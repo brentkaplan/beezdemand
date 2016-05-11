@@ -159,9 +159,8 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
 
     }
 
-
-    sum$pmaxe <- max(adf$expend)
-    sum$omaxe <- max(adf$x[which(adf$expend == max(adf$expend))])
+    sum$pmaxe <- max(adf$x[which(adf$expend == max(adf$expend))])
+    sum$omaxe <- max(adf$expend)
     sum$q0e <- q0e
     sum$aucallmax <- aucallmax
     sum$aucindmax <- aucindmax
@@ -196,8 +195,6 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
                      SIMPLIFY = FALSE)
     names(reslst) <- names(dfs)
     reslst
-
-
 }
 
 ##' Calculates Area Under the Curve
