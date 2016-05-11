@@ -40,15 +40,11 @@ analyze <- function(adf = NULL, eq = NULL, nltype = NULL, k = NULL,
                        trace = seetrace, data = adf), silent = TRUE)
     }
     if (nltype == "lm") {
-        ## Eventually change: http://stackoverflow.com/questions/5595512/what-is-the-difference-between-require-and-library
-        #require(minpack.lm)
         mod <- try(minpack.lm::nlsLM(fo, start = list(q0 = q0st, alpha = ast),
                          control = list(maxiter = 1000, warnOnly = TRUE, maxfev = 500),
                          trace = seetrace, data = adf), silent = TRUE)
     }
     if (nltype == "brute") {
-        ## Eventually change: http://stackoverflow.com/questions/5595512/what-is-the-difference-between-require-and-library
-        #require(nls2)
         grid.start <- expand.grid(list(q0 = c(max(adf$y)),
                                        alpha = seq(.00000001, .1, length.out = 100)))
         start.m <- nls2::nls2(fo, data = adf, start = grid.start,
@@ -123,7 +119,7 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
     f <- function(adf, equation, optimizer, k, remq0e, aucallmax, aucindmax) {
         q0e <- adf[1, "y"]
         adf <- if (remq0e) adf[-1,] else adf
-        ## TODO: find good way to pass different starting values
+        ## TODO: allow user to pass different starting values
         model <- analyze(adf, eq = equation, nltype = optimizer, k = k)
 
     if (!is.character(model)) {
