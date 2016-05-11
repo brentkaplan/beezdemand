@@ -1,0 +1,105 @@
+##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
+##'
+##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also flags for a minimum number of positive consumption values.
+##' @title Systematic Purchase Task Data Checker
+##' @param mat A matrix in wide form where each column is a participant's responses. If a dataframe is provided, it will attempt to coerce it to a matrix.
+##' @param x A vector of prices used in the purchase task. The number of elements must be equal to the number of rows in the matrix.
+##' @param deltaq Numeric vector of length equal to one. The criterion by which the relative change in quantity purchased will be compared. Relative changes in quantity purchased below this criterion will be flagged. Default value is 0.025.
+##' @param bounce Numeric vector of length equal to one. The criterion by which the number of price-to-price increases in consumption that exceed 25\% of initial consumption at the lowest price, expressed relative to the total number of price increments, will be compared. The relative number of price-to-price increases above this criterion will be flagged. Default value is 0.10.
+##' @param reversals Numeric vector of length equal to one. The criterion by which the number of reversals from 0 will be compared. Number of reversals above this criterion will be flagged. Default value is 0.
+##' @param minpos Minimum positive values to be checked against. Default value if 4.
+##' @return A dataframe providing individual values of deltaq, bounce, reversals, and number of positive consumption values. Also contains passing information for each criterion, as well as a total number of passes (total number of passes applies only to Stein et al.'s criteria). Prints the number of cases and the percentage of cases that fail at least one criterion.
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+systemCheck <- function(mat = NULL, x = NULL, deltaq = 0.025, bounce = 0.10, reversals = 0, minpos = 4) {
+    if (is.null(mat) || is.null(x)) stop("You are missing either a matrix or vector of prices")
+    if (is.data.frame(mat)) mat <- as.matrix(mat)
+    critCheck <- function(y, x, deltaq, bounce, reversals, minpos) {
+        y01 <- y + .01
+        x01 <- x + .01
+        crit1 <- (log(y01[1]) - log(y01[length(y)])) /
+            (log(x01[length(x)]) - log(x01[1]))
+        crit2 <- sum(diff(y) > y[1] * 0.25, na.rm = TRUE) / (length(y) - 1)
+        crit3 <- if (length(which(y == 0)) == 0) 0 else sum(diff(y[min(which(y == 0)):length(y)]) > 0, na.rm = TRUE)
+        numpos <- length(which(y != 0))
+        crit1pass <- ifelse(crit1 >= deltaq, 1, 0)
+        crit2pass <- ifelse(crit2 <= bounce,  1, 0)
+        crit3pass <- ifelse(crit3 <= reversals,  1, 0)
+        numpospass <- ifelse(numpos >= minpos, 1, 0)
+        res <- c("Total_Pass" = crit1pass + crit2pass + crit3pass,
+                 "DeltaQ" = round(crit1, 4),
+                 "DeltaQ_Pass" = ifelse(crit1pass == 1, 1, 0),
+                 "Bounce" = round(crit2, 4),
+                 "Bounce_Pass" = ifelse(crit2pass == 1, 1, 0),
+                 "Reversals" = crit3,
+                 "Reversals_Pass" = ifelse(crit3pass == 1, 1, 0),
+                 "Number_Postive_Values" = numpos,
+                 "Minimum_Positive_Values" = ifelse(numpospass == 1, 1, 0))
+        return(res)
+    }
+    rownames(mat) <- NULL
+    res <- as.data.frame(t(apply(mat, 2, critCheck, x, deltaq, bounce, reversals, minpos)))
+    for (i in c("DeltaQ_Pass", "Bounce_Pass", "Reversals_Pass", "Minimum_Positive_Values")) {
+        res[ , i] <- gsub(1, "Yes", res[ , i])
+        res[ , i] <- gsub(0, "No", res[ , i])
+    }
+    res <- cbind("ID" = attributes(mat)$dimnames[[2]], res)
+    cat(paste0("I examined ", nrow(res), " participants' data.\n There were ", length(which(res$Total_Pass < 3)), " participant(s) that failed at least one criterion, representing ", (round(length(which(res$Total_Pass < 3)) / nrow(res), 3)) * 100, "% of the sample.\n Additionally, there were ", length(which(res$Minimum_Positive_Values == "No")), " participants who had less than ", minpos, " non-zero (positive) datapoints.\n Please consider examining these participant(s)"))
+    res
+}
+
+##' Makes a summary table.
+##'
+##' Makes a summary table from the return from doEverything.
+##' @title Make Summary Table
+##' @param reslst The return from doEverything.
+##' @return A dataframe with the following indices: empirical q0 (q0e), derived q0 (q0d), alpha (alpha), essential value (ev), empirical pmax (pmaxe), derived pmax using empirical q0 (pmaxdq0e), derived pmax using derived q0 (pmaxdq0d), empirical omax (omaxe), derived omax using empirical q0e (omaxdq0e), derived omax using derived q0 (omaxdq0d), auc using maximum consumption from entire sample as normalization (aucallmax), auc using individual maximum consumption as normalization (aucindmax), k (k), standard error of derived q0 (q0se), standard error of alpha (alphase), Sy.x (Sy.x), number of points analyzed (pointsanalyzed), degrees of freedom (df), convergence notes from model (convergnotes), equation used in fitting (eq), optimizer used in fitting (nltype), whether empirical q0 was used in fitting (remq0e), whether a parallel shift was used (parshift), replacement number for 0s if applicable (replnum), whether 0s were included in fitting (incl0s).
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+makeSumTable <- function(reslst) {
+    ## library(data.table)
+    zz <- t(sapply(reslst, "[[", 4))
+    sumtable <- data.frame("q0d" = unlist(zz[,1]), "k" = unlist(zz[,2]),
+                    "alpha" = unlist(zz[,3]), "q0se" = unlist(zz[,4]),
+                    "alphase" = unlist(zz[,5]), "df" = unlist(zz[,6]),
+                    "Sy.x" = unlist(zz[,7]), "pointsanalyzed" = unlist(zz[,8]),
+                    "convergnotes" = unlist(zz[,9]), "eq" = unlist(zz[,10]),
+                    "nltype" = unlist(zz[,11]), "pmaxe" = unlist(zz[,12]),
+                    "omaxe" = unlist(zz[,13]), "q0e" = unlist(zz[,14]),
+                    "aucallmax" = unlist(zz[,15]), "aucindmax" = unlist(zz[,16]),
+                    "ev" = unlist(zz[,17]), "pmaxdq0d" = unlist(zz[,18]),
+                    "pmaxdq0e" = unlist(zz[,19]), "omaxdq0d" = unlist(zz[,20]),
+                    "omaxdq0e" = unlist(zz[,21]), "remq0e" = unlist(zz[,22]),
+                    "parshift" = unlist(zz[,23]), "replnum" = unlist(zz[,24]),
+                    "incl0s" = unlist(zz[,25]))
+    varstochar <- c("convergnotes", "eq", "nltype")
+    sumtable[varstochar] <- lapply(sumtable[varstochar], as.character)
+    target <- c("q0e", "q0d", "alpha", "ev", "pmaxe", "pmaxdq0e", "pmaxdq0d", "omaxe",
+                "omaxdq0e", "omaxdq0d", "aucallmax", "aucindmax", "k", "q0se", "alphase",
+                "Sy.x", "pointsanalyzed", "df", "convergnotes", "eq", "nltype", "remq0e",
+                "parshift", "replnum", "incl0s")
+    sumtable <- sumtable[ , match(target, names(sumtable))]
+    sumtable
+}
+
+##' Calculates descriptive statistics from purchase task data.
+##'
+##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, standard deviation of consumption, and percentage of 0 values.
+##' @title Purchase Task Descriptive Summary
+##' @param mat A matrix of purchase task data.
+##' @param x A vector of prices coinciding with purchase task data.
+##' @return A matrix of descriptive statistics.
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+conssum <- function(mat, x = x) {
+    consdescr <- matrix(NA, length(x), 3)
+    mat <- as.matrix(mat)
+    for (i in 1:length(x)) {
+        consdescr[i, 1] <- mean(mat[i, 1:NCOL(mat)])
+        consdescr[i, 2] <- sd(mat[i, 1:NCOL(mat)])
+        consdescr[i, 3] <- (sum(mat[i, 1:NCOL(mat)] == 0))/NCOL(mat)
+    }
+    consdescr <- cbind(x, consdescr)
+    colnames(consdescr) <- c("Price", "Mean", "SD", "Proportion 0s")
+    consdescr
+}

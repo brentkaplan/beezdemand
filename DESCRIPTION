@@ -1,0 +1,15 @@
+Package: beezdemand
+Title: Behavioral Economic Easy Demand
+Version: 0.0.1
+Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", "cre"))
+Description: Functions to help aid in analyzing behavioral economic demand curve data.
+Depends:
+    R (>= 3.2.4)
+Imports:
+    minpack.lm,
+    nls2
+Suggests:
+    openxlsx
+License: GPL-2 | file LICENSE
+LazyData: true
+RoxygenNote: 5.0.0

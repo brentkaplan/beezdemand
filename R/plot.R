@@ -1,0 +1,198 @@
+## Logarithmic spaced sequence
+## Blatantly stolen from library("emdbook"), because need only this
+##' Creates a logarithmically spaced sequence.
+##'
+##' A vector of logarithmically spaced values primarily used for plotting. Taken from library("emdbook").
+##' @title Create Logarithmically Spaced Sequence
+##' @param from Starting value. Default value is 0.0000000001.
+##' @param to Ending value. Default value is 1000.
+##' @param length.out Number of values in vector. Default value is 14.
+##' @return Vector
+##' @author library("emdbook")
+##' @export
+lseq <- function(from=.0000000001, to=1000, length.out=14) {
+    ## CHANGE? should this be log10?
+  exp(seq(log(from), log(to), length.out = length.out))
+}
+
+## Create small ticks
+##' Creates minor ticks for use in plotting.
+##'
+##'
+##' @title Create Minor Tick Sequence
+##' @param maj Value from function lseq
+##' @return Vector
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+minTicks <- function(maj) {
+    minticks <- vector(length = (length(maj)-1) * 10)
+    for (i in 1:length(maj)) {
+        if (i == length(maj)) {
+            return(minticks)
+        }
+        if (i == 1) {
+            minticks <- seq(maj[i], maj[i + 1], length.out = 10)
+        } else {
+            minticks <- c(minticks, seq(maj[i], maj[i + 1], length.out = 10))
+        }
+    }
+}
+
+##' Plots individual demand curves.
+##'
+##' Plots and saves individual demand curves.
+##' @title Plot Individual Curves
+##' @param reslst Return from doEverything
+##' @param basedir Base directory
+##' @param basename Directory to have plots saved in
+##' @param work If TRUE, work function will be plotted. Default value is FALSE.
+##' @param vartext Character vector of variables to be reported on plots.
+##' @return Message indicating how many plots were made and where plots were saved.
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+plotInd <- function(reslst, basedir = "../", basename = "indplots/", work = FALSE, vartext = NULL) {
+    majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
+    majticks <- lseq()
+    minticks <- minTicks(majticks)
+
+    if (is.null(vartext)) {
+        printvars <- FALSE
+    } else {
+        if (!is.null(vartext)) {
+             dict <- data.frame( Name = c("q0d", "alpha", "q0e", "ev", "pmaxe",
+                                     "omaxe", "pmaxdq0e", "pmaxdq0d", "omaxdq0e",
+                                     "omaxdq0d", "aucallmax", "aucindmax", "k",
+                                     "q0se", "alphase", "Sy.x"),
+                                Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
+                                    "O[max[e]]", "P[max[d[Q0e]]]", "P[max[d[Q0d]]]", "O[max[d[Q0e]]]",
+                                    "O[max[d[Q0e]]]", "AUC[allmax]", "AUC[indmax]", "k",
+                                    "Q[0[se]]", "alpha[se]", "Sy.x" ))
+            if (any(is.na(dict$Variable[ match( vartext , dict$Name ) ]))) {
+                warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
+                printvars <- FALSE
+            } else {
+                tobquote <- as.character(dict$Variable[ match( vartext , dict$Name ) ])
+                printvars <- TRUE
+            }
+        }
+    }
+
+    for (i in seq_along(reslst)) {
+        pid <-  names(reslst)[i]
+
+        print(paste0("Graphing participant ", pid))
+
+        equation <- switch(reslst[[i]]$indices[, "eq"], "hs" = "HS", "koff" = "Exponentiated")
+
+        optimizer <- switch(reslst[[i]]$indices[, "nltype"], "lm" = "Levenburg-Marquardt",
+                            "brute" = "Brute-force", "default" = "Gauss-Newton")
+
+        remq0e <- if (reslst[[i]]$indices[, "remq0e"]) " removed " else " retained "
+
+
+        if (is.na(reslst[[i]]$indices[, "parshift"]) || !reslst[[i]]$indices[, "parshift"]) {
+            if (reslst[[i]]$indices[, "incl0s"] && is.na(reslst[[i]]$indices[, "replnum"])) {
+                zeroes <- " 0s retained "
+            } else {
+                if (reslst[[i]]$indices[, "incl0s"] && !is.na(reslst[[i]]$indices[, "replnum"])) {
+                    zeroes <- paste0(" 0s replaced with ", reslst[[i]]$indices[, "replnum"])
+                } else {
+                    if (!reslst[[i]]$indices[, "incl0s"] && is.na(reslst[[i]]$indices[, "replnum"])) {
+                        zeroes <- " 0s removed "
+                    } else {
+                        if (!reslst[[i]]$indices[, "incl0s"] && is.na(reslst[[i]]$indices[, "replnum"])) {
+                            zeroes <- paste0(" 0s replaced with ", reslst[[i]]$indices[, "replnum"])
+                        }
+                    }
+                }
+            }
+        } else {
+            zeroes <- paste0(" a parallel shift of ", reslst[[i]]$indices[, "replnum"])
+        }
+
+        if (i == 1) {
+            q <- if (reslst[[i]]$indices[, "remq0e"]) "q0rem" else "q0ret"
+            z <- if (reslst[[i]]$indices[, "incl0s"]) "0inc" else "0rem"
+            r <- if (!is.na(reslst[[i]]$indices[, "replnum"])) as.character(reslst[[i]]$indices[, "replnum"]) else ""
+            r <- sapply(strsplit(r,split="\\."),function(x)x[length(x)])
+            p <- if (is.na(reslst[[i]]$indices[, "parshift"]) || !reslst[[i]]$indices[, "parshift"]) "" else paste0("-pshift", r)
+            basename <- paste0(basename, reslst[[i]]$indices[, "eq"], "-", reslst[[i]]$indices[, "nltype"], "-", q, "-", z, p, "/")
+            outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+        }
+
+        if (is.character(reslst[[i]]$mod)) {
+            xmin <- min(c(reslst[[i]]$df$x[reslst[[i]]$df$x > 0], .1))
+            xmax <- max(reslst[[i]]$df$x)
+            ymin <- min(reslst[[i]]$df$y)
+            ymax <- min(c(1000, max(reslst[[i]]$df$y))) + 5
+            pdf(file = paste0(outdir, "IndPlot-", pid, reslst[[i]]$indices[, "eq"], "-", reslst[[i]]$indices[, "nltype"], ".pdf"))
+            par(mar = c(5, 4, 4, 4) + 0.3)
+            plot(reslst[[i]]$df$x, reslst[[i]]$df$y, type = "n", log = "xy", yaxt = "n", xaxt = "n",
+                 xlim = c(xmin, xmax),
+                 ylim = c(ymin, ymax),
+                 xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", pid, sep = "-"))
+            usr <- 10^par("usr")
+            points(reslst[[i]]$df$x, reslst[[i]]$df$y)
+            axis(1, majticks, labels = majlabels)
+            axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            axis(2, majticks, labels = majlabels, las = 1)
+            axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            graphics.off()
+            print(paste0("Caution: Unable to plot lines for participant ", pid))
+            next
+        }
+
+        tempnew <- data.frame(x = seq(min(reslst[[i]]$df$x), max(reslst[[i]]$df$x), length.out = 100))
+
+        if (reslst[[i]]$indices[, "eq"] == "hs") {
+            tempnew$y <- 10^(predict(reslst[[i]]$mod, newdata = tempnew))
+        } else {
+            tempnew$y <- predict(reslst[[i]]$mod, newdata = tempnew)
+        }
+
+        tempnew$expend <- tempnew$x * tempnew$y
+
+        xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
+        xmax <- max(tempnew$x)
+        ymin <- min(c(tempnew$y, reslst[[i]]$df$y[reslst[[i]]$df$x > 0]))
+        ymax <- min(c(1000, max(c(tempnew$y, reslst[[i]]$df$y)))) + 5
+
+        pdf(file = paste0(outdir, "IndPlot-", pid, ".pdf"))
+        par(mar = c(5, 4, 4, 4) + 0.3)
+        plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n", xaxt = "n",
+             xlim = c(xmin, xmax),
+             ylim = c(ymin, ymax),
+             xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", pid, sep = "-"))
+        usr <- 10^par("usr")
+        points(reslst[[i]]$df$x, reslst[[i]]$df$y)
+        axis(1, majticks, labels = majlabels)
+        axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        axis(2, majticks, labels = majlabels, las = 1)
+        axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        lines(tempnew$y ~ tempnew$x, lwd = 1.5)
+        mtext(paste0(equation, " using ", optimizer, " with Q0e", remq0e, "and", zeroes), cex = .6)
+
+        if (printvars) {
+           leg <- vector("expression", length(vartext))
+           for (j in seq_along(vartext)) {
+               tmp <- round(reslst[[i]]$indices[, vartext[j]], 6)
+               leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
+           }
+           legend("bottomleft", legend = leg, xjust = 0, cex = .7)
+       }
+
+        if (work) {
+            par(new = TRUE)
+            plot(tempnew$x, tempnew$expend, type = "l", axes = FALSE, bty = "n",
+                 xlab = "", ylab = "", lty = 2, log = "xy",
+                 xlim = c(min(c(tempnew$x[tempnew$x > 0], .1)), max(tempnew$x)),
+                 ylim = c(1, min(c(1000, max(tempnew$expend))) + 5))
+            points(reslst[[i]]$df$x, reslst[[i]]$df$expend, pch = 5)
+            axis(4, majticks, labels = majlabels, las = 1)
+            axis(4, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        }
+
+        graphics.off()
+    }
+    print(paste0(length(list.files(outdir, pattern = "*.pdf")), " plots made and saved into ", outdir))
+}
