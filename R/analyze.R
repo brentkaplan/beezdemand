@@ -171,11 +171,11 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
         sum$pmaxdq0d <- 1/(sum$q0d * sum$alpha * (sum$k ^ 1.5)) * (0.083 * sum$k + 0.65)
         sum$pmaxdq0e <- 1/(sum$q0e * sum$alpha * (sum$k ^ 1.5)) * (0.083 * sum$k + 0.65)
         if (equation == "hs") {
-            sum$omaxdq0d <- 10^(log10(sum$q0d) + (sum$k * (exp(-sum$alpha * sum$q0d * sum$pmaxdq0d) - 1)))
-            sum$omaxdq0e <- 10^(log10(sum$q0e) + (sum$k * (exp(-sum$alpha * sum$q0e * sum$pmaxdq0e) - 1)))
+            sum$omaxdq0d <- (10^(log10(sum$q0d) + (sum$k * (exp(-sum$alpha * sum$q0d * sum$pmaxdq0d) - 1)))) * sum$pmaxdq0d
+            sum$omaxdq0e <- (10^(log10(sum$q0e) + (sum$k * (exp(-sum$alpha * sum$q0e * sum$pmaxdq0e) - 1)))) * sum$pmaxdq0e
         } else {
-            sum$omaxdq0d <- sum$q0d * (10^(sum$k * (exp(-sum$alpha * sum$q0d * sum$pmaxdq0d) - 1)))
-            sum$omaxdq0e <- sum$q0e * (10^(sum$k * (exp(-sum$alpha * sum$q0e * sum$pmaxdq0e) - 1)))
+            sum$omaxdq0d <- (sum$q0d * (10^(sum$k * (exp(-sum$alpha * sum$q0d * sum$pmaxdq0d) - 1)))) * sum$pmaxdq0d
+            sum$omaxdq0e <- (sum$q0e * (10^(sum$k * (exp(-sum$alpha * sum$q0e * sum$pmaxdq0e) - 1)))) * sum$pmaxdq0e
         }
     } else {
         sum$ev <- NA
