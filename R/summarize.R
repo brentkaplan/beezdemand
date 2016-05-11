@@ -57,27 +57,23 @@ systemCheck <- function(mat = NULL, x = NULL, deltaq = 0.025, bounce = 0.10, rev
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 makeSumTable <- function(reslst) {
-    ## library(data.table)
-    zz <- t(sapply(reslst, "[[", 4))
-    sumtable <- data.frame("q0d" = unlist(zz[,1]), "k" = unlist(zz[,2]),
-                    "alpha" = unlist(zz[,3]), "q0se" = unlist(zz[,4]),
-                    "alphase" = unlist(zz[,5]), "df" = unlist(zz[,6]),
-                    "Sy.x" = unlist(zz[,7]), "pointsanalyzed" = unlist(zz[,8]),
-                    "convergnotes" = unlist(zz[,9]), "eq" = unlist(zz[,10]),
-                    "nltype" = unlist(zz[,11]), "pmaxe" = unlist(zz[,12]),
-                    "omaxe" = unlist(zz[,13]), "q0e" = unlist(zz[,14]),
-                    "aucallmax" = unlist(zz[,15]), "aucindmax" = unlist(zz[,16]),
-                    "ev" = unlist(zz[,17]), "pmaxdq0d" = unlist(zz[,18]),
-                    "pmaxdq0e" = unlist(zz[,19]), "omaxdq0d" = unlist(zz[,20]),
-                    "omaxdq0e" = unlist(zz[,21]), "remq0e" = unlist(zz[,22]),
-                    "parshift" = unlist(zz[,23]), "replnum" = unlist(zz[,24]),
-                    "incl0s" = unlist(zz[,25]))
-    varstochar <- c("convergnotes", "eq", "nltype")
-    sumtable[varstochar] <- lapply(sumtable[varstochar], as.character)
+    flatten <- function(indices) {
+        temp1 <- apply(indices, 2, function(x) class(unlist(x)))
+        types <- unique(temp1)
+        index <- list()
+        for (i in seq_along(types)) {
+            index[[i]] <- assign(types[i], which(temp1 == types[i]))
+            index[[i]] <- apply(indices[, index[[i]]], 2, unlist)
+        }
+        sumtable <- data.frame(index, stringsAsFactors = FALSE)
+        sumtable
+    }
     target <- c("q0e", "q0d", "alpha", "ev", "pmaxe", "pmaxdq0e", "pmaxdq0d", "omaxe",
                 "omaxdq0e", "omaxdq0d", "aucallmax", "aucindmax", "k", "q0se", "alphase",
                 "Sy.x", "pointsanalyzed", "df", "convergnotes", "eq", "nltype", "remq0e",
                 "parshift", "replnum", "incl0s")
+    indices <- t(sapply(reslst, "[[", 4))
+    sumtable <- flatten(indices)
     sumtable <- sumtable[ , match(target, names(sumtable))]
     sumtable
 }
