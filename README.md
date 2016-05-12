@@ -22,6 +22,9 @@ install_github("bkaplan4/beezdemand")
 - Michael Amlung, Cognitive Neuroscience of Addictions Laboratory
 (www.cnalab.weebly.com)
 
+### Questions, Suggestions, and Contributions
+Have a question? Have a suggestion for a feature? Would you like to contribute? Email me at <bkaplan4@ku.edu>!
+
 ### Recommended Readings
 - Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral Economics: A Tutorial for Behavior Analysts in Practice. *Behavior Analysis in Practice, 6* (1), 34–54.
 
@@ -34,5 +37,4 @@ install_github("bkaplan4/beezdemand")
 - Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and Management of Nonsystematic Purchase Task Data: Toward Best Practice. *Experimental and Clinical Psychopharmacology*
 
 ### License
-_____
 GPL-Version 2
