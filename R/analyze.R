@@ -104,7 +104,6 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
         replnum <- NA
     }
 
-    ## when replfree != null, auc calculates based on x[1] = replfree
     dfs <- splitMat(mat, x = prices, incl0 = include0, replfree = replfree)
 
     mndf <- data.frame("x" = prices, "y" = mn, "expend" = prices * mn)
@@ -113,10 +112,7 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
     dfs$mean <- mndf
     dfs$median <- mddf
 
-    aucallmax <- calcAUC(dfs, qmaxs = TRUE)
-    aucindmax <- calcAUC(dfs, qmaxs = FALSE)
-
-    f <- function(adf, equation, optimizer, k, remq0e, aucallmax, aucindmax) {
+    f <- function(adf, equation, optimizer, k, remq0e) {
         q0e <- adf[1, "y"]
         adf <- if (remq0e) adf[-1,] else adf
         ## TODO: allow user to pass different starting values
@@ -158,8 +154,6 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
     sum$pmaxe <- max(adf$x[which(adf$expend == max(adf$expend))])
     sum$omaxe <- max(adf$expend)
     sum$q0e <- q0e
-    sum$aucallmax <- aucallmax
-    sum$aucindmax <- aucindmax
 
     if (!is.na(sum$alpha)) {
         sum$ev <- 1/(sum$alpha * (sum$k ^ 1.5) * 100)
@@ -187,8 +181,7 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
 }
 
     reslst <- mapply(f, adf = dfs, equation = equation, optimizer = optimizer, k = k,
-                     remq0e = remq0e, aucallmax = aucallmax, aucindmax = aucindmax,
-                     SIMPLIFY = FALSE)
+                     remq0e = remq0e, SIMPLIFY = FALSE)
     names(reslst) <- names(dfs)
     reslst
 }
