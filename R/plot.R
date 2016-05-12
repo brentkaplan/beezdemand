@@ -61,12 +61,10 @@ plotInd <- function(reslst, basedir = "../", basename = "indplots/", work = FALS
         if (!is.null(vartext)) {
              dict <- data.frame( Name = c("q0d", "alpha", "q0e", "ev", "pmaxe",
                                      "omaxe", "pmaxdq0e", "pmaxdq0d", "omaxdq0e",
-                                     "omaxdq0d", "aucallmax", "aucindmax", "k",
-                                     "q0se", "alphase", "Sy.x"),
+                                     "omaxdq0d", "k", "q0se", "alphase", "Sy.x"),
                                 Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
                                     "O[max[e]]", "P[max[d[Q0e]]]", "P[max[d[Q0d]]]", "O[max[d[Q0e]]]",
-                                    "O[max[d[Q0e]]]", "AUC[allmax]", "AUC[indmax]", "k",
-                                    "Q[0[se]]", "alpha[se]", "Sy.x" ))
+                                    "O[max[d[Q0e]]]", "k", "Q[0[se]]", "alpha[se]", "Sy.x" ))
             if (any(is.na(dict$Variable[ match( vartext , dict$Name ) ]))) {
                 warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
                 printvars <- FALSE
