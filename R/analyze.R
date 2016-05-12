@@ -1,3 +1,35 @@
+##
+## Copyright 2016 Brent Kaplan
+##
+## This file is part of beezdemand.
+##
+## beezdemand is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, version 2.
+##
+## beezdemand is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with beezdemand.  If not, see <http://www.gnu.org/licenses/gpl-2.0.html>.
+##
+## summary
+## R script for analysis functions
+##
+## dependencies
+## @minpack.lm = implements Levenberg-Marquardt algorithm for nonlinear least squares (Copyright - 1999 - University of Chicago - GPLv3)
+## link @ https://cran.r-project.org/web/packages/minpack.lm/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-3
+##
+## @nls2 = adds brute force and multiple starting values to nls. (Copyright - 2013 - G. Grothendieck - GPLv2)
+## link @ https://cran.r-project.org/web/packages/nls2/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
+##
+##
+##
+
 ##' Analyzes a dataframe and returns the regression model.
 ##'
 ##' This function takes a dataframe, consisting of prices (x) and consumption values (y), and analyzes it using nonlinear regression.
