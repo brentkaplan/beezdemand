@@ -1,3 +1,26 @@
+##
+## Copyright 2016 Brent Kaplan
+##
+## This file is part of beezdemand.
+##
+## beezdemand is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, version 2.
+##
+## beezdemand is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with beezdemand.  If not, see <http://www.gnu.org/licenses/gpl-2.0.html>.
+##
+## summary
+## R script for summarizing demand data
+##
+##
+##
+
 ##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
 ##'
 ##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also flags for a minimum number of positive consumption values.
