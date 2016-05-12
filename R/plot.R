@@ -1,8 +1,35 @@
-## Logarithmic spaced sequence
-## Blatantly stolen from library("emdbook"), because need only this
+##
+## Copyright 2016 Brent Kaplan
+##
+## This file is part of beezdemand.
+##
+## beezdemand is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, version 2.
+##
+## beezdemand is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with beezdemand.  If not, see <http://www.gnu.org/licenses/gpl-2.0.html>.
+##
+## summary
+## R script for plotting demand functions
+##
+## lseq derived from
+## @emdbook = auxiliary functions and data sets for "Ecological Models and Data", (Copyright - 2016 - Ben Bolker - GPLv2+)
+## link @ https://cran.r-project.org/web/packages/emdbook/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
+##
+##
+##
+
+
 ##' Creates a logarithmically spaced sequence.
 ##'
-##' A vector of logarithmically spaced values primarily used for plotting. Taken from library("emdbook").
+##' A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
 ##' @title Create Logarithmically Spaced Sequence
 ##' @param from Starting value. Default value is 0.0000000001.
 ##' @param to Ending value. Default value is 1000.
