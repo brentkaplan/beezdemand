@@ -53,7 +53,7 @@ systemCheck <- function(mat = NULL, x = NULL, deltaq = 0.025, bounce = 0.10, rev
 ##' Makes a summary table from the return from doEverything.
 ##' @title Make Summary Table
 ##' @param reslst The return from doEverything.
-##' @return A dataframe with the following indices: empirical q0 (q0e), derived q0 (q0d), alpha (alpha), essential value (ev), empirical pmax (pmaxe), derived pmax using empirical q0 (pmaxdq0e), derived pmax using derived q0 (pmaxdq0d), empirical omax (omaxe), derived omax using empirical q0e (omaxdq0e), derived omax using derived q0 (omaxdq0d), auc using maximum consumption from entire sample as normalization (aucallmax), auc using individual maximum consumption as normalization (aucindmax), k (k), standard error of derived q0 (q0se), standard error of alpha (alphase), Sy.x (Sy.x), number of points analyzed (pointsanalyzed), degrees of freedom (df), convergence notes from model (convergnotes), equation used in fitting (eq), optimizer used in fitting (nltype), whether empirical q0 was used in fitting (remq0e), whether a parallel shift was used (parshift), replacement number for 0s if applicable (replnum), whether 0s were included in fitting (incl0s).
+##' @return A dataframe with the following indices: empirical q0 (q0e), derived q0 (q0d), alpha (alpha), essential value (ev), empirical pmax (pmaxe), derived pmax using empirical q0 (pmaxdq0e), derived pmax using derived q0 (pmaxdq0d), empirical omax (omaxe), derived omax using empirical q0e (omaxdq0e), derived omax using derived q0 (omaxdq0d), k (k), standard error of derived q0 (q0se), standard error of alpha (alphase), Sy.x (Sy.x), number of points analyzed (pointsanalyzed), degrees of freedom (df), convergence notes from model (convergnotes), equation used in fitting (eq), optimizer used in fitting (nltype), whether empirical q0 was used in fitting (remq0e), whether a parallel shift was used (parshift), replacement number for 0s if applicable (replnum), whether 0s were included in fitting (incl0s).
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 makeSumTable <- function(reslst) {
@@ -69,8 +69,8 @@ makeSumTable <- function(reslst) {
         sumtable
     }
     target <- c("q0e", "q0d", "alpha", "ev", "pmaxe", "pmaxdq0e", "pmaxdq0d", "omaxe",
-                "omaxdq0e", "omaxdq0d", "aucallmax", "aucindmax", "k", "q0se", "alphase",
-                "Sy.x", "pointsanalyzed", "df", "convergnotes", "eq", "nltype", "remq0e",
+                "omaxdq0e", "omaxdq0d", "k", "q0se", "alphase", "Sy.x", "pointsanalyzed",
+                "df", "convergnotes", "eq", "nltype", "remq0e",
                 "parshift", "replnum", "incl0s")
     indices <- t(sapply(reslst, "[[", 4))
     sumtable <- flatten(indices)
