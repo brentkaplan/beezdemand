@@ -4,13 +4,13 @@ An R package containing commonly used functions for analyzing behavioral economi
 ### Installation
 Install and load the devtools package.
 
-install.packages("devtools")
+'install.packages("devtools")'
 
-library(devtools)
+'library(devtools)'
 
 Use install_github to install the package.
 
-install_github("bkaplan4/beezdemand")
+'install_github("bkaplan4/beezdemand")'
 
 ### Acknowledgments
 Derek D. Reed and the Applied Behavioral Economics Laboratory
