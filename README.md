@@ -9,7 +9,7 @@ install.packages("devtools")
 
 library(devtools)
 
-install_github("bkaplan4/beezdemand")
+install_github("miyamot0/beezdemand")
 
 library(beezdemand)
 ```
