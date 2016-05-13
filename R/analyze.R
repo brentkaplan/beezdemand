@@ -116,6 +116,7 @@ analyze <- function(adf = NULL, eq = NULL, nltype = NULL, k = NULL,
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, remq0e = TRUE, replfree = NULL) {
+    if (is.infinite(k)) stop("k is Inf. Please make sure you calculated k correctly.")
     if (NCOL(mat) > 1) {
         mn <- vector(length = NROW(mat))
         md <- vector(length = NROW(mat))
