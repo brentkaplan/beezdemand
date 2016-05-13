@@ -14,6 +14,9 @@ install_github("bkaplan4/beezdemand")
 library(beezdemand)
 ```
 
+### Note About Use
+Currently, this version is under development. You are free to use it, but be aware that there might be bugs present. If you find issues or things that should be changed, please contact me.
+
 ### Acknowledgments
 - Derek D. Reed, Applied Behavioral Economics Laboratory
 (www.behavioraleconlab.com)
