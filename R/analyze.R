@@ -146,8 +146,8 @@ doEverything <- function(mat, prices, include0 = TRUE, equation, optimizer, k, r
 
     f <- function(adf, equation, optimizer, k, remq0e) {
         if (is.character(adf)) {
-            if (adf == "Fewer than 3 datapoints") stop("I can not and will not analyze a dataset with less than 3 positive datapoints")
-            if (adf == "No consumption") stop("I can not and will not analyze a dataset with no consumption")
+            if (adf == "Fewer than 3 datapoints") stop("I can not and will not analyze a dataset with less than 3 positive datapoints. Please run your dataset through systemCheck.")
+            if (adf == "No consumption") stop("I can not and will not analyze a dataset with no consumption. . Please run your dataset through systemCheck.")
         }
         q0e <- adf[1, "y"]
         adf <- if (remq0e) adf[-1,] else adf
