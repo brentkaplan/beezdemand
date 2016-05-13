@@ -20,7 +20,7 @@ Vector
 Creates a logarithmically spaced sequence.
 }
 \details{
-A vector of logarithmically spaced values primarily used for plotting. Taken from library("emdbook").
+A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
 }
 \author{
 library("emdbook")
