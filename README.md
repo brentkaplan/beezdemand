@@ -6,6 +6,7 @@ Install and load the devtools package. Then, use install_github to install the p
 
 ```r
 install.packages("devtools")
+install.packages("digest")
 
 library(devtools)
 
