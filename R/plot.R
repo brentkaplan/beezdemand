@@ -179,7 +179,7 @@ plotInd <- function(reslst, basedir = "../", basename = "indplots/", work = FALS
 
         xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
         xmax <- max(tempnew$x)
-        ymin <- min(c(tempnew$y, reslst[[i]]$df$y[reslst[[i]]$df$x > 0]))
+        ymin <- min(c(tempnew$y, reslst[[i]]$df$y[reslst[[i]]$df$y > 0]))
         ymax <- min(c(1000, max(c(tempnew$y, reslst[[i]]$df$y)))) + 5
 
         pdf(file = paste0(outdir, "IndPlot-", pid, ".pdf"))
