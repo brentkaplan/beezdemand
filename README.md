@@ -56,6 +56,8 @@ testMethods
 - Steven R. Hursh, Institutes for Behavior Resources, Inc.
 (www.ibrinc.org)
 
+- Shawn P. Gilroy, (<shawn.gilroy@temple.edu>; [GitHub](https://github.com/miyamot0))
+
 ### Recommended Readings
 - Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral economics: A tutorial for behavior analysts in practice. *Behavior Analysis in Practice, 6* (1), 34–54.
 
