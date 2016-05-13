@@ -87,16 +87,6 @@ analyze <- function(adf = NULL, eq = NULL, nltype = NULL, k = NULL,
                         control = list(maxiter = 1000, warnOnly = TRUE),
                         trace = seetrace, data = adf), silent = TRUE)
     }
-    if (nltype == "nash") {
-        mod <- try(wrapnls(data=SourceFrame[SourceFrame$p==i,], 
-                  (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha*q0*x)-1), 
-                  start=c(q0=3, alpha=0.000000001), 
-                  control = list(maxiter = 1000),
-                  trace = seetrace), silent=TRUE)
-        #mod <- try(minpack.lm::nlsLM(fo, start = list(q0 = q0st, alpha = ast),
-        #                 control = list(maxiter = 1000, warnOnly = TRUE, maxfev = 500),
-        #                 trace = seetrace, data = adf), silent = TRUE)
-    }
     if(inherits(mod, "try-error")) {
         mod <- mod[1]
         attr(mod, "eq") <- eq
