@@ -10,6 +10,8 @@ install.packages("devtools")
 library(devtools)
 
 install_github("bkaplan4/beezdemand")
+
+library(beezdemand)
 ```
 
 ### Acknowledgments
