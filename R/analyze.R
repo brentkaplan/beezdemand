@@ -30,6 +30,148 @@
 ##
 ##
 
+##' @title FitCurves
+##' @param mat: data frame of purchase task data.
+##' @param pprices Vector of prices coinciding with purchase task data
+##' @param include0 If FALSE, removes all 0s in consumption data prior to analysis. Default value is TRUE.
+##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
+##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units.
+##' @param remq0e If FALSE, retains consumption and price where price == 0. Default value is TRUE
+##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
+##' @return Data frame, fitting params and CI's/SE's
+##' @author Shawn Gilroy <shawn.gilroy@temple.edu>
+##' @export
+FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
+
+    ## Workaround to make sure nlmrt is available and referenced
+    if (!require(nlmrt))
+    {
+      install.packages('nlmrt', repos = 'http://cran.us.r-project.org')
+      require(nlmrt)
+      library(nlmrt)
+    }
+
+    ## Workaround to make sure nlmrt is available and referenced
+    if (!require(nlstools))
+    {
+      install.packages('nlstools', repos = 'http://cran.us.r-project.org')
+      require(nlstools)
+      library(nlstools)
+    }
+
+    ## Assert not Inf
+    if (is.infinite(k))
+    {
+      stop("k is Inf. Please make sure you calculated k correctly.")
+    }
+
+    ## Get unique participants, informing loop
+    participants <- max(unique(mat$p))
+    #cat("total participants: ", participants, "\n");
+
+    ## Preallocate for speed
+    DataFrameResult <- data.frame(
+      Participant=c(rep(NA, participants)),
+      Mean=c(rep(NA, participants)),
+      Median=c(rep(NA, participants)),
+      Q0=c(rep(NA, participants)),
+      K=c(rep(NA, participants)),
+      R2=c(rep(NA, participants)),
+      Alpha=c(rep(NA, participants)),
+      Q0se=c(rep(NA, participants)),
+      Alphase=c(rep(NA, participants)),
+      N=c(rep(NA, participants)),
+      AbsSS=c(rep(NA, participants)),
+      SdRes=c(rep(NA, participants)),
+      Q0Low=c(rep(NA, participants)),
+      Q0High=c(rep(NA, participants)),
+      AlphaLow=c(rep(NA, participants)),
+      AlphaHigh=c(rep(NA, participants)),
+      Notes=c(rep(NA, participants))
+    )
+
+    ## Loop through unique values as indices, not necessarily sequentially
+    for (i in unique(mat$p))
+    {
+      DataFrameResult[i,]$Participant = i
+      DataFrameResult[i,]$Mean = mean(mat[mat$p==i,]$y)
+      DataFrameResult[i,]$Median = median(mat[mat$p==i,]$y)
+
+      adf <- NULL
+      adf <- mat[mat$p==i,]
+      adf[,"k"] <- k
+
+      ## Workaround for Hursh's zero point issues
+      if (equation == "hs")
+      {
+
+        if (remq0e)
+        {
+          ## Drop any zero comsumption points altogether
+          adf <- adf[adf$y != 0,]
+        }
+
+        ## Skirt 0 domain values away from intercept, for Hursh zero point issues
+        if (adf[1,"x"] == 0.0)
+        {
+          adf[1,"x"] <- replfree
+        }
+
+        fit <- NULL
+        try(fit <- wrapnls(data=adf,
+                           (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha*q0*x)-1),
+                           start = list(q0 = 10, alpha = 0.01),
+                           control = list(maxiter = 1000)), silent = TRUE)
+
+        if (!is.null(fit))
+        {
+          DataFrameResult[i,]$Q0 <- as.numeric(coef(fit)["q0"])
+          DataFrameResult[i,]$Alpha <- as.numeric(coef(fit)["alpha"])
+          DataFrameResult[i,]$K <- min(adf$k)
+          DataFrameResult[i,]$Q0se <- summary(fit)[[10]][1,2]
+          DataFrameResult[i,]$Alphase <- summary(fit)[[10]][2,2]
+          DataFrameResult[i,]$N <- length(adf$k)
+          DataFrameResult[i,]$R2 <- 1.0 -(deviance(fit)/sum((log(adf$y)/log(10)-mean(log(adf$y)/log(10)))^2))
+          DataFrameResult[i,]$AbsSS <- deviance(fit)
+          DataFrameResult[i,]$SdRes <- sqrt(deviance(fit)/df.residual(fit))
+          DataFrameResult[i,]$Q0Low <- confint2(fit)[1]
+          DataFrameResult[i,]$Q0High <- confint2(fit)[3]
+          DataFrameResult[i,]$AlphaLow <- confint2(fit)[2]
+          DataFrameResult[i,]$AlphaHigh <- confint2(fit)[4]
+        }
+      }
+      else if (equation == "koff")
+      {
+        fit <- NULL
+        try(fit <- wrapnls(data=adf,
+                           y ~ q0 * 10^(k * (exp(-alpha*q0*x)-1)),
+                           start = list(q0 = 10, alpha = 0.01),
+                           control = list(maxiter = 1000)))
+
+        if (!is.null(fit))
+        {
+          DataFrameResult[i,]$Q0 <- as.numeric(coef(fit)["q0"])
+          DataFrameResult[i,]$Alpha <- as.numeric(coef(fit)["alpha"])
+          DataFrameResult[i,]$K <- min(adf$k)
+          DataFrameResult[i,]$Q0se <- summary(fit)[[10]][1,2]
+          DataFrameResult[i,]$Alphase <- summary(fit)[[10]][2,2]
+          DataFrameResult[i,]$N <- length(adf$k)
+          DataFrameResult[i,]$R2 <-  1.0 -(deviance(fit)/sum((adf$y-mean(adf$y))^2))
+          DataFrameResult[i,]$AbsSS <- deviance(fit)
+          DataFrameResult[i,]$SdRes <- sqrt(deviance(fit)/df.residual(fit))
+          DataFrameResult[i,]$Q0Low <- confint2(fit)[1]
+          DataFrameResult[i,]$Q0High <- confint2(fit)[3]
+          DataFrameResult[i,]$AlphaLow <- confint2(fit)[2]
+          DataFrameResult[i,]$AlphaHigh <- confint2(fit)[4]
+        }
+      }
+    }
+
+
+    return(DataFrameResult)
+
+}
+
 ##' Analyzes a dataframe and returns the regression model.
 ##'
 ##' This function takes a dataframe, consisting of prices (x) and consumption values (y), and analyzes it using nonlinear regression.
