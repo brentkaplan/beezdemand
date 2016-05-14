@@ -35,10 +35,13 @@
 ## link @ https://cran.r-project.org/web/packages/nlmrt/index.html
 ## license @ https://cran.r-project.org/web/licenses/GPL-2
 ##
+## @ggplot2 (R package) = Grammar of Graphics plotting library (Copyright 2016 - Hadley Wickham - GPLv2)
+## link @ https://cran.r-project.org/web/packages/ggplot2/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
+##
 
 ##' Analyzes purchase task data
 ##'
-##' Analyzes purchase task data
 ##' @title FitCurves
 ##' @param mat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
@@ -46,120 +49,239 @@
 ##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
 ##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
+##' @param plotting If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE) {
+FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
 
-    ## Assert not Inf
-    if (is.infinite(k)) {
-        warning("k is Inf. I will calculate a k based on the entire sample.")
-        k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
-    }
+  ## Assert not Inf
+  if (is.infinite(k))
+  {
+    warning("k is Inf. I will calculate a k based on the entire sample.")
+    k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
+  }
 
-    ## If no k is provided
-    if (is.null(k)) {
-        k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
-    }
+  ## If no k is provided
+  if (is.null(k))
+  {
+    k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
+  }
 
-    ## Get unique participants, informing loop
-    participants <- length(unique(mat$p))
+  ## Get N unique participants, informing loop
+  participants <- length(unique(mat$p))
 
-    ## Preallocate for speed
-    cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0", "K",
-                "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-                "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+  ## Preallocate for speed
+  cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0", "K",
+              "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+              "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
 
-    dfres <- data.frame(matrix(vector(), participants, length(cnames),
-                               dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+  dfres <- data.frame(matrix(vector(),
+                             participants,
+                             length(cnames),
+                             dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
-    ## Loop through unique values as indices, not necessarily sequentially
-    for (i in unique(mat$p)) {
-        dfres[i, "Participant"] <- i
-        dfres[i, "Equation"] <- equation
-        #browser()
-        adf <- NULL
-        adf <- mat[mat$p == i, ]
-        adf[, "expend"] <- adf$x * adf$y
-        adf[, "k"] <- k
+  ## Loop through unique values as indices, not necessarily sequentially
+  for (i in unique(mat$p))
+  {
+    dfres[i, "Participant"] <- i
+    dfres[i, "Equation"] <- equation
 
-        ## Find empirical Q0, BP0, BP1
-        dfres[i, "Q0e"] <- if (0 %in% adf$x) adf[adf$x == 0, "y"] else NA
-        dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
-        dfres[i, "BP1"] <- if (!0 %in% adf$y) max(adf[adf$y != 0, "x"]) else NA
+    adf <- NULL
+    adf <- mat[mat$p == i, ]
+    adf[, "expend"] <- adf$x * adf$y
+    adf[, "k"] <- k
 
-        ## Find empirical Pmax, Omax
-        dfres[i, "Omaxe"] <- max(adf$expend)
-        dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
+    ## Find empirical Q0, BP0, BP1
+    dfres[i, "Q0e"] <- if (0 %in% adf$x) adf[adf$x == 0, "y"] else NA
+    dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
+    dfres[i, "BP1"] <- if (!0 %in% adf$y) max(adf[adf$y != 0, "x"]) else NA
 
-        if (equation == "hs") {
+    ## Find empirical Pmax, Omax
+    dfres[i, "Omaxe"] <- max(adf$expend)
+    dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
 
-            ## If retain y where x = 0, replace
-            if (remq0e) {
-                adf <- adf[adf$x != 0, ]
-            } else {
-                replfree <- if (is.null(replfree)) 0.01 else replfree
-                adf[adf$x == 0, "x"] <- replfree
-            }
+    if (equation == "hs")
+    {
+      ## If retain y where x = 0, replace
+      if (remq0e)
+      {
+        adf <- adf[adf$x != 0, ]
+      } else
+      {
+        replfree <- if (is.null(replfree)) 0.01 else replfree
+        adf[adf$x == 0, "x"] <- replfree
+      }
 
-            ## Drop any zero consumption points altogether
-            adf <- adf[adf$y != 0, ]
+      ## Drop any zero consumption points altogether
+      adf <- adf[adf$y != 0, ]
 
-            fit <- NULL
-            try(fit <- nlmrt::wrapnls(data = adf,
-                               (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-                               start = list(q0 = 10, alpha = 0.01),
-                               control = list(maxiter = 1000)), silent = TRUE)
+      fit <- NULL
+      try(fit <- nlmrt::wrapnls(data = adf,
+                                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+                                start = list(q0 = 10, alpha = 0.01),
+                                control = list(maxiter = 1000)), silent = TRUE)
 
-            if (!is.null(fit)) {
-                dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-                dfres[i, "K"] <- min(adf$k)
-                dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-                dfres[i, "N"] <- length(adf$k)
-                dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
-                dfres[i, "AbsSS"] <- deviance(fit)
-                dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-                dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-                dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-                dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-                dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
-                                      (0.083 * dfres[i, "K"] + 0.65)
-                dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                      dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-            }
-        } else {
-            if (equation == "koff") {
-
-                if (rem0) {
-                    adf <- adf[adf$y != 0, ]
-                }
-
-                fit <- NULL
-                try(fit <- nlmrt::wrapnls(data = adf,
-                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                   start = list(q0 = 10, alpha = 0.01),
-                                   control = list(maxiter = 1000)), silent = TRUE)
-
-                if (!is.null(fit)) {
-                    dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-                    dfres[i, "K"] <- min(adf$k)
-                    dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-                    dfres[i, "N"] <- length(adf$k)
-                    dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
-                    dfres[i, "AbsSS"] <- deviance(fit)
-                    dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-                    dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-                    dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-                    dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-                    dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
-                                          (0.083 * dfres[i, "K"] + 0.65)
-                    dfres[i, "Omaxd"] <- (dfres[i, "Q0"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                          dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-                }
-            }
+      if (!is.null(fit))
+      {
+        dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+        dfres[i, "K"] <- min(adf$k)
+        dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+        dfres[i, "N"] <- length(adf$k)
+        dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
+        dfres[i, "AbsSS"] <- deviance(fit)
+        dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+        dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+        dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+        dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
+          (0.083 * dfres[i, "K"] + 0.65)
+        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
+                                                                                  dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+      }
+    } else
+    {
+      if (equation == "koff")
+      {
+        if (rem0)
+        {
+          adf <- adf[adf$y != 0, ]
         }
+
+        fit <- NULL
+        try(fit <- nlmrt::wrapnls(data = adf,
+                                  y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                  start = list(q0 = 10, alpha = 0.01),
+                                  control = list(maxiter = 1000)), silent = TRUE)
+
+        if (!is.null(fit))
+        {
+          dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+          dfres[i, "K"] <- min(adf$k)
+          dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+          dfres[i, "N"] <- length(adf$k)
+          dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
+          dfres[i, "AbsSS"] <- deviance(fit)
+          dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+          dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+          dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+          dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+          dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
+            (0.083 * dfres[i, "K"] + 0.65)
+          dfres[i, "Omaxd"] <- (dfres[i, "Q0"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
+                                                                             dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        }
+      }
     }
-    return(dfres)
+  }
+
+  if(plotting)
+  {
+    ## Can add this to build tools and remove later, just added for now -sg
+
+    if(!require(ggplot2)) {
+      install.packages("ggplot2")
+      require(ggplot2)
+      library(ggplot2)
+    }
+
+    xDraw <- seq(min(mat$x), max(mat$x), 0.01)
+
+    p.rep <- seq(1,max(mat$p),1)
+
+    graphFrame<-data.frame(Individual=rep(seq(min(p.rep), max(p.rep),1),each=length(xDraw)),
+                           DemandSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
+                           YSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
+                           XSeries=rep(seq(1:length(xDraw)-1),length(p.rep)))
+
+    pointFrame <- NULL
+
+    for(i in unique(mat$p))
+    {
+      qTemp <- dfres[i,]$Q0
+      aTemp <- dfres[i,]$Alpha
+      kTemp <- dfres[i,]$K
+
+      for (j in 1:length(xDraw))
+      {
+        ### mapped fittings, based on model
+        if (equation == "hs")
+        {
+          graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- log10(qTemp) + kTemp * (exp(-aTemp*qTemp*xDraw[j])-1)
+        }else if (equation == "koff")
+        {
+          graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- qTemp * 10^(kTemp * (exp(-aTemp * qTemp * xDraw[j]) - 1))
+        }
+
+        ### Base domain
+        graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$XSeries <- xDraw[j]
+      }
+    }
+
+    axis_mod <- function(l) {
+      l <- paste("10^", l, sep = "")
+      parse(text=l)
+    }
+
+    if (equation == "hs")
+    {
+      pointFrame <- data.frame(X=mat$x, Y=log10(mat$y), Individual=mat$p)
+
+      logChart <- ggplot() +
+        geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
+        geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
+        expand_limits(y=0) +
+        theme_bw() +
+        theme(panel.grid.minor = element_blank()) +
+        ggtitle("Fitted Demand Curves\n") +
+        ylab("log(Consumption)") +
+        scale_x_log10(
+          breaks = scales::trans_breaks("log10", function(x) 10^x),
+          labels = scales::trans_format("log10", scales::math_format(10^.x))
+        ) +
+        scale_y_continuous(labels=axis_mod) +
+        annotation_logticks(sides = "b") +
+        xlab("log(Price)") +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "none") +
+        theme(legend.direction = "vertical") +
+        theme(panel.grid.minor = element_blank()) +
+        theme(panel.grid.major = element_blank()) +
+        guides(col = guide_legend(ncol = 3))
+
+        print(logChart)
+
+    }else if (equation == "koff")
+    {
+      pointFrame <- data.frame(X=mat$x, Y=mat$y, Individual=mat$p)
+
+      logChart <- ggplot() +
+        geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
+        geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
+        expand_limits(y=0) +
+        theme_bw() +
+        theme(panel.grid.minor = element_blank()) +
+        ggtitle("Fitted Demand Curves\n") +
+        ylab("log(Consumption)") +
+        scale_x_log10(
+          breaks = scales::trans_breaks("log10", function(x) 10^x),
+          labels = scales::trans_format("log10", scales::math_format(10^.x))
+        ) +
+        annotation_logticks(sides = "b") +
+        xlab("log(Price)") +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "none") +
+        theme(legend.direction = "vertical") +
+        theme(panel.grid.minor = element_blank()) +
+        theme(panel.grid.major = element_blank()) +
+        guides(col = guide_legend(ncol = 3))
+
+      print(logChart)
+
+    }
+  }
+
+  return(dfres)
 }
 
 ##' Analyzes a dataframe and returns the regression model.
