@@ -5,11 +5,12 @@ Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", 
 Description: Functions to help aid in analyzing behavioral economic demand curve data.
 Depends:
     R (>= 3.2.4)
-Suggests:
-    minpack.lm,
-    nls2,
+Imports:
     nlmrt,
     nlstools,
+    minpack.lm,
+    nls2
+Suggests:
     openxlsx
 License: GPL-2 | file LICENSE
 LazyData: true
