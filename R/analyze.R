@@ -40,41 +40,21 @@
 ##'
 ##' Analyzes purchase task data
 ##' @title FitCurves
-<<<<<<< HEAD
-##'
-##' @param mat: data frame of purchase task data.
-=======
 ##' @param mat data frame (long form) of purchase task data.
->>>>>>> refs/remotes/bkaplan4/master
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
 ##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample
 ##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
-<<<<<<< HEAD
-##'
-##' @return Data frame, fitting params, CI's/SE's and notes
-##' @author Shawn Gilroy <shawn.gilroy@temple.edu>
-=======
 ##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
->>>>>>> refs/remotes/bkaplan4/master
 ##' @export
 FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE) {
 
-<<<<<<< HEAD
-    ## Workaround to make sure nlstools is available and referenced
-    if (!require(nlstools))
-    {
-      install.packages('nlstools', repos = 'http://cran.us.r-project.org')
-      require(nlstools)
-      library(nlstools)
-=======
     ## Assert not Inf
     if (is.infinite(k)) {
         warning("k is Inf. I will calculate a k based on the entire sample.")
         k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
->>>>>>> refs/remotes/bkaplan4/master
     }
 
     ## If no k is provided
@@ -82,11 +62,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
         k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
     }
 
-<<<<<<< HEAD
-    ## Get n unique participants, informing loop
-=======
     ## Get unique participants, informing loop
->>>>>>> refs/remotes/bkaplan4/master
     participants <- length(unique(mat$p))
 
     ## Preallocate for speed
@@ -98,33 +74,6 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
                                dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
     ## Loop through unique values as indices, not necessarily sequentially
-<<<<<<< HEAD
-    for (i in unique(mat$p))
-    {
-      DataFrameResult[i,]$Participant = i
-      DataFrameResult[i,]$Mean = mean(mat[mat$p==i,]$y)
-      DataFrameResult[i,]$Median = median(mat[mat$p==i,]$y)
-
-      adf <- NULL
-      adf <- mat[mat$p==i,]
-      adf[,"k"] <- k
-
-      if (equation == "hs")
-      {
-
-        ## Workaround for Hursh's zero point issues
-        if (remq0e)
-        {
-          ## Drop any zero comsumption points altogether
-          adf <- adf[adf$y != 0,]
-        }
-
-        ## Skirt 0 domain values away from intercept, for Hursh initial zero point issues
-        if (adf[1,"x"] == 0.0)
-        {
-          adf[1,"x"] <- replfree
-        }
-=======
     for (i in unique(mat$p)) {
         dfres[i, "Participant"] <- i
         dfres[i, "Equation"] <- equation
@@ -144,7 +93,6 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
         dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
 
         if (equation == "hs") {
->>>>>>> refs/remotes/bkaplan4/master
 
             ## If retain y where x = 0, replace
             if (remq0e) {
@@ -211,12 +159,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
             }
         }
     }
-<<<<<<< HEAD
-    
-    return(DataFrameResult)
-=======
     return(dfres)
->>>>>>> refs/remotes/bkaplan4/master
 }
 
 ##' Analyzes a dataframe and returns the regression model.
