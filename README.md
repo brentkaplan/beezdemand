@@ -21,7 +21,7 @@ Currently, this version is under development. You are free to use it, but be awa
 ### Sample Implementation
 
 ```r
-ExampleDataFromAptInDataFrame <- data.frame(
+Apt <- data.frame(
   p=c(rep(1,16), rep(2,16)),
   x=c(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0,
       0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0),
@@ -29,13 +29,13 @@ ExampleDataFromAptInDataFrame <- data.frame(
       10,10, 8,8,6,6,5,5,4,4,3,3,2,2,0,0)
 )
 
-k <- log10(max(ExampleDataFromAptInDataFrame[ExampleDataFromAptInDataFrame$y>1,]$y)) -
-     log10(min(ExampleDataFromAptInDataFrame[ExampleDataFromAptInDataFrame$y>1,]$y))
+k <- log10(max(Apt[Apt$y>1,]$y)) -
+     log10(min(Apt[Apt$y>1,]$y))
 
-testMethods <- FitCurves(ExampleDataFromAptInDataFrame, equation="hs", k=k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "hs", k = k, remq0e = TRUE, replfree = 0.01)
 testMethods
 
-testMethods <- FitCurves(ExampleDataFromAptInDataFrame, equation="koff", k=k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "koff", k = k, remq0e = TRUE, replfree = 0.01)
 testMethods
 ```
 
