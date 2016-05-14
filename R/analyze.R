@@ -31,14 +31,14 @@
 ##
 
 ##' @title FitCurves
+##'
 ##' @param mat: data frame of purchase task data.
-##' @param pprices Vector of prices coinciding with purchase task data
-##' @param include0 If FALSE, removes all 0s in consumption data prior to analysis. Default value is TRUE.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
 ##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units.
 ##' @param remq0e If FALSE, retains consumption and price where price == 0. Default value is TRUE
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
-##' @return Data frame, fitting params and CI's/SE's
+##'
+##' @return Data frame, fitting params, CI's/SE's and notes
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
 FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
@@ -51,7 +51,7 @@ FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
       library(nlmrt)
     }
 
-    ## Workaround to make sure nlmrt is available and referenced
+    ## Workaround to make sure nlstools is available and referenced
     if (!require(nlstools))
     {
       install.packages('nlstools', repos = 'http://cran.us.r-project.org')
@@ -65,9 +65,8 @@ FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
       stop("k is Inf. Please make sure you calculated k correctly.")
     }
 
-    ## Get unique participants, informing loop
-    participants <- max(unique(mat$p))
-    #cat("total participants: ", participants, "\n");
+    ## Get n unique participants, informing loop
+    participants <- length(unique(mat$p))
 
     ## Preallocate for speed
     DataFrameResult <- data.frame(
@@ -101,17 +100,17 @@ FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
       adf <- mat[mat$p==i,]
       adf[,"k"] <- k
 
-      ## Workaround for Hursh's zero point issues
       if (equation == "hs")
       {
 
+        ## Workaround for Hursh's zero point issues
         if (remq0e)
         {
           ## Drop any zero comsumption points altogether
           adf <- adf[adf$y != 0,]
         }
 
-        ## Skirt 0 domain values away from intercept, for Hursh zero point issues
+        ## Skirt 0 domain values away from intercept, for Hursh initial zero point issues
         if (adf[1,"x"] == 0.0)
         {
           adf[1,"x"] <- replfree
@@ -166,10 +165,8 @@ FitCurves <- function(mat, equation, k, remq0e = TRUE, replfree = NULL) {
         }
       }
     }
-
-
+    
     return(DataFrameResult)
-
 }
 
 ##' Analyzes a dataframe and returns the regression model.
