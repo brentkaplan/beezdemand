@@ -10,15 +10,18 @@ install.packages("digest")
 
 library(devtools)
 
-install_github("miyamot0/beezdemand")
+install_github("bkaplan4/beezdemand")
 
 library(beezdemand)
 ```
 
+### Note About Use
+Currently, this version is under development. You are free to use it, but be aware that there might be bugs present. If you find issues or things that should be changed, please contact me.
+
 ### Sample Implementation
 
 ```r
-ExampleDataFromAptInDataFrame <- data.frame(
+Apt <- data.frame(
   p=c(rep(1,16), rep(2,16)),
   x=c(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0,
       0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0),
@@ -26,15 +29,16 @@ ExampleDataFromAptInDataFrame <- data.frame(
       10,10, 8,8,6,6,5,5,4,4,3,3,2,2,0,0)
 )
 
-k <- log10(max(ExampleDataFromAptInDataFrame[ExampleDataFromAptInDataFrame$y>1,]$y)) -
-     log10(min(ExampleDataFromAptInDataFrame[ExampleDataFromAptInDataFrame$y>1,]$y))
+k <- log10(max(Apt[Apt$y>1,]$y)) -
+     log10(min(Apt[Apt$y>1,]$y))
 
-testMethods <- FitCurves(ExampleDataFromAptInDataFrame, equation="hs", k=k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "hs", k = k, remq0e = TRUE, replfree = 0.01)
 testMethods
 
-testMethods <- FitCurves(ExampleDataFromAptInDataFrame, equation="koff", k=k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "koff", k = k, remq0e = TRUE, replfree = 0.01)
 testMethods
 ```
+
 
 ### Acknowledgments
 - Derek D. Reed, Applied Behavioral Economics Laboratory
@@ -51,6 +55,8 @@ testMethods
 
 - Steven R. Hursh, Institutes for Behavior Resources, Inc.
 (www.ibrinc.org)
+
+- Shawn P. Gilroy, (<shawn.gilroy@temple.edu>; [GitHub](https://github.com/miyamot0))
 
 ### Recommended Readings
 - Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral economics: A tutorial for behavior analysts in practice. *Behavior Analysis in Practice, 6* (1), 34–54.

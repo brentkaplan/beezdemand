@@ -6,6 +6,8 @@ Description: Functions to help aid in analyzing behavioral economic demand curve
 Depends:
     R (>= 3.2.4)
 Imports:
+    nlmrt,
+    nlstools,
     minpack.lm,
     nls2
 Suggests:
