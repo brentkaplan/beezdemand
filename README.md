@@ -32,10 +32,10 @@ Apt <- data.frame(
 k <- log10(max(Apt[Apt$y>1,]$y)) -
      log10(min(Apt[Apt$y>1,]$y))
 
-testMethods <- FitCurves(Apt, equation = "hs", k = k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "hs", k = k, remq0e = FALSE, replfree = 0.01)
 testMethods
 
-testMethods <- FitCurves(Apt, equation = "koff", k = k, remq0e = TRUE, replfree = 0.01)
+testMethods <- FitCurves(Apt, equation = "koff", k = k, remq0e = FALSE, replfree = 0.01)
 testMethods
 ```
 
