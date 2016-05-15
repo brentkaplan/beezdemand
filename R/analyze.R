@@ -43,7 +43,7 @@
 ##' Analyzes purchase task data
 ##'
 ##' @title FitCurves
-##' @param mat data frame (long form) of purchase task data.
+##' @param dat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
 ##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample
 ##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
@@ -53,23 +53,23 @@
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
+FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
 
   ## Assert not Inf
   if (is.infinite(k))
   {
     warning("k is Inf. I will calculate a k based on the entire sample.")
-    k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
+    k <- log10(max(dat[dat$y > 1, "y"])) - log10(min(dat[dat$y > 1, "y"]))
   }
 
   ## If no k is provided
   if (is.null(k))
   {
-    k <- log10(max(mat[mat$y > 1, "y"])) - log10(min(mat[mat$y > 1, "y"]))
+    k <- log10(max(dat[dat$y > 1, "y"])) - log10(min(dat[dat$y > 1, "y"]))
   }
 
   ## Get N unique participants, informing loop
-  participants <- unique(mat$p)
+  participants <- unique(dat$p)
   np <- length(participants)
 
   ## Preallocate for speed
@@ -89,7 +89,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
     dfres[i, "Equation"] <- equation
 
     adf <- NULL
-    adf <- mat[mat$p == participants[i], ]
+    adf <- dat[dat$p == participants[i], ]
     adf[, "expend"] <- adf$x * adf$y
     adf[, "k"] <- k
 
@@ -186,9 +186,9 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
       library(ggplot2)
     }
 
-    xDraw <- seq(min(mat$x), max(mat$x), 0.01)
+    xDraw <- seq(min(dat$x), max(dat$x), 0.01)
 
-    p.rep <- seq(1,max(mat$p),1)
+    p.rep <- seq(1,max(dat$p),1)
 
     graphFrame<-data.frame(Individual=rep(seq(min(p.rep), max(p.rep),1),each=length(xDraw)),
                            DemandSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
@@ -197,7 +197,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
 
     pointFrame <- NULL
 
-    for(i in unique(mat$p))
+    for(i in unique(dat$p))
     {
       qTemp <- dfres[i,]$Q0
       aTemp <- dfres[i,]$Alpha
@@ -226,7 +226,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
 
     if (equation == "hs")
     {
-      pointFrame <- data.frame(X=mat$x, Y=log10(mat$y), Individual=mat$p)
+      pointFrame <- data.frame(X=dat$x, Y=log10(dat$y), Individual=dat$p)
 
       logChart <- ggplot() +
         geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
@@ -254,7 +254,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
 
     }else if (equation == "koff")
     {
-      pointFrame <- data.frame(X=mat$x, Y=mat$y, Individual=mat$p)
+      pointFrame <- data.frame(X=dat$x, Y=dat$y, Individual=dat$p)
 
       logChart <- ggplot() +
         geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
