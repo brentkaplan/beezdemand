@@ -32,6 +32,7 @@
 ##' @param ncons0 Numer of consecutive 0s prior to a positive value is used to flag for a reversal. Value can be either 1 (relatively more conservative) or 2 (default; as recommended by Stein et al., (2015).
 ##' @return Dataframe
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
 CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2) {
 
     ## Get N unique participants, informing loop
