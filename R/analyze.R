@@ -70,6 +70,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
 
   ## Get N unique participants, informing loop
   participants <- length(unique(mat$p))
+  np <- length(participants)
 
   ## Preallocate for speed
   cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0", "K",
@@ -77,14 +78,14 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
               "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
 
   dfres <- data.frame(matrix(vector(),
-                             participants,
+                             np,
                              length(cnames),
                              dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
   ## Loop through unique values as indices, not necessarily sequentially
-  for (i in unique(mat$p))
+  for (i in seq_len(np))
   {
-    dfres[i, "Participant"] <- i
+    dfres[i, "Participant"] <- participants[i]
     dfres[i, "Equation"] <- equation
 
     adf <- NULL
