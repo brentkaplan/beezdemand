@@ -5,7 +5,7 @@
 \title{FitCurves}
 \usage{
 FitCurves(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
-  rem0 = FALSE)
+  rem0 = FALSE, plotting = FALSE)
 }
 \arguments{
 \item{mat}{data frame (long form) of purchase task data.}
@@ -19,14 +19,13 @@ FitCurves(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
 \item{replfree}{Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01}
 
 \item{rem0}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
+
+\item{plotting}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
 }
 \value{
 Data frame, fitting params and CI's/SE's
 }
 \description{
-Analyzes purchase task data
-}
-\details{
 Analyzes purchase task data
 }
 \author{

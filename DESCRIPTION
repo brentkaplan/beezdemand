@@ -8,6 +8,7 @@ Depends:
 Imports:
     nlmrt,
     nlstools,
+    ggplot2,
     minpack.lm,
     nls2
 Suggests:
