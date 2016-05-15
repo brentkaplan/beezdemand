@@ -23,6 +23,78 @@
 
 ##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
 ##'
+##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also reports number of positive consumption values.
+##' @title Systematic Purchase Task Data Checker
+##' @param dat Dataframe in long form. Colums are id, x, y.
+##' @param deltaq Numeric vector of length equal to one. The criterion by which the relative change in quantity purchased will be compared. Relative changes in quantity purchased below this criterion will be flagged. Default value is 0.025.
+##' @param bounce Numeric vector of length equal to one. The criterion by which the number of price-to-price increases in consumption that exceed 25\% of initial consumption at the lowest price, expressed relative to the total number of price increments, will be compared. The relative number of price-to-price increases above this criterion will be flagged. Default value is 0.10.
+##' @param reversals Numeric vector of length equal to one. The criterion by which the number of reversals from number of consecutive (see ncons0) 0s will be compared. Number of reversals above this criterion will be flagged. Default value is 0.
+##' @param ncons0 Numer of consecutive 0s prior to a positive value is used to flag for a reversal. Value can be either 1 (relatively more conservative) or 2 (default; as recommended by Stein et al., (2015).
+##' @return Dataframe
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2) {
+
+    ## Get N unique participants, informing loop
+    participants <- unique(dat$id)
+    np <- length(participants)
+
+    cnames <- c("Participant", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
+                "BouncePass", "Reversals", "ReversalsPass", "NumPosValues")
+
+    dfres <- data.frame(matrix(vector(),
+                               np,
+                               length(cnames),
+                               dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+
+    for (i in seq_len(np)) {
+        dfres[i, "Participant"] <- participants[i]
+
+        adf <- NULL
+        adf <- dat[dat$id == participants[i], ]
+        adf[, c("x01", "y01")] <- adf[, c("x", "y")] + .01
+
+        dfres[i, "DeltaQ"] <- (log10(adf[1, "y01"]) - log10(adf[nrow(adf), "y01"])) /
+            (log10(adf[nrow(adf), "x01"]) - log10(adf[1, "x01"]))
+        dfres[i, "Bounce"] <- sum(diff(adf[, "y"]) > adf[1, "y"] * 0.25, na.rm = TRUE)  /
+            (nrow(adf) - 1)
+
+        if (0 %in% adf[, "y"]) {
+            z <- which(adf[, "y"] == 0)
+            nrev <- NULL
+            if (ncons0 == 2) {
+                for (j in min(z):NROW(adf)-2) {
+                    if (adf[j, "y"] == 0 && adf[j + 1, "y"] == 0 && adf[j + 2, "y"] != 0) {
+                        nrev[j] <- 1
+                    } else {
+                        next
+                    }
+                }
+            } else {
+                if (ncons0 == 1) {
+                    for (j in min(z):NROW(adf)-1) {
+                        if (adf[j, "y"] == 0 && adf[j + 1, "y"] != 0) {
+                            nrev[j] <- 1
+                        } else {
+                            next
+                        }
+                    }
+                }
+            }
+        }
+
+        dfres[i, "Reversals"] <- sum(nrev, na.rm = TRUE)
+        dfres[i, "NumPosValues"] <- length(adf[ adf$y != 0, "y"])
+        dfres[i, "DeltaQPass"] <- ifelse(dfres[i, "DeltaQ"] >= deltaq, "Pass", "Fail")
+        dfres[i, "BouncePass"] <- ifelse(dfres[i, "Bounce"] <= bounce, "Pass", "Fail")
+        dfres[i, "ReversalsPass"] <- ifelse(dfres[i, "Reversals"] <= reversals, "Pass", "Fail")
+        dfres[i, "TotalPass"] <- length(grep("Pass", dfres[i, ]))
+    }
+    dfres
+}
+
+
+##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
+##'
 ##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also flags for a minimum number of positive consumption values.
 ##' @title Systematic Purchase Task Data Checker
 ##' @param mat A matrix in wide form where each column is a participant's responses. If a dataframe is provided, it will attempt to coerce it to a matrix.
