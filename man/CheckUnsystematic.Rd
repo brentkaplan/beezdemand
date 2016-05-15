@@ -27,6 +27,12 @@ Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for id
 \details{
 This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also reports number of positive consumption values.
 }
+\examples{
+## Using all default values
+CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
+## Specifying just 1 zero to flag as reversal
+CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
+}
 \author{
 Brent Kaplan <bkaplan4@ku.edu>
 }
