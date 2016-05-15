@@ -9,6 +9,7 @@ Imports:
     nlmrt,
     nlstools,
     ggplot2,
+    reshape2,
     minpack.lm,
     nls2
 Suggests:
