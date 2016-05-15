@@ -113,6 +113,39 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 }
 
 
+##' Calculates descriptive statistics from purchase task data.
+##'
+##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, standard deviation of consumption, proportion of 0 values, and number of NAs.
+##' @title Get Purchase Task Descriptive Summary
+##' @param dat Dataframe (long form)
+##' @return Dataframe with descriptive statistics
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+GetDescriptives <- function(dat) {
+
+    ## Get N unique prices
+    prices <- unique(dat$x)
+    np <- length(prices)
+
+    dfres <- data.frame(matrix(vector(), 4, np,
+                               dimnames = list(c("Mean", "SD", "PropZeros", "NAs"),
+                                   c(prices))), stringsAsFactors = FALSE)
+    colnames(dfres) <- gsub("X", "", colnames(dfres))
+
+    dfres["Mean", ] <- aggregate(y ~ x, dat,
+                                 function(x) round(mean(x, na.rm = TRUE),2))$y
+    dfres["SD", ] <- aggregate(y ~ x, dat,
+                               function(x) round(sd(x, na.rm = TRUE),2))$y
+    dfres["PropZeros", ] <- aggregate(y ~ x, dat,
+                                      function(x) round(sum(x == 0, na.rm = TRUE)/length(x), 2))$y
+    dfres["NAs", ] <- aggregate(y ~ x, dat,
+                                function(x) sum(is.na(x)))$y
+
+    dfres
+}
+
+
+
 ##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
 ##'
 ##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also flags for a minimum number of positive consumption values.
