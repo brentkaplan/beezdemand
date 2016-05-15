@@ -94,9 +94,9 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
     adf[, "k"] <- k
 
     ## Find empirical Q0, BP0, BP1
-    dfres[i, "Q0e"] <- if (0 %in% adf$x) adf[adf$x == 0, "y"] else NA
+    dfres[i, "Q0e"] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
     dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
-    dfres[i, "BP1"] <- if (!0 %in% adf$y) max(adf[adf$y != 0, "x"]) else NA
+    dfres[i, "BP1"] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
 
     ## Find empirical Pmax, Omax
     dfres[i, "Omaxe"] <- max(adf$expend)
@@ -118,12 +118,12 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
       adf <- adf[adf$y != 0, ]
 
       fit <- NULL
-      try(fit <- nlmrt::wrapnls(data = adf,
+      fit <- try(nlmrt::wrapnls(data = adf,
                                 (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                                 start = list(q0 = 10, alpha = 0.01),
                                 control = list(maxiter = 1000)), silent = TRUE)
-
-      if (!is.null(fit))
+      #browser()
+      if (!class(fit) == "try-error")
       {
         dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
         dfres[i, "K"] <- min(adf$k)
@@ -138,8 +138,14 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
           (0.083 * dfres[i, "K"] + 0.65)
         dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                                  dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-      }
+                                                                                    dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        dfres[i, "Notes"] <- fit$convInfo$stopMessage
+    } else {
+        if (class(fit) == "try-error") {
+            dfres[i, "Notes"] <- fit[1]
+            dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+        }
+    }
     } else
     {
       if (equation == "koff")
@@ -150,12 +156,12 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
         }
 
         fit <- NULL
-        try(fit <- nlmrt::wrapnls(data = adf,
+        fit <- try(nlmrt::wrapnls(data = adf,
                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
                                   start = list(q0 = 10, alpha = 0.01),
                                   control = list(maxiter = 1000)), silent = TRUE)
 
-        if (!is.null(fit))
+        if (!class(fit) == "try-error")
         {
           dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
           dfres[i, "K"] <- min(adf$k)
@@ -170,11 +176,20 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
           dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
             (0.083 * dfres[i, "K"] + 0.65)
           dfres[i, "Omaxd"] <- (dfres[i, "Q0"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                             dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+                                                                               dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+          dfres[i, "Notes"] <- fit$convInfo$stopMessage
+          } else {
+              if (class(fit) == "try-error") {
+                  dfres[i, "Notes"] <- fit[1]
+                  dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+              }
+          }
         }
       }
-    }
   }
+
+  trim.leading <- function (x)  sub("^\\s+", "", x)
+  dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
 
   if(plotting)
   {
