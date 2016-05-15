@@ -4,11 +4,11 @@
 \alias{FitCurves}
 \title{FitCurves}
 \usage{
-FitCurves(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
+FitCurves(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
   rem0 = FALSE, plotting = FALSE)
 }
 \arguments{
-\item{mat}{data frame (long form) of purchase task data.}
+\item{dat}{data frame (long form) of purchase task data.}
 
 \item{equation}{Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.}
 

@@ -3,6 +3,7 @@
 export(CheckUnsystematic)
 export(FitCurves)
 export(GetDescriptives)
+export(ReplaceZeros)
 export(analyze)
 export(calcAUC)
 export(change0)
