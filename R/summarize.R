@@ -52,38 +52,57 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 
         adf <- NULL
         adf <- dat[dat$id == participants[i], ]
+
+
         adf[, c("x01", "y01")] <- adf[, c("x", "y")] + .01
 
-        dfres[i, "DeltaQ"] <- (log10(adf[1, "y01"]) - log10(adf[nrow(adf), "y01"])) /
-            (log10(adf[nrow(adf), "x01"]) - log10(adf[1, "x01"]))
-        dfres[i, "Bounce"] <- sum(diff(adf[, "y"]) > adf[1, "y"] * 0.25, na.rm = TRUE)  /
-            (nrow(adf) - 1)
+        dfres[i, "DeltaQ"] <- round((log10(adf[1, "y01"]) - log10(adf[nrow(adf), "y01"])) /
+            (log10(adf[nrow(adf), "x01"]) - log10(adf[1, "x01"])), 4)
+        dfres[i, "Bounce"] <- round(sum(diff(adf[, "y"]) > adf[1, "y"] * 0.25, na.rm = TRUE)  /
+            (nrow(adf) - 1), 4)
 
+        nrev <- NULL
         if (0 %in% adf[, "y"]) {
             z <- which(adf[, "y"] == 0)
-            nrev <- NULL
             if (ncons0 == 2) {
-                for (j in min(z):NROW(adf)-2) {
-                    if (adf[j, "y"] == 0 && adf[j + 1, "y"] == 0 && adf[j + 2, "y"] != 0) {
-                        nrev[j] <- 1
-                    } else {
-                        next
-                    }
-                }
-            } else {
-                if (ncons0 == 1) {
-                    for (j in min(z):NROW(adf)-1) {
-                        if (adf[j, "y"] == 0 && adf[j + 1, "y"] != 0) {
+                if (any(z > NROW(adf) - 2)) {
+                    z <- z[-which(z > NROW(adf) - 2)]
+                   }
+                if (length(z) > 0) {
+                    for (j in (min(z)):(NROW(adf) - 2)) {
+                        if (adf[j, "y"] == 0 && adf[j + 1, "y"] == 0 && adf[j + 2, "y"] != 0) {
                             nrev[j] <- 1
                         } else {
                             next
                         }
                     }
+                    dfres[i, "Reversals"] <- sum(nrev, na.rm = TRUE)
+                } else {
+                    dfres[i, "Reversals"] <- 0
+                }
+            } else {
+                if (ncons0 == 1) {
+                    if (any(z > NROW(adf) - 1)) {
+                        z <- z[-which(z > NROW(adf) - 1)]
+                    }
+                    if (length(z) > 0) {
+                        for (j in (min(z)):(NROW(adf) - 1)) {
+                            if (adf[j, "y"] == 0 && adf[j + 1, "y"] != 0) {
+                                nrev[j] <- 1
+                            } else {
+                                next
+                            }
+                        }
+                        dfres[i, "Reversals"] <- sum(nrev, na.rm = TRUE)
+                    } else {
+                        dfres[i, "Reversals"] <- 0
+                    }
                 }
             }
+        } else {
+            dfres[i, "Reversals"] <- 0
         }
 
-        dfres[i, "Reversals"] <- sum(nrev, na.rm = TRUE)
         dfres[i, "NumPosValues"] <- length(adf[ adf$y != 0, "y"])
         dfres[i, "DeltaQPass"] <- ifelse(dfres[i, "DeltaQ"] >= deltaq, "Pass", "Fail")
         dfres[i, "BouncePass"] <- ifelse(dfres[i, "Bounce"] <= bounce, "Pass", "Fail")
