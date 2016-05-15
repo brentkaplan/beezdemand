@@ -120,6 +120,8 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 ##' @param dat Dataframe (long form)
 ##' @return Dataframe with descriptive statistics
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @examples
+##' GetDescriptives(apt)
 ##' @export
 GetDescriptives <- function(dat) {
 

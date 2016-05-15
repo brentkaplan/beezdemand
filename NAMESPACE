@@ -2,6 +2,7 @@
 
 export(CheckUnsystematic)
 export(FitCurves)
+export(GetDescriptives)
 export(analyze)
 export(calcAUC)
 export(change0)
