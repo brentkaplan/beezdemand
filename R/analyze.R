@@ -69,7 +69,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
   }
 
   ## Get N unique participants, informing loop
-  participants <- length(unique(mat$p))
+  participants <- unique(mat$p)
   np <- length(participants)
 
   ## Preallocate for speed
@@ -89,7 +89,7 @@ FitCurves <- function(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
     dfres[i, "Equation"] <- equation
 
     adf <- NULL
-    adf <- mat[mat$p == i, ]
+    adf <- mat[mat$p == participants[i], ]
     adf[, "expend"] <- adf$x * adf$y
     adf[, "k"] <- k
 
