@@ -21,7 +21,7 @@ Currently, this version is under development. You are free to use it, but be awa
 ### Sample Implementation
 
 ```r
-# Example Dataset (note long form)
+# Example dataset (note long form)
 >apt[c(1:8, 17:24), ]
    id   x  y
 1  19 0.0 10
@@ -41,7 +41,7 @@ Currently, this version is under development. You are free to use it, but be awa
 23 30 3.0  2
 24 30 4.0  2
 
-# Descriptive Summary
+# Descriptive summary
 > GetDescriptives(apt)
              0  0.5    1  1.5    2  2.5    3    4    5    6    7    8    9   10
 Mean      6.80 6.80 6.50 6.10 5.30 5.20 4.80 4.30 3.90 3.50 3.30 2.60 2.40 2.20
@@ -54,8 +54,8 @@ SD        1.37 1.14
 PropZeros 0.50 0.60
 NAs       0.00 0.00
 
-# Apply Stein et al., (2015) Algorithm
-> head(CheckUnsystematic(apt), 3)
+# Apply Stein et al., (2015) algorithm
+> head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2), 3)
   Participant TotalPass DeltaQ DeltaQPass Bounce BouncePass Reversals
 1          19         3 0.2112       Pass      0       Pass         0
 2          30         3 0.1437       Pass      0       Pass         0
@@ -65,7 +65,8 @@ NAs       0.00 0.00
 2          Pass           16
 3          Pass           14
 
-# Analyze Using Either Exponential/Exponentiated
+# Analyze using either Exponential/Exponentiated
+# Note the return for both empirical and derived measures
 > head(FitCurves(apt, "hs"), 3)
   Participant Q0e BP0 BP1 Omaxe Pmaxe Equation        Q0 K        R2
 1          19  10  NA  20    45    15       hs 10.492736 1 0.9643380
@@ -93,25 +94,6 @@ NAs       0.00 0.00
 1 0.003881080 0.005122573 2.2213207 49.22443 15.93181 converged
 2 0.009900933 0.019096158 0.6897244 15.28428 16.71106 converged
 3 0.006546778 0.014629766 0.9444412 20.92880 15.05260 converged
-
-
-
-Apt <- data.frame(
-  p=c(rep(1,16), rep(2,16)),
-  x=c(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0,
-      0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 15.0, 20.0),
-  y=c(10,10,10,8,8,8,7,7,7,6,6,5,5,4,3,2,
-      10,10, 8,8,6,6,5,5,4,4,3,3,2,2,0,0)
-)
-
-k <- log10(max(Apt[Apt$y>1,]$y)) -
-     log10(min(Apt[Apt$y>1,]$y))
-
-testMethods <- FitCurves(Apt, equation = "hs", k = k, remq0e = FALSE, replfree = 0.01)
-testMethods
-
-testMethods <- FitCurves(Apt, equation = "koff", k = k, remq0e = FALSE, replfree = 0.01)
-testMethods
 ```
 
 
