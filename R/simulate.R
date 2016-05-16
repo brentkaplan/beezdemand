@@ -180,10 +180,10 @@ GetValsForSim <- function(dat) {
     }
 
     setparams <- vector("numeric", 6)
-    setparams[1] <- log10(mean(dfres$Alpha, na.rm = TRUE))
-    setparams[2] <- log10(sd(dfres$Alpha, na.rm = TRUE))
-    setparams[3] <- log10(mean(dfres$Q0, na.rm = TRUE))
-    setparams[4] <- log10(sd(dfres$Q0, na.rm = TRUE))
+    setparams[1] <- mean(log10(dfres$Alpha), na.rm = TRUE)
+    setparams[2] <- sd(log10(dfres$Alpha), na.rm = TRUE)
+    setparams[3] <- mean(log10(dfres$Q0), na.rm = TRUE)
+    setparams[4] <- sd(log10(dfres$Q0), na.rm = TRUE)
     setparams[5] <- k
     setparams[6] <- sd(dat$y)
     names(setparams) <- c("alphalm", "alphalsd", "q0lm", "q0lsd", "k", "yvalssd")
