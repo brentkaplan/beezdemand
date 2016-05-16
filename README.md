@@ -94,6 +94,18 @@ NAs       0.00 0.00
 1 0.003881080 0.005122573 2.2213207 49.22443 15.93181 converged
 2 0.009900933 0.019096158 0.6897244 15.28428 16.71106 converged
 3 0.006546778 0.014629766 0.9444412 20.92880 15.05260 converged
+
+# To see details regarding a given function:
+> ?CheckUnsystematic
+CheckUnsystematic          package:beezdemand          R Documentation
+
+Systematic Purchase Task Data Checker
+
+Description:
+
+     Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015)
+     criteria for identification of nonsystematic purchase task data.
+     ...
 ```
 
 
