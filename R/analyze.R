@@ -53,24 +53,35 @@
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
+FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
     }
 
-  ## If no k is provided
-  if (is.null(k))
-  {
-    k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
-   }
-
-  ## Assert not Inf
-  if (is.infinite(k))
-  {
-    warning("k is Inf. I will calculate a k based on the entire sample.")
-    k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
-  }
+    ## If no k is provided
+    if (missing(k)) {
+        k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+        kest <- FALSE
+    } else {
+        if (is.numeric(k)) {
+            kest <- FALSE
+        } else {
+            if (is.character(k)) {
+                if (k == "fit") {
+                    kest <- "fit"
+                    kstart <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+                } else {
+                    if (k == "ind") {
+                        kest <- "ind"
+                    }
+                }
+            } else {
+                k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+                kest <- FALSE
+            }
+        }
+    }
 
   ## Get N unique participants, informing loop
   participants <- unique(dat$id)
@@ -96,8 +107,12 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
     adf <- dat[dat$id == participants[i], ]
     adf[, "expend"] <- adf$x * adf$y
 
-    if (k == "ind") {
+    if (kest == "ind") {
         k <- log10(max(adf[adf$y > 0, "y"])) - log10(min(adf[adf$y > 0, "y"])) + .5
+    } else {
+        if (kest == "fit") {
+            k <- kstart
+        }
     }
 
     adf[, "k"] <- k
@@ -126,16 +141,23 @@ FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, 
       ## Drop any zero consumption points altogether
       adf <- adf[adf$y != 0, ]
 
-      fit <- NULL
-      fit <- try(nlmrt::wrapnls(data = adf,
+      if (!kest == "fit") {
+          fit <- NULL
+          fit <- try(nlmrt::wrapnls(data = adf,
                                 (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                                 start = list(q0 = 10, alpha = 0.01),
                                 control = list(maxiter = 1000)), silent = TRUE)
-      #browser()
+      } else {
+          fit <- try(nlmrt::wrapnls(data = adf,
+                                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+                                start = list(q0 = 10, k = kstart, alpha = 0.01),
+                                control = list(maxiter = 1000)), silent = TRUE)
+      }
+
       if (!class(fit) == "try-error")
-      {
+          {
+         dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
         dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-        dfres[i, "K"] <- min(adf$k)
         dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
         dfres[i, "N"] <- length(adf$k)
         dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
