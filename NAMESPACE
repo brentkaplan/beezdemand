@@ -3,6 +3,7 @@
 export(CheckUnsystematic)
 export(FitCurves)
 export(GetDescriptives)
+export(GetValsForSim)
 export(ReplaceZeros)
 export(SimulateDemand)
 export(analyze)

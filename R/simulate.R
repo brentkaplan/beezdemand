@@ -23,6 +23,10 @@
 ## link @ https://cran.r-project.org/web/packages/reshape2/index.html
 ## license @ https://cran.r-project.org/web/licenses/MIT
 ##
+## @nlmrt (R package) = Nash's customized optimization of L-M residual reduction (Copyright 2016 - John C. Nash - GPLv2)
+## link @ https://cran.r-project.org/web/packages/nlmrt/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
+##
 ##
 ##
 
@@ -129,7 +133,68 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
 }
 
 
+##' Gets values used in SimulateDemand
+##'
+##' Gets values used in SimulateDemand
+##' @title Get Values for SimulateDemand
+##' @param dat Dataframe (long form)
+##' @return List of 2: setaparams, sdindex
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @examples
+##' GetValsForSim(apt)
+##' @export
+GetValsForSim <- function(dat) {
 
+    k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+
+    ## Get N unique participants, prices informing loops
+    participants <- unique(dat$id)
+    np <- length(participants)
+    nprices <- length(unique(dat$x))
+
+    cnames <- c("Participant", "Q0", "Alpha", as.numeric(unique(dat$x)))
+    dfres <- data.frame(matrix(vector(),
+                               np,
+                               length(cnames),
+                               dimnames = list(c(), c(cnames))),
+                        stringsAsFactors = FALSE)
+
+    for (i in seq_len(np)) {
+        dfres[i, "Participant"] <- participants[i]
+
+        adf <- NULL
+        adf <- dat[dat$id == participants[i], ]
+        adf[, "k"] <- k
+
+        fit <- NULL
+        fit <- try(nlmrt::wrapnls(data = adf,
+                                  y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                  start = list(q0 = 10, alpha = 0.01),
+                                  control = list(maxiter = 1000)), silent = TRUE)
+
+        if (!class(fit) == "try-error") {
+            dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+            dfres[i, 4:NCOL(dfres)] <- resid(fit)
+        }
+    }
+
+    setparams <- vector("numeric", 6)
+    setparams[1] <- log10(mean(dfres$Alpha, na.rm = TRUE))
+    setparams[2] <- log10(sd(dfres$Alpha, na.rm = TRUE))
+    setparams[3] <- log10(mean(dfres$Q0, na.rm = TRUE))
+    setparams[4] <- log10(sd(dfres$Q0, na.rm = TRUE))
+    setparams[5] <- k
+    setparams[6] <- sd(dat$y)
+    names(setparams) <- c("alphalm", "alphalsd", "q0lm", "q0lsd", "k", "yvalssd")
+
+    sdindex <- vector("numeric", nprices)
+
+    for (i in 4:NCOL(dfres)) {
+        j <- i - 3
+        sdindex[j] <- sd(dfres[ , i], na.rm = TRUE)
+    }
+    list("setparams" = setparams, "sdindex" = sdindex)
+}
 
 
 
