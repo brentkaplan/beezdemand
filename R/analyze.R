@@ -55,17 +55,17 @@
 ##' @export
 FitCurves <- function(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
 
+  ## If no k is provided
+  if (is.null(k))
+  {
+    k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+   }
+
   ## Assert not Inf
   if (is.infinite(k))
   {
     warning("k is Inf. I will calculate a k based on the entire sample.")
-    k <- log10(max(dat[dat$y > 1, "y"])) - log10(min(dat[dat$y > 1, "y"]))
-  }
-
-  ## If no k is provided
-  if (is.null(k))
-  {
-    k <- log10(max(dat[dat$y > 1, "y"])) - log10(min(dat[dat$y > 1, "y"]))
+    k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
   }
 
   ## Get N unique participants, informing loop
