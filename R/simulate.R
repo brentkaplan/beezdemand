@@ -138,7 +138,7 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
 ##' Gets values used in SimulateDemand
 ##' @title Get Values for SimulateDemand
 ##' @param dat Dataframe (long form)
-##' @return List of 2: setaparams, sdindex
+##' @return List of 3: setaparams, sdindex, x
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @examples
 ##' GetValsForSim(apt)
@@ -150,9 +150,10 @@ GetValsForSim <- function(dat) {
     ## Get N unique participants, prices informing loops
     participants <- unique(dat$id)
     np <- length(participants)
-    nprices <- length(unique(dat$x))
+    prices <- unique(dat$x)
+    nprices <- length(prices)
 
-    cnames <- c("Participant", "Q0", "Alpha", as.numeric(unique(dat$x)))
+    cnames <- c("Participant", "Q0", "Alpha", as.numeric(prices))
     dfres <- data.frame(matrix(vector(),
                                np,
                                length(cnames),
@@ -193,7 +194,9 @@ GetValsForSim <- function(dat) {
         j <- i - 3
         sdindex[j] <- sd(dfres[ , i], na.rm = TRUE)
     }
-    list("setparams" = setparams, "sdindex" = sdindex)
+
+
+    list("setparams" = setparams, "sdindex" = sdindex, "x" = prices)
 }
 
 
