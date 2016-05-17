@@ -10,7 +10,7 @@ GetValsForSim(dat)
 \item{dat}{Dataframe (long form)}
 }
 \value{
-List of 2: setaparams, sdindex
+List of 3: setaparams, sdindex, x
 }
 \description{
 Gets values used in SimulateDemand

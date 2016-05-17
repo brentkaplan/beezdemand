@@ -4,15 +4,15 @@
 \alias{FitCurves}
 \title{FitCurves}
 \usage{
-FitCurves(dat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
-  rem0 = FALSE, plotting = FALSE)
+FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
+  plotting = FALSE)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
 
 \item{equation}{Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.}
 
-\item{k}{A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample}
+\item{k}{A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5.}
 
 \item{remq0e}{If TRUE, removes consumption and price where price == 0. Default value is FALSE}
 
