@@ -61,7 +61,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
     ## If no k is provided
     if (missing(k)) {
-        k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+        k <- GetK(dat)
         kest <- FALSE
     } else {
         if (is.numeric(k)) {
@@ -70,14 +70,14 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             if (is.character(k)) {
                 if (k == "fit") {
                     kest <- "fit"
-                    kstart <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+                    kstart <- GetK(dat)
                 } else {
                     if (k == "ind") {
                         kest <- "ind"
                     }
                 }
             } else {
-                k <- log10(max(dat[dat$y > 0, "y"])) - log10(min(dat[dat$y > 0, "y"]))
+                k <- GetK(dat)
                 kest <- FALSE
             }
         }
@@ -105,10 +105,12 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
     adf <- NULL
     adf <- dat[dat$id == participants[i], ]
+    adf <- adf[!is.na(adf$y), ]
+
     adf[, "expend"] <- adf$x * adf$y
 
     if (kest == "ind") {
-        k <- log10(max(adf[adf$y > 0, "y"])) - log10(min(adf[adf$y > 0, "y"])) + .5
+        k <- GetK(dat) + .5
     } else {
         if (kest == "fit") {
             k <- kstart
@@ -330,6 +332,21 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
   return(dfres)
 }
+
+
+##' Calculates a k value by looking for the max/min consumption across entire dataset
+##'
+##' Will look for minimum greater zero
+##' @title Get K
+##' @param dat Dataframe (long form)
+##' @return Numeric
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @examples
+##' GetK(apt)
+##' @export
+GetK <- function(dat) {
+     log10(max(dat[dat$y > 0, "y"], na.rm = TRUE)) - log10(min(dat[dat$y > 0, "y"], na.rm = TRUE))
+ }
 
 ##' Analyzes a dataframe and returns the regression model.
 ##'
