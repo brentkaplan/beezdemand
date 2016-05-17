@@ -113,7 +113,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         k <- GetK(dat) + .5
     } else {
         if (kest == "fit") {
-            k <- kstart
+            k <- GetK(adf) + .5
         }
     }
 
