@@ -15,13 +15,20 @@ install_github("bkaplan4/beezdemand")
 library(beezdemand)
 ```
 
-### Note About Use
-Currently, this version is under development. You are free to use it, but be aware that there might be bugs present. If you find issues or things that should be changed, please contact me.
+#### Note About Use
+Currently, this version (0.0.5) is under development. You are free to use it,
+but be aware that there might be bugs present.
+If you find issues or would like to contribute, please contact me.
 
 ### Sample Implementation
 
+#### Example dataset provided
+Example dataset of responses on an Alcohol Purchase Task. Participants
+reported the number of alcoholic drinks (y) they would be willing to
+purchase and consume at various prices (x; USD). Note the
+long format.
+
 ```r
-# Example dataset (note long form)
 >apt[c(1:8, 17:24), ]
    id   x  y
 1  19 0.0 10
@@ -40,8 +47,13 @@ Currently, this version is under development. You are free to use it, but be awa
 22 30 2.5  2
 23 30 3.0  2
 24 30 4.0  2
+```
 
-# Descriptive summary
+#### Obtain descriptive summary
+Descriptive values of responses at each price. Includes mean, standard
+deviation, proportion of zeros, and numer of NAs.
+
+```r
 > GetDescriptives(apt)
              0  0.5    1  1.5    2  2.5    3    4    5    6    7    8    9   10
 Mean      6.80 6.80 6.50 6.10 5.30 5.20 4.80 4.30 3.90 3.50 3.30 2.60 2.40 2.20
@@ -53,8 +65,14 @@ Mean      1.10 0.80
 SD        1.37 1.14
 PropZeros 0.50 0.60
 NAs       0.00 0.00
+```
 
-# Apply Stein et al., (2015) algorithm
+#### Apply algorithm for identifying unsystematic responses
+Examine consistency of demand data using Stein et al.'s (2015) alogrithm for identifying unsystematic
+responses. Default values shown.
+
+
+```r
 > head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2), 3)
   Participant TotalPass DeltaQ DeltaQPass Bounce BouncePass Reversals
 1          19         3 0.2112       Pass      0       Pass         0
@@ -64,9 +82,13 @@ NAs       0.00 0.00
 1          Pass           16
 2          Pass           16
 3          Pass           14
+```
 
-# Analyze using either Exponential/Exponentiated
-# Note the return for both empirical and derived measures
+#### Analyze demand data using either Exponential/Exponentiated models
+Results of the analysis return both empirical and derived measures for
+use in additional analyses and model specification.
+
+```r
 > head(FitCurves(apt, "hs"), 3)
   Participant Q0e BP0 BP1 Omaxe Pmaxe Equation        Q0 K        R2
 1          19  10  NA  20    45    15       hs 10.492736 1 0.9643380
@@ -94,8 +116,13 @@ NAs       0.00 0.00
 1 0.003881080 0.005122573 2.2213207 49.22443 15.93181 converged
 2 0.009900933 0.019096158 0.6897244 15.28428 16.71106 converged
 3 0.006546778 0.014629766 0.9444412 20.92880 15.05260 converged
+```
 
-# Share k globally while fitting other parameters locally
+#### Share k globally while fitting other parameters locally
+Provides the ability to share k globally (across all participants)
+while estimating Q<sub>0</sub> and alpha locally. 
+
+```r
 > head(FitCurves(apt, "hs", k = "share"), 3)
   Participant Q0e BP0 BP1 Omaxe Pmaxe Equation     Q0d SharedK      R2
 1          19  10  NA  20    45    15       hs 10.0146  3.3183 0.98210
@@ -109,8 +136,13 @@ NAs       0.00 0.00
 1 0.0012277 1.42418 44.552 13.161 converged
 2 0.0041350 0.49633 15.526 16.604 converged
 3 0.0028858 0.67304 21.054 13.885 converged
+```
 
-# To see details regarding a given function:
+#### See function details
+To learn more about a function and what arguments it takes, type "?"
+in front of the function name.
+
+```r
 > ?CheckUnsystematic
 CheckUnsystematic          package:beezdemand          R Documentation
 
@@ -122,7 +154,6 @@ Description:
      criteria for identification of nonsystematic purchase task data.
      ...
 ```
-
 
 ### Acknowledgments
 - Derek D. Reed, Applied Behavioral Economics Laboratory
