@@ -110,7 +110,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     adf[, "expend"] <- adf$x * adf$y
 
     if (kest == "ind") {
-        k <- GetK(dat) + .5
+        k <- GetK(adf) + .5
     } else {
         if (kest == "fit") {
             k <- GetK(adf) + .5
@@ -158,7 +158,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
       if (!class(fit) == "try-error")
           {
-         dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+        dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
         dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
         dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
         dfres[i, "N"] <- length(adf$k)
