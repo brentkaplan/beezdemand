@@ -4,7 +4,7 @@ Date: 2016-05-20
 Title: Behavioral Economic Easy Demand
 Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", "cre"))
 Author: Brent Kaplan [aut, cre]
-Maintainer: Brent Kaplan <bkaplan4@@ku.edu>
+Maintainer: Brent Kaplan <bkaplan4@ku.edu>
 Description: Functions to help aid in analyzing behavioral economic demand curve data.
 Depends:
     R (>= 2.5)
