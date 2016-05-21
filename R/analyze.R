@@ -58,29 +58,34 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
     }
+    ## get rid of NAs
+    dat <- dat[!is.na(dat$y), ]
 
-    ## If no k is provided
+    ## If no k is provided, otherwise
     if (missing(k)) {
         k <- GetK(dat)
         kest <- FALSE
-    } else {
-        if (is.numeric(k)) {
-            kest <- FALSE
-        } else {
+    } else if (is.numeric(k)) {
+        k <- k
+        kest <- FALSE
+    } else if (is.character(k)) {
+        if (k == "fit") {
+            kest <- "fit"
+            kstart <- GetK(dat)
+        } else if (k == "ind") {
+            kest <- "ind"
+        } else if (k == "share") {
+            k <- GetSharedK(dat, equation, remq0e, replfree, rem0)
             if (is.character(k)) {
-                if (k == "fit") {
-                    kest <- "fit"
-                    kstart <- GetK(dat)
-                } else {
-                    if (k == "ind") {
-                        kest <- "ind"
-                    }
-                }
-            } else {
+                warning(k)
                 k <- GetK(dat)
                 kest <- FALSE
             }
+            kest <- "share"
         }
+    } else {
+        k <- GetK(dat)
+        kest <- FALSE
     }
 
   ## Get N unique participants, informing loop
@@ -88,9 +93,9 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
   np <- length(participants)
 
   ## Preallocate for speed
-  cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0", "K",
+  cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
               "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-              "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+              "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
 
   dfres <- data.frame(matrix(vector(),
                              np,
@@ -105,17 +110,15 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
     adf <- NULL
     adf <- dat[dat$id == participants[i], ]
-    adf <- adf[!is.na(adf$y), ]
 
     adf[, "expend"] <- adf$x * adf$y
 
     if (kest == "ind") {
         k <- GetK(adf) + .5
-    } else {
-        if (kest == "fit") {
-            k <- GetK(adf) + .5
+    } else if (kest == "fit") {
+        ## k <- GetK(adf) + .5 do I need this check?
+        k <- kstart
         }
-    }
 
     adf[, "k"] <- k
 
@@ -128,17 +131,16 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     dfres[i, "Omaxe"] <- max(adf$expend)
     dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
 
-    if (equation == "hs")
-    {
-      ## If retain y where x = 0, replace
-      if (remq0e)
-      {
-        adf <- adf[adf$x != 0, ]
-      } else
-      {
-        replfree <- if (is.null(replfree)) 0.01 else replfree
-        adf[adf$x == 0, "x"] <- replfree
-      }
+    if (equation == "hs") {
+        ## If retain y where x = 0, replace
+        if (remq0e) {
+            adf <- adf[adf$x != 0, ]
+        } else {
+            if (!is.null(replfree)) {
+                replfree <- if (is.numeric(replfree)) replfree else 0.01
+                adf[adf$x == 0, "x"] <- replfree
+            }
+        }
 
       ## Drop any zero consumption points altogether
       adf <- adf[adf$y != 0, ]
@@ -159,7 +161,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
       if (!class(fit) == "try-error")
           {
         dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
-        dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+        dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
         dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
         dfres[i, "N"] <- length(adf$k)
         dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
@@ -167,11 +169,11 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
         dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
         dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-        dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
+        dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
           (0.083 * dfres[i, "K"] + 0.65)
-        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                                    dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
+                                                                                    dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
         dfres[i, "Notes"] <- fit$convInfo$stopMessage
     } else {
         if (class(fit) == "try-error") {
@@ -179,7 +181,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
         }
     }
-    } else
+  } else
     {
       if (equation == "koff")
       {
@@ -196,7 +198,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         if (!class(fit) == "try-error")
         {
-          dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+          dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
           dfres[i, "K"] <- min(adf$k)
           dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
           dfres[i, "N"] <- length(adf$k)
@@ -205,11 +207,11 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
           dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
           dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
           dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-          dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-          dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
+          dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+          dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
             (0.083 * dfres[i, "K"] + 0.65)
-          dfres[i, "Omaxd"] <- (dfres[i, "Q0"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                               dfres[i, "Q0"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+          dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
+                                                                                dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
           dfres[i, "Notes"] <- fit$convInfo$stopMessage
           } else {
               if (class(fit) == "try-error") {
@@ -329,10 +331,102 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
     }
   }
-
-  return(dfres)
+     if (kest == "share") {
+         names(dfres)[names(dfres) == "K"] <- "SharedK"
+     } else if (kest == "fit") {
+         names(dfres)[names(dfres) == "K"] <- "FittedK"
+     }
+    return(dfres)
 }
 
+
+
+##' Finds shared k among selected datasets using global regression
+##'
+##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form.
+##' @title Get Shared K
+##' @param dat Dataframe (longform)
+##' @param equation Character vector. Accepts either "hs" or "koff"
+##' @return Numeric value of shared k
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
+
+    ## remove q0e if specified, otherwise replace if specified
+    if (remq0e) {
+        dat <- dat[dat$x != 0, ]
+    } else {
+        if (!is.null(replfree)) {
+            replfree <- if (is.numeric(replfree)) replfree else 0.01
+            dat[dat$x == 0, "x"] <- replfree
+        }
+    }
+    ## drop zeros if hs, otherwise drop zeros if rem0
+    if (equation == "hs") {
+        dat <- dat[dat$y != 0, ]
+    } else {
+        if (rem0) {
+            dat <- dat[dat$y !=0, ]
+        }
+    }
+
+    j <- 1
+    for (i in unique(dat$id)) {
+        dat[dat$id == i, "ref"] <- j
+        j <- j+1
+    }
+    dat$ref <- as.factor(dat$ref)
+    ## create contrasts
+    dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
+    nparams <- length(unique(dat2$ref))
+
+    if (equation == "hs") {
+        paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+
+        startq0 <- paste(sprintf("q0%d", 1:nparams))
+        startalpha <- paste(sprintf("alpha%d", 1:nparams))
+
+        startingvals <- as.vector(c(rep(10, length(startq0)), rep(.001, length(startalpha)), 4))
+        names(startingvals) <- c(startq0, startalpha, "k")
+
+        fo <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(%s) * (%s) * x)-1)", paramslogq0, paramsalpha, paramsq0)
+
+        fit <- NULL
+        fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
+
+        if (!class(fit) == "try-error") {
+            sharedk <- summary(fit)$coefficients["k", 1]
+            return(sharedk)
+        } else {
+            sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+            return(sharedk)
+        }
+    } else if (equation == "koff") {
+        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+
+        startq0 <- paste(sprintf("q0%d", 1:nparams))
+        startalpha <- paste(sprintf("alpha%d", 1:nparams))
+
+        startingvals <- as.vector(c(rep(10, length(startq0)), rep(.001, length(startalpha)), 4))
+        names(startingvals) <- c(startq0, startalpha, "k")
+
+        fo <- sprintf("y ~ (%s) * 10^(k * exp(-(%s) * (%s) * x)-1)", paramsq0, paramsalpha, paramsq0)
+
+        fit <- NULL
+        fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
+
+        if (!class(fit) == "try-error") {
+            sharedk <- summary(fit)$coefficients["k", 1]
+            return(sharedk)
+        } else {
+            sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+            return(sharedk)
+        }
+    }
+}
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset
 ##'
