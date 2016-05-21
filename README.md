@@ -30,44 +30,44 @@ reported the number of alcoholic drinks (y) they would be willing to
 purchase and consume at various prices (x; USD). Note the
 long format.
 
-	```r
-	>apt[c(1:8, 17:24), ]
-	id   x  y
-	1  19 0.0 10
-	2  19 0.5 10
-	3  19 1.0 10
-	4  19 1.5  8
-	5  19 2.0  8
-	6  19 2.5  8
-	7  19 3.0  7
-	8  19 4.0  7
-	17 30 0.0  3
-	18 30 0.5  3
-	19 30 1.0  3
-	20 30 1.5  3
-	21 30 2.0  2
-	22 30 2.5  2
-	23 30 3.0  2
-	24 30 4.0  2
-	```
+```r
+>apt[c(1:8, 17:24), ]
+id   x  y
+1  19 0.0 10
+2  19 0.5 10
+3  19 1.0 10
+4  19 1.5  8
+5  19 2.0  8
+6  19 2.5  8
+7  19 3.0  7
+8  19 4.0  7
+17 30 0.0  3
+18 30 0.5  3
+19 30 1.0  3
+20 30 1.5  3
+21 30 2.0  2
+22 30 2.5  2
+23 30 3.0  2
+24 30 4.0  2
+```
 
 #### Obtain descriptive summary
 Descriptive values of responses at each price. Includes mean, standard
 deviation, proportion of zeros, and numer of NAs.
 
-	```r
-	> GetDescriptives(apt)
-	          0  0.5    1  1.5    2  2.5    3    4    5    6    7    8    9   10
-	Mean      6.80 6.80 6.50 6.10 5.30 5.20 4.80 4.30 3.90 3.50 3.30 2.60 2.40 2.20
-	SD        2.62 2.62 2.27 1.91 1.89 1.87 1.48 1.57 1.45 1.43 1.34 1.51 1.58 1.32
-	PropZeros 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.10 0.10 0.10
-	NAs       0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-              15   20
-	Mean      1.10 0.80
-	SD        1.37 1.14
-	PropZeros 0.50 0.60
-	NAs       0.00 0.00
-	```
+```r
+> GetDescriptives(apt)
+	         0  0.5    1  1.5    2  2.5    3    4    5    6    7    8    9   10
+Mean      6.80 6.80 6.50 6.10 5.30 5.20 4.80 4.30 3.90 3.50 3.30 2.60 2.40 2.20
+SD        2.62 2.62 2.27 1.91 1.89 1.87 1.48 1.57 1.45 1.43 1.34 1.51 1.58 1.32
+PropZeros 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.10 0.10 0.10
+NAs       0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+            15   20
+Mean      1.10 0.80
+SD        1.37 1.14
+PropZeros 0.50 0.60
+NAs       0.00 0.00
+```
 
 #### Apply algorithm for identifying unsystematic responses
 Examine consistency of demand data using Stein et al.'s (2015) alogrithm for identifying unsystematic
@@ -158,6 +158,8 @@ Description:
 ```
 
 ### Acknowledgments
+-------------------
+
 - Derek D. Reed, Applied Behavioral Economics Laboratory
 (www.behavioraleconlab.com)
 
@@ -176,6 +178,8 @@ Description:
 - Shawn P. Gilroy, (<shawn.gilroy@temple.edu>; [GitHub](https://github.com/miyamot0))
 
 ### Recommended Readings
+------------------------
+
 - Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral economics: A tutorial for behavior analysts in practice. *Behavior Analysis in Practice, 6* (1), 34–54.
 
 - Reed, D. D., Kaplan, B. A., & Becirevic, A. (2015). Basic research on the behavioral economics of reinforcer value. In *Autism Service Delivery* (pp. 279-306). Springer New York.
@@ -187,7 +191,11 @@ Description:
 - Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology*
 
 ### Questions, Suggestions, and Contributions
+---------------------------------------------
+
 Have a question? Have a suggestion for a feature? Would you like to contribute? Email me at <bkaplan4@ku.edu>.
 
 ### License
+-----------
+
 GPL-Version 2
