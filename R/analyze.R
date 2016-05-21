@@ -340,7 +340,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 }
 
 
-
 ##' Finds shared k among selected datasets using global regression
 ##'
 ##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. As of now, only to be used within FitCurves
@@ -354,6 +353,9 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
+
+    ## get rid of NAs
+    dat <- dat[!is.na(dat$y), ]
 
     ## remove q0e if specified, otherwise replace if specified
     if (remq0e) {
@@ -398,7 +400,7 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
 
         fit <- NULL
         fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
-
+browser()
         if (!class(fit) == "try-error") {
             sharedk <- summary(fit)$coefficients["k", 1]
             return(sharedk)
