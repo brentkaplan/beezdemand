@@ -95,6 +95,21 @@ NAs       0.00 0.00
 2 0.009900933 0.019096158 0.6897244 15.28428 16.71106 converged
 3 0.006546778 0.014629766 0.9444412 20.92880 15.05260 converged
 
+# Share k globally while fitting other parameters locally
+> head(FitCurves(apt, "hs", k = "share"), 3)
+  Participant Q0e BP0 BP1 Omaxe Pmaxe Equation     Q0d SharedK      R2
+1          19  10  NA  20    45    15       hs 10.0146  3.3183 0.98210
+2          30   3  NA  20    20    20       hs  2.7663  3.3183 0.76418
+3          38   4  15  10    21     7       hs  4.4858  3.3183 0.88031
+      Alpha    Q0se    Alphase  N    AbsSS    SdRes  Q0Low  Q0High  AlphaLow
+1 0.0011616 0.24291 3.0813e-05 16 0.010182 0.026968 9.4936 10.5356 0.0010955
+2 0.0033331 0.21928 3.7389e-04 16 0.111049 0.089062 2.2960  3.2366 0.0025312
+3 0.0024580 0.20750 1.9633e-04 14 0.023186 0.043957 4.0337  4.9379 0.0020302
+  AlphaHigh     EVd  Omaxd  Pmaxd     Notes
+1 0.0012277 1.42418 44.552 13.161 converged
+2 0.0041350 0.49633 15.526 16.604 converged
+3 0.0028858 0.67304 21.054 13.885 converged
+
 # To see details regarding a given function:
 > ?CheckUnsystematic
 CheckUnsystematic          package:beezdemand          R Documentation
