@@ -343,10 +343,13 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
 ##' Finds shared k among selected datasets using global regression
 ##'
-##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form.
+##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. As of now, only to be used within FitCurves
 ##' @title Get Shared K
 ##' @param dat Dataframe (longform)
 ##' @param equation Character vector. Accepts either "hs" or "koff"
+##' @param remq0e If TRUE, removes consumption and price where price == 0.
+##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree.
+##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis.
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
