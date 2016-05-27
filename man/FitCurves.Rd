@@ -5,7 +5,7 @@
 \title{FitCurves}
 \usage{
 FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
-  plotting = FALSE)
+  plotting = FALSE, nrepl = NULL, replnum = NULL)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
@@ -21,6 +21,10 @@ FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
 \item{rem0}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
 
 \item{plotting}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
+
+\item{nrepl}{Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.}
+
+\item{replnum}{Value to replace zeros. Default is .01}
 }
 \value{
 Data frame, fitting params and CI's/SE's
@@ -29,6 +33,6 @@ Data frame, fitting params and CI's/SE's
 Analyzes purchase task data
 }
 \author{
-Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan4@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 }
 
