@@ -53,7 +53,7 @@
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE) {
+FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE, nrepl = NULL, replnum = NULL) {
 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
@@ -61,7 +61,48 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     ## get rid of NAs
     dat <- dat[!is.na(dat$y), ]
 
+    ## Get N unique participants, informing loop
+    participants <- unique(dat$id)
+    np <- length(participants)
+
+    ## Preallocate for speed
+    cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
+              "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+              "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
+
+    dfres <- data.frame(matrix(vector(),
+                             np,
+                             length(cnames),
+                             dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+
+    ## Find empirical measures before transformations
+    for (i in seq_len(np)) {
+        dfres[i, "Participant"] <- participants[i]
+        dfres[i, "Equation"] <- equation
+
+        adf <- NULL
+        adf <- dat[dat$id == participants[i], ]
+
+        adf[, "expend"] <- adf$x * adf$y
+
+        ## Find empirical Q0, BP0, BP1
+        dfres[i, "Q0e"] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
+        dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
+        dfres[i, "BP1"] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
+
+        ## Find empirical Pmax, Omax
+        dfres[i, "Omaxe"] <- max(adf$expend)
+        dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
+
+    }
+
+    ## Transformations if specified
+    if (!is.null(nrepl) && !is.null(replnum)) {
+        dat <- ReplaceZeros(dat, nrepl = nrepl, replnum = replnum)
+        }
+
     ## If no k is provided, otherwise
+    ## TODO: provide a character element to fit empirical max/min range
     if (missing(k)) {
         k <- GetK(dat)
         kest <- FALSE
@@ -88,30 +129,13 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         kest <- FALSE
     }
 
-  ## Get N unique participants, informing loop
-  participants <- unique(dat$id)
-  np <- length(participants)
-
-  ## Preallocate for speed
-  cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
-              "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-              "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
-
-  dfres <- data.frame(matrix(vector(),
-                             np,
-                             length(cnames),
-                             dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
-
   ## Loop through unique values as indices, not necessarily sequentially
-  for (i in seq_len(np))
-  {
+  for (i in seq_len(np)) {
     dfres[i, "Participant"] <- participants[i]
     dfres[i, "Equation"] <- equation
 
     adf <- NULL
     adf <- dat[dat$id == participants[i], ]
-
-    adf[, "expend"] <- adf$x * adf$y
 
     if (kest == "ind") {
         k <- GetK(adf) + .5
@@ -121,15 +145,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         }
 
     adf[, "k"] <- k
-
-    ## Find empirical Q0, BP0, BP1
-    dfres[i, "Q0e"] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
-    dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
-    dfres[i, "BP1"] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
-
-    ## Find empirical Pmax, Omax
-    dfres[i, "Omaxe"] <- max(adf$expend)
-    dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
 
     if (equation == "hs") {
         ## If retain y where x = 0, replace
