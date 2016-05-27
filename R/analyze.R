@@ -50,8 +50,10 @@
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
 ##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
 ##' @param plotting If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
+##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
+##' @param replnum Value to replace zeros. Default is .01
 ##' @return Data frame, fitting params and CI's/SE's
-##' @author Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
 FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE, nrepl = NULL, replnum = NULL) {
 
