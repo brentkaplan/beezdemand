@@ -89,7 +89,18 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         ## Find empirical Q0, BP0, BP1
         dfres[i, "Q0e"] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
-        dfres[i, "BP0"] <- if (0 %in% adf$y) min(adf[adf$y == 0, "x"]) else NA
+        if (0 %in% adf$y) {
+            for (j in nrow(adf):1) {
+                if (adf$y[j] == 0) {
+                    next
+                } else {
+                    dfres[i, "BP0"] <- j + 1
+                    break
+                }
+            }
+        } else {
+            dfres[i, "BP0"] <- NA
+        }
         dfres[i, "BP1"] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
 
         ## Find empirical Pmax, Omax
@@ -212,9 +223,9 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 adf[adf$x == 0, "x"] <- replfree
             }
         }
-        if (!kest = "fit") {
-        fit <- NULL
-        fit <- try(nlmrt::wrapnls(data = adf,
+        if (!kest == "fit") {
+            fit <- NULL
+            fit <- try(nlmrt::wrapnls(data = adf,
                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
                                   start = list(q0 = 10, alpha = 0.01),
                                   control = list(maxiter = 1000)), silent = TRUE)
@@ -258,8 +269,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
   trim.leading <- function (x)  sub("^\\s+", "", x)
   dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
 
-  if(plotting)
-  {
+  if(plotting) {
     ## Can add this to build tools and remove later, just added for now -sg
 
     if(!require(ggplot2)) {
