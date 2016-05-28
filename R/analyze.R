@@ -175,8 +175,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                                 control = list(maxiter = 1000)), silent = TRUE)
       }
 
-      if (!class(fit) == "try-error")
-          {
+      if (!class(fit) == "try-error") {
         dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
         dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
         dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
@@ -198,38 +197,54 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
         }
     }
-  } else
-    {
-      if (equation == "koff")
-      {
-        if (rem0)
-        {
+    } else {
+      if (equation == "koff") {
+        if (rem0) {
           adf <- adf[adf$y != 0, ]
         }
 
+         ## If retain y where x = 0, replace
+        if (remq0e) {
+            adf <- adf[adf$x != 0, ]
+        } else {
+            if (!is.null(replfree)) {
+                replfree <- if (is.numeric(replfree)) replfree else 0.01
+                adf[adf$x == 0, "x"] <- replfree
+            }
+        }
+        if (!kest = "fit") {
         fit <- NULL
         fit <- try(nlmrt::wrapnls(data = adf,
                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
                                   start = list(q0 = 10, alpha = 0.01),
                                   control = list(maxiter = 1000)), silent = TRUE)
+        } else {
+            fit <- try(nlmrt::wrapnls(data = adf,
+                                      y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                      start = list(q0 = 10, k = kstart, alpha = 0.01),
+                                      control = list(maxiter = 1000)), silent = TRUE)
+        }
 
-        if (!class(fit) == "try-error")
-        {
-          dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-          dfres[i, "K"] <- min(adf$k)
-          dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-          dfres[i, "N"] <- length(adf$k)
-          dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
-          dfres[i, "AbsSS"] <- deviance(fit)
-          dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-          dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-          dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-          dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-          dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
-            (0.083 * dfres[i, "K"] + 0.65)
-          dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                                dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-          dfres[i, "Notes"] <- fit$convInfo$stopMessage
+        if (!class(fit) == "try-error") {
+            dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+            dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+            dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+            dfres[i, "N"] <- length(adf$k)
+            dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
+            dfres[i, "AbsSS"] <- deviance(fit)
+            dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+            dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+            dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+            dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+            dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] *
+                                    dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
+                (0.083 * dfres[i, "K"] + 0.65)
+            dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] *
+                                                         (exp(-dfres[i, "Alpha"] *
+                                                              dfres[i, "Q0d"] *
+                                                              dfres[i, "Pmaxd"]) - 1)))) *
+                dfres[i, "Pmaxd"]
+            dfres[i, "Notes"] <- fit$convInfo$stopMessage
           } else {
               if (class(fit) == "try-error") {
                   dfres[i, "Notes"] <- fit[1]
