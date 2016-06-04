@@ -11,7 +11,7 @@ install.packages("digest")
 
 library(devtools)
 
-install_github("bkaplan4/beezdemand")
+install_github("brentkaplan/beezdemand")
 
 library(beezdemand)
 ```
