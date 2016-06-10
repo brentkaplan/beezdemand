@@ -60,6 +60,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
     }
+
     ## get rid of NAs
     dat <- dat[!is.na(dat$y), ]
 
@@ -77,7 +78,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                              length(cnames),
                              dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
-    ## Find empirical measures before transformations
+    ## loop to find empirical measures before transformations
     for (i in seq_len(np)) {
         dfres[i, "Participant"] <- participants[i]
         dfres[i, "Equation"] <- equation
@@ -101,18 +102,18 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         } else {
             dfres[i, "BP0"] <- NA
         }
+
         dfres[i, "BP1"] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
 
         ## Find empirical Pmax, Omax
         dfres[i, "Omaxe"] <- max(adf$expend)
         dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
-
     }
 
     ## Transformations if specified
     if (!is.null(nrepl) && !is.null(replnum)) {
         dat <- ReplaceZeros(dat, nrepl = nrepl, replnum = replnum)
-        }
+    }
 
     ## If no k is provided, otherwise
     ## TODO: provide a character element to fit empirical max/min range
@@ -142,7 +143,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         kest <- FALSE
     }
 
-  ## Loop through unique values as indices, not necessarily sequentially
+  ## loop to fit data
   for (i in seq_len(np)) {
     dfres[i, "Participant"] <- participants[i]
     dfres[i, "Equation"] <- equation
@@ -475,7 +476,7 @@ browser()
     }
 }
 
-##' Calculates a k value by looking for the max/min consumption across entire dataset
+##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range
 ##'
 ##' Will look for minimum greater zero
 ##' @title Get K
@@ -486,7 +487,7 @@ browser()
 ##' GetK(apt)
 ##' @export
 GetK <- function(dat) {
-     log10(max(dat[dat$y > 0, "y"], na.rm = TRUE)) - log10(min(dat[dat$y > 0, "y"], na.rm = TRUE))
+     (log10(max(dat[dat$y > 0, "y"], na.rm = TRUE)) - log10(min(dat[dat$y > 0, "y"], na.rm = TRUE))) + .5
  }
 
 ##' Analyzes a dataframe and returns the regression model.
