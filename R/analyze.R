@@ -143,132 +143,121 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         kest <- FALSE
     }
 
-  ## loop to fit data
-  for (i in seq_len(np)) {
-    dfres[i, "Participant"] <- participants[i]
-    dfres[i, "Equation"] <- equation
+    ## loop to fit data
+    for (i in seq_len(np)) {
+        dfres[i, "Participant"] <- participants[i]
+        dfres[i, "Equation"] <- equation
 
-    adf <- NULL
-    adf <- dat[dat$id == participants[i], ]
+        adf <- NULL
+        adf <- dat[dat$id == participants[i], ]
 
-    if (kest == "ind") {
-        k <- GetK(adf) + .5
-    } else if (kest == "fit") {
-        ## k <- GetK(adf) + .5 do I need this check?
-        k <- kstart
+        if (kest == "ind") {
+            k <- GetK(adf)
+        } else if (kest == "fit") {
+            ## k <- GetK(adf) + .5 do I need this check?
+            k <- kstart
         }
 
-    adf[, "k"] <- k
+        adf[, "k"] <- k
 
-    if (equation == "hs") {
-        ## If retain y where x = 0, replace
-        if (remq0e) {
-            adf <- adf[adf$x != 0, ]
-        } else {
-            if (!is.null(replfree)) {
+        if (equation == "hs") {
+            ## If retain y where x = 0, replace
+            if (remq0e) {
+                adf <- adf[adf$x != 0, ]
+            } else if (!is.null(replfree)) {
                 replfree <- if (is.numeric(replfree)) replfree else 0.01
                 adf[adf$x == 0, "x"] <- replfree
             }
-        }
 
-      ## Drop any zero consumption points altogether
-      adf <- adf[adf$y != 0, ]
+            ## Drop any zero consumption points altogether
+            ## Will change when q+1 equation gets coded
+            adf <- adf[adf$y != 0, ]
 
-      if (!kest == "fit") {
-          fit <- NULL
-          fit <- try(nlmrt::wrapnls(data = adf,
-                                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-                                start = list(q0 = 10, alpha = 0.01),
-                                control = list(maxiter = 1000)), silent = TRUE)
-      } else {
-          fit <- try(nlmrt::wrapnls(data = adf,
-                                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-                                start = list(q0 = 10, k = kstart, alpha = 0.01),
-                                control = list(maxiter = 1000)), silent = TRUE)
-      }
+            if (!kest == "fit") {
+                fit <- NULL
+                fit <- try(nlmrt::wrapnls(data = adf,
+                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+                start = list(q0 = 10, alpha = 0.01),
+                control = list(maxiter = 1000)), silent = TRUE)
+            } else {
+                fit <- try(nlmrt::wrapnls(data = adf,
+                (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+                start = list(q0 = 10, k = kstart, alpha = 0.01),
+                control = list(maxiter = 1000)), silent = TRUE)
+            }
 
-      if (!class(fit) == "try-error") {
-        dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
-        dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-        dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-        dfres[i, "N"] <- length(adf$k)
-        dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
-        dfres[i, "AbsSS"] <- deviance(fit)
-        dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-        dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-        dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-        dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
-          (0.083 * dfres[i, "K"] + 0.65)
-        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] *
-                                                                                    dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-        dfres[i, "Notes"] <- fit$convInfo$stopMessage
-    } else {
-        if (class(fit) == "try-error") {
-            dfres[i, "Notes"] <- fit[1]
-            dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+            if (!class(fit) == "try-error") {
+                dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+                dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+                dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+                dfres[i, "N"] <- length(adf$k)
+                dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
+                dfres[i, "AbsSS"] <- deviance(fit)
+                dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+                dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+                dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+                dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+                dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+                dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] * dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+                dfres[i, "Notes"] <- fit$convInfo$stopMessage
+            } else {
+                if (class(fit) == "try-error") {
+                    dfres[i, "Notes"] <- fit[1]
+                    dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+                }
+            }
+        } else if (equation == "koff") {
+            if (rem0) {
+                adf <- adf[adf$y != 0, ]
+            }
+
+            ## If retain y where x = 0, replace
+            if (remq0e) {
+                adf <- adf[adf$x != 0, ]
+            } else {
+                if (!is.null(replfree)) {
+                    replfree <- if (is.numeric(replfree)) replfree else 0.01
+                    adf[adf$x == 0, "x"] <- replfree
+                }
+            }
+            if (!kest == "fit") {
+                fit <- NULL
+                fit <- try(nlmrt::wrapnls(data = adf,
+                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                          start = list(q0 = 10, alpha = 0.01),
+                                          control = list(maxiter = 1000)), silent = TRUE)
+            } else {
+                fit <- try(nlmrt::wrapnls(data = adf,
+                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                          start = list(q0 = 10, k = kstart, alpha = 0.01),
+                                          control = list(maxiter = 1000)), silent = TRUE)
+            }
+
+            if (!class(fit) == "try-error") {
+                dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+                dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
+                dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+                dfres[i, "N"] <- length(adf$k)
+                dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
+                dfres[i, "AbsSS"] <- deviance(fit)
+                dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+                dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+                dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+                dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+                dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+                dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] * dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+                dfres[i, "Notes"] <- fit$convInfo$stopMessage
+            } else {
+                if (class(fit) == "try-error") {
+                    dfres[i, "Notes"] <- fit[1]
+                    dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+                }
+            }
         }
     }
-    } else {
-      if (equation == "koff") {
-        if (rem0) {
-          adf <- adf[adf$y != 0, ]
-        }
 
-         ## If retain y where x = 0, replace
-        if (remq0e) {
-            adf <- adf[adf$x != 0, ]
-        } else {
-            if (!is.null(replfree)) {
-                replfree <- if (is.numeric(replfree)) replfree else 0.01
-                adf[adf$x == 0, "x"] <- replfree
-            }
-        }
-        if (!kest == "fit") {
-            fit <- NULL
-            fit <- try(nlmrt::wrapnls(data = adf,
-                                  y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                  start = list(q0 = 10, alpha = 0.01),
-                                  control = list(maxiter = 1000)), silent = TRUE)
-        } else {
-            fit <- try(nlmrt::wrapnls(data = adf,
-                                      y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                      start = list(q0 = 10, k = kstart, alpha = 0.01),
-                                      control = list(maxiter = 1000)), silent = TRUE)
-        }
-
-        if (!class(fit) == "try-error") {
-            dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
-            dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-            dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-            dfres[i, "N"] <- length(adf$k)
-            dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
-            dfres[i, "AbsSS"] <- deviance(fit)
-            dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-            dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-            dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-            dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-            dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] *
-                                    dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) *
-                (0.083 * dfres[i, "K"] + 0.65)
-            dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] *
-                                                         (exp(-dfres[i, "Alpha"] *
-                                                              dfres[i, "Q0d"] *
-                                                              dfres[i, "Pmaxd"]) - 1)))) *
-                dfres[i, "Pmaxd"]
-            dfres[i, "Notes"] <- fit$convInfo$stopMessage
-          } else {
-              if (class(fit) == "try-error") {
-                  dfres[i, "Notes"] <- fit[1]
-                  dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
-              }
-          }
-        }
-      }
-  }
-
-  trim.leading <- function (x)  sub("^\\s+", "", x)
-  dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
+    trim.leading <- function (x)  sub("^\\s+", "", x)
+    dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
 
   if(plotting) {
     ## Can add this to build tools and remove later, just added for now -sg
@@ -403,19 +392,16 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
     ## remove q0e if specified, otherwise replace if specified
     if (remq0e) {
         dat <- dat[dat$x != 0, ]
-    } else {
-        if (!is.null(replfree)) {
-            replfree <- if (is.numeric(replfree)) replfree else 0.01
-            dat[dat$x == 0, "x"] <- replfree
-        }
+    } else if (!is.null(replfree)) {
+        replfree <- if (is.numeric(replfree)) replfree else 0.01
+        dat[dat$x == 0, "x"] <- replfree
     }
+
     ## drop zeros if hs, otherwise drop zeros if rem0
     if (equation == "hs") {
         dat <- dat[dat$y != 0, ]
-    } else {
-        if (rem0) {
-            dat <- dat[dat$y !=0, ]
-        }
+    } else if (rem0) {
+        dat <- dat[dat$y !=0, ]
     }
 
     j <- 1
@@ -424,6 +410,7 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
         j <- j+1
     }
     dat$ref <- as.factor(dat$ref)
+
     ## create contrasts
     dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
     nparams <- length(unique(dat2$ref))
