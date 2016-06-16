@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Beezdemand by brentkaplan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Beezdemand</h1>
+      <h2 class="project-tagline">R package to help aid in analyzing behavioral economic demand curve data</h2>
+      <a href="https://github.com/brentkaplan/beezdemand" class="btn">View on GitHub</a>
+      <a href="https://github.com/brentkaplan/beezdemand/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/brentkaplan/beezdemand/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="behavioral-economic-be-easy-ez-demand" class="anchor" href="#behavioral-economic-be-easy-ez-demand" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Behavioral Economic (be) Easy (ez) Demand</h1>
+
+<p>An R package containing commonly used functions for analyzing behavioral economic demand curve data.</p>
+
+<h3>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h3>
+
+<hr>
+
+<p>Install and load the devtools package. Then, use install_github to install the package.</p>
+
+<div class="highlight highlight-source-r"><pre>install.packages(<span class="pl-s"><span class="pl-pds">"</span>devtools<span class="pl-pds">"</span></span>)
+install.packages(<span class="pl-s"><span class="pl-pds">"</span>digest<span class="pl-pds">"</span></span>)
+
+library(<span class="pl-smi">devtools</span>)
+
+install_github(<span class="pl-s"><span class="pl-pds">"</span>brentkaplan/beezdemand<span class="pl-pds">"</span></span>)
+
+library(<span class="pl-smi">beezdemand</span>)</pre></div>
+
+<h4>
+<a id="note-about-use" class="anchor" href="#note-about-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Note About Use</h4>
+
+<p>Currently, this version (0.0.5) is under development. You are free to use it,
+but be aware that there might be bugs present.
+If you find issues or would like to contribute, please contact me at <a href="mailto:bkaplan4@ku.edu">bkaplan4@ku.edu</a>.</p>
+
+<h3>
+<a id="sample-implementation" class="anchor" href="#sample-implementation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sample Implementation</h3>
+
+<hr>
+
+<h4>
+<a id="example-dataset-provided" class="anchor" href="#example-dataset-provided" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example dataset provided</h4>
+
+<p>Example dataset of responses on an Alcohol Purchase Task. Participants
+reported the number of alcoholic drinks (y) they would be willing to
+purchase and consume at various prices (x; USD). Note the
+long format.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span><span class="pl-smi">apt</span>[c(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">8</span>, <span class="pl-c1">17</span><span class="pl-k">:</span><span class="pl-c1">24</span>), ]
+<span class="pl-smi">id</span>   <span class="pl-smi">x</span>  <span class="pl-smi">y</span>
+<span class="pl-c1">1</span>  <span class="pl-c1">19</span> <span class="pl-c1">0.0</span> <span class="pl-c1">10</span>
+<span class="pl-c1">2</span>  <span class="pl-c1">19</span> <span class="pl-c1">0.5</span> <span class="pl-c1">10</span>
+<span class="pl-c1">3</span>  <span class="pl-c1">19</span> <span class="pl-c1">1.0</span> <span class="pl-c1">10</span>
+<span class="pl-c1">4</span>  <span class="pl-c1">19</span> <span class="pl-c1">1.5</span>  <span class="pl-c1">8</span>
+<span class="pl-c1">5</span>  <span class="pl-c1">19</span> <span class="pl-c1">2.0</span>  <span class="pl-c1">8</span>
+<span class="pl-c1">6</span>  <span class="pl-c1">19</span> <span class="pl-c1">2.5</span>  <span class="pl-c1">8</span>
+<span class="pl-c1">7</span>  <span class="pl-c1">19</span> <span class="pl-c1">3.0</span>  <span class="pl-c1">7</span>
+<span class="pl-c1">8</span>  <span class="pl-c1">19</span> <span class="pl-c1">4.0</span>  <span class="pl-c1">7</span>
+<span class="pl-c1">17</span> <span class="pl-c1">30</span> <span class="pl-c1">0.0</span>  <span class="pl-c1">3</span>
+<span class="pl-c1">18</span> <span class="pl-c1">30</span> <span class="pl-c1">0.5</span>  <span class="pl-c1">3</span>
+<span class="pl-c1">19</span> <span class="pl-c1">30</span> <span class="pl-c1">1.0</span>  <span class="pl-c1">3</span>
+<span class="pl-c1">20</span> <span class="pl-c1">30</span> <span class="pl-c1">1.5</span>  <span class="pl-c1">3</span>
+<span class="pl-c1">21</span> <span class="pl-c1">30</span> <span class="pl-c1">2.0</span>  <span class="pl-c1">2</span>
+<span class="pl-c1">22</span> <span class="pl-c1">30</span> <span class="pl-c1">2.5</span>  <span class="pl-c1">2</span>
+<span class="pl-c1">23</span> <span class="pl-c1">30</span> <span class="pl-c1">3.0</span>  <span class="pl-c1">2</span>
+<span class="pl-c1">24</span> <span class="pl-c1">30</span> <span class="pl-c1">4.0</span>  <span class="pl-c1">2</span></pre></div>
+
+<h4>
+<a id="obtain-descriptive-summary" class="anchor" href="#obtain-descriptive-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Obtain descriptive summary</h4>
+
+<p>Descriptive values of responses at each price. Includes mean, standard
+deviation, proportion of zeros, and numer of NAs.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span> GetDescriptives(<span class="pl-smi">apt</span>)
+             <span class="pl-c1">0</span>  <span class="pl-c1">0.5</span>    <span class="pl-c1">1</span>  <span class="pl-c1">1.5</span>    <span class="pl-c1">2</span>  <span class="pl-c1">2.5</span>    <span class="pl-c1">3</span>    <span class="pl-c1">4</span>    <span class="pl-c1">5</span>    <span class="pl-c1">6</span>    <span class="pl-c1">7</span>    <span class="pl-c1">8</span>    <span class="pl-c1">9</span>   <span class="pl-c1">10</span>
+<span class="pl-smi">Mean</span>      <span class="pl-c1">6.80</span> <span class="pl-c1">6.80</span> <span class="pl-c1">6.50</span> <span class="pl-c1">6.10</span> <span class="pl-c1">5.30</span> <span class="pl-c1">5.20</span> <span class="pl-c1">4.80</span> <span class="pl-c1">4.30</span> <span class="pl-c1">3.90</span> <span class="pl-c1">3.50</span> <span class="pl-c1">3.30</span> <span class="pl-c1">2.60</span> <span class="pl-c1">2.40</span> <span class="pl-c1">2.20</span>
+<span class="pl-smi">SD</span>        <span class="pl-c1">2.62</span> <span class="pl-c1">2.62</span> <span class="pl-c1">2.27</span> <span class="pl-c1">1.91</span> <span class="pl-c1">1.89</span> <span class="pl-c1">1.87</span> <span class="pl-c1">1.48</span> <span class="pl-c1">1.57</span> <span class="pl-c1">1.45</span> <span class="pl-c1">1.43</span> <span class="pl-c1">1.34</span> <span class="pl-c1">1.51</span> <span class="pl-c1">1.58</span> <span class="pl-c1">1.32</span>
+<span class="pl-smi">PropZeros</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.10</span> <span class="pl-c1">0.10</span> <span class="pl-c1">0.10</span>
+<span class="pl-smi">NAs</span>       <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span>
+            <span class="pl-c1">15</span>   <span class="pl-c1">20</span>
+<span class="pl-smi">Mean</span>      <span class="pl-c1">1.10</span> <span class="pl-c1">0.80</span>
+<span class="pl-smi">SD</span>        <span class="pl-c1">1.37</span> <span class="pl-c1">1.14</span>
+<span class="pl-smi">PropZeros</span> <span class="pl-c1">0.50</span> <span class="pl-c1">0.60</span>
+<span class="pl-smi">NAs</span>       <span class="pl-c1">0.00</span> <span class="pl-c1">0.00</span></pre></div>
+
+<h4>
+<a id="apply-algorithm-for-identifying-unsystematic-responses" class="anchor" href="#apply-algorithm-for-identifying-unsystematic-responses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Apply algorithm for identifying unsystematic responses</h4>
+
+<p>Examine consistency of demand data using Stein et al.'s (2015) alogrithm for identifying unsystematic
+responses. Default values shown.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span> head(CheckUnsystematic(<span class="pl-smi">apt</span>, <span class="pl-v">deltaq</span> <span class="pl-k">=</span> <span class="pl-c1">0.025</span>, <span class="pl-v">bounce</span> <span class="pl-k">=</span> <span class="pl-c1">0.1</span>, <span class="pl-v">reversals</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>, <span class="pl-v">ncons0</span> <span class="pl-k">=</span> <span class="pl-c1">2</span>), <span class="pl-c1">3</span>)
+  <span class="pl-smi">Participant</span> <span class="pl-smi">TotalPass</span> <span class="pl-smi">DeltaQ</span> <span class="pl-smi">DeltaQPass</span> <span class="pl-smi">Bounce</span> <span class="pl-smi">BouncePass</span> <span class="pl-smi">Reversals</span>
+<span class="pl-c1">1</span>          <span class="pl-c1">19</span>         <span class="pl-c1">3</span> <span class="pl-c1">0.2112</span>       <span class="pl-smi">Pass</span>      <span class="pl-c1">0</span>       <span class="pl-smi">Pass</span>         <span class="pl-c1">0</span>
+<span class="pl-c1">2</span>          <span class="pl-c1">30</span>         <span class="pl-c1">3</span> <span class="pl-c1">0.1437</span>       <span class="pl-smi">Pass</span>      <span class="pl-c1">0</span>       <span class="pl-smi">Pass</span>         <span class="pl-c1">0</span>
+<span class="pl-c1">3</span>          <span class="pl-c1">38</span>         <span class="pl-c1">3</span> <span class="pl-c1">0.7885</span>       <span class="pl-smi">Pass</span>      <span class="pl-c1">0</span>       <span class="pl-smi">Pass</span>         <span class="pl-c1">0</span>
+  <span class="pl-smi">ReversalsPass</span> <span class="pl-smi">NumPosValues</span>
+<span class="pl-c1">1</span>          <span class="pl-smi">Pass</span>           <span class="pl-c1">16</span>
+<span class="pl-c1">2</span>          <span class="pl-smi">Pass</span>           <span class="pl-c1">16</span>
+<span class="pl-c1">3</span>          <span class="pl-smi">Pass</span>           <span class="pl-c1">14</span></pre></div>
+
+<h4>
+<a id="analyze-demand-data-using-either-exponentialexponentiated-models" class="anchor" href="#analyze-demand-data-using-either-exponentialexponentiated-models" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Analyze demand data using either Exponential/Exponentiated models</h4>
+
+<p>Results of the analysis return both empirical and derived measures for
+use in additional analyses and model specification.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span> head(FitCurves(<span class="pl-smi">apt</span>, <span class="pl-s"><span class="pl-pds">"</span>hs<span class="pl-pds">"</span></span>), <span class="pl-c1">3</span>)
+  <span class="pl-smi">Participant</span> <span class="pl-smi">Q0e</span> <span class="pl-smi">BP0</span> <span class="pl-smi">BP1</span> <span class="pl-smi">Omaxe</span> <span class="pl-smi">Pmaxe</span> <span class="pl-smi">Equation</span>        <span class="pl-smi">Q0</span> <span class="pl-smi">K</span>        <span class="pl-smi">R2</span>
+<span class="pl-c1">1</span>          <span class="pl-c1">19</span>  <span class="pl-c1">10</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">45</span>    <span class="pl-c1">15</span>       <span class="pl-smi">hs</span> <span class="pl-c1">10.492736</span> <span class="pl-c1">1</span> <span class="pl-c1">0.9643380</span>
+<span class="pl-c1">2</span>          <span class="pl-c1">30</span>   <span class="pl-c1">3</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">20</span>    <span class="pl-c1">20</span>       <span class="pl-smi">hs</span>  <span class="pl-c1">2.942614</span> <span class="pl-c1">1</span> <span class="pl-c1">0.7934822</span>
+<span class="pl-c1">3</span>          <span class="pl-c1">38</span>   <span class="pl-c1">4</span>  <span class="pl-c1">15</span>  <span class="pl-c1">10</span>    <span class="pl-c1">21</span>     <span class="pl-c1">7</span>       <span class="pl-smi">hs</span>  <span class="pl-c1">4.525925</span> <span class="pl-c1">1</span> <span class="pl-c1">0.8656883</span>
+        <span class="pl-smi">Alpha</span>      <span class="pl-smi">Q0se</span>      <span class="pl-smi">Alphase</span>  <span class="pl-smi">N</span>      <span class="pl-smi">AbsSS</span>      <span class="pl-smi">SdRes</span>    <span class="pl-smi">Q0Low</span>
+<span class="pl-c1">1</span> <span class="pl-c1">0.004856258</span> <span class="pl-c1">0.4312016</span> <span class="pl-c1">0.0002574193</span> <span class="pl-c1">16</span> <span class="pl-c1">0.02028108</span> <span class="pl-c1">0.03806112</span> <span class="pl-c1">9.567901</span>
+<span class="pl-c1">2</span> <span class="pl-c1">0.014057972</span> <span class="pl-c1">0.2531714</span> <span class="pl-c1">0.0018292289</span> <span class="pl-c1">16</span> <span class="pl-c1">0.09724906</span> <span class="pl-c1">0.08334484</span> <span class="pl-c1">2.399616</span>
+<span class="pl-c1">3</span> <span class="pl-c1">0.009120746</span> <span class="pl-c1">0.2373820</span> <span class="pl-c1">0.0009315781</span> <span class="pl-c1">14</span> <span class="pl-c1">0.02601971</span> <span class="pl-c1">0.04656511</span> <span class="pl-c1">4.008714</span>
+     <span class="pl-smi">Q0High</span>    <span class="pl-smi">AlphaLow</span>   <span class="pl-smi">AlphaHigh</span>        <span class="pl-smi">EV</span>    <span class="pl-smi">Omaxd</span>    <span class="pl-smi">Pmaxd</span>     <span class="pl-smi">Notes</span>
+<span class="pl-c1">1</span> <span class="pl-c1">11.417572</span> <span class="pl-c1">0.004304148</span> <span class="pl-c1">0.005408367</span> <span class="pl-c1">2.0591989</span> <span class="pl-c1">45.63181</span> <span class="pl-c1">14.38512</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">2</span>  <span class="pl-c1">3.485613</span> <span class="pl-c1">0.010134666</span> <span class="pl-c1">0.017981278</span> <span class="pl-c1">0.7113402</span> <span class="pl-c1">15.76329</span> <span class="pl-c1">17.71936</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">3</span>  <span class="pl-c1">5.043136</span> <span class="pl-c1">0.007091012</span> <span class="pl-c1">0.011150481</span> <span class="pl-c1">1.0964015</span> <span class="pl-c1">24.29624</span> <span class="pl-c1">17.75686</span> <span class="pl-smi">converged</span>
+
+<span class="pl-k">&gt;</span> head(FitCurves(<span class="pl-smi">apt</span>, <span class="pl-s"><span class="pl-pds">"</span>koff<span class="pl-pds">"</span></span>), <span class="pl-c1">3</span>)
+  <span class="pl-smi">Participant</span> <span class="pl-smi">Q0e</span> <span class="pl-smi">BP0</span> <span class="pl-smi">BP1</span> <span class="pl-smi">Omaxe</span> <span class="pl-smi">Pmaxe</span> <span class="pl-smi">Equation</span>        <span class="pl-smi">Q0</span> <span class="pl-smi">K</span>        <span class="pl-smi">R2</span>
+<span class="pl-c1">1</span>          <span class="pl-c1">19</span>  <span class="pl-c1">10</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">45</span>    <span class="pl-c1">15</span>     <span class="pl-smi">koff</span> <span class="pl-c1">10.219980</span> <span class="pl-c1">1</span> <span class="pl-c1">0.9636911</span>
+<span class="pl-c1">2</span>          <span class="pl-c1">30</span>   <span class="pl-c1">3</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">20</span>    <span class="pl-c1">20</span>     <span class="pl-smi">koff</span>  <span class="pl-c1">3.025350</span> <span class="pl-c1">1</span> <span class="pl-c1">0.8188253</span>
+<span class="pl-c1">3</span>          <span class="pl-c1">38</span>   <span class="pl-c1">4</span>  <span class="pl-c1">15</span>  <span class="pl-c1">10</span>    <span class="pl-c1">21</span>     <span class="pl-c1">7</span>     <span class="pl-smi">koff</span>  <span class="pl-c1">4.599041</span> <span class="pl-c1">1</span> <span class="pl-c1">0.8182557</span>
+        <span class="pl-smi">Alpha</span>      <span class="pl-smi">Q0se</span>      <span class="pl-smi">Alphase</span>  <span class="pl-smi">N</span>    <span class="pl-smi">AbsSS</span>     <span class="pl-smi">SdRes</span>    <span class="pl-smi">Q0Low</span>    <span class="pl-smi">Q0High</span>
+<span class="pl-c1">1</span> <span class="pl-c1">0.004501826</span> <span class="pl-c1">0.2673350</span> <span class="pl-c1">0.0002894209</span> <span class="pl-c1">16</span> <span class="pl-c1">3.186106</span> <span class="pl-c1">0.4770524</span> <span class="pl-c1">9.646603</span> <span class="pl-c1">10.793356</span>
+<span class="pl-c1">2</span> <span class="pl-c1">0.014498545</span> <span class="pl-c1">0.1780691</span> <span class="pl-c1">0.0021436221</span> <span class="pl-c1">16</span> <span class="pl-c1">1.449398</span> <span class="pl-c1">0.3217583</span> <span class="pl-c1">2.643430</span>  <span class="pl-c1">3.407271</span>
+<span class="pl-c1">3</span> <span class="pl-c1">0.010588272</span> <span class="pl-c1">0.3414723</span> <span class="pl-c1">0.0018843340</span> <span class="pl-c1">16</span> <span class="pl-c1">5.043406</span> <span class="pl-c1">0.6002027</span> <span class="pl-c1">3.866656</span>  <span class="pl-c1">5.331426</span>
+     <span class="pl-smi">AlphaLow</span>   <span class="pl-smi">AlphaHigh</span>        <span class="pl-smi">EV</span>    <span class="pl-smi">Omaxd</span>    <span class="pl-smi">Pmaxd</span>     <span class="pl-smi">Notes</span>
+<span class="pl-c1">1</span> <span class="pl-c1">0.003881080</span> <span class="pl-c1">0.005122573</span> <span class="pl-c1">2.2213207</span> <span class="pl-c1">49.22443</span> <span class="pl-c1">15.93181</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">2</span> <span class="pl-c1">0.009900933</span> <span class="pl-c1">0.019096158</span> <span class="pl-c1">0.6897244</span> <span class="pl-c1">15.28428</span> <span class="pl-c1">16.71106</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">3</span> <span class="pl-c1">0.006546778</span> <span class="pl-c1">0.014629766</span> <span class="pl-c1">0.9444412</span> <span class="pl-c1">20.92880</span> <span class="pl-c1">15.05260</span> <span class="pl-smi">converged</span></pre></div>
+
+<h4>
+<a id="share-k-globally-while-fitting-other-parameters-locally" class="anchor" href="#share-k-globally-while-fitting-other-parameters-locally" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Share k globally while fitting other parameters locally</h4>
+
+<p>Provides the ability to share k globally (across all participants)
+while estimating Q<sub>0</sub> and alpha locally. </p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span> head(FitCurves(<span class="pl-smi">apt</span>, <span class="pl-s"><span class="pl-pds">"</span>hs<span class="pl-pds">"</span></span>, <span class="pl-v">k</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>share<span class="pl-pds">"</span></span>), <span class="pl-c1">3</span>)
+  <span class="pl-smi">Participant</span> <span class="pl-smi">Q0e</span> <span class="pl-smi">BP0</span> <span class="pl-smi">BP1</span> <span class="pl-smi">Omaxe</span> <span class="pl-smi">Pmaxe</span> <span class="pl-smi">Equation</span>     <span class="pl-smi">Q0d</span> <span class="pl-smi">SharedK</span>      <span class="pl-smi">R2</span>
+<span class="pl-c1">1</span>          <span class="pl-c1">19</span>  <span class="pl-c1">10</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">45</span>    <span class="pl-c1">15</span>       <span class="pl-smi">hs</span> <span class="pl-c1">10.0146</span>  <span class="pl-c1">3.3183</span> <span class="pl-c1">0.98210</span>
+<span class="pl-c1">2</span>          <span class="pl-c1">30</span>   <span class="pl-c1">3</span>  <span class="pl-c1">NA</span>  <span class="pl-c1">20</span>    <span class="pl-c1">20</span>    <span class="pl-c1">20</span>       <span class="pl-smi">hs</span>  <span class="pl-c1">2.7663</span>  <span class="pl-c1">3.3183</span> <span class="pl-c1">0.76418</span>
+<span class="pl-c1">3</span>          <span class="pl-c1">38</span>   <span class="pl-c1">4</span>  <span class="pl-c1">15</span>  <span class="pl-c1">10</span>    <span class="pl-c1">21</span>     <span class="pl-c1">7</span>       <span class="pl-smi">hs</span>  <span class="pl-c1">4.4858</span>  <span class="pl-c1">3.3183</span> <span class="pl-c1">0.88031</span>
+      <span class="pl-smi">Alpha</span>    <span class="pl-smi">Q0se</span>    <span class="pl-smi">Alphase</span>  <span class="pl-smi">N</span>    <span class="pl-smi">AbsSS</span>    <span class="pl-smi">SdRes</span>  <span class="pl-smi">Q0Low</span>  <span class="pl-smi">Q0High</span>  <span class="pl-smi">AlphaLow</span>
+<span class="pl-c1">1</span> <span class="pl-c1">0.0011616</span> <span class="pl-c1">0.24291</span> <span class="pl-c1">3.0813e-05</span> <span class="pl-c1">16</span> <span class="pl-c1">0.010182</span> <span class="pl-c1">0.026968</span> <span class="pl-c1">9.4936</span> <span class="pl-c1">10.5356</span> <span class="pl-c1">0.0010955</span>
+<span class="pl-c1">2</span> <span class="pl-c1">0.0033331</span> <span class="pl-c1">0.21928</span> <span class="pl-c1">3.7389e-04</span> <span class="pl-c1">16</span> <span class="pl-c1">0.111049</span> <span class="pl-c1">0.089062</span> <span class="pl-c1">2.2960</span>  <span class="pl-c1">3.2366</span> <span class="pl-c1">0.0025312</span>
+<span class="pl-c1">3</span> <span class="pl-c1">0.0024580</span> <span class="pl-c1">0.20750</span> <span class="pl-c1">1.9633e-04</span> <span class="pl-c1">14</span> <span class="pl-c1">0.023186</span> <span class="pl-c1">0.043957</span> <span class="pl-c1">4.0337</span>  <span class="pl-c1">4.9379</span> <span class="pl-c1">0.0020302</span>
+  <span class="pl-smi">AlphaHigh</span>     <span class="pl-smi">EVd</span>  <span class="pl-smi">Omaxd</span>  <span class="pl-smi">Pmaxd</span>     <span class="pl-smi">Notes</span>
+<span class="pl-c1">1</span> <span class="pl-c1">0.0012277</span> <span class="pl-c1">1.42418</span> <span class="pl-c1">44.552</span> <span class="pl-c1">13.161</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">2</span> <span class="pl-c1">0.0041350</span> <span class="pl-c1">0.49633</span> <span class="pl-c1">15.526</span> <span class="pl-c1">16.604</span> <span class="pl-smi">converged</span>
+<span class="pl-c1">3</span> <span class="pl-c1">0.0028858</span> <span class="pl-c1">0.67304</span> <span class="pl-c1">21.054</span> <span class="pl-c1">13.885</span> <span class="pl-smi">converged</span></pre></div>
+
+<h4>
+<a id="see-function-details" class="anchor" href="#see-function-details" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>See function details</h4>
+
+<p>To learn more about a function and what arguments it takes, type "?"
+in front of the function name.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-k">&gt;</span> ?<span class="pl-smi">CheckUnsystematic</span>
+<span class="pl-smi">CheckUnsystematic</span>          <span class="pl-smi">package</span><span class="pl-k">:</span><span class="pl-smi">beezdemand</span>          <span class="pl-smi">R</span> <span class="pl-smi">Documentation</span>
+
+<span class="pl-smi">Systematic</span> <span class="pl-smi">Purchase</span> <span class="pl-smi">Task</span> <span class="pl-smi">Data</span> <span class="pl-smi">Checker</span>
+
+<span class="pl-smi">Description</span><span class="pl-k">:</span>
+
+     <span class="pl-smi">Applies</span> <span class="pl-smi">Stein</span>, <span class="pl-smi">Koffarnus</span>, <span class="pl-smi">Snider</span>, <span class="pl-smi">Quisenberry</span>, <span class="pl-k">&amp;</span> <span class="pl-smi">Bickel</span><span class="pl-s"><span class="pl-pds">'</span>s (2015)</span>
+<span class="pl-s">     criteria for identification of nonsystematic purchase task data.</span>
+<span class="pl-s">     ...</span></pre></div>
+
+<h3>
+<a id="acknowledgments" class="anchor" href="#acknowledgments" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Acknowledgments</h3>
+
+<hr>
+
+<ul>
+<li><p>Derek D. Reed, Applied Behavioral Economics Laboratory
+(<a href="http://www.behavioraleconlab.com">www.behavioraleconlab.com</a>)</p></li>
+<li><p>Paul E. Johnson, Center for Research Methods and Data Analysis, University of Kansas
+(<a href="http://www.crmda.ku.edu">www.crmda.ku.edu</a>)</p></li>
+<li><p>Michael Amlung, Cognitive Neuroscience of Addictions Laboratory
+(<a href="http://www.cnalab.weebly.com">www.cnalab.weebly.com</a>)</p></li>
+<li><p>Peter G. Roma, Institutes for Behavior Resources, Inc.
+(<a href="http://www.ibrinc.org">www.ibrinc.org</a>)</p></li>
+<li><p>Steven R. Hursh, Institutes for Behavior Resources, Inc.
+(<a href="http://www.ibrinc.org">www.ibrinc.org</a>)</p></li>
+<li><p>Shawn P. Gilroy, (<a href="mailto:shawn.gilroy@temple.edu">shawn.gilroy@temple.edu</a>; <a href="https://github.com/miyamot0">GitHub</a>)</p></li>
+</ul>
+
+<h3>
+<a id="recommended-readings" class="anchor" href="#recommended-readings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Recommended Readings</h3>
+
+<hr>
+
+<ul>
+<li><p>Reed, D. D., Niileksela, C. R., &amp; Kaplan, B. A. (2013). Behavioral economics: A tutorial for behavior analysts in practice. <em>Behavior Analysis in Practice, 6</em> (1), 34–54.</p></li>
+<li><p>Reed, D. D., Kaplan, B. A., &amp; Becirevic, A. (2015). Basic research on the behavioral economics of reinforcer value. In <em>Autism Service Delivery</em> (pp. 279-306). Springer New York.</p></li>
+<li><p>Hursh, S. R., &amp; Silberberg, A. (2008). Economic demand and essential value. <em>Psychological Review, 115</em> (1), 186-198.</p></li>
+<li><p>Koffarnus, M. N., Franck, C. T., Stein, J. S., &amp; Bickel, W. K. (2015). A modified exponential behavioral economic demand model to better describe consumption data. <em>Experimental and Clinical Psychopharmacology, 23</em> (6), 504-512.</p></li>
+<li><p>Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., &amp; Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. <em>Experimental and Clinical Psychopharmacology</em></p></li>
+</ul>
+
+<h3>
+<a id="questions-suggestions-and-contributions" class="anchor" href="#questions-suggestions-and-contributions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Questions, Suggestions, and Contributions</h3>
+
+<hr>
+
+<p>Have a question? Have a suggestion for a feature? Would you like to contribute? Email me at <a href="mailto:bkaplan4@ku.edu">bkaplan4@ku.edu</a>.</p>
+
+<h3>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h3>
+
+<hr>
+
+<p>GPL-Version 2</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/brentkaplan/beezdemand">Beezdemand</a> is maintained by <a href="https://github.com/brentkaplan">brentkaplan</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
