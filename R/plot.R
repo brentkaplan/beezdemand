@@ -65,6 +65,85 @@ minTicks <- function(maj) {
     }
 }
 
+
+##' Creates plots
+##'
+##' Creates and saves plots of individual demand curves
+##' @title Plot Curves
+##' @param adf Data frame (long form) of purchase task data.
+##' @param dfrow A row of results from FitCurves
+##' @param fit A nls model object from FitCurves
+##' @param outdir Directory where plots are saved
+##' @param fitfail Boolean whether there's a valid nls model object
+##' @param tobquote Character string to be evaluated
+##' @param vartext Character vector to match demand indices
+##' @return Nothing
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+PlotCurves <- function(adf, dfrow, fit, outdir, fitfail, tobquote, vartext) {
+    majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
+    majticks <- lseq()
+    minticks <- minTicks(majticks)
+
+    if (!fitfail) {
+        tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x), length.out = 100), k = dfrow[["K"]])
+        if (dfrow[["Equation"]] == "hs") {
+            tempnew$y <- 10^(predict(fit, newdata = tempnew))
+        } else if (dfrow[["Equation"]] == "koff") {
+            tempnew$y <- predict(fit, newdata = tempnew)
+        }
+        tempnew$expend <- tempnew$x * tempnew$y
+
+        xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
+        xmax <- max(tempnew$x)
+        ymin <- min(c(tempnew$y, adf$y[adf$y > 0], 1))
+        ymax <- min(c(1000, max(c(tempnew$y, adf$y)))) + 5
+
+        pdf(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".pdf"))
+        par(mar = c(5, 4, 4, 4) + 0.3)
+        plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+             xlim = c(xmin, xmax),
+             ylim = c(ymin, ymax),
+             xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", dfrow[["Participant"]], sep = "-"))
+        usr <- 10^par("usr")
+        points(adf$x, adf$y)
+        axis(1, majticks, labels = majlabels)
+        axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        axis(2, majticks, labels = majlabels, las = 1)
+        axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        lines(tempnew$y ~ tempnew$x, lwd = 1.5)
+
+        if (!is.null(tobquote)) {
+            leg <- vector("expression", length(vartext))
+            for (j in seq_along(vartext)) {
+                tmp <- round(dfrow[[vartext[j]]], 6)
+                leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
+            }
+            legend("bottomleft", legend = leg, xjust = 0, cex = .7)
+        }
+        graphics.off()
+    } else {
+        xmin <- min(c(adf$x[adf$x > 0], .1))
+        xmax <- max(adf$x)
+        ymin <- min(c(adf$y[adf$y > 0], 1))
+        ymax <- min(c(1000, max(adf$y))) + 5
+
+        pdf(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".pdf"))
+        par(mar = c(5, 4, 4, 4) + 0.3)
+        plot(adf$x, adf$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+             xlim = c(xmin, xmax),
+             ylim = c(ymin, ymax),
+             xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", dfrow[["Participant"]], sep = "-"))
+        usr <- 10^par("usr")
+        points(adf$x, adf$y)
+        axis(1, majticks, labels = majlabels)
+        axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        axis(2, majticks, labels = majlabels, las = 1)
+        axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+        graphics.off()
+    }
+}
+
 ##' Plots individual demand curves.
 ##'
 ##' Plots and saves individual demand curves.

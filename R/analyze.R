@@ -44,21 +44,46 @@
 ##'
 ##' @title FitCurves
 ##' @param dat data frame (long form) of purchase task data.
-##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.
-##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5.
+##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
+##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis
 ##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
 ##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
-##' @param plotting If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
 ##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
 ##' @param replnum Value to replace zeros. Default is .01
+##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
+##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
-FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, plotting=FALSE, nrepl = NULL, replnum = NULL) {
+FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL) {
 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
+    } else if (!"id" %in% colnames(dat)) {
+        stop("Make sure there is an id column in data")
+    }
+
+    if (plotcurves == TRUE) {
+        if (!dir.exists("../plots/")) dir.create("../plots/")
+        basedir <- "../plots/"
+        basename <- paste0("indplots-", equation, "-")
+        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+
+        tobquote = NULL
+        if (!is.null(vartext)) {
+            dict <- data.frame(Name = c("Q0d", "Alpha", "Q0e", "EVd", "Pmaxe",
+                                        "Omaxe", "Pmaxd", "Omaxd",
+                                        "K", "Q0se", "Alphase", "R2", "AbsSS"),
+                               Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
+                                            "O[max[e]]", "P[max[d]]",  "O[max[d]]",
+                                            "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
+            if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
+                warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
+            } else {
+                tobquote <- as.character(dict$Variable[match(vartext, dict$Name)])
+            }
+        }
     }
 
     ## get rid of NAs
@@ -154,7 +179,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         if (kest == "ind") {
             k <- GetK(adf)
         } else if (kest == "fit") {
-            ## k <- GetK(adf) + .5 do I need this check?
             k <- kstart
         }
 
@@ -175,15 +199,15 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
             if (!kest == "fit") {
                 fit <- NULL
-                fit <- try(nlmrt::wrapnls(data = adf,
+                suppressWarnings(fit <- try(nlmrt::wrapnls(data = adf,
                 (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                 start = list(q0 = 10, alpha = 0.01),
-                control = list(maxiter = 1000)), silent = TRUE)
+                control = list(maxiter = 1000)), silent = TRUE))
             } else {
-                fit <- try(nlmrt::wrapnls(data = adf,
+                suppressWarnings(fit <- try(nlmrt::wrapnls(data = adf,
                 (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                 start = list(q0 = 10, k = kstart, alpha = 0.01),
-                control = list(maxiter = 1000)), silent = TRUE)
+                control = list(maxiter = 1000)), silent = TRUE))
             }
 
             if (!class(fit) == "try-error") {
@@ -200,10 +224,19 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
                 dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) + (dfres[i, "K"] * (exp(-dfres[i, "Alpha"] * dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
                 dfres[i, "Notes"] <- fit$convInfo$stopMessage
-            } else {
-                if (class(fit) == "try-error") {
-                    dfres[i, "Notes"] <- fit[1]
-                    dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+
+                if (plotcurves == TRUE) {
+                    PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ], outdir = outdir,
+                               fitfail = FALSE, tobquote = tobquote, vartext = vartext)
+                }
+            } else if (class(fit) == "try-error") {
+                dfres[i, "Notes"] <- fit[1]
+                dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+
+                if (plotcurves == TRUE) {
+                    suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
+                                                outdir = outdir, fitfail = TRUE,
+                                                tobquote = tobquote, vartext = vartext))
                 }
             }
         } else if (equation == "koff") {
@@ -214,12 +247,11 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             ## If retain y where x = 0, replace
             if (remq0e) {
                 adf <- adf[adf$x != 0, ]
-            } else {
-                if (!is.null(replfree)) {
-                    replfree <- if (is.numeric(replfree)) replfree else 0.01
-                    adf[adf$x == 0, "x"] <- replfree
-                }
+            } else if (!is.null(replfree)) {
+                replfree <- if (is.numeric(replfree)) replfree else 0.01
+                adf[adf$x == 0, "x"] <- replfree
             }
+
             if (!kest == "fit") {
                 fit <- NULL
                 fit <- try(nlmrt::wrapnls(data = adf,
@@ -247,128 +279,415 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
                 dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] * (10^(dfres[i, "K"] * (exp(-dfres[i, "Alpha"] * dfres[i, "Q0d"] * dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
                 dfres[i, "Notes"] <- fit$convInfo$stopMessage
-            } else {
-                if (class(fit) == "try-error") {
-                    dfres[i, "Notes"] <- fit[1]
-                    dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+
+                if (plotcurves == TRUE) {
+                    PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ], outdir = outdir,
+                               fitfail = FALSE, tobquote = tobquote, vartext = vartext)
+                }
+            } else if (class(fit) == "try-error") {
+                dfres[i, "Notes"] <- fit[1]
+                dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+
+                if (plotcurves == TRUE) {
+                    suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
+                                                outdir = outdir, fitfail = TRUE,
+                                                tobquote = tobquote, vartext = vartext))
                 }
             }
         }
-    }
 
     trim.leading <- function (x)  sub("^\\s+", "", x)
-    dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
-
-  if(plotting) {
-    ## Can add this to build tools and remove later, just added for now -sg
-
-    if(!require(ggplot2)) {
-      install.packages("ggplot2")
-      require(ggplot2)
-      library(ggplot2)
+        dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
     }
 
-    xDraw <- seq(min(dat$x), max(dat$x), 0.01)
+  ## if(plotting) {
+  ##   ## Can add this to build tools and remove later, just added for now -sg
 
-    p.rep <- seq(1,max(dat$id),1)
+  ##   if(!require(ggplot2)) {
+  ##     install.packages("ggplot2")
+  ##     require(ggplot2)
+  ##     library(ggplot2)
+  ##   }
 
-    graphFrame<-data.frame(Individual=rep(seq(min(p.rep), max(p.rep),1),each=length(xDraw)),
-                           DemandSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
-                           YSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
-                           XSeries=rep(seq(1:length(xDraw)-1),length(p.rep)))
+  ##   xDraw <- seq(min(dat$x), max(dat$x), 0.01)
 
-    pointFrame <- NULL
+  ##   p.rep <- seq(1,max(dat$id),1)
 
-    for(i in unique(dat$id))
-    {
-      qTemp <- dfres[i,]$Q0
-      aTemp <- dfres[i,]$Alpha
-      kTemp <- dfres[i,]$K
+  ##   graphFrame<-data.frame(Individual=rep(seq(min(p.rep), max(p.rep),1),each=length(xDraw)),
+  ##                          DemandSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
+  ##                          YSeries=rep(seq(1:length(xDraw)-1),length(p.rep)),
+  ##                          XSeries=rep(seq(1:length(xDraw)-1),length(p.rep)))
 
-      for (j in 1:length(xDraw))
-      {
-        ### mapped fittings, based on model
-        if (equation == "hs")
-        {
-          graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- log10(qTemp) + kTemp * (exp(-aTemp*qTemp*xDraw[j])-1)
-        }else if (equation == "koff")
-        {
-          graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- qTemp * 10^(kTemp * (exp(-aTemp * qTemp * xDraw[j]) - 1))
-        }
+  ##   pointFrame <- NULL
 
-        ### Base domain
-        graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$XSeries <- xDraw[j]
-      }
-    }
+  ##   for(i in unique(dat$id))
+  ##   {
+  ##     qTemp <- dfres[i,]$Q0
+  ##     aTemp <- dfres[i,]$Alpha
+  ##     kTemp <- dfres[i,]$K
 
-    axis_mod <- function(l) {
-      l <- paste("10^", l, sep = "")
-      parse(text=l)
-    }
+  ##     for (j in 1:length(xDraw))
+  ##     {
+  ##       ### mapped fittings, based on model
+  ##       if (equation == "hs")
+  ##       {
+  ##         graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- log10(qTemp) + kTemp * (exp(-aTemp*qTemp*xDraw[j])-1)
+  ##       }else if (equation == "koff")
+  ##       {
+  ##         graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$YSeries <- qTemp * 10^(kTemp * (exp(-aTemp * qTemp * xDraw[j]) - 1))
+  ##       }
 
-    if (equation == "hs")
-    {
-      pointFrame <- data.frame(X=dat$x, Y=log10(dat$y), Individual=dat$id)
+  ##       ### Base domain
+  ##       graphFrame[ graphFrame$Individual==i & graphFrame$DemandSeries==as.numeric(j),]$XSeries <- xDraw[j]
+  ##     }
+  ##   }
 
-      logChart <- ggplot() +
-        geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
-        geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
-        expand_limits(y=0) +
-        theme_bw() +
-        theme(panel.grid.minor = element_blank()) +
-        ggtitle("Fitted Demand Curves\n") +
-        ylab("log(Consumption)") +
-        scale_x_log10(
-          breaks = scales::trans_breaks("log10", function(x) 10^x),
-          labels = scales::trans_format("log10", scales::math_format(10^.x))
-        ) +
-        scale_y_continuous(labels=axis_mod) +
-        annotation_logticks(sides = "b") +
-        xlab("log(Price)") +
-        theme(legend.title = element_blank()) +
-        theme(legend.position = "none") +
-        theme(legend.direction = "vertical") +
-        theme(panel.grid.minor = element_blank()) +
-        theme(panel.grid.major = element_blank()) +
-        guides(col = guide_legend(ncol = 3))
+  ##   axis_mod <- function(l) {
+  ##     l <- paste("10^", l, sep = "")
+  ##     parse(text=l)
+  ##   }
 
-        print(logChart)
+  ##   if (equation == "hs")
+  ##   {
+  ##     pointFrame <- data.frame(X=dat$x, Y=log10(dat$y), Individual=dat$id)
 
-    }else if (equation == "koff")
-    {
-      pointFrame <- data.frame(X=dat$x, Y=dat$y, Individual=dat$id)
+  ##     logChart <- ggplot() +
+  ##       geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
+  ##       geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
+  ##       expand_limits(y=0) +
+  ##       theme_bw() +
+  ##       theme(panel.grid.minor = element_blank()) +
+  ##       ggtitle("Fitted Demand Curves\n") +
+  ##       ylab("log(Consumption)") +
+  ##       scale_x_log10(
+  ##         breaks = scales::trans_breaks("log10", function(x) 10^x),
+  ##         labels = scales::trans_format("log10", scales::math_format(10^.x))
+  ##       ) +
+  ##       scale_y_continuous(labels=axis_mod) +
+  ##       annotation_logticks(sides = "b") +
+  ##       xlab("log(Price)") +
+  ##       theme(legend.title = element_blank()) +
+  ##       theme(legend.position = "none") +
+  ##       theme(legend.direction = "vertical") +
+  ##       theme(panel.grid.minor = element_blank()) +
+  ##       theme(panel.grid.major = element_blank()) +
+  ##       guides(col = guide_legend(ncol = 3))
 
-      logChart <- ggplot() +
-        geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
-        geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
-        expand_limits(y=0) +
-        theme_bw() +
-        theme(panel.grid.minor = element_blank()) +
-        ggtitle("Fitted Demand Curves\n") +
-        ylab("log(Consumption)") +
-        scale_x_log10(
-          breaks = scales::trans_breaks("log10", function(x) 10^x),
-          labels = scales::trans_format("log10", scales::math_format(10^.x))
-        ) +
-        annotation_logticks(sides = "b") +
-        xlab("log(Price)") +
-        theme(legend.title = element_blank()) +
-        theme(legend.position = "none") +
-        theme(legend.direction = "vertical") +
-        theme(panel.grid.minor = element_blank()) +
-        theme(panel.grid.major = element_blank()) +
-        guides(col = guide_legend(ncol = 3))
+  ##       print(logChart)
 
-      print(logChart)
+  ##   }else if (equation == "koff")
+  ##   {
+  ##     pointFrame <- data.frame(X=dat$x, Y=dat$y, Individual=dat$id)
 
-    }
-  }
+  ##     logChart <- ggplot() +
+  ##       geom_line(data=graphFrame, aes(x=XSeries, y=YSeries, group=Individual, colour = factor(Individual))) +
+  ##       geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y, shape=factor(Individual))) +
+  ##       expand_limits(y=0) +
+  ##       theme_bw() +
+  ##       theme(panel.grid.minor = element_blank()) +
+  ##       ggtitle("Fitted Demand Curves\n") +
+  ##       ylab("log(Consumption)") +
+  ##       scale_x_log10(
+  ##         breaks = scales::trans_breaks("log10", function(x) 10^x),
+  ##         labels = scales::trans_format("log10", scales::math_format(10^.x))
+  ##       ) +
+  ##       annotation_logticks(sides = "b") +
+  ##       xlab("log(Price)") +
+  ##       theme(legend.title = element_blank()) +
+  ##       theme(legend.position = "none") +
+  ##       theme(legend.direction = "vertical") +
+  ##       theme(panel.grid.minor = element_blank()) +
+  ##       theme(panel.grid.major = element_blank()) +
+  ##       guides(col = guide_legend(ncol = 3))
+
+  ##     print(logChart)
+
+  ##   }
+  ## }
      if (kest == "share") {
          names(dfres)[names(dfres) == "K"] <- "SharedK"
      } else if (kest == "fit") {
          names(dfres)[names(dfres) == "K"] <- "FittedK"
      }
     return(dfres)
+}
+
+##' Fits curve to pooled data
+##'
+##' @title Fit Pooled Curves
+##' @param dat data frame (long form) of purchase task data.
+##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
+##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "fit", k will be a free parameter
+##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
+##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
+##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
+##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
+##' @param replnum Value to replace zeros. Default is .01
+##' @param plotcurves Boolean whether to create plot. If TRUE, a "plots/" directory is created one level above working directory. Default is FALSE.
+##' @param method Character string of length 1. Accepts "Mean" to fit to mean data or "Pooled" to fit to pooled data
+##' @param indpoints Boolean whether to plot individual points in gray. Default is TRUE.
+##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
+##' @return Data frame
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
+
+    if (is.null(method)) stop("No method specified. Choose either 'Mean' or 'Pooled'")
+
+    if ("p" %in% colnames(dat)) {
+        colnames(dat)[which(colnames(dat) == "p")] <- "id"
+    } else if (!"id" %in% colnames(dat)) {
+         stop("Make sure there is an id column in data")
+    }
+
+    if (plotcurves) {
+        if (!dir.exists("../plots/")) dir.create("../plots/")
+        basedir <- "../plots/"
+        basename <- paste0(method, "-", equation, "-")
+        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+
+        tobquote = NULL
+        if (!is.null(vartext)) {
+            dict <- data.frame(Name = c("Q0d", "Alpha", "Q0e", "EVd", "Pmaxe",
+                                        "Omaxe", "Pmaxd", "Omaxd",
+                                        "K", "Q0se", "Alphase", "R2", "AbsSS"),
+                               Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
+                                            "O[max[e]]", "P[max[d]]",  "O[max[d]]",
+                                            "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
+            if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
+                warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
+            } else {
+                tobquote <- as.character(dict$Variable[match(vartext, dict$Name)])
+                printvars <- TRUE
+            }
+        }
+
+    }
+
+    dat <- dat[!is.na(dat$y), ]
+
+    cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
+              "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+              "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
+
+    dfres <- data.frame(matrix(vector(),
+                             1,
+                             length(cnames),
+                             dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+
+    dfres[["Participant"]] <- method
+
+    ## Find empirical measures before transofrmations
+    adf <- aggregate(y ~ x, data = dat, mean)
+    adf[, "expend"] <- adf$x * adf$y
+    dfres[["Q0e"]] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
+    if (0 %in% adf$y) {
+        for (j in nrow(adf):1) {
+            if (adf$y[j] == 0) {
+                next
+            } else {
+                dfres[["BP0"]] <- j + 1
+                break
+            }
+        }
+    } else {
+        dfres[["BP0"]] <- NA
+    }
+    dfres[["BP1"]] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
+
+    ## Find empirical Pmax, Omax
+    dfres[["Omaxe"]] <- max(adf$expend)
+    dfres[["Pmaxe"]] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
+
+    ## Transformations if specified
+    if (!is.null(nrepl) && !is.null(replnum)) {
+        dat <- ReplaceZeros(dat, nrepl = nrepl, replnum = replnum)
+    }
+
+    if (method == "Mean") {
+        dato <- dat
+        dat <- aggregate(y ~ x, data = dat, mean)
+    }
+
+    ## If no k is provided, otherwise
+    ## TODO: provide a character element to fit empirical max/min range
+    if (missing(k)) {
+        k <- GetK(dat)
+        kest <- FALSE
+    } else if (is.numeric(k)) {
+        k <- k
+        kest <- FALSE
+    } else if (k == "fit") {
+        kest <- "fit"
+        kstart <- GetK(dat)
+    } else {
+        k <- GetK(dat)
+        kest <- FALSE
+    }
+
+    if (kest == "fit") {
+        k <- kstart
+    } else {
+        dat[, "k"] <- k
+    }
+
+    if (remq0e) {
+        dat <- dat[dat$x != 0, ]
+    } else if (!is.null(replfree)) {
+        replfree <- if (is.numeric(replfree)) replfree else 0.01
+        dat[dat$x == 0, "x"] <- replfree
+    }
+
+    if (equation == "hs") {
+        ## Drop any zero consumption points altogether
+        dat <- dat[dat$y != 0, ]
+
+        fit <- NULL
+        if (!kest == "fit") {
+            suppressWarnings(fit <- try(nlmrt::wrapnls(data = dat,
+            (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+            start = list(q0 = 10, alpha = 0.01),
+            control = list(maxiter = 1000)), silent = TRUE))
+        } else {
+            suppressWarnings(fit <- try(nlmrt::wrapnls(data = dat,
+            (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+            start = list(q0 = 10, k = kstart, alpha = 0.01),
+            control = list(maxiter = 1000)), silent = TRUE))
+        }
+    } else if (equation == "koff") {
+        fit <- NULL
+        if (!kest == "fit") {
+            fit <- try(nlmrt::wrapnls(data = dat,
+                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                          start = list(q0 = 10, alpha = 0.01),
+                                          control = list(maxiter = 1000)), silent = TRUE)
+        } else {
+            fit <- try(nlmrt::wrapnls(data = dat,
+                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                                          start = list(q0 = 10, k = kstart, alpha = 0.01),
+                                          control = list(maxiter = 1000)), silent = TRUE)
+        }
+    }
+
+        if (!class(fit) == "try-error") {
+            dfres[["Equation"]] <- equation
+            dfres[["K"]] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(dat$k)
+            dfres[["Alpha"]] <- as.numeric(coef(fit)["alpha"])
+            dfres[["Q0d"]] <- as.numeric(coef(fit)["q0"])
+            dfres[["Q0se"]] <- summary(fit)[[10]][1, 2]
+            dfres[["Alphase"]] <- summary(fit)[[10]][2, 2]
+            dfres[["N"]] <- length(dat$k)
+            if (equation == "hs") {
+                dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((log10(dat$y) - mean(log10(dat$y)))^2))
+            } else if (equation == "koff") {
+                dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((dat$y - mean(dat$y))^2))
+            }
+            dfres[["AbsSS"]] <- deviance(fit)
+            dfres[["SdRes"]] <- sqrt(deviance(fit)/df.residual(fit))
+            dfres[["Q0Low"]] <- nlstools::confint2(fit)[1]
+            dfres[["Q0High"]] <- nlstools::confint2(fit)[3]
+            dfres[["AlphaLow"]] <- nlstools::confint2(fit)[2]
+            dfres[["AlphaHigh"]] <- nlstools::confint2(fit)[4]
+            dfres[["EVd"]] <- 1/(dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5) * 100)
+            dfres[["Pmaxd"]] <- 1/(dfres[["Q0d"]] * dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5)) * (0.083 * dfres[["K"]] + 0.65)
+            dfres[["Omaxd"]] <- (10^(log10(dfres[["Q0d"]]) + (dfres[["K"]] * (exp(-dfres[["Alpha"]] * dfres[["Q0d"]] * dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
+            dfres[["Notes"]] <- fit$convInfo$stopMessage
+
+            if (plotcurves) {
+
+                majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
+                majticks <- lseq()
+                minticks <- minTicks(majticks)
+
+                datmean <- aggregate(y ~ x, data = dat, mean)
+                tempnew <- data.frame(x = seq(min(dat$x[dat$x > 0]), max(dat$x), length.out = 1000),  k = dfres[["K"]])
+                if (equation == "hs") {
+                    tempnew$y <- 10^(predict(fit, newdata = tempnew))
+                } else if (equation == "koff") {
+                    tempnew$y <- predict(fit, newdata = tempnew)
+                }
+                tempnew$expend <- tempnew$x * tempnew$y
+
+                xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
+                xmax <- max(tempnew$x)
+                if (indpoints && method == "Mean") {
+                    ymin <- min(c(tempnew$y, dato$y[dato$y > 0], 1))
+                    ymax <- min(c(1000, max(c(tempnew$y, dato$y)))) + 5
+                } else {
+                    ymin <- min(c(tempnew$y, dat$y[dat$y > 0], 1))
+                    ymax <- min(c(1000, max(c(tempnew$y, dat$y)))) + 5
+                }
+
+                pdf(file = paste0(outdir, method, ".pdf"))
+                par(mar = c(5, 4, 4, 4) + 0.3)
+                plot(tempnew$x, tempnew$y,
+                     type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+                     xlim = c(xmin, xmax),
+                     ylim = c(ymin, ymax),
+                     xlab = "Price", ylab = "Reported Consumption", main = method)
+
+
+                if (indpoints && method == "Pooled") {
+                    points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
+                } else if (indpoints && method == "Mean") {
+                    points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
+                }
+                points(datmean$x, datmean$y, pch = 16, cex = .9)
+                axis(1, majticks, labels = majlabels)
+                axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+                axis(2, majticks, labels = majlabels, las = 1)
+                axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+                lines(tempnew$y ~ tempnew$x, lwd = 1.5)
+
+                if (printvars) {
+                    leg <- vector("expression", length(vartext))
+                    for (j in seq_along(vartext)) {
+                        tmp <- round(dfres[[vartext[j]]], 6)
+                        leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
+                    }
+                    legend("bottomleft", legend = leg, xjust = 0, cex = .7)
+                }
+                graphics.off()
+            }
+        } else if (class(fit) == "try-error") {
+            warning(paste0("Unable to fit error: ", strsplit(fit[1], "\n")[[1]][2]))
+            if (plotcurves) {
+                if (!dir.exists("../plots/")) dir.create("../plots/")
+                basedir <- "../plots/"
+                basename <- paste0(method, "-", equation, "-")
+                outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+                majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
+                majticks <- lseq()
+                minticks <- minTicks(majticks)
+
+                datmean <- aggregate(y ~ x, data = dat, mean)
+                xmin <- min(c(dat$x[dat$x > 0], .1))
+                xmax <- max(dat$x)
+                ymin <- min(c(dat$y, dat$y[dat$y > 0], 1))
+                ymax <- min(c(1000, max(dat$y))) + 5
+
+                pdf(file = paste0(outdir, method, ".pdf"))
+                par(mar = c(5, 4, 4, 4) + 0.3)
+                plot(dat$x, dat$y,
+                     type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+                     xlim = c(xmin, xmax),
+                     ylim = c(ymin, ymax),
+                     xlab = "Price", ylab = "Reported Consumption", main = method)
+
+                if (indpoints && method == "Pooled") {
+                    points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
+                } else if (indpoints && method == "Mean") {
+                    points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
+                }
+                points(datmean$x, datmean$y, pch = 16, cex = .9)
+                axis(1, majticks, labels = majlabels)
+                axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+                axis(2, majticks, labels = majlabels, las = 1)
+                axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+                graphics.off()
+            }
+        }
+    dfres
 }
 
 
@@ -492,15 +811,15 @@ GetK <- function(dat) {
 ##' @return In most cases, an object of class 'nls' is returned. If there is an error in the fitting process, the convergence note (type = character) will be returned.
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-analyze <- function(adf = NULL, eq = NULL, nltype = NULL, k = NULL,
+analyze <- function(adf = NULL, eq = NULL, k = NULL,
                     q0st = 10, ast = .001, seetrace = FALSE, replfree = .01) {
-    ## Change fo to eq? Can allow for user to put in their own equation
+
     fo <- switch(eq,
                  "hs" = log(y, 10) ~ log(q0, 10) + (k * (exp(-alpha * q0 * x) - 1)),
                  "koff" = y ~ q0 * (10 ^ (k * (exp(-alpha * q0 * x) - 1))),
                  stop("No equation specified"))
+
     if (is.null(k)) stop("No value for k specified")
-    if (is.null(nltype)) stop("No optimizer specified")
 
     if (eq == "hs") {
         if (any(adf$y == 0)) {
@@ -514,37 +833,36 @@ analyze <- function(adf = NULL, eq = NULL, nltype = NULL, k = NULL,
     }
 
     if (nltype == "default") {
-        mod <- try(nls(fo, start = list(q0 = q0st, alpha = ast),
+        fit <- try(nlmrt::wrapnls(fo, start = list(q0 = q0st, alpha = ast),
                        control = list(maxiter = 1000, warnOnly = TRUE),
                        trace = seetrace, data = adf), silent = TRUE)
     }
-    if (nltype == "lm") {
-        mod <- try(minpack.lm::nlsLM(fo, start = list(q0 = q0st, alpha = ast),
-                         control = list(maxiter = 1000, warnOnly = TRUE, maxfev = 500),
-                         trace = seetrace, data = adf), silent = TRUE)
-    }
+
     if (nltype == "brute") {
         grid.start <- expand.grid(list(q0 = c(max(adf$y)),
                                        alpha = seq(.00000001, .1, length.out = 100)))
         start.m <- nls2::nls2(fo, data = adf, start = grid.start,
-                        algorithm = "brute-force")
-        mod <- try(nls2::nls2(fo, start = start.m, algorithm = "port",
-                        lower = list(0.001, 0.0000000001),
-                        upper = list((max(adf$y) * 1.5), 1),
-                        control = list(maxiter = 1000, warnOnly = TRUE),
-                        trace = seetrace, data = adf), silent = TRUE)
+                              algorithm = "brute-force")
+        fit <- try(nlmrt::wrapnls(fo, start = start.m,
+                                  control = list(maxiter = 1000, warnOnly = TRUE),
+                                  trace = seetrace, data = adf), silent = TRUE)
+        ## mod <- try(nls2::nls2(fo, start = start.m, algorithm = "port",
+        ##                 lower = list(0.001, 0.0000000001),
+        ##                 upper = list((max(adf$y) * 1.5), 1),
+        ##                 control = list(maxiter = 1000, warnOnly = TRUE),
+        ##                 trace = seetrace, data = adf), silent = TRUE)
     }
     if(inherits(mod, "try-error")) {
-        mod <- mod[1]
-        attr(mod, "eq") <- eq
-        attr(mod, "nltype") <- nltype
-        attr(mod, "k") <- k
+        fit <- fit[1]
+        attr(fit, "eq") <- eq
+        attr(fit, "nltype") <- nltype
+        attr(fit, "k") <- k
     } else {
-        attr(mod, "eq") <- eq
-        attr(mod, "nltype") <- nltype
-        attr(mod, "k") <- k
+        attr(fit, "eq") <- eq
+        attr(fit, "nltype") <- nltype
+        attr(fit, "k") <- k
     }
-    mod
+    fit
 }
 
 ##' Analyzes matrix of purchase task data.

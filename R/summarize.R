@@ -123,12 +123,13 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 ##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, standard deviation of consumption, proportion of 0 values, and number of NAs.
 ##' @title Get Purchase Task Descriptive Summary
 ##' @param dat Dataframe (long form)
+##' @param bwplot Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE
 ##' @return Dataframe with descriptive statistics
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @examples
 ##' GetDescriptives(apt)
 ##' @export
-GetDescriptives <- function(dat) {
+GetDescriptives <- function(dat, bwplot = FALSE) {
 
     ## Get N unique prices
     prices <- unique(dat$x)
@@ -148,6 +149,16 @@ GetDescriptives <- function(dat) {
     dfres["NAs", ] <- aggregate(y ~ x, dat,
                                 function(x) sum(is.na(x)))$y
 
+    if (bwplot) {
+        if (!dir.exists("../plots/")) dir.create("../plots/")
+        basedir <- "../plots/"
+        basename <- "bwplot-"
+        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+
+        pdf(file = paste0(outdir, "bwplot", ".pdf"), width = 7, height = 6)
+        boxplot(dat$y ~ dat$x, xlab = "Price", ylab = "Reported Consumption")
+        dev.off()
+    }
     dfres
 }
 
