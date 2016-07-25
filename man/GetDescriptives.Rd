@@ -4,10 +4,12 @@
 \alias{GetDescriptives}
 \title{Get Purchase Task Descriptive Summary}
 \usage{
-GetDescriptives(dat)
+GetDescriptives(dat, bwplot = FALSE)
 }
 \arguments{
 \item{dat}{Dataframe (long form)}
+
+\item{bwplot}{Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE}
 }
 \value{
 Dataframe with descriptive statistics

@@ -13,7 +13,7 @@ GetK(dat)
 Numeric
 }
 \description{
-Calculates a k value by looking for the max/min consumption across entire dataset
+Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range
 }
 \details{
 Will look for minimum greater zero
