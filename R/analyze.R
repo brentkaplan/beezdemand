@@ -112,7 +112,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 if (adf$y[j] == 0) {
                     next
                 } else {
-                    dfres[i, "BP0"] <- j + 1
+                    dfres[i, "BP0"] <- adf$x[j + 1]
                     break
                 }
             }
