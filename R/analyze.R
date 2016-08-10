@@ -124,7 +124,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         ## Find empirical Pmax, Omax
         dfres[i, "Omaxe"] <- max(adf$expend)
-        dfres[i, "Pmaxe"] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
+        dfres[i, "Pmaxe"] <- if (dfres[i, "Omaxe"] == 0) 0 else adf[max(which(adf$expend == max(adf$expend))), "x"]
     }
 
     ## Transformations if specified
