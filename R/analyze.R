@@ -478,7 +478,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
             if (adf$y[j] == 0) {
                 next
             } else {
-                dfres[["BP0"]] <- j + 1
+                dfres[["BP0"]] <- adf$x[j + 1]
                 break
             }
         }
@@ -489,7 +489,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     ## Find empirical Pmax, Omax
     dfres[["Omaxe"]] <- max(adf$expend)
-    dfres[["Pmaxe"]] <- adf[max(which(adf$expend == max(adf$expend))), "x"]
+    dfres[["Pmaxe"]] <- if (dfres[i, "Omaxe"] == 0) 0 else adf[max(which(adf$expend == max(adf$expend))), "x"]
 
     ## Transformations if specified
     if (!is.null(nrepl) && !is.null(replnum)) {
