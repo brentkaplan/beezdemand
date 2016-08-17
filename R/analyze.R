@@ -741,7 +741,7 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
 
         fit <- NULL
         fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
-browser()
+
         if (!class(fit) == "try-error") {
             sharedk <- summary(fit)$coefficients["k", 1]
             return(sharedk)
