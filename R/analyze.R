@@ -44,7 +44,7 @@
 ##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
 ##' @param replnum Value to replace zeros. Default is .01
 ##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
-##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
+##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
@@ -64,7 +64,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         tobquote = NULL
         if (!is.null(vartext)) {
-            dict <- data.frame(Name = c("Q0d", "Alpha", "Intensity", "EVd", "Pmaxe",
+            dict <- data.frame(Name = c("Q0d", "Alpha", "Intensity", "EV", "Pmaxe",
                                         "Omaxe", "Pmaxd", "Omaxd",
                                         "K", "Q0se", "Alphase", "R2", "AbsSS"),
                                Variable = c("Q[0[d]]", "alpha", "Intensity", "EV", "P[max[e]]",
@@ -88,7 +88,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     if (equation == "hs" || equation == "koff") {
         cnames <- c("Participant", "Equation", "Q0d", "K",
                     "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-                    "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
+                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
     } else if (equation == "linear") {
         cnames <- c("Participant", "Equation", "L", "b", "a",
                     "R2", "Lse", "bse", "ase", "N", "AbsSS", "SdRes", "LLow", "LHigh",
@@ -227,7 +227,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
                 dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
                 dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-                dfres[i, "EVd"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+                dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
                 dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                         (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
             }
@@ -279,7 +279,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @param plotcurves Boolean whether to create plot. If TRUE, a "plots/" directory is created one level above working directory. Default is FALSE.
 ##' @param method Character string of length 1. Accepts "Mean" to fit to mean data or "Pooled" to fit to pooled data
 ##' @param indpoints Boolean whether to plot individual points in gray. Default is TRUE.
-##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
+##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
@@ -301,7 +301,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
         tobquote = NULL
         if (!is.null(vartext)) {
-            dict <- data.frame(Name = c("Q0d", "Alpha", "Q0e", "EVd", "Pmaxe",
+            dict <- data.frame(Name = c("Q0d", "Alpha", "Q0e", "EV", "Pmaxe",
                                         "Omaxe", "Pmaxd", "Omaxd",
                                         "K", "Q0se", "Alphase", "R2", "AbsSS"),
                                Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
@@ -309,19 +309,21 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
                                             "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
             if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
                 warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
+                printvars <- FALSE
             } else {
                 tobquote <- as.character(dict$Variable[match(vartext, dict$Name)])
                 printvars <- TRUE
             }
+        } else {
+            printvars <- FALSE
         }
-
     }
 
     dat <- dat[!is.na(dat$y), ]
 
     cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
               "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-              "AlphaLow", "AlphaHigh", "EVd", "Omaxd", "Pmaxd", "Notes")
+              "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
 
     dfres <- data.frame(matrix(vector(),
                              1,
@@ -331,6 +333,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
     dfres[["Participant"]] <- method
 
     ## Find empirical measures before transofrmations
+    ## TODO: Fix GetEmpirical so it can take this dataframe
     adf <- aggregate(y ~ x, data = dat, mean)
     adf[, "expend"] <- adf$x * adf$y
     dfres[["Q0e"]] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
@@ -350,7 +353,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     ## Find empirical Pmax, Omax
     dfres[["Omaxe"]] <- max(adf$expend)
-    dfres[["Pmaxe"]] <- if (dfres[i, "Omaxe"] == 0) 0 else adf[max(which(adf$expend == max(adf$expend))), "x"]
+    dfres[["Pmaxe"]] <- if (dfres[["Omaxe"]] == 0) 0 else adf[max(which(adf$expend == max(adf$expend))), "x"]
 
     ## Transformations if specified
     if (!is.null(nrepl) && !is.null(replnum)) {
@@ -441,7 +444,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
             dfres[["Q0High"]] <- nlstools::confint2(fit)[3]
             dfres[["AlphaLow"]] <- nlstools::confint2(fit)[2]
             dfres[["AlphaHigh"]] <- nlstools::confint2(fit)[4]
-            dfres[["EVd"]] <- 1/(dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5) * 100)
+            dfres[["EV"]] <- 1/(dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5) * 100)
             dfres[["Pmaxd"]] <- 1/(dfres[["Q0d"]] * dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5)) * (0.083 * dfres[["K"]] + 0.65)
             dfres[["Omaxd"]] <- (10^(log10(dfres[["Q0d"]]) + (dfres[["K"]] * (exp(-dfres[["Alpha"]] * dfres[["Q0d"]] * dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
             dfres[["Notes"]] <- fit$convInfo$stopMessage
