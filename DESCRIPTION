@@ -5,7 +5,8 @@ Title: Behavioral Economic Easy Demand
 Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", "cre"))
 Author: Brent Kaplan [aut, cre]
 Maintainer: Brent Kaplan <bkaplan4@ku.edu>
-Description: Functions to help aid in analyzing behavioral economic demand curve data.
+Description: Functions to help aid in analyzing behavioral economic demand curve
+    data.
 Depends:
     R (>= 2.5)
 Imports:
@@ -18,4 +19,4 @@ Suggests:
 License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 LazyData: true
-RoxygenNote: 5.0.0
+RoxygenNote: 5.0.1
