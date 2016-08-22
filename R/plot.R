@@ -38,7 +38,6 @@
 ##' @author library("emdbook")
 ##' @export
 lseq <- function(from=.0000000001, to=1000, length.out=14) {
-    ## CHANGE? should this be log10?
   exp(seq(log(from), log(to), length.out = length.out))
 }
 
@@ -80,13 +79,14 @@ minTicks <- function(maj) {
 ##' @return Nothing
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-PlotCurves <- function(adf, dfrow, fit, outdir, fitfail, tobquote, vartext) {
+PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
     majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
     majticks <- lseq()
     minticks <- minTicks(majticks)
 
     if (!fitfail) {
-        tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x), length.out = 100), k = dfrow[["K"]])
+        tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x),
+                                      length.out = 1000), k = dfrow[["K"]])
         if (dfrow[["Equation"]] == "hs") {
             tempnew$y <- 10^(predict(fit, newdata = tempnew))
         } else if (dfrow[["Equation"]] == "koff") {
@@ -101,10 +101,12 @@ PlotCurves <- function(adf, dfrow, fit, outdir, fitfail, tobquote, vartext) {
 
         pdf(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".pdf"))
         par(mar = c(5, 4, 4, 4) + 0.3)
-        plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+        plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n",
+             xaxt = "n", bty = "l",
              xlim = c(xmin, xmax),
              ylim = c(ymin, ymax),
-             xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", dfrow[["Participant"]], sep = "-"))
+             xlab = "Price", ylab = "Reported Consumption",
+             main = paste("Participant", dfrow[["Participant"]], sep = "-"))
         usr <- 10^par("usr")
         points(adf$x, adf$y)
         axis(1, majticks, labels = majlabels)
@@ -133,7 +135,8 @@ PlotCurves <- function(adf, dfrow, fit, outdir, fitfail, tobquote, vartext) {
         plot(adf$x, adf$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
              xlim = c(xmin, xmax),
              ylim = c(ymin, ymax),
-             xlab = "Price", ylab = "Reported Consumption", main = paste("Participant", dfrow[["Participant"]], sep = "-"))
+             xlab = "Price", ylab = "Reported Consumption",
+             main = paste("Participant", dfrow[["Participant"]], sep = "-"))
         usr <- 10^par("usr")
         points(adf$x, adf$y)
         axis(1, majticks, labels = majlabels)

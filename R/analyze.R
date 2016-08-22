@@ -217,7 +217,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                 dfres[i, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
                 ## Calculates mean elasticity based on individual range of x
                 pbar <- mean(unique(adf$x))
-                dfres[i, "MeanElasticity"] <- dfres[i, "b"] - (dres[i, "a"] * pbar)
+                dfres[i, "MeanElasticity"] <- dfres[i, "b"] - (dfres[i, "a"] * pbar)
                 dfres[i, "Pmaxd"] <- (1 + dfres[i, "b"])/dfres[i, "a"]
                 dfres[i, "Omaxd"] <- (dfres[i, "L"] * dfres[i, "Pmaxd"]^dfres[i, "b"]) /
                     exp(dfres[i, "a"] * dfres[i, "Pmaxd"]) * dfres[i, "Pmaxd"]
@@ -285,7 +285,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @export
 FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
 
-    if (is.null(method)) stop("No method specified. Choose either 'Mean' or 'Pooled'")
+    if (is.null(method) || !any(c("Mean", "Pooled") %in% method)) stop("No method specified. Choose either 'Mean' or 'Pooled'")
 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
@@ -301,10 +301,10 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
         tobquote = NULL
         if (!is.null(vartext)) {
-            dict <- data.frame(Name = c("Q0d", "Alpha", "Q0e", "EV", "Pmaxe",
+            dict <- data.frame(Name = c("Q0d", "Alpha", "Intensity", "EV", "Pmaxe",
                                         "Omaxe", "Pmaxd", "Omaxd",
                                         "K", "Q0se", "Alphase", "R2", "AbsSS"),
-                               Variable = c("Q[0[d]]", "alpha", "Q[0[e]]", "EV", "P[max[e]]",
+                               Variable = c("Q[0[d]]", "alpha", "Intensity", "EV", "P[max[e]]",
                                             "O[max[e]]", "P[max[d]]",  "O[max[d]]",
                                             "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
             if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
@@ -321,39 +321,28 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     dat <- dat[!is.na(dat$y), ]
 
-    cnames <- c("Participant", "Q0e", "BP0", "BP1", "Omaxe", "Pmaxe", "Equation", "Q0d", "K",
-              "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-              "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+    if (equation == "hs" || equation == "koff") {
+        cnames <- c("Participant", "Equation", "Q0d", "K",
+                    "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+    } else if (equation == "linear") {
+        cnames <- c("Participant", "Equation", "L", "b", "a",
+                    "R2", "Lse", "bse", "ase", "N", "AbsSS", "SdRes", "LLow", "LHigh",
+                    "bLow", "bHigh", "aLow", "aHigh", "Elasticity", "MeanElasticity",
+                    "Omaxd", "Pmaxd", "Notes")
+    }
 
     dfres <- data.frame(matrix(vector(),
                              1,
                              length(cnames),
                              dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+    adf <- aggregate(y ~ x, data = dat, mean)
+    adf$id <- method
+
+    dfresempirical <- GetEmpirical(adf)
 
     dfres[["Participant"]] <- method
-
-    ## Find empirical measures before transofrmations
-    ## TODO: Fix GetEmpirical so it can take this dataframe
-    adf <- aggregate(y ~ x, data = dat, mean)
-    adf[, "expend"] <- adf$x * adf$y
-    dfres[["Q0e"]] <- adf[which(adf$x == min(adf$x), arr.ind = TRUE), "y"]
-    if (0 %in% adf$y) {
-        for (j in nrow(adf):1) {
-            if (adf$y[j] == 0) {
-                next
-            } else {
-                dfres[["BP0"]] <- adf$x[j + 1]
-                break
-            }
-        }
-    } else {
-        dfres[["BP0"]] <- NA
-    }
-    dfres[["BP1"]] <- if (sum(adf$y) > 0) max(adf[adf$y != 0, "x"]) else NA
-
-    ## Find empirical Pmax, Omax
-    dfres[["Omaxe"]] <- max(adf$expend)
-    dfres[["Pmaxe"]] <- if (dfres[["Omaxe"]] == 0) 0 else adf[max(which(adf$expend == max(adf$expend))), "x"]
+    dfres[["Equation"]] <- equation
 
     ## Transformations if specified
     if (!is.null(nrepl) && !is.null(replnum)) {
@@ -367,24 +356,26 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     ## If no k is provided, otherwise
     ## TODO: provide a character element to fit empirical max/min range
-    if (missing(k)) {
-        k <- GetK(dat)
-        kest <- FALSE
-    } else if (is.numeric(k)) {
-        k <- k
-        kest <- FALSE
-    } else if (k == "fit") {
-        kest <- "fit"
-        kstart <- GetK(dat)
-    } else {
-        k <- GetK(dat)
-        kest <- FALSE
-    }
+    if (!equation == "linear") {
+        if (missing(k)) {
+            k <- GetK(dat)
+            kest <- FALSE
+        } else if (is.numeric(k)) {
+            k <- k
+            kest <- FALSE
+        } else if (k == "fit") {
+            kest <- "fit"
+            kstart <- GetK(dat)
+        } else {
+            k <- GetK(dat)
+            kest <- FALSE
+        }
 
-    if (kest == "fit") {
-        k <- kstart
-    } else {
-        dat[, "k"] <- k
+        if (kest == "fit") {
+            k <- kstart
+        } else {
+            dat[, "k"] <- k
+        }
     }
 
     if (remq0e) {
@@ -394,158 +385,189 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
         dat[dat$x == 0, "x"] <- replfree
     }
 
-    if (equation == "hs") {
-        ## Drop any zero consumption points altogether
+    if (rem0 || equation == "hs") {
         dat <- dat[dat$y != 0, ]
-
-        fit <- NULL
-        if (!kest == "fit") {
-            suppressWarnings(fit <- try(nlmrt::wrapnls(data = dat,
-            (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-            start = list(q0 = 10, alpha = 0.01),
-            control = list(maxiter = 1000)), silent = TRUE))
-        } else {
-            suppressWarnings(fit <- try(nlmrt::wrapnls(data = dat,
-            (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-            start = list(q0 = 10, k = kstart, alpha = 0.01),
-            control = list(maxiter = 1000)), silent = TRUE))
-        }
-    } else if (equation == "koff") {
-        fit <- NULL
-        if (!kest == "fit") {
-            fit <- try(nlmrt::wrapnls(data = dat,
-                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                          start = list(q0 = 10, alpha = 0.01),
-                                          control = list(maxiter = 1000)), silent = TRUE)
-        } else {
-            fit <- try(nlmrt::wrapnls(data = dat,
-                                          y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                          start = list(q0 = 10, k = kstart, alpha = 0.01),
-                                          control = list(maxiter = 1000)), silent = TRUE)
-        }
     }
 
-        if (!class(fit) == "try-error") {
-            dfres[["Equation"]] <- equation
+    fo <- switch(equation,
+                 "hs" = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
+                 "koff" = y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
+                 "linear" = log(y) ~ log(l) + (b * log(x)) - a * x)
+
+    fit <- NULL
+
+    if (!equation == "linear") {
+        if (!kest == "fit") {
+                suppressWarnings(fit <- try(nlmrt::wrapnls(
+                                     formula = fo,
+                                     start = list(q0 = 10, alpha = 0.01),
+                                     control = list(maxiter = 1000),
+                                     data = dat),
+                                     silent = TRUE))
+            } else {
+                suppressWarnings(fit <- try(nlmrt::wrapnls(
+                                     formula = fo,
+                                     start = list(q0 = 10, k = kstart, alpha = 0.01),
+                                     control = list(maxiter = 1000),
+                                     data = dat),
+                                     silent = TRUE))
+            }
+    } else if (equation == "linear") {
+        fit <- try(nlmrt::wrapnls(
+                formula = fo,
+                start = list(l = 1, b = 0, a = 0),
+                control = list(maxiter = 1000),
+                data = dat),
+                silent = TRUE)
+    }
+
+    if (class(fit) == "try-error") {
+        dfres[["Notes"]] <- fit[1]
+        dfres[["Notes"]] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+    } else {
+        dfres[["N"]] <- length(dat$k)
+        dfres[["AbsSS"]] <- deviance(fit)
+        dfres[["SdRes"]] <- sqrt(deviance(fit)/df.residual(fit))
+        dfres[["Notes"]] <- fit$convInfo$stopMessage
+        if (equation == "linear") {
+            dfres[["L"]] <- as.numeric(coef(fit)["l"])
+            dfres[["b"]] <- as.numeric(coef(fit)["b"])
+            dfres[["a"]] <- as.numeric(coef(fit)["a"])
+            dfres[["Lse"]] <- as.numeric(summary(fit)[[10]][1, 2])
+            dfres[["bse"]] <- as.numeric(summary(fit)[[10]][2, 2])
+            dfres[["ase"]] <- as.numeric(summary(fit)[[10]][3, 2])
+            dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((log(adf$y) - mean(log(adf$y)))^2))
+            dfres[["LLow"]] <- nlstools::confint2(fit)[1]
+            dfres[["LHigh"]] <- nlstools::confint2(fit)[4]
+            dfres[["bLow"]] <- nlstools::confint2(fit)[2]
+            dfres[["bHigh"]] <- nlstools::confint2(fit)[5]
+            dfres[["aLow"]] <- nlstools::confint2(fit)[3]
+            dfres[["aHigh"]] <- nlstools::confint2(fit)[6]
+            ## Calculates mean elasticity based on individual range of x
+            pbar <- mean(unique(dat$x))
+            dfres[["MeanElasticity"]] <- dfres[["b"]] - (dfres[["a"]] * pbar)
+            dfres[["Pmaxd"]] <- (1 + dfres[["b"]])/dfres[["a"]]
+            dfres[["Omaxd"]] <- (dfres[["L"]] * dfres[["Pmaxd"]]^dfres[["b"]]) /
+                    exp(dfres[["a"]] * dfres[["Pmaxd"]]) * dfres[["Pmaxd"]]
+        } else {
             dfres[["K"]] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(dat$k)
             dfres[["Alpha"]] <- as.numeric(coef(fit)["alpha"])
             dfres[["Q0d"]] <- as.numeric(coef(fit)["q0"])
             dfres[["Q0se"]] <- summary(fit)[[10]][1, 2]
             dfres[["Alphase"]] <- summary(fit)[[10]][2, 2]
-            dfres[["N"]] <- length(dat$k)
-            if (equation == "hs") {
-                dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((log10(dat$y) - mean(log10(dat$y)))^2))
-            } else if (equation == "koff") {
-                dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((dat$y - mean(dat$y))^2))
-            }
-            dfres[["AbsSS"]] <- deviance(fit)
-            dfres[["SdRes"]] <- sqrt(deviance(fit)/df.residual(fit))
             dfres[["Q0Low"]] <- nlstools::confint2(fit)[1]
             dfres[["Q0High"]] <- nlstools::confint2(fit)[3]
             dfres[["AlphaLow"]] <- nlstools::confint2(fit)[2]
             dfres[["AlphaHigh"]] <- nlstools::confint2(fit)[4]
             dfres[["EV"]] <- 1/(dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5) * 100)
             dfres[["Pmaxd"]] <- 1/(dfres[["Q0d"]] * dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5)) * (0.083 * dfres[["K"]] + 0.65)
-            dfres[["Omaxd"]] <- (10^(log10(dfres[["Q0d"]]) + (dfres[["K"]] * (exp(-dfres[["Alpha"]] * dfres[["Q0d"]] * dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
-            dfres[["Notes"]] <- fit$convInfo$stopMessage
+        }
+        if (equation == "hs") {
+            dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((log10(dat$y) - mean(log10(dat$y)))^2))
+            dfres[["Omaxd"]] <- (10^(log10(dfres[["Q0d"]]) +
+                                     (dfres[["K"]] *
+                                      (exp(-dfres[["Alpha"]] *
+                                           dfres[["Q0d"]] *
+                                           dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
+        } else if (equation == "koff") {
+            dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((dat$y - mean(dat$y))^2))
+            dfres[["Omaxd"]] <- (dfres[["Q0d"]] *
+                                    (10^(dfres[["K"]] *
+                                      (exp(-dfres[["Alpha"]] *
+                                           dfres[["Q0d"]] *
+                                           dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
+        }
+    }
+    dfres <- merge(dfresempirical, dfres, by = "Participant")
 
-            if (plotcurves) {
+    if (plotcurves) {
+        majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
+        majticks <- lseq()
+        minticks <- minTicks(majticks)
 
-                majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
-                majticks <- lseq()
-                minticks <- minTicks(majticks)
-
-                datmean <- aggregate(y ~ x, data = dat, mean)
-                tempnew <- data.frame(x = seq(min(dat$x[dat$x > 0]), max(dat$x), length.out = 1000),  k = dfres[["K"]])
-                if (equation == "hs") {
-                    tempnew$y <- 10^(predict(fit, newdata = tempnew))
-                } else if (equation == "koff") {
-                    tempnew$y <- predict(fit, newdata = tempnew)
-                }
-                tempnew$expend <- tempnew$x * tempnew$y
-
-                xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
-                xmax <- max(tempnew$x)
-                if (indpoints && method == "Mean") {
-                    ymin <- min(c(tempnew$y, dato$y[dato$y > 0], 1))
-                    ymax <- min(c(1000, max(c(tempnew$y, dato$y)))) + 5
-                } else {
-                    ymin <- min(c(tempnew$y, dat$y[dat$y > 0], 1))
-                    ymax <- min(c(1000, max(c(tempnew$y, dat$y)))) + 5
-                }
-
-                pdf(file = paste0(outdir, method, ".pdf"))
-                par(mar = c(5, 4, 4, 4) + 0.3)
-                plot(tempnew$x, tempnew$y,
-                     type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
-                     xlim = c(xmin, xmax),
-                     ylim = c(ymin, ymax),
-                     xlab = "Price", ylab = "Reported Consumption", main = method)
-
-
-                if (indpoints && method == "Pooled") {
-                    points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
-                } else if (indpoints && method == "Mean") {
-                    points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
-                }
-                points(datmean$x, datmean$y, pch = 16, cex = .9)
-                axis(1, majticks, labels = majlabels)
-                axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-                axis(2, majticks, labels = majlabels, las = 1)
-                axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-                lines(tempnew$y ~ tempnew$x, lwd = 1.5)
-
-                if (printvars) {
-                    leg <- vector("expression", length(vartext))
-                    for (j in seq_along(vartext)) {
-                        tmp <- round(dfres[[vartext[j]]], 6)
-                        leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
-                    }
-                    legend("bottomleft", legend = leg, xjust = 0, cex = .7)
-                }
-                graphics.off()
+        datmean <- aggregate(y ~ x, data = dat, mean)
+        if (!class(fit) == "try-error") {
+            tempnew <- data.frame(x = seq(min(dat$x[dat$x > 0]), max(dat$x), length.out = 1000))
+            if (equation == "hs") {
+                tempnew$k = dfres[["K"]]
+                tempnew$y <- 10^(predict(fit, newdata = tempnew))
+            } else if (equation == "koff") {
+                tempnew$k = dfres[["K"]]
+                tempnew$y <- predict(fit, newdata = tempnew)
+            } else if (equation == "linear") {
+                tempnew$y <- exp^(predict(fit, newdata = tempnew))
             }
+            tempnew$expend <- tempnew$x * tempnew$y
+
+            xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
+            xmax <- max(tempnew$x)
+            if (indpoints && method == "Mean") {
+                ymin <- min(c(tempnew$y, dato$y[dato$y > 0], 1))
+                ymax <- min(c(1000, max(c(tempnew$y, dato$y)))) + 5
+            } else {
+                ymin <- min(c(tempnew$y, dat$y[dat$y > 0], 1))
+                ymax <- min(c(1000, max(c(tempnew$y, dat$y)))) + 5
+            }
+
+            pdf(file = paste0(outdir, method, ".pdf"))
+            par(mar = c(5, 4, 4, 4) + 0.3)
+            plot(tempnew$x, tempnew$y,
+                 type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+                 xlim = c(xmin, xmax),
+                 ylim = c(ymin, ymax),
+                 xlab = "Price", ylab = "Reported Consumption", main = method)
+
+            if (indpoints && method == "Pooled") {
+                points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
+            } else if (indpoints && method == "Mean") {
+                points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
+            }
+            points(datmean$x, datmean$y, pch = 16, cex = .9)
+            axis(1, majticks, labels = majlabels)
+            axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            axis(2, majticks, labels = majlabels, las = 1)
+            axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            lines(tempnew$y ~ tempnew$x, lwd = 1.5)
+
+            if (printvars) {
+                leg <- vector("expression", length(vartext))
+                for (j in seq_along(vartext)) {
+                    tmp <- round(dfres[[vartext[j]]], 6)
+                    leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
+                }
+                legend("bottomleft", legend = leg, xjust = 0, cex = .7)
+            }
+            graphics.off()
         } else if (class(fit) == "try-error") {
             warning(paste0("Unable to fit error: ", strsplit(fit[1], "\n")[[1]][2]))
-            if (plotcurves) {
-                if (!dir.exists("../plots/")) dir.create("../plots/")
-                basedir <- "../plots/"
-                basename <- paste0(method, "-", equation, "-")
-                outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
-                majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
-                majticks <- lseq()
-                minticks <- minTicks(majticks)
+            xmin <- min(c(dat$x[dat$x > 0], .1))
+            xmax <- max(dat$x)
+            ymin <- min(c(dat$y, dat$y[dat$y > 0], 1))
+            ymax <- min(c(1000, max(dat$y))) + 5
 
-                datmean <- aggregate(y ~ x, data = dat, mean)
-                xmin <- min(c(dat$x[dat$x > 0], .1))
-                xmax <- max(dat$x)
-                ymin <- min(c(dat$y, dat$y[dat$y > 0], 1))
-                ymax <- min(c(1000, max(dat$y))) + 5
+            pdf(file = paste0(outdir, method, ".pdf"))
+            par(mar = c(5, 4, 4, 4) + 0.3)
+            plot(dat$x, dat$y,
+                 type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
+                 xlim = c(xmin, xmax),
+                 ylim = c(ymin, ymax),
+                 xlab = "Price", ylab = "Reported Consumption", main = method)
 
-                pdf(file = paste0(outdir, method, ".pdf"))
-                par(mar = c(5, 4, 4, 4) + 0.3)
-                plot(dat$x, dat$y,
-                     type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
-                     xlim = c(xmin, xmax),
-                     ylim = c(ymin, ymax),
-                     xlab = "Price", ylab = "Reported Consumption", main = method)
-
-                if (indpoints && method == "Pooled") {
-                    points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
-                } else if (indpoints && method == "Mean") {
-                    points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
-                }
-                points(datmean$x, datmean$y, pch = 16, cex = .9)
-                axis(1, majticks, labels = majlabels)
-                axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-                axis(2, majticks, labels = majlabels, las = 1)
-                axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-                graphics.off()
+            if (indpoints && method == "Pooled") {
+                points(dat$x, jitter(dat$y, .8), col = "gray", pch = 16, cex = .5)
+            } else if (indpoints && method == "Mean") {
+                points(dato$x, jitter(dato$y, .8), col = "gray", pch = 16, cex = .5)
             }
+            points(datmean$x, datmean$y, pch = 16, cex = .9)
+            axis(1, majticks, labels = majlabels)
+            axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            axis(2, majticks, labels = majlabels, las = 1)
+            axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
+            graphics.off()
         }
+    }
     dfres
 }
-
 
 ##' Finds shared k among selected datasets using global regression
 ##'
