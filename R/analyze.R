@@ -423,7 +423,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     if (class(fit) == "try-error") {
         dfres[["Notes"]] <- fit[1]
-        dfres[["Notes"]] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
+        dfres[["Notes"]] <- strsplit(dfres[["Notes"]], "\n")[[1]][2]
     } else {
         dfres[["N"]] <- length(dat$k)
         dfres[["AbsSS"]] <- deviance(fit)
