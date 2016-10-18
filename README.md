@@ -3,15 +3,14 @@ An R package containing commonly used functions for analyzing behavioral economi
 
 ### Installation
 ----------------
-Install and load the devtools package. Then, use install_github to install the package.
+Install and load the devtools package. Then, use install_github to
+install the package and associated vignette.
 
 ```r
 install.packages("devtools")
 install.packages("digest")
 
-library(devtools)
-
-install_github("brentkaplan/beezdemand")
+devtools::install_github("brentkaplan/beezdemand", build_vignettes = TRUE)
 
 library(beezdemand)
 ```
@@ -25,7 +24,7 @@ If you find issues or would like to contribute, please contact me at <bkaplan4@k
 -------------------------
 
 #### Example dataset provided
-Example dataset of responses on an Alcohol Purchase Task. Participants
+Example dataset of responses on an Alcohol Purchase Task. Participants (id)
 reported the number of alcoholic drinks (y) they would be willing to
 purchase and consume at various prices (x; USD). Note the
 long format.
@@ -122,7 +121,7 @@ use in additional analyses and model specification.
 
 #### Share k globally while fitting other parameters locally
 Provides the ability to share k globally (across all participants)
-while estimating Q<sub>0</sub> and alpha locally. 
+while estimating Q<sub>0</sub> and alpha locally.
 
 ```r
 > head(FitCurves(apt, "hs", k = "share"), 3)
@@ -175,7 +174,7 @@ Description:
 - Steven R. Hursh, Institutes for Behavior Resources, Inc.
 (www.ibrinc.org)
 
-- Shawn P. Gilroy, (<shawn.gilroy@temple.edu>; [GitHub](https://github.com/miyamot0))
+- Shawn P. Gilroy, [GitHub](https://github.com/miyamot0)
 
 ### Recommended Readings
 ------------------------
