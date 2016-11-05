@@ -162,6 +162,13 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             adf <- adf[adf$y != 0, ]
         }
 
+        if (nrow(adf) == 0) {
+            dfres[i, setdiff(colnames(dfres), c("Participant", "Equation", "N", "Notes"))] <- NA
+            dfres[i, "N"] <- 0
+            dfres[i, "Notes"] <- "No consumption"
+            next()
+        }
+
         fit <- NULL
         if (!equation == "linear") {
             if (kest == "ind") {
