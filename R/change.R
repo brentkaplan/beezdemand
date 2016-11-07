@@ -67,17 +67,17 @@ ReplaceZeros <- function(dat, nrepl = 1, replnum = .01) {
 
 ##' Recodes outliers
 ##'
-##' Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is standardized and values that are greater than or equal to a specified outlier value (specified in standard deviations; default 3.29SD) are recoded to a certain number of units (default 1) higher than the greatest nonoutlier value.
+##' Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is standardized and values that are greater than or equal to a specified outlier value (specified in standard deviations; default 3.29SD) are recoded to a certain number of units (default 1) higher than the greatest nonoutlier value. Disregards 'NA' values.
 ##' @title Recode Outliers
 ##' @param x A vector
 ##' @param outval Values greater than or equal to this number (specified in standard deviations) will be recoded. Default is 3.29SD as specified by Tabachnick and Fidell (2013)
 ##' @param unitshigher Outliers identified by outval will be coded to a certain number of units higher than the greatest nonoutlier value. Default is 1 unit as specified by Tabachnick and Fidell (2013)
-##' @return A vector with recoded values alongside original values
+##' @return A vector with original and recoded (if any) values
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 RecodeOutliers <- function(x, outval = 3.29, unitshigher = 1) {
     ztmp <- scale(x)
-    if (!any(ztmp >= outval)) {
+    if (!any(ztmp >= outval, na.rm = TRUE)) {
         return(x)
     } else {
         replind <- which(ztmp >= outval)
