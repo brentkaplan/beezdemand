@@ -26,7 +26,7 @@ FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
 
 \item{plotcurves}{Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory}
 
-\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
+\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
 }
 \value{
 Data frame, fitting params and CI's/SE's

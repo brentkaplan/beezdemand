@@ -31,7 +31,7 @@ FitMeanCurves(dat, equation, k, remq0e = FALSE, replfree = NULL,
 
 \item{indpoints}{Boolean whether to plot individual points in gray. Default is TRUE.}
 
-\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EVd", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
+\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
 }
 \value{
 Data frame

@@ -4,7 +4,7 @@
 \alias{PlotCurves}
 \title{Plot Curves}
 \usage{
-PlotCurves(adf, dfrow, fit, outdir, fitfail, tobquote, vartext)
+PlotCurves(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext)
 }
 \arguments{
 \item{adf}{Data frame (long form) of purchase task data.}
