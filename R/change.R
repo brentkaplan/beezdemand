@@ -81,7 +81,7 @@ RecodeOutliers <- function(x, outval = 3.29, unitshigher = 1) {
         return(x)
     } else {
         replind <- which(ztmp >= outval)
-        replval <- x[which(ztmp == max(ztmp[ztmp < outval]))][[1]] + unitshigher
+        replval <- x[which(ztmp == max(ztmp[ztmp < outval], na.rm = TRUE))][[1]] + unitshigher
         for (i in seq(length(replind))) {
             print(paste0("Recoding ", x[replind[i]], " with ", replval, "."))
             x[replind[i]] <- replval
