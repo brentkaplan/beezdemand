@@ -53,3 +53,18 @@ createOutdir <- function(basedir = "../", basename = "/output/",
     if (!res) stop("output directory could not be created")
     list(outdir, basename)
 }
+
+##' Pull vector from data frame
+##'
+##' Pulls a single vector from a data frame. Good to use with dplyr.
+##' From http://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
+##' @title Pull
+##' @param x A data frame
+##' @param y Name of column
+##' @return Vector
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+pull <- function(x, y) {
+    if (ncol(x) == 1) y <- 1 else y
+    x[ , if (is.name(substitute(y))) deparse(substitute(y)) else y, drop = FALSE][[1]]
+}
