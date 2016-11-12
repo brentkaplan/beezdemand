@@ -69,39 +69,52 @@ ReplaceZeros <- function(dat, nrepl = 1, replnum = .01) {
 ##'
 ##' Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is standardized and values that are greater/less than or equal to a specified outlier value (specified in standard deviations; default 3.29SD) are recoded to a certain number of units (default 0) higher/lower than the greatest nonoutlier value. Disregards 'NA' values.
 ##' @title Recode Outliers
-##' @param x A vector
+##' @param df A dataframe of consumption values
 ##' @param outval Values greater/less than or equal to this number (specified in standard deviations) will be recoded. Default is 3.29SD as specified by Tabachnick and Fidell (2013)
 ##' @param unitshigher Outliers identified by outval will be coded to a certain number of units higher/lower than the greatest nonoutlier value. Default is 0 units.
-##' @return A vector with original and recoded (if any) values
+##' @return Invisibly, a dataframe with original and recoded (if any) values
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
-RecodeOutliers <- function(x, outval = 3.29, unitshigher = 0) {
-    dname <- deparse(substitute(x))
+RecodeOutliers <- function(df, outval = 3.29, unitshigher = 0) {
+
     outval <- abs(outval)
     unitshigher <- abs(unitshigher)
-    ztmp <- scale(x)
-    if (!any(ztmp >= outval | ztmp <= -outval, na.rm = TRUE)) {
-        print(paste0("No outliers detected in: ", dname, "."))
-        return(x)
-    } else {
-        if (any(ztmp >= outval, na.rm = TRUE)) {
-            replind <- which(ztmp >= outval)
-            replval <- x[which(ztmp == max(ztmp[ztmp < outval], na.rm = TRUE))][[1]] + unitshigher
-            print(paste0("Outliers greater than ", outval, " detected in: ", dname, "."))
-            for (i in seq(length(replind))) {
-                print(paste0("Recoding ", x[replind[i]], " with ", replval, "."))
-                x[replind[i]] <- replval
+
+    dfout <- data.frame(matrix(vector(),
+                               nrow(df), length(colnames(df))), stringsAsFactors = FALSE)
+    colnames(dfout) <- colnames(df)
+    rownames(dfout) <- rownames(df)
+    totoutliers <- 0
+    for (i in colnames(df)) {
+        x <- df[, i]
+        ztmp <- scale(df[, i])
+        if (!any(ztmp >= outval | ztmp <= -outval, na.rm = TRUE)) {
+            print(paste0("No outliers detected in column: ", i, "."))
+            dfout[, i] <- x
+        } else {
+            if (any(ztmp >= outval, na.rm = TRUE)) {
+                replind <- which(ztmp >= outval)
+                replval <- x[which(ztmp == max(ztmp[ztmp < outval], na.rm = TRUE))][[1]] + unitshigher
+                print(paste0(length(replind), " outliers greater than ", outval, "SDs detected in: ", i, "."))
+                totoutliers <- totoutliers + length(replind)
+                for (j in seq(length(replind))) {
+                    print(paste0("Recoding ", x[replind[j]], " with ", replval, "."))
+                    x[replind[j]] <- replval
+                }
             }
-        }
-        if (any(ztmp <= -outval, na.rm = TRUE)) {
-            replind <- which(ztmp <= -outval)
-            replval <- x[which(ztmp == min(ztmp[ztmp > -outval], na.rm = TRUE))][[1]] - unitshigher
-            print(paste0("Outliers less than ", -outval, " detected in: ", dname, "."))
-            for (i in seq(length(replind))) {
-                print(paste0("Recoding ", x[replind[i]], " with ", replval, "."))
-                x[replind[i]] <- replval
+            if (any(ztmp <= -outval, na.rm = TRUE)) {
+                replind <- which(ztmp <= -outval)
+                replval <- x[which(ztmp == min(ztmp[ztmp > -outval], na.rm = TRUE))][[1]] - unitshigher
+                print(paste0(length(replind), " outliers less than ", outval, "SDs detected in: ", i, "."))
+                totoutliers <- totoutliers + length(replind)
+                for (j in seq(length(replind))) {
+                    print(paste0("Recoding ", x[replind[j]], " with ", replval, "."))
+                    x[replind[j]] <- replval
+                }
             }
+           dfout[, i] <- x
         }
-        return(x)
     }
+    print(paste0("A total of ", totoutliers, " outlying values were replaced"))
+    invisible(dfout)
 }

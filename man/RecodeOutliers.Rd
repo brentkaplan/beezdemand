@@ -4,17 +4,17 @@
 \alias{RecodeOutliers}
 \title{Recode Outliers}
 \usage{
-RecodeOutliers(x, outval = 3.29, unitshigher = 0)
+RecodeOutliers(df, outval = 3.29, unitshigher = 0)
 }
 \arguments{
-\item{x}{A vector}
+\item{df}{A dataframe of consumption values}
 
 \item{outval}{Values greater/less than or equal to this number (specified in standard deviations) will be recoded. Default is 3.29SD as specified by Tabachnick and Fidell (2013)}
 
 \item{unitshigher}{Outliers identified by outval will be coded to a certain number of units higher/lower than the greatest nonoutlier value. Default is 0 units.}
 }
 \value{
-A vector with original and recoded (if any) values
+Invisibly, a dataframe with original and recoded (if any) values
 }
 \description{
 Recodes outliers
