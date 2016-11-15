@@ -576,6 +576,91 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
     dfres
 }
 
+##' Extra Sum of Squares F-test
+##'
+##' One alpha better than individual alphas?
+##' @title ExtraF
+##' @param dat Long form data frame
+##' @param equation "hs"
+##' @param groups NULL for all. Character vector matching groups in id column
+##' @param verbose If TRUE, prints all output including models
+##' @return List of results and models
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
+    ## find best fit k to constrain later
+    bfk <- GetSharedK(dat = dat, equation = equation, remq0e = FALSE, replfree = NULL, rem0 = FALSE)
+
+    if (is.null(groups)) {
+        grps <- unique(dat$id)
+    } else {
+        grps <- groups
+        dat <- subset(dat, id %in% groups)
+    }
+
+    ## set references
+    j <- 1
+    for (i in grps) {
+        dat[dat$id == i, "ref"] <- j
+        j <- j+1
+    }
+    dat$ref <- as.factor(dat$ref)
+
+    ## create contrasts
+    dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
+    nparams <- length(unique(dat2$ref))
+
+    ## dummy code q0
+    paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    startq0 <- paste(sprintf("q0%d", 1:nparams))
+    startingvals <- as.vector(c(rep(10, length(startq0)), .001))
+    names(startingvals) <- c(startq0, "alpha")
+
+    ## fit simple model (alpha shared, fixed k)
+    fu <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(alpha) * (%s) * x)-1)", paramslogq0, paramsq0)
+    fu <- gsub("k", bfk, fu)
+
+    fit <- NULL
+    fit <- try(nlmrt::wrapnls(fu, data = dat2, start = c(startingvals)), silent = TRUE)
+
+    ## fit complex model (q0 and alpha free, fixed k)
+    fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
+    fo <- gsub("k", bfk, fo)
+
+    ## on group by group basis
+    lstfits <- list()
+    for (i in grps) {
+        tmp <- subset(dat, id %in% i)
+        lstfits[[i]] <- try(nlmrt::wrapnls(formula = fo,
+                           start = list(q0 = 10, alpha = 0.01),
+                           control = list(maxiter = 1000),
+                           data = tmp), silent = TRUE)
+    }
+
+    ss1 <- sum(resid(fit)^2)
+    ss2 <- sum(sapply(sapply(sapply(lstfits, resid), function(x) x^2), sum))
+    df1 <- df.residual(fit)
+    df2 <- sum(sapply(lstfits, df.residual))
+
+    F <- ((ss1-ss2)/ss2)/((df1-df2)/df2)
+    pval <- 1 - pf(F, (df1-df2), df2)
+    critF <- qf(c(0.025, 0.975), (df1 - df2), df2)
+
+    print(paste0("Null hypothesis: alpha same for all data sets"))
+    print(paste0("Alternative hypothesis: alpha different for each data set"))
+    print(paste0("Conclusion: ", if(pval < .05) "reject" else "fail to reject", " the null hypothesis"))
+    print(paste0("F(", (df1-df2), ",", df2, ") = ", round(F, 4), ", p = ", round(pval, 4)))
+
+    results <- list("ftest" = list("F" = F, "pval" = pval, "df1" = (df1 - df2), "df2" = df2),
+                    "simpmodel" = fit,
+                    "compmodels" = lstfits)
+    if (verbose) results else invisible(results)
+
+}
+
+
+
 ##' Finds shared k among selected datasets using global regression
 ##'
 ##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. As of now, only to be used within FitCurves
