@@ -628,6 +628,13 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
     fo <- gsub("k", bfk, fo)
 
+    ## to hold predicted values
+    newdat <- data.frame("group" = rep(grps, each = 1000),
+                         "x" = rep(seq(min(unique(dat$x)),
+                                       max(unique(dat$x)),
+                                       length.out = 1000), times = length(grps)),
+                         "y" = NA)
+
     ## on group by group basis
     lstfits <- list()
     for (i in grps) {
@@ -636,8 +643,10 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
                            start = list(q0 = 10, alpha = 0.01),
                            control = list(maxiter = 1000),
                            data = tmp), silent = TRUE)
-    }
+        newdat[newdat$group == i, "y"] <- 10^predict(lstfits[[i]],
+                                                     subset(newdat, group %in% i, select = "x"))
 
+    }
     ss1 <- sum(resid(fit)^2)
     ss2 <- sum(sapply(sapply(sapply(lstfits, resid), function(x) x^2), sum))
     df1 <- df.residual(fit)
@@ -652,13 +661,73 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     print(paste0("Conclusion: ", if(pval < .05) "reject" else "fail to reject", " the null hypothesis"))
     print(paste0("F(", (df1-df2), ",", df2, ") = ", round(F, 4), ", p = ", round(pval, 4)))
 
+    cnames <- c("Group", "Q0d", "K",
+                "R2", "Alpha", "N", "AbsSS", "SdRes", "EV",
+                "Omaxd", "Pmaxd", "Notes", "F-Test")
+
+    dfres <- data.frame(matrix(vector(),
+                             (nparams * 2) + 2,
+                             length(cnames),
+                             dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
+
+    dfres[1, "Group"] <- "Shared"
+    grps <- as.character(grps)
+    for (i in 2:(1+nparams)) {
+        dfres[i, "Group"] <- grps[(i-1)]
+        dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c(startq0[i-1], "alpha")])
+        dfres[i, "K"] <- bfk
+        dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(dat2$y) - mean(log10(dat2$y)))^2))
+        dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
+                                (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                  (dfres[i, "K"] *
+                                   (exp(-dfres[i, "Alpha"] *
+                                        dfres[i, "Q0d"] *
+                                        dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        dfres[i, "N"] <- NROW(dat2$y)
+        dfres[i, "AbsSS"] <- deviance(fit)
+        dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
+        dfres[i, "Notes"] <- fit$convInfo$stopMessage
+    }
+
+    dfres[nparams+2, "Group"] <- "Not Shared"
+    j <- 1
+    for (i in (nparams+3):nrow(dfres)) {
+        tmp <- lstfits[[j]]
+        dfres[i, "Group"] <- grps[j]
+        dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(tmp)[c("q0", "alpha")])
+        dfres[i, "K"] <- bfk
+        dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, id %in% grps[j])$y) -
+                                                    mean(log10(subset(dat, id %in% grps[j])$y)))^2))
+        dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
+        dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
+                                (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                  (dfres[i, "K"] *
+                                   (exp(-dfres[i, "Alpha"] *
+                                        dfres[i, "Q0d"] *
+                                        dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        dfres[i, "N"] <- NROW(subset(dat, id %in% grps[j])$y)
+        dfres[i, "AbsSS"] <- deviance(tmp)
+        dfres[i, "SdRes"] <- sqrt(deviance(tmp)/df.residual(tmp))
+        dfres[i, "Notes"] <- tmp$convInfo$stopMessage
+        j <- j+1
+    }
+    dfres[1, "F-test"] <- "Summary of F-test"
+    dfres[2, "F-test"] <- paste0("Conclusion: ", if(pval < .05) "reject" else "fail to reject",
+                                 " the null hypothesis")
+    dfres[3, "F-test"] <- paste0("F(", (df1-df2), ",", df2, ") = ", round(F, 4),
+                                 ", p = ", round(pval, 4))
+
     results <- list("ftest" = list("F" = F, "pval" = pval, "df1" = (df1 - df2), "df2" = df2),
+                    "dfres" = dfres,
+                    "newdat" = newdat,
                     "simpmodel" = fit,
                     "compmodels" = lstfits)
     if (verbose) results else invisible(results)
 
 }
-
 
 
 ##' Finds shared k among selected datasets using global regression
