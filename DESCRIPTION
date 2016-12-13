@@ -1,17 +1,25 @@
 Package: beezdemand
+Version: 0.0.81
+Date: 2016-11-10
 Title: Behavioral Economic Easy Demand
-Version: 0.0.1
 Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", "cre"))
-Description: Functions to help aid in analyzing behavioral economic demand curve data.
+Author: Brent Kaplan [aut, cre]
+Maintainer: Brent Kaplan <bkaplan4@ku.edu>
+Description: Functions to help aid in analyzing behavioral economic demand curve
+    data.
 Depends:
-    R (>= 3.2.4)
+    R (>= 2.5)
 Imports:
     nlmrt,
     nlstools,
-    minpack.lm,
-    nls2
+    ggplot2,
+    reshape2
 Suggests:
-    openxlsx
+    openxlsx,
+    knitr,
+    rmarkdown
 License: GPL-2 | file LICENSE
+URL: https://github.com/brentkaplan/beezdemand
 LazyData: true
-RoxygenNote: 5.0.0
+RoxygenNote: 5.0.1
+VignetteBuilder: knitr

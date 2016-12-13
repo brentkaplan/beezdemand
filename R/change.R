@@ -21,87 +21,100 @@
 ##
 ##
 
-##' Changes 0 values or applies a parallel shift.
+##' Replaces 0 values
 ##'
-##' Takes a matrix of consumption values and replaces specified number of 0s with replacement value. Optionally, can apply a parallel shift to all consumption values and prices.
-##' @title Change 0s
-##' @param mat A matrix of consumption values.
-##' @param repl The number of 0s to be replaced by replnum. Default is NULL (i.e., all 0s).
-##' @param replnum Replacement number. Default value is 0.01.
-##' @param parshift Whether to apply a parallel shift of replnum to all consumption and prices.
-##' @param prices If parshift == TRUE, value is required.
-##' @return Matrix of transformed data. If parshift == TRUE, list of 2. First element is the transformed matrix. Second element is transformed price vector.
+##' Replaces specified number of 0s with replacement value.
+##' @title Replace Zeros
+##' @param dat Dataframe (long form)
+##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
+##' @param replnum Value to replace zeros. Default is .01
+##' @return Dataframe (long form)
 ##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @examples
+##' ReplaceZeros(apt)
+##' ## Replace all zeros with .01
+##' ReplaceZeros(apt, nrepl = "all", replnum = .01)
 ##' @export
-change0 <- function(mat, repl = NULL, replnum = .01, parshift = FALSE, prices = NULL) {
-    f <- function(x, repl = NULL, replnum = .01) {
-        ind <- which(x == 0, arr.ind = TRUE)
-        if (is.null(repl)) {
-            x[ind] <- replnum
-        } else {
-            x[ind[1:repl]] <- replnum
-        }
-        x
-    }
-    if (!parshift ) {
-        mat <- apply(mat, 2, f, repl = repl, replnum = replnum)
-        attr(mat, "parshift") <- parshift
-        attr(mat, "replnum") <- replnum
-        return(mat)
-    } else {
-        if (parshift && is.null(prices)) stop("Trying to apply a parallel shift but missing a vector of prices")
-        mat <- mat + replnum
-        attr(mat, "parshift") <- parshift
-        attr(mat, "replnum") <- replnum
-        prices <- prices + replnum
-        return(list(mat, prices))
-    }
-}
+ReplaceZeros <- function(dat, nrepl = 1, replnum = .01) {
 
-##' Splits a matrix of purchase task data into individual dataframes consisting of price, consumption, and expenditure.
-##'
-##' This function takes a matrix and splits it into a list of dataframes. Each dataframe consists of prices (x), consumption values (y), and expenditure values (expend). If a participant has no consumption, the dataframe will instead be a character vector indicating "No consumption." If a participant has fewer than 3 datapoints, the dataframe will instead be a character vector indicating "Fewer than 3 datapoints." Note that these conditions are more likely to be met when 0s are deleted.
-##' @title Split Matrix
-##' @param mat A matrix in wide form where each column is a participant's responses. If a dataframe is provided, it will attempt to coerce it into a matrix.
-##' @param x A vector of prices used in the purchase task. The number of elements must be equal to the number of rows in the matrix.
-##' @param incl0 If FALSE, ALL 0 values and their associated prices will be removed, even those that precede reverals from 0.
-##' @param replfree Optionally replaces price=0 with specified number.
-##' @return A list of dataframes and/or character vectors whose length is equal to the number of columns (i.e., participants) in the original matrix. Prints the number of cases that contain no consumption and fewer than 3 datapoints.
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
-##' @export
-splitMat <- function(mat, x = x, incl0 = TRUE, replfree = NULL) {
-    fu <- function(y, x = x, incl0, replfree) {
-        if (!incl0) {
-            xremove <- which(y == 0)
-            if (length(xremove) > 0) x <- x[-xremove]
-            y <- y[ y > 0 ]
-            ifelse(length(y) == 0, df <- "No consumption",
-                   ifelse(length(y) <= 2, df <- "Fewer than 3 datapoints",
-                          df <- data.frame("x" = x, "y" = y, "expend" = x * y)))
+    ## Get N unique participants, informing loop
+    participants <- unique(dat$id)
+    np <- length(participants)
+
+    for (i in seq_len(np)) {
+
+        adf <- NULL
+        adf <- dat[dat$id == participants[i], ]
+
+        if (!any(adf$y == 0)) {
+            dat[dat$id == participants[i], ] <- adf
+            next
         } else {
-            ifelse(length(y) == 0, df <- "No consumption",
-                   ifelse(length(y) <= 2, df <- "Fewer than 3 datapoints",
-                          df <- data.frame("x" = x, "y" = y, "expend" = x * y)))
-        }
-        ## CHANGE? because this occurs after the df is made, expend doesn't take into account replfree
-        if (is.numeric(replfree)) {
-            if (df$x[1] == 0) {
-                df$x[1] <- replfree
+            if (nrepl == "all") {
+                ind <- which(adf$y == 0, arr.ind = TRUE)
+                adf$y[ind] <- replnum
+                dat[dat$id == participants[i], ] <- adf
             } else {
-                warning(paste0("Tried to replace free with ", replfree, " but the first price was not 0"))
+                ind <- which(adf$y == 0, arr.ind = TRUE)
+                nrep <- if (length(ind) < nrepl) length(ind) else nrepl
+                adf$y[ind[1:nrep]] <- replnum
+                dat[dat$id == participants[i], ] <- adf
             }
         }
-        return(df)
     }
-    if (is.data.frame(mat)) mat <- as.matrix(mat)
-    if (NCOL(mat) > 1) {
-        dfs <- apply(mat, 2, fu, x = x, incl0, replfree)
-        if (length(which(dfs == "No consumption")) > 1 || length(which(dfs == "Fewer than 3 datapoints"))) {
-            cat(paste0("There are ", length(which(dfs == "No consumption")), " participant(s) who have no consumption. There are ", length(which(dfs == "Fewer than 3 datapoints")), " participant(s) who have fewer than 3 datapoints. Consider excluding these participant(s)."))
+    dat
+}
+
+##' Recodes outliers
+##'
+##' Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is standardized and values that are greater/less than or equal to a specified outlier value (specified in standard deviations; default 3.29SD) are recoded to a certain number of units (default 0) higher/lower than the greatest nonoutlier value. Disregards 'NA' values.
+##' @title Recode Outliers
+##' @param df A dataframe of consumption values
+##' @param outval Values greater/less than or equal to this number (specified in standard deviations) will be recoded. Default is 3.29SD as specified by Tabachnick and Fidell (2013)
+##' @param unitshigher Outliers identified by outval will be coded to a certain number of units higher/lower than the greatest nonoutlier value. Default is 0 units.
+##' @return Invisibly, a dataframe with original and recoded (if any) values
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+RecodeOutliers <- function(df, outval = 3.29, unitshigher = 0) {
+
+    outval <- abs(outval)
+    unitshigher <- abs(unitshigher)
+
+    dfout <- data.frame(matrix(vector(),
+                               nrow(df), length(colnames(df))), stringsAsFactors = FALSE)
+    colnames(dfout) <- colnames(df)
+    rownames(dfout) <- rownames(df)
+    totoutliers <- 0
+    for (i in colnames(df)) {
+        x <- df[, i]
+        ztmp <- scale(df[, i])
+        if (!any(ztmp >= outval | ztmp <= -outval, na.rm = TRUE)) {
+            print(paste0("No outliers detected in column: ", i, "."))
+            dfout[, i] <- x
+        } else {
+            if (any(ztmp >= outval, na.rm = TRUE)) {
+                replind <- which(ztmp >= outval)
+                replval <- x[which(ztmp == max(ztmp[ztmp < outval], na.rm = TRUE))][[1]] + unitshigher
+                print(paste0(length(replind), " outliers greater than ", outval, "SDs detected in: ", i, "."))
+                totoutliers <- totoutliers + length(replind)
+                for (j in seq(length(replind))) {
+                    print(paste0("Recoding ", x[replind[j]], " with ", replval, "."))
+                    x[replind[j]] <- replval
+                }
+            }
+            if (any(ztmp <= -outval, na.rm = TRUE)) {
+                replind <- which(ztmp <= -outval)
+                replval <- x[which(ztmp == min(ztmp[ztmp > -outval], na.rm = TRUE))][[1]] - unitshigher
+                print(paste0(length(replind), " outliers less than ", outval, "SDs detected in: ", i, "."))
+                totoutliers <- totoutliers + length(replind)
+                for (j in seq(length(replind))) {
+                    print(paste0("Recoding ", x[replind[j]], " with ", replval, "."))
+                    x[replind[j]] <- replval
+                }
+            }
+           dfout[, i] <- x
         }
-    } else {
-        dfs <- list(fu(mat, x = x, incl0, replfree))
     }
-    ## TODO: add attribute for replfree
-    return(dfs)
+    print(paste0("A total of ", totoutliers, " outlying values were replaced"))
+    invisible(dfout)
 }

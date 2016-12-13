@@ -1,0 +1,267 @@
+---
+title: "Usage of beezdemand"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Usage of beezdemand}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=NA)
+```
+
+## Rationale Behind beezdemand
+
+Behavioral economic demand is gaining in popularity. In my experience,
+many researchers who do research in this field use (relatively)
+expensive, proprietary software to conduct their analyses. I was
+motivated to create an alternative tool to conduct these
+analyses. This package is not necessarily meant to be a replacement
+for those other softwares; rather, it is meant to serve as an
+additional tool in the behavioral economist's toolbox. It is meant for
+researchers to conduct behavioral economic (be) demand the easy (ez) way.
+
+[`R`](https://www.r-project.org/) is an open-source statistical programming language. It is powerful and allows for nearly endless
+customizability.
+
+## Note About Use
+
+This package is a work in progress. I welcome suggestions, feedback,
+questions, and comments regarding what other researchers might be
+interested in seeing. If you encounter bugs, errors, or other
+discrepancies please either open an issue or
+[contact me](mailto:bkaplan4@ku.edu?Subject=Question/comment%20Regarding%20beezdemand%20Package "Email bkaplan4@ku.edu") and I will do my best to fix
+the problem.
+
+## Installation
+
+Right now the package can be obtained from my GitHub page:
+[github.com/brentkaplan](https://github.com/brentkaplan). There are plans to make it available
+properly on CRAN. In any case, to install the package first install
+Hadley Wickham's `devtools` package:
+
+```install.packages("devtools")```
+
+Then simply install the package using the following command:
+
+```devtools::install_github("brentkaplan/beezdemand", build_vignettes
+= TRUE)```
+
+This will compile this vignette during the installation.
+
+```{r include = FALSE}
+library(beezdemand)
+```
+
+## Using the Package
+
+### Example Dataset
+
+I include an example dataset to demonstrate how data should be
+entered and how to use the functions. This example dataset consists
+of participant responses on an alcohol purchase task. Participants (id)
+reported the number of alcoholic drinks (y) they would be willing to
+purchase and consume at various prices (x; USD). Note the long format:
+
+```{r example-data-set, echo=FALSE, results='asis'}
+knitr::kable(apt[c(1:8, 17:24), ])
+```
+
+### Obtain Descriptive Data
+
+Descriptive values of responses at each price. Includes mean, standard
+deviation, proportion of zeros, and numer of NAs. If `bwplot = TRUE`, a box-and-whisker
+plot (in PDF format) is also created and saved into the relative path: `../plots/bwplot-MMDD/`
+
+```{r descriptive, eval=FALSE}
+GetDescriptives(apt, bwplot = TRUE)
+```
+
+```{r descriptive-output, echo=FALSE, results='asis'}
+descr <- GetDescriptives(apt)
+knitr::kable(descr)
+```
+
+<center><img src="bwplot.pdf" alt="Box-and-whisker plot"  width="504"
+height="432"/></center>
+
+### Identify Unsystematic Responses
+
+Examine consistency of demand data using Stein et al.'s (2015)
+alogrithm for identifying unsystematic responses. Default values
+shown, but they can be customized.
+
+```{r unsystematic, eval=FALSE}
+CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
+```
+
+```{r unsystematic-output, echo=FALSE, results='asis'}
+knitr::kable(head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2), 5))
+```
+
+### Analyze Demand Data
+
+Results of the analysis return both empirical and derived measures for
+use in additional analyses and model specification. Equations include
+the linear model, exponential model, and exponentiated model. Soon, I
+will be including the nonlinear mixed effects model, mixed effects
+versions of the exponential and exponentiated model, and the
+experimental "Q0+1" model.
+
+```{r hs, eval=FALSE}
+FitCurves(apt, "hs")
+```
+
+```{r hs-output, echo=FALSE, results='asis'}
+knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 1:6], caption = "Empirical Measures")
+knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 7:11], caption = "Fitted Measures")
+knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
+knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 21:24], caption = "Derived Measures")
+```
+
+
+```{r koff, eval=FALSE}
+FitCurves(apt, "koff")
+```
+
+```{r koff-output, echo=FALSE, results='asis'}
+knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 1:6], caption = "Empirical Measures")
+knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 7:11], caption = "Fitted Measures")
+knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
+knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 21:24], caption = "Derived Measures")
+```
+
+Graphs can automatically be created at both an aggregate
+(fitting on the means or on the pooled data
+[NOTE: This disregards clustering within individual]) and individual
+level.
+
+
+### Share k Globally; Fit Other Parameters Locally
+
+Provides the ability to share k globally (across all participants)
+while estimating Q0 and alpha locally. While this works, it may take
+some time with larger sample sizes.
+
+```{r share, eval=FALSE}
+FitCurves(apt, "hs", k = "share")
+```
+
+```{r, include=FALSE}
+df <- FitCurves(apt, "hs", k = "share")
+```
+
+```{r share-output, echo=FALSE, results='asis'}
+knitr::kable(head(df, 5)[ , 1:6], caption = "Empirical Measures")
+knitr::kable(head(df, 5)[ , 7:11], caption = "Fitted Measures")
+knitr::kable(head(df, 5)[ , 12:20], caption = "Uncertainty and Model Information")
+knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
+```
+
+### Learn More About Functions
+
+To learn more about a function and what arguments it takes, type "?" in front of the function name.
+
+```{r learn, eval=FALSE}
+?CheckUnsystematic
+```
+
+```{r learn-output, eval=FALSE}
+CheckUnsystematic          package:beezdemand          R Documentation
+
+Systematic Purchase Task Data Checker
+
+Description:
+
+     Applies Stein, Koffarnus, Snider, Quisenberry, & Bickels (2015)
+     criteria for identification of nonsystematic purchase task data.
+
+Usage:
+
+     CheckUnsystematic(dat, deltaq = 0.025, bounce = 0.1, reversals = 0,
+       ncons0 = 2)
+
+Arguments:
+
+     dat: Dataframe in long form. Colums are id, x, y.
+
+  deltaq: Numeric vector of length equal to one. The criterion by which
+          the relative change in quantity purchased will be compared.
+          Relative changes in quantity purchased below this criterion
+          will be flagged. Default value is 0.025.
+
+  bounce: Numeric vector of length equal to one. The criterion by which
+          the number of price-to-price increases in consumption that
+          exceed 25% of initial consumption at the lowest price,
+          expressed relative to the total number of price increments,
+          will be compared. The relative number of price-to-price
+          increases above this criterion will be flagged. Default value
+          is 0.10.
+
+reversals: Numeric vector of length equal to one. The criterion by
+          which the number of reversals from number of consecutive (see
+          ncons0) 0s will be compared. Number of reversals above this
+          criterion will be flagged. Default value is 0.
+
+  ncons0: Numer of consecutive 0s prior to a positive value is used to
+          flag for a reversal. Value can be either 1 (relatively more
+          conservative) or 2 (default; as recommended by Stein et al.,
+          (2015).
+
+Details:
+
+     This function applies the 3 criteria proposed by Stein et al.,
+     (2015) for identification of nonsystematic purchase task data. The
+     three criteria include trend (deltaq), bounce, and reversals from
+     0. Also reports number of positive consumption values.
+
+Value:
+
+     Dataframe
+
+Author(s):
+
+     Brent Kaplan <bkaplan4@ku.edu>
+
+Examples:
+
+     ## Using all default values
+     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
+     ## Specifying just 1 zero to flag as reversal
+     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
+```
+
+## Acknowledgments
+
+- Derek D. Reed, Applied Behavioral Economics Laboratory
+[www.behavioraleconlab.com](www.behavioraleconlab.com)
+
+- Paul E. Johnson, Center for Research Methods and Data Analysis, University of Kansas
+[www.crmda.ku.edu](www.crmda.ku.edu)
+
+- Michael Amlung, Cognitive Neuroscience of Addictions Laboratory
+[www.cnalab.weebly.com](www.cnalab.weebly.com)
+
+- Peter G. Roma, Institutes for Behavior Resources, Inc.
+[www.ibrinc.org](www.ibrinc.org)
+
+- Steven R. Hursh, Institutes for Behavior Resources, Inc.
+[www.ibrinc.org](www.ibrinc.org)
+
+- Shawn P. Gilroy, [GitHub](https://github.com/miyamot0)
+
+## Recommended Readings
+
+- Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral economics: A tutorial for behavior analysts in practice. *Behavior Analysis in Practice, 6* (1), 34–54.
+
+- Reed, D. D., Kaplan, B. A., & Becirevic, A. (2015). Basic research on the behavioral economics of reinforcer value. In *Autism Service Delivery* (pp. 279-306). Springer New York.
+
+- Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psychological Review, 115* (1), 186-198.
+
+- Koffarnus, M. N., Franck, C. T., Stein, J. S., & Bickel, W. K. (2015). A modified exponential behavioral economic demand model to better describe consumption data. *Experimental and Clinical Psychopharmacology, 23* (6), 504-512.
+
+- Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology*
+
