@@ -11,10 +11,10 @@ Thumbs.db
 # Temp files #
 ##############
 *~
-
 # R files #
 ###########
 .Rhistory
 \#*#
 .#*
 .Rproj.user
+inst/doc

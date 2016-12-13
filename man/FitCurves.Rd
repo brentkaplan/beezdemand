@@ -4,21 +4,29 @@
 \alias{FitCurves}
 \title{FitCurves}
 \usage{
-FitCurves(mat, equation, k = NULL, remq0e = FALSE, replfree = NULL,
-  rem0 = FALSE)
+FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
+  nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL)
 }
 \arguments{
-\item{mat}{data frame (long form) of purchase task data.}
+\item{dat}{data frame (long form) of purchase task data.}
 
-\item{equation}{Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015). If "hs" and the first price (x) is 0, it will be replaced by replfree.}
+\item{equation}{Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).}
 
-\item{k}{A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample}
+\item{k}{A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis}
 
 \item{remq0e}{If TRUE, removes consumption and price where price == 0. Default value is FALSE}
 
 \item{replfree}{Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01}
 
 \item{rem0}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
+
+\item{nrepl}{Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.}
+
+\item{replnum}{Value to replace zeros. Default is .01}
+
+\item{plotcurves}{Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory}
+
+\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
 }
 \value{
 Data frame, fitting params and CI's/SE's
@@ -26,10 +34,7 @@ Data frame, fitting params and CI's/SE's
 \description{
 Analyzes purchase task data
 }
-\details{
-Analyzes purchase task data
-}
 \author{
-Shawn Gilroy <shawn.gilroy@temple.edu> Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan4@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 }
 
