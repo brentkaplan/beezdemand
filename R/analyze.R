@@ -48,7 +48,7 @@
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
-FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL) {
+FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL, plotdestination = NULL) {
 
     if ("p" %in% colnames(dat)) {
         colnames(dat)[which(colnames(dat) == "p")] <- "id"
@@ -57,9 +57,19 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     }
 
     if (plotcurves == TRUE) {
+
         if (!dir.exists("../plots/")) dir.create("../plots/")
         basedir <- "../plots/"
         basename <- paste0("indplots-", equation, "-")
+
+        if (!is.null(plotdestination)) {
+          if (!dir.exists(plotdestination)) {
+            dir.create(plotdestination)
+          }
+
+          basedir <- plotdestination
+        }
+
         outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
 
         tobquote = NULL
