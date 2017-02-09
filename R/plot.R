@@ -99,7 +99,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         ymin <- min(c(tempnew$y, adf$y[adf$y > 0], 1))
         ymax <- min(c(1000, max(c(tempnew$y, adf$y)))) + 5
 
-        pdf(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".pdf"))
+        png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
         par(mar = c(5, 4, 4, 4) + 0.3)
         plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n",
              xaxt = "n", bty = "l",
@@ -130,7 +130,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         ymin <- min(c(adf$y[adf$y > 0], 1))
         ymax <- min(c(1000, max(adf$y))) + 5
 
-        pdf(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".pdf"))
+        png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
         par(mar = c(5, 4, 4, 4) + 0.3)
         plot(adf$x, adf$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
              xlim = c(xmin, xmax),
