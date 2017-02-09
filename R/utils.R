@@ -68,3 +68,13 @@ pull <- function(x, y) {
     if (ncol(x) == 1) y <- 1 else y
     x[ , if (is.name(substitute(y))) deparse(substitute(y)) else y, drop = FALSE][[1]]
 }
+
+##' Trims leading characters
+##'
+##' Trims leading characters
+##' @title
+##' @param x A string
+##' @return Character vector of length 1
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @export
+trim.leading <- function (x)  sub("^\\s+", "", x)
