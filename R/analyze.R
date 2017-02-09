@@ -253,7 +253,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                                                 dfres[i, "Q0d"] *
                                                 dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
             }
-            trim.leading <- function (x)  sub("^\\s+", "", x)
+
             dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
 
             if (plotcurves) {
