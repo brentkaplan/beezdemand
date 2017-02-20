@@ -273,11 +273,15 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             }
         }
     }
-    if (kest == "share") {
+
+    if (!equation == "linear") {
+      if (kest == "share") {
         names(dfres)[names(dfres) == "K"] <- "SharedK"
-    } else if (kest == "fit") {
+      } else if (kest == "fit") {
         names(dfres)[names(dfres) == "K"] <- "FittedK"
+      }
     }
+
     dfres <- merge(dfresempirical, dfres, by = "Participant")
     return(dfres)
 }
