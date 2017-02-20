@@ -151,7 +151,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     fo <- switch(equation,
                  "hs" = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                  "koff" = y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                 "linear" = log(y) ~ log(l) + (b * log(x)) - a * x)
+                 "linear" = log(y) ~ log(l) + (b * log(x)) - (a * x))
 
     ## loop to fit data
     for (i in seq_len(np)) {
@@ -166,9 +166,13 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         } else if (!is.null(replfree)) {
             replfree <- if (is.numeric(replfree)) replfree else 0.01
             adf[adf$x == 0, "x"] <- replfree
+        } else if (equation == "linear") {
+            # If no other specified params, lop off un-loggable values for linear
+            adf <- adf[adf$x != 0, ]
         }
 
-        if (rem0 || equation == "hs") {
+        # Linear can't handle log zeros also
+        if (rem0 || equation == "hs" || equation == "linear") {
             adf <- adf[adf$y != 0, ]
         }
 
@@ -204,9 +208,12 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                                      silent = TRUE))
             }
         } else if (equation == "linear") {
-            fit <- try(nlmrt::wrapnls(
+            fit <- try(nls(
                 formula = fo,
-                start = list(l = 1, b = 0, a = 0),
+                start = list(l = 1, b = 1, a = 1),
+                lower = list(l = 0.01, b = -Inf, a = -Inf),
+                upper = list(l = Inf, b = Inf, a = Inf),
+                algorithm = "port",
                 control = list(maxiter = 1000),
                 data = adf),
                 silent = TRUE)
