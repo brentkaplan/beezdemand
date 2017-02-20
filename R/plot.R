@@ -133,10 +133,23 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
 
     if (!fitfail) {
         tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x), length.out = 1000), k = dfrow[["K"]])
+
+        segmentFrame <- data.frame(x1 = c(0),
+                                   x2 = c(0),
+                                   y1 = c(0),
+                                   y2 = c(0))
+        segmentFrame[1, "x1"] <- dfrow[["Pmaxd"]]
+        segmentFrame[1, "x2"] <- dfrow[["Pmaxd"]]
+        segmentFrame[1, "y1"] <- 0
+
+        tempMax <- data.frame(x = segmentFrame$x1, k = dfrow[["K"]])
+
         if (dfrow[["Equation"]] == "hs") {
             tempnew$y <- 10^(predict(fit, newdata = tempnew))
+            segmentFrame[1, "y2"] <- 10^(predict(fit, newdata = tempMax))
         } else if (dfrow[["Equation"]] == "koff") {
             tempnew$y <- predict(fit, newdata = tempnew)
+            segmentFrame[1, "y2"] <- predict(fit, newdata = tempMax)
         }
 
         tempnew$expend <- tempnew$x * tempnew$y
@@ -155,8 +168,11 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
           pointFrame[pointFrame$X == 0,]$mask <- 0
           pointFrame[pointFrame$X == 0,]$X <- 0.00001
 
+          segmentFrame$mask <- 1
+
           logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
             geom_point(size=2, shape=21, show.legend=T) +
+            geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
             facet_grid(.~mask, scales="free_x", space="free") +
             geom_line(data=tempnew, aes(x=x, y=y)) +
             scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
