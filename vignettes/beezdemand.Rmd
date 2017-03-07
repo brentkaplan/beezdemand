@@ -15,12 +15,10 @@ knitr::opts_chunk$set(echo=TRUE, comment=NA)
 
 ## Rationale Behind beezdemand
 
-Behavioral economic demand is gaining in popularity. In my experience,
-many researchers who do research in this field use (relatively)
-expensive, proprietary software to conduct their analyses. I was
-motivated to create an alternative tool to conduct these
+Behavioral economic demand is gaining in popularity. The motivation behind beezdemand was to 
+create an alternative tool to conduct these
 analyses. This package is not necessarily meant to be a replacement
-for those other softwares; rather, it is meant to serve as an
+for other softwares; rather, it is meant to serve as an
 additional tool in the behavioral economist's toolbox. It is meant for
 researchers to conduct behavioral economic (be) demand the easy (ez) way.
 
