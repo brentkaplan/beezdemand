@@ -18,7 +18,9 @@
 ## summary
 ## R script for summarizing demand data
 ##
-##
+## @ggplot2 = grammar of graphics
+## link @ https://cran.r-project.org/web/packages/ggplot2/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
 ##
 
 ##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
@@ -155,8 +157,15 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
         basename <- "bwplot-"
         outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
 
-        pdf(file = paste0(outdir, "bwplot", ".pdf"), width = 7, height = 6)
-        boxplot(dat$y ~ dat$x, xlab = "Price", ylab = "Reported Consumption")
+        ## pdf(file = paste0(outdir, "bwplot", ".pdf"), width = 7, height = 6)
+        ## boxplot(dat$y ~ dat$x, xlab = "Price", ylab = "Reported Consumption")
+        ## dev.off()
+
+        png(file = paste0(outdir, "bwplot.png"), width = 7, height = 6)
+        ggplot(dat, aes(x = as.factor(x), y = y)) +
+            geom_boxplot() +
+            labs(x = "Price", y = "Reported Consumption") +
+            theme_apa()
         dev.off()
     }
     dfres
