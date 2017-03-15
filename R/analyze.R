@@ -155,7 +155,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                  "hs" = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                  "koff" = y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
                  "linear" = log(y) ~ log(l) + (b * log(x)) - a * x)
-
     ## loop to fit data
     for (i in seq_len(np)) {
         dfres[i, "Participant"] <- participants[i]
@@ -217,7 +216,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         fits[[i]] <- fit
 
-        dfres[i, ] <- Extractor(i, adf, fit, eq = equation, cols = colnames(dfres), kest = kest)
+        dfres[i, ] <- Extractor(participants[i], adf, fit, eq = equation, cols = colnames(dfres), kest = kest)
 
         if (plotcurves) {
             if (class(fit) == "try-error") {
@@ -230,67 +229,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                                            tobquote = tobquote, vartext = vartext))
             }
         }
-
-        ## if (class(fit) == "try-error") {
-        ##     dfres[i, "Notes"] <- fit[1]
-        ##     dfres[i, "Notes"] <- strsplit(dfres[i, "Notes"], "\n")[[1]][2]
-        ##     if (plotcurves) {
-        ##         suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
-        ##                                 outdir = outdir, fitfail = TRUE,
-        ##                                 tobquote = tobquote, vartext = vartext))
-        ##     }
-        ## } else {
-        ##     dfres[i, "N"] <- length(adf$k)
-        ##     dfres[i, "AbsSS"] <- deviance(fit)
-        ##     dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-        ##     dfres[i, "Notes"] <- fit$convInfo$stopMessage
-        ##     if (equation == "linear") {
-        ##         dfres[i, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
-        ##         dfres[i, c("Lse", "bse", "ase")] <- as.numeric(summary(fit)[[10]][c(1:3), 2])
-        ##         dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log(adf$y) - mean(log(adf$y)))^2))
-        ##         dfres[i, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
-        ##         dfres[i, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
-        ##         dfres[i, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
-        ##         ## Calculates mean elasticity based on individual range of x
-        ##         pbar <- mean(unique(adf$x))
-        ##         dfres[i, "MeanElasticity"] <- dfres[i, "b"] - (dfres[i, "a"] * pbar)
-        ##         dfres[i, "Pmaxd"] <- (1 + dfres[i, "b"])/dfres[i, "a"]
-        ##         dfres[i, "Omaxd"] <- (dfres[i, "L"] * dfres[i, "Pmaxd"]^dfres[i, "b"]) /
-        ##             exp(dfres[i, "a"] * dfres[i, "Pmaxd"]) * dfres[i, "Pmaxd"]
-        ##     } else {
-        ##         dfres[i, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
-        ##         dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-        ##         dfres[i, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-        ##         dfres[i, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-        ##         dfres[i, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
-        ##         dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
-        ##         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
-        ##                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
-        ##     }
-        ##     if (equation == "hs") {
-        ##         dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
-        ##         dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
-        ##                                   (dfres[i, "K"] *
-        ##                                    (exp(-dfres[i, "Alpha"] *
-        ##                                         dfres[i, "Q0d"] *
-        ##                                         dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-        ##     } else if (equation == "koff") {
-        ##         dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
-        ##         dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] *
-        ##                               (10^(dfres[i, "K"] *
-        ##                                    (exp(-dfres[i, "Alpha"] *
-        ##                                         dfres[i, "Q0d"] *
-        ##                                         dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
-        ##     }
-
-        ##     dfres[i, "Notes"] <- trim.leading(dfres[i, "Notes"])
-
-            ## if (plotcurves) {
-            ##     suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
-            ##                                 outdir = outdir, fitfail = FALSE,
-            ##                                 tobquote = tobquote, vartext = vartext))
-            ## }
-        ## }
     }
     if (kest == "share") {
         names(dfres)[names(dfres) == "K"] <- "SharedK"
@@ -315,7 +253,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @param kest Specification of k value
 ##' @return One row of a dataframe with results
 ##' @author Brent Kaplan <bkaplan.ku@gmail.com>
-Extractor <- function(pid, adf, fit, eq, cols, kest) { ## TODO: Include linear objects
+Extractor <- function(pid, adf, fit, eq, cols, kest) {
     dfrow <- data.frame(matrix(vector(),
                                1,
                                length(cols),
@@ -324,6 +262,20 @@ Extractor <- function(pid, adf, fit, eq, cols, kest) { ## TODO: Include linear o
     if (class(fit) == "try-error") {
         dfrow[["Notes"]] <- fit[1]
         dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
+    } else if (eq == "linear") {
+        dfrow[1, "N"] <- nrow(adf)
+        dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
+        dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(summary(fit)[[10]][c(1:3), 2])
+        dfrow[1, "R2"] <- 1.0 - (deviance(fit)/sum((log(adf$y) - mean(log(adf$y)))^2))
+        dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
+        dfrow[1, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
+        dfrow[1, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
+        ## Calculates mean elasticity based on individual range of x
+        pbar <- mean(unique(adf$x))
+        dfrow[1, "MeanElasticity"] <- dfrow[1, "b"] - (dfrow[1, "a"] * pbar)
+        dfrow[1, "Pmaxd"] <- (1 + dfrow[1, "b"])/dfrow[1, "a"]
+        dfrow[1, "Omaxd"] <- (dfrow[1, "L"] * dfrow[1, "Pmaxd"]^dfrow[1, "b"]) /
+            exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) * dfrow[1, "Pmaxd"]
     } else {
         dfrow[1, "N"] <- length(adf$k)
         dfrow[1, "AbsSS"] <- deviance(fit)
