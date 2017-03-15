@@ -112,7 +112,8 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                                dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
     fits <- vector(mode = "list", length = np)
-    names(fits) <- participants
+    adfs <- vector(mode = "list", length = np)
+    ## names(fits) <- participants
 
     dfresempirical <- GetEmpirical(dat)
 
@@ -215,6 +216,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         }
 
         fits[[i]] <- fit
+        adfs[[i]] <- adf
 
         dfres[i, ] <- Extractor(participants[i], adf, fit, eq = equation, cols = colnames(dfres), kest = kest)
 
@@ -238,7 +240,9 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
     dfres$Equation <- equation
     dfres <- merge(dfresempirical, dfres, by = "Participant")
     ## return(dfres)
-    list(dfres, fits)
+    names(fits) <- participants
+    names(adfs) <- participants
+    list(dfres, fits, adfs)
 }
 
 ##' Extracts the useful information
