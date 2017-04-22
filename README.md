@@ -18,7 +18,7 @@ library(beezdemand)
 #### Note About Use
 Currently, this version (0.0.84) is under development. You are free to use it,
 but be aware that there might be bugs present.
-If you find issues or would like to contribute, please contact me at <bkaplan4@ku.edu>.
+If you find issues or would like to contribute, please contact me at <bkaplan.ku@gmail.com>.
 
 ### Sample Implementation
 -------------------------
