@@ -22,6 +22,5 @@ Gets values used in SimulateDemand
 GetValsForSim(apt)
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

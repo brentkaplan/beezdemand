@@ -24,6 +24,5 @@ Provides the following descriptive statistics from purchase task data at each pr
 GetDescriptives(apt)
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

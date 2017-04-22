@@ -45,6 +45,7 @@
 ##' @param replnum Value to replace zeros. Default is .01
 ##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
+##' @param plotdestination Destination of plots
 ##' @return Data frame, fitting params and CI's/SE's
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
@@ -257,6 +258,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @param kest Specification of k value
 ##' @return One row of a dataframe with results
 ##' @author Brent Kaplan <bkaplan.ku@gmail.com>
+##' @export
 Extractor <- function(pid, adf, fit, eq, cols, kest) {
     dfrow <- data.frame(matrix(vector(),
                                1,
@@ -329,7 +331,7 @@ Extractor <- function(pid, adf, fit, eq, cols, kest) {
 ##' @param indpoints Boolean whether to plot individual points in gray. Default is TRUE.
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
 
@@ -626,7 +628,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @param groups NULL for all. Character vector matching groups in id column
 ##' @param verbose If TRUE, prints all output including models
 ##' @return List of results and models
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     ## find best fit k to constrain later
@@ -781,7 +783,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
 ##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree.
 ##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis.
 ##' @return Numeric value of shared k
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
 
@@ -868,7 +870,7 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
 ##' @title Get K
 ##' @param dat Dataframe (long form)
 ##' @return Numeric
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' GetK(apt)
 ##' @export
@@ -882,7 +884,7 @@ GetK <- function(dat) {
 ##' @title GetEmpirical
 ##' @param dat data frame (long form) of purchase task data.
 ##' @return Data frame of empirical measures
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 GetEmpirical <- function(dat) {
     participants <- unique(dat$id)

@@ -22,6 +22,5 @@ Pulls a single vector from a data frame. Good to use with dplyr.
 From http://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

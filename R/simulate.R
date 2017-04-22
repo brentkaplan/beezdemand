@@ -41,7 +41,7 @@
 ##' @param outdir Optional. Directory to save results. Must end with a "/"
 ##' @param fn Optional. Filename of saved RData object
 ##' @return Invisibly a list consisting of: rounded consumption values, unrounded consumption values, simulation parameters, and inState and outState of seeds.
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' ## set values
 ##' setparams <- vector(length = 4)
@@ -139,7 +139,7 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
 ##' @title Get Values for SimulateDemand
 ##' @param dat Dataframe (long form)
 ##' @return List of 3: setaparams, sdindex, x
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' GetValsForSim(apt)
 ##' @export

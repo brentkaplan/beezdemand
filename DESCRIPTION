@@ -1,10 +1,10 @@
 Package: beezdemand
-Version: 0.0.82
-Date: 2016-11-10
+Version: 0.0.83
+Date: 2017-04-21
 Title: Behavioral Economic Easy Demand
-Authors@R: person("Brent", "Kaplan", email = "bkaplan4@ku.edu", role = c("aut", "cre"))
+Authors@R: person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre"))
 Author: Brent Kaplan [aut, cre]
-Maintainer: Brent Kaplan <bkaplan4@ku.edu>
+Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
 Description: Functions to help aid in analyzing behavioral economic demand curve
     data.
 Depends:
@@ -21,5 +21,5 @@ Suggests:
 License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 LazyData: true
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 VignetteBuilder: knitr

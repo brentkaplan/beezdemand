@@ -28,6 +28,5 @@ ReplaceZeros(apt)
 ReplaceZeros(apt, nrepl = "all", replnum = .01)
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

@@ -41,6 +41,5 @@ sim <- SimulateDemand(nruns = 1, setparams = setparams, sdindex = sdindex, x = x
 sim
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

@@ -23,6 +23,5 @@ Recodes outliers
 Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is standardized and values that are greater/less than or equal to a specified outlier value (specified in standard deviations; default 3.29SD) are recoded to a certain number of units (default 0) higher/lower than the greatest nonoutlier value. Disregards 'NA' values.
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

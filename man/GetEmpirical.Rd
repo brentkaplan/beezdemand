@@ -19,6 +19,5 @@ Calculates empirical measures for purchase task data
 Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

@@ -22,6 +22,5 @@ Will look for minimum greater zero
 GetK(apt)
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

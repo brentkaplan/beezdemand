@@ -28,4 +28,3 @@ A more detailed description here.
 \author{
 Paul Johnson <pauljohn@ku.edu>
 }
-

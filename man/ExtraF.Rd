@@ -25,6 +25,5 @@ Extra Sum of Squares F-test
 One alpha better than individual alphas?
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

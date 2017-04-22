@@ -48,7 +48,7 @@ lseq <- function(from=.0000000001, to=1000, length.out=14) {
 ##' @title Create Minor Tick Sequence
 ##' @param maj Value from function lseq
 ##' @return Vector
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 minTicks <- function(maj) {
     minticks <- vector(length = (length(maj)-1) * 10)
@@ -70,7 +70,8 @@ minTicks <- function(maj) {
 ##' @title APA Theme
 ##' @param plot.box Boolean for a box around the plot
 ##' @return ggplot theme
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @export
 theme_apa <- function(plot.box = FALSE){
     helv <- "Helvetica"
 
@@ -109,7 +110,7 @@ theme_apa <- function(plot.box = FALSE){
 ##' @param tobquote Character string to be evaluated
 ##' @param vartext Character vector to match demand indices
 ##' @return Nothing
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
     majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")

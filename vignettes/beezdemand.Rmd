@@ -113,7 +113,7 @@ experimental "Q0+1" model.
 FitCurves(apt, "hs")
 ```
 
-```{r hs-output, echo=FALSE, results='asis'}
+```{r hs-output, echo=FALSE, results='asis', eval = FALSE}
 knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 1:6], caption = "Empirical Measures")
 knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 7:11], caption = "Fitted Measures")
 knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
@@ -125,7 +125,7 @@ knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 21:24], caption = "Derived Measure
 FitCurves(apt, "koff")
 ```
 
-```{r koff-output, echo=FALSE, results='asis'}
+```{r koff-output, echo=FALSE, results='asis', eval = FALSE}
 knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 1:6], caption = "Empirical Measures")
 knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 7:11], caption = "Fitted Measures")
 knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
@@ -148,11 +148,11 @@ some time with larger sample sizes.
 FitCurves(apt, "hs", k = "share")
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval = FALSE}
 df <- FitCurves(apt, "hs", k = "share")
 ```
 
-```{r share-output, echo=FALSE, results='asis'}
+```{r share-output, echo=FALSE, results='asis', eval = FALSE}
 knitr::kable(head(df, 5)[ , 1:6], caption = "Empirical Measures")
 knitr::kable(head(df, 5)[ , 7:11], caption = "Fitted Measures")
 knitr::kable(head(df, 5)[ , 12:20], caption = "Uncertainty and Model Information")

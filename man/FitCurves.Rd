@@ -5,7 +5,8 @@
 \title{FitCurves}
 \usage{
 FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
-  nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL)
+  nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL,
+  plotdestination = NULL)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
@@ -27,6 +28,8 @@ FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
 \item{plotcurves}{Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory}
 
 \item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
+
+\item{plotdestination}{Destination of plots}
 }
 \value{
 Data frame, fitting params and CI's/SE's
@@ -37,4 +40,3 @@ Analyzes purchase task data
 \author{
 Brent Kaplan <bkaplan4@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 }
-

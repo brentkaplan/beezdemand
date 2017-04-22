@@ -25,4 +25,3 @@ A vector of logarithmically spaced values primarily used for plotting. Adapted f
 \author{
 library("emdbook")
 }
-

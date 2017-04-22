@@ -12,4 +12,3 @@ apt
 A dataset containing alcohol purchase task data for a small number of participants
 }
 \keyword{datasets}
-

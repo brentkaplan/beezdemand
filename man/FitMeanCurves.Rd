@@ -40,6 +40,5 @@ Data frame
 Fits curve to pooled data
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

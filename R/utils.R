@@ -62,7 +62,7 @@ createOutdir <- function(basedir = "../", basename = "/output/",
 ##' @param x A data frame
 ##' @param y Name of column
 ##' @return Vector
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 pull <- function(x, y) {
     if (ncol(x) == 1) y <- 1 else y
@@ -72,9 +72,9 @@ pull <- function(x, y) {
 ##' Trims leading characters
 ##'
 ##' Trims leading characters
-##' @title
+##' @title Trim Leading Characters
 ##' @param x A string
 ##' @return Character vector of length 1
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 trim.leading <- function (x)  sub("^\\s+", "", x)

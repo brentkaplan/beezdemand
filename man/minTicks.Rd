@@ -16,6 +16,5 @@ Vector
 Creates minor ticks for use in plotting.
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu>
+Brent Kaplan <bkaplan.ku@gmail.com>
 }
-

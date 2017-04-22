@@ -33,7 +33,7 @@
 ##' @param reversals Numeric vector of length equal to one. The criterion by which the number of reversals from number of consecutive (see ncons0) 0s will be compared. Number of reversals above this criterion will be flagged. Default value is 0.
 ##' @param ncons0 Numer of consecutive 0s prior to a positive value is used to flag for a reversal. Value can be either 1 (relatively more conservative) or 2 (default; as recommended by Stein et al., (2015).
 ##' @return Dataframe
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' ## Using all default values
 ##' CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
@@ -127,7 +127,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 ##' @param dat Dataframe (long form)
 ##' @param bwplot Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE
 ##' @return Dataframe with descriptive statistics
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' GetDescriptives(apt)
 ##' @export
