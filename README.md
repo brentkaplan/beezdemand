@@ -192,7 +192,7 @@ Description:
 ### Questions, Suggestions, and Contributions
 ---------------------------------------------
 
-Have a question? Have a suggestion for a feature? Would you like to contribute? Email me at <bkaplan.ku@gmail.com>>.
+Have a question? Have a suggestion for a feature? Would you like to contribute? Email me at <bkaplan.ku@gmail.com>.
 
 ### License
 -----------
