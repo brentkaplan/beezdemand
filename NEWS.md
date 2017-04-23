@@ -1,3 +1,13 @@
+# beezdemand 0.0.85
+
+## New updates
+
+* `FitCurves()` correctly pulls alpha and q0 standard errors when k is fitted as a free parameter. Also no longer accepts data transformations. Must be done prior to fitting using `ChangeData()`.
+
+* `FitCurves()` now fits mean/pooled data based on `method` argument.
+
+* `GetSharedK()` no longer accepts data transformations.
+
 # beezdemand 0.0.84
 
 ## New updates

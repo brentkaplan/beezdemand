@@ -4,18 +4,12 @@
 \alias{GetSharedK}
 \title{Get Shared K}
 \usage{
-GetSharedK(dat, equation, remq0e, replfree, rem0)
+GetSharedK(dat, equation)
 }
 \arguments{
 \item{dat}{Dataframe (longform)}
 
 \item{equation}{Character vector. Accepts either "hs" or "koff"}
-
-\item{remq0e}{If TRUE, removes consumption and price where price == 0.}
-
-\item{replfree}{Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree.}
-
-\item{rem0}{If TRUE, removes all 0s in consumption data prior to analysis.}
 }
 \value{
 Numeric value of shared k
@@ -24,7 +18,7 @@ Numeric value of shared k
 Finds shared k among selected datasets using global regression
 }
 \details{
-Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. As of now, only to be used within FitCurves
+Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. Used within FitCurves
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>

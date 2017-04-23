@@ -4,8 +4,8 @@
 \alias{FitCurves}
 \title{FitCurves}
 \usage{
-FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
-  nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL,
+FitCurves(dat, equation, k, method = NULL, detailed = FALSE, xcol = "x",
+  ycol = "y", idcol = "id", plotcurves = FALSE, vartext = NULL,
   plotdestination = NULL)
 }
 \arguments{
@@ -13,17 +13,17 @@ FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
 
 \item{equation}{Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).}
 
-\item{k}{A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis}
+\item{k}{A numeric (or character) vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample + .5. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis. If k = "range", k will be calculated based on the max/min of the entire sample + .5.}
 
-\item{remq0e}{If TRUE, removes consumption and price where price == 0. Default value is FALSE}
+\item{method}{Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregrated appropriately and analyzed in the specified way.}
 
-\item{replfree}{Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01}
+\item{detailed}{If TRUE, output will be a 3 element list including (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting. Default value is FALSE, which returns only the dataframe of results.}
 
-\item{rem0}{If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.}
+\item{xcol}{The column name that should be treated as "x" data}
 
-\item{nrepl}{Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.}
+\item{ycol}{The column name that should be treated as "y" data}
 
-\item{replnum}{Value to replace zeros. Default is .01}
+\item{idcol}{The column name that should be treated as dataset identifier}
 
 \item{plotcurves}{Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory}
 
@@ -32,7 +32,7 @@ FitCurves(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE,
 \item{plotdestination}{Destination of plots}
 }
 \value{
-Data frame, fitting params and CI's/SE's
+If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 }
 \description{
 Analyzes purchase task data

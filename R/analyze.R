@@ -37,66 +37,41 @@
 ##' @title FitCurves
 ##' @param dat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
-##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis
-##' @param remq0e If TRUE, removes consumption and price where price == 0. Default value is FALSE
-##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree. Default value is .01
-##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis. Default value is FALSE.
-##' @param nrepl Number of zeros to replace with replacement value (replnum). Can accept either a number or "all" if all zeros should be replaced. Default is to replace the first zero only.
-##' @param replnum Value to replace zeros. Default is .01
+##' @param k A numeric (or character) vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample + .5. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis. If k = "range", k will be calculated based on the max/min of the entire sample + .5.
+##' @param method Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregrated appropriately and analyzed in the specified way.
+##' @param detailed If TRUE, output will be a 3 element list including (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting. Default value is FALSE, which returns only the dataframe of results.
+##' @param xcol The column name that should be treated as "x" data
+##' @param ycol The column name that should be treated as "y" data
+##' @param idcol The column name that should be treated as dataset identifier
 ##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @param plotdestination Destination of plots
-##' @return Data frame, fitting params and CI's/SE's
+##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
-FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, vartext = NULL, plotdestination = NULL) {
+FitCurves <- function(dat, equation, k, method = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", plotcurves = FALSE, vartext = NULL, plotdestination = NULL) {
 
-    if ("p" %in% colnames(dat)) {
-        colnames(dat)[which(colnames(dat) == "p")] <- "id"
-    } else if (!"id" %in% colnames(dat)) {
-        stop("Make sure there is an id column in data")
+    if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
+    origcols <- colnames(dat)
+    if (any(colnames(dat) %in% "x") && any(colnames(dat) %in% "y") && any(colnames(dat) %in% "id")) {
+
+    } else if (any(colnames(dat) %in% xcol) && any(colnames(dat) %in% ycol) && any(colnames(dat) %in% idcol)) {
+        if (!any(colnames(dat) %in% "x") && any(colnames(dat) %in% xcol)) {
+            colnames(dat) <- gsub(xcol, "x", colnames(dat))
+        }
+        if (!any(colnames(dat) %in% "y") && any(colnames(dat) %in% ycol)) {
+            colnames(dat) <- gsub(ycol, "y", colnames(dat))
+        }
+        if (!any(colnames(dat) %in% "id") && any(colnames(dat) %in% idcol)) {
+            colnames(dat) <- gsub(idcol, "id", colnames(dat))
+        }
+    } else {
+        stop("Can't find x, y, and id column names in data!", call. = FALSE)
     }
 
-    if (plotcurves == TRUE) {
-
-        if (!dir.exists("../plots/")) dir.create("../plots/")
-        basedir <- "../plots/"
-        basename <- paste0("indplots-", equation, "-")
-
-        if (!is.null(plotdestination)) {
-          if (!dir.exists(plotdestination)) {
-            dir.create(plotdestination)
-          }
-
-          basedir <- plotdestination
-        }
-
-        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
-
-        tobquote = NULL
-        if (!is.null(vartext)) {
-            dict <- data.frame(Name = c("Q0d", "Alpha", "Intensity", "EV", "Pmaxe",
-                                        "Omaxe", "Pmaxd", "Omaxd",
-                                        "K", "Q0se", "Alphase", "R2", "AbsSS"),
-                               Variable = c("Q[0[d]]", "alpha", "Intensity", "EV", "P[max[e]]",
-                                            "O[max[e]]", "P[max[d]]",  "O[max[d]]",
-                                            "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
-            if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
-                warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
-            } else {
-                tobquote <- as.character(dict$Variable[match(vartext, dict$Name)])
-            }
-        }
-    }
-
-    ## get rid of NAs
-    dat <- dat[!is.na(dat$y), ]
-
-    ## Get N unique participants, informing loop
-    participants <- unique(dat$id)
-    np <- length(participants)
-
-    if (equation == "hs" || equation == "koff") {
+    if (missing(equation)) {
+        stop("Need to specify an equation!", call. = FALSE)
+    } else if (equation == "hs" || equation == "koff") {
         cnames <- c("Participant", "Equation", "Q0d", "K",
                     "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
                     "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
@@ -107,6 +82,27 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
                     "Omaxd", "Pmaxd", "Notes")
     }
 
+    dat <- dat[!is.na(dat$y), ]
+
+    if (!is.null(method) && !any(c("Mean", "Pooled") %in% method)) {
+        stop("No method specified. Choose either 'Mean' or 'Pooled'")
+    } else if (method == "Mean") {
+        dat <- aggregate(y ~ x, data = dat, mean)
+        dat$id <- method
+    } else if (method == "Pooled") {
+        tmpdat <- aggregate(y ~ x, data = dat, mean)
+        tmpdat$id <- method
+        dat$id <- method
+    }
+
+    if (any(dat$y %in% 0) && (equation == "hs" || equation == "linear")) {
+        warning("Zeros found in data no compatible with equation! Dropping zeros!", call. = FALSE)
+        dat <- dat[dat$y != 0, , drop = FALSE]
+    }
+
+    participants <- unique(dat$id)
+    np <- length(participants)
+
     dfres <- data.frame(matrix(vector(),
                                np,
                                length(cnames),
@@ -114,21 +110,18 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
     fits <- vector(mode = "list", length = np)
     adfs <- vector(mode = "list", length = np)
-    ## names(fits) <- participants
 
-    dfresempirical <- GetEmpirical(dat)
-
-    ## Transformations if specified
-    if (!is.null(nrepl) && !is.null(replnum)) {
-        dat <- ReplaceZeros(dat, nrepl = nrepl, replnum = replnum)
+    if (method == "Pooled") {
+        dfresempirical <- GetEmpirical(tmpdat)
+    } else {
+        dfresempirical <- GetEmpirical(dat)
     }
 
-    ## If no k is provided, otherwise
-    ## TODO: provide a character element to fit empirical max/min range
     if (!equation == "linear") {
         if (missing(k)) {
             k <- GetK(dat)
             kest <- FALSE
+            message("No k value specified. Defaulting to empirical range +.5")
         } else if (is.numeric(k)) {
             k <- k
             kest <- FALSE
@@ -139,17 +132,21 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
             } else if (k == "ind") {
                 kest <- "ind"
             } else if (k == "share") {
-                k <- GetSharedK(dat, equation, remq0e, replfree, rem0)
+                k <- GetSharedK(dat, equation)
                 if (is.character(k)) {
                     warning(k)
                     k <- GetK(dat)
                     kest <- FALSE
                 }
                 kest <- "share"
+            } else if (k == "range") {
+                k <- GetK(dat)
+                kest <- FALSE
             }
         } else {
             k <- GetK(dat)
             kest <- FALSE
+            warning("Defaulting to empirical range +.5")
         }
     }
 
@@ -164,17 +161,6 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 
         adf <- NULL
         adf <- dat[dat$id == participants[i], ]
-
-        if (remq0e) {
-            adf <- adf[adf$x != 0, ]
-        } else if (!is.null(replfree)) {
-            replfree <- if (is.numeric(replfree)) replfree else 0.01
-            adf[adf$x == 0, "x"] <- replfree
-        }
-
-        if (rem0 || equation == "hs") {
-            adf <- adf[adf$y != 0, ]
-        }
 
         if (nrow(adf) == 0) {
             dfres[i, setdiff(colnames(dfres), c("Participant", "Equation", "N", "Notes"))] <- NA
@@ -237,13 +223,20 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
         names(dfres)[names(dfres) == "K"] <- "SharedK"
     } else if (kest == "fit") {
         names(dfres)[names(dfres) == "K"] <- "FittedK"
+    } else if (kest == "ind") {
+        names(dfres)[names(dfres) == "K"] <- "IndividualK"
+    } else {
+        names(dfres)[names(dfres) == "K"] <- "RangeK"
     }
     dfres$Equation <- equation
     dfres <- merge(dfresempirical, dfres, by = "Participant")
-    ## return(dfres)
     names(fits) <- participants
     names(adfs) <- participants
-    list(dfres, fits, adfs)
+    if (detailed) {
+        return(list(dfres, fits, adfs))
+    } else {
+        return(dfres)
+    }
 }
 
 ##' Extracts the useful information
@@ -257,7 +250,7 @@ FitCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = 
 ##' @param cols Column names to populate the dataframe row
 ##' @param kest Specification of k value
 ##' @return One row of a dataframe with results
-##' @author Brent Kaplan <bkaplan.ku@gmail.com>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 Extractor <- function(pid, adf, fit, eq, cols, kest) {
     dfrow <- data.frame(matrix(vector(),
@@ -287,11 +280,18 @@ Extractor <- function(pid, adf, fit, eq, cols, kest) {
         dfrow[1, "AbsSS"] <- deviance(fit)
         dfrow[1, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
         dfrow[1, "Notes"] <- fit$convInfo$stopMessage
-        dfrow[1, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
         dfrow[1, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-        dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-        dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-        dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+        if (kest == "fit") {
+            dfrow[1, "K"] <- as.numeric(coef(fit)["k"])
+            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 3), 2]
+            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 4)]
+            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(3, 6)]
+        } else {
+            dfrow[1, "K"] <- min(adf$k)
+            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
+            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
+            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+        }
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)
         dfrow[1, "Pmaxd"] <- 1/(dfrow[1, "Q0d"] * dfrow[1, "Alpha"] *
                                 (dfrow[1, "K"] ^ 1.5)) * (0.083 * dfrow[1, "K"] + 0.65)
@@ -632,7 +632,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @export
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     ## find best fit k to constrain later
-    bfk <- GetSharedK(dat = dat, equation = equation, remq0e = FALSE, replfree = NULL, rem0 = FALSE)
+    bfk <- GetSharedK(dat = dat, equation = equation)
 
     if (is.null(groups)) {
         grps <- unique(dat$id)
@@ -775,35 +775,20 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
 
 ##' Finds shared k among selected datasets using global regression
 ##'
-##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. As of now, only to be used within FitCurves
+##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. Used within FitCurves
 ##' @title Get Shared K
 ##' @param dat Dataframe (longform)
 ##' @param equation Character vector. Accepts either "hs" or "koff"
-##' @param remq0e If TRUE, removes consumption and price where price == 0.
-##' @param replfree Optionally replaces price == 0 with specified value. Note, if fitting using equation == "hs", and 0 is first price, 0 gets replaced by replfree.
-##' @param rem0 If TRUE, removes all 0s in consumption data prior to analysis.
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
-GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
+GetSharedK <- function(dat, equation) {
 
+    if (length(unique(dat$id)) == 1) {
+        stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
+    }
     ## get rid of NAs
     dat <- dat[!is.na(dat$y), ]
-
-    ## remove q0e if specified, otherwise replace if specified
-    if (remq0e) {
-        dat <- dat[dat$x != 0, ]
-    } else if (!is.null(replfree)) {
-        replfree <- if (is.numeric(replfree)) replfree else 0.01
-        dat[dat$x == 0, "x"] <- replfree
-    }
-
-    ## drop zeros if hs, otherwise drop zeros if rem0
-    if (equation == "hs") {
-        dat <- dat[dat$y != 0, ]
-    } else if (rem0) {
-        dat <- dat[dat$y !=0, ]
-    }
 
     j <- 1
     for (i in unique(dat$id)) {
@@ -866,7 +851,7 @@ GetSharedK <- function(dat, equation, remq0e, replfree, rem0) {
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range
 ##'
-##' Will look for minimum greater zero
+##' Will look for maximum/minimum greater zero
 ##' @title Get K
 ##' @param dat Dataframe (long form)
 ##' @return Numeric
