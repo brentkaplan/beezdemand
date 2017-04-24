@@ -84,15 +84,17 @@ FitCurves <- function(dat, equation, k, method = NULL, detailed = FALSE, xcol = 
 
     dat <- dat[!is.na(dat$y), ]
 
-    if (!is.null(method) && !any(c("Mean", "Pooled") %in% method)) {
-        stop("No method specified. Choose either 'Mean' or 'Pooled'")
-    } else if (method == "Mean") {
-        dat <- aggregate(y ~ x, data = dat, mean)
-        dat$id <- method
-    } else if (method == "Pooled") {
-        tmpdat <- aggregate(y ~ x, data = dat, mean)
-        tmpdat$id <- method
-        dat$id <- method
+    if (!is.null(method)) {
+        if (!any(c("Mean", "Pooled") %in% method)) {
+            stop("No method specified. Choose either 'Mean' or 'Pooled'")
+        } else if (method == "Mean") {
+            dat <- aggregate(y ~ x, data = dat, mean)
+            dat$id <- method
+        } else if (method == "Pooled") {
+            tmpdat <- aggregate(y ~ x, data = dat, mean)
+            tmpdat$id <- method
+            dat$id <- method
+        }
     }
 
     if (any(dat$y %in% 0) && (equation == "hs" || equation == "linear")) {
@@ -111,7 +113,7 @@ FitCurves <- function(dat, equation, k, method = NULL, detailed = FALSE, xcol = 
     fits <- vector(mode = "list", length = np)
     adfs <- vector(mode = "list", length = np)
 
-    if (method == "Pooled") {
+    if (!is.null(method) && method == "Pooled") {
         dfresempirical <- GetEmpirical(tmpdat)
     } else {
         dfresempirical <- GetEmpirical(dat)
