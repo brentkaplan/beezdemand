@@ -635,6 +635,10 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     ## find best fit k to constrain later
     bfk <- GetSharedK(dat = dat, equation = equation)
+    if (class(bfk) == "character") {
+        message(bfk)
+        bfk <- GetK(dat)
+    }
 
     if (is.null(groups)) {
         grps <- unique(dat$id)
@@ -656,21 +660,34 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
     nparams <- length(unique(dat2$ref))
 
     ## dummy code q0
-    paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
-    paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-    startq0 <- paste(sprintf("q0%d", 1:nparams))
+    if (equation == "hs") {
+        paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        startq0 <- paste(sprintf("q0%d", 1:nparams))
+    } else if (equation == "koff") {
+        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+        startq0 <- paste(sprintf("q0%d", 1:nparams))
+    }
     startingvals <- as.vector(c(rep(10, length(startq0)), .001))
     names(startingvals) <- c(startq0, "alpha")
 
     ## fit simple model (alpha shared, fixed k)
-    fu <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(alpha) * (%s) * x)-1)", paramslogq0, paramsq0)
+    if (equation == "hs") {
+        fu <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(alpha) * (%s) * x)-1)", paramslogq0, paramsq0)
+    } else if (equation == "koff") {
+        fu <- sprintf("y ~ (%s) * 10 ^ (k * (exp(-(alpha) * (%s) * x) - 1))", paramsq0, paramsq0)
+    }
     fu <- gsub("k", bfk, fu)
 
     fit <- NULL
     fit <- try(nlmrt::wrapnls(fu, data = dat2, start = c(startingvals)), silent = TRUE)
 
     ## fit complex model (q0 and alpha free, fixed k)
-    fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
+    if (equation == "hs") {
+        fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
+    } else if (equation == "koff") {
+        fo <- "y ~ q0  * 10 ^ (k * (exp(-(alpha * q0 * x)) - 1))"
+    }
     fo <- gsub("k", bfk, fo)
 
     ## to hold predicted values
@@ -688,8 +705,13 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
                            start = list(q0 = 10, alpha = 0.01),
                            control = list(maxiter = 1000),
                            data = tmp), silent = TRUE)
-        newdat[newdat$group == i, "y"] <- 10^predict(lstfits[[i]],
-                                                     subset(newdat, group %in% i, select = "x"))
+        if (equation == "hs") {
+            newdat[newdat$group == i, "y"] <- 10^predict(lstfits[[i]],
+                                                         subset(newdat, group %in% i, select = "x"))
+        } else if (equation == "koff") {
+            newdat[newdat$group == i, "y"] <- predict(lstfits[[i]],
+                                                         subset(newdat, group %in% i, select = "x"))
+        }
 
     }
     ss1 <- sum(resid(fit)^2)
@@ -721,15 +743,24 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
         dfres[i, "Group"] <- grps[(i-1)]
         dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c(startq0[i-1], "alpha")])
         dfres[i, "K"] <- bfk
-        dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(dat2$y) - mean(log10(dat2$y)))^2))
         dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
-        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
-                                  (dfres[i, "K"] *
-                                   (exp(-dfres[i, "Alpha"] *
-                                        dfres[i, "Q0d"] *
-                                        dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        if (equation == "hs") {
+            dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(dat2$y) - mean(log10(dat2$y)))^2))
+            dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                      (dfres[i, "K"] *
+                                       (exp(-dfres[i, "Alpha"] *
+                                            dfres[i, "Q0d"] *
+                                            dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        } else if (equation == "koff") {
+            dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((dat2$y - mean(dat2$y))^2))
+            dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] *
+                                  (10^(dfres[i, "K"] *
+                                       (exp(-dfres[i, "Alpha"] *
+                                            dfres[i, "Q0d"] *
+                                            dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        }
         dfres[i, "N"] <- NROW(dat2$y)
         dfres[i, "AbsSS"] <- deviance(fit)
         dfres[i, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
@@ -743,16 +774,26 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE) {
         dfres[i, "Group"] <- grps[j]
         dfres[i, c("Q0d", "Alpha")] <- as.numeric(coef(tmp)[c("q0", "alpha")])
         dfres[i, "K"] <- bfk
-        dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, id %in% grps[j])$y) -
-                                                    mean(log10(subset(dat, id %in% grps[j])$y)))^2))
         dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
-        dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
-                                  (dfres[i, "K"] *
-                                   (exp(-dfres[i, "Alpha"] *
-                                        dfres[i, "Q0d"] *
-                                        dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        if (equation == "hs") {
+            dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, id %in% grps[j])$y) -
+                                                        mean(log10(subset(dat, id %in% grps[j])$y)))^2))
+            dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                      (dfres[i, "K"] *
+                                       (exp(-dfres[i, "Alpha"] *
+                                            dfres[i, "Q0d"] *
+                                            dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        } else if (equation == "koff") {
+            dfres[i, "R2"] <-  1.0 -(deviance(tmp)/sum((subset(dat, id %in% grps[j])$y -
+                                                       mean(subset(dat, id %in% grps[j])$y))^2))
+            dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] *
+                                  (10^(dfres[i, "K"] *
+                                       (exp(-dfres[i, "Alpha"] *
+                                            dfres[i, "Q0d"] *
+                                            dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+        }
         dfres[i, "N"] <- NROW(subset(dat, id %in% grps[j])$y)
         dfres[i, "AbsSS"] <- deviance(tmp)
         dfres[i, "SdRes"] <- sqrt(deviance(tmp)/df.residual(tmp))
