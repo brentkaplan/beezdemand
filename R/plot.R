@@ -113,6 +113,8 @@ theme_apa <- function(plot.box = FALSE){
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
+    ## TODO 20170430: rewrite using ggplot, add arithmetic y for koff,
+    ## anticipate for normalization curves.
     majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
     majticks <- lseq()
     minticks <- minTicks(majticks)
