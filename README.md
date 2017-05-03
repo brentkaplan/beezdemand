@@ -197,4 +197,4 @@ Have a question? Have a suggestion for a feature? Would you like to contribute? 
 ### License
 -----------
 
-GPL-Version 2
+GPL Version 2 or later
