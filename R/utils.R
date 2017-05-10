@@ -78,3 +78,44 @@ pull <- function(x, y) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 trim.leading <- function (x)  sub("^\\s+", "", x)
+
+##' Checks to ensure column names are specified
+##'
+##' Check column names
+##' @title Check Column Names
+##' @param dat Dataframe
+##' @param xcol Name of x column
+##' @param ycol Name of y column
+##' @param idcol Name of id column
+##' @param groupcol Name of group column
+##' @return Dataframe
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @export
+CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
+
+    if (any(colnames(dat) %in% "x") && any(colnames(dat) %in% "y") && any(colnames(dat) %in% "id")) {
+
+    } else if (any(colnames(dat) %in% xcol) && any(colnames(dat) %in% ycol) && any(colnames(dat) %in% idcol)) {
+        if (!any(colnames(dat) %in% "x") && any(colnames(dat) %in% xcol)) {
+            colnames(dat) <- gsub(xcol, "x", colnames(dat))
+        }
+        if (!any(colnames(dat) %in% "y") && any(colnames(dat) %in% ycol)) {
+            colnames(dat) <- gsub(ycol, "y", colnames(dat))
+        }
+        if (!any(colnames(dat) %in% "id") && any(colnames(dat) %in% idcol)) {
+            colnames(dat) <- gsub(idcol, "id", colnames(dat))
+        }
+    } else {
+        stop("Can't find x, y, and id column names in data!", call. = FALSE)
+    }
+
+    if (!is.null(groupcol) && any(colnames(dat) %in% groupcol)) {
+        colnames(dat) <- gsub(groupcol, "group", colnames(dat))
+    } else if (!is.null(groupcol) && !any(colnames(dat) %in% "group")) {
+        stop("Can't find groupcol column name in data!", call. = FALSE)
+    } else if (!is.null(groupcol) && any(colnames(dat) %in% "group") && !any(colnames(dat) %in% groupcol)) {
+        stop("Groupcol does not match column names. Column name 'group' was found and will be used.", call. = FALSE)
+    }
+    return(dat)
+}
+
