@@ -136,19 +136,20 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
     ## Get N unique prices
     prices <- unique(dat$x)
     np <- length(prices)
+    browser()
+    dfres <-  data.frame(matrix(vector(), np, 5,
+                                dimnames = list(c(),
+                                                c("Price", "Mean", "SD", "PropZeros", "NAs"))),
+                         stringsAsFactors = FALSE)
+    dfres$Price <- gsub("X", "", prices)
 
-    dfres <- data.frame(matrix(vector(), 4, np,
-                               dimnames = list(c("Mean", "SD", "PropZeros", "NAs"),
-                                   c(prices))), stringsAsFactors = FALSE)
-    colnames(dfres) <- gsub("X", "", colnames(dfres))
-
-    dfres["Mean", ] <- aggregate(y ~ x, dat,
+    dfres[, "Mean"] <- aggregate(y ~ x, dat,
                                  function(x) round(mean(x, na.rm = TRUE),2))$y
-    dfres["SD", ] <- aggregate(y ~ x, dat,
+    dfres[, "SD"] <- aggregate(y ~ x, dat,
                                function(x) round(sd(x, na.rm = TRUE),2))$y
-    dfres["PropZeros", ] <- aggregate(y ~ x, dat,
+    dfres[, "PropZeros"] <- aggregate(y ~ x, dat,
                                       function(x) round(sum(x == 0, na.rm = TRUE)/length(x), 2))$y
-    dfres["NAs", ] <- aggregate(y ~ x, dat,
+    dfres[, "NAs"] <- aggregate(y ~ x, dat,
                                 function(x) sum(is.na(x)))$y
 
     if (bwplot) {
