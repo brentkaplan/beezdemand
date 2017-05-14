@@ -48,55 +48,71 @@ lseq <- function(from=.0000000001, to=1000, length.out=14) {
 ##' @title Create Minor Tick Sequence
 ##' @param maj Value from function lseq
 ##' @return Vector
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @author Brent Kaplan <bkaplan4@@ku.edu>
 ##' @export
 minTicks <- function(maj) {
-    minticks <- vector(length = (length(maj)-1) * 10)
-    for (i in 1:length(maj)) {
-        if (i == length(maj)) {
-            return(minticks)
-        }
-        if (i == 1) {
-            minticks <- seq(maj[i], maj[i + 1], length.out = 10)
-        } else {
-            minticks <- c(minticks, seq(maj[i], maj[i + 1], length.out = 10))
-        }
+  minticks <- vector(length = (length(maj)-1) * 10)
+  for (i in 1:length(maj)) {
+    if (i == length(maj)) {
+      return(minticks)
     }
-}
-
-##' APA theme for ggplot
-##'
-##' Theme for ggplot graphics that closely align with APA formatting
-##' @title APA Theme
-##' @param plot.box Boolean for a box around the plot
-##' @return ggplot theme
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
-##' @export
-theme_apa <- function(plot.box = FALSE){
-    helv <- "Helvetica"
-
-    out <- theme(
-        plot.title = element_text(family = helv, size = 14, face = "bold", colour = "black"),
-        axis.title.x = element_text(family = helv, size = 14, colour = "black"),
-        axis.title.y = element_text(family = helv, size = 14, angle = 90, colour = "black"),
-        axis.text.x = element_text(family = helv, size = 11, colour = "black"),
-        axis.text.y = element_text(family = helv, size = 11, colour = "black"),
-        axis.ticks = element_line(colour="black"))
-
-    if (plot.box) {
-        out <- out + theme(panel.background = element_rect(fill = "white",
-                colour = "black"), panel.border = element_rect(fill = NA,
-                colour = "white"), axis.line = element_line())
+    if (i == 1) {
+      minticks <- seq(maj[i], maj[i + 1], length.out = 10)
     } else {
-        out <- out + theme(panel.background = element_blank(),
-                           panel.border = element_blank(),
-                           panel.grid.major = element_blank(),
-                           panel.grid.minor = element_blank(),
-                           axis.line = element_line(colour = "black"))
+      minticks <- c(minticks, seq(maj[i], maj[i + 1], length.out = 10))
     }
-    out
+  }
 }
 
+##' Creates annotation layer
+##'
+##' Inherit and extend layer for use in ggplot draw
+##' @title annotation_logticks2
+##' @param base base for drawing in scale
+##' @param sides sides to draw, by default bottom and left
+##' @param scaled true by default
+##' @param short short tick settings
+##' @param mid mid tick settings
+##' @param long long tick settings
+##' @param colour default to black colour
+##' @param size size for labels
+##' @param linetype default linetype
+##' @param alpha default alpha level
+##' @param data data to include
+##' @param color colors to include
+##' @return ggplot2 layer
+##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @export
+annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short = unit(0.1, "cm"),
+                                 mid = unit(0.2, "cm"), long = unit(0.3, "cm"), colour = "black",
+                                 size = 0.5, linetype = 1, alpha = 1, data =data.frame(x = NA), color = NULL, ...) {
+  if (!is.null(color)) {
+    colour <- color
+  }
+
+  layer(
+    data = data,
+    mapping = NULL,
+    stat = StatIdentity,
+    geom = GeomLogticks,
+    position = PositionIdentity,
+    show.legend = FALSE,
+    inherit.aes = FALSE,
+    params = list(
+      base = base,
+      sides = sides,
+      scaled = scaled,
+      short = short,
+      mid = mid,
+      long = long,
+      colour = colour,
+      size = size,
+      linetype = linetype,
+      alpha = alpha,
+      ...
+    )
+  )
+}
 
 ##' Creates plots
 ##'
@@ -110,74 +126,397 @@ theme_apa <- function(plot.box = FALSE){
 ##' @param tobquote Character string to be evaluated
 ##' @param vartext Character vector to match demand indices
 ##' @return Nothing
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @author Brent Kaplan <bkaplan4@@ku.edu>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
-    ## TODO 20170430: rewrite using ggplot, add arithmetic y for koff,
-    ## anticipate for normalization curves.
-    majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
-    majticks <- lseq()
-    minticks <- minTicks(majticks)
+  require(ggplot2)
 
-    if (!fitfail) {
-        tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x),
-                                      length.out = 1000), k = dfrow[["K"]])
-        if (dfrow[["Equation"]] == "hs") {
-            tempnew$y <- 10^(predict(fit, newdata = tempnew))
-        } else if (dfrow[["Equation"]] == "koff") {
-            tempnew$y <- predict(fit, newdata = tempnew)
-        }
-        tempnew$expend <- tempnew$x * tempnew$y
+  if (!fitfail) {
+    tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x), length.out = 1000), k = dfrow[["K"]])
 
-        xmin <- min(c(tempnew$x[tempnew$x > 0], .1))
-        xmax <- max(tempnew$x)
-        ymin <- min(c(tempnew$y, adf$y[adf$y > 0], 1))
-        ymax <- min(c(1000, max(c(tempnew$y, adf$y)))) + 5
+    segmentFrame <- data.frame(x1 = c(0),
+                               x2 = c(0),
+                               y1 = c(0),
+                               y2 = c(0))
+    segmentFrame[1, "x1"] <- dfrow[["Pmaxd"]]
+    segmentFrame[1, "x2"] <- dfrow[["Pmaxd"]]
+    segmentFrame[1, "y1"] <- 0
 
-        png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
-        par(mar = c(5, 4, 4, 4) + 0.3)
-        plot(tempnew$x, tempnew$y, type = "n", log = "xy", yaxt = "n",
-             xaxt = "n", bty = "l",
-             xlim = c(xmin, xmax),
-             ylim = c(ymin, ymax),
-             xlab = "Price", ylab = "Reported Consumption",
-             main = paste("Participant", dfrow[["Participant"]], sep = "-"))
-        usr <- 10^par("usr")
-        points(adf$x, adf$y)
-        axis(1, majticks, labels = majlabels)
-        axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-        axis(2, majticks, labels = majlabels, las = 1)
-        axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-        lines(tempnew$y ~ tempnew$x, lwd = 1.5)
+    tempMax <- data.frame(x = segmentFrame$x1, k = dfrow[["K"]])
 
-        if (!is.null(tobquote)) {
-            leg <- vector("expression", length(vartext))
-            for (j in seq_along(vartext)) {
-                tmp <- round(dfrow[[vartext[j]]], 6)
-                leg[j] <- parse(text = paste(tobquote[[j]], " == ", tmp))
-            }
-            legend("bottomleft", legend = leg, xjust = 0, cex = .7)
-        }
-        graphics.off()
-    } else {
-        xmin <- min(c(adf$x[adf$x > 0], .1))
-        xmax <- max(adf$x)
-        ymin <- min(c(adf$y[adf$y > 0], 1))
-        ymax <- min(c(1000, max(adf$y))) + 5
-
-        png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
-        par(mar = c(5, 4, 4, 4) + 0.3)
-        plot(adf$x, adf$y, type = "n", log = "xy", yaxt = "n", xaxt = "n", bty = "l",
-             xlim = c(xmin, xmax),
-             ylim = c(ymin, ymax),
-             xlab = "Price", ylab = "Reported Consumption",
-             main = paste("Participant", dfrow[["Participant"]], sep = "-"))
-        usr <- 10^par("usr")
-        points(adf$x, adf$y)
-        axis(1, majticks, labels = majlabels)
-        axis(1, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-        axis(2, majticks, labels = majlabels, las = 1)
-        axis(2, minticks, labels = NA, tcl = -0.25, lwd = 0, lwd.ticks = 1)
-        graphics.off()
+    if (dfrow[["Equation"]] == "hs") {
+      tempnew$y <- 10^(predict(fit, newdata = tempnew))
+      segmentFrame[1, "y2"] <- 10^(predict(fit, newdata = tempMax))
+    } else if (dfrow[["Equation"]] == "koff") {
+      tempnew$y <- predict(fit, newdata = tempnew)
+      segmentFrame[1, "y2"] <- predict(fit, newdata = tempMax)
     }
+
+    tempnew$expend <- tempnew$x * tempnew$y
+
+    png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
+
+    pointFrame <- data.frame(X=adf$x, Y=adf$y)
+
+    if (0 %in% pointFrame$X) {
+      # If the points contain a qFree (x = 0), use faceted grid arrangement
+      #
+
+      pointFrame$mask <- 1
+      tempnew$mask <- 1
+
+      pointFrame[pointFrame$X == 0,]$mask <- 0
+      pointFrame[pointFrame$X == 0,]$X <- 0.00001
+
+      segmentFrame$mask <- 1
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
+        facet_grid(.~mask, scales="free_x", space="free") +
+        geom_line(data=tempnew, aes(x=x, y=y)) +
+        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c("QFree",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        theme(strip.background = element_blank(),
+              strip.text = element_blank(),
+              panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.position = "bottom",
+              legend.title=element_blank(),
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0)) +
+        annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    } else {
+      logChart <- ggplot(tempnew,aes(x=tempnew$x,y=tempnew$y)) +
+        geom_line(show.legend=F) +
+        geom_point(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y), size=2, shape=21, show.legend=T) +
+        scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        annotation_logticks() +
+        theme(panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.title=element_blank(),
+              legend.position = "bottom",
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    }
+
+    print(logChart)
+    graphics.off()
+
+  } else {
+    # If the points contain a qFree (x = 0), use faceted grid arrangement
+    #
+
+    png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
+
+    pointFrame <- data.frame(X=adf$x, Y=adf$y)
+
+    if (0 %in% pointFrame$X) {
+      pointFrame$mask <- 1
+
+      pointFrame[pointFrame$X == 0,]$mask <- 0
+      pointFrame[pointFrame$X == 0,]$X <- 0.00001
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        facet_grid(.~mask, scales="free_x", space="free") +
+        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c("QFree",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        theme(strip.background = element_blank(),
+              strip.text = element_blank(),
+              panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.position = "bottom",
+              legend.title=element_blank(),
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0)) +
+        annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    } else {
+      logChart <- ggplot(data=pointFrame, aes(x=pointFrame$X, y=pointFrame$Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        annotation_logticks() +
+        theme(panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.title=element_blank(),
+              legend.position = "bottom",
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    }
+
+    print(logChart)
+
+    graphics.off()
+  }
+}
+
+PlotCurve <- function(adf, dfrow, fitfail) {
+  require(ggplot2)
+
+  if (!fitfail) {
+    segmentFrame <- data.frame(x1 = c(0),
+                               x2 = c(0),
+                               y1 = c(0),
+                               y2 = c(0))
+
+    segmentFrame[1, "x1"] <- dfrow[["Pmaxd"]]
+    segmentFrame[1, "x2"] <- dfrow[["Pmaxd"]]
+    segmentFrame[1, "y1"] <- 0
+
+
+    tempMax <- data.frame(x = segmentFrame$x1, k = dfrow[["K"]])
+
+    lowPrice <- 0.001
+
+    # Lengthen out the curve domain
+    highPrice <- max(adf$x) * 2
+
+    xSeries <- seq(from = lowPrice, to = highPrice, by = 0.001)
+    ySeries <- rep(NA, length(xSeries))
+
+    if (dfrow[["Equation"]] == "hs") {
+      ySeries <- (log(dfrow[["Q0d"]])/log(10)) + dfrow[["K"]] * (exp(-dfrow[["Alpha"]] * dfrow[["Q0d"]] * xSeries) - 1)
+      ySeries <- 10^ySeries
+
+      segmentFrame[1, "y2"] <- 10^((log(dfrow[["Q0d"]])/log(10)) + dfrow[["K"]] * (exp(-dfrow[["Alpha"]] * dfrow[["Q0d"]] * dfrow[["Pmaxd"]]) - 1))
+
+    } else if (dfrow[["Equation"]] == "koff") {
+      ySeries <- dfrow[["Q0d"]] * 10^(dfrow[["K"]] * (exp(-dfrow[["Alpha"]] * dfrow[["Q0d"]] * xSeries) - 1))
+
+      segmentFrame[1, "y2"] <- dfrow[["Q0d"]] * 10^(dfrow[["K"]] * (exp(-dfrow[["Alpha"]] * dfrow[["Q0d"]] * dfrow[["Pmaxd"]]) - 1))
+    }
+
+    tempnew <- data.frame(x=xSeries,
+                          y=ySeries)
+
+    tempnew$expend <- tempnew$x * tempnew$y
+
+    pointFrame <- data.frame(X=adf$x, Y=adf$y)
+
+    if (0 %in% pointFrame$X) {
+      # If the points contain a qFree (x = 0), use faceted grid arrangement
+      #
+
+      pointFrame$mask <- 1
+      tempnew$mask <- 1
+
+      pointFrame[pointFrame$X == 0,]$mask <- 0
+      pointFrame[pointFrame$X == 0,]$X <- 0.00001
+
+      segmentFrame$mask <- 1
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
+        facet_grid(.~mask, scales="free_x", space="free_x") +
+        geom_line(data=tempnew, aes(x=x, y=y)) +
+        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c("QFree",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.01, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        theme(strip.background = element_blank(),
+              strip.text = element_blank(),
+              panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.position = "bottom",
+              legend.title=element_blank(),
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0)) +
+        annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    } else {
+      message('here')
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
+        geom_line(data=tempnew, aes(x=x, y=y)) +
+        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.01, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        annotation_logticks() +
+        theme(panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.title=element_blank(),
+              legend.position = "bottom",
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        labs(x = "Price", y = "Reported Consumption")
+    }
+
+    logChart
+
+  } else {
+    # fitting failed in these instances
+    #
+
+    pointFrame <- data.frame(X=adf$x, Y=adf$y)
+
+    if (0 %in% pointFrame$X) {
+      pointFrame$mask <- 1
+
+      pointFrame[pointFrame$X == 0,]$mask <- 0
+      pointFrame[pointFrame$X == 0,]$X <- 0.00001
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        geom_blank(data = data.frame(X=0.001,
+                                     Y=0.001,
+                                     mask=1)) +
+        geom_blank(data = data.frame(X=max(adf$x)*2,
+                                     Y=max(adf$y),
+                                     mask=1)) +
+        facet_grid(.~mask, scales="free_x", space="free_x") +
+        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c("QFree",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        theme(strip.background = element_blank(),
+              strip.text = element_blank(),
+              panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.position = "bottom",
+              legend.title=element_blank(),
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0)) +
+        annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    } else {
+
+      logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
+        geom_point(size=2, shape=21, show.legend=T) +
+        geom_blank(data = data.frame(X=0.001,
+                                     Y=0.001)) +
+        geom_blank(data = data.frame(X=max(adf$x)*2,
+                                     Y=max(adf$y))) +
+        scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+        coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
+        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        annotation_logticks() +
+        theme(panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_rect(colour = "white",
+                                          fill=FALSE,
+                                          size=0),
+              axis.line.x = element_line(colour = "black"),
+              axis.line.y = element_line(colour = "black"),
+              axis.text.x=element_text(colour="black"),
+              axis.text.y=element_text(colour="black"),
+              text = element_text(size=16),
+              plot.title = element_text(hjust = 0.5),
+              legend.title=element_blank(),
+              legend.position = "bottom",
+              legend.key = element_rect(fill = "transparent", colour = "transparent")) +
+        labs(x = "Price", y = "Reported Consumption")
+
+    }
+
+    logChart
+  }
 }
