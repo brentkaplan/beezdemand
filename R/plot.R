@@ -314,6 +314,16 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
   }
 }
 
+##' Creates a single plot object
+##'
+##' Creates individual demand curves
+##' @title Plot Curve
+##' @param adf Data frame (long form) of purchase task data.
+##' @param dfrow A row of results from FitCurves
+##' @param fitfail Boolean whether there's a valid nls model object
+##' @return ggplot2 graphical object
+##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @export
 PlotCurve <- function(adf, dfrow, fitfail) {
   require(ggplot2)
 
@@ -326,9 +336,6 @@ PlotCurve <- function(adf, dfrow, fitfail) {
     segmentFrame[1, "x1"] <- dfrow[["Pmaxd"]]
     segmentFrame[1, "x2"] <- dfrow[["Pmaxd"]]
     segmentFrame[1, "y1"] <- 0
-
-
-    tempMax <- data.frame(x = segmentFrame$x1, k = dfrow[["K"]])
 
     lowPrice <- 0.001
 
@@ -353,13 +360,10 @@ PlotCurve <- function(adf, dfrow, fitfail) {
     tempnew <- data.frame(x=xSeries,
                           y=ySeries)
 
-    tempnew$expend <- tempnew$x * tempnew$y
-
     pointFrame <- data.frame(X=adf$x, Y=adf$y)
 
     if (0 %in% pointFrame$X) {
-      # If the points contain a qFree (x = 0), use faceted grid arrangement
-      #
+      # Split axes are warranted here
 
       pointFrame$mask <- 1
       tempnew$mask <- 1
@@ -402,7 +406,7 @@ PlotCurve <- function(adf, dfrow, fitfail) {
         labs(x = "Price", y = "Reported Consumption")
 
     } else {
-      message('here')
+      # Regular representation
 
       logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
         geom_point(size=2, shape=21, show.legend=T) +
@@ -437,11 +441,11 @@ PlotCurve <- function(adf, dfrow, fitfail) {
 
   } else {
     # fitting failed in these instances
-    #
 
     pointFrame <- data.frame(X=adf$x, Y=adf$y)
 
     if (0 %in% pointFrame$X) {
+      # Split axes are warranted
       pointFrame$mask <- 1
 
       pointFrame[pointFrame$X == 0,]$mask <- 0
@@ -484,6 +488,7 @@ PlotCurve <- function(adf, dfrow, fitfail) {
         labs(x = "Price", y = "Reported Consumption")
 
     } else {
+      # Regular representation
 
       logChart <- ggplot(pointFrame,aes(x=X,y=Y)) +
         geom_point(size=2, shape=21, show.legend=T) +
