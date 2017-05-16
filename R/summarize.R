@@ -136,7 +136,6 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
     ## Get N unique prices
     prices <- unique(dat$x)
     np <- length(prices)
-    browser()
     dfres <-  data.frame(matrix(vector(), np, 5,
                                 dimnames = list(c(),
                                                 c("Price", "Mean", "SD", "PropZeros", "NAs"))),
