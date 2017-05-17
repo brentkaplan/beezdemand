@@ -48,7 +48,7 @@ lseq <- function(from=.0000000001, to=1000, length.out=14) {
 ##' @title Create Minor Tick Sequence
 ##' @param maj Value from function lseq
 ##' @return Vector
-##' @author Brent Kaplan <bkaplan4@@ku.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 minTicks <- function(maj) {
   minticks <- vector(length = (length(maj)-1) * 10)
@@ -126,7 +126,7 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @param tobquote Character string to be evaluated
 ##' @param vartext Character vector to match demand indices
 ##' @return Nothing
-##' @author Brent Kaplan <bkaplan4@@ku.edu>, Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
   require(ggplot2)
@@ -524,4 +524,38 @@ PlotCurve <- function(adf, dfrow, fitfail) {
 
     logChart
   }
+}
+
+
+##' APA theme for ggplot
+##'
+##' Theme for ggplot graphics that closely align with APA formatting
+##' @title APA Theme
+##' @param plot.box Boolean for a box around the plot
+##' @return ggplot theme
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @export
+theme_apa <- function(plot.box = FALSE){
+    helv <- "Helvetica"
+
+    out <- theme(
+        plot.title = element_text(family = helv, size = 14, face = "bold", colour = "black"),
+        axis.title.x = element_text(family = helv, size = 14, colour = "black"),
+        axis.title.y = element_text(family = helv, size = 14, angle = 90, colour = "black"),
+        axis.text.x = element_text(family = helv, size = 11, colour = "black"),
+        axis.text.y = element_text(family = helv, size = 11, colour = "black"),
+        axis.ticks = element_line(colour="black"))
+
+    if (plot.box) {
+        out <- out + theme(panel.background = element_rect(fill = "white",
+                colour = "black"), panel.border = element_rect(fill = NA,
+                colour = "white"), axis.line = element_line())
+    } else {
+        out <- out + theme(panel.background = element_blank(),
+                           panel.border = element_blank(),
+                           panel.grid.major = element_blank(),
+                           panel.grid.minor = element_blank(),
+                           axis.line = element_line(colour = "black"))
+    }
+    out
 }
