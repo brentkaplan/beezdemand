@@ -80,6 +80,7 @@ minTicks <- function(maj) {
 ##' @param alpha default alpha level
 ##' @param data data to include
 ##' @param color colors to include
+##' @param ... additional arguments
 ##' @return ggplot2 layer
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
@@ -129,7 +130,6 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext) {
-  require(ggplot2)
 
   if (!fitfail) {
     tempnew <- data.frame(x = seq(min(adf$x[adf$x > 0]), max(adf$x), length.out = 1000), k = dfrow[["K"]])
@@ -325,7 +325,6 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 PlotCurve <- function(adf, dfrow, fitfail) {
-  require(ggplot2)
 
   if (!fitfail) {
     segmentFrame <- data.frame(x1 = c(0),

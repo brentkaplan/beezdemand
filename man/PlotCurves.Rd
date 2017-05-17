@@ -31,5 +31,5 @@ Creates plots
 Creates and saves plots of individual demand curves
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan <bkaplan.ku@gmail.com>, Shawn Gilroy <shawn.gilroy@temple.edu>
 }

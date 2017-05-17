@@ -4,10 +4,16 @@
 \alias{GetEmpirical}
 \title{GetEmpirical}
 \usage{
-GetEmpirical(dat)
+GetEmpirical(dat, xcol = "x", ycol = "y", idcol = "id")
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
+
+\item{xcol}{The column name that should be treated as "x" data}
+
+\item{ycol}{The column name that should be treated as "y" data}
+
+\item{idcol}{The column name that should be treated as dataset identifier}
 }
 \value{
 Data frame of empirical measures

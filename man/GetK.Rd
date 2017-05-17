@@ -4,10 +4,12 @@
 \alias{GetK}
 \title{Get K}
 \usage{
-GetK(dat)
+GetK(dat, mnrange = TRUE)
 }
 \arguments{
 \item{dat}{Dataframe (long form)}
+
+\item{mnrange}{Boolean for whether k should be calculated based on the mean range + .5}
 }
 \value{
 Numeric

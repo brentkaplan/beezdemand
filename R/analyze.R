@@ -43,6 +43,7 @@
 ##' @param xcol The column name that should be treated as "x" data
 ##' @param ycol The column name that should be treated as "y" data
 ##' @param idcol The column name that should be treated as dataset identifier
+##' @param groupcol The column name that should be treated as the groups
 ##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @param plotdestination Destination of plots
@@ -998,6 +999,9 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 ##' @title GetEmpirical
 ##' @param dat data frame (long form) of purchase task data.
+##' @param idcol The column name that should be treated as dataset identifier
+##' @param xcol The column name that should be treated as "x" data
+##' @param ycol The column name that should be treated as "y" data
 ##' @return Data frame of empirical measures
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export

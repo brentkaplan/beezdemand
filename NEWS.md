@@ -1,3 +1,11 @@
+# beezdemand 0.0.90
+
+## New updates
+
+* `ExtraF()` now compares alpha and Q0
+
+* A number of functions now allows you to specify the column names
+
 # beezdemand 0.0.85
 
 ## New updates

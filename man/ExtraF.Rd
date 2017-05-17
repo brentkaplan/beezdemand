@@ -4,16 +4,30 @@
 \alias{ExtraF}
 \title{ExtraF}
 \usage{
-ExtraF(dat, equation = "hs", groups = NULL, verbose = FALSE)
+ExtraF(dat, equation = "hs", groups = NULL, verbose = FALSE, k,
+  compare = "alpha", idcol = "id", xcol = "x", ycol = "y",
+  groupcol = NULL)
 }
 \arguments{
 \item{dat}{Long form data frame}
 
 \item{equation}{"hs"}
 
-\item{groups}{NULL for all. Character vector matching groups in id column}
+\item{groups}{NULL for all. Character vector matching groups in groupcol}
 
 \item{verbose}{If TRUE, prints all output including models}
+
+\item{k}{User-defined k value; if missing will attempt to find shared k and then mean emprirical range (in log units)}
+
+\item{compare}{Specify whether to compare alpha or Q0. Default is alpha}
+
+\item{idcol}{The column name that should be treated as dataset identifier}
+
+\item{xcol}{The column name that should be treated as "x" data}
+
+\item{ycol}{The column name that should be treated as "y" data}
+
+\item{groupcol}{The column name that should be treated as the groups}
 }
 \value{
 List of results and models
