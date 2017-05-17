@@ -646,35 +646,68 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @title ExtraF
 ##' @param dat Long form data frame
 ##' @param equation "hs"
-##' @param groups NULL for all. Character vector matching groups in id column
+##' @param groups NULL for all. Character vector matching groups in groupcol
 ##' @param verbose If TRUE, prints all output including models
-##' @param k User-defined k value
+##' @param k User-defined k value; if missing will attempt to find shared k and then mean emprirical range (in log units)
+##' @param compare Specify whether to compare alpha or Q0. Default is alpha
+##' @param idcol The column name that should be treated as dataset identifier
+##' @param xcol The column name that should be treated as "x" data
+##' @param ycol The column name that should be treated as "y" data
+##' @param groupcol The column name that should be treated as the groups
 ##' @return List of results and models
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
-ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, compare = "alpha") {
+ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, compare = "alpha",
+                   idcol = "id", xcol = "x", ycol = "y", groupcol = NULL) {
+
+    if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
+    origcols <- colnames(dat)
+    #browser()
+    dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol, groupcol = groupcol)
+    ## change from subsetting groupcol to subsetting "group"
+    if (is.null(groups) && is.null(groupcol)) {
+        stop("No groups selected!")
+        ##grps <- unique(dat$id)
+    } else if (length(groups) == 1) {
+        stop("Must specify more than 1 group!")
+    } else if (!is.null(groupcol) && !is.null(groups)) {
+        dat <- subset(dat, group %in% groups)
+        grps <- sort(groups)
+    } else if (!is.null(groups) && is.null(groupcol)) {
+        dat <- subset(dat, id %in% groups)
+        grps <- sort(groups)
+    } else if (is.null(groups) && !is.null(groupcol)) {
+        grps <- sort(unique(dat$group))
+    }
+
+    if (!any(colnames(dat) %in% "group")) {
+        dat$group <- dat$id
+    }
+
+     if (any(dat$y %in% 0) && (equation == "hs")) {
+        warning("Zeros found in data no compatible with equation! Dropping zeros!")
+        dat <- dat[dat$y != 0, , drop = FALSE]
+    }
+
     ## find best fit k to constrain later
     if (!missing(k)) {
         bfk <- k
     } else {
-        bfk <- GetSharedK(dat = dat, equation = equation)
+        ## TODO: allow to specify id column in GetSharedK
+        kdat <- dat
+        colnames(kdat) <- c("old-id", "id", "x", "y")
+        bfk <- try(GetSharedK(dat = kdat, equation = equation), silent = TRUE)
         if (class(bfk) == "character") {
             message(bfk)
             bfk <- GetK(dat)
         }
     }
 
-    if (is.null(groups)) {
-        grps <- unique(dat$id)
-    } else {
-        grps <- groups
-        dat <- subset(dat, id %in% groups)
-    }
-
     ## set references
     j <- 1
     for (i in grps) {
-        dat[dat$id == i, "ref"] <- j
+        #dat[dat$id == i, "ref"] <- j
+        dat[dat$group == i, "ref"] <- j
         j <- j+1
     }
     dat$ref <- as.factor(dat$ref)
@@ -724,7 +757,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 
     fit <- NULL
     fit <- try(nlmrt::wrapnls(fu, data = dat2, start = c(startingvals)), silent = TRUE)
-
+    if (class(fit) == "try-error") stop("Unable to fit simple model!")
     ## fit complex model (q0 and alpha free, fixed k)
     if (equation == "hs") {
         fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
@@ -743,7 +776,8 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     ## on group by group basis
     lstfits <- list()
     for (i in grps) {
-        tmp <- subset(dat, id %in% i)
+        #tmp <- subset(dat, id %in% i) ## groupcol %in% i
+        tmp <- subset(dat, group %in% i)
         lstfits[[i]] <- try(nlmrt::wrapnls(formula = fo,
                            start = list(q0 = 10, alpha = 0.01),
                            control = list(maxiter = 1000),
