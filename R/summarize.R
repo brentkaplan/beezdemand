@@ -165,8 +165,8 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
         png(file = paste0(outdir, "bwplot.png"), width = 7, height = 6)
         ggplot(dat, aes(x = as.factor(x), y = y)) +
             geom_boxplot() +
-            labs(x = "Price", y = "Reported Consumption") +
-            theme_apa()
+            labs(x = "Price", y = "Reported Consumption") 
+            #+ theme_apa()
         dev.off()
     }
     dfres
