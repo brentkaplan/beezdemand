@@ -96,6 +96,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 
     ps <- unique(dat$id)
+    ps <- as.character(ps)
     np <- length(ps)
 
     dfres <- data.frame(matrix(vector(),
