@@ -44,7 +44,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 
     ## Get N unique participants, informing loop
     participants <- unique(dat$id)
-    participant <- as.character(participants)
+    participants <- as.character(participants)
     np <- length(participants)
 
     cnames <- c("Participant", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
