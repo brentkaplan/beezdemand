@@ -1010,6 +1010,7 @@ GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
     dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol)
 
     ps <- unique(dat$id)
+    ps <- as.character(ps)
     np <- length(ps)
 
     cnames <- c("ID", "Intensity", "BP0", "BP1", "Omaxe", "Pmaxe")
