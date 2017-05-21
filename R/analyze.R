@@ -905,6 +905,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 ##' @title Get Shared K
 ##' @param dat Dataframe (longform)
 ##' @param equation Character vector. Accepts either "hs" or "koff"
+##' @param sharecol Character for column to find shared k. Default to "group" but can loop based on id.
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
@@ -913,9 +914,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     if (length(unique(dat[, sharecol])) == 1) {
         stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
     }
-    ## if (length(unique(dat$id)) == 1) {
-    ##     stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
-    ## }
+
     ## get rid of NAs
     dat <- dat[!is.na(dat$y), ]
 

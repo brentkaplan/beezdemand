@@ -4,12 +4,14 @@
 \alias{GetSharedK}
 \title{Get Shared K}
 \usage{
-GetSharedK(dat, equation)
+GetSharedK(dat, equation, sharecol = "group")
 }
 \arguments{
 \item{dat}{Dataframe (longform)}
 
 \item{equation}{Character vector. Accepts either "hs" or "koff"}
+
+\item{sharecol}{Character for column to find shared k. Default to "group" but can loop based on id.}
 }
 \value{
 Numeric value of shared k
