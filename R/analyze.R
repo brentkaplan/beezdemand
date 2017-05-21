@@ -129,7 +129,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             } else if (k == "ind") {
                 kest <- "ind"
             } else if (k == "share") {
-                k <- GetSharedK(dat, equation)
+                k <- GetSharedK(dat, equation, sharecol = "id")
                 if (is.character(k)) {
                     warning(k)
                     k <- GetK(dat)
@@ -696,9 +696,9 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         bfk <- k
     } else {
         ## TODO: allow to specify id column in GetSharedK
-        kdat <- dat
-        colnames(kdat) <- c("old-id", "id", "x", "y")
-        bfk <- try(GetSharedK(dat = kdat, equation = equation), silent = TRUE)
+        #kdat <- dat
+        #colnames(kdat) <- c("old-id", "id", "x", "y")
+        bfk <- try(GetSharedK(dat = dat, equation = equation, sharecol = "group"), silent = TRUE)
         if (class(bfk) == "character") {
             message(bfk)
             bfk <- GetK(dat)
@@ -861,23 +861,23 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
         if (equation == "hs") {
-            dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, id %in% grps[j])$y) -
-                                                        mean(log10(subset(dat, id %in% grps[j])$y)))^2))
+            dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, group %in% grps[j])$y) -
+                                                        mean(log10(subset(dat, group %in% grps[j])$y)))^2))
             dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
                                       (dfres[i, "K"] *
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
         } else if (equation == "koff") {
-            dfres[i, "R2"] <-  1.0 -(deviance(tmp)/sum((subset(dat, id %in% grps[j])$y -
-                                                       mean(subset(dat, id %in% grps[j])$y))^2))
+            dfres[i, "R2"] <-  1.0 -(deviance(tmp)/sum((subset(dat, group %in% grps[j])$y -
+                                                       mean(subset(dat, group %in% grps[j])$y))^2))
             dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] *
                                   (10^(dfres[i, "K"] *
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
         }
-        dfres[i, "N"] <- NROW(subset(dat, id %in% grps[j])$y)
+        dfres[i, "N"] <- NROW(subset(dat, group %in% grps[j])$y)
         dfres[i, "AbsSS"] <- deviance(tmp)
         dfres[i, "SdRes"] <- sqrt(deviance(tmp)/df.residual(tmp))
         dfres[i, "Notes"] <- tmp$convInfo$stopMessage
@@ -908,17 +908,20 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
-GetSharedK <- function(dat, equation) {
+GetSharedK <- function(dat, equation, sharecol = "group") {
 
-    if (length(unique(dat$id)) == 1) {
+    if (length(unique(dat[, sharecol])) == 1) {
         stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
     }
+    ## if (length(unique(dat$id)) == 1) {
+    ##     stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
+    ## }
     ## get rid of NAs
     dat <- dat[!is.na(dat$y), ]
 
     j <- 1
-    for (i in unique(dat$id)) {
-        dat[dat$id == i, "ref"] <- j
+    for (i in unique(dat[, sharecol])) {
+        dat[dat[, sharecol] == i, "ref"] <- j
         j <- j+1
     }
     dat$ref <- as.factor(dat$ref)
