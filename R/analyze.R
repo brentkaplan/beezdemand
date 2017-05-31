@@ -208,10 +208,10 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         dfres[i, ] <- Extractor(ps[i], adf, fit, eq = equation, cols = colnames(dfres), kest = kest)
 
         newdat <- NULL
-        newdat <- data.frame("ID" = rep(i, length.out = 1000),
-                             "x" = seq(min(adf$x), max(adf$x), length.out = 1000),
+        newdat <- data.frame("ID" = rep(i, length.out = 10000),
+                             "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
                              "y" = NA)
-        if (!kest == "fit") newdat$k <- k
+        newdat$k <- if (!kest == "fit") k else dfres[["K"]]
 
         if (!class(fit) == "try-error") {
             if (equation == "hs") {
