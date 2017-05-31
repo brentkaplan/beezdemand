@@ -211,12 +211,13 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         newdat <- data.frame("ID" = rep(i, length.out = 1000),
                              "x" = seq(min(adf$x), max(adf$x), length.out = 1000),
                              "y" = NA)
+        if (!kest == "fit") newdat$k <- k
 
         if (!class(fit) == "try-error") {
             if (equation == "hs") {
                 newdat$y <-  10^predict(fit, newdata = newdat)
             } else if (equation == "koff") {
-                newdat$y <- predict(fit, newdat)
+                newdat$y <- predict(fit, newdata = newdat)
             } else if (equation == "linear") {
                 newdat$y <-  exp(predict(fit, newdata = newdat))
             }
