@@ -18,7 +18,7 @@ Dataframe with descriptive statistics
 Calculates descriptive statistics from purchase task data.
 }
 \details{
-Provides the following descriptive statistics from purchase task data at each price: mean consumption, standard deviation of consumption, proportion of 0 values, and number of NAs.
+Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 }
 \examples{
 GetDescriptives(apt)

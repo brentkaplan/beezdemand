@@ -43,11 +43,11 @@
 CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2) {
 
     ## Get N unique participants, informing loop
-    participants <- unique(dat$id)
-    participants <- as.character(participants)
-    np <- length(participants)
+    ps <- unique(dat$id)
+    ps <- as.character(ps)
+    np <- length(ps)
 
-    cnames <- c("Participant", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
+    cnames <- c("ID", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
                 "BouncePass", "Reversals", "ReversalsPass", "NumPosValues")
 
     dfres <- data.frame(matrix(vector(),
@@ -56,10 +56,10 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
                                dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
     for (i in seq_len(np)) {
-        dfres[i, "Participant"] <- participants[i]
+        dfres[i, "ID"] <- ps[i]
 
         adf <- NULL
-        adf <- dat[dat$id == participants[i], ]
+        adf <- dat[dat$id == ps[i], ]
 
 
         adf[, c("x01", "y01")] <- adf[, c("x", "y")] + .01
@@ -123,7 +123,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 
 ##' Calculates descriptive statistics from purchase task data.
 ##'
-##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, standard deviation of consumption, proportion of 0 values, and number of NAs.
+##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 ##' @title Get Purchase Task Descriptive Summary
 ##' @param dat Dataframe (long form)
 ##' @param bwplot Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE
@@ -137,20 +137,28 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
     ## Get N unique prices
     prices <- unique(dat$x)
     np <- length(prices)
-    dfres <-  data.frame(matrix(vector(), np, 5,
-                                dimnames = list(c(),
-                                                c("Price", "Mean", "SD", "PropZeros", "NAs"))),
+    cnames <- c("Price", "Mean", "Median", "SD", "PropZeros", "NAs", "Min", "Max")
+    dfres <-  data.frame(matrix(vector(),
+                                np,
+                                length(cnames),
+                                dimnames = list(c(), cnames)),
                          stringsAsFactors = FALSE)
     dfres$Price <- gsub("X", "", prices)
 
     dfres[, "Mean"] <- aggregate(y ~ x, dat,
                                  function(x) round(mean(x, na.rm = TRUE),2))$y
+    dfres[, "Median"] <- aggregate(y ~ x, dat,
+                                 function(x) round(median(x, na.rm = TRUE),2))$y
     dfres[, "SD"] <- aggregate(y ~ x, dat,
                                function(x) round(sd(x, na.rm = TRUE),2))$y
     dfres[, "PropZeros"] <- aggregate(y ~ x, dat,
                                       function(x) round(sum(x == 0, na.rm = TRUE)/length(x), 2))$y
     dfres[, "NAs"] <- aggregate(y ~ x, dat,
                                 function(x) sum(is.na(x)))$y
+    dfres[, "Min"] <- aggregate(y ~ x, dat,
+                                   function(x) round(min(x, na.rm = TRUE),2))$y
+    dfres[, "Max"] <- aggregate(y ~ x, dat,
+                                 function(x) round(max(x, na.rm = TRUE),2))$y
 
     if (bwplot) {
         if (!dir.exists("../plots/")) dir.create("../plots/")
@@ -162,12 +170,13 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
         ## boxplot(dat$y ~ dat$x, xlab = "Price", ylab = "Reported Consumption")
         ## dev.off()
 
-        png(file = paste0(outdir, "bwplot.png"), width = 7, height = 6)
-        ggplot(dat, aes(x = as.factor(x), y = y)) +
+        #png(file = paste0(outdir, "bwplot.png"), width = 7, height = 6)
+        bwplt <- ggplot(dat, aes(x = as.factor(x), y = y)) +
             geom_boxplot() +
             labs(x = "Price", y = "Reported Consumption") +
             theme_apa()
-        dev.off()
+        ggsave("bwplot.png", plot = bwplt, path = outdir, width = 7, height = 6)
+        unlink("bwplot.png")
     }
     dfres
 }
