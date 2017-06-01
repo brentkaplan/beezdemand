@@ -770,10 +770,10 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     fo <- gsub("k", bfk, fo)
 
     ## to hold predicted values
-    newdat <- data.frame("group" = rep(grps, each = 1000),
+    newdat <- data.frame("group" = rep(grps, each = 10000),
                          "x" = rep(seq(min(unique(dat$x)),
                                        max(unique(dat$x)),
-                                       length.out = 1000), times = length(grps)),
+                                       length.out = 10000), times = length(grps)),
                          "y" = NA)
 
     ## on group by group basis
