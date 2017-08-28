@@ -265,8 +265,8 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
-              axis.title.x = element_text(margin = unit(c(-0.1, 0, 0, 0), "cm")),
-              axis.title.y = element_text(margin = unit(c(0, -0.1, 0, 0), "cm")))
+              axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
+              axis.title.y = element_text(face = "bold", margin = unit(c(0, -0.1, 0, 0), "cm")))
     
     }
     plt
@@ -316,8 +316,8 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
-              axis.title.x = element_text(margin = unit(c(-0.1, 0, 0, 0), "cm")),
-              axis.title.y = element_text(margin = unit(c(0, -0.1, 0, 0), "cm")))
+              axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
+              axis.title.y = element_text(face = "bold", margin = unit(c(0, -0.1, 0, 0), "cm")))
  
     } else {
       # Regular representation
@@ -351,8 +351,8 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
-              axis.title.x = element_text(margin = unit(c(-0.1, 0, 0, 0), "cm")),
-              axis.title.y = element_text(margin = unit(c(0, -0.1, 0, 0), "cm")))
+              axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
+              axis.title.y = element_text(face = "bold", margin = unit(c(0, -0.1, 0, 0), "cm")))
 
     }
 
