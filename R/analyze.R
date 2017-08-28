@@ -250,6 +250,8 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     dfres$Equation <- equation
     dfres <- merge(dfresempirical, dfres, by = "ID")
+    dfres <- dfres[match(ps, dfres$ID), ]
+    rownames(dfres) <- 1:nrow(dfres)
     names(fits) <- ps
     names(adfs) <- ps
     names(newdats) <- ps
