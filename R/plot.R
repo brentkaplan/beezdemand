@@ -154,7 +154,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
 
     tempnew$expend <- tempnew$x * tempnew$y
 
-    png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
+    png(file = paste0(outdir, "Participant-", dfrow[["ID"]], ".png"))
 
     pointFrame <- data.frame(X=adf$x, Y=adf$y)
 
@@ -180,7 +180,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
-        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         theme(strip.background = element_blank(),
               strip.text = element_blank(),
               panel.background = element_blank(),
@@ -211,7 +211,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
-        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         annotation_logticks() +
         theme(panel.background = element_blank(),
               panel.grid.major = element_blank(),
@@ -239,7 +239,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
     # If the points contain a qFree (x = 0), use faceted grid arrangement
     #
 
-    png(file = paste0(outdir, "Participant-", dfrow[["Participant"]], ".png"))
+    png(file = paste0(outdir, "Participant-", dfrow[["ID"]], ".png"))
 
     pointFrame <- data.frame(X=adf$x, Y=adf$y)
 
@@ -257,7 +257,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
-        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         theme(strip.background = element_blank(),
               strip.text = element_blank(),
               panel.background = element_blank(),
@@ -287,7 +287,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
         scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         coord_cartesian(ylim=c(0.1, max(pointFrame$Y))) +
-        ggtitle(paste("Participant", dfrow[["Participant"]], sep = "-")) +
+        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         annotation_logticks() +
         theme(panel.background = element_blank(),
               panel.grid.major = element_blank(),
@@ -324,7 +324,7 @@ PlotCurves <- function(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote,
 ##' @return ggplot2 graphical object
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
-PlotCurve <- function(adf, dfrow, newdats, fitfail) {
+PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
   if (!any(adf$y > 0)) {
    return(print("Warning: No positive consumption values!"))
   }
@@ -382,36 +382,25 @@ PlotCurve <- function(adf, dfrow, newdats, fitfail) {
         facet_grid(.~mask, scales="free_x", space="free_x") +
         scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
-                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        coord_cartesian(ylim=c(0.01, max(pointFrame$Y))) +
+        #coord_cartesian(ylim=c(0.01, max(pointFrame$Y))) +
+        coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
         ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         beezdemand::theme_apa() +
         theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size=16)) +
-        # theme(strip.background = element_blank(),
-        #       strip.text = element_blank(),
-        #       panel.background = element_blank(),
-        #       panel.grid.major = element_blank(),
-        #       panel.grid.minor = element_blank(),
-        #       panel.border = element_rect(colour = "white",
-        #                                   fill=FALSE,
-        #                                   size=0),
-        #       axis.line.x = element_line(colour = "black"),
-        #       axis.line.y = element_line(colour = "black"),
-        #       axis.text.x=element_text(colour="black"),
-        #       axis.text.y=element_text(colour="black"),
-        #       text = element_text(size=16),
-        #       plot.title = element_text(hjust = 0.5),
-        #       legend.position = "bottom",
-        #       legend.title=element_blank(),
-        #       legend.key = element_rect(fill = "transparent", colour = "transparent")) +
-        annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0)) +
         annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
         labs(x = "Price", y = "Reported Consumption")
-
+    
+      if (yscale == "log") {
+        logChart <- logChart +
+          scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+                      labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
+          annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0))
+      }
+      
+      
     } else {
       # Regular representation
 
