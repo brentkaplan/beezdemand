@@ -136,6 +136,10 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
     stop("Object should be from FitCurves")
   }
   
+  if (!dir.exists(outdir)){
+    dir.create(outdir)
+  }
+  
   if (is.null(ending)) {
     ending <- length(dat$fits)
   }
@@ -148,7 +152,15 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
       if (ask) {
         print(ggp)
       } else {
-        ggplot2::ggsave(paste0("Participant-", dat$dfres[i, "ID"], ".", device), plot = ggp, path = outdir, device = device)
+        if (device = "png") {
+          png(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".png"))
+          print(ggp)
+          graphics.off()
+        } else if (device = "pdf") {
+          pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".pdf"))
+          print(ggp)
+          graphics.off()
+        }
       }
     } else {
       next()
