@@ -127,6 +127,7 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @param ... Pass arguments to PlotCurve
 ##' @return Nothing
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @importFrom ggplot2 ggsave
 ##' @export
 PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL, ask = F, ...) {
   
@@ -164,6 +165,7 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
 ##' @param yscale Scaling of y axis. Default is "log". Can also take "linear"
 ##' @return ggplot2 graphical object
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @importFrom ggplot2 geom_point geom_line geom_segment coord_cartesian ggtitle aes annotation_logticks element_blank element_line element_rect element_text expand_limits guide_legend guides labs scale_x_log10 scale_y_log10 theme theme_bw xlab ylab
 ##' @export
 PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
   if (!any(adf$y > 0)) {
