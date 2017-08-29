@@ -128,12 +128,11 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @param ... Pass arguments to PlotCurve
 ##' @return Nothing
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
-##' @importFrom ggplot2 ggsave
 ##' @export
 PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL, ask = F, ...) {
   
   if (!all(c("dfres", "newdats", "adfs") %in% names(dat))) {
-    stop("Object should be from FitCurves")
+    stop("Object should be from FitCurves. Try rerunning FitCurves with detailed = TRUE")
   }
   
   if (!dir.exists(outdir)){
@@ -150,15 +149,15 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
     ggp <- PlotCurve(dat$adfs[[i]], dat$dfres[i, ], dat$newdats[[i]], ...)
     if (!class(ggp)[[1]] == "character") {
       if (ask) {
-        print(ggp)
+        suppressWarnings(print(ggp))
       } else {
         if (device == "png") {
-          png(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".png"))
-          print(ggp)
+          png(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".png"), width = 800, height = 800, res = 120)
+          suppressWarnings(print(ggp))
           graphics.off()
         } else if (device == "pdf") {
           pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".pdf"))
-          print(ggp)
+          suppressWarnings(print(ggp))
           graphics.off()
         }
       }
@@ -226,7 +225,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::facet_grid(.~mask, scales="free_x", space="free_x") +
         ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
+        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
@@ -259,7 +258,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
         ggplot2::scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
+        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
@@ -310,7 +309,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::facet_grid(.~mask, scales="free_x", space="free_x") +
         ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
+        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
@@ -345,7 +344,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
                                      Y=max(adf$y))) +
         ggplot2::scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
+        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         ggplot2::annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
