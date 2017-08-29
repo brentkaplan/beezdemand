@@ -152,11 +152,11 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
       if (ask) {
         print(ggp)
       } else {
-        if (device = "png") {
+        if (device == "png") {
           png(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".png"))
           print(ggp)
           graphics.off()
-        } else if (device = "pdf") {
+        } else if (device == "pdf") {
           pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".pdf"))
           print(ggp)
           graphics.off()
