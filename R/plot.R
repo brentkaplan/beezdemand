@@ -144,7 +144,7 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
   
   for (i in 1:ending) {
     ggp <- PlotCurve(dat$adfs[[i]], dat$dfres[i, ], dat$newdats[[i]], ...)
-    if (!class(ggp) == "character") {
+    if (!class(ggp)[[1]] == "character") {
       if (ask) {
         print(ggp)
       } else {
