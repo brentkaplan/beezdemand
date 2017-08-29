@@ -128,13 +128,13 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @return Nothing
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
-PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending, ask = F, ...) {
+PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL, ask = F, ...) {
   
   if (!all(c("dfres", "newdats", "adfs") %in% names(dat))) {
     stop("Object should be from FitCurves")
   }
   
-  if (!exists("ending")) {
+  if (is.null(ending)) {
     ending <- length(dat$fits)
   }
 
@@ -146,7 +146,7 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending, ask = 
       if (ask) {
         print(ggp)
       } else {
-      ggsave(paste0("Participant-", dat$dfres[i, "ID"], ".", device), plot = ggp, path = outdir, device = device)
+        ggplot2::ggsave(paste0("Participant-", dat$dfres[i, "ID"], ".", device), plot = ggp, path = outdir, device = device)
       }
     } else {
       next()
@@ -204,32 +204,32 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
 
       segmentFrame$mask <- 1
 
-      plt <- ggplot(pointFrame,aes(x=X,y=Y)) +
-        geom_line(data=tempnew, aes(x=x, y=y)) +
-        geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
-        geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
-        facet_grid(.~mask, scales="free_x", space="free_x") +
-        scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+      plt <- ggplot2::ggplot(pointFrame,aes(x=X,y=Y)) +
+        ggplot2::geom_line(data=tempnew, aes(x=x, y=y)) +
+        ggplot2::geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
+        ggplot2::geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
+        ggplot2::facet_grid(.~mask, scales="free_x", space="free_x") +
+        ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
-        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         beezdemand::theme_apa() +
-        theme(strip.background = element_blank(),
+        ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size=16)) +
         annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
-        labs(x = "Price", y = "Reported Consumption")
+        ggplot2::labs(x = "Price", y = "Reported Consumption")
     
       if (yscale == "log") {
         plt <- plt +
-          scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+          ggplot2::scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
           annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0))
       } 
        
       plt <- plt +
-          theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
+        ggplot2::theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
                 axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
                 axis.ticks.length = unit(-0.15, "cm"),
                 axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
@@ -238,31 +238,31 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
     } else {
       # Regular representation
 
-      plt <- ggplot(pointFrame,aes(x=X,y=Y)) +
-        geom_line(data=tempnew, aes(x=x, y=y)) +
-        geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
-        geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
-        scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+      plt <- ggplot2::ggplot(pointFrame,aes(x=X,y=Y)) +
+        ggplot2::geom_line(data=tempnew, aes(x=x, y=y)) +
+        ggplot2::geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), show.legend = F, data = segmentFrame, linetype=2) +
+        ggplot2::geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
+        ggplot2::scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
-        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(tempnew$y) * 1.1)) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
-        theme(strip.background = element_blank(),
+        ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size=16)) +
-        labs(x = "Price", y = "Reported Consumption")
+        ggplot2::labs(x = "Price", y = "Reported Consumption")
       
       if (yscale == "log") {
         plt <- plt +
-          scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+          ggplot2::scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                         labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-          annotation_logticks(sides="l")
+          ggplot2::annotation_logticks(sides="l")
       } 
       
       plt <- plt +
-        theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
+        ggplot2::theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
               axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
@@ -284,36 +284,36 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
       pointFrame[pointFrame$X == 0,]$mask <- 0
       pointFrame[pointFrame$X == 0,]$X <- 0.0001
 
-      plt <- ggplot(pointFrame,aes(x=X,y=Y)) +
-        geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
-        geom_blank(data = data.frame(X=0.001,
+      plt <- ggplot2::ggplot(pointFrame,aes(x=X,y=Y)) +
+        ggplot2::geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
+        ggplot2::geom_blank(data = data.frame(X=0.001,
                                      Y=0.001,
                                      mask=1)) +
-        geom_blank(data = data.frame(X=max(adf$x)*2,
+        ggplot2::geom_blank(data = data.frame(X=max(adf$x)*2,
                                      Y=max(adf$y),
                                      mask=1)) +
-        facet_grid(.~mask, scales="free_x", space="free_x") +
-        scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+        ggplot2::facet_grid(.~mask, scales="free_x", space="free_x") +
+        ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
-        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
         beezdemand::theme_apa() +
-        theme(strip.background = element_blank(),
+        ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size=16)) +
         annotation_logticks2(sides="b", data = data.frame(X= NA, mask = 1)) +
-        labs(x = "Price", y = "Reported Consumption")
+        ggplot2::labs(x = "Price", y = "Reported Consumption")
       
       if (yscale == "log") {
         plt <- plt +
-          scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+          ggplot2::scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                         labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
           annotation_logticks2(sides="l", data = data.frame(X= NA, mask = 0))
       } 
       
       plt <- plt +
-        theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
+        ggplot2::theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
               axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
@@ -322,33 +322,33 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
     } else {
       # Regular representation
 
-      plt <- ggplot(pointFrame,aes(x=X,y=Y)) +
-        geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
-        geom_blank(data = data.frame(X=0.001,
+      plt <- ggplot2::ggplot(pointFrame,aes(x=X,y=Y)) +
+        ggplot2::geom_point(size=3, shape=21, show.legend=T, colour = "black", fill = "white", alpha = .9, stroke = 1) +
+        ggplot2::geom_blank(data = data.frame(X=0.001,
                                      Y=0.001)) +
-        geom_blank(data = data.frame(X=max(adf$x)*2,
+        ggplot2::geom_blank(data = data.frame(X=max(adf$x)*2,
                                      Y=max(adf$y))) +
-        scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+        ggplot2::scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-        coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
-        ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
-        annotation_logticks(sides = "b") +
+        ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.1)) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
-        theme(strip.background = element_blank(),
+        ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size=16)) +
-        labs(x = "Price", y = "Reported Consumption")
+        ggplot2::labs(x = "Price", y = "Reported Consumption")
       
       if (yscale == "log") {
         plt <- plt +
-          scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
+          ggplot2::scale_y_log10(breaks=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                         labels=c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
-          annotation_logticks(sides="l")
+          ggplot2::annotation_logticks(sides="l")
       } 
       
       plt <- plt +
-        theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
+        ggplot2::theme(axis.text.x = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.text.y = element_text(size=12, margin = unit(c(0.3,0.3,0.3,0.3), "cm")),
               axis.ticks.length = unit(-0.15, "cm"),
               axis.title.x = element_text(face = "bold", margin = unit(c(-0.1, 0, 0, 0), "cm")),
