@@ -4,14 +4,16 @@
 \alias{PlotCurve}
 \title{Plot Curve}
 \usage{
-PlotCurve(adf, dfrow, fitfail)
+PlotCurve(adf, dfrow, newdats, yscale = "log")
 }
 \arguments{
 \item{adf}{Data frame (long form) of purchase task data.}
 
 \item{dfrow}{A row of results from FitCurves}
 
-\item{fitfail}{Boolean whether there's a valid nls model object}
+\item{newdats}{A newdat dataframe from FitCurves}
+
+\item{yscale}{Scaling of y axis. Default is "log". Can also take "linear"}
 }
 \value{
 ggplot2 graphical object

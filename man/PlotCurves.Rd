@@ -4,22 +4,21 @@
 \alias{PlotCurves}
 \title{Plot Curves}
 \usage{
-PlotCurves(adf, dfrow, fit, outdir = "../plots/", fitfail, tobquote, vartext)
+PlotCurves(dat, outdir = "../plots/", device = "png", ending = NULL,
+  ask = F, ...)
 }
 \arguments{
-\item{adf}{Data frame (long form) of purchase task data.}
-
-\item{dfrow}{A row of results from FitCurves}
-
-\item{fit}{A nls model object from FitCurves}
+\item{dat}{FitCurves object with 4 elements (dfres, newdats, adfs, fits)}
 
 \item{outdir}{Directory where plots are saved}
 
-\item{fitfail}{Boolean whether there's a valid nls model object}
+\item{device}{Type of file. Default is "png". Can be "pdf"}
 
-\item{tobquote}{Character string to be evaluated}
+\item{ending}{Optional. Can specify to only plot through a certain number of datasets}
 
-\item{vartext}{Character vector to match demand indices}
+\item{ask}{Can view plots one by one. If TRUE, plots will not save}
+
+\item{...}{Pass arguments to PlotCurve}
 }
 \value{
 Nothing
