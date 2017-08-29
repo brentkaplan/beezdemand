@@ -83,6 +83,7 @@ minTicks <- function(maj) {
 ##' @param ... additional arguments
 ##' @return ggplot2 layer
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @importFrom ggplot2 layer
 ##' @export
 annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short = unit(0.1, "cm"),
                                  mid = unit(0.2, "cm"), long = unit(0.3, "cm"), colour = "black",
