@@ -1027,7 +1027,11 @@ GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
 
         adf <- NULL
         adf <- dat[dat$id == ps[i], ]
-
+        
+        if (any(duplicated(adf$x))) {
+          stop(paste0("Duplicates found where id = ", ps[i], ". Check data and rerun."))
+        }
+        
         adf[, "expend"] <- adf$x * adf$y
 
         ## Find empirical measures
