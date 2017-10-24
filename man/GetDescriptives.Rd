@@ -4,12 +4,19 @@
 \alias{GetDescriptives}
 \title{Get Purchase Task Descriptive Summary}
 \usage{
-GetDescriptives(dat, bwplot = FALSE)
+GetDescriptives(dat, bwplot = FALSE, outdir = "../plots/", device = "png",
+  filename = "bwplot")
 }
 \arguments{
 \item{dat}{Dataframe (long form)}
 
-\item{bwplot}{Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE}
+\item{bwplot}{Boolean. If TRUE, a ggplot2 box and whisker plot is saved. Default is FALSE.}
+
+\item{outdir}{Character. Directory where plot will be saved. Be sure to include trailing '/'. Default location is one level up in "../plots/".}
+
+\item{device}{Character. Type of file. Default is "png". Can be "pdf".}
+
+\item{filename}{Character. Specify filename. Defualt is "bwplot".}
 }
 \value{
 Dataframe with descriptive statistics
