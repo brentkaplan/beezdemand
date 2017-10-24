@@ -126,13 +126,16 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 ##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 ##' @title Get Purchase Task Descriptive Summary
 ##' @param dat Dataframe (long form)
-##' @param bwplot Boolean. If TRUE, box and whisker plot is saved into "../plots/" directory. Default is FALSE
+##' @param bwplot Boolean. If TRUE, a ggplot2 box and whisker plot is saved. Default is FALSE.
+##' @param outdir Character. Directory where plot will be saved. Be sure to include trailing '/'. Default location is one level up in "../plots/".
+##' @param device Character. Type of file. Default is "png". Can be "pdf".
+##' @param filename Character. Specify filename. Defualt is "bwplot". 
 ##' @return Dataframe with descriptive statistics
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
 ##' GetDescriptives(apt)
 ##' @export
-GetDescriptives <- function(dat, bwplot = FALSE) {
+GetDescriptives <- function(dat, bwplot = FALSE, outdir = "../plots/", device = "png", filename = "bwplot") {
 
     ## Get N unique prices
     prices <- unique(dat$x)
@@ -161,22 +164,22 @@ GetDescriptives <- function(dat, bwplot = FALSE) {
                                  function(x) round(max(x, na.rm = TRUE),2))$y
 
     if (bwplot) {
-        if (!dir.exists("../plots/")) dir.create("../plots/")
-        basedir <- "../plots/"
-        basename <- "bwplot-"
-        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
-
-        ## pdf(file = paste0(outdir, "bwplot", ".pdf"), width = 7, height = 6)
-        ## boxplot(dat$y ~ dat$x, xlab = "Price", ylab = "Reported Consumption")
-        ## dev.off()
-
-        #png(file = paste0(outdir, "bwplot.png"), width = 7, height = 6)
-        bwplt <- ggplot(dat, aes(x = as.factor(x), y = y)) +
-            geom_boxplot() +
-            labs(x = "Price", y = "Reported Consumption") +
+        if (!dir.exists(outdir)) dir.create(outdir)
+        bwplt <- ggplot2::ggplot(dat, aes(x = as.factor(x), y = y)) +
+            ggplot2::geom_boxplot() +
+            ggplot2::stat_summary(fun.y = mean, geom = "point", shape = 43, size = 5, color = "red") +
+            ggplot2::labs(x = "Price", y = "Reported Consumption") +
             theme_apa()
-        ggsave("bwplot.png", plot = bwplt, path = outdir, width = 7, height = 6)
-        unlink("bwplot.png")
+        print(bwplt)
+        if (device == "png") {
+          png(file = paste0(outdir, filename, ".png"), width = 800, height = 600, res = 120)
+          suppressWarnings(print(bwplt))
+          graphics.off()
+        } else if (device == "pdf") {
+          pdf(file = paste0(outdir, filename, ".pdf"))
+          suppressWarnings(print(bwplt))
+          graphics.off()
+        }
     }
     dfres
 }
