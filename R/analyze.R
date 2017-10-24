@@ -902,6 +902,20 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 }
 
 
+# Calculate sum of squares for exponential demand
+getSumOfSquaresExponential <- function(presort, index, k, Y, X) {
+  projections <- (log(presort[index,]$Q0)/log(10)) + k * (exp(-presort[index,]$Alpha * presort[index,]$Q0 * X) - 1)
+  sqResidual <- (log(Y)/log(10) - projections)^2
+  sum(sqResidual)
+}
+
+# Calculate sum of squares for exponentiated demand
+getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
+  projections <- presort[index,]$Q0 * 10^(k * (exp(-presort[index,]$Alpha * presort[index,]$Q0 * X) - 1))
+  sqResidual <- (Y - projections)^2
+  sum(sqResidual)
+}
+
 ##' Finds shared k among selected datasets using global regression
 ##'
 ##' Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. Used within FitCurves
@@ -910,74 +924,259 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 ##' @param equation Character vector. Accepts either "hs" or "koff"
 ##' @param sharecol Character for column to find shared k. Default to "group" but can loop based on id.
 ##' @return Numeric value of shared k
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn P Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 GetSharedK <- function(dat, equation, sharecol = "group") {
-
-    if (length(unique(dat[, sharecol])) == 1) {
-        stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
+  
+  if (length(unique(dat[, sharecol])) == 1) {
+    stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
+  }
+  
+  ## get rid of NAs
+  dat <- dat[!is.na(dat$y), ]
+  
+  # get rid of zeroes early on if HS
+  if (equation == "hs") {
+    # dat <- dat[dat$x != 0, ]
+    dat <- dat[dat$y != 0, ]
+  }
+  
+  j <- 1
+  for (i in unique(dat[, sharecol])) {
+    # get rid of rows with only one or two data points
+    if (nrow(dat[dat$id == i,]) < 3) {
+      dat <- dat[dat$id != i,]
+      next
     }
-
-    ## get rid of NAs
-    dat <- dat[!is.na(dat$y), ]
-
-    j <- 1
-    for (i in unique(dat[, sharecol])) {
-        dat[dat[, sharecol] == i, "ref"] <- j
-        j <- j+1
-    }
-    dat$ref <- as.factor(dat$ref)
-
-    ## create contrasts
-    dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
-    nparams <- length(unique(dat2$ref))
-
-    if (equation == "hs") {
-        paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
-        paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-
-        startq0 <- paste(sprintf("q0%d", 1:nparams))
-        startalpha <- paste(sprintf("alpha%d", 1:nparams))
-
-        startingvals <- as.vector(c(rep(10, length(startq0)), rep(.001, length(startalpha)), 4))
-        names(startingvals) <- c(startq0, startalpha, "k")
-
-        fo <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(%s) * (%s) * x)-1)", paramslogq0, paramsalpha, paramsq0)
-
-        fit <- NULL
-        fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
-
-        if (!class(fit) == "try-error") {
-            sharedk <- summary(fit)$coefficients["k", 1]
-            return(sharedk)
-        } else {
-            sharedk <- "Unable to find a shared k. Using empirical range of dataset"
-            return(sharedk)
+    
+    dat[dat[, sharecol] == i, "ref"] <- j
+    j <- j+1
+  }
+  dat$ref <- as.factor(dat$ref)
+ 
+  ## create contrasts
+  dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
+  nparams <- length(unique(dat2$ref))
+  
+  if (equation == "hs") {
+    paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    
+    startq0 <- paste(sprintf("q0%d", 1:nparams))
+    startalpha <- paste(sprintf("alpha%d", 1:nparams))
+    
+    # Domains
+    minQ <- if (min(dat$y) > 0) min(dat$y) else 0.01
+    
+    startQ <- seq(log(minQ), log(max(dat$y) * 1.5), length.out = 10)
+    startA <- seq(0.98, 1.02, length.out = 10)
+    startK <- seq(log(0.5), log(log(max(dat$y)) + 1), length.out = 10)
+    
+    startQ <- exp(startQ)
+    startA <- log(startA)
+    startK <- exp(startK)
+    
+    # Pre-sorts
+    presort <- expand.grid(Q0 = startQ,
+                           Alpha = startA)
+    presort$sumSquares <- NA
+    
+    savedStartValues <- data.frame(ID = integer(),
+                                   Q0 = double(),
+                                   Alpha = double(),
+                                   SSR = double(),
+                                   stringsAsFactors = FALSE)
+    
+    bestSS <- NA
+    currentK <- NA
+    currentData <- NA
+    
+    bestFrame <- data.frame()
+    
+    for (k in startK) {
+      message(sprintf("Scanning for starting values... %s of %s (K = %s)", 
+                      match(k, startK), length(startK), k))
+      currentK <- k
+      
+      for (j in unique(dat$ref)) {
+        currentData <- dat[dat$ref == j, ]
+        
+        for (i in 1:nrow(presort)) {
+          presort[i, ]$sumSquares <- getSumOfSquaresExponential(presort, # Values to check
+                                                                i,       # Index of values
+                                                                currentK,
+                                                                currentData$y,
+                                                                currentData$x)
         }
-    } else if (equation == "koff") {
-        paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-        paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-
-        startq0 <- paste(sprintf("q0%d", 1:nparams))
-        startalpha <- paste(sprintf("alpha%d", 1:nparams))
-
-        startingvals <- as.vector(c(rep(10, length(startq0)), rep(.001, length(startalpha)), 4))
-        names(startingvals) <- c(startq0, startalpha, "k")
-
-        fo <- sprintf("y ~ (%s) * 10^(k * exp(-(%s) * (%s) * x)-1)", paramsq0, paramsalpha, paramsq0)
-
-        fit <- NULL
-        fit <- try(nlmrt::wrapnls(fo, data = dat2, start = c(startingvals)), silent = TRUE)
-
-        if (!class(fit) == "try-error") {
-            sharedk <- summary(fit)$coefficients["k", 1]
-            return(sharedk)
-        } else {
-            sharedk <- "Unable to find a shared k. Using empirical range of dataset"
-            return(sharedk)
-        }
+        
+        presort <- presort[order(presort[,"sumSquares"]),]
+        
+        savedStartValues[as.numeric(j),"Q0"] <- presort[1,]$Q0
+        savedStartValues[as.numeric(j),"Alpha"] <- presort[1,]$Alpha
+        savedStartValues[as.numeric(j),"SSR"] <- presort[1,]$sumSquares
+        savedStartValues[as.numeric(j),"K"] <- currentK
+        savedStartValues[as.numeric(j),"ID"] <- j
+      }
+      
+      if (is.na(bestSS) || sum(savedStartValues$SSR) < bestSS) {
+        message(sprintf("Improvement: K at %s = err: %s", currentK, sum(savedStartValues$SSR)))
+        
+        bestSS <- sum(savedStartValues$SSR)
+        
+        bestFrame <- data.frame(Q0 = savedStartValues$Q0,
+                               Alpha = savedStartValues$Alpha,
+                               K = savedStartValues$K)
+      }
+      
+      presort$sumSquares <- NA
     }
+    
+    vecStartQ0 <- bestFrame$Q0
+    vecStartAlpha <- bestFrame$Alpha
+    vecStartK <- bestFrame$K
+    
+    startingvals <- as.vector(c(vecStartQ0, vecStartAlpha, mean(vecStartK)))
+    names(startingvals) <- c(startq0, startalpha, "k")
+    
+    minvals <- as.vector(c(rep(0.01, length(startq0)), rep(-Inf, length(startalpha)), 0.5))
+    names(minvals) <- c(startq0, startalpha, "k")
+    
+    maxvals <- as.vector(c(rep(Inf, length(startq0)), rep(Inf, length(startalpha)), (log(max(dat$y)) + 0.5) * 2))
+    names(maxvals) <- c(startq0, startalpha, "k")
+    
+    fo <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(%s) * (%s) * x)-1)", paramslogq0, paramsalpha, paramsq0)
+    
+    message("Searching for shared K, this can take a while...")
+    fit <- NULL
+    
+    fit <- nlmrt::nlxb(fo, data = dat2,
+                       start = c(startingvals),
+                       lower = c(minvals),
+                       upper = c(maxvals),
+                       control = nls.control(maxiter = 30,
+                                             tol = 1e-05,
+                                             warnOnly = TRUE,
+                                             minFactor = 1/1024),
+                       trace = FALSE)
+  
+    if (!class(fit) == "try-error") {
+      sharedk <- fit$coefficients["k"]
+      return(sharedk)
+    } else {
+      sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+      return(sharedk)
+    }
+  } else if (equation == "koff") {
+    paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
+    
+    startq0 <- paste(sprintf("q0%d", 1:nparams))
+    startalpha <- paste(sprintf("alpha%d", 1:nparams))
+
+    # Domains
+    minQ <- if (min(dat$y) > 0) min(dat$y) else 0.01
+    
+    startQ <- seq(log(minQ), log(max(dat$y) * 1.5), length.out = 10)
+    startA <- seq(0.98, 1.02, length.out = 10)
+    startK <- seq(log(0.5), log(log(max(dat$y)) + 0.5), length.out = 10)
+    
+    startQ <- exp(startQ)
+    startA <- log(startA)
+    startK <- exp(startK)
+    
+    # Pre-sorts
+    presort <- expand.grid(Q0 = startQ,
+                           Alpha = startA)
+    presort$sumSquares <- NA
+    
+    savedStartValues <- data.frame(ID = integer(),
+                                   Q0 = double(),
+                                   Alpha = double(),
+                                   SSR = double(),
+                                   stringsAsFactors = FALSE)
+    
+    bestSS <- NA
+    currentK <- NA
+    currentData <- NA
+    
+    bestFrame <- data.frame()
+    
+    for (k in startK) {
+      message(sprintf("Scanning for starting values... %s of %s (K = %s)", 
+                      match(k, startK), length(startK), k))
+      currentK <- k
+      
+      for (j in unique(dat$ref)) {
+        currentData <- dat[dat$ref == j, ]
+        
+        for (i in 1:nrow(presort)) {
+          presort[i, ]$sumSquares <- getSumOfSquaresExponentiated(presort, # Values to check
+                                                                  i,       # Index of values
+                                                                  currentK,
+                                                                  currentData$y,
+                                                                  currentData$x)
+        }
+        
+        presort <- presort[order(presort[,"sumSquares"]),]
+        
+        savedStartValues[as.numeric(j),"Q0"] <- presort[1,]$Q0
+        savedStartValues[as.numeric(j),"Alpha"] <- presort[1,]$Alpha
+        savedStartValues[as.numeric(j),"SSR"] <- presort[1,]$sumSquares
+        savedStartValues[as.numeric(j),"K"] <- currentK
+        savedStartValues[as.numeric(j),"ID"] <- j
+      }
+      
+      if (is.na(bestSS) || sum(savedStartValues$SSR) < bestSS) {
+        message(sprintf("Improvement: K at %s = err: %s", currentK, sum(savedStartValues$SSR)))
+        
+        bestSS <- sum(savedStartValues$SSR)
+        
+        bestFrame <- data.frame(Q0 = savedStartValues$Q0,
+                               Alpha = savedStartValues$Alpha,
+                               K = savedStartValues$K)
+      }
+      
+      presort$sumSquares <- NA
+    }
+    
+    vecStartQ0 <- bestFrame$Q0
+    vecStartAlpha <- bestFrame$Alpha
+    vecStartK <- bestFrame$K
+    
+    startingvals <- as.vector(c(vecStartQ0, vecStartAlpha, mean(vecStartK)))
+    names(startingvals) <- c(startq0, startalpha, "k")
+    
+    minvals <- as.vector(c(rep(0, length(startq0)), rep(-Inf, length(startalpha)), 0.5))
+    names(minvals) <- c(startq0, startalpha, "k")
+    
+    maxvals <- as.vector(c(rep(Inf, length(startq0)), rep(Inf, length(startalpha)), (log(max(dat$y)) + 0.5) * 2))
+    names(maxvals) <- c(startq0, startalpha, "k")
+
+    fo <- sprintf("y ~ (%s) * 10^(k * (exp(-(%s) * (%s) * x) - 1))", paramsq0, paramsalpha, paramsq0)
+
+    message("Searching for shared K, this can take a while...")
+    
+    fit <- NULL
+    
+    fit <- nlmrt::nlxb(fo, data = dat2,
+                       start = c(startingvals),
+                       lower = c(minvals),
+                       upper = c(maxvals),
+                       control = nls.control(maxiter = 30,
+                                             tol = 1e-05,
+                                             warnOnly = TRUE,
+                                             minFactor = 1/1024),
+                       trace = FALSE)
+    
+    if (!class(fit) == "try-error") {
+      sharedk <- fit$coefficients["k"]
+      return(sharedk)
+    } else {
+      sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+      return(sharedk)
+    }
+  }
 }
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range

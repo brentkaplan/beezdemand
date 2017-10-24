@@ -1,3 +1,11 @@
+# beezdemand 0.0.91
+
+## New updates
+
+* `GetSharedK()` updated to work better and faster at finding a reasonable value
+
+* Internal helper functions added to optimize `GetSharedK()`
+
 # beezdemand 0.0.90
 
 ## New updates

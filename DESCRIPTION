@@ -1,9 +1,11 @@
 Package: beezdemand
-Version: 0.0.9
-Date: 2017-05-17
+Version: 0.0.91
+Date: 2017-10-24
 Title: Behavioral Economic Easy Demand
-Authors@R: person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre"))
-Author: Brent Kaplan [aut, cre]
+Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
+	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
+Author: Brent Kaplan [aut, cre],
+	Shawn Gilroy [ctb]
 Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
 Description: Functions to help aid in analyzing behavioral economic demand curve
     data.

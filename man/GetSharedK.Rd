@@ -23,5 +23,5 @@ Finds shared k among selected datasets using global regression
 Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. Used within FitCurves
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan <bkaplan.ku@gmail.com> Shawn P Gilroy <shawn.gilroy@temple.edu>
 }
