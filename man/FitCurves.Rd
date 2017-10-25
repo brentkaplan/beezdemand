@@ -5,8 +5,7 @@
 \title{FitCurves}
 \usage{
 FitCurves(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x",
-  ycol = "y", idcol = "id", groupcol = NULL, plotcurves = FALSE,
-  vartext = NULL, plotdestination = NULL)
+  ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
@@ -27,11 +26,9 @@ FitCurves(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x",
 
 \item{groupcol}{The column name that should be treated as the groups}
 
-\item{plotcurves}{Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory}
+\item{lobound}{Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds.}
 
-\item{vartext}{Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"}
-
-\item{plotdestination}{Destination of plots}
+\item{hibound}{Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds.}
 }
 \value{
 If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting

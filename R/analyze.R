@@ -61,7 +61,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     if (equation == "hs" || equation == "koff") {
         cnames <- c("ID", "Equation", "Q0d", "K",
-                    "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+                    "Alpha", "R2", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
                     "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
     } else if (equation == "linear") {
         cnames <- c("ID", "Equation", "L", "b", "a",
