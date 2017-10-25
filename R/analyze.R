@@ -265,19 +265,14 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 }
 
-##' Extracts the useful information
-##'
-##' Populates a single row of a dataframe consisting of important information from fits, etc.
-##' @title Extractor
-##' @param pid Participant ID
-##' @param adf A data frame
-##' @param fit Fitted model object
-##' @param eq Equation specified
-##' @param cols Column names to populate the dataframe row
-##' @param kest Specification of k value
-##' @return One row of a dataframe with results
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
-##' @export
+
+# Populates a single row of a dataframe consisting of important information from fits, etc.
+# pid Participant ID
+# adf A data frame
+# fit Fitted model object
+# eq Equation specified
+# cols Column names to populate the dataframe row
+# kest Specification of k value
 Extractor <- function(pid, adf, fit, eq, cols, kest) {
     dfrow <- data.frame(matrix(vector(),
                                1,

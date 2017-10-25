@@ -121,10 +121,16 @@ knitr::kable(head(GetEmpirical(apt), 5))
 
 #### Obtaining Derived Measures
 
+`FitCurves()` has several important arguments that can be passed:
+
+* `detailed = FALSE` is the default. This will output a single dataframe of results, as shown below. When `detailed = TRUE`, the output is a 3 element list that includes (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting.
+
+* `agg = NULL` is the default. When `agg = "Mean"`, data are fit to strictly averages. When `agg = "Pooled"`, all data are used and clustering within individual is ignored.
+
 Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical measures, resulting BP0 values will be all NAs (reflective of the data transformations).
 
 ```{r hs, eval=FALSE}
-FitCurves(apt, "hs")
+FitCurves(dat = apt, equation = "hs", k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, plotcurves = FALSE, vartext = NULL, plotdestination = NULL)
 ```
 
 ```{r hs-setup, include=FALSE}

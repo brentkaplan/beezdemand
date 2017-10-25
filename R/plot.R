@@ -27,29 +27,17 @@
 ##
 
 
-##' Creates a logarithmically spaced sequence.
-##'
-##' A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
-##' @title Create Logarithmically Spaced Sequence
-##' @param from Starting value. Default value is 0.0000000001.
-##' @param to Ending value. Default value is 1000.
-##' @param length.out Number of values in vector. Default value is 14.
-##' @return Vector
-##' @author library("emdbook")
-##' @export
+
+# A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
+# from Starting value. Default value is 0.0000000001.
+# to Ending value. Default value is 1000.
+# length.out Number of values in vector. Default value is 14.
 lseq <- function(from=.0000000001, to=1000, length.out=14) {
   exp(seq(log(from), log(to), length.out = length.out))
 }
 
-## Create small ticks
-##' Creates minor ticks for use in plotting.
-##'
-##'
-##' @title Create Minor Tick Sequence
-##' @param maj Value from function lseq
-##' @return Vector
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
-##' @export
+# Creates minor ticks for use in plotting.
+# maj Value from function lseq
 minTicks <- function(maj) {
   minticks <- vector(length = (length(maj)-1) * 10)
   for (i in 1:length(maj)) {
