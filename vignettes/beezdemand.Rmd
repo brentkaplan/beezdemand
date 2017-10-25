@@ -31,13 +31,13 @@ This package is a work in progress. I welcome suggestions, feedback,
 questions, and comments regarding what other researchers might be
 interested in seeing. If you encounter bugs, errors, or other
 discrepancies please either open an issue or
-[contact me](mailto:bkaplan4@ku.edu?Subject=Question/comment%20Regarding%20beezdemand%20Package "Email bkaplan4@ku.edu") and I will do my best to fix
+[contact me](mailto:bkaplan.ku@gmail.com?Subject=Question/comment%20Regarding%20beezdemand%20Package "Email bkaplan.ku@gmail.com") and I will do my best to fix
 the problem.
 
 ## Installation
 
-Right now the package can be obtained from my GitHub page:
-[github.com/brentkaplan](https://github.com/brentkaplan). There are plans to make it available
+Right now the package can be obtained from my [GitHub page](https://github.com/brentkaplan). 
+There are plans to make it available
 properly on CRAN. In any case, to install the package first install
 Hadley Wickham's `devtools` package:
 
@@ -48,7 +48,7 @@ Then simply install the package using the following command:
 ```devtools::install_github("brentkaplan/beezdemand", build_vignettes
 = TRUE)```
 
-This will compile this vignette during the installation.
+Doing so will compile this vignette during the installation.
 
 ```{r include = FALSE}
 library(beezdemand)
@@ -71,11 +71,10 @@ knitr::kable(apt[c(1:8, 17:24), ])
 ### Obtain Descriptive Data
 
 Descriptive values of responses at each price. Includes mean, standard
-deviation, proportion of zeros, and numer of NAs. If `bwplot = TRUE`, a box-and-whisker
-plot (in PDF format) is also created and saved into the relative path: `../plots/bwplot-MMDD/`
+deviation, proportion of zeros, numer of NAs, and minimum and maximum values. If `bwplot = TRUE`, a box-and-whisker plot is also created and saved. Notice the red crosses indicate the mean. User may additionally specify the directory that the plot should save into, the type of file (either `"png"` or `"pdf"`), and the filename. Defaults are shown here:
 
 ```{r descriptive, eval=FALSE}
-GetDescriptives(apt, bwplot = TRUE)
+GetDescriptives(apt, bwplot = TRUE, outdir = "../plots/", device = "png", filename = "bwplot")
 ```
 
 ```{r descriptive-output, echo=FALSE, results='asis'}
@@ -106,18 +105,41 @@ Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
 the linear model, exponential model, and exponentiated model. Soon, I
 will be including the nonlinear mixed effects model, mixed effects
-versions of the exponential and exponentiated model, and the
-experimental "Q0+1" model.
+versions of the exponential and exponentiated model, and others.
+
+#### Obtaining Empirical Measures
+
+Empirical measures can be obtained separately on their own:
+
+```{r empirical, eval=FALSE}
+GetEmpirical(apt)
+```
+
+```{r empirical-output, echo=FALSE, results='asis'}
+knitr::kable(head(GetEmpirical(apt), 5))
+```
+
+#### Obtaining Derived Measures
+
+Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical measures, resulting BP0 values will be all NAs (reflective of the data transformations).
 
 ```{r hs, eval=FALSE}
 FitCurves(apt, "hs")
 ```
 
-```{r hs-output, echo=FALSE, results='asis', eval = FALSE}
-knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 1:6], caption = "Empirical Measures")
-knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 7:11], caption = "Fitted Measures")
-knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
-knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 21:24], caption = "Derived Measures")
+```{r hs-setup, include=FALSE}
+fc <- FitCurves(apt, "hs")
+hs1 <- head(fc, 5)[ , 1:6]
+hs2 <- head(fc, 5)[ , 7:11]
+hs3 <- head(fc, 5)[ , 12:20]
+hs4 <- head(fc, 5)[ , 21:24]
+```
+
+```{r hs-output, echo=FALSE, results='asis'}
+knitr::kable(hs1, caption = "Empirical Measures")
+knitr::kable(hs2, caption = "Fitted Measures")
+knitr::kable(hs3, caption = "Uncertainty and Model Information")
+knitr::kable(hs4, caption = "Derived Measures")
 ```
 
 
@@ -125,11 +147,19 @@ knitr::kable(head(FitCurves(apt, "hs"), 5)[ , 21:24], caption = "Derived Measure
 FitCurves(apt, "koff")
 ```
 
-```{r koff-output, echo=FALSE, results='asis', eval = FALSE}
-knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 1:6], caption = "Empirical Measures")
-knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 7:11], caption = "Fitted Measures")
-knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 12:20], caption = "Uncertainty and Model Information")
-knitr::kable(head(FitCurves(apt, "koff"), 5)[ , 21:24], caption = "Derived Measures")
+```{r koff-setup, include = FALSE}
+fc <- FitCurves(apt, "koff")
+koff1 <- head(fc, 5)[ , 1:6]
+koff2 <- head(fc, 5)[ , 7:11]
+koff3 <- head(fc, 5)[ , 12:20]
+koff4 <- head(fc, 5)[ , 21:24]
+```
+
+```{r koff-output, echo=FALSE, results='asis'}
+knitr::kable(koff1, caption = "Empirical Measures")
+knitr::kable(koff2, caption = "Fitted Measures")
+knitr::kable(koff3, caption = "Uncertainty and Model Information")
+knitr::kable(koff4, caption = "Derived Measures")
 ```
 
 Graphs can automatically be created at both an aggregate
@@ -148,16 +178,23 @@ some time with larger sample sizes.
 FitCurves(apt, "hs", k = "share")
 ```
 
-```{r, include=FALSE, eval = FALSE}
+```{r, include=FALSE}
 df <- FitCurves(apt, "hs", k = "share")
 ```
 
-```{r share-output, echo=FALSE, results='asis', eval = FALSE}
+```{r share-output, echo=FALSE, results='asis'}
 knitr::kable(head(df, 5)[ , 1:6], caption = "Empirical Measures")
 knitr::kable(head(df, 5)[ , 7:11], caption = "Fitted Measures")
 knitr::kable(head(df, 5)[ , 12:20], caption = "Uncertainty and Model Information")
 knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
 ```
+
+### Compare Values of $\alpha$ and $Q_{0}$ via Extra Sum-of-Squares F-Test
+
+```{r ftest, eval=FALSE}
+ExtraF(apt, "hs")
+```
+
 
 ### Learn More About Functions
 
