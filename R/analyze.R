@@ -47,7 +47,7 @@
 ##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds. 
 ##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds. 
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
-##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
 FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound) {
 

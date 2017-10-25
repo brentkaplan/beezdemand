@@ -37,5 +37,5 @@ If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3
 Analyzes purchase task data
 }
 \author{
-Brent Kaplan <bkaplan4@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
+Brent Kaplan <bkaplan.ku@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
 }
