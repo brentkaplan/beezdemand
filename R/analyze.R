@@ -44,13 +44,12 @@
 ##' @param ycol The column name that should be treated as "y" data
 ##' @param idcol The column name that should be treated as dataset identifier
 ##' @param groupcol The column name that should be treated as the groups
-##' @param plotcurves Boolean whether to create individual plots. If TRUE, a "plots/" directory is created one level above working directory
-##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Intensity", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
-##' @param plotdestination Destination of plots
+##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds. 
+##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds. 
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan4@@ku.edu> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
-FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, plotcurves = FALSE, vartext = NULL, plotdestination = NULL) {
+FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound) {
 
     if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
     origcols <- colnames(dat)
@@ -146,8 +145,43 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             warning("Defaulting to empirical mean range +.5")
         }
     }
-
-    ## TODO: constraining parameters could be done here; sprintf?
+    # bounds for exponential/exponentiated
+    if (!kest == "fit") {
+      if (missing(lobound)) {
+        lower <- c(-Inf, -Inf)
+        names(lower) <- c("q0", "alpha")
+      } else {
+        if (!identical(tolower(names(lobound)), c("q0", "alpha"))) stop("lobound names should be q0 and alpha")
+        lower <- lobound
+        names(lower) <- tolower(names(lower))
+      }
+      if (missing(hibound)) {
+        upper <- c(Inf, Inf)
+        names(upper) <- c("q0", "alpha")
+      } else {
+        if (!identical(tolower(names(hibound)), c("q0", "alpha"))) stop("hibound names should be q0 and alpha")
+        upper <- hibound
+        names(upper) <- tolower(names(upper))
+      }
+    } else {
+      if (missing(lobound)) {
+        lower <- c(-Inf, -Inf, -Inf)
+        names(lower) <- c("q0", "k", "alpha")
+      } else {
+        if (!identical(tolower(names(lobound)), c("q0", "k", "alpha"))) stop("lobound names should be q0, k, and alpha")
+        lower <- lobound
+        names(lower) <- tolower(names(lower))
+      }
+      if (missing(hibound)) {
+        upper <- c(Inf, Inf, Inf)
+        names(upper) <- c("q0", "k", "alpha")
+      } else {
+        if (!identical(tolower(names(hibound)), c("q0", "k", "alpha"))) stop("hibound names should be q0, k, and alpha")
+        upper <- hibound
+        names(upper) <- tolower(names(upper))
+      }
+    }
+    
     ## TODO: if groupcol is specified (or not), manufacture vector to loop (paste(agg, grps, sep = "-"))
 
     fo <- switch(equation,
@@ -181,17 +215,21 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             if (!kest == "fit") {
                 suppressWarnings(fit <- try(nlmrt::wrapnls(
                                      formula = fo,
-                                     start = list(q0 = 10, alpha = 0.01),
+                                     start = list(q0 = max(adf$y), alpha = 0.01),
+                                     lower = c(lower),
+                                     upper = c(upper),
                                      control = list(maxiter = 1000),
                                      data = adf),
                                      silent = TRUE))
             } else {
-                suppressWarnings(fit <- try(nlmrt::wrapnls(
-                                     formula = fo,
-                                     start = list(q0 = 10, k = kstart, alpha = 0.01),
-                                     control = list(maxiter = 1000),
-                                     data = adf),
-                                     silent = TRUE))
+              suppressWarnings(fit <- try(nlmrt::wrapnls(
+                                    formula = fo,
+                                    start = list(q0 = max(adf$y), k = kstart, alpha = 0.01),
+                                    lower = c(lower),
+                                    upper = c(upper),
+                                    control = list(maxiter = 1000),
+                                    data = adf),
+                                    silent = TRUE))
             }
         } else if (equation == "linear") {
             fit <- try(nlmrt::wrapnls(
@@ -211,7 +249,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         newdat <- data.frame("ID" = rep(i, length.out = 10000),
                              "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
                              "y" = NA)
-        newdat$k <- if (!kest == "fit") k else dfres[["K"]]
+        newdat$k <- if (!kest == "fit") k else dfres[i, "K"]
 
         if (!class(fit) == "try-error") {
             if (equation == "hs") {
@@ -223,31 +261,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             }
         }
         newdats[[i]] <- newdat
-
-
-        ## if (plotcurves) {
-        ##     if (class(fit) == "try-error") {
-        ##         suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
-        ##                                     outdir = outdir, fitfail = TRUE,
-        ##                                     tobquote = tobquote, vartext = vartext))
-        ##     } else {
-        ##         suppressWarnings(PlotCurves(adf = adf, fit = fit, dfrow = dfres[i, ],
-        ##                                    outdir = outdir, fitfail = FALSE,
-        ##                                    tobquote = tobquote, vartext = vartext))
-        ##     }
-        ## }
     }
-
-    ## if (kest == "share") {
-    ##     names(dfres)[names(dfres) == "K"] <- "SharedK"
-    ## } else if (kest == "fit") {
-    ##     names(dfres)[names(dfres) == "K"] <- "FittedK"
-    ## } else if (kest == "ind") {
-    ##     names(dfres)[names(dfres) == "K"] <- "IndividualK"
-    ## } else {
-    ##     names(dfres)[names(dfres) == "K"] <- "RangeK"
-    ## }
-
     dfres$Equation <- equation
     dfres <- merge(dfresempirical, dfres, by = "ID")
     dfres <- dfres[match(ps, dfres$ID), ]
