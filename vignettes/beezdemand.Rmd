@@ -127,11 +127,22 @@ knitr::kable(head(GetEmpirical(apt), 5))
 
 * `agg = NULL` is the default. When `agg = "Mean"`, data are fit to strictly averages. When `agg = "Pooled"`, all data are used and clustering within individual is ignored.
 
-Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical measures, resulting BP0 values will be all NAs (reflective of the data transformations).
+* `lobound` and `hibound` can accept named vectors that will be used as lower and upper bounds, respectively during fitting. If `k = "fit"`, then it should look as follows: `lobound = c("q0" = 0, "k" = 0, "alpha" = 0)` and `hibound = c("q0" = 25, "k" = 10, "alpha" = 1)`. If `k != "fit"`, then only `"q0"` and `"alpha"` should be used in bounding.
+
+Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical measures, resulting BP0 values will be all NAs (reflective of the data transformations). The warning message will look as follows:
+
+```{r zero-warning, eval=FALSE}
+Warning message:
+Zeros found in data not compatible with equation! Dropping zeros!
+```
+
+The simplest use of `FitCurves()` is shown here, only needing to specify `dat` and `equation`. All other arguments shown are set to their default values.
 
 ```{r hs, eval=FALSE}
-FitCurves(dat = apt, equation = "hs", k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, plotcurves = FALSE, vartext = NULL, plotdestination = NULL)
+FitCurves(dat = apt, equation = "hs", k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound)
 ```
+
+Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results):
 
 ```{r hs-setup, include=FALSE}
 fc <- FitCurves(apt, "hs")
@@ -148,6 +159,7 @@ knitr::kable(hs3, caption = "Uncertainty and Model Information")
 knitr::kable(hs4, caption = "Derived Measures")
 ```
 
+Here, the simplest form is shown specifying another equation, `"koff"`:
 
 ```{r koff, eval=FALSE}
 FitCurves(apt, "koff")
@@ -168,11 +180,43 @@ knitr::kable(koff3, caption = "Uncertainty and Model Information")
 knitr::kable(koff4, caption = "Derived Measures")
 ```
 
-Graphs can automatically be created at both an aggregate
-(fitting on the means or on the pooled data
-[NOTE: This disregards clustering within individual]) and individual
-level.
+```{r agg-mean, eval = FALSE}
+FitCurves(apt, "hs", agg = "Mean")
+```
 
+```{r agg-mean-setup, include = FALSE}
+mn <- FitCurves(apt, "hs", agg = "Mean")
+mn1 <- head(mn)[ , 1:6]
+mn2 <- head(mn)[ , 7:11]
+mn3 <- head(mn)[ , 12:20]
+mn4 <- head(mn)[ , 21:24]
+```
+
+```{r agg-mean-output, echo = FALSE, results = 'asis'}
+knitr::kable(mn1, caption = "Empirical Measures")
+knitr::kable(mn2, caption = "Fitted Measures")
+knitr::kable(mn3, caption = "Uncertainty and Model Information")
+knitr::kable(mn4, caption = "Derived Measures")
+```
+
+```{r agg-pooled, eval = FALSE}
+FitCurves(apt, "hs", agg = "Pooled")
+```
+
+```{r agg-pooled-setup, include = FALSE}
+pl <- FitCurves(apt, "hs", agg = "Pooled")
+pl1 <- head(pl)[ , 1:6]
+pl2 <- head(pl)[ , 7:11]
+pl3 <- head(pl)[ , 12:20]
+pl4 <- head(pl)[ , 21:24]
+```
+
+```{r agg-pooled-output, echo = FALSE, results = 'asis'}
+knitr::kable(pl1, caption = "Empirical Measures")
+knitr::kable(pl2, caption = "Fitted Measures")
+knitr::kable(pl3, caption = "Uncertainty and Model Information")
+knitr::kable(pl4, caption = "Derived Measures")
+```
 
 ### Share k Globally; Fit Other Parameters Locally
 
@@ -201,6 +245,12 @@ knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
 ExtraF(apt, "hs")
 ```
 
+### Plots
+
+Graphs can automatically be created at both an aggregate
+(fitting on the means or on the pooled data
+[NOTE: This disregards clustering within individual]) and individual
+level.
 
 ### Learn More About Functions
 
@@ -265,7 +315,7 @@ Value:
 
 Author(s):
 
-     Brent Kaplan <bkaplan4@ku.edu>
+     Brent Kaplan <bkaplan.ku@gmail.com>
 
 Examples:
 
