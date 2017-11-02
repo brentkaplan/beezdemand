@@ -44,8 +44,8 @@
 ##' @param ycol The column name that should be treated as "y" data
 ##' @param idcol The column name that should be treated as dataset identifier
 ##' @param groupcol The column name that should be treated as the groups
-##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds. 
-##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds. 
+##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds.
+##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds.
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
 ##' @export
@@ -181,7 +181,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         names(upper) <- tolower(names(upper))
       }
     }
-    
+
     ## TODO: if groupcol is specified (or not), manufacture vector to loop (paste(agg, grps, sep = "-"))
 
     fo <- switch(equation,
@@ -711,7 +711,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         #kdat <- dat
         #colnames(kdat) <- c("old-id", "id", "x", "y")
         bfk <- try(GetSharedK(dat = dat, equation = equation, sharecol = "group"), silent = TRUE)
-        if (class(bfk) == "character") {
+        if (class(bfk) == "character" || class(bfk) == "try-error") {
             message(bfk)
             bfk <- GetK(dat)
         }
@@ -936,20 +936,20 @@ getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn P Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
 GetSharedK <- function(dat, equation, sharecol = "group") {
-  
+
   if (length(unique(dat[, sharecol])) == 1) {
     stop("Cannot find a shared k value with only one dataset!", call. = FALSE)
   }
-  
+
   ## get rid of NAs
   dat <- dat[!is.na(dat$y), ]
-  
+
   # get rid of zeroes early on if HS
   if (equation == "hs") {
     # dat <- dat[dat$x != 0, ]
     dat <- dat[dat$y != 0, ]
   }
-  
+
   j <- 1
   for (i in unique(dat[, sharecol])) {
     # get rid of rows with only one or two data points
@@ -957,60 +957,60 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       dat <- dat[dat$id != i,]
       next
     }
-    
+
     dat[dat[, sharecol] == i, "ref"] <- j
     j <- j+1
   }
   dat$ref <- as.factor(dat$ref)
- 
+
   ## create contrasts
   dat2 <- cbind(dat, model.matrix(~0 + ref, dat))
   nparams <- length(unique(dat2$ref))
-  
+
   if (equation == "hs") {
     paramslogq0 <- paste(sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams), collapse = "+")
     paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
     paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-    
+
     startq0 <- paste(sprintf("q0%d", 1:nparams))
     startalpha <- paste(sprintf("alpha%d", 1:nparams))
-    
+
     # Domains
     minQ <- if (min(dat$y) > 0) min(dat$y) else 0.01
-    
+
     startQ <- seq(log(minQ), log(max(dat$y) * 1.5), length.out = 10)
     startA <- seq(0.98, 1.02, length.out = 10)
     startK <- seq(log(0.5), log(log(max(dat$y)) + 1), length.out = 10)
-    
+
     startQ <- exp(startQ)
     startA <- log(startA)
     startK <- exp(startK)
-    
+
     # Pre-sorts
     presort <- expand.grid(Q0 = startQ,
                            Alpha = startA)
     presort$sumSquares <- NA
-    
+
     savedStartValues <- data.frame(ID = integer(),
                                    Q0 = double(),
                                    Alpha = double(),
                                    SSR = double(),
                                    stringsAsFactors = FALSE)
-    
+
     bestSS <- NA
     currentK <- NA
     currentData <- NA
-    
+
     bestFrame <- data.frame()
-    
+
     for (k in startK) {
-      message(sprintf("Scanning for starting values... %s of %s (K = %s)", 
+      message(sprintf("Scanning for starting values... %s of %s (K = %s)",
                       match(k, startK), length(startK), k))
       currentK <- k
-      
+
       for (j in unique(dat$ref)) {
         currentData <- dat[dat$ref == j, ]
-        
+
         for (i in 1:nrow(presort)) {
           presort[i, ]$sumSquares <- getSumOfSquaresExponential(presort, # Values to check
                                                                 i,       # Index of values
@@ -1018,47 +1018,47 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
                                                                 currentData$y,
                                                                 currentData$x)
         }
-        
+
         presort <- presort[order(presort[,"sumSquares"]),]
-        
+
         savedStartValues[as.numeric(j),"Q0"] <- presort[1,]$Q0
         savedStartValues[as.numeric(j),"Alpha"] <- presort[1,]$Alpha
         savedStartValues[as.numeric(j),"SSR"] <- presort[1,]$sumSquares
         savedStartValues[as.numeric(j),"K"] <- currentK
         savedStartValues[as.numeric(j),"ID"] <- j
       }
-      
+
       if (is.na(bestSS) || sum(savedStartValues$SSR) < bestSS) {
         message(sprintf("Improvement: K at %s = err: %s", currentK, sum(savedStartValues$SSR)))
-        
+
         bestSS <- sum(savedStartValues$SSR)
-        
+
         bestFrame <- data.frame(Q0 = savedStartValues$Q0,
                                Alpha = savedStartValues$Alpha,
                                K = savedStartValues$K)
       }
-      
+
       presort$sumSquares <- NA
     }
-    
+
     vecStartQ0 <- bestFrame$Q0
     vecStartAlpha <- bestFrame$Alpha
     vecStartK <- bestFrame$K
-    
+
     startingvals <- as.vector(c(vecStartQ0, vecStartAlpha, mean(vecStartK)))
     names(startingvals) <- c(startq0, startalpha, "k")
-    
+
     minvals <- as.vector(c(rep(0.01, length(startq0)), rep(-Inf, length(startalpha)), 0.5))
     names(minvals) <- c(startq0, startalpha, "k")
-    
+
     maxvals <- as.vector(c(rep(Inf, length(startq0)), rep(Inf, length(startalpha)), (log(max(dat$y)) + 0.5) * 2))
     names(maxvals) <- c(startq0, startalpha, "k")
-    
+
     fo <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(%s) * (%s) * x)-1)", paramslogq0, paramsalpha, paramsq0)
-    
+
     message("Searching for shared K, this can take a while...")
     fit <- NULL
-    
+
     fit <- nlmrt::nlxb(fo, data = dat2,
                        start = c(startingvals),
                        lower = c(minvals),
@@ -1068,7 +1068,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
                                              warnOnly = TRUE,
                                              minFactor = 1/1024),
                        trace = FALSE)
-  
+
     if (!class(fit) == "try-error") {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
@@ -1079,46 +1079,46 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
   } else if (equation == "koff") {
     paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
     paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
-    
+
     startq0 <- paste(sprintf("q0%d", 1:nparams))
     startalpha <- paste(sprintf("alpha%d", 1:nparams))
 
     # Domains
     minQ <- if (min(dat$y) > 0) min(dat$y) else 0.01
-    
+
     startQ <- seq(log(minQ), log(max(dat$y) * 1.5), length.out = 10)
     startA <- seq(0.98, 1.02, length.out = 10)
     startK <- seq(log(0.5), log(log(max(dat$y)) + 0.5), length.out = 10)
-    
+
     startQ <- exp(startQ)
     startA <- log(startA)
     startK <- exp(startK)
-    
+
     # Pre-sorts
     presort <- expand.grid(Q0 = startQ,
                            Alpha = startA)
     presort$sumSquares <- NA
-    
+
     savedStartValues <- data.frame(ID = integer(),
                                    Q0 = double(),
                                    Alpha = double(),
                                    SSR = double(),
                                    stringsAsFactors = FALSE)
-    
+
     bestSS <- NA
     currentK <- NA
     currentData <- NA
-    
+
     bestFrame <- data.frame()
-    
+
     for (k in startK) {
-      message(sprintf("Scanning for starting values... %s of %s (K = %s)", 
+      message(sprintf("Scanning for starting values... %s of %s (K = %s)",
                       match(k, startK), length(startK), k))
       currentK <- k
-      
+
       for (j in unique(dat$ref)) {
         currentData <- dat[dat$ref == j, ]
-        
+
         for (i in 1:nrow(presort)) {
           presort[i, ]$sumSquares <- getSumOfSquaresExponentiated(presort, # Values to check
                                                                   i,       # Index of values
@@ -1126,48 +1126,48 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
                                                                   currentData$y,
                                                                   currentData$x)
         }
-        
+
         presort <- presort[order(presort[,"sumSquares"]),]
-        
+
         savedStartValues[as.numeric(j),"Q0"] <- presort[1,]$Q0
         savedStartValues[as.numeric(j),"Alpha"] <- presort[1,]$Alpha
         savedStartValues[as.numeric(j),"SSR"] <- presort[1,]$sumSquares
         savedStartValues[as.numeric(j),"K"] <- currentK
         savedStartValues[as.numeric(j),"ID"] <- j
       }
-      
+
       if (is.na(bestSS) || sum(savedStartValues$SSR) < bestSS) {
         message(sprintf("Improvement: K at %s = err: %s", currentK, sum(savedStartValues$SSR)))
-        
+
         bestSS <- sum(savedStartValues$SSR)
-        
+
         bestFrame <- data.frame(Q0 = savedStartValues$Q0,
                                Alpha = savedStartValues$Alpha,
                                K = savedStartValues$K)
       }
-      
+
       presort$sumSquares <- NA
     }
-    
+
     vecStartQ0 <- bestFrame$Q0
     vecStartAlpha <- bestFrame$Alpha
     vecStartK <- bestFrame$K
-    
+
     startingvals <- as.vector(c(vecStartQ0, vecStartAlpha, mean(vecStartK)))
     names(startingvals) <- c(startq0, startalpha, "k")
-    
+
     minvals <- as.vector(c(rep(0, length(startq0)), rep(-Inf, length(startalpha)), 0.5))
     names(minvals) <- c(startq0, startalpha, "k")
-    
+
     maxvals <- as.vector(c(rep(Inf, length(startq0)), rep(Inf, length(startalpha)), (log(max(dat$y)) + 0.5) * 2))
     names(maxvals) <- c(startq0, startalpha, "k")
 
     fo <- sprintf("y ~ (%s) * 10^(k * (exp(-(%s) * (%s) * x) - 1))", paramsq0, paramsalpha, paramsq0)
 
     message("Searching for shared K, this can take a while...")
-    
+
     fit <- NULL
-    
+
     fit <- nlmrt::nlxb(fo, data = dat2,
                        start = c(startingvals),
                        lower = c(minvals),
@@ -1177,7 +1177,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
                                              warnOnly = TRUE,
                                              minFactor = 1/1024),
                        trace = FALSE)
-    
+
     if (!class(fit) == "try-error") {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
@@ -1235,11 +1235,11 @@ GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
 
         adf <- NULL
         adf <- dat[dat$id == ps[i], ]
-        
+
         if (any(duplicated(adf$x))) {
           stop(paste0("Duplicates found where id = ", ps[i], ". Check data and rerun."))
         }
-        
+
         adf[, "expend"] <- adf$x * adf$y
 
         ## Find empirical measures
