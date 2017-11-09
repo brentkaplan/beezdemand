@@ -68,6 +68,29 @@ purchase and consume at various prices (x; USD). Note the long format:
 knitr::kable(apt[c(1:8, 17:24), ])
 ```
 
+### Converting from Wide to Long and vice versa
+
+Some datasets read into `R` will be in a "wide" format, where column names indicate dataset identifiers:
+
+```{r example-wide, results = 'asis', echo = FALSE}
+wide <- tidyr::spread(apt, id, y)
+knitr::kable(wide)
+```
+
+The functions in this package primarily deal with data that is in long format, for example the provided dataset `apt` described initially. In order to convert from wide to long formats and vice versa, I recommend using the following commands.
+
+__Wide to Long__
+
+```{r example-w2l, eval = FALSE}
+long <- tidyr::gather(wide, id, y, -x)
+```
+
+__Long to Wide__
+
+```{r example-l2w, eval = FALSE}
+wide <- tidyr::spread(long, id, y)
+```
+
 ### Obtain Descriptive Data
 
 Descriptive values of responses at each price. Includes mean, standard
@@ -84,6 +107,24 @@ knitr::kable(descr)
 
 <center><img src="bwplot.pdf" alt="Box-and-whisker plot"  width="504"
 height="432"/></center>
+
+### Change Data
+
+There are certain instances in which data are to be modified before fitting, for example when using an equation that logarithmically transforms y values. The following function can help with modifying data:
+
+* `nrepl` indicates number of replacement 0 values, either as an integer or `"all"`
+
+* `replnum` indicates the number that should replace 0 values
+
+* `rem0` removes all zeros
+
+* `remq0e` removes y value where x (or price) equals 0
+
+* `replfree` replaces where x (or price) equals 0 with a specified number
+
+```{r change-data, eval = FALSE}
+ChangeData(apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE, replfree = NULL)
+```
 
 ### Identify Unsystematic Responses
 
