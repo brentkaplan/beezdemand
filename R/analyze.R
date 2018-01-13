@@ -133,7 +133,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             } else if (k == "share") {
                 k <- GetSharedK(dat, equation, sharecol = "id")
                 if (is.character(k)) {
-                    warning(k)
+                    warning(paste0(k, " Defaulting to empirical mean range +.5"))
                     k <- GetK(dat)
                     kest <- FALSE
                 }
@@ -1100,7 +1100,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
     } else {
-      sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+      sharedk <- "Unable to find a shared k."
       return(sharedk)
     }
   } else if (equation == "koff") {
@@ -1209,7 +1209,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
     } else {
-      sharedk <- "Unable to find a shared k. Using empirical range of dataset"
+      sharedk <- "Unable to find a shared k."
       return(sharedk)
     }
   }
