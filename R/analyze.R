@@ -31,6 +31,9 @@
 ## link @ https://cran.r-project.org/web/packages/ggplot2/index.html
 ## license @ https://cran.r-project.org/web/licenses/GPL-2
 ##
+## @nls2 (R package) = Non-linear regression with brute force (Copyright 2013 - G. Grothendieck - GPLv2)
+## link @ https://cran.r-project.org/web/packages/nls2/index.html
+## license @ https://cran.r-project.org/web/licenses/GPL-2
 
 ##' Analyzes purchase task data
 ##'
@@ -90,7 +93,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 
     if (any(dat$y %in% 0) && (equation == "hs" || equation == "linear")) {
-        warning("Zeros found in data no compatible with equation! Dropping zeros!", call. = FALSE)
+        warning("Zeros found in data not compatible with equation! Dropping zeros!", call. = FALSE)
         dat <- dat[dat$y != 0, , drop = FALSE]
     }
 
@@ -221,6 +224,20 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                      control = list(maxiter = 1000),
                                      data = adf),
                                      silent = TRUE))
+              if (inherits(fit, what = "try-error") && nrow(adf) > 2) {
+                suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+                                                        start = list(q0 = max(adf$y), alpha = 0.01),
+                                                        lower = c(lower),
+                                                        upper = c(upper),
+                                                        control = list(maxiter = 1000),
+                                                        data = adf),
+                                            silent = TRUE))
+                suppressWarnings(fit <- try(nls2::nls2(fo, 
+                                                       data = adf, 
+                                                       start = fit$coefficients, 
+                                                       algorithm = "brute-force")))
+                attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
+              }
             } else {
               suppressWarnings(fit <- try(nlmrt::wrapnls(
                                     formula = fo,
@@ -230,6 +247,20 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                     control = list(maxiter = 1000),
                                     data = adf),
                                     silent = TRUE))
+              if (inherits(fit, what = "try-error") && nrow(adf) > 3) {
+                suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+                                       start = list(q0 = max(adf$y), k = kstart, alpha = 0.01),
+                                       lower = c(lower),
+                                       upper = c(upper),
+                                       control = list(maxiter = 1000),
+                                       data = adf),
+                                       silent = TRUE))
+                suppressWarnings(fit <- try(nls2::nls2(fo, 
+                                                       data = adf, 
+                                                       start = fit$coefficients, 
+                                                       algorithm = "brute-force")))
+                attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
+              }
             }
         } else if (equation == "linear") {
             fit <- try(nlmrt::wrapnls(
@@ -249,9 +280,10 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         newdat <- data.frame("ID" = rep(i, length.out = 10000),
                              "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
                              "y" = NA)
-        newdat$k <- if (!kest == "fit") k else dfres[i, "K"]
+        #newdat$k <- if (!kest == "fit") k else dfres[i, "K"]
+        newdat$k <- dfres[i, "K"]
 
-        if (!class(fit) == "try-error") {
+        if (!inherits(fit, what = "try-error")) {
             if (equation == "hs") {
                 newdat$y <-  10^predict(fit, newdata = newdat)
             } else if (equation == "koff") {
@@ -293,7 +325,7 @@ Extractor <- function(pid, adf, fit, eq, cols, kest) {
                                length(cols),
                                dimnames = list(c(), c(cols))), stringsAsFactors = FALSE)
     dfrow[["ID"]] <- pid
-    if (class(fit) == "try-error") {
+    if (inherits(fit, what = "try-error")) {
         dfrow[["Notes"]] <- fit[1]
         dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
     } else if (eq == "linear") {
@@ -312,40 +344,35 @@ Extractor <- function(pid, adf, fit, eq, cols, kest) {
             exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) * dfrow[1, "Pmaxd"]
     } else {
         dfrow[1, "N"] <- length(adf$k)
-        dfrow[1, "AbsSS"] <- deviance(fit)
-        dfrow[1, "SdRes"] <- sqrt(deviance(fit)/df.residual(fit))
-        dfrow[1, "Notes"] <- fit$convInfo$stopMessage
-        dfrow[1, c("Q0d", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-        if (kest == "fit") {
-            dfrow[1, "K"] <- as.numeric(coef(fit)["k"])
-            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 3), 2]
-            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 4)]
-            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(3, 6)]
-        } else {
-            dfrow[1, "K"] <- min(adf$k)
-            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c(1, 2), 2]
-            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)[c(1, 3)]
-            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)[c(2, 4)]
+        dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) fit$m$deviance() else deviance(fit)
+        dfrow[1, "SdRes"] <- sqrt(dfrow[1, "AbsSS"]/(length(adf$k) - length(fit$m$getPars())))
+        dfrow[1, c("Q0d", "Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("q0", "alpha")] else as.numeric(coef(fit)[c("q0", "alpha")])
+        dfrow[1, "Notes"] <- if ("nls2" %in% class(fit)) "wrapnls failed to converge, reverted to nlxb" else fit$convInfo$stopMessage
+        dfrow[1, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+        if (!inherits(fit, what = "error")) {
+          dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c("q0", "alpha"), "Std. Error"]
+          dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)["q0", ]
+          dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)["alpha", ]
         }
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)
         dfrow[1, "Pmaxd"] <- 1/(dfrow[1, "Q0d"] * dfrow[1, "Alpha"] *
                                 (dfrow[1, "K"] ^ 1.5)) * (0.083 * dfrow[1, "K"] + 0.65)
         if (eq == "hs") {
-            dfrow[1, "R2"] <- 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2))
+            dfrow[1, "R2"] <- if (!inherits(fit, what = "error")) 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2)) else NA
             dfrow[1, "Omaxd"] <- (10^(log10(dfrow[1, "Q0d"]) +
                                       (dfrow[1, "K"] *
                                        (exp(-dfrow[1, "Alpha"] *
                                             dfrow[1, "Q0d"] *
                                             dfrow[1, "Pmaxd"]) - 1)))) * dfrow[1, "Pmaxd"]
         } else if (eq == "koff") {
-            dfrow[1, "R2"] <-  1.0 -(deviance(fit)/sum((adf$y - mean(adf$y))^2))
+            dfrow[1, "R2"] <-  if (!inherits(fit, what = "error")) 1.0 - (deviance(fit)/sum((adf$y - mean(adf$y))^2)) else NA
             dfrow[1, "Omaxd"] <- (dfrow[1, "Q0d"] *
                                   (10^(dfrow[1, "K"] *
                                        (exp(-dfrow[1, "Alpha"] *
                                             dfrow[1, "Q0d"] *
                                             dfrow[1, "Pmaxd"]) - 1)))) * dfrow[1, "Pmaxd"]
         }
-    }
+  }
     dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
     dfrow
 }
@@ -699,7 +726,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     }
 
      if (any(dat$y %in% 0) && (equation == "hs")) {
-        warning("Zeros found in data no compatible with equation! Dropping zeros!")
+        warning("Zeros found in data not compatible with equation! Dropping zeros!")
         dat <- dat[dat$y != 0, , drop = FALSE]
     }
 

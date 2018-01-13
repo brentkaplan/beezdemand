@@ -1,6 +1,6 @@
 Package: beezdemand
-Version: 0.0.91
-Date: 2017-10-24
+Version: 0.0.92
+Date: 2018-01-13
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
@@ -14,6 +14,7 @@ Depends:
 Imports:
     nlmrt,
     nlstools,
+    nls2,
     ggplot2,
     reshape2
 Suggests:
