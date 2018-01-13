@@ -980,8 +980,8 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
   j <- 1
   for (i in unique(dat[, sharecol])) {
     # get rid of rows with only one or two data points
-    if (nrow(dat[dat$id == i,]) < 3) {
-      dat <- dat[dat$id != i,]
+    if (nrow(dat[dat[[sharecol]] == i,]) < 3) {
+      dat <- dat[dat[[sharecol]] != i,]
       next
     }
 
