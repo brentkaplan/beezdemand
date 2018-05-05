@@ -41,7 +41,15 @@
 ##' CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
 ##' @export
 CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2) {
-
+    
+    dat$x <- if (!is.numeric(dat$x)) as.numeric(dat$x) else dat$x
+    dat$y <- if (!is.numeric(dat$y)) as.numeric(dat$y) else dat$y
+  
+    if (any(is.na(dat$y))) {
+      warning("NA values found in y column. Dropping NAs and continuing")
+      dat <- dat[!is.na(dat$y), ]
+    }
+  
     ## Get N unique participants, informing loop
     ps <- unique(dat$id)
     ps <- as.character(ps)
