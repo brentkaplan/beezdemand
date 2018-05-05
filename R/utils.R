@@ -110,6 +110,10 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
     } else if (!is.null(groupcol) && any(colnames(dat) %in% "group") && !any(colnames(dat) %in% groupcol)) {
         stop("Groupcol does not match column names. Column name 'group' was found and will be used.", call. = FALSE)
     }
+  
+    dat[, xcol] <- if (!is.numeric(dat[, xcol])) as.numeric(dat[, xcol]) else dat[, xcol]
+    dat[, ycol] <- if (!is.numeric(dat[, ycol])) as.numeric(dat[, ycol]) else dat[, ycol]
+    
     return(dat)
 }
 
