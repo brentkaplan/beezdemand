@@ -114,6 +114,11 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
     dat[, xcol] <- if (!is.numeric(dat[, xcol])) as.numeric(dat[, xcol]) else dat[, xcol]
     dat[, ycol] <- if (!is.numeric(dat[, ycol])) as.numeric(dat[, ycol]) else dat[, ycol]
     
+    if (any(is.na(dat[, ycol]))) {
+      warning("NA values found in ", ycol, " column. Dropping NAs and continuing")
+      dat <- dat[!is.na(dat[, ycol]), ]
+    }
+    
     return(dat)
 }
 

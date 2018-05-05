@@ -73,11 +73,6 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                     "Omaxd", "Pmaxd", "Notes")
     }
 
-    if (any(is.na(dat$y))) {
-        warning("NA values found in y column. Dropping NAs and continuing")
-        dat <- dat[!is.na(dat$y), ]
-    }
-
     if (!is.null(agg)) {
         agg <- tolower(agg)
         if (!any(c("mean", "pooled") %in% agg)) {
@@ -1248,11 +1243,6 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @export
 GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
     dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol)
-    
-    if (any(is.na(dat$y))) {
-      warning("NA values found in y column. Dropping NAs and continuing")
-      dat <- dat[!is.na(dat$y), ]
-    }
     
     ps <- unique(dat$id)
     ps <- as.character(ps)
