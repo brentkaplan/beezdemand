@@ -86,7 +86,8 @@ trim.leading <- function (x)  sub("^\\s+", "", x)
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
-
+  
+    dat <- if (is.tbl(dat)) as.data.frame(dat) else dat
     if (any(colnames(dat) %in% "x") && any(colnames(dat) %in% "y") && any(colnames(dat) %in% "id")) {
 
     } else if (any(colnames(dat) %in% xcol) && any(colnames(dat) %in% ycol) && any(colnames(dat) %in% idcol)) {
