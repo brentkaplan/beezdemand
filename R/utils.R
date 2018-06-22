@@ -87,7 +87,12 @@ trim.leading <- function (x)  sub("^\\s+", "", x)
 ##' @export
 CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
   
-    dat <- if (is.tbl(dat)) as.data.frame(dat) else dat
+    dat <- if (dplyr::is.tbl(dat)) {
+        as.data.frame(dat) 
+        print("Data casted as data.frame")
+      } else { 
+        dat
+      }
     if (any(colnames(dat) %in% "x") && any(colnames(dat) %in% "y") && any(colnames(dat) %in% "id")) {
 
     } else if (any(colnames(dat) %in% xcol) && any(colnames(dat) %in% ycol) && any(colnames(dat) %in% idcol)) {
