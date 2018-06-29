@@ -68,25 +68,25 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 
         adf <- NULL
         adf <- dat[dat$id == ps[i], ]
-
+        adf <- adf[order(adf$x), ]
 
         adf[, c("x01", "y01")] <- adf[, c("x", "y")] + .01
 
         dfres[i, "DeltaQ"] <- round((log10(adf[1, "y01"]) - log10(adf[nrow(adf), "y01"])) /
             (log10(adf[nrow(adf), "x01"]) - log10(adf[1, "x01"])), 4)
-        dfres[i, "Bounce"] <- round(sum(diff(adf[, "y"]) > adf[1, "y"] * 0.25, na.rm = TRUE)  /
+        dfres[i, "Bounce"] <- round(sum(diff(adf$y) > adf[1, "y"] * 0.25, na.rm = TRUE)  /
             (nrow(adf) - 1), 4)
 
         nrev <- NULL
-        if (0 %in% adf[, "y"]) {
-            z <- which(adf[, "y"] == 0)
+        if (0 %in% adf$y) {
+            z <- which(adf$y == 0)
             if (ncons0 == 2) {
                 if (any(z > NROW(adf) - 2)) {
                     z <- z[-which(z > NROW(adf) - 2)]
                    }
                 if (length(z) > 0) {
                     for (j in (min(z)):(NROW(adf) - 2)) {
-                        if (adf[j, "y"] == 0 && adf[j + 1, "y"] == 0 && adf[j + 2, "y"] != 0) {
+                        if (adf$y[j] == 0 && adf$y[j + 1] == 0 && adf$y[j + 2] != 0) {
                             nrev[j] <- 1
                         } else {
                             next
@@ -103,7 +103,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
                     }
                     if (length(z) > 0) {
                         for (j in (min(z)):(NROW(adf) - 1)) {
-                            if (adf[j, "y"] == 0 && adf[j + 1, "y"] != 0) {
+                            if (adf$y[j] == 0 && adf$y[j + 1] != 0) {
                                 nrev[j] <- 1
                             } else {
                                 next
@@ -119,7 +119,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
             dfres[i, "Reversals"] <- 0
         }
 
-        dfres[i, "NumPosValues"] <- length(adf[ adf$y != 0, "y"])
+        dfres[i, "NumPosValues"] <- length(adf$y[adf$y != 0])
         dfres[i, "DeltaQPass"] <- ifelse(dfres[i, "DeltaQ"] >= deltaq, "Pass", "Fail")
         dfres[i, "BouncePass"] <- ifelse(dfres[i, "Bounce"] <= bounce, "Pass", "Fail")
         dfres[i, "ReversalsPass"] <- ifelse(dfres[i, "Reversals"] <= reversals, "Pass", "Fail")
