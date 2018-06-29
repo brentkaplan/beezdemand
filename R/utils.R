@@ -88,8 +88,8 @@ trim.leading <- function (x)  sub("^\\s+", "", x)
 CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
   
     dat <- if (dplyr::is.tbl(dat)) {
-        as.data.frame(dat) 
-        print("Data casted as data.frame")
+      print("Data casted as data.frame")  
+      dat <- as.data.frame(dat)
       } else { 
         dat
       }
