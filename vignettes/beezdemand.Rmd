@@ -30,7 +30,7 @@ customizability.
 This package is a work in progress. I welcome suggestions, feedback,
 questions, and comments regarding what other researchers might be
 interested in seeing. If you encounter bugs, errors, or other
-discrepancies please either open an issue or
+discrepancies please either open an issue on the package's [GitHub page](https://github.com/brentkaplan/beezdemand) or
 [contact me](mailto:bkaplan.ku@gmail.com?Subject=Question/comment%20Regarding%20beezdemand%20Package "Email bkaplan.ku@gmail.com") and I will do my best to fix
 the problem.
 
@@ -48,7 +48,7 @@ Then simply install the package using the following command:
 ```devtools::install_github("brentkaplan/beezdemand", build_vignettes
 = TRUE)```
 
-Doing so will compile this vignette during the installation.
+By indicating `build_vignettes = TRUE`, the installation will compile this vignette.
 
 ```{r include = FALSE}
 library(beezdemand)
@@ -164,13 +164,17 @@ knitr::kable(head(GetEmpirical(apt), 5))
 
 `FitCurves()` has several important arguments that can be passed:
 
-* `detailed = FALSE` is the default. This will output a single dataframe of results, as shown below. When `detailed = TRUE`, the output is a 3 element list that includes (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting.
+* `equation` can accept `hs` or `koff`, two of the contemporary equations proposed by Hursh & Silberberg (2008) and Koffarnus et al. (2015), respectively. 
 
-* `agg = NULL` is the default. When `agg = "Mean"`, data are fit to strictly averages. When `agg = "Pooled"`, all data are used and clustering within individual is ignored.
+* `k` by default will be calculated based on the maximum and minimum y values of the entire sample and adding .5. Adding this amount was originally proposed by Steven R. Hursh in an early iteration of a Microsoft Excel spreadsheet used to calculate demand metrics. This adjustment was adopted for two reasons. First, when fitting $Q_0$ as a derived parameter, the value may exceed the empirically observed intensity value. Thus, a k value calculated based only on the observed range of data may underestimate the full fitted range of the curve. Second, we have found that values of $\alpha$ (as well as values that rely on $\alpha$, i.e. approximate $P_{max}$) display greater discrepancies when smaller values of k are used compared to larger values of k. Other options include `"ind"`, which will calculate k based on individual basis, `"fit"`, which will fit k as a free parameter on an individual basis, `"share"`, which will fit k as a single shared parameter across all data sets (while fitting individual $Q_0$ and $\alpha$).
 
-* `lobound` and `hibound` can accept named vectors that will be used as lower and upper bounds, respectively during fitting. If `k = "fit"`, then it should look as follows: `lobound = c("q0" = 0, "k" = 0, "alpha" = 0)` and `hibound = c("q0" = 25, "k" = 10, "alpha" = 1)`. If `k != "fit"`, then only `"q0"` and `"alpha"` should be used in bounding.
+* `agg = NULL` is the default. When `agg = "Mean"`, data are fit averaged data disregarding any error. When `agg = "Pooled"`, all data are used and clustering within individual is ignored.
 
-Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical measures, resulting BP0 values will be all NAs (reflective of the data transformations). The warning message will look as follows:
+* `detailed = FALSE` is the default. This will output a single dataframe of results, as shown below. When `detailed = TRUE`, the output is a 3 element list that includes (1) dataframe of results, (2) list of nonlinear regression model objects, (3) list of dataframes containing predicted x and y values (to be used in subsequent plotting), and (4) list of individual dataframes used in fitting.
+
+* `lobound` and `hibound` can accept named vectors that will be used as lower and upper bounds, respectively during fitting. If `k = "fit"`, then it should look as follows: `lobound = c("q0" = 0, "k" = 0, "alpha" = 0)` and `hibound = c("q0" = 25, "k" = 10, "alpha" = 1)`. If `k` is not being fit as a parameter, then only `"q0"` and `"alpha"` should be used in bounding.
+
+Note: Fitting with an equation that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical (i.e., observed) measures, resulting BP0 values will be all NAs (reflective of the data transformations). The warning message will look as follows:
 
 ```{r zero-warning, eval=FALSE}
 Warning message:
@@ -183,7 +187,7 @@ The simplest use of `FitCurves()` is shown here, only needing to specify `dat` a
 FitCurves(dat = apt, equation = "hs", k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound)
 ```
 
-Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results):
+Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results). This example fits the exponential equation proposed by Hursh & Silberberg (2008):
 
 ```{r hs-setup, include=FALSE}
 fc <- FitCurves(apt, "hs")
@@ -200,7 +204,7 @@ knitr::kable(hs3, caption = "Uncertainty and Model Information")
 knitr::kable(hs4, caption = "Derived Measures")
 ```
 
-Here, the simplest form is shown specifying another equation, `"koff"`:
+Here, the simplest form is shown specifying another equation, `"koff"`. This fits the modified exponential equation proposed by Koffarnus et al. (2015):
 
 ```{r koff, eval=FALSE}
 FitCurves(apt, "koff")
@@ -261,9 +265,7 @@ knitr::kable(pl4, caption = "Derived Measures")
 
 ### Share k Globally; Fit Other Parameters Locally
 
-Provides the ability to share k globally (across all participants)
-while estimating Q0 and alpha locally. While this works, it may take
-some time with larger sample sizes.
+As mentioned earlier, in the function `FitCurves`, when `k = "share"` this parameter will be a shared parameter across all datasets (globally) while estimating $Q_0$ and $\alpha$ locally. While this works, it may take some time with larger sample sizes.
 
 ```{r share, eval=FALSE}
 FitCurves(apt, "hs", k = "share")
@@ -280,18 +282,25 @@ knitr::kable(head(df, 5)[ , 12:20], caption = "Uncertainty and Model Information
 knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
 ```
 
-### Compare Values of $\alpha$ and $Q_{0}$ via Extra Sum-of-Squares F-Test
+### Compare Values of $\alpha$ and $Q_0$ via Extra Sum-of-Squares F-Test
 
+When one has multiple groups, it may be beneficial to compare whether separate curves are preferred over a single curve. This is accomplished by the Extra Sum-of-Squares F-test. This function (using the argument `compare`) will determine whether a single $\alpha$ or a single $Q_0$ is better than multiple $\alpha$s or $Q_0$s. A single curve will be fit, the residual deviations calculated and those residuals are compared to residuals obtained from multiple curves. A resulting _F_ statistic will be reporting along with a _p_ value. 
+
+Example forthcoming.
 ```{r ftest, eval=FALSE}
 ExtraF(apt, "hs")
 ```
 
 ### Plots
 
-Graphs can automatically be created at both an aggregate
-(fitting on the means or on the pooled data
-[NOTE: This disregards clustering within individual]) and individual
-level.
+Plots can be created using the `PlotCurves` function. This function takes the output from `FitCurves` when the argument from `FitCurves`, `detailed = TRUE`. The default will be to save figures into a plots folder created one directory above the current working directory. Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`, then plots will be shown interactively and not saved (`ask = FALSE` is the default). Graphs can automatically be created at both an aggregate and individual level.
+
+<center><img src="Participant-mean.png" alt="Mean Curve"  width="432"
+height="432"/></center>
+
+<center><img src="Participant-19.png" alt="Individual Curve"  width="432"
+height="432"/></center>
+
 
 ### Learn More About Functions
 
