@@ -113,7 +113,7 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @param device Type of file. Default is "png". Can be "pdf"
 ##' @param ending Optional. Can specify to only plot through a certain number of datasets
 ##' @param ask Can view plots one by one. If TRUE, plots will not save
-##' @param ... Pass arguments to PlotCurve
+##' @param ... Pass arguments to PlotCurve (for example yscale = c("log", "linear"))
 ##' @return Nothing
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @export
