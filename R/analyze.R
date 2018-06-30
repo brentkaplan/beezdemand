@@ -484,6 +484,8 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @import graphics
+##' @import grDevices
 ##' @export
 FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
 
@@ -787,6 +789,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @param groupcol The column name that should be treated as the groups
 ##' @return List of results and models
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @import stats
 ##' @export
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, compare = "alpha",
                    idcol = "id", xcol = "x", ycol = "y", groupcol = NULL) {

@@ -26,7 +26,7 @@
 ##
 ##
 
-
+utils::globalVariables(c("X", "Y", "group", "id", "x", "x1", "x2", "y", "y1", "y2"))
 
 # A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
 # from Starting value. Default value is 0.0000000001.
@@ -140,11 +140,11 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
         suppressWarnings(print(ggp))
       } else {
         if (device == "png") {
-          png(file = paste0(outdir, "Participant-", dat$dfres[i, "id"], ".png"), width = 800, height = 800, res = 120)
+          png(paste0(outdir, "Participant-", dat$dfres[i, "id"], ".png"), width = 800, height = 800, res = 120)
           suppressWarnings(print(ggp))
           graphics.off()
         } else if (device == "pdf") {
-          pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "id"], ".pdf"))
+          pdf(paste0(outdir, "Participant-", dat$dfres[i, "id"], ".pdf"))
           suppressWarnings(print(ggp))
           graphics.off()
         }

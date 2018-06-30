@@ -180,11 +180,11 @@ GetDescriptives <- function(dat, bwplot = FALSE, outdir = "../plots/", device = 
             theme_apa()
         print(bwplt)
         if (device == "png") {
-          png(file = paste0(outdir, filename, ".png"), width = 800, height = 600, res = 120)
+          png(paste0(outdir, filename, ".png"), width = 800, height = 600, res = 120)
           suppressWarnings(print(bwplt))
           graphics.off()
         } else if (device == "pdf") {
-          pdf(file = paste0(outdir, filename, ".pdf"))
+          pdf(paste0(outdir, filename, ".pdf"))
           suppressWarnings(print(bwplt))
           graphics.off()
         }

@@ -16,7 +16,7 @@ library(beezdemand)
 ```
 
 #### Note About Use
-Currently, this version (0.0.91) is under development. You are free to use it,
+Currently, this version (0.0.95) is under development. You are free to use it,
 but be aware that there might be bugs present.
 If you find issues or would like to contribute, please contact me at <bkaplan.ku@gmail.com>.
 

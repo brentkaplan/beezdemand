@@ -1,3 +1,11 @@
+# beezdemand 0.0.95
+
+## New updates
+
+* One major change that might affect previous scripts is that in output summary tables, the column formally named ID is now named id (lowercase)
+
+* Cleaned up a few things here and there. The package is close for submission to CRAN as it passes R CMD check with no errors, warnings, or notes
+
 # beezdemand 0.0.91
 
 ## New updates

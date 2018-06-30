@@ -18,7 +18,7 @@ PlotCurves(dat, outdir = "../plots/", device = "png", ending = NULL,
 
 \item{ask}{Can view plots one by one. If TRUE, plots will not save}
 
-\item{...}{Pass arguments to PlotCurve}
+\item{...}{Pass arguments to PlotCurve (for example yscale = c("log", "linear"))}
 }
 \value{
 Nothing
