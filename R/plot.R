@@ -140,11 +140,11 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
         suppressWarnings(print(ggp))
       } else {
         if (device == "png") {
-          png(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".png"), width = 800, height = 800, res = 120)
+          png(file = paste0(outdir, "Participant-", dat$dfres[i, "id"], ".png"), width = 800, height = 800, res = 120)
           suppressWarnings(print(ggp))
           graphics.off()
         } else if (device == "pdf") {
-          pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "ID"], ".pdf"))
+          pdf(file = paste0(outdir, "Participant-", dat$dfres[i, "id"], ".pdf"))
           suppressWarnings(print(ggp))
           graphics.off()
         }
@@ -214,7 +214,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
-        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
@@ -247,7 +247,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::scale_x_log10(breaks=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.00001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
-        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
@@ -298,7 +298,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::scale_x_log10(breaks=c(0.0001,  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
-        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
@@ -333,7 +333,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::scale_x_log10(breaks=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000),
                       labels=c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
-        ggplot2::ggtitle(paste("Participant", dfrow[["ID"]], sep = "-")) +
+        ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         ggplot2::annotation_logticks(sides = "b") +
         beezdemand::theme_apa() +
         ggplot2::theme(strip.background = element_blank(),
