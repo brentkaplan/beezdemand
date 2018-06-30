@@ -93,6 +93,15 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
       } else { 
         dat
       }
+    
+    dat[, xcol] <- if (!is.numeric(dat[, xcol])) as.numeric(dat[, xcol]) else dat[, xcol]
+    dat[, ycol] <- if (!is.numeric(dat[, ycol])) as.numeric(dat[, ycol]) else dat[, ycol]
+    
+    if (any(is.na(dat[, ycol]))) {
+      warning("NA values found in ", ycol, " column. Dropping NAs and continuing")
+      dat <- dat[!is.na(dat[, ycol]), ]
+    }
+    
     if (any(colnames(dat) %in% "x") && any(colnames(dat) %in% "y") && any(colnames(dat) %in% "id")) {
 
     } else if (any(colnames(dat) %in% xcol) && any(colnames(dat) %in% ycol) && any(colnames(dat) %in% idcol)) {
@@ -117,14 +126,6 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
         stop("Groupcol does not match column names. Column name 'group' was found and will be used.", call. = FALSE)
     }
   
-    dat[, xcol] <- if (!is.numeric(dat[, xcol])) as.numeric(dat[, xcol]) else dat[, xcol]
-    dat[, ycol] <- if (!is.numeric(dat[, ycol])) as.numeric(dat[, ycol]) else dat[, ycol]
-    
-    if (any(is.na(dat[, ycol]))) {
-      warning("NA values found in ", ycol, " column. Dropping NAs and continuing")
-      dat <- dat[!is.na(dat[, ycol]), ]
-    }
-    
     return(dat)
 }
 
