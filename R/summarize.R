@@ -55,7 +55,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
     ps <- as.character(ps)
     np <- length(ps)
 
-    cnames <- c("ID", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
+    cnames <- c("id", "TotalPass", "DeltaQ", "DeltaQPass", "Bounce",
                 "BouncePass", "Reversals", "ReversalsPass", "NumPosValues")
 
     dfres <- data.frame(matrix(vector(),
@@ -64,7 +64,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
                                dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
 
     for (i in seq_len(np)) {
-        dfres[i, "ID"] <- ps[i]
+        dfres[i, "id"] <- ps[i]
 
         adf <- NULL
         adf <- dat[dat$id == ps[i], ]
