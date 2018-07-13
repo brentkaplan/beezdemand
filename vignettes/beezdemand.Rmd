@@ -22,7 +22,7 @@ for other softwares; rather, it is meant to serve as an
 additional tool in the behavioral economist's toolbox. It is meant for
 researchers to conduct behavioral economic (be) demand the easy (ez) way.
 
-[`R`](https://www.r-project.org/) is an open-source statistical programming language. It is powerful and allows for nearly endless
+`R` is an open-source statistical programming language. It is powerful and allows for nearly endless
 customizability.
 
 ## Note About Use

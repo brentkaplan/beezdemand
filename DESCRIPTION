@@ -1,6 +1,6 @@
 Package: beezdemand
-Version: 0.0.95
-Date: 2018-06-30
+Version: 0.1.00
+Date: 2018-07-13
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))

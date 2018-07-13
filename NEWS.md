@@ -1,3 +1,7 @@
+# beezdemand 0.1.00
+
+* Package should be ready for CRAN and is being submitted
+
 # beezdemand 0.0.95
 
 ## New updates
