@@ -1,13 +1,22 @@
 Package: beezdemand
-Version: 0.1.00
-Date: 2018-07-13
+Version: 0.1.1
+Date: 2018-07-14
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
 Author: Brent Kaplan [aut, cre],
 	Shawn Gilroy [ctb]
 Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
-Description: Analyze behavioral economic demand curve data.
+Description: Facilitates many of the analyses performed in studies of
+    behavioral economic demand. The package supports commonly-used options for
+		modeling operant demand including (1) data screening proposed by Stein,
+		Koffarnus, Snider, Quisenberry, & Bickel (2015; doi:10.1037/pha0000020),
+		(2) fitting models of demand such as linear (Hursh, Raslear, Bauman,
+		& Black, 1989), exponential	(Hursh & Silberberg, 2008,
+		doi:10.1037/0033-295X.115.1.186) and modified exponential (Koffarnus,
+		Franck, Stein, & Bickel, 2015, doi:10.1037/pha0000045), and (3) calculating 
+		numerous measures	relevant to applied behavioral economists (Intensity,
+		Pmax, Omax). Also	supports plotting and comparing data.
 Depends:
     R (>= 2.5)
 Imports:
