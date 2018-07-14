@@ -7,8 +7,7 @@ Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c(
 Author: Brent Kaplan [aut, cre],
 	Shawn Gilroy [ctb]
 Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
-Description: Functions to help aid in analyzing behavioral economic demand curve
-    data.
+Description: Analyze behavioral economic demand curve data.
 Depends:
     R (>= 2.5)
 Imports:
