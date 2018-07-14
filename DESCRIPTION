@@ -1,5 +1,5 @@
 Package: beezdemand
-Version: 0.1.1
+Version: 0.1.0
 Date: 2018-07-14
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
@@ -14,7 +14,7 @@ Description: Facilitates many of the analyses performed in studies of
 		(2) fitting models of demand such as linear (Hursh, Raslear, Bauman,
 		& Black, 1989), exponential	(Hursh & Silberberg, 2008,
 		doi:10.1037/0033-295X.115.1.186) and modified exponential (Koffarnus,
-		Franck, Stein, & Bickel, 2015, doi:10.1037/pha0000045), and (3) calculating 
+		Franck, Stein, & Bickel, 2015, doi:10.1037/pha0000045), and (3) calculating
 		numerous measures	relevant to applied behavioral economists (Intensity,
 		Pmax, Omax). Also	supports plotting and comparing data.
 Depends:

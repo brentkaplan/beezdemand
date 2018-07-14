@@ -11,7 +11,7 @@ There were no ERRORs or WARNINGs or NOTEs
 
 Version contains leading zeroes (0.1.00). Please change.
 
-* Version has been updated to 0.1.1
+* Version has been updated to 0.1.0
 
 Can you elaborate which methods are implemented for this task? Is there 
 some reference about the method you can add in the Description field in 
