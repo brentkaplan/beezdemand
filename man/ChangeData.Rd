@@ -35,6 +35,10 @@ Changes demand data
 \details{
 Change demand data in various ways. Ways include replacing any number of 0 values with a replacement number (or remove them completely), removing price and consumption at free, replacing free with some number. This will soon replace ReplaceZeros and certain arguments in FitCurves.
 }
+\examples{
+## Change just the first instance of 0 within each unique value of id with .1
+ChangeData(apt, nrepl = 1, replnum = .1)
+}
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>
 }

@@ -36,6 +36,10 @@ If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3
 \description{
 Analyzes purchase task data
 }
+\examples{
+## Analyze using Hursh & Silberberg, 2008 equation with a k fixed to 2
+FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
+}
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
 }

@@ -24,6 +24,10 @@ Calculates empirical measures for purchase task data
 \details{
 Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 }
+\examples{
+## Obtain empirical measures
+GetEmpirical(apt)
+}
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>
 }

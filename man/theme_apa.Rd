@@ -18,6 +18,13 @@ APA theme for ggplot
 \details{
 Theme for ggplot graphics that closely align with APA formatting
 }
+\examples{
+\donttest{
+p <- ggplot2::ggplot(apt, ggplot2::aes(x = x, y = y)) +
+  ggplot2::geom_point() 
+p + theme_apa()
+}
+}
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>
 }

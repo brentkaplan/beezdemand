@@ -23,7 +23,6 @@ Replaces 0 values
 Replaces specified number of 0s with replacement value.
 }
 \examples{
-ReplaceZeros(apt)
 ## Replace all zeros with .01
 ReplaceZeros(apt, nrepl = "all", replnum = .01)
 }

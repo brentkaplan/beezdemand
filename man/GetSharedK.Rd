@@ -22,6 +22,12 @@ Finds shared k among selected datasets using global regression
 \details{
 Uses global regression to fit a shared k among datasets. Assumes the dataset is in its final form. Used within FitCurves
 }
+\examples{
+## Find a shared k value across datasets indicated by id
+\dontrun{
+GetSharedK(apt, "hs", sharecol = "id")
+}
+}
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com> Shawn P Gilroy <shawn.gilroy@temple.edu>
 }
