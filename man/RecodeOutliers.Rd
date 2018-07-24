@@ -24,7 +24,10 @@ Recodes outliers using Tabachnick and Fidell's (2013) criteria. A variable is st
 }
 \examples{
 ## If any outliers are detected, they would be coded as 1 unit higher
-RecodeOutliers(apt[, 3], unitshigher = 1)
+\donttest{
+emp <- GetEmpirical(apt)
+RecodeOutliers(emp[, c(2:6)], unitshigher = 1)
+}
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>

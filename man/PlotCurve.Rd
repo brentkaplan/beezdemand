@@ -27,7 +27,7 @@ Creates individual demand curves
 \examples{
 ## Creates a single plot from elements of an object created by FitCurves
 \donttest{
-fc <- FitCurves(apt, "hs", k = 2, detailed = T)
+fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 PlotCurve(fc$adfs[[1]], fc$dfres[1, ], fc$newdats[[1]])
 }
 }

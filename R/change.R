@@ -75,7 +75,10 @@ ReplaceZeros <- function(dat, nrepl = 1, replnum = .01) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples 
 ##' ## If any outliers are detected, they would be coded as 1 unit higher
-##' RecodeOutliers(apt[, 3], unitshigher = 1)
+##' \donttest{
+##' emp <- GetEmpirical(apt)
+##' RecodeOutliers(emp[, c(2:6)], unitshigher = 1)
+##' }
 ##' @export
 RecodeOutliers <- function(df, outval = 3.29, unitshigher = 0) {
 

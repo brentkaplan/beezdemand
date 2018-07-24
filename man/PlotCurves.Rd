@@ -32,8 +32,8 @@ Creates and saves plots of individual demand curves
 \examples{
 ## Interactively view plots from output from FitCurves
 \donttest{
-fc <- FitCurves(apt, "hs", k = 2, detailed = T)
-PlotCurves(fc, ask = T)}
+fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
+PlotCurves(fc, ask = TRUE)}
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>, Shawn Gilroy <shawn.gilroy@temple.edu>
