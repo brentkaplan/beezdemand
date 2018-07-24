@@ -50,7 +50,10 @@
 ##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds.
 ##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds.
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
-##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
+##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @examples
+##' ## Analyze using Hursh & Silberberg, 2008 equation with a k fixed to 2
+##' FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
 ##' @export
 FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound) {
 
@@ -486,6 +489,9 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @import graphics
 ##' @import grDevices
+##' @examples 
+##' ## Fit aggregated data (mean only) using Hursh & Silberberg, 2008 equation with a k fixed at 2
+##' FitMeanCurves(apt[sample(apt$id, 5), ], "hs", k = 2, method = "Mean")
 ##' @export
 FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
 
@@ -790,6 +796,14 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @return List of results and models
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @import stats
+##' @examples 
+##' ## Compare two groups using equation by Koffarnus et al., 2015 and a fixed k of 2
+##' \dontrun{
+##' apt$group <- NA
+##' apt[apt$id %in% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
+##' apt$group[is.na(apt$group)] <- "b"
+##' ExtraF(apt, "koff", k = 2, groupcol = "group")
+##' }
 ##' @export
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, compare = "alpha",
                    idcol = "id", xcol = "x", ycol = "y", groupcol = NULL) {
@@ -1053,6 +1067,11 @@ getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
 ##' @param sharecol Character for column to find shared k. Default to "group" but can loop based on id.
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn P Gilroy <shawn.gilroy@@temple.edu>
+##' @examples 
+##' ## Find a shared k value across datasets indicated by id
+##' \dontrun{
+##' GetSharedK(apt, "hs", sharecol = "id")
+##' }
 ##' @export
 GetSharedK <- function(dat, equation, sharecol = "group") {
 
@@ -1342,6 +1361,9 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @param ycol The column name that should be treated as "y" data
 ##' @return Data frame of empirical measures
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @examples 
+##' ## Obtain empirical measures
+##' GetEmpirical(apt)
 ##' @export
 GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
     dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol)
