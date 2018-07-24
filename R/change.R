@@ -31,7 +31,6 @@
 ##' @return Dataframe (long form)
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @examples
-##' ReplaceZeros(apt)
 ##' ## Replace all zeros with .01
 ##' ReplaceZeros(apt, nrepl = "all", replnum = .01)
 ##' @export
@@ -74,6 +73,9 @@ ReplaceZeros <- function(dat, nrepl = 1, replnum = .01) {
 ##' @param unitshigher Outliers identified by outval will be coded to a certain number of units higher/lower than the greatest nonoutlier value. Default is 0 units.
 ##' @return Invisibly, a dataframe with original and recoded (if any) values
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @examples 
+##' ## If any outliers are detected, they would be coded as 1 unit higher
+##' RecodeOutliers(apt[, 3], unitshigher = 1)
 ##' @export
 RecodeOutliers <- function(df, outval = 3.29, unitshigher = 0) {
 
@@ -134,6 +136,9 @@ RecodeOutliers <- function(df, outval = 3.29, unitshigher = 0) {
 ##' @param idcol Column name in dataframe that signifies identifying id grouping
 ##' @return Long form dataframe resembling the originally provided dataframe
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @examples 
+##' ## Change just the first instance of 0 within each unique value of id with .1
+##' ChangeData(apt, nrepl = 1, replnum = .1)
 ##' @export
 ChangeData <- function(dat, nrepl = 1, replnum = .01, rem0 = FALSE, remq0e = FALSE, replfree = NULL, xcol = "x", ycol = "y", idcol = "id") {
     origcols <- colnames(dat)
