@@ -71,8 +71,7 @@ minTicks <- function(maj) {
 ##' @param ... additional arguments
 ##' @return ggplot2 layer
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
-##' @importFrom ggplot2 layer GeomLogticks StatIdentity PositionIdentity unit
-##' @export
+##' @import ggplot2
 annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short = unit(0.1, "cm"),
                                  mid = unit(0.2, "cm"), long = unit(0.3, "cm"), colour = "black",
                                  size = 0.5, linetype = 1, alpha = 1, data =data.frame(x = NA), color = NULL, ...) {
@@ -170,7 +169,7 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
 ##' @param yscale Scaling of y axis. Default is "log". Can also take "linear"
 ##' @return ggplot2 graphical object
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
-##' @importFrom ggplot2 geom_point geom_line geom_segment coord_cartesian ggtitle aes annotation_logticks element_blank element_line element_rect element_text expand_limits guide_legend guides labs scale_x_log10 scale_y_log10 theme theme_bw xlab ylab
+##' @import ggplot2
 ##' @examples 
 ##' ## Creates a single plot from elements of an object created by FitCurves
 ##' \donttest{

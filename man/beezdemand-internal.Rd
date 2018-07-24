@@ -4,7 +4,9 @@
 \alias{lseq}
 \alias{minTicks}
 \alias{trim.leading}
-\alias{Extractor}
+\alias{ExtractCoefs}
+\alias{FitCurves.linear}
+\alias{ExtractCoefs.linear}
 \title{Internal Beezdemand Functions}
 \description{
  Internal Beezdemand functions

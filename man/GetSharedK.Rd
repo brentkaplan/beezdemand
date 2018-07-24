@@ -24,7 +24,7 @@ Uses global regression to fit a shared k among datasets. Assumes the dataset is 
 }
 \examples{
 ## Find a shared k value across datasets indicated by id
-\dontrun{
+\donttest{
 GetSharedK(apt, "hs", sharecol = "id")
 }
 }

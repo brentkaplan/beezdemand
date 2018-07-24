@@ -798,7 +798,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @import stats
 ##' @examples 
 ##' ## Compare two groups using equation by Koffarnus et al., 2015 and a fixed k of 2
-##' \dontrun{
+##' \donttest{
 ##' apt$group <- NA
 ##' apt[apt$id %in% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
 ##' apt$group[is.na(apt$group)] <- "b"
@@ -1069,7 +1069,7 @@ getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn P Gilroy <shawn.gilroy@@temple.edu>
 ##' @examples 
 ##' ## Find a shared k value across datasets indicated by id
-##' \dontrun{
+##' \donttest{
 ##' GetSharedK(apt, "hs", sharecol = "id")
 ##' }
 ##' @export

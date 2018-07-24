@@ -40,7 +40,7 @@ One alpha better than individual alphas?
 }
 \examples{
 ## Compare two groups using equation by Koffarnus et al., 2015 and a fixed k of 2
-\dontrun{
+\donttest{
 apt$group <- NA
 apt[apt$id \%in\% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
 apt$group[is.na(apt$group)] <- "b"

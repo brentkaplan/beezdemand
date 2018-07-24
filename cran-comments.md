@@ -7,7 +7,17 @@ There were no ERRORs or WARNINGs or NOTEs
 
 ## Submission comments
 
-### Reviewer comments
+### Reviewer comments 20180720
+
+Please write DOIs in brackets as suggested.
+
+* DOIs are now in brackets
+
+Please add examples to all exported functions.
+
+* Examples have been added to all exported functions
+
+### Reviewer comments 20180714
 
 Version contains leading zeroes (0.1.00). Please change.
 
