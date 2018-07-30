@@ -18,10 +18,6 @@
 ## summary
 ## R script for summarizing demand data
 ##
-## @ggplot2 = grammar of graphics
-## link @ https://cran.r-project.org/web/packages/ggplot2/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
 
 ##' Applies Stein, Koffarnus, Snider, Quisenberry, & Bickel's (2015) criteria for identification of nonsystematic purchase task data.
 ##'
