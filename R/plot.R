@@ -22,6 +22,22 @@
 
 utils::globalVariables(c("X", "Y", "group", "id", "x", "x1", "x2", "y", "y1", "y2"))
 
+# Creates minor ticks for use in plotting.
+# maj Major values
+minTicks <- function(maj) {
+  minticks <- vector(length = (length(maj)-1) * 10)
+  for (i in 1:length(maj)) {
+    if (i == length(maj)) {
+      return(minticks)
+    }
+    if (i == 1) {
+      minticks <- seq(maj[i], maj[i + 1], length.out = 10)
+    } else {
+      minticks <- c(minticks, seq(maj[i], maj[i + 1], length.out = 10))
+    }
+  }
+}
+
 ##' Creates annotation layer
 ##'
 ##' Inherit and extend layer for use in ggplot draw

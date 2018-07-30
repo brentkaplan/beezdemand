@@ -673,7 +673,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     if (plotcurves) {
         majlabels <- c(".0000000001", ".000000001", ".00000001", ".0000001", ".000001", ".00001", ".0001", ".001", ".01", ".1", "1", "10", "100", "1000")
-        majticks <- lseq()
+        majticks <- exp(seq(log(.0000000001), log(1000), length.out = 14))
         minticks <- minTicks(majticks)
 
         datmean <- aggregate(y ~ x, data = dat, mean)
