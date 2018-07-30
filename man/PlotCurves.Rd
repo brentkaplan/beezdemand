@@ -4,8 +4,8 @@
 \alias{PlotCurves}
 \title{Plot Curves}
 \usage{
-PlotCurves(dat, outdir = "../plots/", device = "png", ending = NULL,
-  ask = F, ...)
+PlotCurves(dat, outdir = NULL, device = "png", ending = NULL, ask = T,
+  ...)
 }
 \arguments{
 \item{dat}{FitCurves object with 4 elements (dfres, newdats, adfs, fits)}
