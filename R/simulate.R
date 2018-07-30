@@ -18,17 +18,6 @@
 ## summary
 ## R script for simulating data
 ##
-## dependencies
-## @reshape2 = used to melt into long form (Copyright - 2014 - Hadley Wickham - MIT)
-## link @ https://cran.r-project.org/web/packages/reshape2/index.html
-## license @ https://cran.r-project.org/web/licenses/MIT
-##
-## @nlmrt (R package) = Nash's customized optimization of L-M residual reduction (Copyright 2016 - John C. Nash - GPLv2)
-## link @ https://cran.r-project.org/web/packages/nlmrt/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
-##
-##
 
 ##' Simulate demand data
 ##'
