@@ -488,10 +488,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
     }
 
     if (plotcurves) {
-        if (!dir.exists("../plots/")) dir.create("../plots/")
-        basedir <- "../plots/"
-        basename <- paste0(method, "-", equation, "-")
-        outdir <- createOutdir(basedir = basedir, basename = basename)[[1]]
+        outdir <- paste0(tempdir(), "/")
 
         tobquote = NULL
         if (!is.null(vartext)) {

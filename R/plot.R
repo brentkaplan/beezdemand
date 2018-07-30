@@ -103,10 +103,7 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
       dir.create(outdir)
     }
   }
-  if (!dir.exists(outdir)){
-    dir.create(outdir)
-  }
-  
+
   if (is.null(ending)) {
     ending <- length(dat$fits)
   }
