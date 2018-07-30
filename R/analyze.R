@@ -18,22 +18,6 @@
 ## summary
 ## R script for analysis functions
 ##
-## dependencies
-## @nlstools = confint2 for bootstrapped confidence intervals (Copyright 2015 - Baty and Delignette-Muller - GPLv2+)
-## link @ https://cran.r-project.org/web/packages/nlstools/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
-## @nlmrt (R package) = Nash's customized optimization of L-M residual reduction (Copyright 2016 - John C. Nash - GPLv2)
-## link @ https://cran.r-project.org/web/packages/nlmrt/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
-## @ggplot2 (R package) = Grammar of Graphics plotting library (Copyright 2016 - Hadley Wickham - GPLv2)
-## link @ https://cran.r-project.org/web/packages/ggplot2/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
-## @nls2 (R package) = Non-linear regression with brute force (Copyright 2013 - G. Grothendieck - GPLv2)
-## link @ https://cran.r-project.org/web/packages/nls2/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
 
 ##' Analyzes purchase task data
 ##'
