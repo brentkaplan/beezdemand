@@ -18,39 +18,9 @@
 ## summary
 ## R script for plotting demand functions
 ##
-## lseq derived from
-## @emdbook = auxiliary functions and data sets for "Ecological Models and Data", (Copyright - 2016 - Ben Bolker - GPLv2+)
-## link @ https://cran.r-project.org/web/packages/emdbook/index.html
-## license @ https://cran.r-project.org/web/licenses/GPL-2
-##
-##
 ##
 
 utils::globalVariables(c("X", "Y", "group", "id", "x", "x1", "x2", "y", "y1", "y2"))
-
-# A vector of logarithmically spaced values primarily used for plotting. Adapted from library("emdbook").
-# from Starting value. Default value is 0.0000000001.
-# to Ending value. Default value is 1000.
-# length.out Number of values in vector. Default value is 14.
-lseq <- function(from=.0000000001, to=1000, length.out=14) {
-  exp(seq(log(from), log(to), length.out = length.out))
-}
-
-# Creates minor ticks for use in plotting.
-# maj Value from function lseq
-minTicks <- function(maj) {
-  minticks <- vector(length = (length(maj)-1) * 10)
-  for (i in 1:length(maj)) {
-    if (i == length(maj)) {
-      return(minticks)
-    }
-    if (i == 1) {
-      minticks <- seq(maj[i], maj[i + 1], length.out = 10)
-    } else {
-      minticks <- c(minticks, seq(maj[i], maj[i + 1], length.out = 10))
-    }
-  }
-}
 
 ##' Creates annotation layer
 ##'
@@ -121,12 +91,18 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 ##' PlotCurves(fc, ask = TRUE)}
 ##' @export
-PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL, ask = F, ...) {
+PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = T, ...) {
   
   if (!all(c("dfres", "newdats", "adfs") %in% names(dat))) {
     stop("Object should be from FitCurves. Try rerunning FitCurves with detailed = TRUE")
   }
   
+  if (!ask) {
+    outdir <- if (is.null(outdir)) paste0(tempdir(), "/") else outdir
+    if (!dir.exists(outdir)){
+      dir.create(outdir)
+    }
+  }
   if (!dir.exists(outdir)){
     dir.create(outdir)
   }
@@ -157,6 +133,7 @@ PlotCurves <- function(dat, outdir = "../plots/", device = "png", ending = NULL,
       next()
     }
   }
+  message(ending, " plots saved in ", outdir)
 }
 
 ##' Creates a single plot object
