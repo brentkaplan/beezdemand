@@ -11,7 +11,7 @@ install.packages("beezdemand", dependencies = TRUE)
 library(beezdemand)
 ```
 
-To install a stable release directly from [GitHub](http://github.com/brentkaplan/beezdemand), first install and load the devtools package. Then, use `install_github` to install the package and associated vignette. 
+To install a stable release directly from [GitHub](http://github.com/brentkaplan/beezdemand), first install and load the devtools package. Then, use `install_github` to install the package and associated vignette.
 
 ```r
 install.packages("devtools")
@@ -214,7 +214,7 @@ No k value specified. Defaulting to empirical mean range +.5
 2 0.009740816 0.017170610 0.7094189 15.74586 17.79622 converged
 3 0.006859242 0.010727726 1.0855466 24.09418 17.65453 converged
 Warning message:
-Zeros found in data not compatible with equation! Dropping zeros! 
+Zeros found in data not compatible with equation! Dropping zeros!
 
 > head(FitCurves(apt, "koff"), 3)
 No k value specified. Defaulting to empirical mean range +.5
@@ -236,7 +236,7 @@ The output of `FitCurves` contains important outputs:
 
 ```r
 > fc <- FitCurves(apt, "hs")
-``` 
+```
 
 ###### Empirical Measures
 
@@ -248,7 +248,7 @@ The output of `FitCurves` contains important outputs:
 3 38         4  NA  10    21     7
 4 60        10  NA  10    24     8
 5 68        10  NA  10    36     9
-``` 
+```
 
 ###### Fitted Measures
 
@@ -314,7 +314,7 @@ Searching for shared K, this can take a while...
 2 0.002531203 0.004135039 0.4963278 15.52624 16.60378 converged
 3 0.002030210 0.002885762 0.6730390 21.05416 13.88478 converged
 Warning message:
-Zeros found in data not compatible with equation! Dropping zeros! 
+Zeros found in data not compatible with equation! Dropping zeros!
 
 > head(FitCurves(apt, "koff", k = "share"), 3)
 Beginning search for best-starting k
@@ -381,6 +381,8 @@ Description:
 
 - Paul E. Johnson, Center for Research Methods and Data Analysis, University of Kansas
 (www.crmda.ku.edu)
+
+- W. Brady DeHart (Virginia Tech Carilion Research Institute)
 
 - Michael Amlung, Cognitive Neuroscience of Addictions Laboratory
 (www.cnalab.weebly.com)
