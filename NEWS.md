@@ -1,3 +1,7 @@
+# beezdemand 0.1.0
+
+* Package successfully on CRAN!
+
 # beezdemand 0.1.00
 
 * Package should be ready for CRAN and is being submitted
