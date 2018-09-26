@@ -1,5 +1,5 @@
 ---
-title: "Usage of beezdemand"
+title: "Using beezdemand"
 author: "Brent Kaplan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -62,15 +62,15 @@ devtools::install_github("brentkaplan/beezdemand@develop")
 ## Using the Package
 
 ```{r packages, include = FALSE, echo = FALSE}
-if (!require(tidyverse)) {
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
   install.packages("tidyverse")
-  library(tidyverse)
 }
+library(tidyverse)
 
-if (!require(beezdemand)) {
+if (!requireNamespace("beezdemand", quietly = TRUE)) {
   install.packages("beezdemand")
-  library(beezdemand)
 }
+library(beezdemand)
 ```
 
 ### Example Dataset

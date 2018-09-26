@@ -5,8 +5,8 @@
 \title{annotation_logticks2}
 \usage{
 annotation_logticks2(base = 10, sides = "bl", scaled = TRUE,
-  short = unit(0.1, "cm"), mid = unit(0.2, "cm"), long = unit(0.3, "cm"),
-  colour = "black", size = 0.5, linetype = 1, alpha = 1,
+  short = unit(0.1, "cm"), mid = unit(0.2, "cm"), long = unit(0.3,
+  "cm"), colour = "black", size = 0.5, linetype = 1, alpha = 1,
   data = data.frame(x = NA), color = NULL, ...)
 }
 \arguments{
