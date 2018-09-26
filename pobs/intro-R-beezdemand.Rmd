@@ -40,9 +40,9 @@ but be aware that, as with any software release, there might be (unknown) bugs p
 
 This specific document is a companion for the paper, "The R Package `beezdemand`: Behavioral Economic Easy Demand", published in [Perspectives on Behavior Science](https://link.springer.com/journal/40614) coauthored by myself, Shawn P. Gilroy, Derek D. Reed, Mikhail N. Koffarnus, and Steven R. Hursh, and is largely adapted from the vignette created for and accessible from the `beezdemand` package. This document is written in R Markdown and is compiled to a PDF with the `rmarkdown` package. R Markdown is a file format for making dynamic documents using `R`. The bulk of this document is written in markdown with `R` code chunks littered throughout. A dynamic document is one that can be updated "on the fly." Over time, a document like this is likely to grow and expand. One such document is the vignette for `beezdemand`, which will be updated as new functions are introduced. You can access the `beezdemand` vignette by either visiting the package website on [CRAN](https://CRAN.R-project.org/package=beezdemand) or [GitHub](http://github.com/brentkaplan/beezdemand), or in `R` using the command, `browseVignettes("beezdemand")`.
 
-The R Markdown version of this document can be found [here]().
+The R Markdown version of this document can be found [here](https://github.com/brentkaplan/beezdemand/blob/master/pobs/intro-R-beezdemand.Rmd).
 
-The PDF version of this document can be found [here]().
+The PDF version of this document can be found [here](https://github.com/brentkaplan/beezdemand/blob/master/pobs/intro-R-beezdemand.pdf).
 
 ## Installing `beezdemand`
 
