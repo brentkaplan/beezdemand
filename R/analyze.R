@@ -1388,10 +1388,34 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @export
 GetAnalyticPmax <- function(Alpha, K, Q0) {
   if (K <= exp(1)/log(10)) {
-    return (NaN);
+    return (beezdemand::GetAnalyticPmaxFallback(K, Alpha, Q0));
   } else {
     return (-beezdemand::lambertW(z = -1/log((10^K))) / (Alpha * Q0));
   }
+}
+
+##' Fallback method for Analytic Pmax
+##'
+##' Derivative-based optimization strategy
+##' @title Analytic Pmax Fallback
+##' @param K_ k parameter
+##' @param A_ alpha parameter
+##' @param Q0_ q0 parameter
+##' @return numeric
+##' @author Shawn Gilroy <sgilroy1@@lsu.edu>
+##' @export
+GetAnalyticPmaxFallback <- function(K_, A_, Q0_) {
+  result <- optimx::optimx(par = c((1/(Q0_ * A_ * K_^1.5)) * (0.083 * K_ + 0.65)),
+                           fn = function(par, data) {
+                             abs((log((10^data$K)) * (-data$A * data$Q0 * par[1] * exp(-data$A * data$Q0 * par[1]))) + 1)
+                           },
+                           data = data.frame(Q0 = Q0_,
+                                             A = A_,
+                                             K = K_),
+                           method = c("BFGS"),
+                           control=list(maxit=2500))
+
+  return(result$p1)
 }
 
 ##' Calculates empirical measures for purchase task data

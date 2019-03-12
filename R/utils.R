@@ -147,3 +147,4 @@ lambertW = function(z,b=0,maxiter=10,eps=.Machine$double.eps,min.imag=1e-9) {
   if (all(Im(w)<min.imag)) w = as.numeric(w)
   return(w)
 }
+
