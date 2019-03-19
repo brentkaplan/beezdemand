@@ -48,7 +48,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     if (missing(equation)) stop("Need to specify an equation!", call. = FALSE)
     equation <- tolower(equation)
-    
+
     if (equation == "linear") {
       out <- FitCurves.linear(dat, equation, agg, detailed, xcol, ycol, idcol, groupcol)
       return(out)
@@ -56,7 +56,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     cnames <- c("id", "Equation", "Q0d", "K",
                     "Alpha", "R2", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Omaxa", "Pmaxa", "Notes")
 
     if (!is.null(agg)) {
         agg <- tolower(agg)
@@ -96,7 +96,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         dfresempirical <- GetEmpirical(dat)
     }
 
-    kest <- FALSE  
+    kest <- FALSE
     if (missing(k)) {
         k <- GetK(dat)
         message("No k value specified. Defaulting to empirical mean range +.5")
@@ -204,9 +204,9 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                                     control = list(maxiter = 1000),
                                                     data = adf),
                                         silent = TRUE))
-            suppressWarnings(fit <- try(nls2::nls2(fo, 
-                                                   data = adf, 
-                                                   start = fit$coefficients, 
+            suppressWarnings(fit <- try(nls2::nls2(fo,
+                                                   data = adf,
+                                                   start = fit$coefficients,
                                                    algorithm = "brute-force")))
             attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
           }
@@ -227,9 +227,9 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                    control = list(maxiter = 1000),
                                    data = adf),
                                    silent = TRUE))
-            suppressWarnings(fit <- try(nls2::nls2(fo, 
-                                                   data = adf, 
-                                                   start = fit$coefficients, 
+            suppressWarnings(fit <- try(nls2::nls2(fo,
+                                                   data = adf,
+                                                   start = fit$coefficients,
                                                    algorithm = "brute-force")))
             attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
           }
@@ -252,7 +252,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                 newdat$y <-  10^predict(fit, newdata = newdat)
             } else if (equation == "koff") {
                 newdat$y <- predict(fit, newdata = newdat)
-            } 
+            }
         }
         newdats[[i]] <- newdat
     }
@@ -277,7 +277,7 @@ FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol =
   cnames <- c("id", "Equation", "L", "b", "a",
               "R2", "Lse", "bse", "ase", "N", "AbsSS", "SdRes", "LLow", "LHigh",
               "bLow", "bHigh", "aLow", "aHigh", "MeanElasticity",
-              "Omaxd", "Pmaxd", "Notes")
+              "Omaxd", "Pmaxd", "Omaxa", "Pmaxa", "Notes")
   if (!is.null(agg)) {
     agg <- tolower(agg)
     if (!any(c("mean", "pooled") %in% agg)) {
@@ -291,51 +291,51 @@ FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol =
       dat$id <- agg
     }
   }
-  
+
   if (any(dat$y %in% 0)) {
     warning("Zeros found in data not compatible with equation! Dropping zeros!", call. = FALSE)
     dat <- dat[dat$y != 0, , drop = FALSE]
   }
-  
+
   if (any(dat$x %in% 0)) {
     dat <- dat[dat$x != 0, , drop = FALSE]
   }
-  
+
   ps <- unique(dat$id)
   ps <- as.character(ps)
   np <- length(ps)
-  
+
   dfres <- data.frame(matrix(vector(),
                              np,
                              length(cnames),
                              dimnames = list(c(), c(cnames))), stringsAsFactors = FALSE)
-  
+
   fits <- vector(mode = "list", length = np)
   adfs <- vector(mode = "list", length = np)
   newdats <- vector(mode = "list", length = np)
-  
+
   if (!is.null(agg) && agg == "pooled") {
     dfresempirical <- GetEmpirical(tmpdat)
   } else {
     dfresempirical <- GetEmpirical(dat)
   }
-  
+
   fo <- log(y) ~ log(l) + (b * log(x)) - a * x
   ## loop to fit data
   for (i in seq_len(np)) {
     dfres[i, "id"] <- ps[i]
     dfres[i, "Equation"] <- equation
-    
+
     adf <- NULL
     adf <- dat[dat$id == ps[i], ]
-    
+
     if (nrow(adf) == 0) {
       dfres[i, setdiff(colnames(dfres), c("id", "Equation", "N", "Notes"))] <- NA
       dfres[i, "N"] <- 0
       dfres[i, "Notes"] <- "No consumption"
       next()
     }
-    
+
     fit <- NULL
     fit <- try(nlmrt::wrapnls(
       formula = fo,
@@ -343,12 +343,12 @@ FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol =
       control = list(maxiter = 1000),
       data = adf),
       silent = TRUE)
-  
+
   fits[[i]] <- fit
   adfs[[i]] <- adf
-  
+
   dfres[i, ] <- ExtractCoefs.linear(ps[i], adf, fit, eq = equation, cols = colnames(dfres))
-  
+
   newdat <- NULL
   newdat <- data.frame("id" = rep(i, length.out = 10000),
                        "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
@@ -434,6 +434,7 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)
         dfrow[1, "Pmaxd"] <- 1/(dfrow[1, "Q0d"] * dfrow[1, "Alpha"] *
                                 (dfrow[1, "K"] ^ 1.5)) * (0.083 * dfrow[1, "K"] + 0.65)
+        dfrow[1, "Pmaxa"] <- beezdemand::GetAnalyticPmax(dfrow[1, "Alpha"], dfrow[1, "K"], dfrow[1, "Q0d"])
         if (eq == "hs") {
             dfrow[1, "R2"] <- if (!inherits(fit, what = "error")) 1.0 - (deviance(fit)/sum((log10(adf$y) - mean(log10(adf$y)))^2)) else NA
             dfrow[1, "Omaxd"] <- (10^(log10(dfrow[1, "Q0d"]) +
@@ -441,6 +442,11 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
                                        (exp(-dfrow[1, "Alpha"] *
                                             dfrow[1, "Q0d"] *
                                             dfrow[1, "Pmaxd"]) - 1)))) * dfrow[1, "Pmaxd"]
+            dfrow[1, "Omaxa"] <- (10^(log10(dfrow[1, "Q0d"]) +
+                                      (dfrow[1, "K"] *
+                                         (exp(-dfrow[1, "Alpha"] *
+                                                dfrow[1, "Q0d"] *
+                                                dfrow[1, "Pmaxa"]) - 1)))) * dfrow[1, "Pmaxa"]
         } else if (eq == "koff") {
             dfrow[1, "R2"] <-  if (!inherits(fit, what = "error")) 1.0 - (deviance(fit)/sum((adf$y - mean(adf$y))^2)) else NA
             dfrow[1, "Omaxd"] <- (dfrow[1, "Q0d"] *
@@ -448,6 +454,11 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
                                        (exp(-dfrow[1, "Alpha"] *
                                             dfrow[1, "Q0d"] *
                                             dfrow[1, "Pmaxd"]) - 1)))) * dfrow[1, "Pmaxd"]
+            dfrow[1, "Omaxa"] <- (dfrow[1, "Q0d"] *
+                                  (10^(dfrow[1, "K"] *
+                                         (exp(-dfrow[1, "Alpha"] *
+                                                dfrow[1, "Q0d"] *
+                                                dfrow[1, "Pmaxa"]) - 1)))) * dfrow[1, "Pmaxa"]
         }
   }
     dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
@@ -473,7 +484,7 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @import graphics
 ##' @import grDevices
-##' @examples 
+##' @examples
 ##' ## Fit aggregated data (mean only) using Hursh & Silberberg, 2008 equation with a k fixed at 2
 ##' FitMeanCurves(apt[sample(apt$id, 5), ], "hs", k = 2, method = "Mean")
 ##' @export
@@ -493,10 +504,10 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
         tobquote = NULL
         if (!is.null(vartext)) {
             dict <- data.frame(Name = c("Q0d", "Alpha", "Intensity", "EV", "Pmaxe",
-                                        "Omaxe", "Pmaxd", "Omaxd",
+                                        "Omaxe", "Pmaxd", "Omaxd", "Pmaxa", "Omaxa",
                                         "K", "Q0se", "Alphase", "R2", "AbsSS"),
                                Variable = c("Q[0[d]]", "alpha", "Intensity", "EV", "P[max[e]]",
-                                            "O[max[e]]", "P[max[d]]",  "O[max[d]]",
+                                            "O[max[e]]", "P[max[d]]",  "O[max[d]]", "P[max[a]]",  "O[max[a]]",
                                             "k", "Q[0[se]]", "alpha[se]", "R^2", "AbsSS"))
             if (any(is.na(dict$Variable[match(vartext, dict$Name)]))) {
                 warning(paste0("Invalid parameter in vartext! I will go on but won't print any parameters. Try again with one of the following: ", dict$Name))
@@ -515,7 +526,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
     if (equation == "hs" || equation == "koff") {
         cnames <- c("id", "Equation", "Q0d", "K",
                     "R2", "Alpha", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
-                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Notes")
+                    "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Omaxa", "Pmaxa", "Notes")
     } else if (equation == "linear") {
         cnames <- c("id", "Equation", "L", "b", "a",
                     "R2", "Lse", "bse", "ase", "N", "AbsSS", "SdRes", "LLow", "LHigh",
@@ -652,6 +663,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
             dfres[["AlphaHigh"]] <- nlstools::confint2(fit)[4]
             dfres[["EV"]] <- 1/(dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5) * 100)
             dfres[["Pmaxd"]] <- 1/(dfres[["Q0d"]] * dfres[["Alpha"]] * (dfres[["K"]] ^ 1.5)) * (0.083 * dfres[["K"]] + 0.65)
+            dfres[["Pmaxa"]] <- beezdemand::GetAnalyticPmax(dfres[["Alpha"]], dfres[["K"]], dfres[["Q0d"]])
         }
         if (equation == "hs") {
             dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((log10(dat$y) - mean(log10(dat$y)))^2))
@@ -660,6 +672,11 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
                                       (exp(-dfres[["Alpha"]] *
                                            dfres[["Q0d"]] *
                                            dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
+            dfres[["Omaxa"]] <- (10^(log10(dfres[["Q0d"]]) +
+                                     (dfres[["K"]] *
+                                      (exp(-dfres[["Alpha"]] *
+                                             dfres[["Q0d"]] *
+                                             dfres[["Pmaxa"]]) - 1)))) * dfres[["Pmaxa"]]
         } else if (equation == "koff") {
             dfres[["R2"]] <- 1.0 - (deviance(fit)/sum((dat$y - mean(dat$y))^2))
             dfres[["Omaxd"]] <- (dfres[["Q0d"]] *
@@ -667,6 +684,11 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
                                       (exp(-dfres[["Alpha"]] *
                                            dfres[["Q0d"]] *
                                            dfres[["Pmaxd"]]) - 1)))) * dfres[["Pmaxd"]]
+            dfres[["Omaxa"]] <- (dfres[["Q0d"]] *
+                                    (10^(dfres[["K"]] *
+                                      (exp(-dfres[["Alpha"]] *
+                                             dfres[["Q0d"]] *
+                                             dfres[["Pmaxa"]]) - 1)))) * dfres[["Pmaxa"]]
         }
     }
     dfres <- merge(dfresempirical, dfres, by = "id")
@@ -777,7 +799,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @return List of results and models
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @import stats
-##' @examples 
+##' @examples
 ##' ## Compare two groups using equation by Koffarnus et al., 2015 and a fixed k of 2
 ##' \donttest{
 ##' apt$group <- NA
@@ -883,7 +905,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     }
 
     fu <- gsub("k", bfk, fu)
- 
+
     fit <- NULL
     fit <- try(nlmrt::wrapnls(fu, data = dat2, start = c(startingvals)), silent = TRUE)
     if (class(fit) == "try-error") stop("Unable to fit simple model!")
@@ -936,7 +958,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 
     cnames <- c("Group", "Q0d", "K",
                 "R2", "Alpha", "N", "AbsSS", "SdRes", "EV",
-                "Omaxd", "Pmaxd", "Notes", "F-Test")
+                "Omaxd", "Pmaxd", "Omaxa", "Pmaxa", "Notes", "F-Test")
 
     dfres <- data.frame(matrix(vector(),
                              (nparams * 2) + 2,
@@ -956,6 +978,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+        dfres[i, "Pmaxa"] <- beezdemand::GetAnalyticPmax(dfres[i, "Alpha"], dfres[i, "K"], dfres[i, "Q0d"])
         if (equation == "hs") {
             dfres[i, "R2"] <- 1.0 - (deviance(fit)/sum((log10(dat2$y) - mean(log10(dat2$y)))^2))
             dfres[i, "Omaxd"] <- (10^(log10(dfres[i, "Q0d"]) +
@@ -963,6 +986,11 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+            dfres[i, "Omaxa"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                      (dfres[i, "K"] *
+                                         (exp(-dfres[i, "Alpha"] *
+                                                dfres[i, "Q0d"] *
+                                                dfres[i, "Pmaxa"]) - 1)))) * dfres[i, "Pmaxa"]
         } else if (equation == "koff") {
             dfres[i, "R2"] <-  1.0 -(deviance(fit)/sum((dat2$y - mean(dat2$y))^2))
             dfres[i, "Omaxd"] <- (dfres[i, "Q0d"] *
@@ -970,6 +998,11 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+            dfres[i, "Omaxa"] <- (dfres[i, "Q0d"] *
+                                  (10^(dfres[i, "K"] *
+                                         (exp(-dfres[i, "Alpha"] *
+                                                dfres[i, "Q0d"] *
+                                                dfres[i, "Pmaxa"]) - 1)))) * dfres[i, "Pmaxa"]
         }
         dfres[i, "N"] <- NROW(dat2$y)
         dfres[i, "AbsSS"] <- deviance(fit)
@@ -986,6 +1019,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         dfres[i, "EV"] <- 1/(dfres[i, "Alpha"] * (dfres[i, "K"] ^ 1.5) * 100)
         dfres[i, "Pmaxd"] <- 1/(dfres[i, "Q0d"] * dfres[i, "Alpha"] *
                                 (dfres[i, "K"] ^ 1.5)) * (0.083 * dfres[i, "K"] + 0.65)
+        dfres[i, "Pmaxa"] <- beezdemand::GetAnalyticPmax(dfres[i, "Alpha"], dfres[i, "K"], dfres[i, "Q0d"])
         if (equation == "hs") {
             dfres[i, "R2"] <- 1.0 - (deviance(tmp)/sum((log10(subset(dat, group %in% grps[j])$y) -
                                                         mean(log10(subset(dat, group %in% grps[j])$y)))^2))
@@ -994,6 +1028,11 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+            dfres[i, "Omaxa"] <- (10^(log10(dfres[i, "Q0d"]) +
+                                      (dfres[i, "K"] *
+                                       (exp(-dfres[i, "Alpha"] *
+                                              dfres[i, "Q0d"] *
+                                              dfres[i, "Pmaxa"]) - 1)))) * dfres[i, "Pmaxa"]
         } else if (equation == "koff") {
             dfres[i, "R2"] <-  1.0 -(deviance(tmp)/sum((subset(dat, group %in% grps[j])$y -
                                                        mean(subset(dat, group %in% grps[j])$y))^2))
@@ -1002,6 +1041,11 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
                                        (exp(-dfres[i, "Alpha"] *
                                             dfres[i, "Q0d"] *
                                             dfres[i, "Pmaxd"]) - 1)))) * dfres[i, "Pmaxd"]
+            dfres[i, "Omaxa"] <- (dfres[i, "Q0d"] *
+                                  (10^(dfres[i, "K"] *
+                                         (exp(-dfres[i, "Alpha"] *
+                                                dfres[i, "Q0d"] *
+                                                dfres[i, "Pmaxa"]) - 1)))) * dfres[i, "Pmaxa"]
         }
         dfres[i, "N"] <- NROW(subset(dat, group %in% grps[j])$y)
         dfres[i, "AbsSS"] <- deviance(tmp)
@@ -1048,7 +1092,7 @@ getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
 ##' @param sharecol Character for column to find shared k. Default to "group" but can loop based on id.
 ##' @return Numeric value of shared k
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn P Gilroy <shawn.gilroy@@temple.edu>
-##' @examples 
+##' @examples
 ##' ## Find a shared k value across datasets indicated by id
 ##' \donttest{
 ##' GetSharedK(apt, "hs", sharecol = "id")
@@ -1162,7 +1206,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     }
 
     message(sprintf("Best k fround at %s = err: %s", bestFrame$K[1], bestSS))
-    
+
     vecStartQ0 <- bestFrame$Q0
     vecStartAlpha <- bestFrame$Alpha
     vecStartK <- bestFrame$K
@@ -1232,7 +1276,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     currentData <- NA
 
     bestFrame <- data.frame()
-    
+
     message("Beginning search for best-starting k")
     for (k in startK) {
       # message(sprintf("Scanning for starting values... %s of %s (K = %s)",
@@ -1291,7 +1335,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     message("Searching for shared K, this can take a while...")
 
     fit <- NULL
-    
+
     fit <- nlmrt::nlxb(fo, data = dat2,
                        start = c(startingvals),
                        lower = c(minvals),
@@ -1301,7 +1345,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
                                              warnOnly = TRUE,
                                              minFactor = 1/1024),
                        trace = FALSE)
-   
+
     if (!class(fit) == "try-error") {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
@@ -1332,6 +1376,48 @@ GetK <- function(dat, mnrange = TRUE) {
     }
 }
 
+##' ...
+##'
+##' ...
+##' @title Get pmax
+##' @param Alpha alpha parameter
+##' @param K k parameter ( > lower limit )
+##' @param Q0 Q0
+##' @return Numeric
+##' @author Shawn Gilroy <sgilroy1@@lsu.edu>
+##' @export
+GetAnalyticPmax <- function(Alpha, K, Q0) {
+  if (K <= exp(1)/log(10)) {
+    return (beezdemand::GetAnalyticPmaxFallback(K, Alpha, Q0));
+  } else {
+    return (-beezdemand::lambertW(z = -1/log((10^K))) / (Alpha * Q0));
+  }
+}
+
+##' Fallback method for Analytic Pmax
+##'
+##' Derivative-based optimization strategy
+##' @title Analytic Pmax Fallback
+##' @param K_ k parameter
+##' @param A_ alpha parameter
+##' @param Q0_ q0 parameter
+##' @return numeric
+##' @author Shawn Gilroy <sgilroy1@@lsu.edu>
+##' @export
+GetAnalyticPmaxFallback <- function(K_, A_, Q0_) {
+  result <- optimx::optimx(par = c((1/(Q0_ * A_ * K_^1.5)) * (0.083 * K_ + 0.65)),
+                           fn = function(par, data) {
+                             abs((log((10^data$K)) * (-data$A * data$Q0 * par[1] * exp(-data$A * data$Q0 * par[1]))) + 1)
+                           },
+                           data = data.frame(Q0 = Q0_,
+                                             A = A_,
+                                             K = K_),
+                           method = c("BFGS"),
+                           control=list(maxit=2500))
+
+  return(result$p1)
+}
+
 ##' Calculates empirical measures for purchase task data
 ##'
 ##' Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
@@ -1342,13 +1428,13 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @param ycol The column name that should be treated as "y" data
 ##' @return Data frame of empirical measures
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
-##' @examples 
+##' @examples
 ##' ## Obtain empirical measures
 ##' GetEmpirical(apt)
 ##' @export
 GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
     dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol)
-    
+
     ps <- unique(dat$id)
     ps <- as.character(ps)
     np <- length(ps)
