@@ -761,3 +761,5 @@ Recommended Readings
 -   Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology 23* (5), 377-386. <http://dx.doi.org/10.1037/pha0000020>
 
 -   Hursh, S. R., Raslear, T. G., Shurtleff, D., Bauman, R., & Simmons, L. (1988). A cost‐benefit analysis of demand for food. *Journal of the Experimental Analysis of Behavior, 50* (3), 419-440. <https://doi.org/10.1901/jeab.1988.50-419>
+
+-   Gilroy, S. P., Kaplan, B. A., Reed, D. D., Hantula, D. A., & Hursh, S. R. (2019). An Exact Solution for Unit Elasticity in the Exponential Model of Operant Demand. *Experimental and Clinical Psychopharmacology.*
