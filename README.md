@@ -571,6 +571,8 @@ A summary table (broken up here for ease of display) will be created when the op
 
 When `verbose = TRUE`, objects from the result can be used in subsequent graphing. The following code generates a plot of our two groups. We can use the predicted values already generated from the `ExtraF` function by accessing the `newdat` object. In the example above, we can access these predicted values using `ef$newdat`. Note that we keep the linear scaling of y given we used [Koffarnus et al. (2015)'s](http://psycnet.apa.org/record/2015-37520-001) equation fitted to the data.
 
+### ggplot2 < v.3.3.0
+
 ``` r
 ## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
 ggplot(apt, aes(x = x, y = y, group = group)) +
@@ -583,6 +585,30 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
   stat_summary(fun.y = mean, aes(fill = group), geom = "point", shape = 21, 
                color = "black", stroke = .75, size = 4) +
   scale_x_log10(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
+  scale_color_discrete(name = "Group") +
+  scale_fill_discrete(name = "Group") +
+  labs(x = "Price per Drink", y = "Drinks Purchased") +
+  theme(legend.position = c(.85, .75)) +
+  ## theme_apa is a beezdemand function used to change the theme in accordance
+  ## with American Psychological Association style
+  theme_apa()
+```
+
+### ggplot2 >= v.3.3.0
+
+``` r
+## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
+ggplot(apt, aes(x = x, y = y, group = group)) +
+  ## the predicted lines from the sum of squares f-test can be used in subsequent
+  ## plots by calling data = ef$newdat
+  geom_line(aes(x = x, y = y, group = group, color = group), 
+            data = ef$newdat[ef$newdat$x >= .1, ]) +
+  stat_summary(fun.data = "mean_se", aes(color = group), 
+               geom = "errorbar", orientation = "x") +
+  stat_summary(fun = "mean", aes(fill = group), geom = "point", shape = 21, 
+               color = "black", stroke = .75, size = 4, orientation = "x") +
+  scale_x_continuous(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
+  coord_trans(x = "log10") +
   scale_color_discrete(name = "Group") +
   scale_fill_discrete(name = "Group") +
   labs(x = "Price per Drink", y = "Drinks Purchased") +
