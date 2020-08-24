@@ -925,20 +925,20 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
                          "y" = NA)
 
     ## on group by group basis
-    lstfits <- list()
-    for (i in grps) {
+    lstfits <- vector(mode = "list", length = length(grps))
+    for (i in 1:length(grps)) {
         #tmp <- subset(dat, id %in% i) ## groupcol %in% i
-        tmp <- subset(dat, group %in% i)
+        tmp <- subset(dat, group %in% grps[i])
         lstfits[[i]] <- try(nlmrt::wrapnls(formula = fo,
                            start = list(q0 = 10, alpha = 0.01),
                            control = list(maxiter = 1000),
                            data = tmp), silent = TRUE)
         if (equation == "hs") {
-            newdat[newdat$group == i, "y"] <- 10^predict(lstfits[[i]],
-                                                         subset(newdat, group %in% i, select = "x"))
+            newdat[newdat$group == grps[i], "y"] <- 10^predict(lstfits[[i]],
+                                                         subset(newdat, group %in% grps[i], select = "x"))
         } else if (equation == "koff") {
-            newdat[newdat$group == i, "y"] <- predict(lstfits[[i]],
-                                                         subset(newdat, group %in% i, select = "x"))
+            newdat[newdat$group == grps[i], "y"] <- predict(lstfits[[i]],
+                                                         subset(newdat, group %in% grps[i], select = "x"))
         }
 
     }
