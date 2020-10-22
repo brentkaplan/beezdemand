@@ -1,3 +1,7 @@
+# beezdemand 0.1.1
+
+* Add experimental features for `FitCurves()`. These arguments are `constrainq0`, `startq0`, and `startalpha`. These arguments allow Q0 to be constrained so alpha is the only fitted parameter and allow for user-specified starting values.
+
 # beezdemand 0.1.0
 
 * Package successfully on CRAN!

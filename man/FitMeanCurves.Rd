@@ -4,9 +4,20 @@
 \alias{FitMeanCurves}
 \title{Fit Pooled Curves}
 \usage{
-FitMeanCurves(dat, equation, k, remq0e = FALSE, replfree = NULL,
-  rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE,
-  method = NULL, indpoints = TRUE, vartext = NULL)
+FitMeanCurves(
+  dat,
+  equation,
+  k,
+  remq0e = FALSE,
+  replfree = NULL,
+  rem0 = FALSE,
+  nrepl = NULL,
+  replnum = NULL,
+  plotcurves = FALSE,
+  method = NULL,
+  indpoints = TRUE,
+  vartext = NULL
+)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}

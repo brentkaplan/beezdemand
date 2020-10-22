@@ -4,8 +4,13 @@
 \alias{GetDescriptives}
 \title{Get Purchase Task Descriptive Summary}
 \usage{
-GetDescriptives(dat, bwplot = FALSE, outdir = "../plots/",
-  device = "png", filename = "bwplot")
+GetDescriptives(
+  dat,
+  bwplot = FALSE,
+  outdir = "../plots/",
+  device = "png",
+  filename = "bwplot"
+)
 }
 \arguments{
 \item{dat}{Dataframe (long form)}

@@ -4,8 +4,7 @@
 \alias{SimulateDemand}
 \title{Simulate Demand Data}
 \usage{
-SimulateDemand(nruns = 10, setparams, sdindex, x, outdir = NULL,
-  fn = NULL)
+SimulateDemand(nruns = 10, setparams, sdindex, x, outdir = NULL, fn = NULL)
 }
 \arguments{
 \item{nruns}{Number of runs. Default value is 10}

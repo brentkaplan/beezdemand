@@ -1,6 +1,6 @@
 Package: beezdemand
-Version: 0.1.0
-Date: 2018-07-14
+Version: 0.1.1
+Date: 2020-10-22
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
@@ -38,5 +38,5 @@ License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.0
+RoxygenNote: 7.0.2
 VignetteBuilder: knitr

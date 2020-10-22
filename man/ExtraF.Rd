@@ -4,9 +4,18 @@
 \alias{ExtraF}
 \title{ExtraF}
 \usage{
-ExtraF(dat, equation = "hs", groups = NULL, verbose = FALSE, k,
-  compare = "alpha", idcol = "id", xcol = "x", ycol = "y",
-  groupcol = NULL)
+ExtraF(
+  dat,
+  equation = "hs",
+  groups = NULL,
+  verbose = FALSE,
+  k,
+  compare = "alpha",
+  idcol = "id",
+  xcol = "x",
+  ycol = "y",
+  groupcol = NULL
+)
 }
 \arguments{
 \item{dat}{Long form data frame}

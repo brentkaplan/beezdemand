@@ -4,9 +4,17 @@
 \alias{ChangeData}
 \title{ChangeData}
 \usage{
-ChangeData(dat, nrepl = 1, replnum = 0.01, rem0 = FALSE,
-  remq0e = FALSE, replfree = NULL, xcol = "x", ycol = "y",
-  idcol = "id")
+ChangeData(
+  dat,
+  nrepl = 1,
+  replnum = 0.01,
+  rem0 = FALSE,
+  remq0e = FALSE,
+  replfree = NULL,
+  xcol = "x",
+  ycol = "y",
+  idcol = "id"
+)
 }
 \arguments{
 \item{dat}{A long form dataframe}

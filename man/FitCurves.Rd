@@ -4,8 +4,22 @@
 \alias{FitCurves}
 \title{FitCurves}
 \usage{
-FitCurves(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x",
-  ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound)
+FitCurves(
+  dat,
+  equation,
+  k,
+  agg = NULL,
+  detailed = FALSE,
+  xcol = "x",
+  ycol = "y",
+  idcol = "id",
+  groupcol = NULL,
+  lobound,
+  hibound,
+  constrainq0 = NULL,
+  startq0 = NULL,
+  startalpha = NULL
+)
 }
 \arguments{
 \item{dat}{data frame (long form) of purchase task data.}
@@ -29,6 +43,12 @@ FitCurves(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x",
 \item{lobound}{Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds.}
 
 \item{hibound}{Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds.}
+
+\item{constrainq0}{Optional. A number that will be used to constrain Q0 in the fitting process. Currently experimental and only works with a fixed k value.}
+
+\item{startq0}{Optional. A number that will be used to start Q0 in the fitting process. Currently experimental.}
+
+\item{startalpha}{Optional. A number that will be used to start Alpha in the fitting process. Currently experimental.}
 }
 \value{
 If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
