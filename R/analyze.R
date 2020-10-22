@@ -33,13 +33,18 @@
 ##' @param groupcol The column name that should be treated as the groups
 ##' @param lobound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the lower bounds.
 ##' @param hibound Optional. A named vector of length 2 ("q0", "alpha") or 3 ("q0", "k", "alpha"), the latter length if k = "fit", specifying the upper bounds.
+##' @param constrainq0 Optional. A number that will be used to constrain Q0 in the fitting process. Currently experimental and only works with a fixed k value.
+##' @param startq0 Optional. A number that will be used to start Q0 in the fitting process. Currently experimental.
+##' @param startalpha Optional. A number that will be used to start Alpha in the fitting process. Currently experimental.
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @examples
 ##' ## Analyze using Hursh & Silberberg, 2008 equation with a k fixed to 2
 ##' FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
 ##' @export
-FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound) {
+FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", 
+                      ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound,
+                      constrainq0 = NULL, startq0 = NULL, startalpha = NULL) {
 
     if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
     origcols <- colnames(dat)
@@ -48,6 +53,8 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     if (missing(equation)) stop("Need to specify an equation!", call. = FALSE)
     equation <- tolower(equation)
+    
+    if (!is.numeric(constrainq0) & !is.null(constrainq0)) stop("Q0 constraint must be a number", call. = FALSE)
 
     if (equation == "linear") {
       out <- FitCurves.linear(dat, equation, agg, detailed, xcol, ycol, idcol, groupcol)
@@ -160,10 +167,11 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 
     ## TODO: if groupcol is specified (or not), manufacture vector to loop (paste(agg, grps, sep = "-"))
-
+   
     fo <- switch(equation,
                  "hs" = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
                  "koff" = y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)))
+    
     ## loop to fit data
     for (i in seq_len(np)) {
         dfres[i, "id"] <- ps[i]
@@ -186,11 +194,22 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             k <- kstart
         }
         adf[, "k"] <- k
+        if (!is.null(constrainq0)) {
+          adf[, "q0"] <- constrainq0
+        }
+        
+        if (is.null(startq0)) {
+          startq0 <- max(adf$y)
+        }
+        if (is.null(startalpha)) {
+          startalpha <- 0.01
+        }
 
         if (!kest == "fit") {
+          if (is.null(constrainq0)) {
             suppressWarnings(fit <- try(nlmrt::wrapnls(
                                  formula = fo,
-                                 start = list(q0 = max(adf$y), alpha = 0.01),
+                                 start = list(q0 = startq0, alpha = startalpha),
                                  lower = c(lower),
                                  upper = c(upper),
                                  control = list(maxiter = 1000),
@@ -198,7 +217,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                  silent = TRUE))
           if (inherits(fit, what = "try-error") && nrow(adf) > 2) {
             suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
-                                                    start = list(q0 = max(adf$y), alpha = 0.01),
+                                                    start = list(q0 = startq0, alpha = startalpha),
                                                     lower = c(lower),
                                                     upper = c(upper),
                                                     control = list(maxiter = 1000),
@@ -210,10 +229,34 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                                    algorithm = "brute-force")))
             attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
           }
+          } else if (!is.null(constrainq0)) {
+            suppressWarnings(fit <- try(nlmrt::wrapnls(
+              formula = fo,
+              start = list(alpha = startalpha),
+              lower = c(lower[2]),
+              upper = c(upper[2]),
+              control = list(maxiter = 1000),
+              data = adf),
+              silent = TRUE))
+            if (inherits(fit, what = "try-error") && nrow(adf) > 2) {
+              suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+                                                      start = list(alpha = startalpha),
+                                                      lower = c(lower[2]),
+                                                      upper = c(upper[2]),
+                                                      control = list(maxiter = 1000),
+                                                      data = adf),
+                                          silent = TRUE))
+              suppressWarnings(fit <- try(nls2::nls2(fo,
+                                                     data = adf,
+                                                     start = fit$coefficients,
+                                                     algorithm = "brute-force")))
+              attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
+            }
+        }
         } else {
           suppressWarnings(fit <- try(nlmrt::wrapnls(
                                 formula = fo,
-                                start = list(q0 = max(adf$y), k = kstart, alpha = 0.01),
+                                start = list(q0 = startq0, k = kstart, alpha = startalpha),
                                 lower = c(lower),
                                 upper = c(upper),
                                 control = list(maxiter = 1000),
@@ -221,7 +264,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
                                 silent = TRUE))
           if (inherits(fit, what = "try-error") && nrow(adf) > 3) {
             suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
-                                   start = list(q0 = max(adf$y), k = kstart, alpha = 0.01),
+                                   start = list(q0 = startq0, k = kstart, alpha = startalpha),
                                    lower = c(lower),
                                    upper = c(upper),
                                    control = list(maxiter = 1000),
@@ -238,7 +281,9 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         fits[[i]] <- fit
         adfs[[i]] <- adf
 
-        dfres[i, ] <- ExtractCoefs(ps[i], adf, fit, eq = equation, cols = colnames(dfres), kest = kest)
+        dfres[i, ] <- ExtractCoefs(ps[i], adf, fit, eq = equation, 
+                                   cols = colnames(dfres), kest = kest,
+                                   constrainq0 = constrainq0)
 
         newdat <- NULL
         newdat <- data.frame("id" = rep(i, length.out = 10000),
@@ -410,7 +455,7 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
 # eq Equation specified
 # cols Column names to populate the dataframe row
 # kest Specification of k value
-ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
+ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0) {
     dfrow <- data.frame(matrix(vector(),
                                1,
                                length(cols),
@@ -423,13 +468,25 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest) {
         dfrow[1, "N"] <- length(adf$k)
         dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) fit$m$deviance() else deviance(fit)
         dfrow[1, "SdRes"] <- sqrt(dfrow[1, "AbsSS"]/(length(adf$k) - length(fit$m$getPars())))
-        dfrow[1, c("Q0d", "Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("q0", "alpha")] else as.numeric(coef(fit)[c("q0", "alpha")])
+        if (is.null(constrainq0)) {
+          dfrow[1, c("Q0d", "Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("q0", "alpha")] else as.numeric(coef(fit)[c("q0", "alpha")])
+        } else {
+          dfrow[1, c("Q0d")] <- min(adf$q0)
+          dfrow[1, c("Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("alpha")] else as.numeric(coef(fit)[c("alpha")])
+        }
         dfrow[1, "Notes"] <- if ("nls2" %in% class(fit)) "wrapnls failed to converge, reverted to nlxb" else fit$convInfo$stopMessage
         dfrow[1, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
         if (!inherits(fit, what = "error")) {
-          dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c("q0", "alpha"), "Std. Error"]
-          dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)["q0", ]
+          if (is.null(constrainq0)) {
+            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c("q0", "alpha"), "Std. Error"]
+            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)["q0", ]
+            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)["alpha", ]
+          } else {
+          dfrow[1, c("Q0se")] <- NA
+          dfrow[1, c("Alphase")] <- summary(fit)[[10]][c("alpha"), "Std. Error"]
+          dfrow[1, c("Q0Low", "Q0High")] <- NA
           dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)["alpha", ]
+          }
         }
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)
         dfrow[1, "Pmaxd"] <- 1/(dfrow[1, "Q0d"] * dfrow[1, "Alpha"] *
