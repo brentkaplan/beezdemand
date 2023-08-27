@@ -14,7 +14,8 @@ ExtraF(
   idcol = "id",
   xcol = "x",
   ycol = "y",
-  groupcol = NULL
+  groupcol = NULL,
+  start_alpha = 0.001
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ ExtraF(
 \item{ycol}{The column name that should be treated as "y" data}
 
 \item{groupcol}{The column name that should be treated as the groups}
+
+\item{start_alpha}{Optional numeric to inform starting value for alpha}
 }
 \value{
 List of results and models

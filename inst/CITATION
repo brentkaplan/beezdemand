@@ -3,15 +3,26 @@ citHeader("To cite 'beezdemand' in publications, please use:")
 year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date, perl = TRUE)
 vers <- paste("R package version", meta$Version)
 
-citEntry(entry="Manual",
-	 key = "beezdemand",
-         title = "beezdemand: Behavioral Economic Easy Demand",
-         author = personList(as.person("Brent Kaplan")),
-         year = year,
-         note = vers,
+bibentry("Article",
+      title = "The {R} package {beezdemand}: Behavioral Economic Easy Demand",
+      author = c(
+            person(c("Brent", "A"), "Kaplan",
+                  email = "bkaplan.ku@gmail.com",
+                  comment = c(ORCID = "0000-0002-3758-6776")
+            ),
+            person(c("Shawn", "P"), "Gilroy"),
+            person(c("Derek", "D"), "Reed"),
+            person(c("Mikhail", "N"), "Koffarnus"),
+            person(c("Steven", "R"), "Hursh")
+      ),
+      journal = "Perspectives on Behavior Science",
+      year = "2019",
+      volume = "42",
+      number = "1",
+      pages = "163--180",
+      doi = "10.1007/s40614-018-00187-7"
+)
 
-         textVersion =
-         paste("Kaplan, Brent. (",
-               year,
-               "). beezdemand: Behavioral Economic Easy Demand. ",
-               vers, ".", sep=""))
+bibentry("Manual",
+      other = unlist(citation(auto = meta), recursive = FALSE)
+)

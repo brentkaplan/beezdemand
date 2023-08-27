@@ -24,6 +24,7 @@ utils::globalVariables(c("X", "Y", "group", "id", "x", "x1", "x2", "y", "y1", "y
 
 # Creates minor ticks for use in plotting.
 # maj Major values
+##' @noRd
 minTicks <- function(maj) {
   minticks <- vector(length = (length(maj)-1) * 10)
   for (i in 1:length(maj)) {

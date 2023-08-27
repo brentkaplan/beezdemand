@@ -36,6 +36,7 @@ pull <- function(x, y) {
 
 # Trim Leading Characters
 # x A string
+##' @noRd
 trim.leading <- function (x)  sub("^\\s+", "", x)
 
 ##' Checks to ensure column names are specified
@@ -147,4 +148,3 @@ lambertW = function(z,b=0,maxiter=10,eps=.Machine$double.eps,min.imag=1e-9) {
   if (all(Im(w)<min.imag)) w = as.numeric(w)
   return(w)
 }
-
