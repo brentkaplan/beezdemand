@@ -1,3 +1,13 @@
+# beezdemand 0.1.2
+
+* No longer relies on `nlmrt` and instead relies on `nls2`
+
+* Fixes an issue where CheckUnsystematic may not flag certain cases when data are passed as `tibble`
+
+* Fixes deprecated arguments in `ggplot2`
+
+* Add ability to specify a start value for alpha in `ExtraF()` function
+
 # beezdemand 0.1.1
 
 * Add experimental features for `FitCurves()`. These arguments are `constrainq0`, `startq0`, and `startalpha`. These arguments allow Q0 to be constrained so alpha is the only fitted parameter and allow for user-specified starting values.

@@ -4,7 +4,9 @@
 \name{apt}
 \alias{apt}
 \title{Example alcohol purchase task data}
-\format{Long-form data.frame with columns: id, x, y. Participants were asked how many standard sized alcoholic beverages they would buy at various prices.}
+\format{
+Long-form data.frame with columns: id, x, y. Participants were asked how many standard sized alcoholic beverages they would buy at various prices.
+}
 \usage{
 apt
 }

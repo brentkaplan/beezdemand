@@ -207,20 +207,18 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
         if (!kest == "fit") {
           if (is.null(constrainq0)) {
-            suppressWarnings(fit <- try(nlmrt::wrapnls(
+            suppressWarnings(fit <- try(nlsr::wrapnlsr(
                                  formula = fo,
                                  start = list(q0 = startq0, alpha = startalpha),
                                  lower = c(lower),
                                  upper = c(upper),
-                                 control = list(maxiter = 1000),
                                  data = adf),
                                  silent = TRUE))
           if (inherits(fit, what = "try-error") && nrow(adf) > 2) {
-            suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+            suppressWarnings(fit <- try(nlsr::nlxb(formula = fo,
                                                     start = list(q0 = startq0, alpha = startalpha),
                                                     lower = c(lower),
                                                     upper = c(upper),
-                                                    control = list(maxiter = 1000),
                                                     data = adf),
                                         silent = TRUE))
             suppressWarnings(fit <- try(nls2::nls2(fo,
@@ -230,20 +228,18 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             attributes(fit)$class <- if (fit$m$Rmat()[2,2] == 0) c("nls", "nls2", "error") else c("nls", "nls2")
           }
           } else if (!is.null(constrainq0)) {
-            suppressWarnings(fit <- try(nlmrt::wrapnls(
+            suppressWarnings(fit <- try(nlsr::wrapnlsr(
               formula = fo,
               start = list(alpha = startalpha),
               lower = c(lower[2]),
               upper = c(upper[2]),
-              control = list(maxiter = 1000),
               data = adf),
               silent = TRUE))
             if (inherits(fit, what = "try-error") && nrow(adf) > 2) {
-              suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+              suppressWarnings(fit <- try(nlsr::nlxb(formula = fo,
                                                       start = list(alpha = startalpha),
                                                       lower = c(lower[2]),
                                                       upper = c(upper[2]),
-                                                      control = list(maxiter = 1000),
                                                       data = adf),
                                           silent = TRUE))
               suppressWarnings(fit <- try(nls2::nls2(fo,
@@ -254,20 +250,18 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             }
         }
         } else {
-          suppressWarnings(fit <- try(nlmrt::wrapnls(
+          suppressWarnings(fit <- try(nlsr::wrapnlsr(
                                 formula = fo,
                                 start = list(q0 = startq0, k = kstart, alpha = startalpha),
                                 lower = c(lower),
                                 upper = c(upper),
-                                control = list(maxiter = 1000),
                                 data = adf),
                                 silent = TRUE))
           if (inherits(fit, what = "try-error") && nrow(adf) > 3) {
-            suppressWarnings(fit <- try(nlmrt::nlxb(formula = fo,
+            suppressWarnings(fit <- try(nlsr::nlxb(formula = fo,
                                    start = list(q0 = startq0, k = kstart, alpha = startalpha),
                                    lower = c(lower),
                                    upper = c(upper),
-                                   control = list(maxiter = 1000),
                                    data = adf),
                                    silent = TRUE))
             suppressWarnings(fit <- try(nls2::nls2(fo,
@@ -318,6 +312,7 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 }
 
+##' @noRd
 FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol = "x", ycol = "y", idcol = "id", groupcol = NULL) {
   cnames <- c("id", "Equation", "L", "b", "a",
               "R2", "Lse", "bse", "ase", "N", "AbsSS", "SdRes", "LLow", "LHigh",
@@ -382,10 +377,9 @@ FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol =
     }
 
     fit <- NULL
-    fit <- try(nlmrt::wrapnls(
+    fit <- try(nlsr::wrapnlsr(
       formula = fo,
       start = list(l = 1, b = 0, a = 0),
-      control = list(maxiter = 1000),
       data = adf),
       silent = TRUE)
 
@@ -420,7 +414,7 @@ FitCurves.linear <- function(dat, equation, agg = NULL, detailed = FALSE, xcol =
   }
 }
 
-
+##' @noRd
 ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
   dfrow <- data.frame(matrix(vector(),
                              1,
@@ -455,6 +449,7 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
 # eq Equation specified
 # cols Column names to populate the dataframe row
 # kest Specification of k value
+##' @noRd
 ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0) {
     dfrow <- data.frame(matrix(vector(),
                                1,
@@ -657,30 +652,27 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 
     if (!equation == "linear") {
         if (!kest == "fit") {
-                suppressWarnings(fit <- try(nlmrt::wrapnls(
+                suppressWarnings(fit <- try(nlsr::wrapnlsr(
                                      formula = fo,
                                      start = list(q0 = 10, alpha = 0.01),
-                                     control = list(maxiter = 1000),
                                      data = dat),
                                      silent = TRUE))
             } else {
-                suppressWarnings(fit <- try(nlmrt::wrapnls(
+                suppressWarnings(fit <- try(nlsr::wrapnlsr(
                                      formula = fo,
                                      start = list(q0 = 10, k = kstart, alpha = 0.01),
-                                     control = list(maxiter = 1000),
                                      data = dat),
                                      silent = TRUE))
             }
     } else if (equation == "linear") {
-        fit <- try(nlmrt::wrapnls(
+        fit <- try(nlsr::wrapnlsr(
                 formula = fo,
                 start = list(l = 1, b = 0, a = 0),
-                control = list(maxiter = 1000),
                 data = dat),
                 silent = TRUE)
     }
 
-    if (class(fit) == "try-error") {
+    if (inherits(fit, "try-error")) {
         dfres[["Notes"]] <- fit[1]
         dfres[["Notes"]] <- strsplit(dfres[["Notes"]], "\n")[[1]][2]
     } else {
@@ -756,7 +748,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
         minticks <- minTicks(majticks)
 
         datmean <- aggregate(y ~ x, data = dat, mean)
-        if (!class(fit) == "try-error") {
+        if (!inherits(fit, "try-error")) {
             tempnew <- data.frame(x = seq(min(dat$x[dat$x > 0]), max(dat$x), length.out = 1000))
             if (equation == "hs") {
                 tempnew$k = dfres[["K"]]
@@ -808,7 +800,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
                 legend("bottomleft", legend = leg, xjust = 0, cex = .7)
             }
             graphics.off()
-        } else if (class(fit) == "try-error") {
+        } else if (inherits(fit, "try-error")) {
             warning(paste0("Unable to fit error: ", strsplit(fit[1], "\n")[[1]][2]))
             xmin <- min(c(dat$x[dat$x > 0], .1))
             xmax <- max(dat$x)
@@ -853,6 +845,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' @param xcol The column name that should be treated as "x" data
 ##' @param ycol The column name that should be treated as "y" data
 ##' @param groupcol The column name that should be treated as the groups
+##' @param start_alpha Optional numeric to inform starting value for alpha
 ##' @return List of results and models
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @import stats
@@ -866,7 +859,7 @@ FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem
 ##' }
 ##' @export
 ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, compare = "alpha",
-                   idcol = "id", xcol = "x", ycol = "y", groupcol = NULL) {
+                   idcol = "id", xcol = "x", ycol = "y", groupcol = NULL, start_alpha = .001) {
 
     if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
     origcols <- colnames(dat)
@@ -905,7 +898,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         #kdat <- dat
         #colnames(kdat) <- c("old-id", "id", "x", "y")
         bfk <- try(GetSharedK(dat = dat, equation = equation, sharecol = "group"), silent = TRUE)
-        if (class(bfk) == "character" || class(bfk) == "try-error") {
+        if (inherits(bfk, "character") || inherits(bfk, "try-error")) {
             message(bfk)
             bfk <- GetK(dat)
         }
@@ -928,7 +921,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     if (compare == "q0") {
         paramsalpha <- paste(sprintf("alpha%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
         startalpha <- paste(sprintf("alpha%d", 1:nparams))
-        startingvals <- as.vector(c(10, rep(.001, length(startalpha))))
+        startingvals <- as.vector(c(10, rep(start_alpha, length(startalpha))))
         names(startingvals) <- c("q0", startalpha)
     }
 
@@ -942,7 +935,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
             paramsq0 <- paste(sprintf("q0%d*ref%d", 1:nparams, 1:nparams), collapse = "+")
             startq0 <- paste(sprintf("q0%d", 1:nparams))
         }
-        startingvals <- as.vector(c(rep(10, length(startq0)), .001))
+        startingvals <- as.vector(c(rep(10, length(startq0)), start_alpha))
         names(startingvals) <- c(startq0, "alpha")
     }
 
@@ -962,10 +955,10 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     }
 
     fu <- gsub("k", bfk, fu)
-
+    fu <- as.formula(fu)
     fit <- NULL
-    fit <- try(nlmrt::wrapnls(fu, data = dat2, start = c(startingvals)), silent = TRUE)
-    if (class(fit) == "try-error") stop("Unable to fit simple model!")
+    fit <- try(nlsr::wrapnlsr(fu, data = dat2, start = c(startingvals)), silent = TRUE)
+    if (inherits(fit, "try-error")) stop("Unable to fit simple model!")
     ## fit complex model (q0 and alpha free, fixed k)
     if (equation == "hs") {
         fo <- "(log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1)"
@@ -973,7 +966,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
         fo <- "y ~ q0  * 10 ^ (k * (exp(-(alpha * q0 * x)) - 1))"
     }
     fo <- gsub("k", bfk, fo)
-
+    fo <- as.formula(fo)
     ## to hold predicted values
     newdat <- data.frame("group" = rep(grps, each = 100000),
                          "x" = rep(seq(min(unique(dat$x)),
@@ -986,9 +979,8 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
     for (i in 1:length(grps)) {
         #tmp <- subset(dat, id %in% i) ## groupcol %in% i
         tmp <- subset(dat, group %in% grps[i])
-        lstfits[[i]] <- try(nlmrt::wrapnls(formula = fo,
+        lstfits[[i]] <- try(nlsr::wrapnlsr(formula = fo,
                            start = list(q0 = 10, alpha = 0.01),
-                           control = list(maxiter = 1000),
                            data = tmp), silent = TRUE)
         if (equation == "hs") {
             newdat[newdat$group == grps[i], "y"] <- 10^predict(lstfits[[i]],
@@ -1127,6 +1119,7 @@ ExtraF <- function(dat, equation = "hs", groups = NULL, verbose = FALSE, k, comp
 
 
 # Calculate sum of squares for exponential demand
+##' @noRd
 getSumOfSquaresExponential <- function(presort, index, k, Y, X) {
   projections <- (log(presort[index,]$Q0)/log(10)) + k * (exp(-presort[index,]$Alpha * presort[index,]$Q0 * X) - 1)
   sqResidual <- (log(Y)/log(10) - projections)^2
@@ -1134,6 +1127,7 @@ getSumOfSquaresExponential <- function(presort, index, k, Y, X) {
 }
 
 # Calculate sum of squares for exponentiated demand
+##' @noRd
 getSumOfSquaresExponentiated <- function(presort, index, k, Y, X) {
   projections <- presort[index,]$Q0 * 10^(k * (exp(-presort[index,]$Alpha * presort[index,]$Q0 * X) - 1))
   sqResidual <- (Y - projections)^2
@@ -1278,21 +1272,21 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     names(maxvals) <- c(startq0, startalpha, "k")
 
     fo <- sprintf("log(y)/log(10) ~ (%s) + k * (exp(-(%s) * (%s) * x)-1)", paramslogq0, paramsalpha, paramsq0)
-
+    fo <- as.formula(fo)
     message("Searching for shared K, this can take a while...")
     fit <- NULL
 
-    fit <- nlmrt::nlxb(fo, data = dat2,
+    fit <- nlsr::nlxb(fo, data = dat2,
                        start = c(startingvals),
                        lower = c(minvals),
                        upper = c(maxvals),
-                       control = nls.control(maxiter = 30,
-                                             tol = 1e-05,
-                                             warnOnly = TRUE,
-                                             minFactor = 1/1024),
+                       # control = nls.control(maxiter = 30,
+                       #                       tol = 1e-05,
+                       #                       warnOnly = TRUE,
+                       #                       minFactor = 1/1024),
                        trace = FALSE)
 
-    if (!class(fit) == "try-error") {
+    if (!inherits(fit, "try-error")) {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
     } else {
@@ -1388,22 +1382,22 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     names(maxvals) <- c(startq0, startalpha, "k")
 
     fo <- sprintf("y ~ (%s) * 10^(k * (exp(-(%s) * (%s) * x) - 1))", paramsq0, paramsalpha, paramsq0)
-
+    fo <- as.formula(fo)
     message("Searching for shared K, this can take a while...")
 
     fit <- NULL
 
-    fit <- nlmrt::nlxb(fo, data = dat2,
+    fit <- nlsr::nlxb(fo, data = dat2,
                        start = c(startingvals),
                        lower = c(minvals),
                        upper = c(maxvals),
-                       control = nls.control(maxiter = 30,
-                                             tol = 1e-05,
-                                             warnOnly = TRUE,
-                                             minFactor = 1/1024),
+                       # control = nls.control(maxiter = 30,
+                       #                       tol = 1e-05,
+                       #                       warnOnly = TRUE,
+                       #                       minFactor = 1/1024),
                        trace = FALSE)
 
-    if (!class(fit) == "try-error") {
+    if (!inherits(fit, "try-error")) {
       sharedk <- fit$coefficients["k"]
       return(sharedk)
     } else {

@@ -157,12 +157,12 @@ GetValsForSim <- function(dat) {
         adf[, "k"] <- k
 
         fit <- NULL
-        fit <- try(nlmrt::wrapnls(data = adf,
+        fit <- try(nlsr::wrapnlsr(data = adf,
                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                  start = list(q0 = 10, alpha = 0.01),
-                                  control = list(maxiter = 1000)), silent = TRUE)
+                                  start = list(q0 = 10, alpha = 0.01)), 
+                   silent = TRUE)
 
-        if (!class(fit) == "try-error") {
+        if (!inherits(fit, "try-error")) {
             dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
             dfres[i, 4:NCOL(dfres)] <- resid(fit)
         }
@@ -187,13 +187,3 @@ GetValsForSim <- function(dat) {
 
     list("setparams" = setparams, "sdindex" = sdindex, "x" = prices)
 }
-
-
-
-
-
-
-
-
-
-

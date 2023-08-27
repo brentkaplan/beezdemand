@@ -1,10 +1,10 @@
 Package: beezdemand
-Version: 0.1.1
-Date: 2020-10-22
+Version: 0.1.2
+Date: 2023-08-23
 Title: Behavioral Economic Easy Demand
-Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre")),
+Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre", "cph")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
-Author: Brent Kaplan [aut, cre],
+Author: Brent Kaplan [aut, cre, cph],
 	Shawn Gilroy [ctb]
 Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
 Description: Facilitates many of the analyses performed in studies of
@@ -20,23 +20,23 @@ Description: Facilitates many of the analyses performed in studies of
 Depends:
     R (>= 2.5)
 Imports:
-    nlmrt,
+    nlsr,
     nlstools,
     nls2,
     ggplot2,
     reshape2,
     stats,
-    tidyverse,
     optimx
 Suggests:
     openxlsx,
     knitr,
     dplyr,
     tidyr,
+    tidyverse,
     rmarkdown
 License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.2.3
 VignetteBuilder: knitr

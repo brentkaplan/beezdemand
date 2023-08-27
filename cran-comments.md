@@ -1,11 +1,13 @@
 ## Test environments
-* macOS High Sierra, R 3.5.0
+* macOS Ventura 13.4.1, R 4.2.2
 * win-builder (devel and release)
 
 ## R CMD check results
-There were no ERRORs or WARNINGs or NOTEs
+0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 
 ## Submission comments
+Was asked to change dependency from nlmrt to nlsr. This submission makes that change and fixes any issues associated with it.
+Currently, no other package depends on beezdemand. 
 
 ### Reviewer comments 20180730
 Thanks, please add a DOI, arXiv or ISBN to your reference Hursh,

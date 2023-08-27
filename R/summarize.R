@@ -171,7 +171,7 @@ GetDescriptives <- function(dat, bwplot = FALSE, outdir = "../plots/", device = 
         if (!dir.exists(outdir)) dir.create(outdir)
         bwplt <- ggplot2::ggplot(dat, aes(x = as.factor(x), y = y)) +
             ggplot2::geom_boxplot() +
-            ggplot2::stat_summary(fun.y = mean, geom = "point", shape = 43, size = 5, color = "red") +
+            ggplot2::stat_summary(fun = "mean", geom = "point", shape = 43, size = 5, color = "red") +
             ggplot2::labs(x = "Price", y = "Reported Consumption") +
             theme_apa()
         print(bwplt)
@@ -187,5 +187,3 @@ GetDescriptives <- function(dat, bwplot = FALSE, outdir = "../plots/", device = 
     }
     dfres
 }
-
-
