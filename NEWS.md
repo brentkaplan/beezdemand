@@ -1,6 +1,6 @@
 # beezdemand 0.1.2
 
-* No longer relies on `nlmrt` and instead relies on `nls2`
+* No longer relies on `nlmrt` and instead relies on `nlsr`
 
 * Fixes an issue where CheckUnsystematic may not flag certain cases when data are passed as `tibble`
 
