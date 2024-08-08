@@ -1,11 +1,11 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+# Behavioral Economic (be) Easy (ez) Demand <a><img src="hex-beezdemand.png" align="right" height="200" /></a>
+
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/beezdemand)](https://cran.r-project.org/package=beezdemand)
 [![downloads](https://cranlogs.r-pkg.org/badges/beezdemand)](https://cranlogs.r-pkg.org/)
 [![total](https://cranlogs.r-pkg.org/badges/grand-total/beezdemand)](https://cranlogs.r-pkg.org/)
-
-# Behavioral Economic (be) Easy (ez) Demand
 
 Behavioral economic demand is gaining in popularity. The motivation
 behind `beezdemand` was to create an alternative tool to conduct these
@@ -147,7 +147,7 @@ were. For example, for the purposes of our example dataset, price_1 was
 
 ``` r
 ## make an object to hold what will be the new column names
-newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3", 
+newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
                  "4", "5", "6", "7", "8", "9", "10", "15", "20")
 ## current column names
 colnames(wide)
@@ -178,7 +178,7 @@ functions in the `tidyverse` package (make sure the package is loaded
 before trying the commands below).
 
 ``` r
-## using the dataframe 'wide', we specify the key will be 'price', the values 
+## using the dataframe 'wide', we specify the key will be 'price', the values
 ## will be 'consumption', and we will select all columns besides the first ('id')
 long <- tidyr::gather(wide, price, consumption, -id)
 
@@ -253,7 +253,7 @@ directory that the plot should save into, the type of file (either
 the mean. Defaults are shown here:
 
 ``` r
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png", 
+GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
                 filename = "bwplot")
 ```
 
@@ -263,7 +263,7 @@ the current folder (i.e., the `../` portion) and save the file,
 “bwplot.png” in the folder.
 
 ``` r
-GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png", 
+GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
                 filename = "bwplot")
 ```
 
@@ -311,7 +311,7 @@ data:
   number
 
 ``` r
-ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE, 
+ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE,
            replfree = NULL)
 ```
 
@@ -428,7 +428,7 @@ The simplest use of `FitCurves()` is shown here, only needing to specify
 values.
 
 ``` r
-FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE, 
+FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE,
           xcol = "x", ycol = "y", idcol = "id", groupcol = NULL)
 ```
 
@@ -635,7 +635,7 @@ Fitted Measures
 | 0.2429150 | 0.0000308 |  16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 | 0.0010955 | 0.0012277 |
 | 0.2192797 | 0.0003739 |  16 | 0.1110490 | 0.0890622 | 2.296005 |  3.236621 | 0.0025312 | 0.0041350 |
 | 0.2074990 | 0.0001963 |  14 | 0.0231862 | 0.0439566 | 4.033709 |  4.937912 | 0.0020302 | 0.0028858 |
-| 0.4371060 | 0.0000778 |  14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
+| 0.4371061 | 0.0000778 |  14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
 | 0.3179671 | 0.0000523 |  14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 | 0.0014740 | 0.0017018 |
 
 Uncertainty and Model Information
@@ -662,7 +662,7 @@ residuals obtained from multiple curves. A resulting *F* statistic will
 be reporting along with a *p* value.
 
 ``` r
-## setting the seed initializes the random number generator so results will be 
+## setting the seed initializes the random number generator so results will be
 ## reproducible
 set.seed(1234)
 
@@ -772,11 +772,11 @@ fitted to the data.
 ggplot(apt, aes(x = x, y = y, group = group)) +
   ## the predicted lines from the sum of squares f-test can be used in subsequent
   ## plots by calling data = ef$newdat
-  geom_line(aes(x = x, y = y, group = group, color = group), 
+  geom_line(aes(x = x, y = y, group = group, color = group),
             data = ef$newdat[ef$newdat$x >= .1, ]) +
-  stat_summary(fun.data = "mean_se", aes(color = group), 
+  stat_summary(fun.data = "mean_se", aes(color = group),
                geom = "errorbar", orientation = "x", width = 0) +
-  stat_summary(fun = "mean", aes(fill = group), geom = "point", shape = 21, 
+  stat_summary(fun = "mean", aes(fill = group), geom = "point", shape = 21,
                color = "black", stroke = .75, size = 4, orientation = "x") +
   scale_x_continuous(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
   coord_trans(x = "log10") +
@@ -827,6 +827,66 @@ out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
 PlotCurves(dat = out, outdir = plotdir, device = "png", ask = F)
 ```
 
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
+
     10 plots saved in man/figures/
 
 ![](man/figures/Participant-19.png)
@@ -844,6 +904,12 @@ mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = T)
 ``` r
 PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = F)
 ```
+
+    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
+    1)): Ignoring unknown parameters: `size`
+
+    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
+    0)): Ignoring unknown parameters: `size`
 
     1 plots saved in man/figures/
 
