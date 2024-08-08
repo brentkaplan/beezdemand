@@ -20,3 +20,8 @@ Thumbs.db
 inst/doc
 /doc/
 /Meta/
+
+# Other files #
+##############
+*-workspace
+man/figures/P*

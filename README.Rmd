@@ -11,13 +11,13 @@ knitr::opts_chunk$set(echo=TRUE, comment=NA, fig.path = "man/figures/")
 plotdir <- "man/figures/"
 ```
 
+# Behavioral Economic (be) Easy (ez) Demand <a><img src="hex-beezdemand.png" align="right" height="200" /></a>
+
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/beezdemand)](https://cran.r-project.org/package=beezdemand)
 [![downloads](https://cranlogs.r-pkg.org/badges/beezdemand)](https://cranlogs.r-pkg.org/)
 [![total](https://cranlogs.r-pkg.org/badges/grand-total/beezdemand)](https://cranlogs.r-pkg.org/)
 
-# Behavioral Economic (be) Easy (ez) Demand
-
-Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to 
+Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to
 create an alternative tool to conduct these
 analyses. This package is not necessarily meant to be a replacement
 for other softwares; rather, it is meant to serve as an
@@ -106,11 +106,11 @@ knitr::kable(wide[1:5, 1:10])
 
 A dataset such as this is referred to as "wide format" because each participant series contains a single row and multiple measurements within the participant are indicated by the columns. This data format is fine for some purposes; however, for `beezdemand`, data are required to be in "long format" (in the same format as the example data described [earlier](#exdata)). In order to convert to the long format, some steps will be required.
 
-First, it is helpful to rename the columns to what the prices actually were. For example, for the purposes of our example dataset, price_1 was \$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on. 
+First, it is helpful to rename the columns to what the prices actually were. For example, for the purposes of our example dataset, price_1 was \$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on.
 
 ```{r example-wide1}
 ## make an object to hold what will be the new column names
-newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3", 
+newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
                  "4", "5", "6", "7", "8", "9", "10", "15", "20")
 ## current column names
 colnames(wide)
@@ -125,7 +125,7 @@ knitr::kable(wide[1:5, ])
 Now we can convert into a long format using some of the helpful functions in the `tidyverse` package (make sure the package is loaded before trying the commands below).
 
 ```{r example-w2l}
-## using the dataframe 'wide', we specify the key will be 'price', the values 
+## using the dataframe 'wide', we specify the key will be 'price', the values
 ## will be 'consumption', and we will select all columns besides the first ('id')
 long <- tidyr::gather(wide, price, consumption, -id)
 
@@ -153,14 +153,14 @@ Descriptive values of responses at each price can be obtained easily. The result
 deviation, proportion of zeros, number of NAs, and minimum and maximum values. If `bwplot = TRUE`, a box-and-whisker plot is also created and saved. By default, this location is a folder named "plots" one level up from the current working directory.  The user may additionally specify the directory that the plot should save into, the type of file (either `"png"` or `"pdf"`), and the filename. Notice the red crosses indicate the mean. Defaults are shown here:
 
 ```{r descriptive, eval = FALSE}
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png", 
+GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
                 filename = "bwplot")
 ```
 
 To actually run the code and generate the file, we will turn `bwplot = TRUE`. The function will create a folder one level higher than the current folder (i.e., the `../` portion) and save the file, "bwplot.png" in the folder.
 
 ```{r descriptive2, results = 'hide'}
-GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png", 
+GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
                 filename = "bwplot")
 ```
 
@@ -177,7 +177,7 @@ knitr::kable(descr)
 
 There are certain instances in which data are to be modified before fitting, for example when using an equation that logarithmically transforms y values. The following function can help with modifying data:
 
-* `nrepl` indicates number of replacement 0 values, either as an integer or `"all"`. If this value is an integer, `n`, then the first `n` 0s will be replaced. 
+* `nrepl` indicates number of replacement 0 values, either as an integer or `"all"`. If this value is an integer, `n`, then the first `n` 0s will be replaced.
 
 * `replnum` indicates the number that should replace 0 values
 
@@ -188,7 +188,7 @@ There are certain instances in which data are to be modified before fitting, for
 * `replfree` replaces where x (or price) equals 0 with a specified number
 
 ```{r change-data, eval = FALSE}
-ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE, 
+ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE,
            replfree = NULL)
 ```
 
@@ -203,7 +203,7 @@ CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0
 ```
 
 ```{r unsystematic-output, echo=FALSE, results='asis'}
-knitr::kable(head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1, 
+knitr::kable(head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1,
                                     reversals = 0, ncons0 = 2), 5))
 ```
 
@@ -231,7 +231,7 @@ knitr::kable(head(GetEmpirical(apt), 5))
 
 `FitCurves()` has several important arguments that can be passed. For the purposes of this document, focus will be on the two contemporary demand equations.
 
-* `equation = "hs"` is the default but can accept the character strings `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the contemporary equations proposed by [Hursh & Silberberg (2008)](https://psycnet.apa.org/record/2008-00265-008) and [Koffarnus et al. (2015)](https://psycnet.apa.org/record/2015-37520-001), respectively. 
+* `equation = "hs"` is the default but can accept the character strings `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the contemporary equations proposed by [Hursh & Silberberg (2008)](https://psycnet.apa.org/record/2008-00265-008) and [Koffarnus et al. (2015)](https://psycnet.apa.org/record/2015-37520-001), respectively.
 
 * `k` can take accept a specific number but by default will be calculated based on the maximum and minimum y values of the entire sample and adding .5. Adding this amount was originally proposed by Steven R. Hursh in an early iteration of a Microsoft Excel spreadsheet used to calculate demand metrics. This adjustment was adopted for two reasons. First, when fitting $Q_0$ as a derived parameter, the value may exceed the empirically observed intensity value. Thus, a k value calculated based only on the observed range of data may underestimate the full fitted range of the curve. Second, we have found that values of $\alpha$ (as well as values that rely on $\alpha$, i.e. approximate $P_{max}$) display greater discrepancies when smaller values of k are used compared to larger values of k. Other options include `"ind"`, which will calculate k based on individual basis, `"fit"`, which will fit k as a free parameter on an individual basis, `"share"`, which will fit k as a single shared parameter across all data sets (while fitting individual $Q_0$ and $\alpha$).
 
@@ -251,7 +251,7 @@ Zeros found in data not compatible with equation! Dropping zeros!
 The simplest use of `FitCurves()` is shown here, only needing to specify `dat` and `equation`. All other arguments shown are set to their default values.
 
 ```{r hs, eval=FALSE}
-FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE, 
+FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE,
           xcol = "x", ycol = "y", idcol = "id", groupcol = NULL)
 ```
 
@@ -361,10 +361,10 @@ knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
 
 ## Compare Values of $\alpha$ and $Q_0$ via Extra Sum-of-Squares _F_-Test
 
-When one has multiple groups, it may be beneficial to compare whether separate curves are preferred over a single curve. This is accomplished by the Extra Sum-of-Squares _F_-test. This function (using the argument `compare`) will determine whether a single $\alpha$ or a single $Q_0$ is better than multiple $\alpha$s or $Q_0$s. A single curve will be fit, the residual deviations calculated and those residuals are compared to residuals obtained from multiple curves. A resulting _F_ statistic will be reporting along with a _p_ value. 
+When one has multiple groups, it may be beneficial to compare whether separate curves are preferred over a single curve. This is accomplished by the Extra Sum-of-Squares _F_-test. This function (using the argument `compare`) will determine whether a single $\alpha$ or a single $Q_0$ is better than multiple $\alpha$s or $Q_0$s. A single curve will be fit, the residual deviations calculated and those residuals are compared to residuals obtained from multiple curves. A resulting _F_ statistic will be reporting along with a _p_ value.
 
 ```{r ftest}
-## setting the seed initializes the random number generator so results will be 
+## setting the seed initializes the random number generator so results will be
 ## reproducible
 set.seed(1234)
 
@@ -399,11 +399,11 @@ When `verbose = TRUE`, objects from the result can be used in subsequent graphin
 ggplot(apt, aes(x = x, y = y, group = group)) +
   ## the predicted lines from the sum of squares f-test can be used in subsequent
   ## plots by calling data = ef$newdat
-  geom_line(aes(x = x, y = y, group = group, color = group), 
+  geom_line(aes(x = x, y = y, group = group, color = group),
             data = ef$newdat[ef$newdat$x >= .1, ]) +
-  stat_summary(fun.data = "mean_se", aes(color = group), 
+  stat_summary(fun.data = "mean_se", aes(color = group),
                geom = "errorbar", orientation = "x", width = 0) +
-  stat_summary(fun = "mean", aes(fill = group), geom = "point", shape = 21, 
+  stat_summary(fun = "mean", aes(fill = group), geom = "point", shape = 21,
                color = "black", stroke = .75, size = 4, orientation = "x") +
   scale_x_continuous(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
   coord_trans(x = "log10") +
@@ -519,7 +519,7 @@ Examples:
 
 - Derek D. Reed, Applied Behavioral Economics Laboratory
 
-- Mikhail N. Koffarnus, Addiction Recovery Research Center 
+- Mikhail N. Koffarnus, Addiction Recovery Research Center
 
 - Steven R. Hursh, Institutes for Behavior Resources, Inc.
 
@@ -553,4 +553,3 @@ Special thanks to the following people who helped provide feedback on this docum
 - Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology 23* (5), 377-386. https://dx.doi.org/10.1037/pha0000020
 
 - Hursh, S. R., Raslear, T. G., Shurtleff, D., Bauman, R., & Simmons, L. (1988). A cost‐benefit analysis of demand for food. *Journal of the Experimental Analysis of Behavior, 50* (3), 419-440. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1338908/
-
