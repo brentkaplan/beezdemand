@@ -1,0 +1,241 @@
+---
+title: "How to Use Cross-Price Demand Model Functions"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How to Use Cross-Price Demand Model Functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  collapse = TRUE,
+  comment = NA,
+  fig.width = 6,
+  fig.height = 4
+)
+
+library(beezdemand)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+
+load("../data/etm.RData")
+```
+
+## Data Structure
+
+```{r}
+glimpse(etm)
+```
+
+Typical columns:
+- `id`: participant identifier
+
+- `x`: alternative product price
+
+- `y`: consumption level
+
+- `target`: condition type (e.g., "alt")
+
+- `group`: product category
+
+## Checking Unsystematic Data
+
+```{r}
+etm |>
+  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
+
+
+unsys_one <- etm |>
+  filter(group %in% "E-Cigarettes" & id %in% 1) |>
+  check_unsystematic_cp()
+
+unsys_one
+
+
+```
+
+```{r}
+unsys_all <- etm |>
+  group_by(id, group) |>
+  nest() |>
+  mutate(unsys = map(data, check_unsystematic_cp)) |>
+  unnest(unsys)
+
+unsys_all
+```
+
+## Nonlinear Model Fitting
+
+### Two Stage
+
+```{r}
+fit_one <- etm |>
+  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+  fit_cp_nls(
+    equation = "exponentiated",
+    return_all = TRUE
+  )
+
+summary(fit_one)
+
+plot(fit_one, x_trans = "log10")
+```
+
+```{r}
+fit_all <- etm |>
+  group_by(id, group) |>
+  nest() |>
+  mutate(
+    unsys = map(data, check_unsystematic_cp),
+    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+    summary = map(fit, summary),
+    plot = map(fit, plot, x_trans = "log10"),
+    glance = map(fit, glance),
+    tidy = map(fit, tidy)
+  )
+
+fit_all
+
+fit_all$summary[[2]]
+
+rand_id <- sample(unique(etm$id), 1)
+print(rand_id)
+fit_all$summary[[rand_id]]
+fit_all$plot[[rand_id]]
+```
+
+### Fit to Group (pooled by group)
+
+```{r}
+fit_pooled <- etm |>
+  group_by(group) |>
+  nest() |>
+  mutate(
+    unsys = map(data, check_unsystematic_cp),
+    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+    summary = map(fit, summary),
+    plot = map(fit, plot, x_trans = "log10"),
+    glance = map(fit, glance),
+    tidy = map(fit, tidy)
+  )
+
+fit_pooled
+
+fit_pooled |>
+  dplyr::filter(group %in% "E-Cigarettes") |>
+  pull(summary)
+
+fit_pooled |>
+  dplyr::filter(group %in% "E-Cigarettes") |>
+  pull(plot)
+
+
+```
+
+### Fit to Group (mean)
+
+```{r}
+fit_mean <- etm |>
+  group_by(group, x) |>
+  summarise(
+    y = mean(y)
+  ) |>
+  ungroup() |>
+  group_by(group) |>
+  nest() |>
+  mutate(
+    unsys = map(data, check_unsystematic_cp),
+    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+    summary = map(fit, summary),
+    plot = map(fit, plot, x_trans = "log10"),
+    glance = map(fit, glance),
+    tidy = map(fit, tidy)
+  )
+
+fit_mean
+
+fit_mean |>
+    unnest(cols = c(glance, tidy)) |>
+    select(
+        group,
+        term,
+        estimate
+    ) |>
+        ggplot(aes(x = group, y = estimate, group = term)) +
+        geom_bar(stat = "identity") +
+        facet_wrap(~term)
+
+fit_mean |>
+  dplyr::filter(group %in% "E-Cigarettes") |>
+  pull(summary)
+
+fit_mean |>
+  dplyr::filter(group %in% "E-Cigarettes") |>
+  pull(plot)
+
+
+```
+
+
+## Linear Model Fitting
+
+```{r}
+fit_one_linear <- etm |>
+  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+  fit_cp_linear(
+    type = "fixed",
+    log10x = TRUE,
+    return_all = TRUE
+  )
+
+summary(fit_one_linear)
+plot(fit_one_linear, x_trans = "log10")
+```
+
+## Linear Mixed-Effects Model
+
+```{r}
+fit_mixed <- fit_cp_linear(
+  etm,
+  type = "mixed",
+  log10x = TRUE,
+  group_effects = "interaction",
+  random_slope = FALSE,
+  return_all = TRUE
+)
+
+summary(fit_mixed)
+
+# plot fixed effects only
+plot(fit_mixed, x_trans = "log10", pred_type = "fixed")
+
+# plot random effects only
+plot(fit_mixed, x_trans = "log10", pred_type = "random")
+
+# plot both fixed and random effects
+plot(fit_mixed, x_trans = "log10", pred_type = "all")
+```
+
+## Extracting Model Coefficients
+
+```{r}
+glance(fit_one)
+tidy(fit_one)
+```
+
+```{r}
+extract_coefficients(fit_mixed)
+```
+
+## Post-hoc Comparisons
+
+```{r}
+cp_posthoc_slopes(fit_mixed)
+cp_posthoc_intercepts(fit_mixed)
+```

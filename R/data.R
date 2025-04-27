@@ -27,3 +27,25 @@
 #'
 #' @format Long-form data.frame with columns: id, x, y. Participants were asked how many standard sized alcoholic beverages they would buy at various prices.
 "apt"
+
+#' Example Experimental Tobacco Marketplace data
+#'
+#' A dataset containing ETM data for a small number of participants
+#'
+#' @format Long-form data.frame with columns: id, x, y, target, group. Participants were asked how many cigarettes, e-cigarettes, combustible, and non-combustible products they would buy at various prices.
+"etm"
+
+#' Example cross‐price dataset
+#'
+#' A small illustrative dataset of price (x) and consumption (y) target
+#' (target), and group (group).
+#'
+#' @format A data frame with N rows and columns:
+#'   \describe{
+#'     \item{id}{unique identifier}
+#'     \item{x}{price of the alternative}
+#'     \item{y}{consumption/demand}
+#'     \item{target}{target (e.g., alone, own, alt)}
+#'     \item{group}{e.g., drug or product}
+#'   }
+"cp"
