@@ -1,6 +1,6 @@
 Package: beezdemand
-Version: 0.1.2
-Date: 2023-08-23
+Version: 0.1.3
+Date: 2025-04-20
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre", "cph")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
@@ -18,7 +18,7 @@ Description: Facilitates many of the analyses performed in studies of
 		numerous measures	relevant to applied behavioral economists (Intensity,
 		Pmax, Omax). Also	supports plotting and comparing data.
 Depends:
-    R (>= 2.5)
+    R (>= 4.1.0)
 Imports:
     nlsr,
     nlstools,
@@ -26,17 +26,27 @@ Imports:
     ggplot2,
     reshape2,
     stats,
-    optimx
+    optimx,
+    broom,
+    lme4,
+    emmeans,
+    minpack.lm,
+    nls.multstart,
+    performance,
+    scales,
+    tibble,
+    lifecycle
 Suggests:
     openxlsx,
     knitr,
     dplyr,
     tidyr,
     tidyverse,
-    rmarkdown
+    rmarkdown,
+    purrr
 License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 VignetteBuilder: knitr
