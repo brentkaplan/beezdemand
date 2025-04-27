@@ -1,3 +1,41 @@
+# beezdemand 0.1.3
+
+## New Features
+
+### Cross-Price Demand Models
+
+* Added comprehensive cross-price demand model functionality:
+
+  * `check_unsystematic_cp()`: Check for unsystematic data in cross-price models
+
+  * `fit_cp_nls()`: Nonlinear model fitting for cross-price demand data
+
+  * `fit_cp_linear()`: Linear model fitting for cross-price demand data with options for fixed effects and mixed-effects models
+
+  * New utility functions for cross-price model objects:
+
+    * `summary()`, `plot()`, `glance()`, and `tidy()` methods
+
+  * `extract_coefficients()`: Extract model coefficients in tidy format
+
+  * `cp_posthoc_slopes()` and `cp_posthoc_intercepts()`: Post-hoc comparisons for model parameters
+
+  * `validate_cp_data()`: Validate and filter cross-price demand data
+
+* Added new vignette "How to Use Cross-Price Demand Model Functions" demonstrating:
+
+  * Required data structure for cross-price analyses
+
+  * Checking for unsystematic data
+
+  * Both two-stage and pooled model fitting approaches
+
+  * Linear and mixed-effects modeling options
+
+  * Model visualization and coefficient extraction
+
+  * Post-hoc comparisons
+
 # beezdemand 0.1.2
 
 * No longer relies on `nlmrt` and instead relies on `nlsr`

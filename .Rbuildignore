@@ -12,3 +12,7 @@
 ^doc$
 ^Meta$
 ^CRAN-SUBMISSION$
+^.*\.code-workspace$
+^example_data.csv$
+^hex-beezdemand.png
+^Notes.md
