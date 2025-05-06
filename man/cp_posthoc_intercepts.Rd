@@ -16,9 +16,10 @@ cp_posthoc_intercepts(object, alpha = 0.05, adjust = "tukey", ...)
 \item{...}{Additional arguments passed to emmeans}
 }
 \value{
-Data frame of pairwise comparisons of intercepts
+List containing the emmeans table and optionally pairwise comparisons if interaction is significant
 }
 \description{
 This function performs pairwise comparisons of intercepts between groups in a
 cross-price demand model, but only when a significant interaction is present.
+The emmeans table showing estimated marginal means for intercepts is always returned.
 }

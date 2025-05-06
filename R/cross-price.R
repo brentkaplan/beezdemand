@@ -16,7 +16,7 @@
 #' @export
 fit_cp_nls <- function(
   data,
-  equation = c("exponentiated", "exponential"),
+  equation = c("exponentiated", "exponential", "additive"),
   start_vals = NULL,
   iter = 100,
   bounds = list(
@@ -47,7 +47,8 @@ fit_cp_nls <- function(
   formula_nls <- switch(
     equation,
     exponentiated = y ~ qalone * 10^(I * exp(-beta * x)),
-    exponential = y ~ log10(qalone) + I * exp(-beta * x)
+    exponential = y ~ log10(qalone) + I * exp(-beta * x),
+    additive = y ~ qalone + I * exp(-beta * x)
   )
 
   # If no explicit start values, define parameter ranges.
@@ -169,7 +170,8 @@ fit_cp_nls <- function(
       formula_nlsr <- switch(
         equation,
         exponentiated = as.formula("y ~ qalone * 10^(I * exp(-beta * x))"),
-        exponential = as.formula("y ~ log10(qalone) + I * exp(-beta * x)")
+        exponential = as.formula("y ~ log10(qalone) + I * exp(-beta * x)"),
+        additive = as.formula("y ~ qalone + I * exp(-beta * x)")
       )
 
       nlsr_fit <- tryCatch(

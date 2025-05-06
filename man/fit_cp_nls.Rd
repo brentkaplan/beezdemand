@@ -6,7 +6,7 @@
 \usage{
 fit_cp_nls(
   data,
-  equation = c("exponentiated", "exponential"),
+  equation = c("exponentiated", "exponential", "additive"),
   start_vals = NULL,
   iter = 100,
   bounds = list(lower = c(qalone = 0.1, I = -2, beta = 1e-05), upper = c(qalone = NA, I =

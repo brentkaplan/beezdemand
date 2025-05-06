@@ -39,6 +39,7 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
         equation,
         exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
         exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
+        additive = "y ~ qalone + I * exp(-beta * x)",
         "Unknown equation type"
       ),
       method = method,
@@ -114,6 +115,7 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
     equation,
     exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
     exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
+    additive = "y ~ qalone + I * exp(-beta * x)",
     "Unknown equation type"
   )
 
@@ -404,6 +406,7 @@ predict.cp_model_nls <- function(
     equation,
     exponentiated = qalone * 10^(I_param * exp(-beta * x_vals)),
     exponential = log10(qalone) + I_param * exp(-beta * x_vals),
+    additive = qalone + I_param * exp(-beta * x_vals),
     stop("Unsupported equation type: ", equation)
   )
 
@@ -1358,12 +1361,13 @@ has_significant_interaction <- function(object, alpha = 0.05) {
 #'
 #' This function performs pairwise comparisons of slopes between groups in a
 #' cross-price demand model, but only when a significant interaction is present.
+#' The emmeans table showing estimated marginal means for slopes is always returned.
 #'
 #' @param object A cp_model_lmer object from fit_cp_linear
 #' @param alpha Significance level for testing (default: 0.05)
 #' @param adjust Method for p-value adjustment; see emmeans::contrast (default: "tukey")
 #' @param ... Additional arguments passed to emmeans
-#' @return Data frame of pairwise comparisons of slopes
+#' @return List containing the emmeans table and optionally pairwise comparisons if interaction is significant
 #' @importFrom emmeans emmeans emtrends contrast
 #' @export
 cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
@@ -1376,16 +1380,9 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
   }
 
   # Check if there's a significant interaction
-  if (!has_significant_interaction(object, alpha)) {
-    message(
-      "No significant interaction detected (alpha = ",
-      alpha,
-      "). Pairwise slope comparisons not performed."
-    )
-    return(NULL)
-  }
+  has_interaction <- has_significant_interaction(object, alpha)
 
-  # For log-transformed x, we use tran argument directly in emtrends
+  # Calculate the emmeans for slopes regardless of significance
   if (isTRUE(object$log10x)) {
     # The formula has log10(x), so identify x as the variable
     trends <- emmeans::emtrends(
@@ -1400,23 +1397,40 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
     trends <- emmeans::emtrends(object$model, ~group, var = "x", ...)
   }
 
-  # Compute pairwise differences of slopes
-  contrasts <- emmeans::contrast(
-    trends,
-    method = "pairwise",
-    adjust = adjust,
-    ...
+  # Always include the emmeans table in the result
+  result <- list(
+    emmeans = as.data.frame(summary(trends)),
+    significant_interaction = has_interaction
   )
 
-  # Convert to a clean data frame with standardized column names
-  result <- as.data.frame(summary(contrasts))
+  # Only compute contrasts if there's a significant interaction
+  if (has_interaction) {
+    # Compute pairwise differences of slopes
+    contrasts <- emmeans::contrast(
+      trends,
+      method = "pairwise",
+      adjust = adjust,
+      ...
+    )
 
-  # Add significance indicators (safely check if p.value exists)
-  if ("p.value" %in% names(result)) {
-    result$significance <- ""
-    result$significance[result$p.value < alpha] <- "*"
-    result$significance[result$p.value < alpha / 5] <- "**"
-    result$significance[result$p.value < alpha / 20] <- "***"
+    # Convert to a clean data frame with standardized column names
+    contrast_df <- as.data.frame(summary(contrasts))
+
+    # Add significance indicators
+    if ("p.value" %in% names(contrast_df)) {
+      contrast_df$significance <- ""
+      contrast_df$significance[contrast_df$p.value < alpha] <- "*"
+      contrast_df$significance[contrast_df$p.value < alpha / 5] <- "**"
+      contrast_df$significance[contrast_df$p.value < alpha / 20] <- "***"
+    }
+
+    result$contrasts <- contrast_df
+  } else {
+    result$message <- paste(
+      "No significant interaction detected (alpha =",
+      alpha,
+      "). Pairwise slope comparisons not performed."
+    )
   }
 
   # Set class and attributes
@@ -1431,12 +1445,13 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 #'
 #' This function performs pairwise comparisons of intercepts between groups in a
 #' cross-price demand model, but only when a significant interaction is present.
+#' The emmeans table showing estimated marginal means for intercepts is always returned.
 #'
 #' @param object A cp_model_lmer object from fit_cp_linear
 #' @param alpha Significance level for testing (default: 0.05)
 #' @param adjust Method for p-value adjustment; see emmeans::contrast (default: "tukey")
 #' @param ... Additional arguments passed to emmeans
-#' @return Data frame of pairwise comparisons of intercepts
+#' @return List containing the emmeans table and optionally pairwise comparisons if interaction is significant
 #' @importFrom emmeans emmeans emtrends contrast
 #' @export
 cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
@@ -1449,14 +1464,7 @@ cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
   }
 
   # Check if there's a significant interaction
-  if (!has_significant_interaction(object, alpha)) {
-    message(
-      "No significant interaction detected (alpha = ",
-      alpha,
-      "). Pairwise intercept comparisons not performed."
-    )
-    return(NULL)
-  }
+  has_interaction <- has_significant_interaction(object, alpha)
 
   # Create emmeans specifications, handling log-transformed models
   if (isTRUE(object$log10x)) {
@@ -1467,18 +1475,40 @@ cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
     emm <- emmeans::emmeans(object$model, specs = ~group, at = list(x = 0), ...)
   }
 
-  # Compute pairwise differences
-  contrasts <- emmeans::contrast(emm, method = "pairwise", adjust = adjust, ...)
+  # Always include the emmeans table in the result
+  result <- list(
+    emmeans = as.data.frame(summary(emm)),
+    significant_interaction = has_interaction
+  )
 
-  # Convert to a clean data frame with standardized column names
-  result <- as.data.frame(summary(contrasts))
+  # Only compute contrasts if there's a significant interaction
+  if (has_interaction) {
+    # Compute pairwise differences
+    contrasts <- emmeans::contrast(
+      emm,
+      method = "pairwise",
+      adjust = adjust,
+      ...
+    )
 
-  # Add significance indicators (safely check if p.value exists)
-  if ("p.value" %in% names(result)) {
-    result$significance <- ""
-    result$significance[result$p.value < alpha] <- "*"
-    result$significance[result$p.value < alpha / 5] <- "**"
-    result$significance[result$p.value < alpha / 20] <- "***"
+    # Convert to a clean data frame with standardized column names
+    contrast_df <- as.data.frame(summary(contrasts))
+
+    # Add significance indicators
+    if ("p.value" %in% names(contrast_df)) {
+      contrast_df$significance <- ""
+      contrast_df$significance[contrast_df$p.value < alpha] <- "*"
+      contrast_df$significance[contrast_df$p.value < alpha / 5] <- "**"
+      contrast_df$significance[contrast_df$p.value < alpha / 20] <- "***"
+    }
+
+    result$contrasts <- contrast_df
+  } else {
+    result$message <- paste(
+      "No significant interaction detected (alpha =",
+      alpha,
+      "). Pairwise intercept comparisons not performed."
+    )
   }
 
   # Set class and attributes
@@ -1502,24 +1532,40 @@ print.cp_posthoc <- function(x, ...) {
   # Create title based on type
   title <- switch(
     type,
-    "slopes" = "Pairwise Slope Comparisons",
-    "intercepts" = "Pairwise Intercept Comparisons",
-    "Pairwise Post-hoc Comparisons"
+    "slopes" = "Slope Estimates and Comparisons",
+    "intercepts" = "Intercept Estimates and Comparisons",
+    "Estimates and Post-hoc Comparisons"
   )
 
   cat(title, "\n")
   cat(paste(rep("=", nchar(title)), collapse = ""), "\n\n")
 
-  # Convert to a simple data frame and remove S3 class to avoid recursive calls
-  df <- as.data.frame(unclass(x))
+  # Print the emmeans table
+  cat("Estimated Marginal Means:\n")
+  print(x$emmeans, row.names = FALSE)
+  cat("\n")
 
-  # Print the data frame in a simple way without row names
-  # Don't pass ...args to avoid potential problems
-  print(df, row.names = FALSE)
+  # Print interaction status
+  cat(
+    "Significant interaction:",
+    ifelse(x$significant_interaction, "Yes", "No"),
+    "\n\n"
+  )
 
-  # Print significance legend if needed
-  if ("significance" %in% names(df)) {
-    cat("\nSignificance codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '' 1\n")
+  # If contrasts are available, print them
+  if (!is.null(x$contrasts)) {
+    cat("Pairwise Comparisons:\n")
+    # Convert to a simple data frame and remove S3 class to avoid recursive calls
+    df <- as.data.frame(unclass(x$contrasts))
+    # Print the data frame in a simple way without row names
+    print(df, row.names = FALSE)
+
+    # Print significance legend if needed
+    if ("significance" %in% names(df)) {
+      cat("\nSignificance codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '' 1\n")
+    }
+  } else if (!is.null(x$message)) {
+    cat(x$message, "\n")
   }
 
   # Print adjustment method if available

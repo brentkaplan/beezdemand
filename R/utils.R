@@ -255,3 +255,26 @@ validate_cp_data <- function(
 
   return(data)
 }
+
+
+#' @keywords internal
+validate_demand_data <- function(
+  data,
+  required_cols = c("x", "y"),
+  require_id = FALSE
+) {
+  if (!is.data.frame(data)) {
+    stop("Data must be a data frame.")
+  }
+
+  missing_cols <- setdiff(required_cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  if (require_id && !("id" %in% names(data))) {
+    stop("Data must contain an 'id' column for this operation.")
+  }
+
+  return(data)
+}
