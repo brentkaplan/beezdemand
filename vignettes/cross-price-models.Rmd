@@ -68,6 +68,8 @@ unsys_all <- etm |>
   unnest(unsys)
 
 unsys_all
+
+summary(unsys_all)
 ```
 
 ## Nonlinear Model Fitting
@@ -233,7 +235,7 @@ tidy(fit_one)
 extract_coefficients(fit_mixed)
 ```
 
-## Post-hoc Comparisons
+## Post-hoc Estimated Marginal Means and Comparisons
 
 ```{r}
 cp_posthoc_slopes(fit_mixed)

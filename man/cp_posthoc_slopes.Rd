@@ -16,9 +16,10 @@ cp_posthoc_slopes(object, alpha = 0.05, adjust = "tukey", ...)
 \item{...}{Additional arguments passed to emmeans}
 }
 \value{
-Data frame of pairwise comparisons of slopes
+List containing the emmeans table and optionally pairwise comparisons if interaction is significant
 }
 \description{
 This function performs pairwise comparisons of slopes between groups in a
 cross-price demand model, but only when a significant interaction is present.
+The emmeans table showing estimated marginal means for slopes is always returned.
 }
