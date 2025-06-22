@@ -7,40 +7,28 @@
 \method{summary}{cp_unsystematic}(object, ...)
 }
 \arguments{
-\item{object}{A dataframe containing results from multiple `check_unsystematic_cp()` calls,
-typically with columns 'id', 'group', 'delta_direction', 'bounce_direction', 'bounce_any',
-'bounce_above', and 'bounce_below'.}
+\item{object}{A data frame containing results from multiple `check_unsystematic_cp()` calls,
+with at minimum the columns 'delta_direction', 'bounce_direction', and 'bounce_any'.
+Columns 'id' and 'group' are optional but allow extended summaries.}
 
 \item{...}{Additional arguments (currently unused)}
 }
 \value{
-A list with summary statistics including:
-  \item{total_patterns}{Total number of patterns examined}
-  \item{systematic_count}{Number of systematic patterns}
-  \item{unsystematic_count}{Number of unsystematic patterns}
-  \item{systematic_percent}{Percentage of systematic patterns}
-  \item{unsystematic_percent}{Percentage of unsystematic patterns}
-  \item{trend_counts}{Counts by trend direction}
-  \item{bounce_counts}{Counts by bounce direction}
-  \item{group_summary}{Summary statistics by group}
-  \item{problem_ids}{IDs with the most unsystematic patterns}
+A list of class `summary.cp_unsystematic` with the following elements:
+  \describe{
+    \item{total_patterns}{Number of total patterns examined.}
+    \item{systematic_count}{Count of systematic patterns (no bounce).}
+    \item{unsystematic_count}{Count of unsystematic patterns (bounce detected).}
+    \item{systematic_percent}{Proportion of systematic patterns.}
+    \item{unsystematic_percent}{Proportion of unsystematic patterns.}
+    \item{trend_counts}{Breakdown of trend directions.}
+    \item{bounce_counts}{Breakdown of bounce directions.}
+    \item{group_summary}{(Optional) Summary stats by 'group'.}
+    \item{problem_ids}{(Optional) Top IDs with unsystematic patterns.}
+  }
 }
 \description{
-Creates a summary of unsystematic data checks across multiple subjects and groups.
-This function takes a dataframe containing results from multiple calls to
-`check_unsystematic_cp()` and provides a comprehensive summary of patterns found.
-}
-\examples{
-\dontrun{
-# Run unsystematic checks on multiple patterns
-unsys_all <- etm |>
-  group_by(id, group) |>
-  nest() |>
-  mutate(unsys = map(data, check_unsystematic_cp)) |>
-  unnest(unsys)
-
-# Create summary
-summary(unsys_all)
-}
-
+Summarizes systematic and unsystematic patterns from multiple calls to
+`check_unsystematic_cp()`. This includes overall proportions, trend and bounce
+direction counts, and optionally summaries by subject or group.
 }
