@@ -257,24 +257,94 @@ validate_cp_data <- function(
 }
 
 
+# #' @keywords internal
+# validate_demand_data <- function(
+#   data,
+#   required_cols = c("x", "y"),
+#   require_id = FALSE,
+#   drop_unused_factors = TRUE
+# ) {
+#   if (!is.data.frame(data)) {
+#     stop("Data must be a data frame.")
+#   }
+
+#   missing_cols <- setdiff(required_cols, names(data))
+#   if (length(missing_cols) > 0) {
+#     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+#   }
+
+#   if (require_id && !("id" %in% names(data))) {
+#     stop("Data must contain an 'id' column for this operation.")
+#   }
+
+#   # Drop unused factor levels if requested
+#   if (drop_unused_factors) {
+#     factor_cols <- which(vapply(data, is.factor, logical(1)))
+#     if (length(factor_cols) > 0) {
+#       data[factor_cols] <- lapply(data[factor_cols], droplevels)
+#     }
+#   }
+
+#   return(data)
+# }
+
+#' Validate and Prepare Demand Data
+#'
+#' Internal helper function to validate required columns in demand data and
+#' ensure that specified factor columns are correctly formatted and have unused
+#' levels dropped.
+#'
+#' @param data A data frame.
+#' @param y_var Character string, the name of the dependent variable column.
+#' @param x_var Character string, the name of the independent variable column.
+#' @param id_var Character string, the name of the subject/group identifier column.
+#' @param factors Character vector of factor names (can be NULL).
+#'
+#' @return The validated and prepared data frame.
 #' @keywords internal
 validate_demand_data <- function(
   data,
-  required_cols = c("x", "y"),
-  require_id = FALSE
+  y_var,
+  x_var,
+  id_var,
+  factors = NULL
 ) {
   if (!is.data.frame(data)) {
-    stop("Data must be a data frame.")
+    stop("Input 'data' must be a data frame.")
   }
 
+  # Construct required columns list
+  required_cols <- c(y_var, x_var, id_var)
+  if (!is.null(factors)) {
+    required_cols <- c(required_cols, factors)
+  }
+
+  # Check for missing columns
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
-    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+    stop(
+      "Missing required columns in data: ",
+      paste(missing_cols, collapse = ", ")
+    )
   }
 
-  if (require_id && !("id" %in% names(data))) {
-    stop("Data must contain an 'id' column for this operation.")
+  # Ensure id_var is a factor and drop unused levels
+  data[[id_var]] <- droplevels(as.factor(data[[id_var]]))
+
+  # Ensure all specified factors are factors and drop unused levels
+  if (!is.null(factors)) {
+    for (f_col in factors) {
+      if (!is.factor(data[[f_col]])) {
+        # Only convert if not already a factor
+        data[[f_col]] <- as.factor(data[[f_col]])
+      }
+      data[[f_col]] <- droplevels(data[[f_col]])
+    }
   }
 
   return(data)
 }
+
+#' @keywords internal
+#' small infix helper (define once in your utilities)
+`%||%` <- function(a, b) if (is.null(a)) b else a
