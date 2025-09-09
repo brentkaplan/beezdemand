@@ -9,7 +9,7 @@ check_unsystematic_cp(
   delta_threshold = 0.025,
   bounce_down_threshold = 0.1,
   bounce_up_threshold = 0.1,
-  bounce_none_threshold = 0.2,
+  bounce_none_threshold = 0.1,
   rev_zeroes = 2,
   ret_nums = 2,
   expected_down = FALSE,
@@ -36,16 +36,18 @@ check_unsystematic_cp(
 
 \item{verbose}{Logical. If TRUE, print intermediate values (default FALSE).}
 
-\item{detailed}{Logical. If TRUE, return additional columns including all trend/bounce flags and zero pattern counts.}
+\item{detailed}{Logical. If TRUE, return additional columns including all trend/bounce flags.}
 }
 \value{
 A data frame with core results:
   \describe{
     \item{delta_direction}{Character: 'down', 'up', or 'none'.}
-    \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none_detected'.}
+    \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
     \item{bounce_any}{Logical. TRUE if any bounce pattern detected.}
     \item{bounce_above}{Integer. Number of upward changes meeting threshold.}
     \item{bounce_below}{Integer. Number of downward changes meeting threshold.}
+    \item{reversals}{Integer. Detected reversals from 0 to non-0.}
+    \item{returns}{Integer. Detected returns from non-0 to 0.}
   }
 If `detailed = TRUE`, returns additional columns:
   \describe{
@@ -55,14 +57,13 @@ If `detailed = TRUE`, returns additional columns:
     \item{bounce_up}{Logical. Significant bounce up in a downward trend.}
     \item{bounce_down}{Logical. Significant bounce down in an upward trend.}
     \item{bounce_none}{Logical. Significant bounces in no-trend data.}
-    \item{reversals}{Integer. Detected reversals from 0 to non-0.}
-    \item{returns}{Integer. Detected returns from non-0 to 0.}
   }
 }
 \description{
 Analyzes whether consumption data shows systematic trends or unsystematic patterns ("bounces")
 with respect to price. Includes detection of zero-value reversal/return sequences and allows
-flexible output based on the level of detail requested.
+flexible output based on the level of detail requested. See Rzeszutek et al. (in press) for
+more details.
 }
 \examples{
 x_seq <- 10^(seq(-2, 2, length.out = 10))

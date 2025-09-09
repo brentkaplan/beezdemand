@@ -218,7 +218,7 @@ print.summary.cp_model_nls <- function(x, ...) {
     cat(
       "beta:",
       format(x$derived_metrics$beta, digits = 4),
-      " - decay parameter (speed of cross-price effect decay)\n"
+      " - sensitivity parameter (sensitivity of relationto price)\n"
     )
   }
   invisible(x)

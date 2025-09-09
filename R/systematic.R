@@ -3,7 +3,8 @@
 #' @description
 #' Analyzes whether consumption data shows systematic trends or unsystematic patterns ("bounces")
 #' with respect to price. Includes detection of zero-value reversal/return sequences and allows
-#' flexible output based on the level of detail requested.
+#' flexible output based on the level of detail requested. See Rzeszutek et al. (in press) for
+#' more details.
 #'
 #' @param data A data frame with columns 'x' and 'y', where 'x' is price and 'y' is consumption.
 #' @param delta_threshold Numeric. Threshold for detecting log-scale trends (default 0.025).
@@ -14,15 +15,17 @@
 #' @param ret_nums Integer. Length of non-zero sequences to detect returns (default 2).
 #' @param expected_down Logical. If TRUE, suppress reversal detection.
 #' @param verbose Logical. If TRUE, print intermediate values (default FALSE).
-#' @param detailed Logical. If TRUE, return additional columns including all trend/bounce flags and zero pattern counts.
+#' @param detailed Logical. If TRUE, return additional columns including all trend/bounce flags.
 #'
 #' @return A data frame with core results:
 #'   \describe{
 #'     \item{delta_direction}{Character: 'down', 'up', or 'none'.}
-#'     \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none_detected'.}
+#'     \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
 #'     \item{bounce_any}{Logical. TRUE if any bounce pattern detected.}
 #'     \item{bounce_above}{Integer. Number of upward changes meeting threshold.}
 #'     \item{bounce_below}{Integer. Number of downward changes meeting threshold.}
+#'     \item{reversals}{Integer. Detected reversals from 0 to non-0.}
+#'     \item{returns}{Integer. Detected returns from non-0 to 0.}
 #'   }
 #' If `detailed = TRUE`, returns additional columns:
 #'   \describe{
@@ -32,8 +35,6 @@
 #'     \item{bounce_up}{Logical. Significant bounce up in a downward trend.}
 #'     \item{bounce_down}{Logical. Significant bounce down in an upward trend.}
 #'     \item{bounce_none}{Logical. Significant bounces in no-trend data.}
-#'     \item{reversals}{Integer. Detected reversals from 0 to non-0.}
-#'     \item{returns}{Integer. Detected returns from non-0 to 0.}
 #'   }
 #'
 #' @examples
@@ -47,7 +48,7 @@ check_unsystematic_cp <- function(
   delta_threshold = 0.025,
   bounce_down_threshold = 0.1,
   bounce_up_threshold = 0.1,
-  bounce_none_threshold = 0.2,
+  bounce_none_threshold = 0.1,
   rev_zeroes = 2,
   ret_nums = 2,
   expected_down = FALSE,
@@ -55,28 +56,50 @@ check_unsystematic_cp <- function(
   detailed = FALSE
 ) {
   # Helper function to check for zero patterns
+    # Helper function to check for zero patterns
   check_zero_patterns <- function(y, rev_zeroes, ret_nums) {
-    revs <- rets <- NA
+    revs <- NA
+    rets <- NA
+
+    # --- Reversal Check ---
     if (any(y == 0)) {
+      search_vec_rev <- y
+      # If data starts at zero, only search after the first non-zero value
       if (y[1] == 0 && !all(y == 0)) {
-        segment <- y[min(which(y != 0)):length(y)]
-        revs <- length(gregexpr(
-          paste0(c(rep(0, rev_zeroes), 1), collapse = ""),
-          paste0(as.numeric(segment != 0), collapse = "")
-        )[[1]])
-      } else {
-        revs <- length(gregexpr(
-          paste0(c(rep(0, rev_zeroes), 1), collapse = ""),
-          paste0(as.numeric(y != 0), collapse = "")
-        )[[1]])
+        search_vec_rev <- y[min(which(y != 0)):length(y)]
       }
-      segment <- y[min(which(y == 0)):length(y)]
-      rets <- length(gregexpr(
-        paste0(c(rep(1, ret_nums), 0), collapse = ""),
-        paste0(as.numeric(segment != 0), collapse = "")
-      )[[1]])
+
+      pattern_str_rev <- paste0(as.numeric(search_vec_rev != 0), collapse = "")
+
+      # gregexpr returns c(-1) on no match, which has a length of 1.
+      # Must check the value inside the vector to correctly identify "no match".
+      rev_positions <- gregexpr(
+        paste0(c(rep(0, rev_zeroes), 1), collapse = ""),
+        pattern_str_rev
+      )[[1]]
+
+      revs <- if (rev_positions[1] < 0) 0 else length(rev_positions)
+    } else {
+      revs <- 0 # If no zeroes, no reversals are possible
     }
-    list(revs = ifelse(revs < 0, 0, revs), rets = ifelse(rets < 0, 0, rets))
+
+    # --- Returns Check ---
+    if (any(y == 0)) {
+      # For returns, always start searching from the first occurrence of zero
+      search_vec_ret <- y[min(which(y == 0)):length(y)]
+      pattern_str_ret <- paste0(as.numeric(search_vec_ret != 0), collapse = "")
+
+      ret_positions <- gregexpr(
+        paste0(c(rep(1, ret_nums), 0), collapse = ""),
+        pattern_str_ret
+      )[[1]]
+
+      rets <- if (ret_positions[1] < 0) 0 else length(ret_positions)
+    } else {
+      rets <- 0 # If no zeroes, no returns are possible
+    }
+
+    list(revs = revs, rets = rets)
   }
 
   # Input validation
@@ -119,7 +142,7 @@ check_unsystematic_cp <- function(
   delta_none <- !delta_down & !delta_up
 
   rev_ret <- check_zero_patterns(data$y, rev_zeroes, ret_nums)
-  revs <- if (expected_down || delta_up) NA else rev_ret$revs
+  revs <- if (delta_up) NA else rev_ret$revs
   rets <- if (expected_down || delta_down) NA else rev_ret$rets
 
   # Initialize bounce variables
@@ -129,49 +152,59 @@ check_unsystematic_cp <- function(
   bounce_above <- 0
   bounce_below <- 0
 
-  # Calculate bounce metrics based on trend type
-  if (delta_down) {
-    # For downward trend, check for upward bounces
-    bounce_above <- sum(diff(data_ordered$y) > first_y * 0.25)
-    bounce_up <- (bounce_above / (data_length - 1)) > bounce_up_threshold
+  if (expected_down) {
+  bounce_above <- sum(diff(data_ordered$y) > (first_y * 0.25), na.rm = TRUE)
+  bounce_up <- (bounce_above / (data_length - 1)) > bounce_up_threshold
+
+  bounce_down <- NA
+  bounce_none <- NA
+
+  if (verbose) {
     bounce_proportion <- bounce_above / (data_length - 1)
+    print(paste("Bounce up proportion (expected_down=TRUE):", round(bounce_proportion, 4)))
+  }
+
+} else {
+  if (delta_down) {
+    bounce_above <- sum(diff(data_ordered$y) > first_y * 0.25, na.rm = TRUE)
+    bounce_up <- (bounce_above / (data_length - 1)) > bounce_up_threshold
 
     if (verbose) {
+      bounce_proportion <- bounce_above / (data_length - 1)
       print(paste("Bounce up proportion:", round(bounce_proportion, 4)))
     }
   }
 
   if (delta_up) {
-    # For upward trend, check for downward bounces
-    bounce_below <- sum(-diff(data_ordered$y) > last_y * 0.25)
+    bounce_below <- sum(-diff(data_ordered$y) > last_y * 0.25, na.rm = TRUE)
     bounce_down <- (bounce_below / (data_length - 1)) > bounce_down_threshold
-    bounce_proportion <- bounce_below / (data_length - 1)
 
     if (verbose) {
+      bounce_proportion <- bounce_below / (data_length - 1)
       print(paste("Bounce down proportion:", round(bounce_proportion, 4)))
     }
   }
 
   if (delta_none) {
-    # For no trend, check for both upward and downward bounces
-    mid_y <- mean(c(first_y, last_y))
-    high_thresh <- mid_y * 1.25
-    low_thresh <- mid_y * 0.75
+    max_endpoint_y <- max(c(first_y, last_y))
+    bounce_threshold_value <- max_endpoint_y * 0.25
 
-    y_above <- data_ordered$y1 > high_thresh
-    y_below <- data_ordered$y1 < low_thresh
+    # Count upward and downward bounces exceeding the threshold
+    bounce_above <- sum(diff(data_ordered$y) > bounce_threshold_value, na.rm = TRUE)
+    bounce_below <- sum(-diff(data_ordered$y) > bounce_threshold_value, na.rm = TRUE)
 
-    bounce_above <- sum(y_above)
-    bounce_below <- sum(y_below)
-    combined_proportion <- (bounce_above + bounce_below) /
-      (2 * (data_length - 1))
+    # Calculate proportions for each direction
+    proportion_above <- bounce_above / (data_length - 1)
+    proportion_below <- bounce_below / (data_length - 1)
 
-    bounce_none <- combined_proportion > bounce_none_threshold
+    bounce_none <- min(proportion_above, proportion_below) > bounce_none_threshold
 
     if (verbose) {
-      print(paste("Bounce none proportion:", round(combined_proportion, 4)))
+      print(paste("Bounce above proportion (no trend):", round(proportion_above, 4)))
+      print(paste("Bounce below proportion (no trend):", round(proportion_below, 4)))
     }
   }
+}
 
   # Check if any bounce type is detected
   bounce_any <- any(c(bounce_up, bounce_down, bounce_none), na.rm = TRUE)
@@ -182,11 +215,11 @@ check_unsystematic_cp <- function(
   # Determine bounce direction as a single categorical variable
   bounce_direction <- NA
   if (delta_down && !is.na(bounce_up)) {
-    bounce_direction <- ifelse(bounce_up, "up", "none_detected")
+    bounce_direction <- ifelse(bounce_up, "up", "none")
   } else if (delta_up && !is.na(bounce_down)) {
-    bounce_direction <- ifelse(bounce_down, "down", "none_detected")
+    bounce_direction <- ifelse(bounce_down, "down", "none")
   } else if (delta_none && !is.na(bounce_none)) {
-    bounce_direction <- ifelse(bounce_none, "significant", "none_detected")
+    bounce_direction <- ifelse(bounce_none, "significant", "none")
   }
 
   # Return results
@@ -195,7 +228,9 @@ check_unsystematic_cp <- function(
     bounce_direction = bounce_direction,
     bounce_any = unname(bounce_any),
     bounce_above = unname(bounce_above),
-    bounce_below = unname(bounce_below)
+    bounce_below = unname(bounce_below),
+    reversals = revs,
+    returns = rets
   )
 
   if (detailed) {
@@ -207,9 +242,7 @@ check_unsystematic_cp <- function(
         delta_none = delta_none,
         bounce_up = bounce_up,
         bounce_down = bounce_down,
-        bounce_none = bounce_none,
-        reversals = revs,
-        returns = rets
+        bounce_none = bounce_none
       )
     )
   }

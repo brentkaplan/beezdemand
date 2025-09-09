@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{A data frame containing results from multiple `check_unsystematic_cp()` calls,
 with at minimum the columns 'delta_direction', 'bounce_direction', and 'bounce_any'.
-Columns 'id' and 'group' are optional but allow extended summaries.}
+Columns 'id', 'group', 'reversals', and 'returns' are optional but allow extended summaries.}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -23,6 +23,8 @@ A list of class `summary.cp_unsystematic` with the following elements:
     \item{unsystematic_percent}{Proportion of unsystematic patterns.}
     \item{trend_counts}{Breakdown of trend directions.}
     \item{bounce_counts}{Breakdown of bounce directions.}
+    \item{reversal_summary}{(Optional) Summary of zero-reversal patterns, if present in input.}
+    \item{return_summary}{(Optional) Summary of zero-return patterns, if present in input.}
     \item{group_summary}{(Optional) Summary stats by 'group'.}
     \item{problem_ids}{(Optional) Top IDs with unsystematic patterns.}
   }
