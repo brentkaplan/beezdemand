@@ -49,3 +49,18 @@
 #'     \item{group}{e.g., drug or product}
 #'   }
 "cp"
+
+#' Example nonhuman demand data with drug and dose
+#'
+#' Data from Ko et al. (2002)
+#'
+#' @format A tibble with 135 rows and 6 columns:
+#'   \describe{
+#'     \item{monkey}{unique identifier}
+#'     \item{x}{fixed-ratio requirement}
+#'     \item{y}{consumption}
+#'     \item{y_ll4}{consumption transformed via ll4}
+#'     \item{drug}{drug}
+#'     \item{dose}{dose}
+#'   }
+"ko"

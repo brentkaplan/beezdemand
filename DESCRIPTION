@@ -35,17 +35,24 @@ Imports:
     performance,
     scales,
     tibble,
-    lifecycle
-Suggests:
-    knitr,
+    lifecycle,
     dplyr,
     tidyr,
+    nlme,
+    rlang,
+    utils
+Suggests:
+    knitr,
     tidyverse,
     rmarkdown,
-    purrr
+    purrr,
+    conflicted,
+    devtools,
+    here,
+    readr
 License: GPL-2 | file LICENSE
 URL: https://github.com/brentkaplan/beezdemand
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr
