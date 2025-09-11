@@ -17,3 +17,5 @@
 ^hex-beezdemand.png
 ^Notes.md$
 ^tests$
+^testing\.R$
+^data-raw$

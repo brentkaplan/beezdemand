@@ -31,9 +31,18 @@
 #'   If provided, this overrides `equation_form`. The user is responsible for ensuring
 #'   the `y_var` scale matches the formula and that starting values are appropriate.
 #'   The formula should use parameters named `Q0` and `alpha`.
+#' @param fixed_rhs Optional one-sided formula or character string specifying the
+#'   right-hand side (RHS) for the fixed-effects linear models of `Q0` and `alpha`.
+#'   When provided, this RHS is used for both parameters and overrides
+#'   `factors`, `factor_interaction`, and `continuous_covariates` for building the
+#'   fixed-effects design matrix. Example: `"~ 1 + drug * dose + session"`.
+#' @param continuous_covariates Optional character vector of continuous (numeric)
+#'   predictor names to be included additively in the fixed-effects RHS when
+#'   `fixed_rhs` is `NULL`. These variables are not coerced to factors and are
+#'   stored for downstream functions (e.g., plotting) to condition on.
 #' @param start_value_method Character, method to generate starting values if `start_values` is NULL.
-#'   Options: `"heuristic"` (default, uses data-driven heuristics) or
-#'   `"pooled_nls"` (fits a simpler pooled NLS model first; falls back to heuristic if NLS fails).
+#'   Options: "heuristic" (default, uses data-driven heuristics) or
+#'   "pooled_nls" (fits a simpler pooled NLS model first; falls back to heuristic if NLS fails).
 #' @param random_effects A formula or a list of formulas for the random effects structure.
 #'   Default `nlme::pdDiag(Q0 + alpha ~ 1)`.
 #' @param covariance_structure Character, covariance structure for random effects.
@@ -61,6 +70,8 @@ fit_demand_mixed <- function(
   factor_interaction = FALSE,
   equation_form = c("zben", "simplified"),
   custom_model_formula = NULL,
+  fixed_rhs = NULL,
+  continuous_covariates = NULL,
   start_value_method = c("heuristic", "pooled_nls"),
   # random_effects = NULL,
   random_effects = Q0 + alpha ~ 1, # Changed default to a formula
@@ -94,14 +105,18 @@ fit_demand_mixed <- function(
     factors = factors
   )
 
-  if (!is.null(factors) && length(factors) > 2) {
-    stop("Up to two factors can be specified.")
-  }
-  if (length(factors) < 2 && factor_interaction) {
-    warning(
-      "factor_interaction is TRUE but less than two factors. Interaction ignored."
-    )
-    factor_interaction <- FALSE
+  # Enforce the two-factor limit and interaction rule only when using the legacy
+  # path (no fixed_rhs). If fixed_rhs is provided, user has full control.
+  if (is.null(fixed_rhs)) {
+    if (!is.null(factors) && length(factors) > 2) {
+      stop("Up to two factors can be specified when 'fixed_rhs' is NULL.")
+    }
+    if (length(factors) < 2 && isTRUE(factor_interaction)) {
+      warning(
+        "factor_interaction is TRUE but less than two factors. Interaction ignored."
+      )
+      factor_interaction <- FALSE
+    }
   }
 
   original_factors_info <- list()
@@ -141,16 +156,36 @@ fit_demand_mixed <- function(
     data <- data_modified
   }
 
+  # Determine the effective fixed-effects RHS string
   fixed_effects_formula_str <- "~ 1"
-  if (!is.null(factors)) {
-    fixed_effects_formula_str <- if (length(factors) == 1) {
-      paste("~", factors[1])
+  if (!is.null(fixed_rhs)) {
+    # Use user-provided RHS directly (can be character or formula)
+    if (inherits(fixed_rhs, "formula")) {
+      fixed_effects_formula_str <- deparse(fixed_rhs)
+    } else if (is.character(fixed_rhs)) {
+      fixed_effects_formula_str <- fixed_rhs
     } else {
-      if (factor_interaction) {
-        paste("~", factors[1], "*", factors[2])
-      } else {
-        paste("~", factors[1], "+", factors[2])
+      stop("'fixed_rhs' must be a one-sided formula or character string like '~ 1 + var'.")
+    }
+  } else {
+    # Legacy builder: from factors (+ optional interaction) plus continuous_covariates additively
+    rhs_parts <- c()
+    if (!is.null(factors)) {
+      if (length(factors) == 1) {
+        rhs_parts <- c(rhs_parts, factors[1])
+      } else if (length(factors) >= 2) {
+        if (isTRUE(factor_interaction)) {
+          rhs_parts <- c(rhs_parts, paste0(factors[1], "*", factors[2]))
+        } else {
+          rhs_parts <- c(rhs_parts, factors[1], factors[2])
+        }
       }
+    }
+    if (!is.null(continuous_covariates) && length(continuous_covariates) > 0) {
+      rhs_parts <- c(rhs_parts, continuous_covariates)
+    }
+    if (length(rhs_parts) > 0) {
+      fixed_effects_formula_str <- paste("~", paste(rhs_parts, collapse = " + "))
     }
   }
 
@@ -320,37 +355,27 @@ fit_demand_mixed <- function(
     start_values <- list(fixed = c(start_Q0_vec, start_alpha_vec))
   } else {
     # User provided start_values
-    # Need to determine num_params_per_var if factors are present, for length check
+    # Determine num_params_per_var from the effective RHS for length check
+    current_xlevs <- list()
     if (!is.null(factors)) {
-      current_xlevs <- list()
       for (f in factors) {
         current_xlevs[[f]] <- levels(data[[f]])
       }
-      mm_for_param_count <- stats::model.matrix(
-        stats::as.formula(fixed_effects_formula_str),
-        data = data,
-        xlev = current_xlevs
-      )
-      num_params_per_var <- ncol(mm_for_param_count)
-      if (length(start_values$fixed) != (num_params_per_var * 2)) {
-        stop(paste0(
-          "User-supplied 'start_values' have incorrect length. Expected ",
-          num_params_per_var * 2,
-          " values, got ",
-          length(start_values$fixed),
-          "."
-        ))
-      }
-    } else {
-      # No factors, expect 2 start values (Q0_int, alpha_int)
-      num_params_per_var <- 1 # For intercept only
-      if (length(start_values$fixed) != 2) {
-        stop(
-          "User-supplied 'start_values' have incorrect length. Expected 2 values (Q0_int, alpha_int) when no factors, got ",
-          length(start_values$fixed),
-          "."
-        )
-      }
+    }
+    mm_for_param_count <- stats::model.matrix(
+      stats::as.formula(fixed_effects_formula_str),
+      data = data,
+      xlev = current_xlevs
+    )
+    num_params_per_var <- ncol(mm_for_param_count)
+    if (length(start_values$fixed) != (num_params_per_var * 2)) {
+      stop(paste0(
+        "User-supplied 'start_values' have incorrect length. Expected ",
+        num_params_per_var * 2,
+        " values, got ",
+        length(start_values$fixed),
+        "."
+      ))
     }
   }
 
@@ -427,7 +452,8 @@ fit_demand_mixed <- function(
       x_var = x_var,
       id_var = id_var,
       factors = factors,
-      factor_interaction = factor_interaction
+      factor_interaction = factor_interaction,
+      continuous_covariates = continuous_covariates
     ),
     start_values_used = start_values$fixed,
     original_factors_info = if (length(original_factors_info) > 0) {

@@ -629,6 +629,11 @@ get_demand_comparisons <- function(
 
   results_list <- list()
 
+  # Initialize effective_contrast_by so it exists even if EMMs fail and the loop
+  # short-circuits before setting it. This avoids errors when setting attributes
+  # after the loop.
+  effective_contrast_by <- contrast_by
+
   for (param_name in params_to_compare) {
     if (!param_name %in% c("Q0", "alpha")) {
       warning(
@@ -912,48 +917,153 @@ print.beezdemand_comparison <- function(x, digits = 3, ...) {
   }
   cat(paste(rep("=", 50), collapse = ""), "\n\n")
 
-  for (param_name in names(x)) {
-    if (param_name %in% c("Q0", "alpha")) {
-      cat("--- Parameter:", param_name, "---\n")
-      param_output <- x[[param_name]]
+}
 
-      if (!is.null(param_output$error)) {
-        cat("  Error creating ref_grid:", param_output$error, "\n")
-      }
-      if (!is.null(param_output$emmeans_error)) {
-        cat("  Error calculating EMMs:", param_output$emmeans_error, "\n")
-      } else if (!is.null(param_output$emmeans)) {
-        cat("  Estimated Marginal Means (log10 scale):\n")
-        print(param_output$emmeans, digits = digits)
-        cat("\n")
-      }
-      if (!is.null(param_output$contrasts_log10_error)) {
-        cat(
-          "  Error calculating contrasts (log10 scale):",
-          param_output$contrasts_log10_error,
-          "\n"
+#' Get Trends (Slopes) of Demand Parameters with respect to Continuous Covariates
+#'
+#' Computes the trend (slope) of `Q0` and/or `alpha` with respect to one or more
+#' continuous covariates using `emmeans::emtrends()` on a fitted `beezdemand_nlme`
+#' model. Trends are computed on the parameter estimation scale (log10), consistent
+#' with how parameters are modeled.
+#'
+#' @param fit_obj A `beezdemand_nlme` object from `fit_demand_mixed()`.
+#' @param params Character vector of parameters to analyze: any of "Q0", "alpha".
+#'   Default `c("Q0", "alpha")`.
+#' @param covariates Character vector of continuous covariate names for which
+#'   to compute trends.
+#' @param specs A formula specifying the factors over which to produce trends
+#'   (e.g., `~ drug` for trends by drug; `~ 1` for overall). Default `~ 1`.
+#' @param at Optional named list to condition variables (factors or continuous)
+#'   when computing trends (passed through to `emmeans::ref_grid`).
+#' @param ci_level Confidence level for intervals. Default 0.95.
+#' @param ... Additional args passed to `emmeans::emtrends()`.
+#'
+#' @return A tibble combining trends for each requested parameter and covariate,
+#'   including columns for grouping factors (from `specs`), `parameter`,
+#'   `covariate`, `trend` (slope on log10 scale), and its CI (`lower.CL`, `upper.CL`).
+#'
+#' @examples
+#' \dontrun{
+#' trends <- get_demand_param_trends(
+#'   fit_obj = my_fit,
+#'   params = c("Q0", "alpha"),
+#'   covariates = c("age", "dose_num"),
+#'   specs = ~ drug,
+#'   at = list(age = 21, dose_num = 0.5)
+#' )
+#' }
+#'
+#' @importFrom emmeans ref_grid emtrends
+#' @importFrom tibble as_tibble
+#' @importFrom dplyr bind_rows select any_of rename
+#' @export
+get_demand_param_trends <- function(
+  fit_obj,
+  params = c("Q0", "alpha"),
+  covariates,
+  specs = ~ 1,
+  at = NULL,
+  ci_level = 0.95,
+  ...
+) {
+  if (!inherits(fit_obj, "beezdemand_nlme")) {
+    stop("Input 'fit_obj' must be a 'beezdemand_nlme' object.")
+  }
+  if (is.null(fit_obj$model)) {
+    stop("No model found in 'fit_obj'. Fitting may have failed.")
+  }
+  if (!requireNamespace("emmeans", quietly = TRUE)) {
+    stop("Package 'emmeans' is required.")
+  }
+  if (missing(covariates) || length(covariates) == 0) {
+    stop("Please provide at least one continuous covariate name in 'covariates'.")
+  }
+
+  params <- match.arg(params, choices = c("Q0", "alpha"), several.ok = TRUE)
+  nlme_model <- fit_obj$model
+  model_data <- fit_obj$data
+
+  # Normalize specs to a formula
+  specs_formula <- if (is.character(specs)) stats::as.formula(specs) else specs
+  if (!inherits(specs_formula, "formula")) {
+    stop("'specs' must be a formula or a character string, e.g., '~ drug' or '~ 1'.")
+  }
+  specs_vars <- tryCatch(all.vars(specs_formula[[2]]), error = function(e) character(0))
+
+  out_list <- list()
+
+  for (param_name in params) {
+    for (cv in covariates) {
+      tr_obj <- tryCatch(
+        emmeans::emtrends(
+          nlme_model,
+          specs = specs_formula,
+          var = cv,
+          param = param_name,
+          data = model_data,
+          at = at,
+          infer = c(TRUE, TRUE),
+          level = ci_level,
+          ...
+        ),
+        error = function(e) NULL
+      )
+
+      # Fallback: build ref_grid then emtrends, which can be more reliable for nlme params
+      if (is.null(tr_obj)) {
+        rg <- tryCatch(
+          emmeans::ref_grid(
+            nlme_model,
+            param = param_name,
+            data = model_data,
+            at = at
+          ),
+          error = function(e) NULL
         )
-      } else if (!is.null(param_output$contrasts_log10)) {
-        cat("  Contrasts (differences on log10 scale):\n")
-        print(param_output$contrasts_log10, digits = digits)
-        cat("\n")
+        if (!is.null(rg)) {
+          tr_obj <- tryCatch(
+            emmeans::emtrends(
+              rg,
+              specs = specs_formula,
+              var = cv,
+              infer = c(TRUE, TRUE),
+              level = ci_level,
+              ...
+            ),
+            error = function(e) NULL
+          )
+        }
       }
-      if (!is.null(param_output$contrasts_ratio_error)) {
-        # Check if this attribute was set
-        cat(
-          "  Error calculating contrast ratios:",
-          param_output$contrasts_ratio_error,
-          "\n"
-        )
-      } else if (!is.null(param_output$contrasts_ratio)) {
-        cat("  Contrasts (ratios on natural scale):\n")
-        print(param_output$contrasts_ratio, digits = digits)
-        cat("\n")
+      if (is.null(tr_obj)) next
+
+      tr_sum <- tryCatch(summary(tr_obj, infer = TRUE, level = ci_level), error = function(e) NULL)
+      if (is.null(tr_sum)) next
+
+      df_tr <- tibble::as_tibble(tr_sum)
+      coln <- names(df_tr)
+      trend_col <- if ("trend" %in% coln) {
+        "trend"
+      } else {
+        setdiff(coln, c(specs_vars, "SE", "df", "lower.CL", "upper.CL", "t.ratio", "p.value"))[1]
       }
-      cat("\n")
+      keep_cols <- unique(c(specs_vars, trend_col, "SE", "df", "lower.CL", "upper.CL", "t.ratio", "p.value"))
+      keep_cols <- intersect(keep_cols, coln)
+
+      df_tr <- df_tr |>
+        dplyr::select(dplyr::any_of(keep_cols)) |>
+        dplyr::rename(trend = dplyr::all_of(trend_col))
+
+      df_tr$parameter <- param_name
+      df_tr$covariate <- cv
+      out_list[[paste(param_name, cv, sep = "::")]] <- df_tr
     }
   }
-  invisible(x)
+
+  if (length(out_list) == 0) {
+    warning("No trends could be calculated. Check 'covariates', 'specs', and 'at'.")
+    return(tibble::as_tibble(data.frame()))
+  }
+  dplyr::bind_rows(out_list)
 }
 
 #' Print Method for beezdemand_nlme Objects
@@ -1412,6 +1522,12 @@ predict.beezdemand_nlme <- function(
 #' @param n_points_pred Integer. Number of points for prediction lines. Default `100`.
 #' @param inv_fun Optional function to inverse-transform y-axis and predictions. Default `identity`.
 #' @param facet_formula Optional faceting formula (e.g., `~ dose`).
+#' @param at Optional named list giving values for continuous covariates used in the
+#'   fixed-effects RHS. When building prediction grids for population- or individual-
+#'   level lines, these values will be used. If not provided, the function will
+#'   default to the median of each continuous covariate found in the original
+#'   model data. Factor variables are always handled as grids (population) or
+#'   observed combinations (individual) as before.
 #' @param color_by Optional character string: name of a factor to color lines and/or points by.
 #'   Must be a column in `x$data`.
 #' @param linetype_by Optional character string: name of a factor for linetypes of population prediction lines
@@ -1450,6 +1566,7 @@ plot.beezdemand_nlme <- function(
   n_points_pred = 100,
   inv_fun = identity,
   facet_formula = NULL,
+  at = NULL,
   color_by = NULL,
   linetype_by = NULL,
   shape_by = NULL,
@@ -1475,6 +1592,30 @@ plot.beezdemand_nlme <- function(
   x_var_name <- fit_obj$param_info$x_var
   id_var_name <- fit_obj$param_info$id_var
   model_factors <- fit_obj$param_info$factors
+  model_continuous <- fit_obj$param_info$continuous_covariates
+
+  # Identify additional RHS variables from the stored fixed-effects formula string, if available
+  rhs_vars <- character(0)
+  if (!is.null(fit_obj$formula_details$fixed_effects_formula_str)) {
+    rhs_str <- fit_obj$formula_details$fixed_effects_formula_str
+    # Ensure it's a formula string
+    rhs_formula <- tryCatch(
+      stats::as.formula(rhs_str),
+      error = function(e) NULL
+    )
+    if (!is.null(rhs_formula)) {
+      rhs_vars <- tryCatch(
+        all.vars(rhs_formula),
+        error = function(e) character(0)
+      )
+      # Remove response-like artifacts (since RHS is one-sided, all.vars is fine)
+      rhs_vars <- setdiff(rhs_vars, c("1"))
+    }
+  }
+  # Continuous candidates are RHS vars not declared as factors
+  cont_from_rhs <- setdiff(rhs_vars, model_factors %||% character(0))
+  # Union with explicit metadata
+  cont_covars_all <- unique(c(model_continuous %||% character(0), cont_from_rhs))
 
   y_plot_col_name <- paste0(y_var_name, "_plotscale")
   plot_data_orig[[y_plot_col_name]] <- inv_fun(plot_data_orig[[y_var_name]])
@@ -1567,6 +1708,15 @@ plot.beezdemand_nlme <- function(
           }
         }
       }
+      # Add continuous covariates (single conditioning values)
+      if (length(cont_covars_all) > 0) {
+        for (cv in cont_covars_all) {
+          if (cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])) {
+            val <- if (!is.null(at) && !is.null(at[[cv]])) at[[cv]] else stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+            pred_grid_list[[cv]] <- val
+          }
+        }
+      }
       pred_newdata <- tidyr::expand_grid(!!!pred_grid_list)
     } else {
       # Individual-level grid: only observed id × factor combinations
@@ -1612,6 +1762,15 @@ plot.beezdemand_nlme <- function(
         id_fac_df,
         !!rlang::sym(x_var_name) := x_grid
       )
+      # Add continuous covariates as columns with conditioning values
+      if (length(cont_covars_all) > 0) {
+        for (cv in cont_covars_all) {
+          if (cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])) {
+            val <- if (!is.null(at) && !is.null(at[[cv]])) at[[cv]] else stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+            pred_newdata[[cv]] <- val
+          }
+        }
+      }
     }
 
     # Ensure factors in pred_newdata have correct levels based on fit_obj$data

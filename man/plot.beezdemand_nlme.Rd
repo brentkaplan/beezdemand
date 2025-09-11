@@ -13,6 +13,7 @@
   n_points_pred = 100,
   inv_fun = identity,
   facet_formula = NULL,
+  at = NULL,
   color_by = NULL,
   linetype_by = NULL,
   shape_by = NULL,
@@ -48,6 +49,13 @@ If `c("population", "individual")`, plots both. Default `TRUE` (which means "pop
 \item{inv_fun}{Optional function to inverse-transform y-axis and predictions. Default `identity`.}
 
 \item{facet_formula}{Optional faceting formula (e.g., `~ dose`).}
+
+\item{at}{Optional named list giving values for continuous covariates used in the
+fixed-effects RHS. When building prediction grids for population- or individual-
+level lines, these values will be used. If not provided, the function will
+default to the median of each continuous covariate found in the original
+model data. Factor variables are always handled as grids (population) or
+observed combinations (individual) as before.}
 
 \item{color_by}{Optional character string: name of a factor to color lines and/or points by.
 Must be a column in `x$data`.}

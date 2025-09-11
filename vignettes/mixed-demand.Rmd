@@ -831,6 +831,233 @@ plot_object +
     )
 ```
 
+## Continuous Covariates and `fixed_rhs`
+
+In addition to factor predictors, you can include continuous covariates in the fixed-effects
+linear models for `Q0` and `alpha`.
+
+There are two convenient ways to do this:
+
+1. Add continuous covariates additively using the `continuous_covariates` argument (no formula writing required).
+2. Specify a full right-hand-side using `fixed_rhs` (formula), which gives you complete control,
+   including interactions (e.g., factor-by-continuous).
+
+Below we demonstrate both, using a made-up continuous covariate `age` assigned per subject (`monkey`).
+
+```{r}
+set.seed(123)
+
+# Create a per-monkey continuous covariate: age
+monkey_age <- unique(ko[ , c("monkey")]) |>
+  dplyr::mutate(age = round(runif(dplyr::n(), min = 18, max = 25), 1))
+
+ko_age <- dplyr::left_join(ko, monkey_age, by = "monkey")
+# Ensure a numeric version of dose is available for continuous modeling
+ko_age <- ko_age |>
+  dplyr::mutate(dose_num = suppressWarnings(as.numeric(as.character(dose))))
+
+# Robust median for dose_num (fallbacks if all values are NA)
+median_dose_num <- suppressWarnings(stats::median(ko_age$dose_num, na.rm = TRUE))
+if (is.na(median_dose_num) || !is.finite(median_dose_num)) {
+  finite_vals <- ko_age$dose_num[is.finite(ko_age$dose_num)]
+  if (length(finite_vals) > 0) {
+    median_dose_num <- finite_vals[1]
+  } else {
+    median_dose_num <- 0
+  }
+}
+
+# Sanity check
+head(ko_age[, c("monkey", "age")])
+```
+
+### A) Additive continuous covariate via `continuous_covariates`
+
+Here we keep a single factor (`dose`) and add `age` as an additive continuous covariate. The RHS becomes
+`~ 1 + dose + age` for both parameters.
+
+```{r}
+fit_age_add <- try(
+  fit_demand_mixed(
+    data = ko_age,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    continuous_covariates = c("age"),
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_age_add, "try-error") && !is.null(fit_age_add$model)) {
+  print(fit_age_add)
+
+  # EMMs over dose at age = 21
+  emms_age_add <- get_demand_param_emms(
+    fit_obj = fit_age_add,
+    factors_in_emm = c("dose"),
+    at = list(age = 21),
+    include_ev = TRUE
+  )
+  cat("\nEMMs (age = 21):\n")
+  print(emms_age_add)
+
+  # Pairwise comparisons for dose at age = 21 (log10 scale; ratios reported too)
+  comps_age_add <- get_demand_comparisons(
+    fit_obj = fit_age_add,
+    compare_specs = ~ dose,
+    contrast_type = "pairwise",
+    at = list(age = 21),
+    adjust = "fdr",
+    report_ratios = TRUE
+  )
+  cat("\nPairwise comparisons for dose (age = 21):\n")
+  print(comps_age_add)
+
+  # Plot population lines at age = 21 (natural scale on y)
+  plot(
+    fit_age_add,
+    at = list(age = 21),
+    inv_fun = ll4_inv,
+    color_by = "dose",
+    x_trans = "pseudo_log",
+    y_trans = "pseudo_log",
+    title = "Demand by Dose with Age as Covariate (Population Fit at age = 21)"
+  )
+} else {
+  cat("\nAdditive continuous covariate model failed to converge for the vignette settings.\n")
+}
+```
+
+### B) fixed_rhs with a factor (drug) and a continuous covariate (dose)
+
+Here we specify `drug` as a factor but treat `dose` as a continuous covariate
+(`dose_num`, a numeric version of `dose`),
+and include `age` as an additional continuous covariate. This uses a shared RHS
+for `Q0` and `alpha`:
+`~ 1 + drug + dose_num + age`.
+
+```{r}
+fit_age_rhs <- try(
+  fit_demand_mixed(
+    data = ko_age,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = c("drug"),  # only 'drug' is treated as a factor
+    fixed_rhs = "~ 1 + drug + dose_num + age",
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_age_rhs, "try-error") && !is.null(fit_age_rhs$model)) {
+  print(fit_age_rhs)
+
+  # EMMs over drug (factor) at age = 21 and dose set to its median
+  emms_age_rhs <- get_demand_param_emms(
+    fit_obj = fit_age_rhs,
+    factors_in_emm = c("drug"),
+    at = list(age = 21, dose_num = median_dose_num),
+    include_ev = TRUE
+  )
+  cat("\nEMMs (drug; age = 21, dose_num = median):\n")
+  print(emms_age_rhs)
+
+  # Pairwise comparisons: drug at age = 21 and dose set to its median
+  comps_drug_by_dose_age <- get_demand_comparisons(
+    fit_obj = fit_age_rhs,
+    compare_specs = ~ drug,
+    contrast_type = "pairwise",
+    at = list(age = 21, dose_num = median_dose_num),
+    adjust = "fdr",
+    report_ratios = TRUE
+  )
+  cat("\nPairwise comparisons of drug (age = 21, dose_num = median):\n")
+  print(comps_drug_by_dose_age)
+
+  # Plot population lines at age = 21 and dose_num = median, color by drug and facet by drug
+  plot(
+    fit_age_rhs,
+    at = list(age = 21, dose_num = median_dose_num),
+    inv_fun = ll4_inv,
+    color_by = "drug",
+    facet_formula = ~ drug,
+    x_trans = "pseudo_log",
+    y_trans = "pseudo_log",
+    title = "Demand by Drug with Dose Continuous (Population Fit at age = 21; dose_num = median)"
+  )
+} else {
+  cat("\nfixed_rhs model (drug factor, dose continuous) failed to converge for the vignette settings.\n")
+}
+```
+
+## Trends with `emtrends`
+
+We can examine how the parameters change with continuous covariates using
+`get_demand_param_trends()`, which wraps `emmeans::emtrends()` and returns
+tidy results for Q0 and alpha trends on the log10 scale.
+
+Below we compute trends with respect to `age` and `dose_num`, first overall and
+then by `drug` (if the model includes `drug` as a factor).
+
+```{r}
+# Choose a fitted model for trends (prefer fixed_rhs fit)
+fit_for_trends <- NULL
+if (exists("fit_age_rhs") && !is.null(fit_age_rhs) && !is.null(fit_age_rhs$model)) {
+  fit_for_trends <- fit_age_rhs
+} else if (exists("fit_age_add") && !is.null(fit_age_add) && !is.null(fit_age_add$model)) {
+  fit_for_trends <- fit_age_add
+}
+
+if (!is.null(fit_for_trends)) {
+  # Determine which of the candidate covariates are actually present in the model RHS
+  rhs_vars_tr <- tryCatch(
+    all.vars(as.formula(fit_for_trends$formula_details$fixed_effects_formula_str)),
+    error = function(e) character(0)
+  )
+  covariates_candidate <- c("age", "dose_num")
+  covariates_in_model <- intersect(rhs_vars_tr, covariates_candidate)
+
+  if (length(covariates_in_model) > 0) {
+    cat("\n--- Trends (overall) at age = 21 and dose_num = median ---\n")
+    trends_overall <- get_demand_param_trends(
+      fit_obj = fit_for_trends,
+      params = c("Q0", "alpha"),
+      covariates = covariates_in_model,
+      specs = ~ 1,
+      at = list(age = 21, dose_num = median_dose_num)
+    )
+    print(trends_overall)
+
+    # If 'drug' is a model factor, show trends by drug as well
+    model_factors_tr <- fit_for_trends$param_info$factors
+    if (!is.null(model_factors_tr) && ("drug" %in% model_factors_tr)) {
+      cat("\n--- Trends by drug at age = 21 and dose_num = median ---\n")
+      trends_by_drug <- get_demand_param_trends(
+        fit_obj = fit_for_trends,
+        params = c("Q0", "alpha"),
+        covariates = covariates_in_model,
+        specs = ~ drug,
+        at = list(age = 21, dose_num = median_dose_num)
+      )
+      print(trends_by_drug)
+    } else {
+      cat("\nNote: The selected model does not include 'drug' as a factor; skipping by-drug trends.\n")
+    }
+  } else {
+    cat("\nNo candidate continuous covariates ('age', 'dose_num') are present in the model RHS; skipping trends.\n")
+  }
+} else {
+  cat("\nNo suitable fitted model available for computing trends in the vignette.\n")
+}
+```
+
 # Conclusion
 
 The beezdemand package provides a suite of tools for robustly fitting
