@@ -13,6 +13,8 @@ fit_demand_mixed(
   factor_interaction = FALSE,
   equation_form = c("zben", "simplified"),
   custom_model_formula = NULL,
+  fixed_rhs = NULL,
+  continuous_covariates = NULL,
   start_value_method = c("heuristic", "pooled_nls"),
   random_effects = Q0 + alpha ~ 1,
   covariance_structure = c("pdDiag", "pdSymm"),
@@ -60,9 +62,20 @@ If provided, this overrides `equation_form`. The user is responsible for ensurin
 the `y_var` scale matches the formula and that starting values are appropriate.
 The formula should use parameters named `Q0` and `alpha`.}
 
+\item{fixed_rhs}{Optional one-sided formula or character string specifying the
+right-hand side (RHS) for the fixed-effects linear models of `Q0` and `alpha`.
+When provided, this RHS is used for both parameters and overrides
+`factors`, `factor_interaction`, and `continuous_covariates` for building the
+fixed-effects design matrix. Example: `"~ 1 + drug * dose + session"`.}
+
+\item{continuous_covariates}{Optional character vector of continuous (numeric)
+predictor names to be included additively in the fixed-effects RHS when
+`fixed_rhs` is `NULL`. These variables are not coerced to factors and are
+stored for downstream functions (e.g., plotting) to condition on.}
+
 \item{start_value_method}{Character, method to generate starting values if `start_values` is NULL.
-Options: `"heuristic"` (default, uses data-driven heuristics) or
-`"pooled_nls"` (fits a simpler pooled NLS model first; falls back to heuristic if NLS fails).}
+Options: "heuristic" (default, uses data-driven heuristics) or
+"pooled_nls" (fits a simpler pooled NLS model first; falls back to heuristic if NLS fails).}
 
 \item{random_effects}{A formula or a list of formulas for the random effects structure.
 Default `nlme::pdDiag(Q0 + alpha ~ 1)`.}
