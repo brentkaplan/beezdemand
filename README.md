@@ -9,14 +9,12 @@
 
 Behavioral economic demand is gaining in popularity. The motivation
 behind `beezdemand` was to create an alternative tool to conduct these
-analyses. This package is not necessarily meant to be a replacement for
-other softwares; rather, it is meant to serve as an additional tool in
-the behavioral economist’s toolbox. It is meant for researchers to
-conduct behavioral economic (be) demand the easy (ez) way.
+analyses. It is meant for researchers to conduct behavioral economic
+(be) demand the easy (ez) way.
 
 ## Note About Use
 
-Currently, this version (0.1.2) is stable. I encourage you to use it but
+Currently, this version (0.1.3) is stable. I encourage you to use it but
 be aware that, as with any software release, there might be (unknown)
 bugs present. I’ve tried hard to make this version usable while
 including the core functionality (described more below). However, if you
@@ -28,7 +26,7 @@ me](mailto:bkaplan.ku@gmail.com).
 
 ### CRAN Release (recommended method)
 
-The latest stable version of `beezdemand` (currently v.0.1.2) can be
+The latest stable version of `beezdemand` (currently v.0.1.3) can be
 found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and
 installed using the following command. The first time you install the
 package, you may be asked to select a CRAN mirror. Simply select the
@@ -55,15 +53,6 @@ install.packages("devtools")
 devtools::install_github("brentkaplan/beezdemand", build_vignettes = TRUE)
 
 library(beezdemand)
-```
-
-### GitHub Development Version
-
-To install the development version of the package, specify the
-development branch in `install_github`:
-
-``` r
-devtools::install_github("brentkaplan/beezdemand@develop")
 ```
 
 # Using the Package
@@ -327,22 +316,21 @@ be customized.
 CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
 ```
 
-| id  | TotalPass | DeltaQ | DeltaQPass | Bounce | BouncePass | Reversals | ReversalsPass | NumPosValues |
-|:----|----------:|-------:|:-----------|-------:|:-----------|----------:|:--------------|-------------:|
-| 19  |         3 | 0.2112 | Pass       |      0 | Pass       |         0 | Pass          |           16 |
-| 30  |         3 | 0.1437 | Pass       |      0 | Pass       |         0 | Pass          |           16 |
-| 38  |         3 | 0.7885 | Pass       |      0 | Pass       |         0 | Pass          |           14 |
-| 60  |         3 | 0.9089 | Pass       |      0 | Pass       |         0 | Pass          |           14 |
-| 68  |         3 | 0.9089 | Pass       |      0 | Pass       |         0 | Pass          |           14 |
+| id | TotalPass | DeltaQ | DeltaQPass | Bounce | BouncePass | Reversals | ReversalsPass | NumPosValues |
+|:---|---:|---:|:---|---:|:---|---:|:---|---:|
+| 19 | 3 | 0.2112 | Pass | 0 | Pass | 0 | Pass | 16 |
+| 30 | 3 | 0.1437 | Pass | 0 | Pass | 0 | Pass | 16 |
+| 38 | 3 | 0.7885 | Pass | 0 | Pass | 0 | Pass | 14 |
+| 60 | 3 | 0.9089 | Pass | 0 | Pass | 0 | Pass | 14 |
+| 68 | 3 | 0.9089 | Pass | 0 | Pass | 0 | Pass | 14 |
 
 ## Analyze Demand Data
 
 Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
-the linear model, exponential model, and exponentiated model. Soon, I
-will be including the nonlinear mixed effects model, mixed effects
-versions of the exponential and exponentiated model, and others.
-However, currently these models are not yet supported.
+the linear model, exponential model, and exponentiated model. Nonlinear
+mixed-effects models and cross-price models are now supported as well;
+see the new sections below for quick-start examples.
 
 ### Obtaining Empirical Measures
 
@@ -467,13 +455,13 @@ Empirical Measures
 
 Fitted Measures
 
-|      Q0se |   Alphase |   N |     AbsSS |     SdRes |    Q0Low |    Q0High |  AlphaLow | AlphaHigh |
-|----------:|----------:|----:|----------:|----------:|---------:|----------:|----------:|----------:|
-| 0.4159581 | 0.0002358 |  16 | 0.0193354 | 0.0371632 | 9.583593 | 11.367876 | 0.0041515 | 0.0051628 |
-| 0.2506946 | 0.0017321 |  16 | 0.0978350 | 0.0835955 | 2.394720 |  3.470093 | 0.0097408 | 0.0171706 |
-| 0.2357693 | 0.0008878 |  14 | 0.0259083 | 0.0464653 | 4.009458 |  5.036853 | 0.0068592 | 0.0107277 |
-| 0.6219724 | 0.0005118 |  14 | 0.0236652 | 0.0444083 | 9.136972 | 11.847295 | 0.0091080 | 0.0113382 |
-| 0.3841063 | 0.0002713 |  14 | 0.0109439 | 0.0301992 | 9.814865 | 11.488656 | 0.0055350 | 0.0067173 |
+| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.4159581 | 0.0002358 | 16 | 0.0193354 | 0.0371632 | 9.583593 | 11.367876 | 0.0041515 | 0.0051628 |
+| 0.2506946 | 0.0017321 | 16 | 0.0978350 | 0.0835955 | 2.394720 | 3.470093 | 0.0097408 | 0.0171706 |
+| 0.2357693 | 0.0008878 | 14 | 0.0259083 | 0.0464653 | 4.009458 | 5.036853 | 0.0068592 | 0.0107277 |
+| 0.6219724 | 0.0005118 | 14 | 0.0236652 | 0.0444083 | 9.136972 | 11.847295 | 0.0091080 | 0.0113382 |
+| 0.3841063 | 0.0002713 | 14 | 0.0109439 | 0.0301992 | 9.814865 | 11.488656 | 0.0055350 | 0.0067173 |
 
 Uncertainty and Model Information
 
@@ -515,13 +503,13 @@ Empirical Measures
 
 Fitted Measures
 
-|      Q0se |   Alphase |   N |    AbsSS |     SdRes |    Q0Low |    Q0High |  AlphaLow | AlphaHigh |
-|----------:|----------:|----:|---------:|----------:|---------:|----------:|----------:|----------:|
-| 0.2438729 | 0.0001663 |  16 | 2.908243 | 0.4557758 | 9.608712 | 10.654822 | 0.0025752 | 0.0032886 |
-| 0.1721284 | 0.0013100 |  16 | 1.490454 | 0.3262837 | 2.620434 |  3.358792 | 0.0065620 | 0.0121812 |
-| 0.3078231 | 0.0010631 |  16 | 4.429941 | 0.5625161 | 3.947336 |  5.267766 | 0.0047761 | 0.0093362 |
-| 0.4069382 | 0.0004577 |  16 | 5.010982 | 0.5982703 | 9.498292 | 11.243884 | 0.0058310 | 0.0077945 |
-| 0.4677467 | 0.0003736 |  16 | 8.350830 | 0.7723263 | 9.700410 | 11.706844 | 0.0036349 | 0.0052373 |
+| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.2438729 | 0.0001663 | 16 | 2.908243 | 0.4557758 | 9.608712 | 10.654822 | 0.0025752 | 0.0032886 |
+| 0.1721284 | 0.0013100 | 16 | 1.490454 | 0.3262837 | 2.620434 | 3.358792 | 0.0065620 | 0.0121812 |
+| 0.3078231 | 0.0010631 | 16 | 4.429941 | 0.5625161 | 3.947336 | 5.267766 | 0.0047761 | 0.0093362 |
+| 0.4069382 | 0.0004577 | 16 | 5.010982 | 0.5982703 | 9.498292 | 11.243884 | 0.0058310 | 0.0077945 |
+| 0.4677467 | 0.0003736 | 16 | 8.350830 | 0.7723263 | 9.700410 | 11.706844 | 0.0036349 | 0.0052373 |
 
 Uncertainty and Model Information
 
@@ -630,13 +618,13 @@ Empirical Measures
 
 Fitted Measures
 
-|      Q0se |   Alphase |   N |     AbsSS |     SdRes |    Q0Low |    Q0High |  AlphaLow | AlphaHigh |
-|----------:|----------:|----:|----------:|----------:|---------:|----------:|----------:|----------:|
-| 0.2429150 | 0.0000308 |  16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 | 0.0010955 | 0.0012277 |
-| 0.2192797 | 0.0003739 |  16 | 0.1110490 | 0.0890622 | 2.296005 |  3.236621 | 0.0025312 | 0.0041350 |
-| 0.2074990 | 0.0001963 |  14 | 0.0231862 | 0.0439566 | 4.033709 |  4.937912 | 0.0020302 | 0.0028858 |
-| 0.4371061 | 0.0000778 |  14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
-| 0.3179671 | 0.0000523 |  14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 | 0.0014740 | 0.0017018 |
+| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.2429150 | 0.0000308 | 16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 | 0.0010955 | 0.0012277 |
+| 0.2192797 | 0.0003739 | 16 | 0.1110490 | 0.0890622 | 2.296005 | 3.236621 | 0.0025312 | 0.0041350 |
+| 0.2074990 | 0.0001963 | 14 | 0.0231862 | 0.0439566 | 4.033709 | 4.937912 | 0.0020302 | 0.0028858 |
+| 0.4371061 | 0.0000778 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
+| 0.3179671 | 0.0000523 | 14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 | 0.0014740 | 0.0017018 |
 
 Uncertainty and Model Information
 
@@ -815,8 +803,6 @@ directory.
 out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
 ```
 
-    Warning: Zeros found in data not compatible with equation! Dropping zeros!
-
     Beginning search for best-starting k
 
     Best k fround at 0.93813356574003 = err: 0.744881846162718
@@ -826,66 +812,6 @@ out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
 ``` r
 PlotCurves(dat = out, outdir = plotdir, device = "png", ask = F)
 ```
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
 
     10 plots saved in man/figures/
 
@@ -905,12 +831,6 @@ mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = T)
 PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = F)
 ```
 
-    Warning in annotation_logticks2(sides = "b", data = data.frame(X = NA, mask =
-    1)): Ignoring unknown parameters: `size`
-
-    Warning in annotation_logticks2(sides = "l", data = data.frame(X = NA, mask =
-    0)): Ignoring unknown parameters: `size`
-
     1 plots saved in man/figures/
 
 ``` r
@@ -923,6 +843,103 @@ list.files("../plots/")
     [10] "Participant-68.png"   "Participant-mean.png"
 
 ![](man/figures/Participant-mean.png)
+
+## Cross-Price Demand Models
+
+In addition to classic purchase-task analyses, `beezdemand` now includes
+functions for cross-price demand modeling. These tools help you check
+for unsystematic data, fit nonlinear or linear/mixed-effects cross-price
+models, and visualize the results.
+
+Key functions:
+
+- `check_unsystematic_cp()` — identify unsystematic cross-price
+  patterns.
+- `fit_cp_nls()` — fit nonlinear cross-price models (e.g., exponentiated
+  form).
+- `fit_cp_linear()` — fit linear and mixed-effects cross-price models.
+- S3 methods: `summary()`, `plot()`, `glance()`, `tidy()`.
+
+Minimal example (using the included ETM dataset):
+
+``` r
+library(dplyr)
+data(etm, package = "beezdemand")
+
+# Focus on one product/id and check for unsystematic responding
+ex <- etm |> filter(group %in% "E-Cigarettes", id %in% 1)
+check_unsystematic_cp(ex)
+
+# Nonlinear cross-price model (exponentiated form)
+fit_nls <- fit_cp_nls(ex, equation = "exponentiated", return_all = TRUE)
+summary(fit_nls)
+plot(fit_nls, x_trans = "log10")
+```
+
+Linear mixed-effects cross-price model across all participants:
+
+``` r
+fit_mixed <- fit_cp_linear(
+  etm,
+  type = "mixed",
+  log10x = TRUE,
+  group_effects = "interaction",
+  return_all = TRUE
+)
+summary(fit_mixed)
+plot(fit_mixed, x_trans = "log10", pred_type = "all")
+```
+
+See the vignette “How to Use Cross-Price Demand Model Functions” for a
+full walkthrough of data structure, modeling options, visualization, and
+post-hoc comparisons.
+
+## Mixed-Effects Demand Models
+
+`beezdemand` also supports nonlinear mixed-effects demand models to
+estimate subject-level parameters (e.g., Q0 and alpha) while modeling
+fixed effects of conditions (e.g., dose, drug). The `zben` equation form
+pairs well with the included LL4 transformation to handle zeros and wide
+dynamic ranges.
+
+Key functions:
+
+- `fit_demand_mixed()` — fit mixed-effects demand models via `nlme`.
+- `ll4()` / `ll4_inv()` — transform and inverse-transform consumption.
+- Plotting and predictions via `plot()`/`predict()` on `beezdemand_nlme`
+  objects.
+- Post-hoc summaries with `get_demand_param_emms()` and comparisons
+  using `get_demand_comparisons()`.
+
+Minimal example (using the included nonhuman dataset `ko`):
+
+``` r
+library(dplyr)
+data(ko, package = "beezdemand")
+
+# Fit zben form on LL4-transformed consumption with two factors
+fit_nlme <- fit_demand_mixed(
+  data = ko,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey",
+  factors = c("drug", "dose"),
+  equation_form = "zben"
+)
+print(fit_nlme)
+
+# Plot on the natural (back-transformed) scale
+plot(
+  fit_nlme,
+  inv_fun = ll4_inv,
+  x_trans = "pseudo_log",
+  y_trans = "pseudo_log"
+)
+```
+
+For more details, see the “Mixed-Effects Demand Modeling with
+`beezdemand`” vignette, which covers starting values, fixed/random
+effects, and post-hoc analyses of parameter estimates.
 
 ## Learn More About Functions
 
