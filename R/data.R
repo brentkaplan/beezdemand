@@ -64,3 +64,33 @@
 #'     \item{dose}{dose}
 #'   }
 "ko"
+
+#' Low-nicotine cigarette purchase task
+#'
+#' Long-form purchase task data across nicotine conditions.
+#'
+#' @format A data frame with 5 columns: id, condition, x, y, commodity.
+#' @keywords datasets
+#' @examples
+#' # data(lowNicClean)
+"lowNicClean"
+
+#' Cannabis/cigarette cross-price responses
+#'
+#' Cross-price style data with cannabis and cigarette context.
+#'
+#' @format A data frame with columns including: id, x, y, commodity, and auxiliary fields (Q1035, CigPrice, CanPrice, variable, value).
+#' @keywords datasets
+#' @examples
+#' # data(cannabisCigarettes)
+"cannabisCigarettes"
+
+#' Experimental Tobacco Marketplace (ETM) data
+#'
+#' ETM data across price points with product quantities.
+#'
+#' @format A data frame with 6 columns: id, x, AdjCig, FixCig, ECig, flavor.
+#' @keywords datasets
+#' @examples
+#' # data(ongoingETM)
+"ongoingETM"
