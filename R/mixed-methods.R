@@ -161,6 +161,7 @@ get_demand_param_emms <- function(
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
+
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     stop("Package 'emmeans' is required.")
   }
@@ -168,6 +169,11 @@ get_demand_param_emms <- function(
   nlme_model <- fit_obj$model
   model_data <- fit_obj$data
   all_model_factors <- fit_obj$param_info$factors
+
+  # Check if collapse_levels was used - Q0 and alpha may have different factors
+  collapse_was_used <- !is.null(fit_obj$collapse_info)
+  factors_Q0 <- fit_obj$param_info$factors_Q0 %||% all_model_factors
+  factors_alpha <- fit_obj$param_info$factors_alpha %||% all_model_factors
 
   if (is.null(factors_in_emm)) {
     factors_in_emm <- all_model_factors
@@ -186,19 +192,56 @@ get_demand_param_emms <- function(
     }
   }
 
-  specs_formula_str <- if (length(factors_in_emm) > 0) {
-    paste("~", paste(factors_in_emm, collapse = " * "))
-  } else {
-    "~ 1"
+  # Build mapping from original factor names to collapsed names
+  # This handles the case where collapse_levels created factor1_Q0 and factor1_alpha
+  .get_actual_factors <- function(original_factors, param_factors, param_suffix) {
+    if (!collapse_was_used || is.null(param_factors)) {
+      return(original_factors)
+    }
+    # For each original factor, find corresponding collapsed factor if it exists
+    # and verify it has more than 1 level (otherwise it was removed from formula)
+    actual_factors <- character(0)
+    for (orig_fac in original_factors) {
+      collapsed_name <- paste0(orig_fac, "_", param_suffix)
+      if (collapsed_name %in% param_factors) {
+        # Check if the collapsed factor has > 1 level in the data
+        if (collapsed_name %in% names(model_data) &&
+            is.factor(model_data[[collapsed_name]]) &&
+            nlevels(model_data[[collapsed_name]]) >= 2) {
+          actual_factors <- c(actual_factors, collapsed_name)
+        }
+        # If only 1 level, skip this factor (it's intercept-only)
+      } else if (orig_fac %in% param_factors) {
+        actual_factors <- c(actual_factors, orig_fac)
+      }
+    }
+    return(actual_factors)
   }
-  specs_formula <- stats::as.formula(specs_formula_str)
+
+  # Get actual factor names for each parameter
+  actual_factors_Q0 <- .get_actual_factors(factors_in_emm, factors_Q0, "Q0")
+  actual_factors_alpha <- .get_actual_factors(factors_in_emm, factors_alpha, "alpha")
+
+  # Build specs formulas for each parameter
+  .build_specs_formula <- function(factors) {
+    if (length(factors) > 0) {
+      stats::as.formula(paste("~", paste(factors, collapse = " * ")))
+    } else {
+      stats::as.formula("~ 1")
+    }
+  }
+
+  specs_formula_Q0 <- .build_specs_formula(actual_factors_Q0)
+  specs_formula_alpha <- .build_specs_formula(actual_factors_alpha)
 
   # --- Helper to get EMMs for a single parameter (Q0 or alpha) ---
   .get_single_param_emm_table <- function(
     param_name_model,
-    param_name_natural_prefix
+    param_name_natural_prefix,
+    specs_formula,
+    actual_factors,
+    original_factors
   ) {
-    # (This helper remains exactly as in the previous working version that correctly back-transformed Q0 and alpha)
     emm_table_combined <- NULL
     rg <- tryCatch(
       emmeans::ref_grid(
@@ -234,9 +277,20 @@ get_demand_param_emms <- function(
           level = ci_level
         )
         summary_names_log <- names(df_log_scale_summary)
+
+        # Handle intercept-only case (no factors)
+        # emmeans creates a column "1" with value "overall" for ~ 1 specs
+        if (length(actual_factors) == 0) {
+          # For intercept-only, remove the "1" column if it exists
+          if ("1" %in% summary_names_log) {
+            df_log_scale_summary <- df_log_scale_summary[, names(df_log_scale_summary) != "1", drop = FALSE]
+            summary_names_log <- names(df_log_scale_summary)
+          }
+        }
+
         factor_cols_in_summary_log <- intersect(
           summary_names_log,
-          factors_in_emm
+          actual_factors
         )
         potential_estimate_cols_log <- setdiff(
           summary_names_log,
@@ -271,13 +325,26 @@ get_demand_param_emms <- function(
           estimate_col_name_log <- potential_estimate_cols_log[1]
         }
 
-        emm_table_combined <- tibble::as_tibble(df_log_scale_summary) |>
-          dplyr::select(
-            dplyr::all_of(factors_in_emm),
-            param_log10_estimate = dplyr::all_of(estimate_col_name_log),
-            param_log10_LCL = .data$lower.CL,
-            param_log10_UCL = .data$upper.CL
-          ) |>
+        # Build select columns - handle intercept-only case
+        if (length(actual_factors) > 0) {
+          emm_table_combined <- tibble::as_tibble(df_log_scale_summary) |>
+            dplyr::select(
+              dplyr::all_of(actual_factors),
+              param_log10_estimate = dplyr::all_of(estimate_col_name_log),
+              param_log10_LCL = .data$lower.CL,
+              param_log10_UCL = .data$upper.CL
+            )
+        } else {
+          # Intercept-only: no factor columns to select
+          emm_table_combined <- tibble::as_tibble(df_log_scale_summary) |>
+            dplyr::select(
+              param_log10_estimate = dplyr::all_of(estimate_col_name_log),
+              param_log10_LCL = .data$lower.CL,
+              param_log10_UCL = .data$upper.CL
+            )
+        }
+
+        emm_table_combined <- emm_table_combined |>
           dplyr::mutate(
             param_natural_estimate = 10^.data$param_log10_estimate,
             param_natural_LCL = 10^.data$param_log10_LCL,
@@ -331,6 +398,26 @@ get_demand_param_emms <- function(
               fixed = TRUE
             )
           )
+
+        # Rename collapsed factor columns back to original names
+        # We need to map actual_factors back to original_factors
+        # Only do this if we have actual factors in the output
+        if (length(actual_factors) > 0) {
+          # Build a mapping from collapsed name to original name
+          for (actual_fac in actual_factors) {
+            if (actual_fac %in% names(emm_table_combined)) {
+              # Find the corresponding original factor name
+              # Collapsed names are like "factor1_Q0" or "factor1_alpha"
+              orig_name <- sub("_(Q0|alpha)$", "", actual_fac)
+              if (orig_name %in% original_factors && orig_name != actual_fac) {
+                emm_table_combined <- dplyr::rename(
+                  emm_table_combined,
+                  !!orig_name := !!actual_fac
+                )
+              }
+            }
+          }
+        }
       }
     }
     if (is.null(emm_table_combined)) {
@@ -345,20 +432,53 @@ get_demand_param_emms <- function(
   # --- Get EMMs for Q0 and alpha ---
   emm_q0 <- .get_single_param_emm_table(
     param_name_model = "Q0",
-    param_name_natural_prefix = "Q0"
+    param_name_natural_prefix = "Q0",
+    specs_formula = specs_formula_Q0,
+    actual_factors = actual_factors_Q0,
+    original_factors = factors_in_emm
   )
   emm_alpha <- .get_single_param_emm_table(
     param_name_model = "alpha",
-    param_name_natural_prefix = "alpha"
+    param_name_natural_prefix = "alpha",
+    specs_formula = specs_formula_alpha,
+    actual_factors = actual_factors_alpha,
+    original_factors = factors_in_emm
   )
 
   # --- Combine parameter estimates ---
+  # Handle asymmetric factor structures (e.g., Q0 has factors, alpha is intercept-only)
   if (!is.null(emm_q0) && !is.null(emm_alpha)) {
-    combined_estimates <- dplyr::full_join(
-      emm_q0,
-      emm_alpha,
-      by = factors_in_emm
-    )
+    # Find common factor columns in both results
+    q0_factor_cols <- intersect(names(emm_q0), factors_in_emm)
+    alpha_factor_cols <- intersect(names(emm_alpha), factors_in_emm)
+    common_factors <- intersect(q0_factor_cols, alpha_factor_cols)
+
+    if (length(common_factors) > 0) {
+      # Both have common factors - standard join
+      combined_estimates <- dplyr::full_join(
+        emm_q0,
+        emm_alpha,
+        by = common_factors
+      )
+    } else if (length(q0_factor_cols) > 0 && length(alpha_factor_cols) == 0) {
+      # Q0 has factors, alpha is intercept-only
+      # Cross-join alpha values to each Q0 row
+      alpha_cols <- setdiff(names(emm_alpha), factors_in_emm)
+      for (col in alpha_cols) {
+        emm_q0[[col]] <- emm_alpha[[col]][1]
+      }
+      combined_estimates <- emm_q0
+    } else if (length(q0_factor_cols) == 0 && length(alpha_factor_cols) > 0) {
+      # alpha has factors, Q0 is intercept-only
+      q0_cols <- setdiff(names(emm_q0), factors_in_emm)
+      for (col in q0_cols) {
+        emm_alpha[[col]] <- emm_q0[[col]][1]
+      }
+      combined_estimates <- emm_alpha
+    } else {
+      # Both are intercept-only
+      combined_estimates <- dplyr::bind_cols(emm_q0, emm_alpha)
+    }
   } else if (!is.null(emm_q0)) {
     combined_estimates <- emm_q0
   } else if (!is.null(emm_alpha)) {
@@ -494,27 +614,69 @@ get_observed_demand_param_emms <- function(
     ...
   )
 
-  if (length(factors_in_emm) > 0) {
-    missing_factors_in_data <- setdiff(factors_in_emm, names(fit_obj$data))
-    if (length(missing_factors_in_data) > 0) {
-      stop(
-        "Specified 'factors_in_emm' not found in fit_obj$data: ",
-        paste(missing_factors_in_data, collapse = ", ")
-      )
+  if (length(factors_in_emm) > 0 && nrow(full_emms) > 0) {
+    # Check if collapse_levels was used - if so, EMMs have collapsed levels
+    # but the original factor column has un-collapsed levels
+    collapse_was_used <- !is.null(fit_obj$collapse_info)
+
+    if (collapse_was_used) {
+      # When collapse_levels is used, the EMMs have collapsed levels (e.g., "high", "low")
+      # but the original data column has original levels (e.g., "level1", "level2", "level3")
+      # We need to get observed combinations from the collapsed factor columns
+
+      # For Q0-based factors, look for factor1_Q0 columns in the data
+      collapse_factor_cols <- character(0)
+      for (orig_fac in factors_in_emm) {
+        q0_col <- paste0(orig_fac, "_Q0")
+        alpha_col <- paste0(orig_fac, "_alpha")
+        if (q0_col %in% names(fit_obj$data)) {
+          collapse_factor_cols <- c(collapse_factor_cols, q0_col)
+        } else if (alpha_col %in% names(fit_obj$data)) {
+          collapse_factor_cols <- c(collapse_factor_cols, alpha_col)
+        } else if (orig_fac %in% names(fit_obj$data)) {
+          collapse_factor_cols <- c(collapse_factor_cols, orig_fac)
+        }
+      }
+
+      if (length(collapse_factor_cols) > 0) {
+        # Get observed combinations from collapsed columns
+        observed_combinations <- fit_obj$data |>
+          dplyr::distinct(!!!rlang::syms(collapse_factor_cols))
+
+        # Rename collapsed columns back to original names for the join
+        for (i in seq_along(collapse_factor_cols)) {
+          col_name <- collapse_factor_cols[i]
+          orig_name <- sub("_(Q0|alpha)$", "", col_name)
+          if (col_name != orig_name) {
+            observed_combinations <- dplyr::rename(
+              observed_combinations,
+              !!orig_name := !!col_name
+            )
+          }
+        }
+
+        filtered_emms <- full_emms |>
+          dplyr::semi_join(observed_combinations, by = factors_in_emm)
+      } else {
+        # Fallback: return all EMMs
+        filtered_emms <- full_emms
+      }
+    } else {
+      # No collapse - use original factor columns
+      missing_factors_in_data <- setdiff(factors_in_emm, names(fit_obj$data))
+      if (length(missing_factors_in_data) > 0) {
+        stop(
+          "Specified 'factors_in_emm' not found in fit_obj$data: ",
+          paste(missing_factors_in_data, collapse = ", ")
+        )
+      }
+
+      observed_combinations <- fit_obj$data |>
+        dplyr::distinct(!!!rlang::syms(factors_in_emm))
+
+      filtered_emms <- full_emms |>
+        dplyr::semi_join(observed_combinations, by = factors_in_emm)
     }
-
-    # Correct way to use distinct with a character vector of column names:
-    # Option 1: Using select first
-    # observed_combinations <- fit_obj$data |>
-    #   dplyr::select(dplyr::all_of(factors_in_emm)) |>
-    #   dplyr::distinct()
-
-    # Option 2: Using !!!syms (more direct for distinct)
-    observed_combinations <- fit_obj$data |>
-      dplyr::distinct(!!!rlang::syms(factors_in_emm))
-
-    filtered_emms <- full_emms |>
-      dplyr::semi_join(observed_combinations, by = factors_in_emm)
 
     if (nrow(filtered_emms) < nrow(full_emms)) {
       message(
@@ -599,32 +761,59 @@ get_demand_comparisons <- function(
   all_model_factors <- fit_obj$param_info$factors
   model_had_interaction <- fit_obj$param_info$factor_interaction # From fit_demand_mixed
 
+  # Check if collapse_levels was used - Q0 and alpha may have different factors
+  collapse_was_used <- !is.null(fit_obj$collapse_info)
+  factors_Q0 <- fit_obj$param_info$factors_Q0 %||% all_model_factors
+  factors_alpha <- fit_obj$param_info$factors_alpha %||% all_model_factors
+
+  # Helper to get actual factors for a parameter
+  .get_actual_factors_for_param <- function(original_factors, param_factors, param_suffix) {
+    if (!collapse_was_used || is.null(param_factors)) {
+      return(original_factors)
+    }
+    actual_factors <- character(0)
+    for (orig_fac in original_factors) {
+      collapsed_name <- paste0(orig_fac, "_", param_suffix)
+      if (collapsed_name %in% param_factors) {
+        if (collapsed_name %in% names(model_data) &&
+            is.factor(model_data[[collapsed_name]]) &&
+            nlevels(model_data[[collapsed_name]]) >= 2) {
+          actual_factors <- c(actual_factors, collapsed_name)
+        }
+      } else if (orig_fac %in% param_factors) {
+        actual_factors <- c(actual_factors, orig_fac)
+      }
+    }
+    return(actual_factors)
+  }
+
+  # Determine the base factors from compare_specs or default
   if (is.null(compare_specs)) {
     if (is.null(all_model_factors) || length(all_model_factors) == 0) {
       message(
         "No factors in model or 'compare_specs'. Getting overall intercept EMMs."
       )
-      emm_specs_formula <- stats::as.formula("~ 1")
+      base_factors <- character(0)
     } else {
-      emm_specs_formula_str <- paste(
-        "~",
-        paste(all_model_factors, collapse = " * ")
-      )
-      emm_specs_formula <- stats::as.formula(emm_specs_formula_str)
+      base_factors <- all_model_factors
       message(
-        "Using default 'compare_specs': ",
-        emm_specs_formula_str,
+        "Using default 'compare_specs': ~ ",
+        paste(all_model_factors, collapse = " * "),
         " for EMMs."
       )
     }
-  } else if (is.character(compare_specs)) {
-    emm_specs_formula <- stats::as.formula(compare_specs)
-  } else if (inherits(compare_specs, "formula")) {
-    emm_specs_formula <- compare_specs
+    user_provided_specs <- FALSE
   } else {
-    stop(
-      "'compare_specs' must be a formula or a character string (e.g., '~ factor1 * factor2')."
-    )
+    if (is.character(compare_specs)) {
+      compare_specs <- stats::as.formula(compare_specs)
+    }
+    if (!inherits(compare_specs, "formula")) {
+      stop(
+        "'compare_specs' must be a formula or a character string (e.g., '~ factor1 * factor2')."
+      )
+    }
+    base_factors <- all.vars(compare_specs)
+    user_provided_specs <- TRUE
   }
 
   results_list <- list()
@@ -650,6 +839,24 @@ get_demand_comparisons <- function(
       param_name,
       " ---"
     ))
+
+    # Get actual factors for this parameter (handles collapse_levels)
+    param_suffix <- param_name  # "Q0" or "alpha"
+    param_factors <- if (param_name == "Q0") factors_Q0 else factors_alpha
+    actual_factors <- .get_actual_factors_for_param(base_factors, param_factors, param_suffix)
+
+    # Build specs formula for this parameter
+    if (length(actual_factors) > 0) {
+      emm_specs_formula <- stats::as.formula(paste("~", paste(actual_factors, collapse = " * ")))
+    } else {
+      emm_specs_formula <- stats::as.formula("~ 1")
+      if (length(base_factors) > 0) {
+        message(
+          "  Note: Parameter ", param_name,
+          " has no factors (intercept-only) due to collapse_levels."
+        )
+      }
+    }
 
     rg <- tryCatch(
       emmeans::ref_grid(
@@ -698,7 +905,7 @@ get_demand_comparisons <- function(
       # This is a simplified check. A more robust check would parse fit_obj$formula_details$fixed_effects_formula_str
       # to see if an interaction term actually exists between the terms in emm_specs_formula and contrast_by.
       # For now, if the global factor_interaction flag from the fit was FALSE, and we have multiple factors and a 'by', warn.
-      terms_in_emmspecs <- all.vars(emm_specs_formula[[2]])
+      terms_in_emmspecs <- actual_factors
       if (
         !is.null(contrast_by) &&
           length(all_model_factors) > 1 &&
@@ -736,6 +943,17 @@ get_demand_comparisons <- function(
           ") for simple contrasts. Ignoring `contrast_by` for this parameter."
         )
         effective_contrast_by <- NULL
+      }
+
+      # Skip contrasts if intercept-only (no factors to contrast)
+      if (length(actual_factors) == 0) {
+        message("  Skipping contrasts for ", param_name, " (intercept-only, no factors to compare).")
+        current_param_results$contrasts_log10 <- tibble::tibble()
+        if (report_ratios) {
+          current_param_results$contrasts_ratio <- tibble::tibble()
+        }
+        results_list[[param_name]] <- current_param_results
+        next
       }
 
       contrasts_log10_obj <- tryCatch(
@@ -1108,11 +1326,22 @@ print.beezdemand_nlme <- function(
   )
   cat("NLME Model Formula:\n")
   print(x$formula_details$nlme_model_formula_obj)
-  cat(
-    "Fixed Effects Structure for Q0 & alpha: ",
-    x$formula_details$fixed_effects_formula_str,
-    "\n"
-  )
+
+  # Print fixed effects formulas - may differ for Q0 and alpha with collapse_levels
+
+  q0_formula <- x$formula_details$fixed_effects_formula_str_Q0
+  alpha_formula <- x$formula_details$fixed_effects_formula_str_alpha
+
+  if (!is.null(q0_formula) && !is.null(alpha_formula) && q0_formula == alpha_formula) {
+    cat("Fixed Effects Structure (Q0 & alpha): ", q0_formula, "\n")
+  } else {
+    if (!is.null(q0_formula)) {
+      cat("Fixed Effects Structure (Q0):    ", q0_formula, "\n")
+    }
+    if (!is.null(alpha_formula)) {
+      cat("Fixed Effects Structure (alpha): ", alpha_formula, "\n")
+    }
+  }
   if (!is.null(x$param_info$factors)) {
     cat("Factors: ", paste(x$param_info$factors, collapse = ", "), "\n")
     cat("Interaction Term Included: ", x$param_info$factor_interaction, "\n")
@@ -1594,24 +1823,36 @@ plot.beezdemand_nlme <- function(
   model_factors <- fit_obj$param_info$factors
   model_continuous <- fit_obj$param_info$continuous_covariates
 
-  # Identify additional RHS variables from the stored fixed-effects formula string, if available
+
+  # Identify additional RHS variables from the stored fixed-effects formula strings
+  # Check both Q0 and alpha formulas and union their variables (they may differ with collapse_levels)
   rhs_vars <- character(0)
-  if (!is.null(fit_obj$formula_details$fixed_effects_formula_str)) {
-    rhs_str <- fit_obj$formula_details$fixed_effects_formula_str
-    # Ensure it's a formula string
+
+  .extract_rhs_vars <- function(formula_str) {
+    if (is.null(formula_str)) return(character(0))
     rhs_formula <- tryCatch(
-      stats::as.formula(rhs_str),
+      stats::as.formula(formula_str),
       error = function(e) NULL
     )
-    if (!is.null(rhs_formula)) {
-      rhs_vars <- tryCatch(
-        all.vars(rhs_formula),
-        error = function(e) character(0)
-      )
-      # Remove response-like artifacts (since RHS is one-sided, all.vars is fine)
-      rhs_vars <- setdiff(rhs_vars, c("1"))
-    }
+    if (is.null(rhs_formula)) return(character(0))
+    vars <- tryCatch(
+      all.vars(rhs_formula),
+      error = function(e) character(0)
+    )
+    setdiff(vars, c("1"))
   }
+
+  # Get vars from Q0 formula
+  rhs_vars <- union(
+    rhs_vars,
+    .extract_rhs_vars(fit_obj$formula_details$fixed_effects_formula_str_Q0)
+  )
+
+  # Get vars from alpha formula
+  rhs_vars <- union(
+    rhs_vars,
+    .extract_rhs_vars(fit_obj$formula_details$fixed_effects_formula_str_alpha)
+  )
   # Continuous candidates are RHS vars not declared as factors
   cont_from_rhs <- setdiff(rhs_vars, model_factors %||% character(0))
   # Union with explicit metadata

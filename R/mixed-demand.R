@@ -49,7 +49,17 @@
 #'   Options: `"pdDiag"` (default) or `"pdSymm"`
 #' @param start_values Optional named list of starting values for fixed effects.
 #'   If `NULL`, defaults are estimated based on `equation_form` and `y_var` scale.
-#' @param collapse_levels Optional named list to collapse factor levels.
+#' @param collapse_levels Optional named list specifying factor level collapsing
+#'   separately for Q0 and alpha parameters. Structure:
+#'   ```
+#'   list(
+#'     Q0 = list(factor_name = list(new_level = c(old_levels), ...)),
+#'     alpha = list(factor_name = list(new_level = c(old_levels), ...))
+#'   )
+#'   ```
+#'   Either `Q0` or `alpha` (or both) can be omitted to use original factor levels
+#'   for that parameter. This allows different collapsing schemes for each parameter.
+#'   Ignored if `fixed_rhs` is provided.
 #' @param nlme_control Control parameters for `nlme::nlme()`.
 #' @param method Fitting method for `nlme::nlme()` ("ML" or "REML"). Default "ML".
 #' @param ... Additional arguments passed to `nlme::nlme()`.
@@ -119,79 +129,78 @@ fit_demand_mixed <- function(
     }
   }
 
-  original_factors_info <- list()
-  if (!is.null(collapse_levels)) {
-    # (Collapsing logic - assume this is correct from previous versions)
-    if (!is.list(collapse_levels) || is.null(names(collapse_levels))) {
-      stop("`collapse_levels` must be a named list.")
-    }
-    data_modified <- data
-    for (factor_col in names(collapse_levels)) {
-      if (!factor_col %in% factors) {
-        next
-      } # Skip if factor not in model
-      if (!factor_col %in% names(data_modified)) {
-        next
-      } # Skip if factor not in data
+  # Initialize factor tracking for separate Q0/alpha collapsing
+  factors_Q0 <- factors
+  factors_alpha <- factors
+  collapse_info <- list(Q0 = list(), alpha = list())
 
-      original_factors_info[[
-        factor_col
-      ]]$original_levels <- levels(data_modified[[factor_col]])
-      level_map <- collapse_levels[[factor_col]]
-      if (!is.list(level_map) || is.null(names(level_map))) {
-        stop("Each element in `collapse_levels` must be a named list.")
-      }
-      new_factor_values <- as.character(data_modified[[factor_col]])
-      for (new_level_name in names(level_map)) {
-        old_levels_to_map <- level_map[[new_level_name]]
-        new_factor_values[
-          new_factor_values %in% old_levels_to_map
-        ] <- new_level_name
-      }
-      data_modified[[factor_col]] <- droplevels(factor(new_factor_values))
-      original_factors_info[[factor_col]]$new_levels <- levels(data_modified[[
-        factor_col
-      ]])
+  # Process collapse_levels if provided and fixed_rhs is NULL
+  if (!is.null(collapse_levels) && is.null(fixed_rhs)) {
+    validate_collapse_levels(collapse_levels)
+
+    # Process Q0 collapsing (skip if empty list)
+    if (!is.null(collapse_levels$Q0) && length(collapse_levels$Q0) > 0) {
+      result_Q0 <- collapse_factor_levels(
+        data = data,
+        collapse_spec = collapse_levels$Q0,
+        factors = factors,
+        suffix = "Q0"
+      )
+      data <- result_Q0$data
+      factors_Q0 <- result_Q0$new_factor_names
+      collapse_info$Q0 <- result_Q0$info
     }
-    data <- data_modified
+
+    # Process alpha collapsing (skip if empty list)
+    if (!is.null(collapse_levels$alpha) && length(collapse_levels$alpha) > 0) {
+      result_alpha <- collapse_factor_levels(
+        data = data,
+        collapse_spec = collapse_levels$alpha,
+        factors = factors,
+        suffix = "alpha"
+      )
+      data <- result_alpha$data
+      factors_alpha <- result_alpha$new_factor_names
+      collapse_info$alpha <- result_alpha$info
+    }
+  } else if (!is.null(collapse_levels) && !is.null(fixed_rhs)) {
+    message(
+      "Note: 'collapse_levels' is ignored when 'fixed_rhs' is provided."
+    )
   }
 
-  # Determine the effective fixed-effects RHS string
-  fixed_effects_formula_str <- "~ 1"
+  # Determine the effective fixed-effects RHS strings for Q0 and alpha
+  # These may differ if collapse_levels specifies different collapsing
   if (!is.null(fixed_rhs)) {
     # Use user-provided RHS directly (can be character or formula)
     if (inherits(fixed_rhs, "formula")) {
-      fixed_effects_formula_str <- deparse(fixed_rhs)
+      fixed_effects_formula_str_Q0 <- deparse(fixed_rhs)
+      fixed_effects_formula_str_alpha <- deparse(fixed_rhs)
     } else if (is.character(fixed_rhs)) {
-      fixed_effects_formula_str <- fixed_rhs
+      fixed_effects_formula_str_Q0 <- fixed_rhs
+      fixed_effects_formula_str_alpha <- fixed_rhs
     } else {
       stop("'fixed_rhs' must be a one-sided formula or character string like '~ 1 + var'.")
     }
   } else {
-    # Legacy builder: from factors (+ optional interaction) plus continuous_covariates additively
-    rhs_parts <- c()
-    if (!is.null(factors)) {
-      if (length(factors) == 1) {
-        rhs_parts <- c(rhs_parts, factors[1])
-      } else if (length(factors) >= 2) {
-        if (isTRUE(factor_interaction)) {
-          rhs_parts <- c(rhs_parts, paste0(factors[1], "*", factors[2]))
-        } else {
-          rhs_parts <- c(rhs_parts, factors[1], factors[2])
-        }
-      }
-    }
-    if (!is.null(continuous_covariates) && length(continuous_covariates) > 0) {
-      rhs_parts <- c(rhs_parts, continuous_covariates)
-    }
-    if (length(rhs_parts) > 0) {
-      fixed_effects_formula_str <- paste("~", paste(rhs_parts, collapse = " + "))
-    }
+    # Build separate RHS for Q0 and alpha using potentially different factors
+    fixed_effects_formula_str_Q0 <- build_fixed_rhs(
+      factors = factors_Q0,
+      factor_interaction = factor_interaction,
+      continuous_covariates = continuous_covariates,
+      data = data
+    )
+    fixed_effects_formula_str_alpha <- build_fixed_rhs(
+      factors = factors_alpha,
+      factor_interaction = factor_interaction,
+      continuous_covariates = continuous_covariates,
+      data = data
+    )
   }
 
   fixed_effects_list <- list(
-    stats::as.formula(paste("Q0", fixed_effects_formula_str)),
-    stats::as.formula(paste("alpha", fixed_effects_formula_str))
+    stats::as.formula(paste("Q0", fixed_effects_formula_str_Q0)),
+    stats::as.formula(paste("alpha", fixed_effects_formula_str_alpha))
   )
 
   if (!is.null(custom_model_formula)) {
@@ -267,7 +276,23 @@ fit_demand_mixed <- function(
     )
   }
 
-  num_params_per_var <- NA # Define for scope
+  # Calculate parameter counts separately for Q0 and alpha (may differ with collapse_levels)
+  num_params_Q0 <- NA
+  num_params_alpha <- NA
+
+  # Helper to get xlev for a set of factor names
+  get_xlevs <- function(factor_names, dat) {
+    xlevs <- list()
+    if (!is.null(factor_names)) {
+      for (f in factor_names) {
+        if (f %in% names(dat)) {
+          xlevs[[f]] <- levels(dat[[f]])
+        }
+      }
+    }
+    xlevs
+  }
+
   if (is.null(start_values)) {
     message(
       "Generating starting values using method: '",
@@ -337,44 +362,53 @@ fit_demand_mixed <- function(
       alpha_start_intercept <- log10(0.001)
     }
 
-    current_xlevs <- list()
-    if (!is.null(factors)) {
-      for (f in factors) {
-        current_xlevs[[f]] <- levels(data[[f]])
-      }
-    }
-    mm_for_param_count <- stats::model.matrix(
-      stats::as.formula(fixed_effects_formula_str),
+    # Calculate parameter count for Q0
+    xlevs_Q0 <- get_xlevs(factors_Q0, data)
+    mm_Q0 <- stats::model.matrix(
+      stats::as.formula(fixed_effects_formula_str_Q0),
       data = data,
-      xlev = current_xlevs
+      xlev = xlevs_Q0
     )
-    num_params_per_var <- ncol(mm_for_param_count)
+    num_params_Q0 <- ncol(mm_Q0)
 
-    start_Q0_vec <- c(q0_start_intercept, rep(0, num_params_per_var - 1))
-    start_alpha_vec <- c(alpha_start_intercept, rep(0, num_params_per_var - 1))
+    # Calculate parameter count for alpha
+    xlevs_alpha <- get_xlevs(factors_alpha, data)
+    mm_alpha <- stats::model.matrix(
+      stats::as.formula(fixed_effects_formula_str_alpha),
+      data = data,
+      xlev = xlevs_alpha
+    )
+    num_params_alpha <- ncol(mm_alpha)
+
+    start_Q0_vec <- c(q0_start_intercept, rep(0, num_params_Q0 - 1))
+    start_alpha_vec <- c(alpha_start_intercept, rep(0, num_params_alpha - 1))
     start_values <- list(fixed = c(start_Q0_vec, start_alpha_vec))
   } else {
     # User provided start_values
-    # Determine num_params_per_var from the effective RHS for length check
-    current_xlevs <- list()
-    if (!is.null(factors)) {
-      for (f in factors) {
-        current_xlevs[[f]] <- levels(data[[f]])
-      }
-    }
-    mm_for_param_count <- stats::model.matrix(
-      stats::as.formula(fixed_effects_formula_str),
+    # Calculate expected parameter counts for validation
+    xlevs_Q0 <- get_xlevs(factors_Q0, data)
+    mm_Q0 <- stats::model.matrix(
+      stats::as.formula(fixed_effects_formula_str_Q0),
       data = data,
-      xlev = current_xlevs
+      xlev = xlevs_Q0
     )
-    num_params_per_var <- ncol(mm_for_param_count)
-    if (length(start_values$fixed) != (num_params_per_var * 2)) {
+    num_params_Q0 <- ncol(mm_Q0)
+
+    xlevs_alpha <- get_xlevs(factors_alpha, data)
+    mm_alpha <- stats::model.matrix(
+      stats::as.formula(fixed_effects_formula_str_alpha),
+      data = data,
+      xlev = xlevs_alpha
+    )
+    num_params_alpha <- ncol(mm_alpha)
+
+    expected_total <- num_params_Q0 + num_params_alpha
+    if (length(start_values$fixed) != expected_total) {
       stop(paste0(
         "User-supplied 'start_values' have incorrect length. Expected ",
-        num_params_per_var * 2,
-        " values, got ",
-        length(start_values$fixed),
-        "."
+        expected_total, " values (", num_params_Q0, " for Q0 + ",
+        num_params_alpha, " for alpha), got ",
+        length(start_values$fixed), "."
       ))
     }
   }
@@ -389,9 +423,12 @@ fit_demand_mixed <- function(
     "Start values (first few): Q0_int=",
     signif(start_values$fixed[1], 3),
     ", alpha_int=",
-    signif(start_values$fixed[num_params_per_var + 1], 3)
+    signif(start_values$fixed[num_params_Q0 + 1], 3)
   )
-  message("Number of fixed parameters: ", length(start_values$fixed))
+  message(
+    "Number of fixed parameters: ", length(start_values$fixed),
+    " (Q0: ", num_params_Q0, ", alpha: ", num_params_alpha, ")"
+  )
 
   fitted_nlme_model <- tryCatch(
     {
@@ -408,8 +445,8 @@ fit_demand_mixed <- function(
       )
     },
     error = function(e) {
-      num_p_val <- if (!is.na(num_params_per_var)) {
-        num_params_per_var * 2
+      num_p_val <- if (!is.na(num_params_Q0) && !is.na(num_params_alpha)) {
+        paste0(num_params_Q0 + num_params_alpha, " (Q0: ", num_params_Q0, ", alpha: ", num_params_alpha, ")")
       } else {
         "unknown (check factors)"
       }
@@ -443,7 +480,8 @@ fit_demand_mixed <- function(
     formula_details = list(
       nlme_model_formula_obj = nlme_model_formula_obj,
       equation_form_selected = equation_form,
-      fixed_effects_formula_str = fixed_effects_formula_str,
+      fixed_effects_formula_str_Q0 = fixed_effects_formula_str_Q0,
+      fixed_effects_formula_str_alpha = fixed_effects_formula_str_alpha,
       fixed_effects_list = fixed_effects_list,
       random_effects_formula = random_effects_arg
     ),
@@ -452,12 +490,16 @@ fit_demand_mixed <- function(
       x_var = x_var,
       id_var = id_var,
       factors = factors,
+      factors_Q0 = factors_Q0,
+      factors_alpha = factors_alpha,
       factor_interaction = factor_interaction,
-      continuous_covariates = continuous_covariates
+      continuous_covariates = continuous_covariates,
+      num_params_Q0 = num_params_Q0,
+      num_params_alpha = num_params_alpha
     ),
     start_values_used = start_values$fixed,
-    original_factors_info = if (length(original_factors_info) > 0) {
-      original_factors_info
+    collapse_info = if (length(collapse_info$Q0) > 0 || length(collapse_info$alpha) > 0) {
+      collapse_info
     } else {
       NULL
     },

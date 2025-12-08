@@ -287,12 +287,26 @@ if (!inherits(fit_simplified_example, "try-error")) {
 
 ### Collapsing Factor Levels
 
-Sometimes you might want to group levels of a factor.
+Sometimes you might want to group levels of a factor, and you may want different
+groupings for $Q_{0}$ versus $\alpha$. The `collapse_levels` argument allows you
+to specify separate collapsing schemes for each parameter.
+
+**Structure:**
+```r
+collapse_levels = list(
+  Q0 = list(factor_name = list(new_level = c("old_level1", "old_level2"), ...)),
+  alpha = list(factor_name = list(new_level = c("old_level1", ...), ...))
+)
+```
+
+Either `Q0` or `alpha` (or both) can be omitted to keep original levels for that parameter.
+
+#### Example: Same collapsing for both parameters
 
 ```{r}
 # Ensure levels to collapse are present in ko_alf$dose
 # levels(ko_alf$dose) are "0.001", "0.003", "3e-04"
-fit_collapsed_example <- try(
+fit_collapsed_same <- try(
   fit_demand_mixed(
     data = ko_alf,
     y_var = "y_ll4",
@@ -300,7 +314,8 @@ fit_collapsed_example <- try(
     id_var = "monkey",
     factors = "dose",
     collapse_levels = list(
-      dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003")
+      Q0 = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003")),
+      alpha = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003"))
     ),
     equation_form = "zben",
     nlme_control = quick_nlme_control
@@ -308,15 +323,93 @@ fit_collapsed_example <- try(
   silent = TRUE
 )
 
-if (!inherits(fit_collapsed_example, "try-error")) {
-  print(fit_collapsed_example)
-  cat("\nNew levels for 'dose' in the fitted data:\n")
-  print(levels(fit_collapsed_example$data$dose))
+if (!inherits(fit_collapsed_same, "try-error") && !is.null(fit_collapsed_same$model)) {
+  print(fit_collapsed_same)
+  cat("\nQ0 params:", fit_collapsed_same$param_info$num_params_Q0, "\n")
+  cat("alpha params:", fit_collapsed_same$param_info$num_params_alpha, "\n")
 } else {
-  cat(
-    "Collapsed levels model failed to converge with current settings for the vignette.\n"
+  cat("Collapsed levels model failed to converge.\n")
+}
+```
+
+#### Example: Different collapsing for Q0 and alpha
+
+This is particularly useful when you want fine-grained distinctions for one
+parameter but not the other. For instance, you might hypothesize that maximum
+consumption ($Q_{0}$) varies by dose, but sensitivity ($\alpha$) does not.
+
+```{r}
+# Q0: keep 2 collapsed levels (low vs high)
+# alpha: collapse all to 1 level (intercept only)
+fit_collapsed_asymmetric <- try(
+  fit_demand_mixed(
+    data = ko_alf,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    collapse_levels = list(
+      Q0 = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003")),
+      alpha = list(dose = list(all_doses = c("3e-04", "0.001", "0.003")))
+    ),
+    equation_form = "zben",
+    nlme_control = quick_nlme_control
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_collapsed_asymmetric, "try-error") && !is.null(fit_collapsed_asymmetric$model)) {
+  print(fit_collapsed_asymmetric)
+  cat("\nQ0 params:", fit_collapsed_asymmetric$param_info$num_params_Q0, "\n")
+  cat("alpha params:", fit_collapsed_asymmetric$param_info$num_params_alpha, "\n")
+  cat("\nQ0 formula:", fit_collapsed_asymmetric$formula_details$fixed_effects_formula_str_Q0, "\n")
+  cat("alpha formula:", fit_collapsed_asymmetric$formula_details$fixed_effects_formula_str_alpha, "\n")
+} else {
+  cat("Asymmetric collapsed levels model failed to converge.\n")
+}
+```
+
+**Note:** When all levels of a factor are collapsed to a single level for a
+parameter, that factor is automatically removed from the formula for that
+parameter (it contributes only to the intercept). A message will inform you
+when this occurs.
+
+#### EMMs and Comparisons with Collapsed Factors
+
+When using `collapse_levels`, the `get_demand_param_emms()` and 
+`get_demand_comparisons()` functions automatically handle the asymmetric 
+factor structures. EMMs will be computed using the collapsed levels, and
+comparisons will only be performed when there are multiple levels to compare.
+
+```{r}
+# Using the asymmetric collapsed model from above (if it converged)
+if (!inherits(fit_collapsed_asymmetric, "try-error") && 
+    !is.null(fit_collapsed_asymmetric$model)) {
+  
+  cat("--- EMMs with collapsed factors ---\n")
+  # EMMs will show collapsed Q0 levels but single alpha value
+  collapsed_emms <- get_demand_param_emms(
+    fit_obj = fit_collapsed_asymmetric,
+    factors_in_emm = "dose",  # Use original factor name
+    include_ev = TRUE
   )
-  fit_collapsed_example <- NULL
+  print(collapsed_emms)
+  
+  cat("\n--- Comparisons with collapsed factors ---\n")
+  # Q0 will have comparisons (2 levels), alpha will have none (1 level)
+  collapsed_comparisons <- get_demand_comparisons(
+    fit_obj = fit_collapsed_asymmetric,
+    compare_specs = ~ dose,  # Use original factor name
+    params_to_compare = c("Q0", "alpha")
+  )
+  
+  cat("\nQ0 contrasts (collapsed levels):\n")
+  print(collapsed_comparisons$Q0$contrasts_log10)
+  
+  cat("\nalpha contrasts (intercept-only, no comparisons):\n")
+  print(collapsed_comparisons$alpha$contrasts_log10)
+} else {
+  cat("Asymmetric collapsed model not available for EMM demonstration.\n")
 }
 ```
 
@@ -541,8 +634,15 @@ if (!is.null(active_fit$model)) {
 ```
 
 ## Analyzing Estimated Marginal Means (`get_demand_param_emms`)
-
+ 
 This function helps interpret how factors affect $Q_{0}$ and $\alpha$, providing estimates on both log10 and natural scales, and optionally Essential Value (EV).
+
+**Note on `collapse_levels`:** When a model is fit using `collapse_levels` with 
+asymmetric specifications (different collapsing for Q0 and alpha), the EMM functions
+automatically use the appropriate collapsed factor names for each parameter. You 
+still specify the original factor name in `factors_in_emm`, and the output will 
+show the collapsed levels. If a parameter has only one level (intercept-only), 
+that parameter's values will be the same across all rows.
 
 ```{r}
 # We'll use a model with factors.
@@ -593,6 +693,11 @@ if (!is.null(emm_model_to_use)) {
 ## Performing Pairwise Comparisons (`get_demand_comparisons`)
 
 Compare levels of factors for $Q_{0}$ and $\alpha$.
+
+**Note on `collapse_levels`:** When using models fit with asymmetric 
+`collapse_levels`, comparisons are only performed for parameters that have
+multiple levels. If a parameter was collapsed to a single level (intercept-only),
+the comparisons for that parameter will be empty.
 
 ```{r}
 # Using the same emm_model_to_use
@@ -1017,8 +1122,11 @@ if (exists("fit_age_rhs") && !is.null(fit_age_rhs) && !is.null(fit_age_rhs$model
 
 if (!is.null(fit_for_trends)) {
   # Determine which of the candidate covariates are actually present in the model RHS
+  # Use Q0 formula (or alpha if Q0 is NULL) - they may differ if collapse_levels was used
+  rhs_formula_str <- fit_for_trends$formula_details$fixed_effects_formula_str_Q0 %||%
+    fit_for_trends$formula_details$fixed_effects_formula_str_alpha
   rhs_vars_tr <- tryCatch(
-    all.vars(as.formula(fit_for_trends$formula_details$fixed_effects_formula_str)),
+    all.vars(as.formula(rhs_formula_str)),
     error = function(e) character(0)
   )
   covariates_candidate <- c("age", "dose_num")
