@@ -1,18 +1,106 @@
-#-------------------------------------------------------------------------------
-# Nonlinear Model Fitting using NLS
-#' Fit Nonlinear Cross-Price Model using NLS
+#' Fit cross-price demand with NLS (+ robust fallbacks)
 #'
-#' @param data A data frame containing columns: x and y.
-#' @param equation Type of equation ("exponential" or "exponentiated").
-#' @param start_vals Optional named list of starting values.
-#' @param iter Number of iterations for nls.multstart.
-#' @param bounds List with 'lower' and 'upper' bounds for parameters.
-#' @param fallback_to_nlsr Logical; if TRUE, try nlsr when others fail.
-#' @param return_all Logical; if TRUE, returns a list with model metadata.
-#' @return Fitted model object or list with model metadata.
+#' @description
+#' Fits a **cross-price demand** curve of the form
+#'
+#' - **Exponentiated** (default): \eqn{y = q_{alone} \; 10^{\, I \exp(-\beta x)}}
+#'
+#' - **Exponential** (additive on \eqn{\log_{10} y}): \eqn{\log_{10}(y) = \log_{10}(q_{alone}) + I \exp(-\beta x)}
+#'
+#' - **Additive** (level on \eqn{y}): \eqn{y = q_{alone} + I \exp(-\beta x)}
+#'
+#' where \eqn{x} is the alternative product price (or “cross” price) and \eqn{y}
+#' is consumption of the target good. Parameters:
+#' \itemize{
+#'   \item \eqn{q_{alone}}: consumption when the alternative is effectively absent
+#'         (interpretable as a baseline or “alone” level).
+#'   \item \eqn{I}: cross-price **interaction intensity**; sign and magnitude reflect
+#'         substitution/complementarity.
+#'   \item \eqn{\beta}: rate at which cross-price influence decays as \eqn{x} increases.
+#' }
+#'
+#' The function first attempts a multi-start nonlinear least squares fit
+#' (`nls.multstart`). If that fails—or if explicit `start_vals` are provided—it
+#' falls back to `minpack.lm::nlsLM`. Optionally, it will make a final attempt
+#' with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
+#' with metadata for downstream methods.
+#'
+#' @param data A data frame with columns `x` (alternative price) and `y` (consumption).
+#'             Additional columns are ignored. Input is validated internally.
+#' @param equation Character string; model family, one of
+#'   `c("exponentiated", "exponential", "additive")`. Default is `"exponentiated"`.
+#' @param start_vals Optional **named list** of initial values for parameters
+#'   `qalone`, `I`, and `beta`. If `NULL`, the function derives plausible ranges
+#'   from the data and uses multi-start search.
+#' @param iter Integer; number of random starts for `nls.multstart` (default `100`).
+#' @param bounds A list with numeric vectors `lower` and `upper` giving parameter
+#'   bounds in the order `c(qalone, I, beta)`. `NA` entries mean “no bound”.
+#'   Defaults set wide, conservative ranges (see source).
+#' @param fallback_to_nlsr Logical; if `TRUE` (default), try `nlsr::wrapnlsr` when
+#'   both multi-start NLS and `nlsLM` fail.
+#' @param return_all Logical; if `TRUE` (default), return a list containing the
+#'   model and useful metadata. If `FALSE`, return the bare fitted model object.
+#'
+#' @details
+#' **Start values & bounds.** When `start_vals` is missing, the function:
+#' (1) estimates a reasonable range for `qalone` from the observed `y`,
+#' (2) respects user-provided bounds, and (3) launches a multi-start grid in
+#' `nls.multstart`. For the `"exponential"` form, `qalone` is interpreted on the
+#' \eqn{\log_{10}} scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
+#'
+#' **Fitting pipeline (short-circuiting):**
+#' \enumerate{
+#'   \item `nls.multstart::nls_multstart()` with random starts within `bounds`.
+#'   \item If that fails (or if `start_vals` provided): `minpack.lm::nlsLM()` using
+#'         `start_vals` (user or internally estimated).
+#'   \item If that fails and `fallback_to_nlsr = TRUE`: `nlsr::wrapnlsr()`.
+#' }
+#'
+#' The returned object has class `"cp_model_nls"` (when `return_all = TRUE`) with
+#' components: `model`, `method` (the algorithm used), `equation`, `start_vals`,
+#' `nlsLM_fit`, `nlsr_fit`, and the `data` used. This is convenient for custom
+#' print/summary/plot methods.
+#'
+#' @return
+#' If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
+#' \itemize{
+#'   \item `model`: the fitted object from the successful backend.
+#'   \item `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
+#'   \item `equation`: the model family used.
+#'   \item `start_vals`: named list of starting values (final used).
+#'   \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
+#'   \item `data`: the 2-column data frame actually fit.
+#' }
+#' If `return_all = FALSE`: the fitted model object from the successful backend.
+#'
+#' @section Convergence & warnings:
+#' - Check convergence codes and residual diagnostics from the underlying fit.
+#' - Poor scaling or extreme `y` dispersion can make `qalone`/`I`/`beta`
+#'   weakly identified. Consider transforming units or tightening `bounds`.
+#' - For `"exponential"`, remember `qalone` is on the \eqn{\log_{10} y} scale.
+#'
+#' @seealso
+#' \code{\link{check_unsystematic_cp}} for pre-fit data screening,
+#' \code{\link{validate_cp_data}} for input validation.
 #' @importFrom nls.multstart nls_multstart
 #' @importFrom nlsr wrapnlsr
 #' @importFrom minpack.lm nlsLM nls.lm.control
+#' @examples
+#' ## --- Example: Real data (E-Cigarettes, id = 1) ---
+#' dat <- structure(list(
+#'   id = c(1, 1, 1, 1, 1, 1),
+#'   x = c(2, 4, 8, 16, 32, 64),
+#'   y = c(3, 5, 5, 16, 17, 13),
+#'   target = c("alt", "alt", "alt", "alt", "alt", "alt"),
+#'   group = c("E-Cigarettes", "E-Cigarettes", "E-Cigarettes",
+#'             "E-Cigarettes", "E-Cigarettes", "E-Cigarettes")
+#' ), row.names = c(NA, -6L), class = c("tbl_df", "tbl", "data.frame"))
+#'
+#' ## Fit the default (exponentiated) cross-price form
+#' fit_ecig <- fit_cp_nls(dat, equation = "exponentiated", return_all = TRUE)
+#' summary(fit_ecig)         # model summary
+#' fit_ecig$method           # backend actually used (e.g., "nls_multstart")
+#' coef(fit_ecig$model)      # parameter estimates: qalone, I, beta
 #' @export
 fit_cp_nls <- function(
   data,
@@ -90,7 +178,9 @@ fit_cp_nls <- function(
           iter = iter,
           start_lower = start_lower,
           start_upper = start_upper,
-          supp_errors = "Y"
+          supp_errors = "Y",
+          lower = bounds$lower,
+          upper = bounds$upper
         )
       },
       error = function(e) e
@@ -178,7 +268,9 @@ fit_cp_nls <- function(
         nlsr::wrapnlsr(
           formula = formula_nlsr,
           data = data,
-          start = start_vals
+          start = start_vals,
+          lower = bounds$lower,
+          upper = bounds$upper
         ),
         error = function(e) e
       )

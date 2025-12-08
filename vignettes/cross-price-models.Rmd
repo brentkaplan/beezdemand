@@ -12,19 +12,55 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   message = FALSE,
+  include = TRUE,
   collapse = TRUE,
   comment = NA,
   fig.width = 6,
   fig.height = 4
 )
 
-library(beezdemand)
+# library(beezdemand)
+devtools::load_all()
 library(dplyr)
 library(purrr)
 library(tidyr)
 library(ggplot2)
+library(here)
 
-load("../data/etm.RData")
+conflicted::conflict_prefer("filter", "dplyr")
+
+here::i_am("vignettes/cross-price-models.Rmd")
+
+load(here::here("data", "etm.RData"))
+
+lnic <- readr::read_csv(here::here("data", "lowNicClean.csv")) |>
+  mutate(
+    target = if_else(commodity == "cigarettesAdj", "adjusting", "fixed"),
+    group = "cigarettes"
+  ) |>
+  select(
+    -commodity
+  ) |>
+  relocate(condition, .after = group)
+
+can_cig <- readr::read_csv(here::here("data", "cannabisCigarettes.csv")) |>
+  select(
+    id,
+    x,
+    y,
+    target = commodity
+  )
+
+ongoing_etm <- readr::read_csv(here::here("data", "ongoingETM.csv")) |>
+  pivot_longer(
+    -c(id, x, flavor),
+    names_to = "target",
+    values_to = "y",
+    values_drop_na = TRUE
+  ) |>
+  select(id, x, y, target)
+
+# load("../data/etm.RData")
 ```
 
 ## Data Structure
@@ -57,6 +93,14 @@ unsys_one <- etm |>
 
 unsys_one
 
+unsys_one_lnic <- lnic |>
+  filter(
+    target == "adjusting",
+    id == "R_00Q12ahGPKuESBT"
+  ) |>
+  check_unsystematic_cp(detailed = TRUE)
+
+unsys_one_lnic
 
 ```
 
@@ -70,6 +114,115 @@ unsys_all <- etm |>
 unsys_all
 
 summary(unsys_all)
+```
+
+### Demonstration from Rzeszutek et al. (under review)
+
+#### Low Nicotine Study (Kaplan et al., 2018)
+
+```{r}
+unsys_all_lnic <- lnic |>
+  filter(target == "fixed") |>
+  group_by(id, condition) |>
+  nest() |>
+  mutate(
+    unsys = map(
+      data,
+      check_unsystematic_cp,
+      detailed = TRUE
+    )
+  ) |>
+  unnest(unsys) |>
+  arrange(id)
+
+unsys_all_lnic
+
+cat("--- 100% ---\n")
+unsys_all_lnic |>
+  dplyr::filter(condition == "100%") |>
+  summary()
+cat("\n\n")
+
+cat("--- 2% ---\n")
+unsys_all_lnic |>
+  dplyr::filter(condition == "2%") |>
+  summary()
+cat("\n\n")
+cat("--- 2% NegFrame ---\n")
+unsys_all_lnic |>
+  dplyr::filter(condition == "2% NegFrame") |>
+  summary()
+
+summary(unsys_all_lnic)
+```
+
+
+#### Unpublished Cannabis and Cigarette Data
+
+```{r}
+
+unsys_all_can_cig <- can_cig |>
+  filter(target %in% c("cannabisFix", "cigarettesFix")) |>
+  group_by(id, target) |>
+  nest() |>
+  mutate(
+    unsys = map(
+      data,
+      check_unsystematic_cp,
+      detailed = TRUE
+    )
+  ) |>
+  unnest(unsys) |>
+  arrange(id)
+
+cat("--- Cigarettes ---\n")
+unsys_all_can_cig |>
+  dplyr::filter(target == "cigarettesFix") |>
+  summary()
+cat("\n\n")
+
+
+cat("--- Cannabis ---\n")
+unsys_all_can_cig |>
+  dplyr::filter(target == "cannabisFix") |>
+  summary()
+cat("\n\n")
+
+
+```
+
+#### In Progress Experimental Tobacco Marketplace Data
+
+```{r}
+unsys_all_ongoing_etm <- ongoing_etm |>
+  # one person is doubled up
+  distinct() |>
+  filter(target %in% c("FixCig", "ECig")) |>
+  group_by(id, target) |>
+  nest() |>
+  mutate(
+    unsys = map(
+      data,
+      check_unsystematic_cp,
+      detailed = TRUE
+    )
+  ) |>
+  unnest(unsys)
+
+
+cat("--- Fixed Cigarettes ---\n")
+unsys_all_ongoing_etm |>
+  dplyr::filter(target == "FixCig") |>
+  summary()
+cat("\n\n")
+
+cat("--- E-Cigarettes ---\n")
+unsys_all_ongoing_etm |>
+  dplyr::filter(target == "ECig") |>
+  summary()
+cat("\n\n")
+
+
 ```
 
 ## Nonlinear Model Fitting
@@ -163,15 +316,16 @@ fit_mean <- etm |>
 fit_mean
 
 fit_mean |>
-    unnest(cols = c(glance, tidy)) |>
-    select(
-        group,
-        term,
-        estimate
-    ) |>
-        ggplot(aes(x = group, y = estimate, group = term)) +
-        geom_bar(stat = "identity") +
-        facet_wrap(~term)
+  unnest(cols = c(glance, tidy)) |>
+  select(
+    group,
+    term,
+    estimate
+  ) |>
+  ggplot(aes(x = group, y = estimate, group = term)) +
+  geom_bar(stat = "identity") +
+  geom_point() +
+  facet_wrap(~term, ncol = 1, scales = "free_y")
 
 fit_mean |>
   dplyr::filter(group %in% "E-Cigarettes") |>
