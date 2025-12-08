@@ -115,6 +115,18 @@ fit_demand_mixed <- function(
     factors = factors
   )
 
+  # Helper to ensure all specified factor columns are factors in the data
+  ensure_factors <- function(factor_names, dat) {
+    if (!is.null(factor_names)) {
+      for (f in factor_names) {
+        if (f %in% names(dat) && !is.factor(dat[[f]])) {
+          dat[[f]] <- factor(dat[[f]])
+        }
+      }
+    }
+    dat
+  }
+
   # Enforce the two-factor limit and interaction rule only when using the legacy
   # path (no fixed_rhs). If fixed_rhs is provided, user has full control.
   if (is.null(fixed_rhs)) {
@@ -168,6 +180,11 @@ fit_demand_mixed <- function(
       "Note: 'collapse_levels' is ignored when 'fixed_rhs' is provided."
     )
   }
+
+  # Ensure all factor columns (including collapsed ones) are proper factors
+  # This is needed before build_fixed_rhs to correctly filter single-level factors
+  data <- ensure_factors(factors_Q0, data)
+  data <- ensure_factors(factors_alpha, data)
 
   # Determine the effective fixed-effects RHS strings for Q0 and alpha
   # These may differ if collapse_levels specifies different collapsing
@@ -280,13 +297,22 @@ fit_demand_mixed <- function(
   num_params_Q0 <- NA
   num_params_alpha <- NA
 
-  # Helper to get xlev for a set of factor names
+  # Helper to get xlev for a set of factor names and ensure they are factors
+  # Only includes factors with 2+ levels (single-level factors are dropped from formulas)
   get_xlevs <- function(factor_names, dat) {
     xlevs <- list()
     if (!is.null(factor_names)) {
       for (f in factor_names) {
         if (f %in% names(dat)) {
-          xlevs[[f]] <- levels(dat[[f]])
+          # Ensure the column is a factor before getting levels
+          if (!is.factor(dat[[f]])) {
+            dat[[f]] <- factor(dat[[f]])
+          }
+          # Only include in xlev if factor has 2+ levels
+          # (single-level factors are filtered out of formulas by build_fixed_rhs)
+          if (nlevels(dat[[f]]) >= 2) {
+            xlevs[[f]] <- levels(dat[[f]])
+          }
         }
       }
     }
@@ -363,6 +389,8 @@ fit_demand_mixed <- function(
     }
 
     # Calculate parameter count for Q0
+    # Ensure factor columns are proper factors before model.matrix
+    data <- ensure_factors(factors_Q0, data)
     xlevs_Q0 <- get_xlevs(factors_Q0, data)
     mm_Q0 <- stats::model.matrix(
       stats::as.formula(fixed_effects_formula_str_Q0),
@@ -372,6 +400,8 @@ fit_demand_mixed <- function(
     num_params_Q0 <- ncol(mm_Q0)
 
     # Calculate parameter count for alpha
+    # Ensure factor columns are proper factors before model.matrix
+    data <- ensure_factors(factors_alpha, data)
     xlevs_alpha <- get_xlevs(factors_alpha, data)
     mm_alpha <- stats::model.matrix(
       stats::as.formula(fixed_effects_formula_str_alpha),
@@ -386,6 +416,8 @@ fit_demand_mixed <- function(
   } else {
     # User provided start_values
     # Calculate expected parameter counts for validation
+    # Ensure factor columns are proper factors before model.matrix
+    data <- ensure_factors(factors_Q0, data)
     xlevs_Q0 <- get_xlevs(factors_Q0, data)
     mm_Q0 <- stats::model.matrix(
       stats::as.formula(fixed_effects_formula_str_Q0),
@@ -394,6 +426,8 @@ fit_demand_mixed <- function(
     )
     num_params_Q0 <- ncol(mm_Q0)
 
+    # Ensure factor columns are proper factors before model.matrix
+    data <- ensure_factors(factors_alpha, data)
     xlevs_alpha <- get_xlevs(factors_alpha, data)
     mm_alpha <- stats::model.matrix(
       stats::as.formula(fixed_effects_formula_str_alpha),
