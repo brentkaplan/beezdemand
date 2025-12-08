@@ -331,16 +331,16 @@ get_demand_param_emms <- function(
             dplyr::select(
               dplyr::all_of(actual_factors),
               param_log10_estimate = dplyr::all_of(estimate_col_name_log),
-              param_log10_LCL = .data$lower.CL,
-              param_log10_UCL = .data$upper.CL
+              param_log10_LCL = "lower.CL",
+              param_log10_UCL = "upper.CL"
             )
         } else {
           # Intercept-only: no factor columns to select
           emm_table_combined <- tibble::as_tibble(df_log_scale_summary) |>
             dplyr::select(
               param_log10_estimate = dplyr::all_of(estimate_col_name_log),
-              param_log10_LCL = .data$lower.CL,
-              param_log10_UCL = .data$upper.CL
+              param_log10_LCL = "lower.CL",
+              param_log10_UCL = "upper.CL"
             )
         }
 
@@ -525,7 +525,7 @@ get_demand_param_emms <- function(
           LCL_EV = .data$temp_LCL_EV,
           UCL_EV = .data$temp_UCL_EV
         ) |>
-        dplyr::select(-.data$temp_LCL_EV, -.data$temp_UCL_EV)
+        dplyr::select(-"temp_LCL_EV", -"temp_UCL_EV")
     } else {
       warning(
         "Cannot calculate EV because alpha EMMs ('alpha_param_log10' or 'alpha_natural') are not available in the results."
@@ -1049,14 +1049,14 @@ get_demand_comparisons <- function(
               ) |>
               dplyr::select(
                 dplyr::any_of(by_vars_in_summary),
-                .data$contrast_definition,
-                .data$estimate,
-                .data$SE,
-                .data$df,
-                .data$lower.CL,
-                .data$upper.CL,
-                .data$t.ratio,
-                .data$p.value
+                "contrast_definition",
+                "estimate",
+                "SE",
+                "df",
+                "lower.CL",
+                "upper.CL",
+                "t.ratio",
+                "p.value"
               )
 
             if (report_ratios) {
@@ -1068,11 +1068,11 @@ get_demand_comparisons <- function(
                 ) |>
                 dplyr::select(
                   dplyr::any_of(by_vars_in_summary),
-                  .data$contrast_definition,
-                  .data$ratio_estimate,
-                  .data$LCL_ratio,
-                  .data$UCL_ratio,
-                  .data$p.value
+                  "contrast_definition",
+                  "ratio_estimate",
+                  "LCL_ratio",
+                  "UCL_ratio",
+                  "p.value"
                 )
             }
           }
