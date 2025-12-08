@@ -348,3 +348,215 @@ validate_demand_data <- function(
 #' @keywords internal
 #' small infix helper (define once in your utilities)
 `%||%` <- function(a, b) if (is.null(a)) b else a
+
+
+#' Collapse Factor Levels for a Specific Parameter
+#'
+#' Internal helper to apply level collapsing for a single parameter (Q0 or alpha).
+#' Creates new columns with suffix to avoid modifying original factor columns.
+#'
+#' @param data A data frame.
+#' @param collapse_spec Named list of factor collapse specifications.
+#'   Structure: `list(factor_name = list(new_level = c(old_levels), ...))`.
+#' @param factors Character vector of factor names in the model.
+#' @param suffix Character suffix for new column names (e.g., "Q0" or "alpha").
+#'
+#' @return A list with:
+#'   - `data`: Modified data frame with new collapsed factor columns
+#'   - `new_factor_names`: Character vector of new factor column names to use
+#'   - `info`: List with original and new levels for each collapsed factor
+#'
+#' @keywords internal
+collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
+  if (!is.list(collapse_spec) || is.null(names(collapse_spec))) {
+    stop(
+      "Collapse specification for '", suffix,
+      "' must be a named list of factor mappings."
+    )
+  }
+
+  new_factor_names <- factors
+  info <- list()
+
+  for (factor_col in names(collapse_spec)) {
+    # Validate factor is in the model
+
+    if (!factor_col %in% factors) {
+      warning(
+        "Factor '", factor_col, "' in collapse_levels$", suffix,
+        " is not in the 'factors' list. Skipping."
+      )
+      next
+    }
+
+    # Validate factor is in the data
+    if (!factor_col %in% names(data)) {
+      warning(
+        "Factor '", factor_col, "' not found in data. Skipping."
+      )
+      next
+    }
+
+    level_map <- collapse_spec[[factor_col]]
+    if (!is.list(level_map) || is.null(names(level_map))) {
+      stop(
+        "Collapse mapping for factor '", factor_col,
+        "' must be a named list (new_level = c(old_levels))."
+      )
+    }
+
+    # Check for overlapping old levels
+    all_old_levels <- unlist(level_map, use.names = FALSE)
+    if (length(all_old_levels) != length(unique(all_old_levels))) {
+      duplicates <- all_old_levels[duplicated(all_old_levels)]
+      stop(
+        "Overlapping old levels detected in collapse mapping for '",
+        factor_col, "': ", paste(unique(duplicates), collapse = ", "),
+        ". Each old level can only map to one new level."
+      )
+    }
+
+    # Store original levels
+    original_levels <- levels(data[[factor_col]])
+    info[[factor_col]] <- list(original_levels = original_levels)
+
+    # Create new column name
+
+    new_col_name <- paste0(factor_col, "_", suffix)
+
+    # Apply level mapping
+    new_factor_values <- as.character(data[[factor_col]])
+    for (new_level_name in names(level_map)) {
+      old_levels_to_map <- level_map[[new_level_name]]
+      new_factor_values[new_factor_values %in% old_levels_to_map] <- new_level_name
+    }
+
+    # Create new column with collapsed levels
+
+    data[[new_col_name]] <- droplevels(factor(new_factor_values))
+    info[[factor_col]]$new_levels <- levels(data[[new_col_name]])
+    info[[factor_col]]$new_col_name <- new_col_name
+
+
+    # Update factor names to use the new column
+    new_factor_names[new_factor_names == factor_col] <- new_col_name
+  }
+
+  list(
+    data = data,
+    new_factor_names = new_factor_names,
+    info = info
+  )
+}
+
+
+#' Build Fixed-Effects RHS Formula String
+#'
+#' Internal helper to construct the right-hand side of a fixed-effects formula
+#' from factors, interaction flag, and continuous covariates.
+#'
+#' @param factors Character vector of factor names (can be NULL).
+#' @param factor_interaction Logical. If TRUE and two factors provided,
+#'   include their interaction.
+#' @param continuous_covariates Character vector of continuous covariate names.
+#'
+#' @return A character string representing the RHS (e.g., "~ 1 + dose + drug").
+#'
+#' @keywords internal
+build_fixed_rhs <- function(
+    factors = NULL,
+    factor_interaction = FALSE,
+    continuous_covariates = NULL,
+    data = NULL
+) {
+  rhs_parts <- c()
+
+  # Filter out factors with only 1 level (they don't contribute to contrasts)
+  valid_factors <- factors
+  if (!is.null(factors) && !is.null(data)) {
+    valid_factors <- vapply(factors, function(f) {
+      if (f %in% names(data) && is.factor(data[[f]])) {
+        nlevels(data[[f]]) >= 2
+      } else {
+        TRUE  # Keep non-factor or missing columns (will error elsewhere)
+      }
+    }, logical(1))
+    valid_factors <- factors[valid_factors]
+
+    # Warn about dropped single-level factors
+    dropped <- setdiff(factors, valid_factors)
+    if (length(dropped) > 0) {
+      message(
+        "Note: Factor(s) with only 1 level removed from formula: ",
+        paste(dropped, collapse = ", ")
+      )
+    }
+  }
+
+  if (!is.null(valid_factors) && length(valid_factors) > 0) {
+    if (length(valid_factors) == 1) {
+      rhs_parts <- c(rhs_parts, valid_factors[1])
+    } else if (length(valid_factors) >= 2) {
+      if (isTRUE(factor_interaction)) {
+        rhs_parts <- c(rhs_parts, paste0(valid_factors[1], "*", valid_factors[2]))
+      } else {
+        rhs_parts <- c(rhs_parts, valid_factors[1], valid_factors[2])
+      }
+    }
+  }
+
+  if (!is.null(continuous_covariates) && length(continuous_covariates) > 0) {
+    rhs_parts <- c(rhs_parts, continuous_covariates)
+  }
+
+  if (length(rhs_parts) > 0) {
+    paste("~", paste(rhs_parts, collapse = " + "))
+  } else {
+    "~ 1"
+  }
+}
+
+
+#' Validate Collapse Levels Structure
+#'
+#' Internal helper to validate the structure of collapse_levels argument.
+#'
+#' @param collapse_levels The collapse_levels argument from fit_demand_mixed.
+#'
+#' @return TRUE if valid, otherwise stops with an error message.
+#'
+#' @keywords internal
+validate_collapse_levels <- function(collapse_levels) {
+  if (is.null(collapse_levels)) {
+    return(TRUE)
+  }
+
+
+  if (!is.list(collapse_levels)) {
+    stop(
+      "'collapse_levels' must be a named list with keys 'Q0' and/or 
+'alpha'."
+    )
+  }
+
+  valid_keys <- c("Q0", "alpha")
+  provided_keys <- names(collapse_levels)
+
+  if (is.null(provided_keys) || length(provided_keys) == 0) {
+    stop(
+      "'collapse_levels' must have named elements. ",
+      "Expected keys: 'Q0' and/or 'alpha'."
+    )
+  }
+
+  invalid_keys <- setdiff(provided_keys, valid_keys)
+  if (length(invalid_keys) > 0) {
+    stop(
+      "Invalid keys in 'collapse_levels': ",
+      paste(invalid_keys, collapse = ", "), ". ",
+      "Only 'Q0' and 'alpha' are allowed."
+    )
+  }
+
+  TRUE
+}
