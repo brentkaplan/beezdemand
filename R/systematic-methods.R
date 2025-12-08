@@ -1,128 +1,124 @@
 #' Summarize Cross-Price Unsystematic Data Check Results
 #'
 #' @description
-#' Creates a summary of unsystematic data checks across multiple subjects and groups.
-#' This function takes a dataframe containing results from multiple calls to
-#' `check_unsystematic_cp()` and provides a comprehensive summary of patterns found.
+#' Summarizes systematic and unsystematic patterns from multiple calls to
+#' `check_unsystematic_cp()`. This includes overall proportions, trend and bounce
+#' direction counts, and optionally summaries by subject or group.
 #'
-#' @param object A dataframe containing results from multiple `check_unsystematic_cp()` calls,
-#'   typically with columns 'id', 'group', 'delta_direction', 'bounce_direction', 'bounce_any',
-#'   'bounce_above', and 'bounce_below'.
+#' @param object A data frame containing results from multiple `check_unsystematic_cp()` calls,
+#'   with at minimum the columns 'delta_direction', 'bounce_direction', and 'bounce_any'.
+#'   Columns 'id', 'group', 'reversals', and 'returns' are optional but allow extended summaries.
 #' @param ... Additional arguments (currently unused)
 #'
-#' @return A list with summary statistics including:
-#'   \item{total_patterns}{Total number of patterns examined}
-#'   \item{systematic_count}{Number of systematic patterns}
-#'   \item{unsystematic_count}{Number of unsystematic patterns}
-#'   \item{systematic_percent}{Percentage of systematic patterns}
-#'   \item{unsystematic_percent}{Percentage of unsystematic patterns}
-#'   \item{trend_counts}{Counts by trend direction}
-#'   \item{bounce_counts}{Counts by bounce direction}
-#'   \item{group_summary}{Summary statistics by group}
-#'   \item{problem_ids}{IDs with the most unsystematic patterns}
-#'
-#' @examples
-#' \dontrun{
-#' # Run unsystematic checks on multiple patterns
-#' unsys_all <- etm |>
-#'   group_by(id, group) |>
-#'   nest() |>
-#'   mutate(unsys = map(data, check_unsystematic_cp)) |>
-#'   unnest(unsys)
-#'
-#' # Create summary
-#' summary(unsys_all)
-#' }
+#' @return A list of class `summary.cp_unsystematic` with the following elements:
+#'   \describe{
+#'     \item{total_patterns}{Number of total patterns examined.}
+#'     \item{systematic_count}{Count of systematic patterns (no bounce).}
+#'     \item{unsystematic_count}{Count of unsystematic patterns (bounce detected).}
+#'     \item{systematic_percent}{Proportion of systematic patterns.}
+#'     \item{unsystematic_percent}{Proportion of unsystematic patterns.}
+#'     \item{trend_counts}{Breakdown of trend directions.}
+#'     \item{bounce_counts}{Breakdown of bounce directions.}
+#'     \item{reversal_summary}{(Optional) Summary of zero-reversal patterns, if present in input.}
+#'     \item{return_summary}{(Optional) Summary of zero-return patterns, if present in input.}
+#'     \item{group_summary}{(Optional) Summary stats by 'group'.}
+#'     \item{problem_ids}{(Optional) Top IDs with unsystematic patterns.}
+#'   }
 #'
 #' @export
 summary.cp_unsystematic <- function(object, ...) {
-  # Check if required columns exist
   required_cols <- c("bounce_any", "delta_direction", "bounce_direction")
   if (!all(required_cols %in% names(object))) {
-    stop(
-      "Input dataframe must contain columns: ",
-      paste(required_cols, collapse = ", ")
-    )
+    stop("Input must include columns: ", paste(required_cols, collapse = ", "))
   }
 
-  # Calculate basic statistics
   total_patterns <- nrow(object)
   unsystematic_count <- sum(object$bounce_any, na.rm = TRUE)
   systematic_count <- total_patterns - unsystematic_count
   unsystematic_percent <- round(100 * unsystematic_count / total_patterns, 1)
   systematic_percent <- round(100 * systematic_count / total_patterns, 1)
 
-  # Count by trend direction
-  trend_counts <- table(object$delta_direction, useNA = "ifany")
-  trend_percents <- round(100 * trend_counts / sum(trend_counts), 1)
-  trend_summary <- data.frame(
-    direction = names(trend_counts),
-    count = as.numeric(trend_counts),
-    percent = trend_percents
+  trend_counts <- as.data.frame(table(object$delta_direction, useNA = "ifany"))
+  names(trend_counts) <- c("direction", "count")
+  trend_counts$percent <- round(
+    100 * trend_counts$count / sum(trend_counts$count),
+    1
   )
 
-  # Count by bounce direction
-  bounce_counts <- table(object$bounce_direction, useNA = "ifany")
-  bounce_percents <- round(100 * bounce_counts / sum(bounce_counts), 1)
-  bounce_summary <- data.frame(
-    direction = names(bounce_counts),
-    count = as.numeric(bounce_counts),
-    percent = bounce_percents
+  bounce_counts <- as.data.frame(table(
+    object$bounce_direction,
+    useNA = "ifany"
+  ))
+  names(bounce_counts) <- c("direction", "count")
+  bounce_counts$percent <- round(
+    100 * bounce_counts$count / sum(bounce_counts$count),
+    1
   )
 
-  # If group column exists, summarize by group
+  # Initialize summaries for optional columns
+  reversal_summary <- NULL
+  return_summary <- NULL
+
+  # Conditionally summarize reversals if column exists
+  if ("reversals" %in% names(object)) {
+    reversal_count <- sum(object$reversals > 0, na.rm = TRUE)
+    reversal_summary <- list(
+      count = reversal_count,
+      percent = round(100 * reversal_count / total_patterns, 1)
+    )
+  }
+
+  # Conditionally summarize returns if column exists
+  if ("returns" %in% names(object)) {
+    return_count <- sum(object$returns > 0, na.rm = TRUE)
+    return_summary <- list(
+      count = return_count,
+      percent = round(100 * return_count / total_patterns, 1)
+    )
+  }
+
   group_summary <- NULL
   if ("group" %in% names(object)) {
-    group_summary <- tapply(object$bounce_any, object$group, function(x) {
+    group_summary <- aggregate(bounce_any ~ group, object, function(x) {
       c(
         total = length(x),
-        unsystematic = sum(x, na.rm = TRUE),
-        unsystematic_percent = round(100 * sum(x, na.rm = TRUE) / length(x), 1)
+        unsystematic = sum(x),
+        unsystematic_percent = round(100 * mean(x), 1)
       )
     })
-    group_summary <- do.call(rbind, group_summary)
-    group_summary <- as.data.frame(group_summary)
+    group_summary <- do.call(data.frame, group_summary)
   }
 
-  # If id column exists, find IDs with most unsystematic patterns
   problem_ids <- NULL
   if (all(c("id", "group") %in% names(object))) {
-    id_unsys_counts <- tapply(object$bounce_any, object$id, sum, na.rm = TRUE)
-    problem_ids <- sort(id_unsys_counts, decreasing = TRUE)
-    problem_ids <- data.frame(
-      id = names(problem_ids),
-      unsystematic_count = as.numeric(problem_ids)
-    )
-    problem_ids <- problem_ids[problem_ids$unsystematic_count > 0, ]
+    id_counts <- aggregate(bounce_any ~ id, object, sum)
+    problem_ids <- id_counts[id_counts$bounce_any > 0, ]
+    names(problem_ids) <- c("id", "unsystematic_count")
+    problem_ids <- problem_ids[order(-problem_ids$unsystematic_count), ]
   }
 
-  # Create the summary output
-  result <- list(
-    total_patterns = total_patterns,
-    systematic_count = systematic_count,
-    unsystematic_count = unsystematic_count,
-    systematic_percent = systematic_percent,
-    unsystematic_percent = unsystematic_percent,
-    trend_counts = trend_summary,
-    bounce_counts = bounce_summary,
-    group_summary = group_summary,
-    problem_ids = problem_ids
+  structure(
+    list(
+      total_patterns = total_patterns,
+      systematic_count = systematic_count,
+      unsystematic_count = unsystematic_count,
+      systematic_percent = systematic_percent,
+      unsystematic_percent = unsystematic_percent,
+      trend_counts = trend_counts,
+      bounce_counts = bounce_counts,
+      reversal_summary = reversal_summary,
+      return_summary = return_summary,
+      group_summary = group_summary,
+      problem_ids = problem_ids
+    ),
+    class = "summary.cp_unsystematic"
   )
-
-  class(result) <- "summary.cp_unsystematic"
-  return(result)
 }
 
-#' Print method for summary.cp_unsystematic objects
-#' @param x A summary.cp_unsystematic object
-#' @param ... Additional arguments (currently unused)
-#' @importFrom utils head
 #' @export
 print.summary.cp_unsystematic <- function(x, ...) {
   cat("Cross-Price Demand Unsystematic Data Summary\n")
   cat("===========================================\n\n")
-
-  cat("Overall Statistics:\n")
   cat(sprintf("Total patterns examined: %d\n", x$total_patterns))
   cat(sprintf(
     "Systematic patterns: %d (%.1f%%)\n",
@@ -130,49 +126,53 @@ print.summary.cp_unsystematic <- function(x, ...) {
     x$systematic_percent
   ))
   cat(sprintf(
-    "Unsystematic patterns: %d (%.1f%%)\n\n",
+    "Unsystematic patterns (bounces): %d (%.1f%%)\n",
     x$unsystematic_count,
     x$unsystematic_percent
   ))
 
+  # Conditionally print reversal and return summaries
+  if (!is.null(x$reversal_summary)) {
+    cat(sprintf(
+      "Patterns with Reversals: %d (%.1f%%)\n",
+      x$reversal_summary$count,
+      x$reversal_summary$percent
+    ))
+  }
+  if (!is.null(x$return_summary)) {
+    cat(sprintf(
+      "Patterns with Returns: %d (%.1f%%)\n",
+      x$return_summary$count,
+      x$return_summary$percent
+    ))
+  }
+  cat("\n")
+
   cat("Trend Direction Counts:\n")
   print(x$trend_counts)
-  cat("\n")
-
-  cat("Bounce Pattern Counts:\n")
+  cat("\nBounce Pattern Counts:\n")
   print(x$bounce_counts)
-  cat("\n")
 
   if (!is.null(x$group_summary)) {
-    cat("Summary by Group:\n")
+    cat("\nSummary by Group:\n")
     print(x$group_summary)
-    cat("\n")
   }
-
   if (!is.null(x$problem_ids) && nrow(x$problem_ids) > 0) {
-    cat("Problematic IDs (with unsystematic patterns):\n")
-    print(head(x$problem_ids, 10)) # Show top 10 problematic IDs
+    cat("\nProblematic IDs (most unsystematic patterns):\n")
+    print(utils::head(x$problem_ids, 10))
     if (nrow(x$problem_ids) > 10) {
-      cat(sprintf(
-        "... and %d more IDs with unsystematic patterns\n",
-        nrow(x$problem_ids) - 10
-      ))
+      cat(sprintf("... and %d more\n", nrow(x$problem_ids) - 10))
     }
   }
-
   invisible(x)
 }
 
 #' @export
 summary.tbl_df <- function(object, ...) {
-  # Check if this looks like the result of check_unsystematic_cp
   required_cols <- c("bounce_any", "delta_direction", "bounce_direction")
-
   if (all(required_cols %in% names(object))) {
-    # This looks like unsystematic check results, use our specialized summary
     summary.cp_unsystematic(object, ...)
   } else {
-    # Fall back to default tibble summary
     NextMethod()
   }
 }
