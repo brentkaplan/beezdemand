@@ -197,7 +197,9 @@ fit_demand_mixed <- function(
       fixed_effects_formula_str_Q0 <- fixed_rhs
       fixed_effects_formula_str_alpha <- fixed_rhs
     } else {
-      stop("'fixed_rhs' must be a one-sided formula or character string like '~ 1 + var'.")
+      stop(
+        "'fixed_rhs' must be a one-sided formula or character string like '~ 1 + var'."
+      )
     }
   } else {
     # Build separate RHS for Q0 and alpha using potentially different factors
@@ -440,9 +442,14 @@ fit_demand_mixed <- function(
     if (length(start_values$fixed) != expected_total) {
       stop(paste0(
         "User-supplied 'start_values' have incorrect length. Expected ",
-        expected_total, " values (", num_params_Q0, " for Q0 + ",
-        num_params_alpha, " for alpha), got ",
-        length(start_values$fixed), "."
+        expected_total,
+        " values (",
+        num_params_Q0,
+        " for Q0 + ",
+        num_params_alpha,
+        " for alpha), got ",
+        length(start_values$fixed),
+        "."
       ))
     }
   }
@@ -460,8 +467,13 @@ fit_demand_mixed <- function(
     signif(start_values$fixed[num_params_Q0 + 1], 3)
   )
   message(
-    "Number of fixed parameters: ", length(start_values$fixed),
-    " (Q0: ", num_params_Q0, ", alpha: ", num_params_alpha, ")"
+    "Number of fixed parameters: ",
+    length(start_values$fixed),
+    " (Q0: ",
+    num_params_Q0,
+    ", alpha: ",
+    num_params_alpha,
+    ")"
   )
 
   fitted_nlme_model <- tryCatch(
@@ -480,7 +492,14 @@ fit_demand_mixed <- function(
     },
     error = function(e) {
       num_p_val <- if (!is.na(num_params_Q0) && !is.na(num_params_alpha)) {
-        paste0(num_params_Q0 + num_params_alpha, " (Q0: ", num_params_Q0, ", alpha: ", num_params_alpha, ")")
+        paste0(
+          num_params_Q0 + num_params_alpha,
+          " (Q0: ",
+          num_params_Q0,
+          ", alpha: ",
+          num_params_alpha,
+          ")"
+        )
       } else {
         "unknown (check factors)"
       }
@@ -532,7 +551,9 @@ fit_demand_mixed <- function(
       num_params_alpha = num_params_alpha
     ),
     start_values_used = start_values$fixed,
-    collapse_info = if (length(collapse_info$Q0) > 0 || length(collapse_info$alpha) > 0) {
+    collapse_info = if (
+      length(collapse_info$Q0) > 0 || length(collapse_info$alpha) > 0
+    ) {
       collapse_info
     } else {
       NULL

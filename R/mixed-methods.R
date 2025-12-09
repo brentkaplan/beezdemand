@@ -145,6 +145,7 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #' @importFrom emmeans ref_grid emmeans
 #' @importFrom dplyr full_join select rename mutate across all_of left_join
 #' @importFrom tibble as_tibble
+#' @importFrom tidyr crossing
 #' @importFrom rlang .data `:=`
 #' @export
 get_demand_param_emms <- function(
@@ -194,7 +195,11 @@ get_demand_param_emms <- function(
 
   # Build mapping from original factor names to collapsed names
   # This handles the case where collapse_levels created factor1_Q0 and factor1_alpha
-  .get_actual_factors <- function(original_factors, param_factors, param_suffix) {
+  .get_actual_factors <- function(
+    original_factors,
+    param_factors,
+    param_suffix
+  ) {
     if (!collapse_was_used || is.null(param_factors)) {
       return(original_factors)
     }
@@ -205,9 +210,12 @@ get_demand_param_emms <- function(
       collapsed_name <- paste0(orig_fac, "_", param_suffix)
       if (collapsed_name %in% param_factors) {
         # Check if the collapsed factor has > 1 level in the data
-        if (collapsed_name %in% names(model_data) &&
+        if (
+          collapsed_name %in%
+            names(model_data) &&
             is.factor(model_data[[collapsed_name]]) &&
-            nlevels(model_data[[collapsed_name]]) >= 2) {
+            nlevels(model_data[[collapsed_name]]) >= 2
+        ) {
           actual_factors <- c(actual_factors, collapsed_name)
         }
         # If only 1 level, skip this factor (it's intercept-only)
@@ -220,7 +228,11 @@ get_demand_param_emms <- function(
 
   # Get actual factor names for each parameter
   actual_factors_Q0 <- .get_actual_factors(factors_in_emm, factors_Q0, "Q0")
-  actual_factors_alpha <- .get_actual_factors(factors_in_emm, factors_alpha, "alpha")
+  actual_factors_alpha <- .get_actual_factors(
+    factors_in_emm,
+    factors_alpha,
+    "alpha"
+  )
 
   # Build specs formulas for each parameter
   .build_specs_formula <- function(factors) {
@@ -283,7 +295,10 @@ get_demand_param_emms <- function(
         if (length(actual_factors) == 0) {
           # For intercept-only, remove the "1" column if it exists
           if ("1" %in% summary_names_log) {
-            df_log_scale_summary <- df_log_scale_summary[, names(df_log_scale_summary) != "1", drop = FALSE]
+            df_log_scale_summary <- df_log_scale_summary[,
+              names(df_log_scale_summary) != "1",
+              drop = FALSE
+            ]
             summary_names_log <- names(df_log_scale_summary)
           }
         }
@@ -446,15 +461,59 @@ get_demand_param_emms <- function(
   )
 
   # --- Combine parameter estimates ---
-  # Handle asymmetric factor structures (e.g., Q0 has factors, alpha is intercept-only)
+  # Handle asymmetric factor structures (e.g., Q0 has factors, alpha is intercept-only,
+  # or same factor name but different levels due to differential collapsing)
   if (!is.null(emm_q0) && !is.null(emm_alpha)) {
     # Find common factor columns in both results
     q0_factor_cols <- intersect(names(emm_q0), factors_in_emm)
     alpha_factor_cols <- intersect(names(emm_alpha), factors_in_emm)
     common_factors <- intersect(q0_factor_cols, alpha_factor_cols)
 
-    if (length(common_factors) > 0) {
-      # Both have common factors - standard join
+    # Check if common factors have matching values (they might not if differential
+    # collapsing was used - e.g., Q0 has original levels, alpha has collapsed levels)
+    joinable_factors <- character(0)
+    disjoint_factors <- character(0)
+
+    for (fac in common_factors) {
+      q0_vals <- unique(as.character(emm_q0[[fac]]))
+      alpha_vals <- unique(as.character(emm_alpha[[fac]]))
+      if (length(intersect(q0_vals, alpha_vals)) > 0) {
+        # At least some values match - can join on this factor
+        joinable_factors <- c(joinable_factors, fac)
+      } else {
+        # Factor values are completely disjoint (due to collapsing)
+        disjoint_factors <- c(disjoint_factors, fac)
+      }
+    }
+
+    if (length(disjoint_factors) > 0) {
+      # Differential collapsing: Q0 and alpha have different factor structures
+      # Rename the disjoint factor columns to avoid confusion
+      message(
+        "Note: Differential collapsing detected for factor(s): ",
+        paste(disjoint_factors, collapse = ", "),
+        ". EMMs will show separate rows for Q0 (original levels) and alpha (collapsed levels)."
+      )
+
+      # Rename disjoint factors in alpha table to indicate they're for alpha
+      for (fac in disjoint_factors) {
+        emm_alpha <- dplyr::rename(emm_alpha, !!paste0(fac, "_alpha") := !!fac)
+      }
+      alpha_factor_cols_renamed <- setdiff(alpha_factor_cols, disjoint_factors)
+
+      if (length(joinable_factors) > 0) {
+        # Some factors can still be joined
+        combined_estimates <- dplyr::full_join(
+          emm_q0,
+          emm_alpha,
+          by = joinable_factors
+        )
+      } else {
+        # No joinable factors - cross join (each Q0 row gets all alpha values)
+        combined_estimates <- tidyr::crossing(emm_q0, emm_alpha)
+      }
+    } else if (length(common_factors) > 0) {
+      # Both have common factors with matching values - standard join
       combined_estimates <- dplyr::full_join(
         emm_q0,
         emm_alpha,
@@ -620,46 +679,83 @@ get_observed_demand_param_emms <- function(
     collapse_was_used <- !is.null(fit_obj$collapse_info)
 
     if (collapse_was_used) {
-      # When collapse_levels is used, the EMMs have collapsed levels (e.g., "high", "low")
-      # but the original data column has original levels (e.g., "level1", "level2", "level3")
-      # We need to get observed combinations from the collapsed factor columns
+      # When collapse_levels is used, the EMMs may have:
+      # 1. Collapsed levels only (same collapse for Q0 and alpha)
+      # 2. Original + collapsed levels (differential collapse: Q0 uses original, alpha uses collapsed)
 
-      # For Q0-based factors, look for factor1_Q0 columns in the data
-      collapse_factor_cols <- character(0)
-      for (orig_fac in factors_in_emm) {
-        q0_col <- paste0(orig_fac, "_Q0")
-        alpha_col <- paste0(orig_fac, "_alpha")
-        if (q0_col %in% names(fit_obj$data)) {
-          collapse_factor_cols <- c(collapse_factor_cols, q0_col)
-        } else if (alpha_col %in% names(fit_obj$data)) {
-          collapse_factor_cols <- c(collapse_factor_cols, alpha_col)
-        } else if (orig_fac %in% names(fit_obj$data)) {
-          collapse_factor_cols <- c(collapse_factor_cols, orig_fac)
+      # Check for differential collapsing by looking for "_alpha" suffixed columns in EMMs
+      emm_factor_cols <- intersect(
+        names(full_emms),
+        c(factors_in_emm, paste0(factors_in_emm, "_alpha"))
+      )
+
+      # Check if differential collapsing occurred (both dose and dose_alpha columns exist)
+      differential_collapse <- any(
+        paste0(factors_in_emm, "_alpha") %in% names(full_emms)
+      )
+
+      if (differential_collapse) {
+        # Differential collapsing: EMM table has both original (dose) and collapsed (dose_alpha) columns
+        # For filtering, we need to ensure:
+        # 1. The original factor values (e.g., dose = "3e-05") exist in original data
+        # 2. The collapsed factor values (e.g., dose_alpha = "aa") are derived from those originals
+
+        # Get observed Q0 factor levels from original columns
+        # The original factor columns should be in both factors_in_emm AND in the data
+        q0_cols_to_filter <- intersect(factors_in_emm, names(full_emms))
+        q0_cols_to_filter <- intersect(q0_cols_to_filter, names(fit_obj$data))
+
+        if (length(q0_cols_to_filter) > 0) {
+          observed_q0_combinations <- fit_obj$data |>
+            dplyr::distinct(!!!rlang::syms(q0_cols_to_filter))
+
+          # Filter EMMs to include only observed Q0 factor combinations
+          # The alpha (collapsed) factor levels are all valid since they're derived from observed originals
+          filtered_emms <- full_emms |>
+            dplyr::semi_join(observed_q0_combinations, by = q0_cols_to_filter)
+        } else {
+          # No Q0 columns to filter on - return all EMMs
+          filtered_emms <- full_emms
         }
-      }
-
-      if (length(collapse_factor_cols) > 0) {
-        # Get observed combinations from collapsed columns
-        observed_combinations <- fit_obj$data |>
-          dplyr::distinct(!!!rlang::syms(collapse_factor_cols))
-
-        # Rename collapsed columns back to original names for the join
-        for (i in seq_along(collapse_factor_cols)) {
-          col_name <- collapse_factor_cols[i]
-          orig_name <- sub("_(Q0|alpha)$", "", col_name)
-          if (col_name != orig_name) {
-            observed_combinations <- dplyr::rename(
-              observed_combinations,
-              !!orig_name := !!col_name
-            )
+      } else {
+        # Same collapse for Q0 and alpha, or only one param was collapsed
+        # Use the original logic
+        collapse_factor_cols <- character(0)
+        for (orig_fac in factors_in_emm) {
+          q0_col <- paste0(orig_fac, "_Q0")
+          alpha_col <- paste0(orig_fac, "_alpha")
+          if (q0_col %in% names(fit_obj$data)) {
+            collapse_factor_cols <- c(collapse_factor_cols, q0_col)
+          } else if (alpha_col %in% names(fit_obj$data)) {
+            collapse_factor_cols <- c(collapse_factor_cols, alpha_col)
+          } else if (orig_fac %in% names(fit_obj$data)) {
+            collapse_factor_cols <- c(collapse_factor_cols, orig_fac)
           }
         }
 
-        filtered_emms <- full_emms |>
-          dplyr::semi_join(observed_combinations, by = factors_in_emm)
-      } else {
-        # Fallback: return all EMMs
-        filtered_emms <- full_emms
+        if (length(collapse_factor_cols) > 0) {
+          # Get observed combinations from collapsed columns
+          observed_combinations <- fit_obj$data |>
+            dplyr::distinct(!!!rlang::syms(collapse_factor_cols))
+
+          # Rename collapsed columns back to original names for the join
+          for (i in seq_along(collapse_factor_cols)) {
+            col_name <- collapse_factor_cols[i]
+            orig_name <- sub("_(Q0|alpha)$", "", col_name)
+            if (col_name != orig_name) {
+              observed_combinations <- dplyr::rename(
+                observed_combinations,
+                !!orig_name := !!col_name
+              )
+            }
+          }
+
+          filtered_emms <- full_emms |>
+            dplyr::semi_join(observed_combinations, by = factors_in_emm)
+        } else {
+          # Fallback: return all EMMs
+          filtered_emms <- full_emms
+        }
       }
     } else {
       # No collapse - use original factor columns
@@ -767,7 +863,11 @@ get_demand_comparisons <- function(
   factors_alpha <- fit_obj$param_info$factors_alpha %||% all_model_factors
 
   # Helper to get actual factors for a parameter
-  .get_actual_factors_for_param <- function(original_factors, param_factors, param_suffix) {
+  .get_actual_factors_for_param <- function(
+    original_factors,
+    param_factors,
+    param_suffix
+  ) {
     if (!collapse_was_used || is.null(param_factors)) {
       return(original_factors)
     }
@@ -775,9 +875,12 @@ get_demand_comparisons <- function(
     for (orig_fac in original_factors) {
       collapsed_name <- paste0(orig_fac, "_", param_suffix)
       if (collapsed_name %in% param_factors) {
-        if (collapsed_name %in% names(model_data) &&
+        if (
+          collapsed_name %in%
+            names(model_data) &&
             is.factor(model_data[[collapsed_name]]) &&
-            nlevels(model_data[[collapsed_name]]) >= 2) {
+            nlevels(model_data[[collapsed_name]]) >= 2
+        ) {
           actual_factors <- c(actual_factors, collapsed_name)
         }
       } else if (orig_fac %in% param_factors) {
@@ -841,18 +944,26 @@ get_demand_comparisons <- function(
     ))
 
     # Get actual factors for this parameter (handles collapse_levels)
-    param_suffix <- param_name  # "Q0" or "alpha"
+    param_suffix <- param_name # "Q0" or "alpha"
     param_factors <- if (param_name == "Q0") factors_Q0 else factors_alpha
-    actual_factors <- .get_actual_factors_for_param(base_factors, param_factors, param_suffix)
+    actual_factors <- .get_actual_factors_for_param(
+      base_factors,
+      param_factors,
+      param_suffix
+    )
 
     # Build specs formula for this parameter
     if (length(actual_factors) > 0) {
-      emm_specs_formula <- stats::as.formula(paste("~", paste(actual_factors, collapse = " * ")))
+      emm_specs_formula <- stats::as.formula(paste(
+        "~",
+        paste(actual_factors, collapse = " * ")
+      ))
     } else {
       emm_specs_formula <- stats::as.formula("~ 1")
       if (length(base_factors) > 0) {
         message(
-          "  Note: Parameter ", param_name,
+          "  Note: Parameter ",
+          param_name,
           " has no factors (intercept-only) due to collapse_levels."
         )
       }
@@ -947,7 +1058,11 @@ get_demand_comparisons <- function(
 
       # Skip contrasts if intercept-only (no factors to contrast)
       if (length(actual_factors) == 0) {
-        message("  Skipping contrasts for ", param_name, " (intercept-only, no factors to compare).")
+        message(
+          "  Skipping contrasts for ",
+          param_name,
+          " (intercept-only, no factors to compare)."
+        )
         current_param_results$contrasts_log10 <- tibble::tibble()
         if (report_ratios) {
           current_param_results$contrasts_ratio <- tibble::tibble()
@@ -1134,7 +1249,6 @@ print.beezdemand_comparison <- function(x, digits = 3, ...) {
     cat("P-value adjustment method:", adj_method, "\n")
   }
   cat(paste(rep("=", 50), collapse = ""), "\n\n")
-
 }
 
 #' Get Trends (Slopes) of Demand Parameters with respect to Continuous Covariates
@@ -1179,7 +1293,7 @@ get_demand_param_trends <- function(
   fit_obj,
   params = c("Q0", "alpha"),
   covariates,
-  specs = ~ 1,
+  specs = ~1,
   at = NULL,
   ci_level = 0.95,
   ...
@@ -1194,7 +1308,9 @@ get_demand_param_trends <- function(
     stop("Package 'emmeans' is required.")
   }
   if (missing(covariates) || length(covariates) == 0) {
-    stop("Please provide at least one continuous covariate name in 'covariates'.")
+    stop(
+      "Please provide at least one continuous covariate name in 'covariates'."
+    )
   }
 
   params <- match.arg(params, choices = c("Q0", "alpha"), several.ok = TRUE)
@@ -1204,9 +1320,13 @@ get_demand_param_trends <- function(
   # Normalize specs to a formula
   specs_formula <- if (is.character(specs)) stats::as.formula(specs) else specs
   if (!inherits(specs_formula, "formula")) {
-    stop("'specs' must be a formula or a character string, e.g., '~ drug' or '~ 1'.")
+    stop(
+      "'specs' must be a formula or a character string, e.g., '~ drug' or '~ 1'."
+    )
   }
-  specs_vars <- tryCatch(all.vars(specs_formula[[2]]), error = function(e) character(0))
+  specs_vars <- tryCatch(all.vars(specs_formula[[2]]), error = function(e) {
+    character(0)
+  })
 
   out_list <- list()
 
@@ -1252,19 +1372,46 @@ get_demand_param_trends <- function(
           )
         }
       }
-      if (is.null(tr_obj)) next
+      if (is.null(tr_obj)) {
+        next
+      }
 
-      tr_sum <- tryCatch(summary(tr_obj, infer = TRUE, level = ci_level), error = function(e) NULL)
-      if (is.null(tr_sum)) next
+      tr_sum <- tryCatch(
+        summary(tr_obj, infer = TRUE, level = ci_level),
+        error = function(e) NULL
+      )
+      if (is.null(tr_sum)) {
+        next
+      }
 
       df_tr <- tibble::as_tibble(tr_sum)
       coln <- names(df_tr)
       trend_col <- if ("trend" %in% coln) {
         "trend"
       } else {
-        setdiff(coln, c(specs_vars, "SE", "df", "lower.CL", "upper.CL", "t.ratio", "p.value"))[1]
+        setdiff(
+          coln,
+          c(
+            specs_vars,
+            "SE",
+            "df",
+            "lower.CL",
+            "upper.CL",
+            "t.ratio",
+            "p.value"
+          )
+        )[1]
       }
-      keep_cols <- unique(c(specs_vars, trend_col, "SE", "df", "lower.CL", "upper.CL", "t.ratio", "p.value"))
+      keep_cols <- unique(c(
+        specs_vars,
+        trend_col,
+        "SE",
+        "df",
+        "lower.CL",
+        "upper.CL",
+        "t.ratio",
+        "p.value"
+      ))
       keep_cols <- intersect(keep_cols, coln)
 
       df_tr <- df_tr |>
@@ -1278,7 +1425,9 @@ get_demand_param_trends <- function(
   }
 
   if (length(out_list) == 0) {
-    warning("No trends could be calculated. Check 'covariates', 'specs', and 'at'.")
+    warning(
+      "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
+    )
     return(tibble::as_tibble(data.frame()))
   }
   dplyr::bind_rows(out_list)
@@ -1332,7 +1481,11 @@ print.beezdemand_nlme <- function(
   q0_formula <- x$formula_details$fixed_effects_formula_str_Q0
   alpha_formula <- x$formula_details$fixed_effects_formula_str_alpha
 
-  if (!is.null(q0_formula) && !is.null(alpha_formula) && q0_formula == alpha_formula) {
+  if (
+    !is.null(q0_formula) &&
+      !is.null(alpha_formula) &&
+      q0_formula == alpha_formula
+  ) {
     cat("Fixed Effects Structure (Q0 & alpha): ", q0_formula, "\n")
   } else {
     if (!is.null(q0_formula)) {
@@ -1823,18 +1976,21 @@ plot.beezdemand_nlme <- function(
   model_factors <- fit_obj$param_info$factors
   model_continuous <- fit_obj$param_info$continuous_covariates
 
-
   # Identify additional RHS variables from the stored fixed-effects formula strings
   # Check both Q0 and alpha formulas and union their variables (they may differ with collapse_levels)
   rhs_vars <- character(0)
 
   .extract_rhs_vars <- function(formula_str) {
-    if (is.null(formula_str)) return(character(0))
+    if (is.null(formula_str)) {
+      return(character(0))
+    }
     rhs_formula <- tryCatch(
       stats::as.formula(formula_str),
       error = function(e) NULL
     )
-    if (is.null(rhs_formula)) return(character(0))
+    if (is.null(rhs_formula)) {
+      return(character(0))
+    }
     vars <- tryCatch(
       all.vars(rhs_formula),
       error = function(e) character(0)
@@ -1856,7 +2012,10 @@ plot.beezdemand_nlme <- function(
   # Continuous candidates are RHS vars not declared as factors
   cont_from_rhs <- setdiff(rhs_vars, model_factors %||% character(0))
   # Union with explicit metadata
-  cont_covars_all <- unique(c(model_continuous %||% character(0), cont_from_rhs))
+  cont_covars_all <- unique(c(
+    model_continuous %||% character(0),
+    cont_from_rhs
+  ))
 
   y_plot_col_name <- paste0(y_var_name, "_plotscale")
   plot_data_orig[[y_plot_col_name]] <- inv_fun(plot_data_orig[[y_var_name]])
@@ -1952,8 +2111,14 @@ plot.beezdemand_nlme <- function(
       # Add continuous covariates (single conditioning values)
       if (length(cont_covars_all) > 0) {
         for (cv in cont_covars_all) {
-          if (cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])) {
-            val <- if (!is.null(at) && !is.null(at[[cv]])) at[[cv]] else stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+          if (
+            cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])
+          ) {
+            val <- if (!is.null(at) && !is.null(at[[cv]])) {
+              at[[cv]]
+            } else {
+              stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+            }
             pred_grid_list[[cv]] <- val
           }
         }
@@ -1982,7 +2147,11 @@ plot.beezdemand_nlme <- function(
         dplyr::distinct()
 
       # Ensure id and factor columns carry the same levels as in fit_obj$data
-      if (id_var_name %in% names(fit_obj$data) && is.factor(fit_obj$data[[id_var_name]])) {
+      if (
+        id_var_name %in%
+          names(fit_obj$data) &&
+          is.factor(fit_obj$data[[id_var_name]])
+      ) {
         id_fac_df[[id_var_name]] <- factor(
           as.character(id_fac_df[[id_var_name]]),
           levels = levels(fit_obj$data[[id_var_name]])
@@ -2006,8 +2175,14 @@ plot.beezdemand_nlme <- function(
       # Add continuous covariates as columns with conditioning values
       if (length(cont_covars_all) > 0) {
         for (cv in cont_covars_all) {
-          if (cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])) {
-            val <- if (!is.null(at) && !is.null(at[[cv]])) at[[cv]] else stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+          if (
+            cv %in% names(plot_data_orig) && !is.factor(plot_data_orig[[cv]])
+          ) {
+            val <- if (!is.null(at) && !is.null(at[[cv]])) {
+              at[[cv]]
+            } else {
+              stats::median(plot_data_orig[[cv]], na.rm = TRUE)
+            }
             pred_newdata[[cv]] <- val
           }
         }
