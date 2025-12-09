@@ -45,7 +45,11 @@ pull <- function(x, y) {
     details = "Please use dplyr::pull() instead, which provides similar functionality."
   )
 
-  if (ncol(x) == 1) y <- 1 else y
+  if (ncol(x) == 1) {
+    y <- 1
+  } else {
+    y
+  }
   x[, if (is.name(substitute(y))) deparse(substitute(y)) else y, drop = FALSE][[
     1
   ]]
@@ -76,10 +80,16 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
     dat
   }
 
-  dat[, xcol] <- if (!is.numeric(dat[, xcol])) as.numeric(dat[, xcol]) else
+  dat[, xcol] <- if (!is.numeric(dat[, xcol])) {
+    as.numeric(dat[, xcol])
+  } else {
     dat[, xcol]
-  dat[, ycol] <- if (!is.numeric(dat[, ycol])) as.numeric(dat[, ycol]) else
+  }
+  dat[, ycol] <- if (!is.numeric(dat[, ycol])) {
+    as.numeric(dat[, ycol])
+  } else {
     dat[, ycol]
+  }
 
   if (any(is.na(dat[, ycol]))) {
     warning("NA values found in ", ycol, " column. Dropping NAs and continuing")
@@ -90,8 +100,7 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
     any(colnames(dat) %in% "x") &&
       any(colnames(dat) %in% "y") &&
       any(colnames(dat) %in% "id")
-  ) {
-  } else if (
+  ) {} else if (
     any(colnames(dat) %in% xcol) &&
       any(colnames(dat) %in% ycol) &&
       any(colnames(dat) %in% idcol)
@@ -146,8 +155,12 @@ lambertW = function(
   eps = .Machine$double.eps,
   min.imag = 1e-9
 ) {
-  if (any(round(Re(b)) != b)) stop("branch number for W must be an integer")
-  if (!is.complex(z) && any(z < 0)) z = as.complex(z)
+  if (any(round(Re(b)) != b)) {
+    stop("branch number for W must be an integer")
+  }
+  if (!is.complex(z) && any(z < 0)) {
+    z = as.complex(z)
+  }
   ## series expansion about -1/e
   ##
   ## p = (1 - 2*abs(b)).*sqrt(2*e*z + 2);
@@ -179,17 +192,21 @@ lambertW = function(
     if (
       abs(Re(t)) < (2.48 * eps) * (1.0 + abs(Re(w))) &&
         abs(Im(t)) < (2.48 * eps) * (1.0 + abs(Im(w)))
-    )
+    ) {
       break
+    }
   }
-  if (n == maxiter)
+  if (n == maxiter) {
     warning(paste(
       "iteration limit (",
       maxiter,
       ") reached, result of W may be inaccurate",
       sep = ""
     ))
-  if (all(Im(w) < min.imag)) w = as.numeric(w)
+  }
+  if (all(Im(w) < min.imag)) {
+    w = as.numeric(w)
+  }
   return(w)
 }
 
@@ -370,7 +387,8 @@ validate_demand_data <- function(
 collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
   if (!is.list(collapse_spec) || is.null(names(collapse_spec))) {
     stop(
-      "Collapse specification for '", suffix,
+      "Collapse specification for '",
+      suffix,
       "' must be a named list of factor mappings."
     )
   }
@@ -380,10 +398,12 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
 
   for (factor_col in names(collapse_spec)) {
     # Validate factor is in the model
-
     if (!factor_col %in% factors) {
       warning(
-        "Factor '", factor_col, "' in collapse_levels$", suffix,
+        "Factor '",
+        factor_col,
+        "' in collapse_levels$",
+        suffix,
         " is not in the 'factors' list. Skipping."
       )
       next
@@ -392,15 +412,19 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     # Validate factor is in the data
     if (!factor_col %in% names(data)) {
       warning(
-        "Factor '", factor_col, "' not found in data. Skipping."
+        "Factor '",
+        factor_col,
+        "' not found in data. Skipping."
       )
       next
     }
 
     level_map <- collapse_spec[[factor_col]]
+
     if (!is.list(level_map) || is.null(names(level_map))) {
       stop(
-        "Collapse mapping for factor '", factor_col,
+        "Collapse mapping for factor '",
+        factor_col,
         "' must be a named list (new_level = c(old_levels))."
       )
     }
@@ -411,7 +435,9 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
       duplicates <- all_old_levels[duplicated(all_old_levels)]
       stop(
         "Overlapping old levels detected in collapse mapping for '",
-        factor_col, "': ", paste(unique(duplicates), collapse = ", "),
+        factor_col,
+        "': ",
+        paste(unique(duplicates), collapse = ", "),
         ". Each old level can only map to one new level."
       )
     }
@@ -428,7 +454,9 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     new_factor_values <- as.character(data[[factor_col]])
     for (new_level_name in names(level_map)) {
       old_levels_to_map <- level_map[[new_level_name]]
-      new_factor_values[new_factor_values %in% old_levels_to_map] <- new_level_name
+      new_factor_values[
+        new_factor_values %in% old_levels_to_map
+      ] <- new_level_name
     }
 
     # Create new column with collapsed levels
@@ -436,7 +464,6 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     data[[new_col_name]] <- droplevels(factor(new_factor_values))
     info[[factor_col]]$new_levels <- levels(data[[new_col_name]])
     info[[factor_col]]$new_col_name <- new_col_name
-
 
     # Update factor names to use the new column
     new_factor_names[new_factor_names == factor_col] <- new_col_name
@@ -464,23 +491,27 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
 #'
 #' @keywords internal
 build_fixed_rhs <- function(
-    factors = NULL,
-    factor_interaction = FALSE,
-    continuous_covariates = NULL,
-    data = NULL
+  factors = NULL,
+  factor_interaction = FALSE,
+  continuous_covariates = NULL,
+  data = NULL
 ) {
   rhs_parts <- c()
 
   # Filter out factors with only 1 level (they don't contribute to contrasts)
   valid_factors <- factors
   if (!is.null(factors) && !is.null(data)) {
-    valid_factors <- vapply(factors, function(f) {
-      if (f %in% names(data) && is.factor(data[[f]])) {
-        nlevels(data[[f]]) >= 2
-      } else {
-        TRUE  # Keep non-factor or missing columns (will error elsewhere)
-      }
-    }, logical(1))
+    valid_factors <- vapply(
+      factors,
+      function(f) {
+        if (f %in% names(data) && is.factor(data[[f]])) {
+          nlevels(data[[f]]) >= 2
+        } else {
+          TRUE # Keep non-factor or missing columns (will error elsewhere)
+        }
+      },
+      logical(1)
+    )
     valid_factors <- factors[valid_factors]
 
     # Warn about dropped single-level factors
@@ -498,7 +529,10 @@ build_fixed_rhs <- function(
       rhs_parts <- c(rhs_parts, valid_factors[1])
     } else if (length(valid_factors) >= 2) {
       if (isTRUE(factor_interaction)) {
-        rhs_parts <- c(rhs_parts, paste0(valid_factors[1], "*", valid_factors[2]))
+        rhs_parts <- c(
+          rhs_parts,
+          paste0(valid_factors[1], "*", valid_factors[2])
+        )
       } else {
         rhs_parts <- c(rhs_parts, valid_factors[1], valid_factors[2])
       }
@@ -531,10 +565,9 @@ validate_collapse_levels <- function(collapse_levels) {
     return(TRUE)
   }
 
-
   if (!is.list(collapse_levels)) {
     stop(
-      "'collapse_levels' must be a named list with keys 'Q0' and/or 
+      "'collapse_levels' must be a named list with keys 'Q0' and/or
 'alpha'."
     )
   }
@@ -553,7 +586,8 @@ validate_collapse_levels <- function(collapse_levels) {
   if (length(invalid_keys) > 0) {
     stop(
       "Invalid keys in 'collapse_levels': ",
-      paste(invalid_keys, collapse = ", "), ". ",
+      paste(invalid_keys, collapse = ", "),
+      ". ",
       "Only 'Q0' and 'alpha' are allowed."
     )
   }
