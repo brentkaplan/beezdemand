@@ -376,16 +376,27 @@ when this occurs.
 
 #### EMMs and Comparisons with Collapsed Factors
 
-When using `collapse_levels`, the `get_demand_param_emms()` and 
-`get_demand_comparisons()` functions automatically handle the asymmetric 
+When using `collapse_levels`, the `get_demand_param_emms()` and
+`get_demand_comparisons()` functions automatically handle the asymmetric
 factor structures. EMMs will be computed using the collapsed levels, and
 comparisons will only be performed when there are multiple levels to compare.
 
+**Differential Collapsing Output:** When Q0 and alpha have different numbers
+of factor levels (e.g., Q0 keeps original `dose` levels while alpha collapses
+to fewer groups), the EMM output will include separate factor columns:
+
+- Original factor column (e.g., `dose`) for the uncollapsed parameter (Q0)
+- Suffixed column (e.g., `dose_alpha`) for the collapsed parameter (alpha)
+
+This results in a cross-joined table showing all combinations of Q0 levels
+and alpha levels. For example, if dose has 5 original levels and alpha
+collapses to 2 groups, the EMM table will have 10 rows (5 × 2).
+
 ```{r}
 # Using the asymmetric collapsed model from above (if it converged)
-if (!inherits(fit_collapsed_asymmetric, "try-error") && 
+if (!inherits(fit_collapsed_asymmetric, "try-error") &&
     !is.null(fit_collapsed_asymmetric$model)) {
-  
+
   cat("--- EMMs with collapsed factors ---\n")
   # EMMs will show collapsed Q0 levels but single alpha value
   collapsed_emms <- get_demand_param_emms(
@@ -394,7 +405,7 @@ if (!inherits(fit_collapsed_asymmetric, "try-error") &&
     include_ev = TRUE
   )
   print(collapsed_emms)
-  
+
   cat("\n--- Comparisons with collapsed factors ---\n")
   # Q0 will have comparisons (2 levels), alpha will have none (1 level)
   collapsed_comparisons <- get_demand_comparisons(
@@ -402,10 +413,10 @@ if (!inherits(fit_collapsed_asymmetric, "try-error") &&
     compare_specs = ~ dose,  # Use original factor name
     params_to_compare = c("Q0", "alpha")
   )
-  
+
   cat("\nQ0 contrasts (collapsed levels):\n")
   print(collapsed_comparisons$Q0$contrasts_log10)
-  
+
   cat("\nalpha contrasts (intercept-only, no comparisons):\n")
   print(collapsed_comparisons$alpha$contrasts_log10)
 } else {
@@ -634,14 +645,14 @@ if (!is.null(active_fit$model)) {
 ```
 
 ## Analyzing Estimated Marginal Means (`get_demand_param_emms`)
- 
+
 This function helps interpret how factors affect $Q_{0}$ and $\alpha$, providing estimates on both log10 and natural scales, and optionally Essential Value (EV).
 
-**Note on `collapse_levels`:** When a model is fit using `collapse_levels` with 
+**Note on `collapse_levels`:** When a model is fit using `collapse_levels` with
 asymmetric specifications (different collapsing for Q0 and alpha), the EMM functions
-automatically use the appropriate collapsed factor names for each parameter. You 
-still specify the original factor name in `factors_in_emm`, and the output will 
-show the collapsed levels. If a parameter has only one level (intercept-only), 
+automatically use the appropriate collapsed factor names for each parameter. You
+still specify the original factor name in `factors_in_emm`, and the output will
+show the collapsed levels. If a parameter has only one level (intercept-only),
 that parameter's values will be the same across all rows.
 
 ```{r}
@@ -694,7 +705,7 @@ if (!is.null(emm_model_to_use)) {
 
 Compare levels of factors for $Q_{0}$ and $\alpha$.
 
-**Note on `collapse_levels`:** When using models fit with asymmetric 
+**Note on `collapse_levels`:** When using models fit with asymmetric
 `collapse_levels`, comparisons are only performed for parameters that have
 multiple levels. If a parameter was collapsed to a single level (intercept-only),
 the comparisons for that parameter will be empty.
