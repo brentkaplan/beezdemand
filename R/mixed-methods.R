@@ -1039,16 +1039,47 @@ get_demand_comparisons <- function(
         )
       }
 
-      # Redundant 'by' check (as implemented before)
+      # Map contrast_by to collapsed factor name if needed
       effective_contrast_by <- contrast_by
+      if (!is.null(contrast_by) && collapse_was_used) {
+        mapped_contrast_by <- character(0)
+        for (cb_fac in contrast_by) {
+          collapsed_name <- paste0(cb_fac, "_", param_suffix)
+          if (collapsed_name %in% actual_factors) {
+            mapped_contrast_by <- c(mapped_contrast_by, collapsed_name)
+          } else if (cb_fac %in% actual_factors) {
+            mapped_contrast_by <- c(mapped_contrast_by, cb_fac)
+          }
+          # If factor not in actual_factors at all, skip it
+        }
+        if (length(mapped_contrast_by) > 0) {
+          if (!identical(mapped_contrast_by, contrast_by)) {
+            message(
+              "  Mapped contrast_by from '",
+              paste(contrast_by, collapse = ", "),
+              "' to '",
+              paste(mapped_contrast_by, collapse = ", "),
+              "' for ",
+              param_name,
+              " due to collapse_levels."
+            )
+          }
+          effective_contrast_by <- mapped_contrast_by
+        } else {
+          # contrast_by factors not available for this parameter
+          effective_contrast_by <- NULL
+        }
+      }
+
+      # Redundant 'by' check
       if (
-        !is.null(contrast_by) &&
+        !is.null(effective_contrast_by) &&
           length(terms_in_emmspecs) == 1 &&
-          identical(sort(terms_in_emmspecs), sort(contrast_by))
+          identical(sort(terms_in_emmspecs), sort(effective_contrast_by))
       ) {
         message(
           "  `contrast_by` (",
-          paste(contrast_by, collapse = ", "),
+          paste(effective_contrast_by, collapse = ", "),
           ") is redundant with `compare_specs` (",
           deparse(emm_specs_formula),
           ") for simple contrasts. Ignoring `contrast_by` for this parameter."
@@ -1197,6 +1228,10 @@ get_demand_comparisons <- function(
           "Contrast calculation (log10 scale) failed for",
           param_name
         )
+        current_param_results$contrasts_log10 <- tibble::tibble()
+        if (report_ratios) {
+          current_param_results$contrasts_ratio <- tibble::tibble()
+        }
       }
     } else {
       current_param_results$emmeans_error <- paste(

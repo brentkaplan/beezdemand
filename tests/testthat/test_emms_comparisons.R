@@ -5,11 +5,11 @@
 
 # Helper function to create test demand data for EMM/comparison tests
 create_emm_test_data <- function(
-    n_subjects = 10,
-    n_prices = 6,
-    n_levels_factor1 = 3,
-    n_levels_factor2 = NULL,
-    seed = 42
+  n_subjects = 10,
+  n_prices = 6,
+  n_levels_factor1 = 3,
+  n_levels_factor2 = NULL,
+  seed = 42
 ) {
   set.seed(seed)
   prices <- 10^seq(-1, 1.5, length.out = n_prices)
@@ -170,7 +170,11 @@ test_that("get_demand_param_emms includes EV when requested", {
     equation_form = "simplified"
   )
 
-  emms <- get_demand_param_emms(fit, factors_in_emm = "factor1", include_ev = TRUE)
+  emms <- get_demand_param_emms(
+    fit,
+    factors_in_emm = "factor1",
+    include_ev = TRUE
+  )
 
   # Should have EV columns
   expect_true("EV" %in% names(emms))
@@ -239,7 +243,7 @@ test_that("get_demand_comparisons works with single factor (no collapse)", {
 
   comps <- get_demand_comparisons(
     fit,
-    compare_specs = ~ factor1,
+    compare_specs = ~factor1,
     params_to_compare = c("Q0", "alpha")
   )
 
@@ -281,7 +285,7 @@ test_that("get_demand_comparisons works with collapse_levels (asymmetric)", {
 
   comps <- get_demand_comparisons(
     fit,
-    compare_specs = ~ factor1,
+    compare_specs = ~factor1,
     params_to_compare = c("Q0", "alpha")
   )
 
@@ -316,7 +320,7 @@ test_that("get_demand_comparisons handles multiple factors with different levels
   # Compare just factor1
   comps_f1 <- get_demand_comparisons(
     fit,
-    compare_specs = ~ factor1,
+    compare_specs = ~factor1,
     params_to_compare = "Q0"
   )
 
@@ -339,9 +343,11 @@ test_that("get_demand_comparisons EMMs have correct factor levels", {
     id = factor(1:6),
     x = c(0.1, 1, 10, 30),
     FactorA = c("Level1", "Level2", "Level3"),
-    FactorB = c("Level1", "Level2", "Level4")  # Shares some names!
+    FactorB = c("Level1", "Level2", "Level4") # Shares some names!
   )
-  test_data$y <- 80 * exp(-0.002 * 80 * test_data$x) + rnorm(nrow(test_data), 0, 2)
+  test_data$y <- 80 *
+    exp(-0.002 * 80 * test_data$x) +
+    rnorm(nrow(test_data), 0, 2)
   test_data$y[test_data$y < 0.1] <- 0.1
   test_data$FactorA <- factor(test_data$FactorA)
   test_data$FactorB <- factor(test_data$FactorB)
@@ -362,12 +368,12 @@ test_that("get_demand_comparisons EMMs have correct factor levels", {
 
   # FactorA should have its own levels only
   unique_A <- unique(as.character(emms$FactorA))
-  expect_true("Level3" %in% unique_A)  # Unique to FactorA
+  expect_true("Level3" %in% unique_A) # Unique to FactorA
   expect_false("Level4" %in% unique_A) # Should NOT appear in FactorA
 
   # FactorB should have its own levels only
   unique_B <- unique(as.character(emms$FactorB))
-  expect_true("Level4" %in% unique_B)  # Unique to FactorB
+  expect_true("Level4" %in% unique_B) # Unique to FactorB
   expect_false("Level3" %in% unique_B) # Should NOT appear in FactorB
 })
 
@@ -401,4 +407,66 @@ test_that("get_demand_comparisons errors on invalid fit object", {
     get_demand_comparisons(list(a = 1)),
     "must be a 'beezdemand_nlme' object"
   )
+})
+
+
+test_that("get_demand_comparisons maps contrast_by to collapsed factor name", {
+  skip_on_cran()
+
+  # Create data with two factors (3 levels each for more meaningful collapse)
+  set.seed(123)
+  test_data <- expand.grid(
+    id = factor(1:6),
+    x = c(0.1, 1, 10),
+    factor1 = c("A", "B", "C"),
+    factor2 = c("low", "mid", "high")
+  )
+  test_data$y <- 80 *
+    exp(-0.002 * 80 * test_data$x) +
+    rnorm(nrow(test_data), 0, 3)
+  test_data$y[test_data$y < 0.1] <- 0.1
+  test_data$factor1 <- factor(test_data$factor1)
+  test_data$factor2 <- factor(test_data$factor2)
+
+  # Collapse factor2 for alpha only into 2 groups (aa and bb)
+  # This mirrors the user's scenario: dose collapsed to aa/bb for alpha only
+  collapse_spec <- list(
+    alpha = list(factor2 = list(aa = c("low", "mid"), bb = c("high")))
+  )
+
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = c("factor1", "factor2"),
+    collapse_levels = collapse_spec,
+    equation_form = "simplified"
+  )
+
+  expect_false(is.null(fit$model))
+
+  # User selects: compare factor1, within factor2
+  # For Q0: contrast_by = "factor2" (original levels: low, mid, high)
+
+  # For alpha: contrast_by should be mapped to "factor2_alpha" (collapsed: aa, bb)
+  comps <- get_demand_comparisons(
+    fit,
+    compare_specs = ~ factor1 * factor2,
+    params_to_compare = c("Q0", "alpha"),
+    contrast_by = "factor2"
+  )
+
+  # Q0 should have comparisons with factor2 as 'by' variable
+  expect_true("Q0" %in% names(comps))
+  expect_true(is.data.frame(comps$Q0$contrasts_log10))
+  expect_true(nrow(comps$Q0$contrasts_log10) > 0)
+  expect_true("factor2" %in% names(comps$Q0$contrasts_log10))
+
+  # alpha should have comparisons with factor2_alpha as 'by' variable
+  expect_true("alpha" %in% names(comps))
+  expect_true(is.data.frame(comps$alpha$contrasts_log10))
+  expect_true(nrow(comps$alpha$contrasts_log10) > 0)
+  # The mapped factor should appear in the results
+  expect_true("factor2_alpha" %in% names(comps$alpha$contrasts_log10))
 })
