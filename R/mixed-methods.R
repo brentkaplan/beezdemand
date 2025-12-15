@@ -2044,8 +2044,31 @@ plot.beezdemand_nlme <- function(
     rhs_vars,
     .extract_rhs_vars(fit_obj$formula_details$fixed_effects_formula_str_alpha)
   )
-  # Continuous candidates are RHS vars not declared as factors
-  cont_from_rhs <- setdiff(rhs_vars, model_factors %||% character(0))
+
+  # Identify collapsed factor columns from param_info (e.g., dose_alpha, dose_Q0)
+  # These are factors but not in model_factors
+  factors_Q0 <- fit_obj$param_info$factors_Q0 %||% model_factors
+  factors_alpha <- fit_obj$param_info$factors_alpha %||% model_factors
+  all_factor_cols <- unique(c(
+    model_factors %||% character(0),
+    factors_Q0 %||% character(0),
+    factors_alpha %||% character(0)
+  ))
+
+  # Continuous candidates are RHS vars not declared as any kind of factor
+  # AND not actually factor columns in the data
+  cont_from_rhs <- setdiff(rhs_vars, all_factor_cols)
+  # Further filter: only keep if it's truly numeric in the data
+  if (length(cont_from_rhs) > 0) {
+    is_numeric_mask <- vapply(
+      cont_from_rhs,
+      function(v) {
+        v %in% names(plot_data_orig) && !is.factor(plot_data_orig[[v]])
+      },
+      logical(1)
+    )
+    cont_from_rhs <- cont_from_rhs[is_numeric_mask]
+  }
   # Union with explicit metadata
   cont_covars_all <- unique(c(
     model_continuous %||% character(0),
@@ -2133,16 +2156,48 @@ plot.beezdemand_nlme <- function(
       length.out = n_points_pred
     )
     if (current_pred_level == 0) {
-      # Population-level grid: full factorial over model factor levels
-      pred_grid_list <- list()
-      pred_grid_list[[x_var_name]] <- x_grid
-      if (!is.null(model_factors)) {
-        for (fac in model_factors) {
-          if (fac %in% names(plot_data_orig)) {
-            pred_grid_list[[fac]] <- levels(droplevels(plot_data_orig[[fac]]))
+      # Population-level grid: use OBSERVED factor combinations (not full factorial)
+      # This is critical when collapse_levels creates derived columns (e.g., dose_alpha)
+      # that are linked to original columns (e.g., dose). Full factorial would create
+      # invalid combinations like dose="3e-05" with dose_alpha="bb".
+
+      # Get all factor columns that exist in the data (original + collapsed)
+      factor_cols_in_data <- all_factor_cols[
+        all_factor_cols %in%
+          names(plot_data_orig) &
+          vapply(
+            all_factor_cols,
+            function(f) is.factor(plot_data_orig[[f]]),
+            logical(1)
+          )
+      ]
+
+      if (length(factor_cols_in_data) > 0) {
+        # Get observed factor combinations from the data
+        observed_factor_combos <- plot_data_orig |>
+          dplyr::select(dplyr::all_of(factor_cols_in_data)) |>
+          dplyr::distinct()
+
+        # Ensure factor levels match the fitted data
+        for (fac in factor_cols_in_data) {
+          if (is.factor(fit_obj$data[[fac]])) {
+            observed_factor_combos[[fac]] <- factor(
+              as.character(observed_factor_combos[[fac]]),
+              levels = levels(fit_obj$data[[fac]])
+            )
           }
         }
+
+        # Cross observed factor combinations with x grid
+        pred_newdata <- tidyr::crossing(
+          observed_factor_combos,
+          !!rlang::sym(x_var_name) := x_grid
+        )
+      } else {
+        # No factors - just use x grid
+        pred_newdata <- tibble::tibble(!!rlang::sym(x_var_name) := x_grid)
       }
+
       # Add continuous covariates (single conditioning values)
       if (length(cont_covars_all) > 0) {
         for (cv in cont_covars_all) {
@@ -2154,11 +2209,10 @@ plot.beezdemand_nlme <- function(
             } else {
               stats::median(plot_data_orig[[cv]], na.rm = TRUE)
             }
-            pred_grid_list[[cv]] <- val
+            pred_newdata[[cv]] <- val
           }
         }
       }
-      pred_newdata <- tidyr::expand_grid(!!!pred_grid_list)
     } else {
       # Individual-level grid: only observed id × factor combinations
       if (!(id_var_name %in% names(plot_data_orig))) {
@@ -2170,8 +2224,9 @@ plot.beezdemand_nlme <- function(
         next # Skip this iteration for individual lines
       }
 
-      observed_factors <- if (!is.null(model_factors)) {
-        intersect(model_factors, names(plot_data_orig))
+      # Include all factor columns (original + collapsed) that exist in data
+      observed_factors <- if (length(all_factor_cols) > 0) {
+        intersect(all_factor_cols, names(plot_data_orig))
       } else {
         character(0)
       }
