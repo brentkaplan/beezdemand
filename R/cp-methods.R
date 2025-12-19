@@ -37,8 +37,8 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
       equation = equation,
       equation_text = switch(
         equation,
-        exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
-        exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
+        exponential = "y ~ log(qalone) + I * exp(-beta * x)",
+        exponentiated = "y ~ qalone * exp(I * exp(-beta * x))",
         additive = "y ~ qalone + I * exp(-beta * x)",
         "Unknown equation type"
       ),
@@ -65,9 +65,14 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
   }
 
   # Use provided data or attempt to extract from the model environment.
-  data <- if (!is.null(object$data)) object$data else {
-    model_env <- if (inherits(model, "nls")) model$m$getEnv() else
+  data <- if (!is.null(object$data)) {
+    object$data
+  } else {
+    model_env <- if (inherits(model, "nls")) {
+      model$m$getEnv()
+    } else {
       environment(model)
+    }
     data.frame(x = model_env$x, y = model_env$y)
   }
 
@@ -113,8 +118,8 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
 
   equation_text <- switch(
     equation,
-    exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
-    exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
+    exponential = "y ~ log(qalone) + I * exp(-beta * x)",
+    exponentiated = "y ~ qalone * exp(I * exp(-beta * x))",
     additive = "y ~ qalone + I * exp(-beta * x)",
     "Unknown equation type"
   )
@@ -200,8 +205,12 @@ print.summary.cp_model_nls <- function(x, ...) {
   }
   cat("\nFit Statistics:\n")
   cat("R-squared:", format(x$r_squared, digits = 4), "\n")
-  if (!is.na(x$aic)) cat("AIC:", format(x$aic, digits = 4), "\n")
-  if (!is.na(x$bic)) cat("BIC:", format(x$bic, digits = 4), "\n")
+  if (!is.na(x$aic)) {
+    cat("AIC:", format(x$aic, digits = 4), "\n")
+  }
+  if (!is.na(x$bic)) {
+    cat("BIC:", format(x$bic, digits = 4), "\n")
+  }
 
   if (!is.null(x$derived_metrics)) {
     cat("\nParameter Interpretation:\n")
@@ -254,10 +263,12 @@ plot.cp_model_nls <- function(
   point_size = 3,
   ...
 ) {
-  if (!requireNamespace("ggplot2", quietly = TRUE))
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.")
-  if (!requireNamespace("scales", quietly = TRUE))
+  }
+  if (!requireNamespace("scales", quietly = TRUE)) {
     stop("Package 'scales' is required.")
+  }
 
   # Use provided data or fallback
   if (is.null(data)) {
@@ -271,8 +282,9 @@ plot.cp_model_nls <- function(
   }
 
   # Defensive: ensure data has x and y
-  if (!all(c("x", "y") %in% names(data)))
+  if (!all(c("x", "y") %in% names(data))) {
     stop("Data must contain columns 'x' and 'y'")
+  }
 
   # If model is NULL, plot only the data points and warn
   if (is.null(x$model)) {
@@ -295,8 +307,9 @@ plot.cp_model_nls <- function(
   # --- existing code for valid model below ---
   if ("target" %in% names(data)) {
     data <- data[data$target == "alt", ]
-    if (nrow(data) == 0)
+    if (nrow(data) == 0) {
       stop("No data with target = 'alt' found in provided data")
+    }
   }
 
   allowed_trans <- c("identity", "log10", "pseudo_log")
@@ -317,13 +330,15 @@ plot.cp_model_nls <- function(
   if (x_trans == "log10" && any(data$x <= 0, na.rm = TRUE)) {
     data <- data[data$x > 0, ]
     warning("Filtered out non-positive x values for log10 transformation")
-    if (nrow(data) == 0)
+    if (nrow(data) == 0) {
       stop("No positive x values left after filtering for log10 transformation")
+    }
   }
 
   x_range <- range(data$x, na.rm = TRUE)
-  if (!all(is.finite(x_range)))
+  if (!all(is.finite(x_range))) {
     stop("Cannot determine a valid x range from the provided data")
+  }
 
   if (x_trans == "log10") {
     min_x <- max(0.001, x_range[1])
@@ -337,8 +352,11 @@ plot.cp_model_nls <- function(
 
   y_col <- if (
     !is.null(inverse_fun) && "y_pred_untransformed" %in% names(preds)
-  )
-    "y_pred_untransformed" else "y_pred"
+  ) {
+    "y_pred_untransformed"
+  } else {
+    "y_pred"
+  }
 
   p <- ggplot2::ggplot() +
     ggplot2::geom_line(
@@ -357,8 +375,12 @@ plot.cp_model_nls <- function(
     ggplot2::scale_x_continuous(trans = x_trans_obj) +
     ggplot2::scale_y_continuous(trans = y_trans_obj)
 
-  if (x_trans == "log10") p <- p + ggplot2::annotation_logticks(sides = "b")
-  if (y_trans == "log10") p <- p + ggplot2::annotation_logticks(sides = "l")
+  if (x_trans == "log10") {
+    p <- p + ggplot2::annotation_logticks(sides = "b")
+  }
+  if (y_trans == "log10") {
+    p <- p + ggplot2::annotation_logticks(sides = "l")
+  }
 
   p <- p +
     ggplot2::labs(x = xlab, y = ylab, title = title) +
@@ -381,12 +403,15 @@ predict.cp_model_nls <- function(
   inverse_fun = NULL,
   ...
 ) {
-  if (!inherits(object, "cp_model_nls"))
+  if (!inherits(object, "cp_model_nls")) {
     stop("Object must be of class 'cp_model_nls'")
-  if (is.null(newdata))
+  }
+  if (is.null(newdata)) {
     stop("'newdata' must be provided as a data frame with an 'x' column")
-  if (!("x" %in% names(newdata)))
+  }
+  if (!("x" %in% names(newdata))) {
     stop("'newdata' must contain a column named 'x'")
+  }
 
   equation <- object$equation
   model <- object$model
@@ -394,8 +419,9 @@ predict.cp_model_nls <- function(
     stop("Could not extract coefficients from model: ", e$message)
   })
 
-  if (!all(c("qalone", "I", "beta") %in% names(coefs)))
+  if (!all(c("qalone", "I", "beta") %in% names(coefs))) {
     stop("Missing required coefficients: qalone, I, or beta")
+  }
 
   qalone <- coefs["qalone"]
   I_param <- coefs["I"]
@@ -404,8 +430,8 @@ predict.cp_model_nls <- function(
   x_vals <- newdata$x
   y_pred <- switch(
     equation,
-    exponentiated = qalone * 10^(I_param * exp(-beta * x_vals)),
-    exponential = log10(qalone) + I_param * exp(-beta * x_vals),
+    exponentiated = qalone * exp(I_param * exp(-beta * x_vals)),
+    exponential = log(qalone) + I_param * exp(-beta * x_vals),
     additive = qalone + I_param * exp(-beta * x_vals),
     stop("Unsupported equation type: ", equation)
   )
@@ -434,7 +460,9 @@ predict.cp_model_nls <- function(
 #' @return Data frame with predictions.
 #' @export
 predict.cp_model_lm <- function(object, newdata = NULL, ...) {
-  if (is.null(newdata)) stop("newdata must be provided")
+  if (is.null(newdata)) {
+    stop("newdata must be provided")
+  }
   predictions <- predict(object$model, newdata = newdata, ...)
   data.frame(x = newdata$x, y_pred = predictions)
 }
@@ -728,18 +756,20 @@ print.summary.cp_model_lmer <- function(x, ...) {
   cat("\nRandom Effects:\n")
   print(x$random_effects, row.names = FALSE)
   cat("\nModel Fit:\n")
-  if (!is.na(x$r2_marginal))
+  if (!is.na(x$r2_marginal)) {
     cat(
       "R2 (marginal):",
       format(x$r2_marginal, digits = 4),
       "  [Fixed effects only]\n"
     )
-  if (!is.na(x$r2_conditional))
+  }
+  if (!is.na(x$r2_conditional)) {
     cat(
       "R2 (conditional):",
       format(x$r2_conditional, digits = 4),
       "  [Fixed + random effects]\n"
     )
+  }
   cat("AIC:", format(x$AIC, digits = 4), "\n")
   cat("BIC:", format(x$BIC, digits = 4), "\n")
   cat("\nNote: R2 values for mixed models are approximate.\n")
@@ -836,8 +866,9 @@ plot.cp_model_lm <- function(
     # Create a grid with all combinations of x and group
     newdata <- expand.grid(x = pred_x, group = groups)
     # Ensure group is a factor if original was a factor
-    if (is.factor(data$group))
+    if (is.factor(data$group)) {
       newdata$group <- factor(newdata$group, levels = levels(data$group))
+    }
   } else {
     newdata <- data.frame(x = pred_x)
   }
@@ -1527,7 +1558,9 @@ cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 print.cp_posthoc <- function(x, ...) {
   # Get type attribute or default
   type <- attr(x, "type")
-  if (is.null(type)) type <- "Post-hoc"
+  if (is.null(type)) {
+    type <- "Post-hoc"
+  }
 
   # Create title based on type
   title <- switch(
