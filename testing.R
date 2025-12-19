@@ -1,3 +1,28 @@
+load("data/apt_full.RData")
+
+fit1 <- fit_demand_hurdle(
+  apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  random_effects = c("zeros", "q0", "alpha"),
+  verbose = 1
+)
+
+summary(fit1)
+
+plot(fit1)
+plot(fit1, type = "parameters")
+plot(fit1, type = "probability")
+plot(fit1, type = "individual", subjects = 1:10)
+
+# Single subject with observed data
+plot_subject(fit1, subject_id = "5", show_data = TRUE, show_population = TRUE)
+
+vignette("cross-price-models", package = "beezdemand")
+
+
+
 #' Calculate Individual-Level Predicted Coefficients from beezdemand_nlme Model
 #'
 #' This function extracts and combines fixed and random effects to calculate

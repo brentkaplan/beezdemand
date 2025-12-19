@@ -86,7 +86,17 @@ Options: `"pdDiag"` (default) or `"pdSymm"`}
 \item{start_values}{Optional named list of starting values for fixed effects.
 If `NULL`, defaults are estimated based on `equation_form` and `y_var` scale.}
 
-\item{collapse_levels}{Optional named list to collapse factor levels.}
+\item{collapse_levels}{Optional named list specifying factor level collapsing
+separately for Q0 and alpha parameters. Structure:
+```
+list(
+  Q0 = list(factor_name = list(new_level = c(old_levels), ...)),
+  alpha = list(factor_name = list(new_level = c(old_levels), ...))
+)
+```
+Either `Q0` or `alpha` (or both) can be omitted to use original factor levels
+for that parameter. This allows different collapsing schemes for each parameter.
+Ignored if `fixed_rhs` is provided.}
 
 \item{nlme_control}{Control parameters for `nlme::nlme()`.}
 

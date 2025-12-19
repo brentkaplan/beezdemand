@@ -3,9 +3,9 @@
 #' @description
 #' Fits a **cross-price demand** curve of the form
 #'
-#' - **Exponentiated** (default): \eqn{y = q_{alone} \; 10^{\, I \exp(-\beta x)}}
+#' - **Exponentiated** (default): \eqn{y = q_{alone} \cdot \exp(I \exp(-\beta x))}
 #'
-#' - **Exponential** (additive on \eqn{\log_{10} y}): \eqn{\log_{10}(y) = \log_{10}(q_{alone}) + I \exp(-\beta x)}
+#' - **Exponential** (additive on \eqn{\ln y}): \eqn{\ln(y) = \ln(q_{alone}) + I \exp(-\beta x)}
 #'
 #' - **Additive** (level on \eqn{y}): \eqn{y = q_{alone} + I \exp(-\beta x)}
 #'
@@ -46,7 +46,7 @@
 #' (1) estimates a reasonable range for `qalone` from the observed `y`,
 #' (2) respects user-provided bounds, and (3) launches a multi-start grid in
 #' `nls.multstart`. For the `"exponential"` form, `qalone` is interpreted on the
-#' \eqn{\log_{10}} scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
+#' natural log scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
 #'
 #' **Fitting pipeline (short-circuiting):**
 #' \enumerate{
@@ -134,16 +134,16 @@ fit_cp_nls <- function(
   # Define the model formula
   formula_nls <- switch(
     equation,
-    exponentiated = y ~ qalone * 10^(I * exp(-beta * x)),
-    exponential = y ~ log10(qalone) + I * exp(-beta * x),
+    exponentiated = y ~ qalone * exp(I * exp(-beta * x)),
+    exponential = y ~ log(qalone) + I * exp(-beta * x),
     additive = y ~ qalone + I * exp(-beta * x)
   )
 
   # If no explicit start values, define parameter ranges.
   if (is.null(start_vals)) {
     if (equation == "exponential") {
-      qalone_lower <- max(0.1, 10^(y_range[1] - 1))
-      qalone_upper <- max(10^(y_range[2] + 1), 100)
+      qalone_lower <- max(0.1, exp(y_range[1] - 1))
+      qalone_upper <- max(exp(y_range[2] + 1), 100)
     } else {
       qalone_lower <- max(0.1, y_range[1] * 0.5)
       qalone_upper <- max(y_range[2] * 2, 100)
@@ -216,8 +216,11 @@ fit_cp_nls <- function(
     if (is.null(start_vals)) {
       warning("nls.multstart failed; using estimated start values with nlsLM.")
       start_vals <- list(
-        qalone = if (equation == "exponential") 10^mean(data$y) else
-          mean(data$y),
+        qalone = if (equation == "exponential") {
+          10^mean(data$y)
+        } else {
+          mean(data$y)
+        },
         I = 0,
         beta = 1 / x_width
       )
@@ -259,8 +262,8 @@ fit_cp_nls <- function(
       message("nlsLM failed; attempting to use wrapnlsr as a final fallback...")
       formula_nlsr <- switch(
         equation,
-        exponentiated = as.formula("y ~ qalone * 10^(I * exp(-beta * x))"),
-        exponential = as.formula("y ~ log10(qalone) + I * exp(-beta * x)"),
+        exponentiated = as.formula("y ~ qalone * exp(I * exp(-beta * x))"),
+        exponential = as.formula("y ~ log(qalone) + I * exp(-beta * x)"),
         additive = as.formula("y ~ qalone + I * exp(-beta * x)")
       )
 

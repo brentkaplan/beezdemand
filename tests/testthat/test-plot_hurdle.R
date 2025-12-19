@@ -1,0 +1,149 @@
+# Tests for plot methods for beezdemand_hurdle class
+
+test_that("plot type='demand' returns ggplot", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  p <- plot(fit, type = "demand")
+
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot type='probability' returns ggplot", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  p <- plot(fit, type = "probability")
+
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot type='parameters' works with parameter selection", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  # All parameters
+  p1 <- plot(fit, type = "parameters")
+  expect_s3_class(p1, "ggplot")
+
+  # Selected parameters
+  p2 <- plot(fit, type = "parameters", parameters = c("Q0", "alpha"))
+  expect_s3_class(p2, "ggplot")
+})
+
+test_that("plot type='individual' shows correct subjects", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  # Default (first 9 subjects)
+  p1 <- plot(fit, type = "individual")
+  expect_s3_class(p1, "ggplot")
+
+  # Specific subjects
+  p2 <- plot(fit, type = "individual", subjects = c("1", "2", "3"))
+  expect_s3_class(p2, "ggplot")
+})
+
+test_that("plot_subject shows single subject curve", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  p <- plot_subject(fit, subject_id = "1")
+
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_subject errors for invalid subject", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  expect_error(
+    plot_subject(fit, subject_id = "nonexistent"),
+    "not found in model"
+  )
+})
+
+test_that("plot with log_scale option works", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  p <- plot(fit, type = "demand", log_scale = TRUE)
+
+  expect_s3_class(p, "ggplot")
+})

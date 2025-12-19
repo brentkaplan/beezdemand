@@ -53,9 +53,9 @@ If `return_all = FALSE`: the fitted model object from the successful backend.
 \description{
 Fits a **cross-price demand** curve of the form
 
-- **Exponentiated** (default): \eqn{y = q_{alone} \; 10^{\, I \exp(-\beta x)}}
+- **Exponentiated** (default): \eqn{y = q_{alone} \cdot \exp(I \exp(-\beta x))}
 
-- **Exponential** (additive on \eqn{\log_{10} y}): \eqn{\log_{10}(y) = \log_{10}(q_{alone}) + I \exp(-\beta x)}
+- **Exponential** (additive on \eqn{\ln y}): \eqn{\ln(y) = \ln(q_{alone}) + I \exp(-\beta x)}
 
 - **Additive** (level on \eqn{y}): \eqn{y = q_{alone} + I \exp(-\beta x)}
 
@@ -80,7 +80,7 @@ with metadata for downstream methods.
 (1) estimates a reasonable range for `qalone` from the observed `y`,
 (2) respects user-provided bounds, and (3) launches a multi-start grid in
 `nls.multstart`. For the `"exponential"` form, `qalone` is interpreted on the
-\eqn{\log_{10}} scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
+natural log scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
 
 **Fitting pipeline (short-circuiting):**
 \enumerate{

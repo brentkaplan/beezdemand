@@ -11,12 +11,12 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  message = FALSE,
-  include = TRUE,
-  collapse = TRUE,
-  comment = NA,
-  fig.width = 6,
-  fig.height = 4
+    message = FALSE,
+    include = TRUE,
+    collapse = TRUE,
+    comment = NA,
+    fig.width = 6,
+    fig.height = 4
 )
 
 # library(beezdemand)
@@ -34,31 +34,31 @@ here::i_am("vignettes/cross-price-models.Rmd")
 load(here::here("data", "etm.RData"))
 
 lnic <- readr::read_csv(here::here("data", "lowNicClean.csv")) |>
-  mutate(
-    target = if_else(commodity == "cigarettesAdj", "adjusting", "fixed"),
-    group = "cigarettes"
-  ) |>
-  select(
-    -commodity
-  ) |>
-  relocate(condition, .after = group)
+    mutate(
+        target = if_else(commodity == "cigarettesAdj", "adjusting", "fixed"),
+        group = "cigarettes"
+    ) |>
+    select(
+        -commodity
+    ) |>
+    relocate(condition, .after = group)
 
 can_cig <- readr::read_csv(here::here("data", "cannabisCigarettes.csv")) |>
-  select(
-    id,
-    x,
-    y,
-    target = commodity
-  )
+    select(
+        id,
+        x,
+        y,
+        target = commodity
+    )
 
 ongoing_etm <- readr::read_csv(here::here("data", "ongoingETM.csv")) |>
-  pivot_longer(
-    -c(id, x, flavor),
-    names_to = "target",
-    values_to = "y",
-    values_drop_na = TRUE
-  ) |>
-  select(id, x, y, target)
+    pivot_longer(
+        -c(id, x, flavor),
+        names_to = "target",
+        values_to = "y",
+        values_drop_na = TRUE
+    ) |>
+    select(id, x, y, target)
 
 # load("../data/etm.RData")
 ```
@@ -80,36 +80,195 @@ Typical columns:
 
 - `group`: product category
 
+## Complete Cross-Price Analysis Workflow
+
+This section demonstrates a complete analysis workflow using data that contains multiple
+experimental conditions: target consumption when the alternative is absent (`alone`),
+target consumption when the alternative is present (`own`), and alternative consumption
+as a function of target price (`alt`).
+
+### Loading the cp Dataset
+
+```{r load-cp}
+# Load the cross-price example dataset
+load(here::here("data", "cp.RData"))
+
+# Examine structure
+glimpse(cp)
+
+# View conditions
+table(cp$target)
+```
+
+The `cp` dataset contains:
+
+- **alone**: Target commodity (cigarettes) consumption when alternative is *not* available
+- **own**: Target commodity consumption when alternative *is* available
+- **alt**: Alternative commodity (e-cigarettes) consumption as a function of target price
+
+Note that `x` represents the **target commodity price** throughout all conditions.
+
+### Step 1: Fit Target Demand (Alone Condition)
+
+First, we fit a standard demand curve to the target commodity when the alternative is absent:
+
+```{r fit-alone}
+# Filter to alone condition
+alone_data <- cp |>
+    dplyr::filter(target == "alone")
+
+# Fit demand curve using FitCurves
+fit_alone <- FitCurves(
+    dat = alone_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+# View results
+fit_alone
+```
+
+### Step 2: Fit Target Demand (Own Condition)
+
+Next, fit the same demand model to target consumption when the alternative is present:
+
+```{r fit-own}
+# Filter to own condition
+own_data <- cp |>
+    dplyr::filter(target == "own")
+
+# Fit demand curve
+fit_own <- FitCurves(
+    dat = own_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+# View results
+fit_own
+```
+
+### Step 3: Fit Cross-Price Model (Alt Condition)
+
+Finally, fit the cross-price model to alternative consumption as a function of target price:
+
+```{r fit-alt-cp}
+# Filter to alt condition
+alt_data <- cp |>
+    dplyr::filter(target == "alt")
+
+# Fit cross-price model
+fit_alt <- fit_cp_nls(
+    dat = alt_data,
+    equation = "exponentiated",
+    return_all = TRUE
+)
+
+# View results
+summary(fit_alt)
+```
+
+### Comparing Results Across Conditions
+
+```{r compare-conditions}
+# Extract key parameters from dfres
+comparison <- data.frame(
+    Condition = c("Alone (Target)", "Own (Target)", "Alt (Cross-Price)"),
+    Q0_or_Qalone = c(
+        fit_alone$dfres$Q0d,
+        fit_own$dfres$Q0d,
+        coef(fit_alt)["qalone"]
+    ),
+    Alpha_or_I = c(
+        fit_alone$dfres$Alpha,
+        fit_own$dfres$Alpha,
+        coef(fit_alt)["I"]
+    )
+)
+
+comparison
+```
+
+**Interpretation:**
+
+- Comparing `Q0` between alone and own conditions shows how the presence of an alternative
+  affects baseline consumption of the target commodity
+- The `I` parameter from the cross-price model indicates whether the products are
+  substitutes (I < 0) or complements (I > 0)
+
+### Combined Visualization
+
+```{r combined-plot, fig.width=8, fig.height=4}
+# Create prediction data
+x_seq <- seq(0.01, max(cp$x), length.out = 100)
+
+# Extract parameters from dfres
+Q0_alone <- fit_alone$dfres$Q0d
+K_alone <- fit_alone$dfres$K
+Alpha_alone <- fit_alone$dfres$Alpha
+
+Q0_own <- fit_own$dfres$Q0d
+K_own <- fit_own$dfres$K
+Alpha_own <- fit_own$dfres$Alpha
+
+# Get predictions for each condition using the exponential demand equation
+pred_alone <- Q0_alone * 10^(K_alone * (exp(-Alpha_alone * Q0_alone * x_seq) - 1))
+pred_own <- Q0_own * 10^(K_own * (exp(-Alpha_own * Q0_own * x_seq) - 1))
+pred_alt <- predict(fit_alt, newdata = data.frame(x = x_seq))$y_pred
+
+# Combine into plot data
+plot_data <- data.frame(
+    x = rep(x_seq, 3),
+    y = c(pred_alone, pred_own, pred_alt),
+    Condition = rep(c("Target (Alone)", "Target (Own)", "Alternative (Cross-Price)"), each = length(x_seq))
+)
+
+# Plot
+ggplot() +
+    geom_point(data = cp, aes(x = x, y = y, color = target), alpha = 0.6) +
+    geom_line(data = plot_data, aes(x = x, y = y, color = Condition), linewidth = 1) +
+    scale_x_log10() +
+    scale_y_log10() +
+    labs(
+        x = "Target Price",
+        y = "Consumption",
+        title = "Cross-Price Analysis: All Conditions",
+        color = "Condition"
+    ) +
+    theme_bw()
+```
+
 ## Checking Unsystematic Data
 
 ```{r}
 etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
 
 
 unsys_one <- etm |>
-  filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  check_unsystematic_cp()
+    filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    check_unsystematic_cp()
 
 unsys_one
 
 unsys_one_lnic <- lnic |>
-  filter(
-    target == "adjusting",
-    id == "R_00Q12ahGPKuESBT"
-  ) |>
-  check_unsystematic_cp(detailed = TRUE)
+    filter(
+        target == "adjusting",
+        id == "R_00Q12ahGPKuESBT"
+    ) |>
+    check_unsystematic_cp(detailed = TRUE)
 
 unsys_one_lnic
-
 ```
 
 ```{r}
 unsys_all <- etm |>
-  group_by(id, group) |>
-  nest() |>
-  mutate(unsys = map(data, check_unsystematic_cp)) |>
-  unnest(unsys)
+    group_by(id, group) |>
+    nest() |>
+    mutate(unsys = map(data, check_unsystematic_cp)) |>
+    unnest(unsys)
 
 unsys_all
 
@@ -122,36 +281,36 @@ summary(unsys_all)
 
 ```{r}
 unsys_all_lnic <- lnic |>
-  filter(target == "fixed") |>
-  group_by(id, condition) |>
-  nest() |>
-  mutate(
-    unsys = map(
-      data,
-      check_unsystematic_cp,
-      detailed = TRUE
-    )
-  ) |>
-  unnest(unsys) |>
-  arrange(id)
+    filter(target == "fixed") |>
+    group_by(id, condition) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys) |>
+    arrange(id)
 
 unsys_all_lnic
 
 cat("--- 100% ---\n")
 unsys_all_lnic |>
-  dplyr::filter(condition == "100%") |>
-  summary()
+    dplyr::filter(condition == "100%") |>
+    summary()
 cat("\n\n")
 
 cat("--- 2% ---\n")
 unsys_all_lnic |>
-  dplyr::filter(condition == "2%") |>
-  summary()
+    dplyr::filter(condition == "2%") |>
+    summary()
 cat("\n\n")
 cat("--- 2% NegFrame ---\n")
 unsys_all_lnic |>
-  dplyr::filter(condition == "2% NegFrame") |>
-  summary()
+    dplyr::filter(condition == "2% NegFrame") |>
+    summary()
 
 summary(unsys_all_lnic)
 ```
@@ -160,69 +319,64 @@ summary(unsys_all_lnic)
 #### Unpublished Cannabis and Cigarette Data
 
 ```{r}
-
 unsys_all_can_cig <- can_cig |>
-  filter(target %in% c("cannabisFix", "cigarettesFix")) |>
-  group_by(id, target) |>
-  nest() |>
-  mutate(
-    unsys = map(
-      data,
-      check_unsystematic_cp,
-      detailed = TRUE
-    )
-  ) |>
-  unnest(unsys) |>
-  arrange(id)
+    filter(target %in% c("cannabisFix", "cigarettesFix")) |>
+    group_by(id, target) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys) |>
+    arrange(id)
 
 cat("--- Cigarettes ---\n")
 unsys_all_can_cig |>
-  dplyr::filter(target == "cigarettesFix") |>
-  summary()
+    dplyr::filter(target == "cigarettesFix") |>
+    summary()
 cat("\n\n")
 
 
 cat("--- Cannabis ---\n")
 unsys_all_can_cig |>
-  dplyr::filter(target == "cannabisFix") |>
-  summary()
+    dplyr::filter(target == "cannabisFix") |>
+    summary()
 cat("\n\n")
-
-
 ```
 
 #### In Progress Experimental Tobacco Marketplace Data
 
 ```{r}
 unsys_all_ongoing_etm <- ongoing_etm |>
-  # one person is doubled up
-  distinct() |>
-  filter(target %in% c("FixCig", "ECig")) |>
-  group_by(id, target) |>
-  nest() |>
-  mutate(
-    unsys = map(
-      data,
-      check_unsystematic_cp,
-      detailed = TRUE
-    )
-  ) |>
-  unnest(unsys)
+    # one person is doubled up
+    distinct() |>
+    filter(target %in% c("FixCig", "ECig")) |>
+    group_by(id, target) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys)
 
 
 cat("--- Fixed Cigarettes ---\n")
 unsys_all_ongoing_etm |>
-  dplyr::filter(target == "FixCig") |>
-  summary()
+    dplyr::filter(target == "FixCig") |>
+    summary()
 cat("\n\n")
 
 cat("--- E-Cigarettes ---\n")
 unsys_all_ongoing_etm |>
-  dplyr::filter(target == "ECig") |>
-  summary()
+    dplyr::filter(target == "ECig") |>
+    summary()
 cat("\n\n")
-
-
 ```
 
 ## Nonlinear Model Fitting
@@ -231,11 +385,11 @@ cat("\n\n")
 
 ```{r}
 fit_one <- etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  fit_cp_nls(
-    equation = "exponentiated",
-    return_all = TRUE
-  )
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    fit_cp_nls(
+        equation = "exponentiated",
+        return_all = TRUE
+    )
 
 summary(fit_one)
 
@@ -244,16 +398,16 @@ plot(fit_one, x_trans = "log10")
 
 ```{r}
 fit_all <- etm |>
-  group_by(id, group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(id, group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_all
 
@@ -269,73 +423,69 @@ fit_all$plot[[rand_id]]
 
 ```{r}
 fit_pooled <- etm |>
-  group_by(group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_pooled
 
 fit_pooled |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(summary)
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(summary)
 
 fit_pooled |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(plot)
-
-
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(plot)
 ```
 
 ### Fit to Group (mean)
 
 ```{r}
 fit_mean <- etm |>
-  group_by(group, x) |>
-  summarise(
-    y = mean(y)
-  ) |>
-  ungroup() |>
-  group_by(group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(group, x) |>
+    summarise(
+        y = mean(y)
+    ) |>
+    ungroup() |>
+    group_by(group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_mean
 
 fit_mean |>
-  unnest(cols = c(glance, tidy)) |>
-  select(
-    group,
-    term,
-    estimate
-  ) |>
-  ggplot(aes(x = group, y = estimate, group = term)) +
-  geom_bar(stat = "identity") +
-  geom_point() +
-  facet_wrap(~term, ncol = 1, scales = "free_y")
+    unnest(cols = c(glance, tidy)) |>
+    select(
+        group,
+        term,
+        estimate
+    ) |>
+    ggplot(aes(x = group, y = estimate, group = term)) +
+    geom_bar(stat = "identity") +
+    geom_point() +
+    facet_wrap(~term, ncol = 1, scales = "free_y")
 
 fit_mean |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(summary)
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(summary)
 
 fit_mean |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(plot)
-
-
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(plot)
 ```
 
 
@@ -343,12 +493,12 @@ fit_mean |>
 
 ```{r}
 fit_one_linear <- etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  fit_cp_linear(
-    type = "fixed",
-    log10x = TRUE,
-    return_all = TRUE
-  )
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    fit_cp_linear(
+        type = "fixed",
+        log10x = TRUE,
+        return_all = TRUE
+    )
 
 summary(fit_one_linear)
 plot(fit_one_linear, x_trans = "log10")
@@ -358,12 +508,12 @@ plot(fit_one_linear, x_trans = "log10")
 
 ```{r}
 fit_mixed <- fit_cp_linear(
-  etm,
-  type = "mixed",
-  log10x = TRUE,
-  group_effects = "interaction",
-  random_slope = FALSE,
-  return_all = TRUE
+    etm,
+    type = "mixed",
+    log10x = TRUE,
+    group_effects = "interaction",
+    random_slope = FALSE,
+    return_all = TRUE
 )
 
 summary(fit_mixed)
@@ -394,4 +544,106 @@ extract_coefficients(fit_mixed)
 ```{r}
 cp_posthoc_slopes(fit_mixed)
 cp_posthoc_intercepts(fit_mixed)
+```
+
+## Two-Part Hurdle Cross-Price Model
+
+The hurdle cross-price model extends the standard cross-price demand framework to handle
+datasets with many zero consumption values. It uses a two-part structure:
+
+**Part I (Zero Model):** Logistic regression for probability of zero consumption
+$$\text{logit}(P(\text{zero})) = \beta_0 + \beta_1 \ln(x + \epsilon) + a_i$$
+
+**Part II (Intensity Model):** Exponential cross-price model for positive consumption
+$$\ln(Q) = \ln(Q_{alone}) + I \cdot \exp(-\beta \cdot x) + b_i + e$$
+
+Where:
+- $Q_{alone}$ is baseline consumption when alternative is unavailable
+- $I$ is the interaction parameter (negative = substitutes, positive = complements)
+- $\beta$ is the rate of decay
+- $a_i, b_i$ are subject-specific random effects
+
+### Fitting a 2-RE Hurdle Model
+
+```{r hurdle-2re, warning=FALSE}
+# Filter to E-Cigarettes alternative condition
+ecig_data <- etm |>
+    dplyr::filter(group == "E-Cigarettes", target == "alt") |>
+    as.data.frame()
+
+# Check zero proportion
+cat("Zero consumption:", round(100 * mean(ecig_data$y == 0), 1), "%\n")
+
+# Fit 2-RE hurdle model (random effects on zeros and Qalone)
+fit_hurdle_2re <- fit_cp_hurdle(
+    data = ecig_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "qalone"),
+    verbose = 0
+)
+
+summary(fit_hurdle_2re)
+```
+
+### Fitting a 3-RE Hurdle Model
+
+The 3-RE model adds a random effect on the interaction parameter $I$:
+
+```{r hurdle-3re, warning=FALSE}
+# Fit 3-RE hurdle model
+fit_hurdle_3re <- fit_cp_hurdle(
+    data = ecig_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "qalone", "I"),
+    verbose = 0
+)
+
+summary(fit_hurdle_3re)
+```
+
+### Comparing Models
+
+Use a likelihood ratio test to compare nested models:
+
+```{r hurdle-compare}
+compare_cp_hurdle_models(fit_hurdle_3re, fit_hurdle_2re)
+```
+
+### Subject-Level Parameters
+
+```{r hurdle-params}
+# Get parameter summary
+get_cp_hurdle_param_summary(fit_hurdle_2re)
+
+# View individual subject parameters
+head(predict(fit_hurdle_2re, type = "parameters"))
+```
+
+### Predictions
+
+```{r hurdle-predict}
+# Population-level predictions
+new_prices <- data.frame(x = c(2, 8, 16, 32, 64))
+cbind(
+    new_prices,
+    demand = predict(fit_hurdle_2re, new_prices, type = "response", level = "population"),
+    prob_zero = predict(fit_hurdle_2re, new_prices, type = "probability", level = "population")
+)
+```
+
+### Plotting
+
+```{r hurdle-plot, fig.width=7, fig.height=5}
+# Population demand curve
+plot(fit_hurdle_2re, type = "demand")
+
+# Probability of zero consumption
+plot(fit_hurdle_2re, type = "probability")
+
+# Individual curves
+plot(fit_hurdle_2re, type = "individual")
 ```

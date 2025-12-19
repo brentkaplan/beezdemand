@@ -2,6 +2,44 @@
 
 ## New Features
 
+### Two-Part Mixed Effects Hurdle Demand Models
+
+* Added comprehensive hurdle model functionality using TMB (Template Model Builder):
+
+  * `fit_demand_hurdle()`: Fit two-part hurdle models with 2 or 3 random effects
+
+  * Part I models probability of zero consumption (logistic regression with random intercept)
+
+  * Part II models log-consumption given positive response (nonlinear mixed effects)
+
+* S3 methods for `beezdemand_hurdle` objects:
+
+  * `print()`, `summary()`, `coef()`, `logLik()`, `AIC()`, `BIC()`
+
+  * `predict()`: Extract subject parameters or predict demand/probability
+
+  * `plot()`: Visualize demand curves, zero probability, parameter distributions
+
+* Utility functions:
+
+  * `calc_omax_pmax()`: Calculate Pmax and Omax from demand parameters
+
+  * `get_subject_pars()`: Extract subject-specific parameter estimates
+
+  * `compare_hurdle_models()`: Likelihood ratio test for model comparison
+
+  * `get_hurdle_param_summary()`: Summary statistics for individual parameters
+
+* Simulation functions:
+
+  * `simulate_hurdle_data()`: Generate synthetic hurdle model data
+
+  * `run_hurdle_monte_carlo()`: Monte Carlo simulation studies
+
+* New vignette "Hurdle Demand Models" with comprehensive examples
+
+* New dataset `apt_full`: Full alcohol purchase task data with 1,100 subjects and demographic covariates
+
 ### Cross-Price Demand Models
 
 * Added comprehensive cross-price demand model functionality:
