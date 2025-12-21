@@ -359,6 +359,6 @@ fit <- fit_demand_hurdle(data,
 
 ## References
 
-Zhao, J., Bradshaw, P. T., & Gideon, D. J. (2016). A two-part mixed model for differential trajectory analysis of cigarette purchase task data. *Drug and Alcohol Dependence*.
+Zhao, T., Luo, X., Chu, H., Le, C.T., Epstein, L.H. and Thomas, J.L. (2016), A two-part mixed effects model for cigarette purchase task data. *Jrnl Exper Analysis Behavior*, 106: 242-253. https://doi.org/10.1002/jeab.228
 
 Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psychological Review*, 115(1), 186-198.
