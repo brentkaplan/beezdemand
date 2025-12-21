@@ -647,3 +647,249 @@ plot(fit_hurdle_2re, type = "probability")
 # Individual curves
 plot(fit_hurdle_2re, type = "individual")
 ```
+
+## Joint Hurdle Cross-Price Model
+
+The joint hurdle model extends the separate demand and cross-price models by estimating
+all parameters within a **single likelihood**. This approach:
+
+- Shares information across conditions via correlated random effects
+- Provides a unified framework for analyzing complete cross-price experiments
+- Enables direct comparison of target demand with and without an alternative
+
+### Model Structure
+
+The joint model estimates three "streams" simultaneously:
+
+1. **alone.target**: Target commodity demand when alternative is absent
+2. **own.target**: Target commodity demand when alternative is present
+3. **own.alt**: Alternative commodity consumption as a function of target price
+
+**Key design features:**
+
+- **Shared hurdle**: A single subject-level random effect ($a_i$) captures propensity
+  to purchase anything, with stream-specific intercepts
+- **Global k**: The scaling parameter $k$ is shared across target demand streams
+- **price_T is the predictor for all streams**: Alternative price is assumed fixed
+  and is not modeled as a predictor
+
+### Preparing Data for Joint Model
+
+The `prepare_joint_data()` function transforms data into the required format:
+
+```{r joint-prep}
+# Load the cross-price example dataset
+load(here::here("data", "cp.RData"))
+
+# Examine the data structure
+cat("Data dimensions:", nrow(cp), "rows x", ncol(cp), "cols\n")
+cat("Subjects:", length(unique(cp$id)), "\n")
+cat("Conditions:", paste(unique(cp$target), collapse = ", "), "\n")
+
+# View sample data
+head(cp)
+
+# Prepare for joint model
+prep <- prepare_joint_data(
+    data = cp,
+    y_var = "y",
+    price_var = "x",
+    id_var = "id",
+    target_var = "target",
+    alone_value = "alone",
+    own_value = "own",
+    alt_value = "alt"
+)
+
+# Check stream counts
+prep$stream_counts
+```
+
+### Comparing Separate Fits vs Joint Fit
+
+#### Step 1: Separate Fits (Traditional Workflow)
+
+First, let's fit each condition separately using existing functions:
+
+```{r joint-separate-fits}
+# Filter data by condition
+alone_data <- cp |> dplyr::filter(target == "alone")
+own_data <- cp |> dplyr::filter(target == "own")
+alt_data <- cp |> dplyr::filter(target == "alt")
+
+# Fit target demand (alone condition)
+fit_alone <- FitCurves(
+    dat = alone_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+cat("=== Alone Condition (Target Demand) ===\n")
+cat("Q0:", round(fit_alone$dfres$Q0d, 2), "\n")
+cat("Alpha:", round(fit_alone$dfres$Alpha, 6), "\n")
+
+# Fit target demand (own condition)
+fit_own <- FitCurves(
+    dat = own_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+cat("\n=== Own Condition (Target Demand) ===\n")
+cat("Q0:", round(fit_own$dfres$Q0d, 2), "\n")
+cat("Alpha:", round(fit_own$dfres$Alpha, 6), "\n")
+
+# Fit cross-price model (alt condition)
+fit_alt <- fit_cp_nls(
+    dat = alt_data,
+    equation = "exponentiated",
+    return_all = TRUE
+)
+
+cat("\n=== Alt Condition (Cross-Price) ===\n")
+cat("Qalone:", round(coef(fit_alt)["qalone"], 2), "\n")
+cat("I:", round(coef(fit_alt)["I"], 4), "\n")
+cat("beta:", round(coef(fit_alt)["beta"], 4), "\n")
+```
+
+#### Step 2: Joint Model Fit
+
+Now fit all streams simultaneously with the joint hurdle model:
+
+```{r joint-fit, warning=FALSE}
+# Fit the joint hurdle model
+fit_joint <- fit_joint_hurdle(
+    data = cp,
+    y_var = "y",
+    price_var = "x",
+    id_var = "id",
+    target_var = "target",
+    alone_value = "alone",
+    own_value = "own",
+    alt_value = "alt",
+    k = 2, # Fixed k (matches existing workflow)
+    epsilon = 0.001,
+    verbose = 1
+)
+```
+
+### Examining Joint Model Results
+
+```{r joint-summary}
+# Full summary
+summary(fit_joint)
+```
+
+### Extracting Coefficients
+
+```{r joint-coef}
+# All coefficients
+coef(fit_joint, type = "all")
+
+# Hurdle parameters only
+coef(fit_joint, type = "hurdle")
+
+# Demand parameters (target streams)
+coef(fit_joint, type = "demand")
+
+# Cross-price parameters
+coef(fit_joint, type = "crossprice")
+```
+
+### Comparing Parameter Estimates
+
+```{r joint-compare-params}
+# Create comparison table
+comparison <- data.frame(
+    Stream = c("alone.target", "own.target", "own.alt"),
+    Separate_Q0 = c(
+        fit_alone$dfres$Q0d,
+        fit_own$dfres$Q0d,
+        coef(fit_alt)["qalone"]
+    ),
+    Joint_Q0 = c(
+        exp(coef(fit_joint)["logQ0_AT"]),
+        exp(coef(fit_joint)["logQ0_OT"]),
+        exp(coef(fit_joint)["logQalone_OA"])
+    ),
+    Separate_Sens = c(
+        fit_alone$dfres$Alpha,
+        fit_own$dfres$Alpha,
+        coef(fit_alt)["I"]
+    ),
+    Joint_Sens = c(
+        coef(fit_joint)["alpha_AT"],
+        coef(fit_joint)["alpha_OT"],
+        coef(fit_joint)["I"]
+    )
+)
+
+comparison
+```
+
+### Predictions by Stream
+
+```{r joint-predict}
+# Population-level predictions for all streams
+prices <- data.frame(price_T = c(0.5, 1, 2, 4, 8, 16, 32))
+
+# Response predictions (expected consumption)
+pred_response <- predict(fit_joint, newdata = prices, type = "response", stream = "all")
+head(pred_response, 12)
+
+# Probability of zero consumption
+pred_prob <- predict(fit_joint, newdata = prices, type = "probability", stream = "all")
+head(pred_prob, 12)
+```
+
+### Subject-Level Parameters
+
+```{r joint-subject-pars}
+# Extract subject-specific parameters
+subject_pars <- predict(fit_joint, type = "parameters")
+subject_pars
+```
+
+### Visualizing Joint Model Results
+
+```{r joint-plot-demand, fig.width=8, fig.height=5}
+# Demand curves for all streams
+plot(fit_joint, type = "demand")
+```
+
+```{r joint-plot-prob, fig.width=8, fig.height=4}
+# Zero probability curves
+plot(fit_joint, type = "probability")
+```
+
+### Using Tidy Methods
+
+```{r joint-tidy}
+# Tidy coefficient table
+tidy(fit_joint)
+
+# Model summary statistics
+glance(fit_joint)
+```
+
+### Key Takeaways
+
+**When to use the joint model:**
+
+- You have data across multiple conditions (alone, own, alt)
+- You want correlated random effects across conditions
+- You want a single unified analysis rather than separate fits
+
+**When separate fits may be preferred:**
+
+- You only have one condition
+- You want maximum flexibility in model specification per condition
+- Computational resources are limited
+
+**Important notes:**
+
+- `price_T` (target price) is the predictor for **all** streams
+- Alternative price is assumed **fixed** and does not enter the model
+- The joint model produces consistent parameter orderings with the separate fits
