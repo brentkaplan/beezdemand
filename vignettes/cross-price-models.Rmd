@@ -893,3 +893,141 @@ glance(fit_joint)
 - `price_T` (target price) is the predictor for **all** streams
 - Alternative price is assumed **fixed** and does not enter the model
 - The joint model produces consistent parameter orderings with the separate fits
+
+---
+
+## Variant 2: Latent-Trait Joint Model
+
+### Why a Latent-Trait Model?
+
+The saturated joint model (Variant 1) uses **stream-specific random effects** — each
+subject has separate deviations for alone-target, own-target, and own-alt streams.
+This is flexible but can be unstable with sparse data.
+
+The **latent-trait model** (Variant 2) takes a different approach:
+
+- Instead of stream-specific random effects, subjects have **4 latent behavioral traits**
+- These traits **load into** the model parameters via fixed mappings
+- Result: fewer parameters, more interpretable structure, better stability
+
+| Latent Trait | Behavioral Interpretation |
+|--------------|---------------------------|
+| `u_buy`      | Propensity to purchase (drives hurdle) |
+| `u_val`      | Baseline consumption intensity |
+| `u_sens`     | Price sensitivity (elasticity) |
+| `u_sub`      | Substitution propensity |
+
+**Key insight:** Variant 2 trades flexibility for structure, not correctness. Both
+models use the exact same mean functions — only the random effect structure differs.
+
+### Fitting the Latent-Trait Model
+
+```{r fit-latent-model}
+# Fit the latent-trait joint model
+fit_latent <- fit_joint_hurdle(
+    data = cp,
+    joint_type = "latent",
+    k = 2,
+    verbose = 0
+)
+
+print(fit_latent)
+```
+
+### Comparing Variant 1 and Variant 2
+
+Let's compare the two variants side-by-side:
+```{r compare-variants}
+# Hurdle parameters (should be similar)
+cat("=== Hurdle Parameters ===\n")
+cat("\nSaturated (Variant 1):\n")
+print(coef(fit_joint, type = "hurdle"))
+cat("\nLatent (Variant 2):\n")
+print(coef(fit_latent, type = "hurdle"))
+
+# Cross-price parameters
+cat("\n=== Cross-Price Parameters ===\n")
+cat("\nSaturated (Variant 1):\n")
+print(coef(fit_joint, type = "crossprice"))
+cat("\nLatent (Variant 2):\n")
+print(coef(fit_latent, type = "crossprice"))
+```
+
+```{r compare-fit-stats}
+# Model fit comparison
+comparison <- data.frame(
+    Variant = c("Saturated", "Latent"),
+    LogLik = c(fit_joint$logLik, fit_latent$logLik),
+    AIC = c(fit_joint$AIC, fit_latent$AIC),
+    BIC = c(fit_joint$BIC, fit_latent$BIC),
+    Converged = c(fit_joint$convergence == 0, fit_latent$convergence == 0)
+)
+comparison
+```
+
+### Latent Trait Loadings
+
+The latent model includes **loading parameters** that control how the substitution
+trait (`u_sub`) differentially affects each stream:
+
+```{r latent-loadings}
+# Extract latent loadings
+coef(fit_latent, type = "latent")
+```
+
+- `lambda_sub_q0`: How substitution affects own-target baseline demand
+- `lambda_sub_alpha`: How substitution affects own-target price sensitivity
+- `lambda_sub_alt`: How substitution affects alternative consumption
+
+### Predictions with the Latent Model
+
+Predictions work identically to the saturated model:
+
+```{r latent-predictions}
+# Predicted demand across streams
+prices <- data.frame(price_T = c(0.5, 1, 2, 4, 8, 16))
+
+pred_response <- predict(fit_latent, newdata = prices, type = "response", stream = "all")
+pred_response
+
+# Zero probability predictions
+pred_prob <- predict(fit_latent, newdata = prices, type = "probability", stream = "all")
+pred_prob
+```
+
+### Interpreting Latent Traits
+
+The latent traits provide a **behavioral decomposition** of individual differences:
+
+| Trait | High Value Means | Low Value Means |
+|-------|------------------|-----------------|
+| `u_buy` | More likely to purchase at any price | More likely to abstain |
+| `u_val` | Higher baseline consumption | Lower baseline consumption |
+| `u_sens` | More price-sensitive (steeper curves) | Less price-sensitive |
+| `u_sub` | Stronger substitution behavior | Weaker substitution |
+
+**Important:** These are latent constructs, not directly observed. Their values
+are estimated from the data pattern and should be interpreted with appropriate
+caution.
+
+### When to Use Each Variant
+
+| Criterion | Saturated (Variant 1) | Latent (Variant 2) |
+|-----------|----------------------|-------------------|
+| **Data richness** | Many obs per subject | Sparse data |
+| **Primary interest** | Stream-specific effects | Behavioral traits |
+| **Stability** | May require more data | More stable |
+| **Interpretability** | Random effects per stream | Explicit trait meanings |
+| **Flexibility** | Maximum flexibility | Constrained structure |
+
+**Recommendation:**
+
+- Start with **Variant 1 (saturated)** if you have rich data and want maximum flexibility
+- Use **Variant 2 (latent)** if:
+ - Data is sparse
+ - Model convergence is problematic
+ - You want interpretable behavioral dimensions
+ - Stability is more important than stream-specific flexibility
+
+Both variants produce valid inference — the choice depends on your research goals
+and data characteristics.

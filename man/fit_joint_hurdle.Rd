@@ -13,6 +13,7 @@ fit_joint_hurdle(
   alone_value = "alone",
   own_value = "own",
   alt_value = "alt",
+  joint_type = c("saturated", "latent"),
   k = 2,
   epsilon = 0.001,
   start = NULL,
@@ -34,6 +35,12 @@ fit_joint_hurdle(
 
 \item{alone_value, own_value, alt_value}{Character. Values in target_var
 identifying each condition.}
+
+\item{joint_type}{Character. Model variant to fit:
+\itemize{
+  \item "saturated": Stream-specific random effects (Variant 1)
+  \item "latent": Latent-trait model with shared structure (Variant 2)
+}}
 
 \item{k}{Numeric or NULL. If numeric, k is fixed at this value. If NULL,
 k is estimated. Default matches existing hurdle-demand behavior.}
