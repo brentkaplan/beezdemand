@@ -580,3 +580,206 @@ test_that("plot.beezdemand_joint_hurdle works for probability type", {
   p <- plot(fit, type = "probability")
   expect_s3_class(p, "ggplot")
 })
+
+
+# =============================================================================
+# Test: Latent-Trait Variant (Variant 2)
+# =============================================================================
+
+test_that("fit_joint_hurdle with joint_type='latent' runs without error", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  expect_s3_class(fit, "beezdemand_joint_hurdle")
+  expect_equal(fit$joint_type, "latent")
+})
+
+test_that("latent variant has correct parameter structure", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  coef_names <- names(fit$coefficients)
+
+  # Should have theta parameters instead of logQ0/alpha
+  expect_true("theta_Q0_AT" %in% coef_names)
+  expect_true("theta_alpha_AT" %in% coef_names)
+  expect_true("theta_Q0_OT" %in% coef_names)
+  expect_true("theta_alpha_OT" %in% coef_names)
+  expect_true("theta_Qalone_OA" %in% coef_names)
+
+  # Should have latent loadings
+  expect_true("lambda_sub_q0" %in% coef_names)
+  expect_true("lambda_sub_alpha" %in% coef_names)
+  expect_true("lambda_sub_alt" %in% coef_names)
+
+  # Should have latent trait variances
+  expect_true("logsigma_buy" %in% coef_names)
+  expect_true("logsigma_val" %in% coef_names)
+  expect_true("logsigma_sens" %in% coef_names)
+  expect_true("logsigma_sub" %in% coef_names)
+})
+
+test_that("latent variant has latent_traits instead of random_effects", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  # Should have latent_traits
+  expect_true("latent_traits" %in% names(fit))
+  expect_true(is.matrix(fit$latent_traits))
+  expect_equal(ncol(fit$latent_traits), 4) # u_buy, u_val, u_sens, u_sub
+  expect_equal(
+    colnames(fit$latent_traits),
+    c("u_buy", "u_val", "u_sens", "u_sub")
+  )
+})
+
+test_that("latent variant coef() returns correct types", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  # Demand coefficients should use theta_ prefix
+  demand_coef <- coef(fit, type = "demand")
+  expect_true("theta_Q0_AT" %in% names(demand_coef))
+
+  # Cross-price coefficients
+  cp_coef <- coef(fit, type = "crossprice")
+  expect_true("theta_Qalone_OA" %in% names(cp_coef))
+  expect_true("I" %in% names(cp_coef))
+  expect_true("beta" %in% names(cp_coef))
+
+  # Latent loadings
+  latent_coef <- coef(fit, type = "latent")
+  expect_true("lambda_sub_q0" %in% names(latent_coef))
+})
+
+test_that("latent variant print and summary work", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  expect_output(print(fit), "Variant: latent")
+  expect_output(summary(fit), "Latent Trait")
+})
+
+test_that("latent variant has fewer random effect parameters than saturated", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit_sat <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "saturated",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  fit_lat <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  # Both models should have same number of latent dimensions (4)
+  # but latent model uses shared traits instead of stream-specific REs
+  expect_equal(ncol(fit_sat$random_effects), 4) # a_i, b_AT_i, b_OT_i, b_OA_i
+  expect_equal(ncol(fit_lat$latent_traits), 4) # u_buy, u_val, u_sens, u_sub
+
+  # Both should be beezdemand_joint_hurdle class
+  expect_s3_class(fit_sat, "beezdemand_joint_hurdle")
+  expect_s3_class(fit_lat, "beezdemand_joint_hurdle")
+})
+
+test_that("saturated and latent models can be fit on same data", {
+  skip_on_cran()
+
+  test_data <- create_joint_test_data(n_subjects = 5, n_prices = 6)
+
+  fit_sat <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "saturated",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  fit_lat <- suppressWarnings(
+    fit_joint_hurdle(
+      data = test_data,
+      joint_type = "latent",
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )
+  )
+
+  # Both should have finite log-likelihoods
+  expect_true(is.finite(fit_sat$logLik))
+  expect_true(is.finite(fit_lat$logLik))
+
+  # Both should have same data dimensions
+  expect_equal(fit_sat$n_obs, fit_lat$n_obs)
+  expect_equal(fit_sat$n_subjects, fit_lat$n_subjects)
+})

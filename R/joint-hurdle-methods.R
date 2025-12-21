@@ -16,8 +16,12 @@ utils::globalVariables(c(
 
 #' @export
 print.beezdemand_joint_hurdle <- function(x, ...) {
+  joint_type <- if (!is.null(x$joint_type)) x$joint_type else "saturated"
+
   cat("\nJoint Hurdle Cross-Price Model\n")
   cat("===============================\n\n")
+
+  cat("Variant:", joint_type, "\n")
 
   cat("Call:\n")
   print(x$call)
@@ -45,10 +49,17 @@ print.beezdemand_joint_hurdle <- function(x, ...) {
 
 #' @export
 summary.beezdemand_joint_hurdle <- function(object, ...) {
+  joint_type <- if (!is.null(object$joint_type)) {
+    object$joint_type
+  } else {
+    "saturated"
+  }
+
   cat("\nJoint Hurdle Cross-Price Model Summary\n")
   cat("=======================================\n\n")
 
   # Model info
+  cat("Variant:", joint_type, "\n")
   cat("Observations:", object$n_obs, "\n")
   cat("Subjects:", object$n_subjects, "\n")
   cat("k fixed:", object$k_fixed, "(value:", object$k_value, ")\n")
@@ -76,60 +87,153 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
   cat("  gamma_own_alt:         ", sprintf("%.4f", coef["gamma_own_alt"]), "\n")
   cat("  gamma1 (price slope):  ", sprintf("%.4f", coef["gamma1"]), "\n")
 
-  # Part II - Target Demand
-  cat("\nPart II - Target Demand (alone.target):\n")
-  cat("  logQ0_AT:              ", sprintf("%.4f", coef["logQ0_AT"]), "\n")
-  cat("  Q0_AT:                 ", sprintf("%.4f", exp(coef["logQ0_AT"])), "\n")
-  cat("  alpha_AT:              ", sprintf("%.6f", coef["alpha_AT"]), "\n")
+  if (joint_type == "saturated") {
+    # Saturated model output
+    cat("\nPart II - Target Demand (alone.target):\n")
+    cat("  logQ0_AT:              ", sprintf("%.4f", coef["logQ0_AT"]), "\n")
+    cat(
+      "  Q0_AT:                 ",
+      sprintf("%.4f", exp(coef["logQ0_AT"])),
+      "\n"
+    )
+    cat("  alpha_AT:              ", sprintf("%.6f", coef["alpha_AT"]), "\n")
 
-  cat("\nPart II - Target Demand (own.target):\n")
-  cat("  logQ0_OT:              ", sprintf("%.4f", coef["logQ0_OT"]), "\n")
-  cat("  Q0_OT:                 ", sprintf("%.4f", exp(coef["logQ0_OT"])), "\n")
-  cat("  alpha_OT:              ", sprintf("%.6f", coef["alpha_OT"]), "\n")
+    cat("\nPart II - Target Demand (own.target):\n")
+    cat("  logQ0_OT:              ", sprintf("%.4f", coef["logQ0_OT"]), "\n")
+    cat(
+      "  Q0_OT:                 ",
+      sprintf("%.4f", exp(coef["logQ0_OT"])),
+      "\n"
+    )
+    cat("  alpha_OT:              ", sprintf("%.6f", coef["alpha_OT"]), "\n")
 
-  cat("\nPart II - Cross-Price (own.alt):\n")
-  cat("  logQalone_OA:          ", sprintf("%.4f", coef["logQalone_OA"]), "\n")
-  cat(
-    "  Qalone_OA:             ",
-    sprintf("%.4f", exp(coef["logQalone_OA"])),
-    "\n"
-  )
-  cat("  I:                     ", sprintf("%.4f", coef["I"]), "\n")
-  cat("  beta:                  ", sprintf("%.4f", coef["beta"]), "\n")
+    cat("\nPart II - Cross-Price (own.alt):\n")
+    cat(
+      "  logQalone_OA:          ",
+      sprintf("%.4f", coef["logQalone_OA"]),
+      "\n"
+    )
+    cat(
+      "  Qalone_OA:             ",
+      sprintf("%.4f", exp(coef["logQalone_OA"])),
+      "\n"
+    )
+    cat("  I:                     ", sprintf("%.4f", coef["I"]), "\n")
+    cat("  beta:                  ", sprintf("%.4f", coef["beta"]), "\n")
 
-  # Shared k
-  cat("\nShared Parameter:\n")
-  cat(
-    "  k:                     ",
-    sprintf("%.4f", object$k_value),
-    if (object$k_fixed) " (fixed)" else " (estimated)",
-    "\n"
-  )
+    # Shared k
+    cat("\nShared Parameter:\n")
+    cat(
+      "  k:                     ",
+      sprintf("%.4f", object$k_value),
+      if (object$k_fixed) " (fixed)" else " (estimated)",
+      "\n"
+    )
 
-  # Variance components
-  cat("\nVariance Components:\n")
-  cat("--------------------\n")
-  sigma_a <- exp(object$coefficients["logsigma_a"])
-  sigma_b_AT <- exp(object$coefficients["logsigma_b_AT"])
-  sigma_b_OT <- exp(object$coefficients["logsigma_b_OT"])
-  sigma_b_OA <- exp(object$coefficients["logsigma_b_OA"])
-  sigma_e <- exp(object$coefficients["logsigma_e"])
+    # Variance components
+    cat("\nVariance Components:\n")
+    cat("--------------------\n")
+    sigma_a <- exp(object$coefficients["logsigma_a"])
+    sigma_b_AT <- exp(object$coefficients["logsigma_b_AT"])
+    sigma_b_OT <- exp(object$coefficients["logsigma_b_OT"])
+    sigma_b_OA <- exp(object$coefficients["logsigma_b_OA"])
+    sigma_e <- exp(object$coefficients["logsigma_e"])
 
-  cat("  sigma_a (zeros RE):    ", sprintf("%.4f", sigma_a), "\n")
-  cat("  sigma_b_AT:            ", sprintf("%.4f", sigma_b_AT), "\n")
-  cat("  sigma_b_OT:            ", sprintf("%.4f", sigma_b_OT), "\n")
-  cat("  sigma_b_OA:            ", sprintf("%.4f", sigma_b_OA), "\n")
-  cat("  sigma_e (residual):    ", sprintf("%.4f", sigma_e), "\n")
+    cat("  sigma_a (zeros RE):    ", sprintf("%.4f", sigma_a), "\n")
+    cat("  sigma_b_AT:            ", sprintf("%.4f", sigma_b_AT), "\n")
+    cat("  sigma_b_OT:            ", sprintf("%.4f", sigma_b_OT), "\n")
+    cat("  sigma_b_OA:            ", sprintf("%.4f", sigma_b_OA), "\n")
+    cat("  sigma_e (residual):    ", sprintf("%.4f", sigma_e), "\n")
 
-  # Correlations
-  rho_AT_OT <- tanh(object$coefficients["rho_AT_OT_raw"])
-  rho_AT_OA <- tanh(object$coefficients["rho_AT_OA_raw"])
-  rho_OT_OA <- tanh(object$coefficients["rho_OT_OA_raw"])
+    # Correlations
+    rho_AT_OT <- tanh(object$coefficients["rho_AT_OT_raw"])
+    rho_AT_OA <- tanh(object$coefficients["rho_AT_OA_raw"])
+    rho_OT_OA <- tanh(object$coefficients["rho_OT_OA_raw"])
 
-  cat("\nIntensity RE Correlations:\n")
-  cat("  rho(AT, OT):           ", sprintf("%.4f", rho_AT_OT), "\n")
-  cat("  rho(AT, OA):           ", sprintf("%.4f", rho_AT_OA), "\n")
-  cat("  rho(OT, OA):           ", sprintf("%.4f", rho_OT_OA), "\n")
+    cat("\nIntensity RE Correlations:\n")
+    cat("  rho(AT, OT):           ", sprintf("%.4f", rho_AT_OT), "\n")
+    cat("  rho(AT, OA):           ", sprintf("%.4f", rho_AT_OA), "\n")
+    cat("  rho(OT, OA):           ", sprintf("%.4f", rho_OT_OA), "\n")
+  } else {
+    # Latent model output
+    cat("\nPart II - Population Means (theta):\n")
+    cat("  theta_Q0_AT:           ", sprintf("%.4f", coef["theta_Q0_AT"]), "\n")
+    cat(
+      "  theta_alpha_AT:        ",
+      sprintf("%.4f", coef["theta_alpha_AT"]),
+      "\n"
+    )
+    cat("  theta_Q0_OT:           ", sprintf("%.4f", coef["theta_Q0_OT"]), "\n")
+    cat(
+      "  theta_alpha_OT:        ",
+      sprintf("%.4f", coef["theta_alpha_OT"]),
+      "\n"
+    )
+    cat(
+      "  theta_Qalone_OA:       ",
+      sprintf("%.4f", coef["theta_Qalone_OA"]),
+      "\n"
+    )
+    cat("  I:                     ", sprintf("%.4f", coef["I"]), "\n")
+    cat("  beta:                  ", sprintf("%.4f", coef["beta"]), "\n")
+
+    # Shared k
+    cat("\nShared Parameter:\n")
+    cat(
+      "  k:                     ",
+      sprintf("%.4f", object$k_value),
+      if (object$k_fixed) " (fixed)" else " (estimated)",
+      "\n"
+    )
+
+    # Latent trait loadings
+    cat("\nLatent Trait Loadings:\n")
+    cat(
+      "  lambda_sub_q0:         ",
+      sprintf("%.4f", coef["lambda_sub_q0"]),
+      "\n"
+    )
+    cat(
+      "  lambda_sub_alpha:      ",
+      sprintf("%.4f", coef["lambda_sub_alpha"]),
+      "\n"
+    )
+    cat(
+      "  lambda_sub_alt:        ",
+      sprintf("%.4f", coef["lambda_sub_alt"]),
+      "\n"
+    )
+
+    # Latent trait SDs
+    cat("\nLatent Trait Standard Deviations:\n")
+    sigma_buy <- exp(object$coefficients["logsigma_buy"])
+    sigma_val <- exp(object$coefficients["logsigma_val"])
+    sigma_sens <- exp(object$coefficients["logsigma_sens"])
+    sigma_sub <- exp(object$coefficients["logsigma_sub"])
+    sigma_e <- exp(object$coefficients["logsigma_e"])
+
+    cat("  sigma_buy:             ", sprintf("%.4f", sigma_buy), "\n")
+    cat("  sigma_val:             ", sprintf("%.4f", sigma_val), "\n")
+    cat("  sigma_sens:            ", sprintf("%.4f", sigma_sens), "\n")
+    cat("  sigma_sub:             ", sprintf("%.4f", sigma_sub), "\n")
+    cat("  sigma_e (residual):    ", sprintf("%.4f", sigma_e), "\n")
+
+    # Latent trait correlations
+    rho_buy_val <- tanh(object$coefficients["rho_buy_val_raw"])
+    rho_buy_sens <- tanh(object$coefficients["rho_buy_sens_raw"])
+    rho_buy_sub <- tanh(object$coefficients["rho_buy_sub_raw"])
+    rho_val_sens <- tanh(object$coefficients["rho_val_sens_raw"])
+    rho_val_sub <- tanh(object$coefficients["rho_val_sub_raw"])
+    rho_sens_sub <- tanh(object$coefficients["rho_sens_sub_raw"])
+
+    cat("\nLatent Trait Correlations:\n")
+    cat("  rho(buy, val):         ", sprintf("%.4f", rho_buy_val), "\n")
+    cat("  rho(buy, sens):        ", sprintf("%.4f", rho_buy_sens), "\n")
+    cat("  rho(buy, sub):         ", sprintf("%.4f", rho_buy_sub), "\n")
+    cat("  rho(val, sens):        ", sprintf("%.4f", rho_val_sens), "\n")
+    cat("  rho(val, sub):         ", sprintf("%.4f", rho_val_sub), "\n")
+    cat("  rho(sens, sub):        ", sprintf("%.4f", rho_sens_sub), "\n")
+  }
 
   # Model fit
   cat("\nModel Fit:\n")
@@ -157,21 +261,60 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
 #' @export
 coef.beezdemand_joint_hurdle <- function(
   object,
-  type = c("all", "fixed", "hurdle", "demand", "crossprice"),
+  type = c("all", "fixed", "hurdle", "demand", "crossprice", "latent"),
   ...
 ) {
   type <- match.arg(type)
+  joint_type <- if (!is.null(object$joint_type)) {
+    object$joint_type
+  } else {
+    "saturated"
+  }
 
   coef <- object$coefficients_natural
 
-  switch(
-    type,
-    all = coef,
-    fixed = coef[!grepl("^logsigma|^rho_", names(coef))],
-    hurdle = coef[c("gamma0", "gamma_own_target", "gamma_own_alt", "gamma1")],
-    demand = coef[c("logQ0_AT", "alpha_AT", "logQ0_OT", "alpha_OT", "k")],
-    crossprice = coef[c("logQalone_OA", "I", "beta")]
-  )
+  if (type == "all") {
+    return(coef)
+  }
+
+  if (type == "fixed") {
+    return(coef[!grepl("^logsigma|^rho_", names(coef))])
+  }
+
+  if (type == "hurdle") {
+    return(coef[c("gamma0", "gamma_own_target", "gamma_own_alt", "gamma1")])
+  }
+
+  if (type == "demand") {
+    if (joint_type == "saturated") {
+      return(coef[c("logQ0_AT", "alpha_AT", "logQ0_OT", "alpha_OT", "k")])
+    } else {
+      return(coef[c(
+        "theta_Q0_AT",
+        "theta_alpha_AT",
+        "theta_Q0_OT",
+        "theta_alpha_OT",
+        "k"
+      )])
+    }
+  }
+
+  if (type == "crossprice") {
+    if (joint_type == "saturated") {
+      return(coef[c("logQalone_OA", "I", "beta")])
+    } else {
+      return(coef[c("theta_Qalone_OA", "I", "beta")])
+    }
+  }
+
+  if (type == "latent") {
+    if (joint_type == "latent") {
+      return(coef[c("lambda_sub_q0", "lambda_sub_alpha", "lambda_sub_alt")])
+    } else {
+      warning("Latent loadings only available for joint_type = 'latent'")
+      return(NULL)
+    }
+  }
 }
 
 

@@ -8,6 +8,7 @@
 #include "HurdleCrossPrice2RE.h"
 #include "HurdleCrossPrice3RE.h"
 #include "JointHurdleSaturated.h"
+#include "JointHurdleLatent.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -23,6 +24,8 @@ Type objective_function<Type>::operator() ()
     return HurdleCrossPrice3RE(this);
   } else if (model == "JointHurdleSaturated") {
     return JointHurdleSaturated(this);
+  } else if (model == "JointHurdleLatent") {
+    return JointHurdleLatent(this);
   } else {
     error("Unknown model");
   }
