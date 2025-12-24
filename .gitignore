@@ -44,3 +44,7 @@ vignettes/*.html
 check.log
 *.Rcheck/
 beezdemand_*.tar.gz
+
+# Test artifacts #
+##################
+tests/testthat/Rplots.pdf
