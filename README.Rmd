@@ -16,6 +16,8 @@ plotdir <- "man/figures/"
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/beezdemand)](https://cran.r-project.org/package=beezdemand)
 [![downloads](https://cranlogs.r-pkg.org/badges/beezdemand)](https://cranlogs.r-pkg.org/)
 [![total](https://cranlogs.r-pkg.org/badges/grand-total/beezdemand)](https://cranlogs.r-pkg.org/)
+[![R-CMD-check](https://github.com/brentkaplan/beezdemand/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brentkaplan/beezdemand/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/brentkaplan/beezdemand/branch/master/graph/badge.svg)](https://app.codecov.io/gh/brentkaplan/beezdemand?branch=master)
 
 Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to
 create an alternative tool to conduct these
