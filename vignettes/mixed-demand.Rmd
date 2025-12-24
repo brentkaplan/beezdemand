@@ -19,8 +19,9 @@ knitr::opts_chunk$set(
   message = FALSE  # Suppress messages for cleaner output in vignette
 )
 
-# library(beezdemand) # Load your package
-devtools::load_all()
+library(beezdemand)
+library(dplyr)
+library(ggplot2)
 ```
 
 # Introduction
@@ -461,7 +462,7 @@ if (!is.null(fit_drug_slope_random$model)) {
   summary(fit_drug_slope_random)
 
   cat("\nFixed Effects:\n")
-  print(fixef(fit_drug_slope_random))
+  print(nlme::fixef(fit_drug_slope_random))
 
   cat("\nRandom Effects Structure (Standard Deviations and Correlations):\n")
   print(nlme::VarCorr(fit_drug_slope_random$model))
@@ -469,7 +470,7 @@ if (!is.null(fit_drug_slope_random$model)) {
   cat(
     "\nRandom Effect Estimates for each Monkey (deviations from fixed effects):\n"
   )
-  print(head(ranef(fit_drug_slope_random)))
+  print(utils::head(nlme::ranef(fit_drug_slope_random)))
 
   cat("\nSubject-Specific Coefficients (Fixed + Random, log10 scale):\n")
   print(head(coef(fit_drug_slope_random))) # type="combined" is default
@@ -600,8 +601,8 @@ if (!is.null(active_fit$model)) {
   print(head(coef(active_fit, type = "combined"))) # Default type
 
   cat("\nUsing S3 fixef() and ranef():\n")
-  print(fixef(active_fit))
-  print(head(ranef(active_fit)))
+  print(nlme::fixef(active_fit))
+  print(utils::head(nlme::ranef(active_fit)))
 
   cat("\nStart values that were used for the NLME fit:\n")
   print(active_fit$start_values_used)

@@ -43,3 +43,6 @@
 ^CLAUDE\.md$
 ^check\.log$
 ^beezdemand_.*\.tar\.gz$
+^\.github$
+^[^/]+\.txt$
+^tests/testthat/Rplots\.pdf$
