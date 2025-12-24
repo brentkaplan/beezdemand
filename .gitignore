@@ -28,3 +28,19 @@ man/figures/P*
 Notes.md
 
 /.quarto/
+/src/*.so
+/src/*.o
+/src/*.dll
+/src/symbols.rds
+
+# Vignette outputs #
+####################
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/*.html
+
+# R CMD check outputs #
+#######################
+check.log
+*.Rcheck/
+beezdemand_*.tar.gz

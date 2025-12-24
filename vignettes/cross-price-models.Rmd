@@ -19,21 +19,19 @@ knitr::opts_chunk$set(
     fig.height = 4
 )
 
-# library(beezdemand)
-devtools::load_all()
+library(beezdemand)
 library(dplyr)
 library(purrr)
 library(tidyr)
 library(ggplot2)
-library(here)
 
-conflicted::conflict_prefer("filter", "dplyr")
+# Load package datasets
+data("etm", package = "beezdemand")
+data("lowNicClean", package = "beezdemand")
+data("cannabisCigarettes", package = "beezdemand")
+data("ongoingETM", package = "beezdemand")
 
-here::i_am("vignettes/cross-price-models.Rmd")
-
-load(here::here("data", "etm.RData"))
-
-lnic <- readr::read_csv(here::here("data", "lowNicClean.csv")) |>
+lnic <- lowNicClean |>
     mutate(
         target = if_else(commodity == "cigarettesAdj", "adjusting", "fixed"),
         group = "cigarettes"
@@ -43,7 +41,7 @@ lnic <- readr::read_csv(here::here("data", "lowNicClean.csv")) |>
     ) |>
     relocate(condition, .after = group)
 
-can_cig <- readr::read_csv(here::here("data", "cannabisCigarettes.csv")) |>
+can_cig <- cannabisCigarettes |>
     select(
         id,
         x,
@@ -51,7 +49,7 @@ can_cig <- readr::read_csv(here::here("data", "cannabisCigarettes.csv")) |>
         target = commodity
     )
 
-ongoing_etm <- readr::read_csv(here::here("data", "ongoingETM.csv")) |>
+ongoing_etm <- ongoingETM |>
     pivot_longer(
         -c(id, x, flavor),
         names_to = "target",
@@ -59,8 +57,6 @@ ongoing_etm <- readr::read_csv(here::here("data", "ongoingETM.csv")) |>
         values_drop_na = TRUE
     ) |>
     select(id, x, y, target)
-
-# load("../data/etm.RData")
 ```
 
 ## Data Structure

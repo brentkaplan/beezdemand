@@ -577,7 +577,7 @@ plot.beezdemand_hurdle <- function(
   if (type == "individual") {
     # Select subjects
     if (is.null(subjects)) {
-      subjects <- head(x$param_info$subject_levels, 9)
+      subjects <- utils::head(x$param_info$subject_levels, 9)
     }
 
     # Get predictions

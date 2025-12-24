@@ -24,7 +24,7 @@ researchers to conduct behavioral economic (be) demand the easy (ez) way.
 
 ## Note About Use
 
-Currently, this version (0.1.2) is an iterative minor release and is stable. I encourage you to use it
+Currently, this version (0.1.3) is an iterative minor release and is stable. I encourage you to use it
 but be aware that, as with any software release, there might be (unknown) bugs present. 
 I've tried hard to make this version usable while including the core functionality 
 (described more below). However, if you find issues or would like to contribute, 
@@ -66,14 +66,9 @@ devtools::install_github("brentkaplan/beezdemand@develop")
 ## Using the Package
 
 ```{r packages, include = FALSE, echo = FALSE}
-if (!requireNamespace("tidyverse", quietly = TRUE)) {
-  install.packages("tidyverse")
-}
+# Package dependencies are specified in DESCRIPTION
+# They should already be installed when building vignettes
 library(tidyverse)
-
-if (!requireNamespace("beezdemand", quietly = TRUE)) {
-  install.packages("beezdemand")
-}
 library(beezdemand)
 ```
 
