@@ -1,4 +1,5 @@
 #' @useDynLib beezdemand, .registration = TRUE
+#' @importFrom utils head modifyList
 NULL
 
 #' Fit Two-Part Mixed Effects Hurdle Demand Model
