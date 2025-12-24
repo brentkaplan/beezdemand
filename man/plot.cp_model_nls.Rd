@@ -7,7 +7,7 @@
 \method{plot}{cp_model_nls}(
   x,
   data = NULL,
-  inverse_fun = NULL,
+  inv_fun = identity,
   n_points = 100,
   title = NULL,
   xlab = "Price",
@@ -15,6 +15,7 @@
   x_trans = "identity",
   y_trans = "identity",
   point_size = 3,
+  inverse_fun = deprecated(),
   ...
 )
 }
@@ -23,7 +24,7 @@
 
 \item{data}{Optional data frame with x and y; if NULL, uses object$data.}
 
-\item{inverse_fun}{Optional function to inverse-transform predictions.}
+\item{inv_fun}{Optional function to inverse-transform predictions. Default is `identity`.}
 
 \item{n_points}{Number of points used for prediction curve.}
 
@@ -38,6 +39,8 @@
 \item{y_trans}{Transformation for y-axis: "identity", "log10", or "pseudo_log".}
 
 \item{point_size}{Size of data points.}
+
+\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
 
 \item{...}{Additional arguments (passed to predict).}
 }

@@ -4,12 +4,15 @@
 \alias{summary.cp_model_nls}
 \title{Summarize a Cross-Price Demand Model (Nonlinear)}
 \usage{
-\method{summary}{cp_model_nls}(object, inverse_fun = NULL, ...)
+\method{summary}{cp_model_nls}(object, inv_fun = identity, inverse_fun = deprecated(), ...)
 }
 \arguments{
 \item{object}{A cross-price model object from fit_cp_nls with return_all=TRUE.}
 
-\item{inverse_fun}{Optional function to inverse-transform predictions (e.g., ll4_inv).}
+\item{inv_fun}{Optional function to inverse-transform predictions (e.g., ll4_inv).
+Default is `identity`.}
+
+\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
 
 \item{...}{Additional arguments (unused).}
 }

@@ -23,6 +23,63 @@ utils::globalVariables(c(
   "target"
 ))
 
+#-------------------------------------------------------------------------------
+# Standardized error helpers for consistent error messaging across the package
+#-------------------------------------------------------------------------------
+
+#' Signal a validation error
+#'
+#' Internal helper for signaling validation errors with consistent formatting.
+#' Uses rlang::abort for structured error handling.
+#'
+#' @param message Error message describing what went wrong.
+#' @param arg Optional name of the argument that caused the error.
+#' @param call The calling environment for error reporting.
+#' @param class Additional error classes to add (will be prefixed with "beezdemand_").
+#' @noRd
+validation_error <- function(message, arg = NULL, call = rlang::caller_env(), class = NULL) {
+  if (!is.null(arg)) {
+    message <- paste0("Problem with argument `", arg, "`: ", message)
+  }
+  error_class <- c(
+    if (!is.null(class)) paste0("beezdemand_", class),
+    "beezdemand_validation_error"
+  )
+  rlang::abort(message, class = error_class, call = call)
+}
+
+#' Signal a model fitting error
+#'
+#' Internal helper for signaling model fitting errors.
+#'
+#' @param message Error message.
+#' @param model_type Type of model that failed (e.g., "nls", "nlme", "tmb").
+#' @param call The calling environment.
+#' @noRd
+fitting_error <- function(message, model_type = NULL, call = rlang::caller_env()) {
+  if (!is.null(model_type)) {
+    message <- paste0("[", model_type, "] ", message)
+  }
+  rlang::abort(message, class = c("beezdemand_fitting_error", "beezdemand_error"), call = call)
+}
+
+#' Signal a missing package error
+#'
+#' Internal helper for signaling that a required package is missing.
+#'
+#' @param pkg Package name.
+#' @param reason Why the package is needed.
+#' @param call The calling environment.
+#' @noRd
+missing_package_error <- function(pkg, reason = NULL, call = rlang::caller_env()) {
+  message <- paste0("Package '", pkg, "' is required")
+  if (!is.null(reason)) {
+    message <- paste0(message, " ", reason)
+  }
+  message <- paste0(message, ". Please install it with: install.packages('", pkg, "')")
+  rlang::abort(message, class = c("beezdemand_missing_package", "beezdemand_error"), call = call)
+}
+
 ##' Pull vector from data frame
 ##'
 ##' @description

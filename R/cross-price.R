@@ -295,8 +295,9 @@ fit_cp_nls <- function(
     }
   }
 
-  stop(
-    "Model fitting failed with all methods: nls.multstart, nlsLM, and wrapnlsr."
+  fitting_error(
+    "Model fitting failed with all methods: nls.multstart, nlsLM, and wrapnlsr.",
+    model_type = "nls"
   )
 }
 
@@ -436,7 +437,7 @@ fit_cp_linear <- function(
     }
 
     if (!requireNamespace("lme4", quietly = TRUE)) {
-      stop("Package 'lme4' is required for mixed-effects models")
+      missing_package_error("lme4", reason = "for mixed-effects models")
     }
 
     # Fit model

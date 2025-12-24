@@ -39,7 +39,7 @@ check_unsystematic_cp(
 \item{detailed}{Logical. If TRUE, return additional columns including all trend/bounce flags.}
 }
 \value{
-A data frame with core results:
+A data frame of class `cp_unsystematic` with core results:
   \describe{
     \item{delta_direction}{Character: 'down', 'up', or 'none'.}
     \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
