@@ -131,7 +131,10 @@ fit_demand_mixed <- function(
   # path (no fixed_rhs). If fixed_rhs is provided, user has full control.
   if (is.null(fixed_rhs)) {
     if (!is.null(factors) && length(factors) > 2) {
-      stop("Up to two factors can be specified when 'fixed_rhs' is NULL.")
+      validation_error(
+        "Up to two factors can be specified when 'fixed_rhs' is NULL.",
+        arg = "factors"
+      )
     }
     if (length(factors) < 2 && isTRUE(factor_interaction)) {
       warning(

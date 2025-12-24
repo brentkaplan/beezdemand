@@ -167,12 +167,3 @@ print.summary.cp_unsystematic <- function(x, ...) {
   invisible(x)
 }
 
-#' @export
-summary.tbl_df <- function(object, ...) {
-  required_cols <- c("bounce_any", "delta_direction", "bounce_direction")
-  if (all(required_cols %in% names(object))) {
-    summary.cp_unsystematic(object, ...)
-  } else {
-    NextMethod()
-  }
-}

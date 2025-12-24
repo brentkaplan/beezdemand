@@ -1,5 +1,35 @@
 # beezdemand 0.1.3
 
+## Deprecations
+
+The following deprecations will take effect in version 0.2.0:
+
+* `beezdemand::pull()` is deprecated in favor of `dplyr::pull()`. The beezdemand
+  version was a legacy helper that predates the dplyr function.
+
+* The `inverse_fun` argument in `summary.cp_model_nls()`, `plot.cp_model_nls()`,
+  and `predict.cp_model_nls()` is deprecated in favor of `inv_fun` for consistency
+  with mixed-effects model methods.
+
+## API Improvements
+
+* Standardized argument names across cross-price model methods (`inv_fun` instead
+  of `inverse_fun`)
+
+* Cross-price plot methods now have consistent argument ordering across
+  `plot.cp_model_nls()`, `plot.cp_model_lm()`, and `plot.cp_model_lmer()`
+
+* Key user-facing functions now return tibbles for better compatibility with
+
+  tidyverse workflows: `predict.cp_model_nls()`, `predict.cp_model_lm()`,
+  `tidy.cp_model_nls()`, `glance.cp_model_nls()`
+
+* Added standardized error helpers (`validation_error()`, `fitting_error()`,
+  `missing_package_error()`) for consistent error messaging
+
+* `check_unsystematic_cp()` now returns an object of class `cp_unsystematic`
+  with proper `summary()` method dispatch (no longer overrides `summary.tbl_df()`)
+
 ## New Features
 
 ### Two-Part Mixed Effects Hurdle Demand Models

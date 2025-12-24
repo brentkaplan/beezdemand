@@ -17,7 +17,7 @@
 #' @param verbose Logical. If TRUE, print intermediate values (default FALSE).
 #' @param detailed Logical. If TRUE, return additional columns including all trend/bounce flags.
 #'
-#' @return A data frame with core results:
+#' @return A data frame of class `cp_unsystematic` with core results:
 #'   \describe{
 #'     \item{delta_direction}{Character: 'down', 'up', or 'none'.}
 #'     \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
@@ -246,5 +246,9 @@ check_unsystematic_cp <- function(
       )
     )
   }
+
+  # Add class for proper S3 dispatch
+
+  class(result) <- c("cp_unsystematic", class(result))
   return(result)
 }
