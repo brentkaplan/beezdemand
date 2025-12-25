@@ -53,6 +53,18 @@ vocabulary aligned with `check_systematic_demand()`.
 If the data contains an `id` column (or column specified by `id_var`), each
 unique ID is checked separately. Otherwise, the entire dataset is treated
 as a single pattern.
+
+For cross-price data, the wrapper preserves the legacy meaning of
+`check_unsystematic_cp()`:
+- `trend_direction` and `bounce_direction` are taken directly from the legacy
+  function outputs.
+- `trend_pass` is set to `NA` because cross-price systematicity does not use a
+  separate trend “pass/fail” criterion in the same way as purchase-task
+  screening; instead, trend classification determines which bounce rule
+  applies.
+- `bounce_stat` is reported as the proportion relevant to the legacy bounce
+  rule for the detected `trend_direction` (or `expected_down` case), computed
+  from the legacy bounce counts and the number of price steps.
 }
 \examples{
 \dontrun{

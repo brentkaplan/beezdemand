@@ -59,7 +59,18 @@ test_that("tidy.beezdemand_cp_hurdle meets contract", {
     y = rpois(n_subj * n_obs, lambda = 10)
   )
 
-  fit <- tryCatch(fit_cp_hurdle(cp_data), error = function(e) NULL)
+  fit <- tryCatch(
+    fit_cp_hurdle(
+      cp_data,
+      y_var = "y",
+      x_var = "x",
+      id_var = "id",
+      random_effects = c("zeros", "qalone"),
+      verbose = 0,
+      tmb_control = list(max_iter = 50, eval_max = 200, trace = 0)
+    ),
+    error = function(e) NULL
+  )
   skip_if(is.null(fit), "Model fitting failed")
 
   t <- tidy(fit)
@@ -84,7 +95,18 @@ test_that("glance.beezdemand_cp_hurdle meets contract", {
     y = rpois(n_subj * n_obs, lambda = 10)
   )
 
-  fit <- tryCatch(fit_cp_hurdle(cp_data), error = function(e) NULL)
+  fit <- tryCatch(
+    fit_cp_hurdle(
+      cp_data,
+      y_var = "y",
+      x_var = "x",
+      id_var = "id",
+      random_effects = c("zeros", "qalone"),
+      verbose = 0,
+      tmb_control = list(max_iter = 50, eval_max = 200, trace = 0)
+    ),
+    error = function(e) NULL
+  )
   skip_if(is.null(fit), "Model fitting failed")
 
   g <- glance(fit)

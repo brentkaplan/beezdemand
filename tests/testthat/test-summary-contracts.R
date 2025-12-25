@@ -57,7 +57,15 @@ test_that("summary.beezdemand_cp_hurdle meets contract", {
   )
 
   fit <- tryCatch(
-    fit_cp_hurdle(cp_data),
+    fit_cp_hurdle(
+      cp_data,
+      y_var = "y",
+      x_var = "x",
+      id_var = "id",
+      random_effects = c("zeros", "qalone"),
+      verbose = 0,
+      tmb_control = list(max_iter = 50, eval_max = 200, trace = 0)
+    ),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")
