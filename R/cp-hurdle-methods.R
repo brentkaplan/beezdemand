@@ -580,17 +580,15 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
   coefs <- x$model$coefficients
   se <- x$model$se
 
-  # Determine components for each parameter
-  param_components <- c(
-    beta0 = "part1_probability",
-    beta1 = "part1_probability",
-    logQalone = "part2_consumption",
-    I = "part2_consumption",
-    log_beta = "part2_consumption"
-  )
-
   z_val <- coefs / se
   p_val <- 2 * stats::pnorm(-abs(z_val))
+
+  # Determine components for each parameter (include variance/correlation terms)
+  component <- rep("fixed", length(coefs))
+  names(component) <- names(coefs)
+  component[names(coefs) %in% c("beta0", "beta1")] <- "part1_probability"
+  component[names(coefs) %in% c("logQalone", "I", "log_beta")] <- "part2_consumption"
+  component[grepl("^logsigma_|^rho_|^sigma_|^var_|^cov_", names(coefs))] <- "variance"
 
   # Build tibble for fixed effects
   fixed_tidy <- tibble::tibble(
@@ -599,7 +597,7 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
     std.error = unname(se),
     statistic = unname(z_val),
     p.value = unname(p_val),
-    component = unname(param_components[names(coefs)])
+    component = unname(component)
   )
 
   # Add derived parameters (beta and Qalone on natural scale)

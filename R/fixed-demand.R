@@ -101,8 +101,18 @@ fit_demand_fixed <- function(data,
   # Count successes/failures
   if (is.data.frame(results) && nrow(results) > 0) {
     n_total <- nrow(results)
-    # Success = Alpha is not NA
-    n_success <- sum(!is.na(results$Alpha))
+    success_flag <- NULL
+    if ("Alpha" %in% names(results)) {
+      success_flag <- !is.na(results$Alpha)
+    } else if (all(c("L", "b", "a") %in% names(results))) {
+      success_flag <- !is.na(results$L) & !is.na(results$b) & !is.na(results$a)
+    } else if ("R2" %in% names(results)) {
+      success_flag <- !is.na(results$R2)
+    } else {
+      success_flag <- rep(TRUE, n_total)
+    }
+
+    n_success <- sum(success_flag)
     n_fail <- n_total - n_success
   } else {
     n_total <- n_success <- n_fail <- NA_integer_
@@ -166,38 +176,40 @@ summary.beezdemand_fixed <- function(object, ...) {
   # Build coefficients tibble from results if available
   if (!is.null(object$results) && is.data.frame(object$results) &&
       nrow(object$results) > 0) {
-    # Q0 estimates
-    q0_rows <- tibble::tibble(
-      id = as.character(object$results$id),
-      term = "Q0",
-      estimate = object$results$Q0d,
-      std.error = if ("Q0se" %in% names(object$results)) object$results$Q0se else NA_real_,
-      statistic = NA_real_,
-      p.value = NA_real_,
-      component = "fixed"
+    results <- object$results
+    id_values <- if ("id" %in% names(results)) as.character(results$id) else rep(NA_character_, nrow(results))
+
+    param_specs <- list(
+      Q0 = list(estimate = "Q0d", se = "Q0se"),
+      alpha = list(estimate = "Alpha", se = "Alphase"),
+      k = list(estimate = "K", se = NA_character_),
+      L = list(estimate = "L", se = "Lse"),
+      b = list(estimate = "b", se = "bse"),
+      a = list(estimate = "a", se = "ase")
     )
 
-    # Alpha estimates
-    alpha_rows <- tibble::tibble(
-      id = as.character(object$results$id),
-      term = "alpha",
-      estimate = object$results$Alpha,
-      std.error = if ("Alphase" %in% names(object$results)) object$results$Alphase else NA_real_,
-      statistic = NA_real_,
-      p.value = NA_real_,
-      component = "fixed"
-    )
+    param_specs <- Filter(function(spec) spec$estimate %in% names(results), param_specs)
 
-    coefficients <- dplyr::bind_rows(q0_rows, alpha_rows)
+    coefficients_list <- lapply(names(param_specs), function(term_name) {
+      spec <- param_specs[[term_name]]
+      tibble::tibble(
+        id = id_values,
+        term = term_name,
+        estimate = results[[spec$estimate]],
+        std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
+        statistic = NA_real_,
+        p.value = NA_real_,
+        component = "fixed"
+      )
+    })
+    coefficients <- dplyr::bind_rows(coefficients_list)
 
-    # Summary statistics for each parameter (across subjects)
-    q0_vals <- object$results$Q0d[!is.na(object$results$Q0d)]
-    alpha_vals <- object$results$Alpha[!is.na(object$results$Alpha)]
-
-    param_summary <- list(
-      Q0 = if (length(q0_vals) > 0) summary(q0_vals) else NULL,
-      alpha = if (length(alpha_vals) > 0) summary(alpha_vals) else NULL
-    )
+    param_summary <- lapply(names(param_specs), function(term_name) {
+      vals <- results[[param_specs[[term_name]]$estimate]]
+      vals <- vals[!is.na(vals)]
+      if (length(vals) > 0) summary(vals) else NULL
+    })
+    names(param_summary) <- names(param_specs)
 
     # Count observations if data_used is available
     nobs <- if (!is.null(object$data_used)) {
@@ -322,44 +334,33 @@ tidy.beezdemand_fixed <- function(x, ...) {
       component = character()
     ))
   }
+  results <- x$results
+  id_values <- if ("id" %in% names(results)) as.character(results$id) else rep(NA_character_, nrow(results))
 
-  # Q0 estimates
-  q0 <- tibble::tibble(
-    id = as.character(x$results$id),
-    term = "Q0",
-    estimate = x$results$Q0d,
-    std.error = if ("Q0se" %in% names(x$results)) x$results$Q0se else NA_real_,
-    statistic = NA_real_,
-    p.value = NA_real_,
-    component = "fixed"
+  param_specs <- list(
+    Q0 = list(estimate = "Q0d", se = "Q0se"),
+    alpha = list(estimate = "Alpha", se = "Alphase"),
+    k = list(estimate = "K", se = NA_character_),
+    L = list(estimate = "L", se = "Lse"),
+    b = list(estimate = "b", se = "bse"),
+    a = list(estimate = "a", se = "ase")
   )
 
-  # Alpha estimates
-  alpha <- tibble::tibble(
-    id = as.character(x$results$id),
-    term = "alpha",
-    estimate = x$results$Alpha,
-    std.error = if ("Alphase" %in% names(x$results)) x$results$Alphase else NA_real_,
-    statistic = NA_real_,
-    p.value = NA_real_,
-    component = "fixed"
-  )
-
-  # K estimates if k = "fit"
-  if ("K" %in% names(x$results) && x$k_spec == "fit") {
-    k_tidy <- tibble::tibble(
-      id = as.character(x$results$id),
-      term = "k",
-      estimate = x$results$K,
-      std.error = NA_real_,
+  param_specs <- Filter(function(spec) spec$estimate %in% names(results), param_specs)
+  coefficient_rows <- lapply(names(param_specs), function(term_name) {
+    spec <- param_specs[[term_name]]
+    tibble::tibble(
+      id = id_values,
+      term = term_name,
+      estimate = results[[spec$estimate]],
+      std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
       component = "fixed"
     )
-    return(dplyr::bind_rows(q0, alpha, k_tidy))
-  }
+  })
 
-  dplyr::bind_rows(q0, alpha)
+  dplyr::bind_rows(coefficient_rows)
 }
 
 

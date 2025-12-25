@@ -170,7 +170,7 @@ test_that("scale_ll4 works with ggplot2", {
 
   # Build the plot to ensure it doesn't error
   built <- ggplot2::ggplot_build(p)
-  expect_true(is.list(built))
+  expect_s3_class(built, "ggplot_built")
 })
 
 # =============================================================================
@@ -234,7 +234,7 @@ test_that("pseudo_ll4_trans works with ggplot2 scale_y_continuous", {
 
   # Build the plot to ensure it doesn't error
   built <- ggplot2::ggplot_build(p)
-  expect_true(is.list(built))
+  expect_s3_class(built, "ggplot_built")
 })
 
 # =============================================================================

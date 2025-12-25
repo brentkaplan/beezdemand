@@ -166,6 +166,18 @@ check_systematic_demand <- function(data,
 #' unique ID is checked separately. Otherwise, the entire dataset is treated
 #' as a single pattern.
 #'
+#' For cross-price data, the wrapper preserves the legacy meaning of
+#' `check_unsystematic_cp()`:
+#' - `trend_direction` and `bounce_direction` are taken directly from the legacy
+#'   function outputs.
+#' - `trend_pass` is set to `NA` because cross-price systematicity does not use a
+#'   separate trend “pass/fail” criterion in the same way as purchase-task
+#'   screening; instead, trend classification determines which bounce rule
+#'   applies.
+#' - `bounce_stat` is reported as the proportion relevant to the legacy bounce
+#'   rule for the detected `trend_direction` (or `expected_down` case), computed
+#'   from the legacy bounce counts and the number of price steps.
+#'
 #' @examples
 #' \dontrun{
 #' # Check cross-price data with id column
@@ -213,27 +225,33 @@ check_systematic_cp <- function(data,
         rev_zeroes = consecutive_zeros,
         ret_nums = consecutive_nonzeros,
         expected_down = expected_down,
-        detailed = TRUE
+        detailed = FALSE
       )
 
-      # Determine trend direction (use isTRUE to handle NA)
-      trend_dir <- if (isTRUE(legacy$delta_down)) {
-        "down"
-      } else if (isTRUE(legacy$delta_up)) {
-        "up"
+      # Compute bounce threshold used (consistent with legacy logic)
+      bounce_threshold_used <- if (isTRUE(expected_down)) {
+        bounce_threshold_up
+      } else if (identical(legacy$delta_direction, "down")) {
+        bounce_threshold_up
+      } else if (identical(legacy$delta_direction, "up")) {
+        bounce_threshold_down
       } else {
-        "none"
+        bounce_threshold_none
       }
 
-      # Determine bounce direction (use isTRUE to handle NA)
-      bounce_dir <- if (isTRUE(legacy$bounce_up)) {
-        "up"
-      } else if (isTRUE(legacy$bounce_down)) {
-        "down"
-      } else if (isTRUE(legacy$bounce_none)) {
-        "flat"
+      # Compute bounce statistic (consistent with legacy logic)
+      subset_complete <- subset_data[!is.na(subset_data$x) & !is.na(subset_data$y), ]
+      denom <- nrow(subset_complete) - 1
+      prop_above <- if (denom > 0) legacy$bounce_above / denom else NA_real_
+      prop_below <- if (denom > 0) legacy$bounce_below / denom else NA_real_
+      bounce_stat_used <- if (isTRUE(expected_down) || identical(legacy$delta_direction, "down")) {
+        prop_above
+      } else if (identical(legacy$delta_direction, "up")) {
+        prop_below
+      } else if (identical(legacy$delta_direction, "none")) {
+        min(prop_above, prop_below, na.rm = TRUE)
       } else {
-        "none"
+        NA_real_
       }
 
       tibble::tibble(
@@ -241,11 +259,11 @@ check_systematic_cp <- function(data,
         type = "cp",
         trend_stat = NA_real_,
         trend_threshold = trend_threshold,
-        trend_direction = trend_dir,
-        trend_pass = !isTRUE(legacy$delta_none),
-        bounce_stat = NA_real_,
-        bounce_threshold = bounce_threshold_up,
-        bounce_direction = bounce_dir,
+        trend_direction = legacy$delta_direction,
+        trend_pass = NA,
+        bounce_stat = bounce_stat_used,
+        bounce_threshold = bounce_threshold_used,
+        bounce_direction = legacy$bounce_direction,
         bounce_pass = !isTRUE(legacy$bounce_any),
         reversals = as.integer(legacy$reversals),
         reversals_pass = NA,
@@ -270,24 +288,28 @@ check_systematic_cp <- function(data,
       detailed = TRUE
     )
 
-    # Determine trend direction (use isTRUE to handle NA)
-    trend_dir <- if (isTRUE(legacy$delta_down)) {
-      "down"
-    } else if (isTRUE(legacy$delta_up)) {
-      "up"
+    bounce_threshold_used <- if (isTRUE(expected_down)) {
+      bounce_threshold_up
+    } else if (identical(legacy$delta_direction, "down")) {
+      bounce_threshold_up
+    } else if (identical(legacy$delta_direction, "up")) {
+      bounce_threshold_down
     } else {
-      "none"
+      bounce_threshold_none
     }
 
-    # Determine bounce direction (use isTRUE to handle NA)
-    bounce_dir <- if (isTRUE(legacy$bounce_up)) {
-      "up"
-    } else if (isTRUE(legacy$bounce_down)) {
-      "down"
-    } else if (isTRUE(legacy$bounce_none)) {
-      "flat"
+    subset_complete <- data[!is.na(data$x) & !is.na(data$y), ]
+    denom <- nrow(subset_complete) - 1
+    prop_above <- if (denom > 0) legacy$bounce_above / denom else NA_real_
+    prop_below <- if (denom > 0) legacy$bounce_below / denom else NA_real_
+    bounce_stat_used <- if (isTRUE(expected_down) || identical(legacy$delta_direction, "down")) {
+      prop_above
+    } else if (identical(legacy$delta_direction, "up")) {
+      prop_below
+    } else if (identical(legacy$delta_direction, "none")) {
+      min(prop_above, prop_below, na.rm = TRUE)
     } else {
-      "none"
+      NA_real_
     }
 
     results <- tibble::tibble(
@@ -295,11 +317,11 @@ check_systematic_cp <- function(data,
       type = "cp",
       trend_stat = NA_real_,
       trend_threshold = trend_threshold,
-      trend_direction = trend_dir,
-      trend_pass = !isTRUE(legacy$delta_none),
-      bounce_stat = NA_real_,
-      bounce_threshold = bounce_threshold_up,
-      bounce_direction = bounce_dir,
+      trend_direction = legacy$delta_direction,
+      trend_pass = NA,
+      bounce_stat = bounce_stat_used,
+      bounce_threshold = bounce_threshold_used,
+      bounce_direction = legacy$bounce_direction,
       bounce_pass = !isTRUE(legacy$bounce_any),
       reversals = as.integer(legacy$reversals),
       reversals_pass = NA,
@@ -381,7 +403,14 @@ summary.beezdemand_systematicity <- function(object, ...) {
       BIC = NA_real_,
       counts = counts,
       problem_ids = problem_ids,
-      coefficients = tibble::tibble(),
+      coefficients = tibble::tibble(
+        term = character(),
+        estimate = numeric(),
+        std.error = numeric(),
+        statistic = numeric(),
+        p.value = numeric(),
+        component = character()
+      ),
       notes = character(0)
     ),
     class = c("summary.beezdemand_systematicity", "beezdemand_summary")

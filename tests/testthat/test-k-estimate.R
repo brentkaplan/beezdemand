@@ -1,19 +1,38 @@
 # Tests for k = "estimate" functionality in fit_joint_hurdle
 
+create_joint_k_test_data <- function(n_subjects = 6, n_prices = 6, seed = 123) {
+  set.seed(seed)
+  prices <- seq(0.1, 10, length.out = n_prices)
+  targets <- c("alone", "own", "alt")
+  out <- vector("list", length = n_subjects * n_prices * length(targets))
+  idx <- 1L
+
+  for (id in seq_len(n_subjects)) {
+    for (p in prices) {
+      for (tgt in targets) {
+        # Generate some zeros and positive values
+        y <- rpois(1, lambda = if (tgt == "alt") 6 else 10)
+        if (runif(1) < 0.15) y <- 0
+        out[[idx]] <- data.frame(
+          id = id,
+          x = p,
+          y = y,
+          target = tgt,
+          stringsAsFactors = FALSE
+        )
+        idx <- idx + 1L
+      }
+    }
+  }
+
+  do.call(rbind, out)
+}
+
 test_that("fit_joint_hurdle k parameter validation works", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create minimal test data
-  set.seed(123)
-  n_subj <- 3
-  n_obs <- 5
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(c(0.1, 1, 2, 5, 10), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 5)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 3, n_prices = 4, seed = 123)
 
   # Error on invalid k values
 
@@ -36,19 +55,15 @@ test_that("fit_joint_hurdle k = 2 works (default)", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create test data
-  set.seed(123)
-  n_subj <- 5
-  n_obs <- 8
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(seq(0.1, 10, length.out = n_obs), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 8)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 6, n_prices = 6, seed = 123)
 
   fit <- tryCatch(
-    fit_joint_hurdle(test_data, k = 2),
+    suppressWarnings(fit_joint_hurdle(
+      test_data,
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")
@@ -63,19 +78,15 @@ test_that("fit_joint_hurdle k = numeric value works", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create test data
-  set.seed(123)
-  n_subj <- 5
-  n_obs <- 8
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(seq(0.1, 10, length.out = n_obs), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 8)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 6, n_prices = 6, seed = 123)
 
   fit <- tryCatch(
-    fit_joint_hurdle(test_data, k = 3.5),
+    suppressWarnings(fit_joint_hurdle(
+      test_data,
+      k = 3.5,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")
@@ -90,21 +101,17 @@ test_that("fit_joint_hurdle k = 'estimate' works with warning", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create test data with more observations for stable estimation
-  set.seed(456)
-  n_subj <- 8
-  n_obs <- 10
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(seq(0.1, 10, length.out = n_obs), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 10)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 8, n_prices = 8, seed = 456)
 
   # Should emit identifiability warning
   fit <- tryCatch(
     expect_warning(
-      fit_joint_hurdle(test_data, k = "estimate"),
+      fit_joint_hurdle(
+        test_data,
+        k = "estimate",
+        verbose = 0,
+        control = list(eval.max = 300, iter.max = 300)
+      ),
       regexp = "identifiability"
     ),
     error = function(e) NULL
@@ -121,19 +128,15 @@ test_that("glance includes k_fixed and k_value columns", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create test data
-  set.seed(123)
-  n_subj <- 5
-  n_obs <- 8
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(seq(0.1, 10, length.out = n_obs), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 8)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 6, n_prices = 6, seed = 123)
 
   fit <- tryCatch(
-    fit_joint_hurdle(test_data, k = 2),
+    suppressWarnings(fit_joint_hurdle(
+      test_data,
+      k = 2,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")
@@ -149,19 +152,15 @@ test_that("summary reflects k specification", {
   skip_if_not_installed("TMB")
   skip_on_cran()
 
-  # Create test data
-  set.seed(123)
-  n_subj <- 5
-  n_obs <- 8
-  test_data <- data.frame(
-    id = rep(1:n_subj, each = n_obs * 3),
-    stream = rep(rep(c("own", "cp1", "cp2"), each = n_obs), n_subj),
-    x = rep(rep(seq(0.1, 10, length.out = n_obs), 3), n_subj),
-    y = rpois(n_subj * n_obs * 3, lambda = 8)
-  )
+  test_data <- create_joint_k_test_data(n_subjects = 6, n_prices = 6, seed = 123)
 
   fit <- tryCatch(
-    fit_joint_hurdle(test_data, k = 2.5),
+    suppressWarnings(fit_joint_hurdle(
+      test_data,
+      k = 2.5,
+      verbose = 0,
+      control = list(eval.max = 200, iter.max = 200)
+    )),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")

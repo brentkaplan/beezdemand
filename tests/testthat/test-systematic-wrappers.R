@@ -34,8 +34,8 @@ test_that("check_systematic_demand respects thresholds", {
   data(apt, package = "beezdemand")
 
   # Run with different thresholds
-  check_strict <- check_systematic_demand(apt, trend_threshold = 0.01)
-  check_lenient <- check_systematic_demand(apt, trend_threshold = 0.1)
+  check_strict <- check_systematic_demand(apt, trend_threshold = 0.1)
+  check_lenient <- check_systematic_demand(apt, trend_threshold = 0.01)
 
   # Stricter threshold should catch more unsystematic patterns
   expect_true(check_strict$n_unsystematic >= check_lenient$n_unsystematic)

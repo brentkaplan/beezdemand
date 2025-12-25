@@ -1,3 +1,57 @@
+# beezdemand (development version)
+
+## Breaking Changes
+
+* `summary()` methods for `beezdemand_cp_hurdle`, `beezdemand_joint_hurdle`,
+  and `beezdemand_nlme` now return structured summary objects instead of
+  printing directly. Use `print(summary(fit))` for console output.
+  Programmatic access is now possible: `s <- summary(fit); s$coefficients`.
+
+## New Features
+
+* `fit_joint_hurdle()` now accepts `k = "estimate"` to estimate the scaling
+  constant as a free parameter. Default remains `k = 2` (fixed). Estimating
+  k will emit a warning about potential identifiability issues.
+
+* New `fit_demand_fixed()` function provides a modern interface for individual
+  demand curve fitting. Returns a structured S3 object with `summary()`,
+  `tidy()`, and `glance()` methods. This wrapper offers the same functionality
+  as `FitCurves()` but with a standardized API.
+
+* New systematicity wrappers with unified output vocabulary:
+  - `check_systematic_demand()` for purchase task data (wraps `CheckUnsystematic()`)
+  - `check_systematic_cp()` for cross-price data (wraps `check_unsystematic_cp()`)
+
+  Both return `beezdemand_systematicity` objects with identical column
+  schemas (differing only in NA values for domain-specific fields).
+
+* First-class `tidy()` and `glance()` support is now guaranteed across all
+  beezdemand model classes. All methods return tibbles with standardized
+  columns including `model_class` and `backend`.
+
+* All summary objects now inherit from `beezdemand_summary` base class,
+  enabling shared fallback behavior and consistent field availability.
+
+## API Standardization
+
+This release introduces **Stability Contracts** for all model classes:
+
+* **summary() objects** now return structured S3 objects with class
+  `c("summary.<class>", "beezdemand_summary")`. Required fields include:
+  `call`, `model_class`, `backend`, `nobs`, `n_subjects`, `converged`,
+  `logLik`, `AIC`, `BIC`, `coefficients` (tibble), `notes`.
+
+* **tidy() methods** return tibbles with columns: `term`, `estimate`,
+  `std.error`, `statistic`, `p.value`. Multi-part models include a
+  `component` column (e.g., "fixed", "variance", "derived").
+
+* **glance() methods** return 1-row tibbles with columns: `model_class`,
+  `backend`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC`.
+
+See the ARCHITECTURE.md "Stability Contracts" section for complete details.
+
+---
+
 # beezdemand 0.1.3
 
 ## Deprecations
