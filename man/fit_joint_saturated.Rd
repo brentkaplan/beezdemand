@@ -9,7 +9,7 @@ fit_joint_saturated(
   prep,
   n_subjects,
   stream_counts,
-  k,
+  k_start,
   k_fixed,
   start,
   epsilon,

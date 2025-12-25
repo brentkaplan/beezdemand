@@ -274,9 +274,12 @@ test_that("summary.beezdemand_joint_hurdle works", {
     )
   )
 
-  expect_output(summary(fit), "Part I")
-  expect_output(summary(fit), "Part II")
-  expect_output(summary(fit), "Variance Components")
+  # summary() now returns a structured object; output comes from print()
+  summ <- summary(fit)
+  expect_s3_class(summ, "summary.beezdemand_joint_hurdle")
+  expect_output(print(summ), "Part I")
+  expect_output(print(summ), "Part II")
+  expect_output(print(summ), "Variance Components")
 })
 
 test_that("coef.beezdemand_joint_hurdle returns correct types", {
@@ -398,7 +401,7 @@ test_that("glance.beezdemand_joint_hurdle returns tibble", {
   glance_out <- glance(fit)
   expect_s3_class(glance_out, "tbl_df")
   expect_true("logLik" %in% names(glance_out))
-  expect_true("nsubjects" %in% names(glance_out))
+  expect_true("n_subjects" %in% names(glance_out))
   expect_true("converged" %in% names(glance_out))
 })
 
@@ -712,7 +715,9 @@ test_that("latent variant print and summary work", {
   )
 
   expect_output(print(fit), "Variant: latent")
-  expect_output(summary(fit), "Latent Trait")
+  # summary() now returns a structured object; output comes from print()
+  summ <- summary(fit)
+  expect_output(print(summ), "Latent Trait")
 })
 
 test_that("latent variant has fewer random effect parameters than saturated", {

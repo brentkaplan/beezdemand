@@ -247,8 +247,9 @@ prepare_joint_data <- function(
 #'     \item "saturated": Stream-specific random effects (Variant 1)
 #'     \item "latent": Latent-trait model with shared structure (Variant 2)
 #'   }
-#' @param k Numeric or NULL. If numeric, k is fixed at this value. If NULL,
-#'   k is estimated. Default matches existing hurdle-demand behavior.
+#' @param k Numeric or `"estimate"`. If numeric, k is fixed at this value.
+#'   If `"estimate"`, k is estimated as a free parameter (use with caution due
+#'   to potential identifiability issues with alpha). Default is `2`.
 #' @param epsilon Numeric. Small constant for log(price + epsilon).
 #' @param start Named list. Starting values for parameters. If NULL, defaults
 #'   are computed from data.
@@ -284,6 +285,42 @@ fit_joint_hurdle <- function(
   joint_type <- match.arg(joint_type)
   call <- match.call()
 
+ # =========================================================================
+  # Validate k parameter
+  # =========================================================================
+  if (is.null(k)) {
+    stop(
+      "`k` cannot be NULL. Use a numeric value to fix k, or \"estimate\" to ",
+      "estimate k as a free parameter.",
+      call. = FALSE
+    )
+  }
+
+  if (is.character(k)) {
+    if (!identical(k, "estimate")) {
+      stop(
+        "`k` must be a numeric value or \"estimate\", not \"", k, "\".",
+        call. = FALSE
+      )
+    }
+    k_fixed <- FALSE
+    k_start <- 2 # Starting value for optimization
+    warning(
+      "Estimating k as a free parameter. This may cause identifiability ",
+      "issues with alpha parameters. Consider fixing k unless you have ",
+      "strong theoretical justification.",
+      call. = FALSE
+    )
+  } else if (is.numeric(k) && length(k) == 1) {
+    k_fixed <- TRUE
+    k_start <- k
+  } else {
+    stop(
+      "`k` must be a single numeric value or \"estimate\".",
+      call. = FALSE
+    )
+  }
+
   # =========================================================================
   # Prepare data
   # =========================================================================
@@ -307,9 +344,6 @@ fit_joint_hurdle <- function(
   n_subjects <- prep$n_subjects
   stream_counts <- prep$stream_counts
 
-  # Handle fixed k
-  k_fixed <- !is.null(k)
-
   if (verbose >= 1) {
     cat("Fitting joint hurdle model...\n")
     cat("  Variant:", joint_type, "\n")
@@ -329,7 +363,7 @@ fit_joint_hurdle <- function(
       prep,
       n_subjects,
       stream_counts,
-      k,
+      k_start,
       k_fixed,
       start,
       epsilon,
@@ -343,7 +377,7 @@ fit_joint_hurdle <- function(
       prep,
       n_subjects,
       stream_counts,
-      k,
+      k_start,
       k_fixed,
       start,
       epsilon,
@@ -365,7 +399,7 @@ fit_joint_saturated <- function(
   prep,
   n_subjects,
   stream_counts,
-  k,
+  k_start,
   k_fixed,
   start,
   epsilon,
@@ -377,14 +411,14 @@ fit_joint_saturated <- function(
   if (is.null(start)) {
     start <- compute_joint_start_values_saturated(
       dat,
-      k,
+      k_start,
       epsilon,
       stream_counts
     )
   }
 
   if (k_fixed) {
-    start$k <- k
+    start$k <- k_start
   }
 
   tmb_data <- list(
@@ -554,7 +588,7 @@ fit_joint_saturated <- function(
     n_subjects = n_subjects,
     stream_counts = stream_counts,
     k_fixed = k_fixed,
-    k_value = if (k_fixed) k else coefficients["k"],
+    k_value = if (k_fixed) k_start else coefficients["k"],
     epsilon = epsilon,
     data = dat,
     subject_map = prep$subject_map,
@@ -573,14 +607,14 @@ fit_joint_saturated <- function(
 #' Compute Starting Values for Saturated Joint Hurdle Model
 #'
 #' @param dat Prepared data frame
-#' @param k Fixed k value (or NULL)
+#' @param k_start Starting value for k
 #' @param epsilon Epsilon value
 #' @param stream_counts Named vector of stream counts
 #' @return Named list of starting values
 #' @keywords internal
 compute_joint_start_values_saturated <- function(
   dat,
-  k,
+  k_start,
   epsilon,
   stream_counts
 ) {
@@ -601,7 +635,7 @@ compute_joint_start_values_saturated <- function(
     alpha_AT = 0.01,
     logQ0_OT = 2,
     alpha_OT = 0.01,
-    k = if (is.null(k)) 2 else k,
+    k = k_start,
     # Part II (cross-price)
     logQalone_OA = 1,
     I = -0.5,
@@ -669,7 +703,7 @@ fit_joint_latent <- function(
   prep,
   n_subjects,
   stream_counts,
-  k,
+  k_start,
   k_fixed,
   start,
   epsilon,
@@ -679,11 +713,11 @@ fit_joint_latent <- function(
 ) {
   # Compute starting values for latent model
   if (is.null(start)) {
-    start <- compute_joint_start_values_latent(dat, k, epsilon, stream_counts)
+    start <- compute_joint_start_values_latent(dat, k_start, epsilon, stream_counts)
   }
 
   if (k_fixed) {
-    start$k <- k
+    start$k <- k_start
   }
 
   tmb_data <- list(
@@ -866,7 +900,7 @@ fit_joint_latent <- function(
     n_subjects = n_subjects,
     stream_counts = stream_counts,
     k_fixed = k_fixed,
-    k_value = if (k_fixed) k else coefficients["k"],
+    k_value = if (k_fixed) k_start else coefficients["k"],
     epsilon = epsilon,
     data = dat,
     subject_map = prep$subject_map,
@@ -885,12 +919,12 @@ fit_joint_latent <- function(
 #' Compute Starting Values for Latent-Trait Joint Hurdle Model
 #'
 #' @param dat Prepared data frame
-#' @param k Fixed k value (or NULL)
+#' @param k_start Starting value for k
 #' @param epsilon Epsilon value
 #' @param stream_counts Named vector of stream counts
 #' @return Named list of starting values
 #' @keywords internal
-compute_joint_start_values_latent <- function(dat, k, epsilon, stream_counts) {
+compute_joint_start_values_latent <- function(dat, k_start, epsilon, stream_counts) {
   # Separate by stream
   alone_dat <- dat[dat$stream == 0, ]
   own_dat <- dat[dat$stream == 1, ]
@@ -911,7 +945,7 @@ compute_joint_start_values_latent <- function(dat, k, epsilon, stream_counts) {
     theta_Qalone_OA = 1,
     I = -0.5,
     log_beta = log(0.1),
-    k = if (is.null(k)) 2 else k,
+    k = k_start,
     # Latent loadings (start at 0 = no differential substitution effect)
     lambda_sub_q0 = 0,
     lambda_sub_alpha = 0,

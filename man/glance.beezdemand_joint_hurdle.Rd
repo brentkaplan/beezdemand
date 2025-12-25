@@ -12,7 +12,15 @@
 \item{...}{Additional arguments (unused).}
 }
 \value{
-A tibble with model-level statistics.
+A one-row tibble with model-level statistics including:
+  - `model_class`: "beezdemand_joint_hurdle"
+  - `backend`: "TMB"
+  - `joint_type`: "saturated" or "latent"
+  - `nobs`: Number of observations
+  - `n_subjects`: Number of subjects
+  - `converged`: Convergence status
+  - `logLik`, `AIC`, `BIC`: Model fit statistics
+  - `k_fixed`, `k_value`: Whether k was fixed and its value
 }
 \description{
 Glance Method for Joint Hurdle Model

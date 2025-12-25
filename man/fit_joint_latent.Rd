@@ -9,7 +9,7 @@ fit_joint_latent(
   prep,
   n_subjects,
   stream_counts,
-  k,
+  k_start,
   k_fixed,
   start,
   epsilon,

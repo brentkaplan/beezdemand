@@ -4,12 +4,12 @@
 \alias{compute_joint_start_values_saturated}
 \title{Compute Starting Values for Saturated Joint Hurdle Model}
 \usage{
-compute_joint_start_values_saturated(dat, k, epsilon, stream_counts)
+compute_joint_start_values_saturated(dat, k_start, epsilon, stream_counts)
 }
 \arguments{
 \item{dat}{Prepared data frame}
 
-\item{k}{Fixed k value (or NULL)}
+\item{k_start}{Starting value for k}
 
 \item{epsilon}{Epsilon value}
 

@@ -42,8 +42,9 @@ identifying each condition.}
   \item "latent": Latent-trait model with shared structure (Variant 2)
 }}
 
-\item{k}{Numeric or NULL. If numeric, k is fixed at this value. If NULL,
-k is estimated. Default matches existing hurdle-demand behavior.}
+\item{k}{Numeric or `"estimate"`. If numeric, k is fixed at this value.
+If `"estimate"`, k is estimated as a free parameter (use with caution due
+to potential identifiability issues with alpha). Default is `2`.}
 
 \item{epsilon}{Numeric. Small constant for log(price + epsilon).}
 
