@@ -12,7 +12,15 @@
 \item{...}{Additional arguments (ignored)}
 }
 \value{
-A one-row data frame of model statistics
+A one-row tibble of model statistics with columns:
+  - `model_class`: "beezdemand_cp_hurdle"
+  - `backend`: "TMB"
+  - `nobs`: Number of observations
+  - `n_subjects`: Number of subjects
+  - `n_random_effects`: Number of random effects
+  - `converged`: Convergence status
+  - `logLik`: Log-likelihood
+  - `AIC`, `BIC`: Information criteria
 }
 \description{
 Glance method for beezdemand_cp_hurdle

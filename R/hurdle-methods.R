@@ -36,20 +36,25 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'   \code{\link{fit_demand_hurdle}}.
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return An object of class \code{summary.beezdemand_hurdle} containing:
+#' @return An object of class \code{summary.beezdemand_hurdle} (also inherits
+#'   from \code{beezdemand_summary}) containing:
 #' \describe{
 #'   \item{call}{The original function call}
-#'   \item{coefficients}{Matrix of fixed effects with estimates, SEs, and t-values}
+#'   \item{model_class}{"beezdemand_hurdle"}
+#'   \item{backend}{"TMB"}
+#'   \item{coefficients}{Tibble of fixed effects with estimates, SEs, z-values, p-values}
+#'   \item{coefficients_matrix}{Matrix form for printing (legacy compatibility)}
 #'   \item{variance_components}{Matrix of variance/covariance estimates}
 #'   \item{correlations}{Matrix of correlation estimates}
 #'   \item{n_subjects}{Number of subjects}
-#'   \item{n_obs}{Number of observations}
+#'   \item{nobs}{Number of observations}
 #'   \item{converged}{Logical indicating convergence}
-#'   \item{loglik}{Log-likelihood at convergence}
+#'   \item{logLik}{Log-likelihood at convergence}
 #'   \item{AIC}{Akaike Information Criterion}
 #'   \item{BIC}{Bayesian Information Criterion}
 #'   \item{group_metrics}{Group-level Pmax and Omax}
 #'   \item{individual_metrics}{Summary of individual-level parameters}
+#'   \item{notes}{Character vector of warnings/notes}
 #' }
 #'
 #' @examples
@@ -60,11 +65,33 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'
 #' @export
 summary.beezdemand_hurdle <- function(object, ...) {
-  # Build coefficient table
-  coef_table <- cbind(
+  # Build coefficient table (matrix form for printing)
+  coef_matrix <- cbind(
     Estimate = object$model$coefficients,
     `Std. Error` = object$model$se,
     `t value` = object$model$coefficients / object$model$se
+  )
+
+  # Build coefficient tibble (for contract compliance)
+  coef_names <- names(object$model$coefficients)
+  z_val <- object$model$coefficients / object$model$se
+  p_val <- 2 * stats::pnorm(-abs(z_val))
+
+  # Determine component for each coefficient
+  component <- dplyr::case_when(
+    coef_names %in% c("gamma0", "gamma1") ~ "probability",
+    coef_names %in% c("logQ0", "log_alpha") ~ "consumption",
+    grepl("^logsigma_|^rho_", coef_names) ~ "variance",
+    TRUE ~ "fixed"
+  )
+
+  coefficients <- tibble::tibble(
+    term = coef_names,
+    estimate = unname(object$model$coefficients),
+    std.error = unname(object$model$se),
+    statistic = unname(z_val),
+    p.value = unname(p_val),
+    component = component
   )
 
   # Compute group-level demand metrics (Omax, Pmax)
@@ -83,25 +110,29 @@ summary.beezdemand_hurdle <- function(object, ...) {
     )])
   )
 
-  result <- list(
-    call = object$call,
-    coefficients = coef_table,
-    variance_components = object$model$variance_components,
-    correlations = object$model$correlations,
-    n_subjects = object$param_info$n_subjects,
-    n_obs = object$param_info$n_obs,
-    n_random_effects = object$param_info$n_random_effects,
-    random_effects_spec = object$param_info$random_effects_spec,
-    converged = object$converged,
-    loglik = object$loglik,
-    AIC = object$AIC,
-    BIC = object$BIC,
-    group_metrics = group_metrics,
-    individual_metrics = individual_metrics
+  structure(
+    list(
+      call = object$call,
+      model_class = "beezdemand_hurdle",
+      backend = "TMB",
+      coefficients = coefficients,
+      coefficients_matrix = coef_matrix,
+      variance_components = object$model$variance_components,
+      correlations = object$model$correlations,
+      n_subjects = object$param_info$n_subjects,
+      nobs = object$param_info$n_obs,
+      n_random_effects = object$param_info$n_random_effects,
+      random_effects_spec = object$param_info$random_effects_spec,
+      converged = object$converged,
+      logLik = object$loglik,
+      AIC = object$AIC,
+      BIC = object$BIC,
+      group_metrics = group_metrics,
+      individual_metrics = individual_metrics,
+      notes = character(0)
+    ),
+    class = c("summary.beezdemand_hurdle", "beezdemand_summary")
   )
-
-  class(result) <- "summary.beezdemand_hurdle"
-  return(result)
 }
 
 
@@ -122,7 +153,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
 
   cat("Convergence:", ifelse(x$converged, "Yes", "No"), "\n")
   cat("Number of subjects:", x$n_subjects, "\n")
-  cat("Number of observations:", x$n_obs, "\n")
+  cat("Number of observations:", x$nobs, "\n")
   cat(
     "Random effects:",
     x$n_random_effects,
@@ -132,7 +163,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
 
   cat("Fixed Effects:\n")
   cat("--------------\n")
-  printCoefmat(x$coefficients, digits = digits, signif.stars = FALSE, ...)
+  printCoefmat(x$coefficients_matrix, digits = digits, signif.stars = FALSE, ...)
   cat("\n")
 
   cat("Variance Components:\n")
@@ -147,7 +178,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
 
   cat("Model Fit:\n")
   cat("----------\n")
-  cat(sprintf("  Log-likelihood: %.2f\n", x$loglik))
+  cat(sprintf("  Log-likelihood: %.2f\n", x$logLik))
   cat(sprintf("  AIC: %.2f\n", x$AIC))
   cat(sprintf("  BIC: %.2f\n", x$BIC))
   cat("\n")
@@ -163,6 +194,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
   } else {
     cat("  Pmax/Omax: NA (k < e, no local maximum exists)\n")
   }
+
   cat("\n")
 
   cat("Derived Parameters (Individual-Level Summary):\n")
@@ -733,4 +765,87 @@ plot_subject <- function(
     theme_minimal()
 
   return(p)
+}
+
+
+#' Tidy a beezdemand_hurdle Model
+#'
+#' @description
+#' Returns a tibble of model coefficients in tidy format.
+#'
+#' @param x An object of class \code{beezdemand_hurdle}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A tibble with columns:
+#'   \describe{
+#'     \item{term}{Parameter name}
+#'     \item{estimate}{Point estimate}
+#'     \item{std.error}{Standard error}
+#'     \item{statistic}{z-value}
+#'     \item{p.value}{P-value}
+#'     \item{component}{One of "probability", "consumption", or "variance"}
+#'   }
+#'
+#' @export
+tidy.beezdemand_hurdle <- function(x, ...) {
+  coef_names <- names(x$model$coefficients)
+  coefs <- x$model$coefficients
+  se <- x$model$se
+  z_val <- coefs / se
+  p_val <- 2 * stats::pnorm(-abs(z_val))
+
+  # Determine component for each coefficient
+  component <- dplyr::case_when(
+    coef_names %in% c("gamma0", "gamma1") ~ "probability",
+    coef_names %in% c("logQ0", "log_alpha") ~ "consumption",
+    coef_names %in% c("beta0", "beta1") ~ "probability",
+    grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
+    TRUE ~ "fixed"
+  )
+
+  tibble::tibble(
+    term = coef_names,
+    estimate = unname(coefs),
+    std.error = unname(se),
+    statistic = unname(z_val),
+    p.value = unname(p_val),
+    component = component
+  )
+}
+
+
+#' Glance at a beezdemand_hurdle Model
+#'
+#' @description
+#' Returns a one-row tibble of model-level statistics.
+#'
+#' @param x An object of class \code{beezdemand_hurdle}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A one-row tibble with columns:
+#'   \describe{
+#'     \item{model_class}{"beezdemand_hurdle"}
+#'     \item{backend}{"TMB"}
+#'     \item{nobs}{Number of observations}
+#'     \item{n_subjects}{Number of subjects}
+#'     \item{n_random_effects}{Number of random effects}
+#'     \item{converged}{Convergence status}
+#'     \item{logLik}{Log-likelihood}
+#'     \item{AIC}{Akaike Information Criterion}
+#'     \item{BIC}{Bayesian Information Criterion}
+#'   }
+#'
+#' @export
+glance.beezdemand_hurdle <- function(x, ...) {
+  tibble::tibble(
+    model_class = "beezdemand_hurdle",
+    backend = "TMB",
+    nobs = x$param_info$n_obs,
+    n_subjects = x$param_info$n_subjects,
+    n_random_effects = x$param_info$n_random_effects,
+    converged = x$converged,
+    logLik = x$loglik,
+    AIC = x$AIC,
+    BIC = x$BIC
+  )
 }

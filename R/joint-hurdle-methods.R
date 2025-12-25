@@ -47,6 +47,25 @@ print.beezdemand_joint_hurdle <- function(x, ...) {
 }
 
 
+#' Summary method for beezdemand_joint_hurdle
+#'
+#' Returns a structured summary object containing model coefficients,
+#' fit statistics, variance components, and model-specific details.
+#'
+#' @param object A beezdemand_joint_hurdle object
+#' @param ... Additional arguments (ignored)
+#' @return A `summary.beezdemand_joint_hurdle` object (inherits from
+#'   `beezdemand_summary`) with fields including:
+#'   - `call`: The original function call
+#'   - `model_class`: "beezdemand_joint_hurdle"
+#'   - `backend`: "TMB"
+#'   - `joint_type`: "saturated" or "latent"
+#'   - `k_fixed`, `k_value`: Whether k was fixed and its value
+#'   - `coefficients`: Combined tibble of all coefficients
+#'   - `coefficients_hurdle`: Part I coefficients
+#'   - `coefficients_by_stream`: List of tibbles by stream
+#'   - `variance_components`: Random effect variances
+#'   - `correlations`: Random effect correlations
 #' @export
 summary.beezdemand_joint_hurdle <- function(object, ...) {
   joint_type <- if (!is.null(object$joint_type)) {
@@ -55,21 +74,251 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
     "saturated"
   }
 
+  coef_nat <- object$coefficients_natural
+  coef_raw <- object$coefficients
+
+  # Get standard errors if available
+  se <- rep(NA_real_, length(coef_nat))
+  names(se) <- names(coef_nat)
+  if (!is.null(object$vcov)) {
+    vcov_names <- rownames(object$vcov)
+    for (nm in names(coef_nat)) {
+      if (nm %in% vcov_names) {
+        se[nm] <- sqrt(object$vcov[nm, nm])
+      }
+    }
+  }
+
+  # Part I (hurdle) coefficients
+  hurdle_params <- c("gamma0", "gamma_own_target", "gamma_own_alt", "gamma1")
+  coefficients_hurdle <- tibble::tibble(
+    term = hurdle_params,
+    estimate = unname(coef_nat[hurdle_params]),
+    std.error = unname(se[hurdle_params]),
+    statistic = coef_nat[hurdle_params] / se[hurdle_params],
+    p.value = 2 * stats::pnorm(-abs(coef_nat[hurdle_params] / se[hurdle_params])),
+    component = "hurdle"
+  )
+
+  # Stream-specific coefficients depend on joint_type
+  if (joint_type == "saturated") {
+    # alone.target stream
+    at_params <- c("logQ0_AT", "alpha_AT")
+    coefficients_alone_target <- tibble::tibble(
+      term = at_params,
+      estimate = unname(coef_nat[at_params]),
+      std.error = unname(se[at_params]),
+      statistic = coef_nat[at_params] / se[at_params],
+      p.value = 2 * stats::pnorm(-abs(coef_nat[at_params] / se[at_params])),
+      component = "alone.target"
+    )
+
+    # own.target stream
+    ot_params <- c("logQ0_OT", "alpha_OT")
+    coefficients_own_target <- tibble::tibble(
+      term = ot_params,
+      estimate = unname(coef_nat[ot_params]),
+      std.error = unname(se[ot_params]),
+      statistic = coef_nat[ot_params] / se[ot_params],
+      p.value = 2 * stats::pnorm(-abs(coef_nat[ot_params] / se[ot_params])),
+      component = "own.target"
+    )
+
+    # own.alt stream
+    oa_params <- c("logQalone_OA", "I", "beta")
+    coefficients_own_alt <- tibble::tibble(
+      term = oa_params,
+      estimate = unname(coef_nat[oa_params]),
+      std.error = unname(se[oa_params]),
+      statistic = coef_nat[oa_params] / se[oa_params],
+      p.value = 2 * stats::pnorm(-abs(coef_nat[oa_params] / se[oa_params])),
+      component = "own.alt"
+    )
+
+    # Derived parameters
+    derived_params <- tibble::tibble(
+      term = c("Q0_AT", "Q0_OT", "Qalone_OA"),
+      estimate = c(
+        exp(coef_nat["logQ0_AT"]),
+        exp(coef_nat["logQ0_OT"]),
+        exp(coef_nat["logQalone_OA"])
+      ),
+      std.error = NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_,
+      component = "derived"
+    )
+
+    coefficients_by_stream <- list(
+      alone.target = coefficients_alone_target,
+      own.target = coefficients_own_target,
+      own.alt = coefficients_own_alt
+    )
+
+    # Variance components
+    variance_components <- tibble::tibble(
+      term = c("sigma_a", "sigma_b_AT", "sigma_b_OT", "sigma_b_OA", "sigma_e"),
+      estimate = c(
+        exp(coef_raw["logsigma_a"]),
+        exp(coef_raw["logsigma_b_AT"]),
+        exp(coef_raw["logsigma_b_OT"]),
+        exp(coef_raw["logsigma_b_OA"]),
+        exp(coef_raw["logsigma_e"])
+      ),
+      description = c("zeros RE", "alone.target RE", "own.target RE",
+                      "own.alt RE", "residual")
+    )
+
+    # Correlations
+    correlations <- tibble::tibble(
+      term = c("rho(AT, OT)", "rho(AT, OA)", "rho(OT, OA)"),
+      estimate = c(
+        tanh(coef_raw["rho_AT_OT_raw"]),
+        tanh(coef_raw["rho_AT_OA_raw"]),
+        tanh(coef_raw["rho_OT_OA_raw"])
+      )
+    )
+
+    latent_loadings <- NULL
+    latent_sds <- NULL
+  } else {
+    # Latent model - population means
+    theta_params <- c("theta_Q0_AT", "theta_alpha_AT", "theta_Q0_OT",
+                      "theta_alpha_OT", "theta_Qalone_OA", "I", "beta")
+    coefficients_theta <- tibble::tibble(
+      term = theta_params,
+      estimate = unname(coef_nat[theta_params]),
+      std.error = unname(se[theta_params]),
+      statistic = coef_nat[theta_params] / se[theta_params],
+      p.value = 2 * stats::pnorm(-abs(coef_nat[theta_params] / se[theta_params])),
+      component = "population_means"
+    )
+
+    # Latent trait loadings
+    lambda_params <- c("lambda_sub_q0", "lambda_sub_alpha", "lambda_sub_alt")
+    latent_loadings <- tibble::tibble(
+      term = lambda_params,
+      estimate = unname(coef_nat[lambda_params]),
+      std.error = unname(se[lambda_params]),
+      statistic = coef_nat[lambda_params] / se[lambda_params],
+      p.value = 2 * stats::pnorm(-abs(coef_nat[lambda_params] / se[lambda_params])),
+      component = "latent_loadings"
+    )
+
+    coefficients_by_stream <- list(
+      population_means = coefficients_theta
+    )
+
+    derived_params <- tibble::tibble(
+      term = character(0), estimate = numeric(0), std.error = numeric(0),
+      statistic = numeric(0), p.value = numeric(0), component = character(0)
+    )
+
+    # Latent trait SDs
+    latent_sds <- tibble::tibble(
+      term = c("sigma_buy", "sigma_val", "sigma_sens", "sigma_sub", "sigma_e"),
+      estimate = c(
+        exp(coef_raw["logsigma_buy"]),
+        exp(coef_raw["logsigma_val"]),
+        exp(coef_raw["logsigma_sens"]),
+        exp(coef_raw["logsigma_sub"]),
+        exp(coef_raw["logsigma_e"])
+      ),
+      description = c("buying propensity", "valuation", "price sensitivity",
+                      "substitutability", "residual")
+    )
+
+    variance_components <- latent_sds
+
+    # Latent trait correlations
+    correlations <- tibble::tibble(
+      term = c("rho(buy, val)", "rho(buy, sens)", "rho(buy, sub)",
+               "rho(val, sens)", "rho(val, sub)", "rho(sens, sub)"),
+      estimate = c(
+        tanh(coef_raw["rho_buy_val_raw"]),
+        tanh(coef_raw["rho_buy_sens_raw"]),
+        tanh(coef_raw["rho_buy_sub_raw"]),
+        tanh(coef_raw["rho_val_sens_raw"]),
+        tanh(coef_raw["rho_val_sub_raw"]),
+        tanh(coef_raw["rho_sens_sub_raw"])
+      )
+    )
+  }
+
+  # Shared k parameter
+  k_param <- tibble::tibble(
+    term = "k",
+    estimate = object$k_value,
+    std.error = if (!object$k_fixed && !is.null(se["k"])) se["k"] else NA_real_,
+    statistic = NA_real_,
+    p.value = NA_real_,
+    component = "shared"
+  )
+
+  # Combine all coefficients
+  coefficients <- dplyr::bind_rows(
+    coefficients_hurdle,
+    do.call(dplyr::bind_rows, coefficients_by_stream),
+    derived_params,
+    k_param
+  )
+
+  if (joint_type == "latent" && !is.null(latent_loadings)) {
+    coefficients <- dplyr::bind_rows(coefficients, latent_loadings)
+  }
+
+  structure(
+    list(
+      call = object$call,
+      model_class = "beezdemand_joint_hurdle",
+      backend = "TMB",
+      joint_type = joint_type,
+      nobs = object$n_obs,
+      n_subjects = object$n_subjects,
+      stream_counts = object$stream_counts,
+      k_fixed = object$k_fixed,
+      k_value = object$k_value,
+      epsilon = object$epsilon,
+      converged = object$convergence == 0,
+      logLik = object$logLik,
+      AIC = object$AIC,
+      BIC = object$BIC,
+      coefficients = coefficients,
+      coefficients_hurdle = coefficients_hurdle,
+      coefficients_by_stream = coefficients_by_stream,
+      derived_params = derived_params,
+      variance_components = variance_components,
+      correlations = correlations,
+      latent_loadings = latent_loadings,
+      latent_sds = latent_sds,
+      notes = object$warnings
+    ),
+    class = c("summary.beezdemand_joint_hurdle", "beezdemand_summary")
+  )
+}
+
+#' Print method for summary.beezdemand_joint_hurdle
+#'
+#' @param x A summary.beezdemand_joint_hurdle object
+#' @param digits Number of significant digits to print
+#' @param ... Additional arguments (ignored)
+#' @export
+print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, ...) {
   cat("\nJoint Hurdle Cross-Price Model Summary\n")
   cat("=======================================\n\n")
 
   # Model info
-  cat("Variant:", joint_type, "\n")
-  cat("Observations:", object$n_obs, "\n")
-  cat("Subjects:", object$n_subjects, "\n")
-  cat("k fixed:", object$k_fixed, "(value:", object$k_value, ")\n")
-  cat("Epsilon:", object$epsilon, "\n\n")
+  cat("Variant:", x$joint_type, "\n")
+  cat("Observations:", x$nobs, "\n")
+  cat("Subjects:", x$n_subjects, "\n")
+  cat("k fixed:", x$k_fixed, "(value:", x$k_value, ")\n")
+  cat("Epsilon:", x$epsilon, "\n\n")
 
   # Stream counts
   cat("Stream Counts:\n")
-  cat("  alone.target:", object$stream_counts["alone.target"], "\n")
-  cat("  own.target:  ", object$stream_counts["own.target"], "\n")
-  cat("  own.alt:     ", object$stream_counts["own.alt"], "\n\n")
+  cat("  alone.target:", x$stream_counts["alone.target"], "\n")
+  cat("  own.target:  ", x$stream_counts["own.target"], "\n")
+  cat("  own.alt:     ", x$stream_counts["own.alt"], "\n\n")
 
   # Fixed effects
   cat("Fixed Effects:\n")
@@ -77,184 +326,117 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
 
   # Part I
   cat("\nPart I (Hurdle - Shared Zeros Model):\n")
-  coef <- object$coefficients_natural
-  cat("  gamma0 (intercept):    ", sprintf("%.4f", coef["gamma0"]), "\n")
-  cat(
-    "  gamma_own_target:      ",
-    sprintf("%.4f", coef["gamma_own_target"]),
-    "\n"
-  )
-  cat("  gamma_own_alt:         ", sprintf("%.4f", coef["gamma_own_alt"]), "\n")
-  cat("  gamma1 (price slope):  ", sprintf("%.4f", coef["gamma1"]), "\n")
+  hurdle_df <- as.data.frame(x$coefficients_hurdle[, c("term", "estimate")])
+  for (i in seq_len(nrow(hurdle_df))) {
+    cat(sprintf("  %-24s %.4f\n", paste0(hurdle_df$term[i], ":"), hurdle_df$estimate[i]))
+  }
 
-  if (joint_type == "saturated") {
+  if (x$joint_type == "saturated") {
     # Saturated model output
+    at <- x$coefficients_by_stream$alone.target
+    ot <- x$coefficients_by_stream$own.target
+    oa <- x$coefficients_by_stream$own.alt
+
     cat("\nPart II - Target Demand (alone.target):\n")
-    cat("  logQ0_AT:              ", sprintf("%.4f", coef["logQ0_AT"]), "\n")
-    cat(
-      "  Q0_AT:                 ",
-      sprintf("%.4f", exp(coef["logQ0_AT"])),
-      "\n"
-    )
-    cat("  alpha_AT:              ", sprintf("%.6f", coef["alpha_AT"]), "\n")
+    for (i in seq_len(nrow(at))) {
+      cat(sprintf("  %-24s %.4f\n", paste0(at$term[i], ":"), at$estimate[i]))
+    }
+    q0_at <- x$derived_params$estimate[x$derived_params$term == "Q0_AT"]
+    cat(sprintf("  %-24s %.4f\n", "Q0_AT:", q0_at))
 
     cat("\nPart II - Target Demand (own.target):\n")
-    cat("  logQ0_OT:              ", sprintf("%.4f", coef["logQ0_OT"]), "\n")
-    cat(
-      "  Q0_OT:                 ",
-      sprintf("%.4f", exp(coef["logQ0_OT"])),
-      "\n"
-    )
-    cat("  alpha_OT:              ", sprintf("%.6f", coef["alpha_OT"]), "\n")
+    for (i in seq_len(nrow(ot))) {
+      cat(sprintf("  %-24s %.4f\n", paste0(ot$term[i], ":"), ot$estimate[i]))
+    }
+    q0_ot <- x$derived_params$estimate[x$derived_params$term == "Q0_OT"]
+    cat(sprintf("  %-24s %.4f\n", "Q0_OT:", q0_ot))
 
     cat("\nPart II - Cross-Price (own.alt):\n")
-    cat(
-      "  logQalone_OA:          ",
-      sprintf("%.4f", coef["logQalone_OA"]),
-      "\n"
-    )
-    cat(
-      "  Qalone_OA:             ",
-      sprintf("%.4f", exp(coef["logQalone_OA"])),
-      "\n"
-    )
-    cat("  I:                     ", sprintf("%.4f", coef["I"]), "\n")
-    cat("  beta:                  ", sprintf("%.4f", coef["beta"]), "\n")
+    for (i in seq_len(nrow(oa))) {
+      cat(sprintf("  %-24s %.4f\n", paste0(oa$term[i], ":"), oa$estimate[i]))
+    }
+    qalone_oa <- x$derived_params$estimate[x$derived_params$term == "Qalone_OA"]
+    cat(sprintf("  %-24s %.4f\n", "Qalone_OA:", qalone_oa))
 
     # Shared k
     cat("\nShared Parameter:\n")
-    cat(
-      "  k:                     ",
-      sprintf("%.4f", object$k_value),
-      if (object$k_fixed) " (fixed)" else " (estimated)",
-      "\n"
-    )
+    cat(sprintf("  %-24s %.4f%s\n", "k:",
+                x$k_value, if (x$k_fixed) " (fixed)" else " (estimated)"))
 
     # Variance components
     cat("\nVariance Components:\n")
     cat("--------------------\n")
-    sigma_a <- exp(object$coefficients["logsigma_a"])
-    sigma_b_AT <- exp(object$coefficients["logsigma_b_AT"])
-    sigma_b_OT <- exp(object$coefficients["logsigma_b_OT"])
-    sigma_b_OA <- exp(object$coefficients["logsigma_b_OA"])
-    sigma_e <- exp(object$coefficients["logsigma_e"])
-
-    cat("  sigma_a (zeros RE):    ", sprintf("%.4f", sigma_a), "\n")
-    cat("  sigma_b_AT:            ", sprintf("%.4f", sigma_b_AT), "\n")
-    cat("  sigma_b_OT:            ", sprintf("%.4f", sigma_b_OT), "\n")
-    cat("  sigma_b_OA:            ", sprintf("%.4f", sigma_b_OA), "\n")
-    cat("  sigma_e (residual):    ", sprintf("%.4f", sigma_e), "\n")
+    for (i in seq_len(nrow(x$variance_components))) {
+      cat(sprintf("  %-24s %.4f\n",
+                  paste0(x$variance_components$term[i], " (",
+                         x$variance_components$description[i], "):"),
+                  x$variance_components$estimate[i]))
+    }
 
     # Correlations
-    rho_AT_OT <- tanh(object$coefficients["rho_AT_OT_raw"])
-    rho_AT_OA <- tanh(object$coefficients["rho_AT_OA_raw"])
-    rho_OT_OA <- tanh(object$coefficients["rho_OT_OA_raw"])
-
     cat("\nIntensity RE Correlations:\n")
-    cat("  rho(AT, OT):           ", sprintf("%.4f", rho_AT_OT), "\n")
-    cat("  rho(AT, OA):           ", sprintf("%.4f", rho_AT_OA), "\n")
-    cat("  rho(OT, OA):           ", sprintf("%.4f", rho_OT_OA), "\n")
+    for (i in seq_len(nrow(x$correlations))) {
+      cat(sprintf("  %-24s %.4f\n",
+                  paste0(x$correlations$term[i], ":"),
+                  x$correlations$estimate[i]))
+    }
   } else {
     # Latent model output
+    pm <- x$coefficients_by_stream$population_means
+
     cat("\nPart II - Population Means (theta):\n")
-    cat("  theta_Q0_AT:           ", sprintf("%.4f", coef["theta_Q0_AT"]), "\n")
-    cat(
-      "  theta_alpha_AT:        ",
-      sprintf("%.4f", coef["theta_alpha_AT"]),
-      "\n"
-    )
-    cat("  theta_Q0_OT:           ", sprintf("%.4f", coef["theta_Q0_OT"]), "\n")
-    cat(
-      "  theta_alpha_OT:        ",
-      sprintf("%.4f", coef["theta_alpha_OT"]),
-      "\n"
-    )
-    cat(
-      "  theta_Qalone_OA:       ",
-      sprintf("%.4f", coef["theta_Qalone_OA"]),
-      "\n"
-    )
-    cat("  I:                     ", sprintf("%.4f", coef["I"]), "\n")
-    cat("  beta:                  ", sprintf("%.4f", coef["beta"]), "\n")
+    for (i in seq_len(nrow(pm))) {
+      cat(sprintf("  %-24s %.4f\n", paste0(pm$term[i], ":"), pm$estimate[i]))
+    }
 
     # Shared k
     cat("\nShared Parameter:\n")
-    cat(
-      "  k:                     ",
-      sprintf("%.4f", object$k_value),
-      if (object$k_fixed) " (fixed)" else " (estimated)",
-      "\n"
-    )
+    cat(sprintf("  %-24s %.4f%s\n", "k:",
+                x$k_value, if (x$k_fixed) " (fixed)" else " (estimated)"))
 
     # Latent trait loadings
-    cat("\nLatent Trait Loadings:\n")
-    cat(
-      "  lambda_sub_q0:         ",
-      sprintf("%.4f", coef["lambda_sub_q0"]),
-      "\n"
-    )
-    cat(
-      "  lambda_sub_alpha:      ",
-      sprintf("%.4f", coef["lambda_sub_alpha"]),
-      "\n"
-    )
-    cat(
-      "  lambda_sub_alt:        ",
-      sprintf("%.4f", coef["lambda_sub_alt"]),
-      "\n"
-    )
+    if (!is.null(x$latent_loadings) && nrow(x$latent_loadings) > 0) {
+      cat("\nLatent Trait Loadings:\n")
+      for (i in seq_len(nrow(x$latent_loadings))) {
+        cat(sprintf("  %-24s %.4f\n",
+                    paste0(x$latent_loadings$term[i], ":"),
+                    x$latent_loadings$estimate[i]))
+      }
+    }
 
     # Latent trait SDs
     cat("\nLatent Trait Standard Deviations:\n")
-    sigma_buy <- exp(object$coefficients["logsigma_buy"])
-    sigma_val <- exp(object$coefficients["logsigma_val"])
-    sigma_sens <- exp(object$coefficients["logsigma_sens"])
-    sigma_sub <- exp(object$coefficients["logsigma_sub"])
-    sigma_e <- exp(object$coefficients["logsigma_e"])
-
-    cat("  sigma_buy:             ", sprintf("%.4f", sigma_buy), "\n")
-    cat("  sigma_val:             ", sprintf("%.4f", sigma_val), "\n")
-    cat("  sigma_sens:            ", sprintf("%.4f", sigma_sens), "\n")
-    cat("  sigma_sub:             ", sprintf("%.4f", sigma_sub), "\n")
-    cat("  sigma_e (residual):    ", sprintf("%.4f", sigma_e), "\n")
+    for (i in seq_len(nrow(x$latent_sds))) {
+      cat(sprintf("  %-24s %.4f\n",
+                  paste0(x$latent_sds$term[i], ":"),
+                  x$latent_sds$estimate[i]))
+    }
 
     # Latent trait correlations
-    rho_buy_val <- tanh(object$coefficients["rho_buy_val_raw"])
-    rho_buy_sens <- tanh(object$coefficients["rho_buy_sens_raw"])
-    rho_buy_sub <- tanh(object$coefficients["rho_buy_sub_raw"])
-    rho_val_sens <- tanh(object$coefficients["rho_val_sens_raw"])
-    rho_val_sub <- tanh(object$coefficients["rho_val_sub_raw"])
-    rho_sens_sub <- tanh(object$coefficients["rho_sens_sub_raw"])
-
     cat("\nLatent Trait Correlations:\n")
-    cat("  rho(buy, val):         ", sprintf("%.4f", rho_buy_val), "\n")
-    cat("  rho(buy, sens):        ", sprintf("%.4f", rho_buy_sens), "\n")
-    cat("  rho(buy, sub):         ", sprintf("%.4f", rho_buy_sub), "\n")
-    cat("  rho(val, sens):        ", sprintf("%.4f", rho_val_sens), "\n")
-    cat("  rho(val, sub):         ", sprintf("%.4f", rho_val_sub), "\n")
-    cat("  rho(sens, sub):        ", sprintf("%.4f", rho_sens_sub), "\n")
+    for (i in seq_len(nrow(x$correlations))) {
+      cat(sprintf("  %-24s %.4f\n",
+                  paste0(x$correlations$term[i], ":"),
+                  x$correlations$estimate[i]))
+    }
   }
 
   # Model fit
   cat("\nModel Fit:\n")
   cat("----------\n")
-  cat("  Log-likelihood:        ", sprintf("%.2f", object$logLik), "\n")
-  cat("  AIC:                   ", sprintf("%.2f", object$AIC), "\n")
-  cat("  BIC:                   ", sprintf("%.2f", object$BIC), "\n")
-  cat(
-    "  Convergence:           ",
-    if (object$convergence == 0) "Yes" else "No",
-    "\n"
-  )
+  cat("  Log-likelihood:        ", sprintf("%.2f", x$logLik), "\n")
+  cat("  AIC:                   ", sprintf("%.2f", x$AIC), "\n")
+  cat("  BIC:                   ", sprintf("%.2f", x$BIC), "\n")
+  cat("  Convergence:           ", if (x$converged) "Yes" else "No", "\n")
 
-  if (length(object$warnings) > 0) {
+  if (length(x$notes) > 0) {
     cat("\nWarnings:\n")
-    for (w in object$warnings) {
+    for (w in x$notes) {
       cat("  - ", w, "\n")
     }
   }
 
-  invisible(object)
+  invisible(x)
 }
 
 
@@ -599,37 +781,57 @@ plot.beezdemand_joint_hurdle <- function(
 #' @param x A \code{beezdemand_joint_hurdle} object.
 #' @param ... Additional arguments (unused).
 #'
-#' @return A tibble with coefficient information.
+#' @return A tibble with coefficient information including:
+#'   - `term`: Parameter name
+#'   - `estimate`: Point estimate
+#'   - `std.error`: Standard error (if available)
+#'   - `statistic`: z-value
+#'   - `p.value`: P-value
+#'   - `component`: One of "hurdle", "alone.target", "own.target",
+#'     "own.alt", "variance", "latent_loadings", "shared"
 #' @export
 tidy.beezdemand_joint_hurdle <- function(x, ...) {
   coef <- x$coefficients_natural
+  joint_type <- if (!is.null(x$joint_type)) x$joint_type else "saturated"
 
   # Get standard errors if available
   se <- rep(NA_real_, length(coef))
+  names(se) <- names(coef)
   if (!is.null(x$vcov)) {
-    # Match names
     vcov_names <- rownames(x$vcov)
-    for (i in seq_along(coef)) {
-      nm <- names(coef)[i]
+    for (nm in names(coef)) {
       if (nm %in% vcov_names) {
-        se[i] <- sqrt(x$vcov[nm, nm])
+        se[nm] <- sqrt(x$vcov[nm, nm])
       }
     }
   }
 
-  # Determine component
+  # Determine component based on parameter name
   component <- rep("variance", length(coef))
   component[grepl("^gamma", names(coef))] <- "hurdle"
-  component[grepl("AT$", names(coef)) | names(coef) == "k"] <- "alone.target"
-  component[grepl("OT$", names(coef))] <- "own.target"
-  component[
-    grepl("OA$", names(coef)) | names(coef) %in% c("I", "beta")
-  ] <- "own.alt"
+  component[names(coef) == "k"] <- "shared"
+
+  if (joint_type == "saturated") {
+    component[grepl("_AT$", names(coef))] <- "alone.target"
+    component[grepl("_OT$", names(coef))] <- "own.target"
+    component[grepl("_OA$", names(coef)) | names(coef) %in% c("I", "beta")] <- "own.alt"
+  } else {
+    # Latent model
+    component[grepl("^theta_", names(coef))] <- "population_means"
+    component[grepl("^lambda_", names(coef))] <- "latent_loadings"
+    component[names(coef) %in% c("I", "beta")] <- "population_means"
+  }
+
+  # Calculate z-values and p-values
+  z_val <- coef / se
+  p_val <- 2 * stats::pnorm(-abs(z_val))
 
   tibble::tibble(
     term = names(coef),
     estimate = unname(coef),
-    std.error = se,
+    std.error = unname(se),
+    statistic = unname(z_val),
+    p.value = unname(p_val),
     component = component
   )
 }
@@ -640,19 +842,32 @@ tidy.beezdemand_joint_hurdle <- function(x, ...) {
 #' @param x A \code{beezdemand_joint_hurdle} object.
 #' @param ... Additional arguments (unused).
 #'
-#' @return A tibble with model-level statistics.
+#' @return A one-row tibble with model-level statistics including:
+#'   - `model_class`: "beezdemand_joint_hurdle"
+#'   - `backend`: "TMB"
+#'   - `joint_type`: "saturated" or "latent"
+#'   - `nobs`: Number of observations
+#'   - `n_subjects`: Number of subjects
+#'   - `converged`: Convergence status
+#'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#'   - `k_fixed`, `k_value`: Whether k was fixed and its value
 #' @export
 glance.beezdemand_joint_hurdle <- function(x, ...) {
+  joint_type <- if (!is.null(x$joint_type)) x$joint_type else "saturated"
+
   tibble::tibble(
+    model_class = "beezdemand_joint_hurdle",
+    backend = "TMB",
+    joint_type = joint_type,
+    nobs = x$n_obs,
+    n_subjects = x$n_subjects,
+    n_alone_target = unname(x$stream_counts["alone.target"]),
+    n_own_target = unname(x$stream_counts["own.target"]),
+    n_own_alt = unname(x$stream_counts["own.alt"]),
+    converged = x$convergence == 0,
     logLik = x$logLik,
     AIC = x$AIC,
     BIC = x$BIC,
-    nobs = x$n_obs,
-    nsubjects = x$n_subjects,
-    n_alone_target = x$stream_counts["alone.target"],
-    n_own_target = x$stream_counts["own.target"],
-    n_own_alt = x$stream_counts["own.alt"],
-    converged = x$convergence == 0,
     k_fixed = x$k_fixed,
     k_value = x$k_value
   )

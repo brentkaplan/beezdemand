@@ -12,7 +12,14 @@
 \item{...}{Additional arguments (unused).}
 }
 \value{
-A tibble with coefficient information.
+A tibble with coefficient information including:
+  - `term`: Parameter name
+  - `estimate`: Point estimate
+  - `std.error`: Standard error (if available)
+  - `statistic`: z-value
+  - `p.value`: P-value
+  - `component`: One of "hurdle", "alone.target", "own.target",
+    "own.alt", "variance", "latent_loadings", "shared"
 }
 \description{
 Tidy Method for Joint Hurdle Model

@@ -12,7 +12,13 @@
 \item{...}{Additional arguments (ignored)}
 }
 \value{
-A data frame of model coefficients
+A tibble of model coefficients with columns:
+  - `term`: Parameter name
+  - `estimate`: Point estimate
+  - `std.error`: Standard error
+  - `statistic`: z-value
+  - `p.value`: P-value
+  - `component`: One of "part1_probability", "part2_consumption", "derived"
 }
 \description{
 Tidy method for beezdemand_cp_hurdle

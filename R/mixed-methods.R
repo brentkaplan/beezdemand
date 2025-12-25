@@ -1613,7 +1613,289 @@ print.beezdemand_nlme <- function(
     }
   }
   cat("---------------------------------------------------\n")
+
   invisible(x)
+}
+
+#' Summary method for beezdemand_nlme
+#'
+#' Returns a structured summary object containing model coefficients,
+#' fit statistics, and random effects information.
+#'
+#' @param object A beezdemand_nlme object
+#' @param ... Additional arguments (passed to summary.nlme)
+#' @return A `summary.beezdemand_nlme` object (inherits from
+#'   `beezdemand_summary`) with fields including:
+#'   - `call`: The original function call
+#'   - `model_class`: "beezdemand_nlme"
+#'   - `backend`: "nlme"
+#'   - `equation_form`: The equation form used ("zben" or "simplified")
+#'   - `coefficients`: Tibble of fixed effects with std.error, statistic, p.value
+#'   - `random_effects`: VarCorr output for random effects
+#'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#' @export
+summary.beezdemand_nlme <- function(object, ...) {
+  # Handle failed models
+  if (is.null(object$model)) {
+    return(structure(
+      list(
+        call = object$call,
+        model_class = "beezdemand_nlme",
+        backend = "nlme",
+        failed = TRUE,
+        fail_reason = object$error_message %||% "Unknown error",
+        equation_form = object$param_info$equation_form %||% NA_character_,
+        formula = NULL,
+        factors = object$param_info$factors,
+        nobs = NA_integer_,
+        n_subjects = NA_integer_,
+        converged = FALSE,
+        logLik = NA_real_,
+        AIC = NA_real_,
+        BIC = NA_real_,
+        coefficients = tibble::tibble(
+          term = character(),
+          estimate = numeric(),
+          std.error = numeric(),
+          statistic = numeric(),
+          p.value = numeric(),
+          component = character()
+        ),
+        fixed_effects = NULL,
+        random_effects = NULL,
+        notes = c("Model fitting failed", object$error_message)
+      ),
+      class = c("summary.beezdemand_nlme", "beezdemand_summary")
+    ))
+  }
+
+  nlme_summary <- summary(object$model, ...)
+
+  # Extract fixed effects table
+  ttable <- nlme_summary$tTable
+  coefficients <- tibble::tibble(
+    term = rownames(ttable),
+    estimate = ttable[, "Value"],
+    std.error = ttable[, "Std.Error"],
+    statistic = ttable[, "t-value"],
+    p.value = ttable[, "p-value"],
+    component = "fixed"
+  )
+
+  # Random effects structure
+  random_effects <- nlme::VarCorr(object$model)
+
+  # Get n_obs and n_subjects
+  n_obs <- tryCatch(nrow(object$model$data), error = function(e) NA_integer_)
+  n_subjects <- tryCatch(
+    length(unique(object$model$groups[[1]])),
+    error = function(e) NA_integer_
+  )
+
+  structure(
+    list(
+      call = object$call,
+      model_class = "beezdemand_nlme",
+      backend = "nlme",
+      failed = FALSE,
+      equation_form = object$param_info$equation_form %||%
+        object$formula_details$equation_form_selected,
+      formula = object$formula_details$nlme_model_formula_obj,
+      factors = object$param_info$factors,
+      factor_interaction = object$param_info$factor_interaction,
+      id_var = object$param_info$id_var,
+      nobs = n_obs,
+      n_subjects = n_subjects,
+      converged = TRUE,
+      logLik = as.numeric(stats::logLik(object$model)),
+      AIC = stats::AIC(object$model),
+      BIC = stats::BIC(object$model),
+      sigma = object$model$sigma,
+      coefficients = coefficients,
+      fixed_effects = ttable,
+      random_effects = random_effects,
+      notes = character(0)
+    ),
+    class = c("summary.beezdemand_nlme", "beezdemand_summary")
+  )
+}
+
+#' Print method for summary.beezdemand_nlme
+#'
+#' @param x A summary.beezdemand_nlme object
+#' @param digits Number of significant digits to print
+#' @param ... Additional arguments (ignored)
+#' @export
+print.summary.beezdemand_nlme <- function(x, digits = 4, ...) {
+  cat("\n")
+  cat("Nonlinear Mixed-Effects Demand Model Summary\n")
+  cat(strrep("=", 50), "\n\n")
+
+  if (isTRUE(x$failed)) {
+    cat("MODEL FITTING FAILED\n")
+    cat("Reason:", x$fail_reason, "\n")
+    return(invisible(x))
+  }
+
+  # Model specification
+  cat("Model Specification:\n")
+  cat("  Equation form:", x$equation_form, "\n")
+  if (!is.null(x$factors) && length(x$factors) > 0) {
+    cat("  Factors:", paste(x$factors, collapse = ", "), "\n")
+    cat("  Interaction:", x$factor_interaction, "\n")
+  }
+  cat("  ID variable:", x$id_var, "\n")
+  cat("\n")
+
+  # Data summary
+  cat("Data Summary:\n")
+  cat("  Subjects:", x$n_subjects, "\n")
+  cat("  Observations:", x$nobs, "\n\n")
+
+  # Fixed effects
+  cat("Fixed Effects:\n")
+  stats::printCoefmat(x$fixed_effects, digits = digits, ...)
+  cat("\n")
+
+  # Random effects
+  cat("Random Effects:\n")
+  print(x$random_effects)
+  cat("\n")
+
+  cat("Residual standard error:", round(x$sigma, digits), "\n\n")
+
+  # Model fit
+  cat("Model Fit:\n")
+  cat("  Log-Likelihood:", round(x$logLik, 2), "\n")
+  cat("  AIC:", round(x$AIC, 2), "\n")
+  cat("  BIC:", round(x$BIC, 2), "\n")
+
+  if (length(x$notes) > 0) {
+    cat("\nNotes:\n")
+    for (note in x$notes) {
+      cat("  -", note, "\n")
+    }
+  }
+
+  invisible(x)
+}
+
+#' Tidy method for beezdemand_nlme
+#'
+#' @param x A beezdemand_nlme object
+#' @param effects Which effects to include: "fixed" (default), "ran_pars", or both
+#' @param ... Additional arguments (ignored)
+#' @return A tibble of model coefficients with columns:
+#'   - `term`: Parameter name
+#'   - `estimate`: Point estimate
+#'   - `std.error`: Standard error
+#'   - `statistic`: t-value
+#'   - `p.value`: P-value
+#'   - `component`: "fixed" or "variance"
+#' @export
+tidy.beezdemand_nlme <- function(x, effects = c("fixed", "ran_pars"), ...) {
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      std.error = numeric(),
+      statistic = numeric(),
+      p.value = numeric(),
+      component = character()
+    ))
+  }
+
+  effects <- match.arg(effects, several.ok = TRUE)
+  result <- tibble::tibble()
+
+  if ("fixed" %in% effects) {
+    nlme_summary <- summary(x$model)
+    ttable <- nlme_summary$tTable
+    fixed <- tibble::tibble(
+      term = rownames(ttable),
+      estimate = ttable[, "Value"],
+      std.error = ttable[, "Std.Error"],
+      statistic = ttable[, "t-value"],
+      p.value = ttable[, "p-value"],
+      component = "fixed"
+    )
+    result <- dplyr::bind_rows(result, fixed)
+  }
+
+  if ("ran_pars" %in% effects) {
+    # Extract variance components from VarCorr
+    vc <- nlme::VarCorr(x$model)
+    # VarCorr returns a matrix-like object; extract variances
+    if (is.matrix(vc) || is.data.frame(vc)) {
+      var_names <- rownames(vc)
+      # The "Variance" column contains the variance estimates
+      if ("Variance" %in% colnames(vc)) {
+        variances <- as.numeric(vc[, "Variance"])
+        var_tidy <- tibble::tibble(
+          term = var_names,
+          estimate = variances,
+          std.error = NA_real_,
+          statistic = NA_real_,
+          p.value = NA_real_,
+          component = "variance"
+        )
+        result <- dplyr::bind_rows(result, var_tidy)
+      }
+    }
+  }
+
+  result
+}
+
+#' Glance method for beezdemand_nlme
+#'
+#' @param x A beezdemand_nlme object
+#' @param ... Additional arguments (ignored)
+#' @return A one-row tibble of model statistics with columns:
+#'   - `model_class`: "beezdemand_nlme"
+#'   - `backend`: "nlme"
+#'   - `equation_form`: The equation form used
+#'   - `nobs`: Number of observations
+#'   - `n_subjects`: Number of subjects
+#'   - `converged`: Convergence status
+#'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#'   - `sigma`: Residual standard error
+#' @export
+glance.beezdemand_nlme <- function(x, ...) {
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      model_class = "beezdemand_nlme",
+      backend = "nlme",
+      equation_form = x$param_info$equation_form %||% NA_character_,
+      nobs = NA_integer_,
+      n_subjects = NA_integer_,
+      converged = FALSE,
+      logLik = NA_real_,
+      AIC = NA_real_,
+      BIC = NA_real_,
+      sigma = NA_real_
+    ))
+  }
+
+  n_obs <- tryCatch(nrow(x$model$data), error = function(e) NA_integer_)
+  n_subjects <- tryCatch(
+    length(unique(x$model$groups[[1]])),
+    error = function(e) NA_integer_
+  )
+
+  tibble::tibble(
+    model_class = "beezdemand_nlme",
+    backend = "nlme",
+    equation_form = x$param_info$equation_form %||%
+      x$formula_details$equation_form_selected,
+    nobs = n_obs,
+    n_subjects = n_subjects,
+    converged = TRUE,
+    logLik = as.numeric(stats::logLik(x$model)),
+    AIC = stats::AIC(x$model),
+    BIC = stats::BIC(x$model),
+    sigma = x$model$sigma
+  )
 }
 
 #' Extract Coefficients from a beezdemand_nlme Model

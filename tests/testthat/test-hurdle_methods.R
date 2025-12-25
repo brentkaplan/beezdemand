@@ -39,7 +39,7 @@ test_that("summary.beezdemand_hurdle returns expected structure", {
   expect_true("coefficients" %in% names(summ))
   expect_true("variance_components" %in% names(summ))
   expect_true("correlations" %in% names(summ))
-  expect_true("loglik" %in% names(summ))
+  expect_true("logLik" %in% names(summ))
   expect_true("AIC" %in% names(summ))
   expect_true("BIC" %in% names(summ))
   expect_true("group_metrics" %in% names(summ))

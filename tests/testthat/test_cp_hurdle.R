@@ -131,9 +131,12 @@ test_that("summary.beezdemand_cp_hurdle works", {
     verbose = 0
   )
 
-  expect_output(summary(fit), "Part I")
-  expect_output(summary(fit), "Part II")
-  expect_output(summary(fit), "Variance Components")
+  # summary() now returns a structured object; output comes from print()
+  summ <- summary(fit)
+  expect_s3_class(summ, "summary.beezdemand_cp_hurdle")
+  expect_output(print(summ), "Part I")
+  expect_output(print(summ), "Part II")
+  expect_output(print(summ), "Variance Components")
 })
 
 test_that("coef.beezdemand_cp_hurdle works", {

@@ -4,12 +4,12 @@
 \alias{compute_joint_start_values_latent}
 \title{Compute Starting Values for Latent-Trait Joint Hurdle Model}
 \usage{
-compute_joint_start_values_latent(dat, k, epsilon, stream_counts)
+compute_joint_start_values_latent(dat, k_start, epsilon, stream_counts)
 }
 \arguments{
 \item{dat}{Prepared data frame}
 
-\item{k}{Fixed k value (or NULL)}
+\item{k_start}{Starting value for k}
 
 \item{epsilon}{Epsilon value}
 

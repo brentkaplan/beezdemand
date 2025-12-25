@@ -651,3 +651,59 @@ validate_collapse_levels <- function(collapse_levels) {
 
   TRUE
 }
+
+
+#-------------------------------------------------------------------------------
+# Base class for summary objects
+#-------------------------------------------------------------------------------
+
+#' Print Method for beezdemand Summary Objects
+#'
+#' Fallback print method for summary objects inheriting from `beezdemand_summary`.
+#' Specific summary classes should implement their own `print.summary.*` methods
+#' for detailed output; this provides a minimal fallback.
+#'
+#' @param x A summary object with class including `beezdemand_summary`.
+#' @param ... Additional arguments (unused).
+#'
+#' @return Invisibly returns `x`.
+#' @export
+print.beezdemand_summary <- function(x, ...) {
+  cat("\n")
+  cat("Summary of", x$model_class %||% "beezdemand", "model\n")
+  cat(strrep("-", 40), "\n")
+
+  if (!is.null(x$backend) && !is.na(x$backend)) {
+    cat("Backend:", x$backend, "\n")
+  }
+
+  if (!is.null(x$nobs) && !is.na(x$nobs)) {
+    cat("Observations:", x$nobs)
+    if (!is.null(x$n_subjects) && !is.na(x$n_subjects)) {
+      cat(" | Subjects:", x$n_subjects)
+    }
+    cat("\n")
+  }
+
+  if (!is.null(x$converged) && !is.na(x$converged)) {
+    cat("Converged:", x$converged, "\n")
+  }
+
+  if (!is.null(x$logLik) && !is.na(x$logLik)) {
+    cat("Log-Lik:", round(x$logLik, 2))
+    if (!is.null(x$AIC) && !is.na(x$AIC)) {
+      cat(" | AIC:", round(x$AIC, 2))
+    }
+    if (!is.null(x$BIC) && !is.na(x$BIC)) {
+      cat(" | BIC:", round(x$BIC, 2))
+    }
+    cat("\n")
+  }
+
+  if (!is.null(x$notes) && length(x$notes) > 0) {
+    cat("\nNotes:\n")
+    cat(paste(" -", x$notes), sep = "\n")
+  }
+
+  invisible(x)
+}

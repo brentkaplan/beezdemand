@@ -11,6 +11,23 @@
 
 \item{...}{Additional arguments (ignored)}
 }
+\value{
+A `summary.beezdemand_cp_hurdle` object (also inherits from
+  `beezdemand_summary`) with fields:
+  - `call`: The original function call
+  - `model_class`: "beezdemand_cp_hurdle"
+  - `backend`: "TMB"
+  - `nobs`, `n_subjects`: Data dimensions
+  - `coefficients`: Tibble of all coefficients with std.error, statistic, p.value
+  - `coefficients_part1`: Part I (probability) coefficients
+  - `coefficients_part2`: Part II (consumption) coefficients
+  - `transformed_params`: Derived parameters (Qalone, beta)
+  - `variance_components`: Random effect variances
+  - `correlations`: Random effect correlations (if 3RE)
+  - `interpretation`: Character describing substitute/complement relationship
+  - `logLik`, `AIC`, `BIC`: Model fit statistics
+}
 \description{
-Summary method for beezdemand_cp_hurdle
+Returns a structured summary object containing model coefficients,
+fit statistics, variance components, and interpretation.
 }
