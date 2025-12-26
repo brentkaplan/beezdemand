@@ -26,6 +26,7 @@ inst/doc
 *-workspace
 man/figures/P*
 Notes.md
+lib/*
 
 /.quarto/
 /src/*.so

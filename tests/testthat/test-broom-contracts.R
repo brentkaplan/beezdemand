@@ -113,7 +113,8 @@ test_that("glance.beezdemand_cp_hurdle meets contract", {
 
   expect_s3_class(g, "tbl_df")
   expect_equal(nrow(g), 1)
-  expect_true(all(c("model_class", "backend") %in% names(g)))
+  expect_true(all(c("model_class", "backend", "nobs", "n_subjects",
+                    "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$model_class, "beezdemand_cp_hurdle")
   expect_equal(g$backend, "TMB")
 })
@@ -136,7 +137,9 @@ test_that("tidy.beezdemand_nlme meets contract", {
   t <- tidy(fit)
 
   expect_s3_class(t, "tbl_df")
-  expect_true(all(c("term", "estimate", "std.error") %in% names(t)))
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
+                    names(t)))
+  expect_true("component" %in% names(t))
 })
 
 
@@ -158,7 +161,8 @@ test_that("glance.beezdemand_nlme meets contract", {
 
   expect_s3_class(g, "tbl_df")
   expect_equal(nrow(g), 1)
-  expect_true(all(c("model_class", "backend") %in% names(g)))
+  expect_true(all(c("model_class", "backend", "equation_form", "nobs", "n_subjects",
+                    "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$model_class, "beezdemand_nlme")
   expect_equal(g$backend, "nlme")
 })
@@ -172,7 +176,9 @@ test_that("tidy.beezdemand_fixed meets contract", {
   t <- tidy(fit)
 
   expect_s3_class(t, "tbl_df")
-  expect_true(all(c("term", "estimate") %in% names(t)))
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
+                    names(t)))
+  expect_true("component" %in% names(t))
   expect_true("id" %in% names(t))
 })
 
@@ -186,7 +192,8 @@ test_that("glance.beezdemand_fixed meets contract", {
 
   expect_s3_class(g, "tbl_df")
   expect_equal(nrow(g), 1)
-  expect_true(all(c("model_class", "backend") %in% names(g)))
+  expect_true(all(c("model_class", "backend", "equation", "nobs", "n_subjects",
+                    "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$model_class, "beezdemand_fixed")
   expect_equal(g$backend, "legacy")
 })
@@ -213,7 +220,9 @@ test_that("glance.beezdemand_systematicity meets contract", {
 
   expect_s3_class(g, "tbl_df")
   expect_equal(nrow(g), 1)
-  expect_true("pct_systematic" %in% names(g))
+  expect_true(all(c("model_class", "backend", "type", "nobs", "n_subjects",
+                    "n_systematic", "n_unsystematic", "pct_systematic",
+                    "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$type, "demand")
 })
 

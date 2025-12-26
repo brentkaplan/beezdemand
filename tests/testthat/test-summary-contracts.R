@@ -37,8 +37,8 @@ test_that("summary.beezdemand_hurdle meets contract", {
 
   # coefficients is tibble with required columns
   expect_s3_class(s$coefficients, "tbl_df")
-  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
-                    names(s$coefficients)))
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
+                    "component") %in% names(s$coefficients)))
 })
 
 
@@ -87,6 +87,8 @@ test_that("summary.beezdemand_cp_hurdle meets contract", {
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
+                    "component") %in% names(s$coefficients)))
 })
 
 
@@ -127,6 +129,8 @@ test_that("summary.beezdemand_nlme meets contract", {
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
+                    "component") %in% names(s$coefficients)))
 })
 
 
@@ -149,6 +153,8 @@ test_that("summary.beezdemand_fixed meets contract", {
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
+  expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
+                    "component") %in% names(s$coefficients)))
 })
 
 
