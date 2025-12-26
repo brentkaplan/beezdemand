@@ -153,6 +153,16 @@ test_that("glance method for beezdemand_systematicity works", {
   expect_equal(g$type, "demand")
 })
 
+test_that("check_systematic_demand uses legacy trend direction sign", {
+  data(apt_full, package = "beezdemand")
+
+  subset <- apt_full[apt_full$id %in% c(1, 2), ]
+  check <- check_systematic_demand(subset)
+
+  expect_true(all(check$results$trend_stat > 0))
+  expect_true(all(check$results$trend_direction == "down"))
+})
+
 
 test_that("check_systematic_demand handles column remapping", {
   data(apt, package = "beezdemand")

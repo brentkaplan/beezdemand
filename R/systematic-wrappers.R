@@ -113,8 +113,8 @@ check_systematic_demand <- function(data,
 
   # Compute trend direction from sign of DeltaQ
   trend_direction <- dplyr::case_when(
-    legacy$DeltaQ < -trend_threshold ~ "down",
-    legacy$DeltaQ > trend_threshold ~ "up",
+    legacy$DeltaQ > trend_threshold ~ "down",
+    legacy$DeltaQ < -trend_threshold ~ "up",
     TRUE ~ "none"
   )
 
