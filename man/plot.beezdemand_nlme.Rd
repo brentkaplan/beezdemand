@@ -82,6 +82,10 @@ Must be a column in `x$data`.}
 \item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
 to drop x <= 0 values instead.}
 
+\item{x_limits}{Optional numeric vector of length 2 for x-axis limits.}
+
+\item{y_limits}{Optional numeric vector of length 2 for y-axis limits.}
+
 \item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
 
 \item{title}{Optional plot title.}

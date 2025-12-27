@@ -54,6 +54,10 @@ or "both".}
 \item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
 to drop x <= 0 values instead.}
 
+\item{x_limits}{Optional numeric vector of length 2 for x-axis limits.}
+
+\item{y_limits}{Optional numeric vector of length 2 for y-axis limits.}
+
 \item{x_lab}{Optional x-axis label.}
 
 \item{y_lab}{Optional y-axis label.}

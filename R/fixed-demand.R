@@ -65,16 +65,28 @@ fit_demand_fixed <- function(data,
   call <- match.call()
 
   # Call legacy engine with detailed = TRUE to get all outputs
-  legacy_result <- FitCurves(
-    dat = data,
-    equation = equation,
-    k = k,
-    agg = agg,
-    detailed = TRUE,
-    xcol = x_var,
-    ycol = y_var,
-    idcol = id_var,
-    ...
+  legacy_warnings <- character(0)
+  legacy_result <- withCallingHandlers(
+    FitCurves(
+      dat = data,
+      equation = equation,
+      k = k,
+      agg = agg,
+      detailed = TRUE,
+      xcol = x_var,
+      ycol = y_var,
+      idcol = id_var,
+      ...
+    ),
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      legacy_warnings <<- c(legacy_warnings, msg)
+      # Legacy FitCurves can emit high-frequency data warnings; capture them
+      # but avoid spamming downstream consumers/tests.
+      if (grepl("Zeros found in data not compatible with equation", msg)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
 
   # Determine k specification mode for display
@@ -124,6 +136,7 @@ fit_demand_fixed <- function(data,
       fits = fits,
       predictions = predictions,
       data_used = data_used,
+      legacy_warnings = unique(legacy_warnings),
       call = call,
       equation = equation,
       k_spec = k_spec,

@@ -493,11 +493,21 @@ fit_joint_saturated <- function(
     cat("Optimizing...\n")
   }
 
-  opt <- stats::nlminb(
-    start = obj$par,
-    objective = obj$fn,
-    gradient = obj$gr,
-    control = control
+  opt_warnings <- character(0)
+  opt <- withCallingHandlers(
+    stats::nlminb(
+      start = obj$par,
+      objective = obj$fn,
+      gradient = obj$gr,
+      control = control
+    ),
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      opt_warnings <<- c(opt_warnings, msg)
+      if (grepl("NA/NaN function evaluation|non-finite value supplied", msg)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
 
   if (verbose >= 1) {
@@ -596,7 +606,8 @@ fit_joint_saturated <- function(
     tmb_opt = opt,
     tmb_sdr = sdr,
     call = call,
-    warnings = prep$warnings
+    warnings = prep$warnings,
+    optimizer_warnings = unique(opt_warnings)
   )
 
   class(result) <- "beezdemand_joint_hurdle"
@@ -800,11 +811,21 @@ fit_joint_latent <- function(
     cat("Optimizing...\n")
   }
 
-  opt <- stats::nlminb(
-    start = obj$par,
-    objective = obj$fn,
-    gradient = obj$gr,
-    control = control
+  opt_warnings <- character(0)
+  opt <- withCallingHandlers(
+    stats::nlminb(
+      start = obj$par,
+      objective = obj$fn,
+      gradient = obj$gr,
+      control = control
+    ),
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      opt_warnings <<- c(opt_warnings, msg)
+      if (grepl("NA/NaN function evaluation|non-finite value supplied", msg)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
 
   if (verbose >= 1) {
@@ -908,7 +929,8 @@ fit_joint_latent <- function(
     tmb_opt = opt,
     tmb_sdr = sdr,
     call = call,
-    warnings = prep$warnings
+    warnings = prep$warnings,
+    optimizer_warnings = unique(opt_warnings)
   )
 
   class(result) <- "beezdemand_joint_hurdle"

@@ -165,7 +165,7 @@ fit_demand_hurdle <- function(
   min_recommended <- n_fixed_params * 5
 
   if (n_subjects < min_recommended && verbose >= 1) {
-    warning(sprintf(
+    message(sprintf(
       "Sample size may be too small for reliable estimation.\n  Subjects: %d, Parameters: %d, Recommended minimum: %d subjects.\n  Consider using more subjects or the simpler 2-RE model.",
       n_subjects,
       n_fixed_params,
@@ -273,15 +273,25 @@ fit_demand_hurdle <- function(
     message("  Optimizing...")
   }
 
-  opt <- nlminb(
-    start = obj$par,
-    objective = obj$fn,
-    gradient = obj$gr,
-    control = list(
-      eval.max = tmb_control$eval_max,
-      iter.max = tmb_control$max_iter,
-      trace = if (verbose >= 2) 1 else tmb_control$trace
-    )
+  opt_warnings <- character(0)
+  opt <- withCallingHandlers(
+    nlminb(
+      start = obj$par,
+      objective = obj$fn,
+      gradient = obj$gr,
+      control = list(
+        eval.max = tmb_control$eval_max,
+        iter.max = tmb_control$max_iter,
+        trace = if (verbose >= 2) 1 else tmb_control$trace
+      )
+    ),
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      opt_warnings <<- c(opt_warnings, msg)
+      if (grepl("NA/NaN function evaluation|non-finite value supplied", msg)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
 
   converged <- opt$convergence == 0
@@ -304,9 +314,15 @@ fit_demand_hurdle <- function(
   }
   sdr <- tryCatch(
     TMB::sdreport(obj),
-    error = function(e) {
-      warning("Standard error computation failed: ", e$message)
-      NULL
+    error = function(e1) {
+      sdr2 <- tryCatch(
+        TMB::sdreport(obj, getJointPrecision = FALSE),
+        error = function(e2) NULL
+      )
+      if (is.null(sdr2) && verbose >= 1) {
+        warning("Standard error computation failed: ", e1$message)
+      }
+      sdr2
     }
   )
 
@@ -516,6 +532,7 @@ fit_demand_hurdle <- function(
       epsilon = epsilon
     ),
     converged = converged,
+    optimizer_warnings = unique(opt_warnings),
     loglik = loglik,
     AIC = AIC_val,
     BIC = BIC_val,

@@ -6,9 +6,9 @@
 \usage{
 fit_cp_hurdle(
   data,
-  y_var,
-  x_var,
-  id_var,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
   random_effects = c("zeros", "qalone", "I"),
   epsilon = 0.001,
   start_values = NULL,

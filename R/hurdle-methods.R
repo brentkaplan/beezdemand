@@ -684,7 +684,6 @@ plot.beezdemand_hurdle <- function(
         x = x_lab,
         y = "P(Consumption = 0)"
       ) +
-      ggplot2::ylim(0, 1) +
       scale_x_continuous(
         trans = beezdemand_get_trans(x_trans),
         limits = x_limits,
@@ -692,7 +691,7 @@ plot.beezdemand_hurdle <- function(
       ) +
       scale_y_continuous(
         trans = beezdemand_get_trans(y_trans),
-        limits = y_limits,
+        limits = if (is.null(y_limits)) c(0, 1) else y_limits,
         labels = beezdemand_axis_labels()
       ) +
       theme_beezdemand(style = style)

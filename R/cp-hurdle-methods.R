@@ -629,7 +629,6 @@ plot.beezdemand_cp_hurdle <- function(
         y = "P(Zero Consumption)",
         title = "Probability of Zero Consumption"
       ) +
-      ggplot2::ylim(0, 1) +
       ggplot2::scale_x_continuous(
         trans = beezdemand_get_trans(x_trans),
         limits = x_limits,
@@ -637,7 +636,7 @@ plot.beezdemand_cp_hurdle <- function(
       ) +
       ggplot2::scale_y_continuous(
         trans = beezdemand_get_trans(y_trans),
-        limits = y_limits,
+        limits = if (is.null(y_limits)) c(0, 1) else y_limits,
         labels = beezdemand_axis_labels()
       ) +
       theme_beezdemand(style = style)

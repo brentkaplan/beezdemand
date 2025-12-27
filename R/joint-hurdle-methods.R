@@ -802,7 +802,7 @@ plot.beezdemand_joint_hurdle <- function(
       ) +
       ggplot2::scale_y_continuous(
         trans = beezdemand_get_trans(y_trans),
-        limits = y_limits,
+        limits = if (is.null(y_limits)) c(0, 1) else y_limits,
         labels = beezdemand_axis_labels()
       ) +
       ggplot2::labs(
@@ -869,7 +869,6 @@ plot.beezdemand_joint_hurdle <- function(
         color = "Stream",
         title = "Joint Model: Zero Probability"
       ) +
-      ggplot2::ylim(0, 1) +
       theme_beezdemand(style = style)
 
     p <- beezdemand_apply_color_scale(p, style, pred_df, "stream_name")
