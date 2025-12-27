@@ -1623,6 +1623,8 @@ print.beezdemand_nlme <- function(
 #' fit statistics, and random effects information.
 #'
 #' @param object A beezdemand_nlme object
+#' @param report_space Character. Reporting space for core parameters. One of
+#'   `"natural"` or `"log10"` (default depends on `param_space` used for fitting).
 #' @param ... Additional arguments (passed to summary.nlme)
 #' @return A `summary.beezdemand_nlme` object (inherits from
 #'   `beezdemand_summary`) with fields including:
@@ -1634,7 +1636,12 @@ print.beezdemand_nlme <- function(
 #'   - `random_effects`: VarCorr output for random effects
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
 #' @export
-summary.beezdemand_nlme <- function(object, ...) {
+summary.beezdemand_nlme <- function(
+  object,
+  report_space = c("natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   # Handle failed models
   if (is.null(object$model)) {
     return(structure(
@@ -1667,6 +1674,7 @@ summary.beezdemand_nlme <- function(object, ...) {
 
   # Extract fixed effects table
   ttable <- nlme_summary$tTable
+  internal_space <- object$param_space %||% object$param_info$param_space %||% "log10"
   coefficients <- tibble::tibble(
     term = rownames(ttable),
     estimate = ttable[, "Value"],
@@ -1674,9 +1682,25 @@ summary.beezdemand_nlme <- function(object, ...) {
     statistic = ttable[, "t-value"],
     p.value = ttable[, "p-value"],
     component = "fixed",
-    estimate_scale = "log10",
-    term_display = rownames(ttable)
+    estimate_scale = internal_space,
+    term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
   )
+
+  if (report_space != internal_space) {
+    coefficients$estimate_internal <- coefficients$estimate
+    trans <- beezdemand_transform_est_se(
+      estimate = coefficients$estimate,
+      se = coefficients$std.error,
+      from = internal_space,
+      to = report_space
+    )
+    coefficients$estimate <- trans$estimate
+    coefficients$std.error <- trans$se
+    coefficients$statistic <- coefficients$estimate / coefficients$std.error
+    coefficients$p.value <- 2 * stats::pnorm(-abs(coefficients$statistic))
+    coefficients$estimate_scale <- report_space
+    coefficients$term_display <- vapply(coefficients$term, beezdemand_term_display_space, character(1), report_space = report_space)
+  }
 
   # Random effects structure
   random_effects <- nlme::VarCorr(object$model)
@@ -1707,6 +1731,8 @@ summary.beezdemand_nlme <- function(object, ...) {
       failed = FALSE,
       equation_form = object$param_info$equation_form %||%
         object$formula_details$equation_form_selected,
+      param_space = internal_space,
+      report_space = report_space,
       formula = object$formula_details$nlme_model_formula_obj,
       factors = object$param_info$factors,
       factor_interaction = object$param_info$factor_interaction,
@@ -1793,6 +1819,8 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #'
 #' @param x A beezdemand_nlme object
 #' @param effects Which effects to include: "fixed" (default), "ran_pars", or both
+#' @param report_space Character. Reporting space for core parameters. One of
+#'   `"natural"` or `"log10"` (default depends on `param_space` used for fitting).
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model coefficients with columns:
 #'   - `term`: Parameter name
@@ -1802,7 +1830,13 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #'   - `p.value`: P-value
 #'   - `component`: "fixed" or "variance"
 #' @export
-tidy.beezdemand_nlme <- function(x, effects = c("fixed", "ran_pars"), ...) {
+tidy.beezdemand_nlme <- function(
+  x,
+  effects = c("fixed", "ran_pars"),
+  report_space = c("natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   if (is.null(x$model)) {
     return(tibble::tibble(
       term = character(),
@@ -1816,6 +1850,7 @@ tidy.beezdemand_nlme <- function(x, effects = c("fixed", "ran_pars"), ...) {
 
   effects <- match.arg(effects, several.ok = TRUE)
   result <- tibble::tibble()
+  internal_space <- x$param_space %||% x$param_info$param_space %||% "log10"
 
   if ("fixed" %in% effects) {
     nlme_summary <- summary(x$model)
@@ -1826,8 +1861,25 @@ tidy.beezdemand_nlme <- function(x, effects = c("fixed", "ran_pars"), ...) {
       std.error = ttable[, "Std.Error"],
       statistic = ttable[, "t-value"],
       p.value = ttable[, "p-value"],
-      component = "fixed"
+      component = "fixed",
+      estimate_scale = internal_space,
+      term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
     )
+    if (report_space != internal_space) {
+      fixed$estimate_internal <- fixed$estimate
+      trans <- beezdemand_transform_est_se(
+        estimate = fixed$estimate,
+        se = fixed$std.error,
+        from = internal_space,
+        to = report_space
+      )
+      fixed$estimate <- trans$estimate
+      fixed$std.error <- trans$se
+      fixed$statistic <- fixed$estimate / fixed$std.error
+      fixed$p.value <- 2 * stats::pnorm(-abs(fixed$statistic))
+      fixed$estimate_scale <- report_space
+      fixed$term_display <- vapply(fixed$term, beezdemand_term_display_space, character(1), report_space = report_space)
+    }
     result <- dplyr::bind_rows(result, fixed)
   }
 
@@ -1846,7 +1898,9 @@ tidy.beezdemand_nlme <- function(x, effects = c("fixed", "ran_pars"), ...) {
           std.error = NA_real_,
           statistic = NA_real_,
           p.value = NA_real_,
-          component = "variance"
+          component = "variance",
+          estimate_scale = "natural",
+          term_display = var_names
         )
         result <- dplyr::bind_rows(result, var_tidy)
       }
@@ -1934,6 +1988,7 @@ glance.beezdemand_nlme <- function(x, ...) {
 #'           and that subject's random effect deviation. This is equivalent to
 #'           what `stats::coef()` on an `nlme` object returns.
 #'   }
+#' @param report_space Character. One of `"internal"` (default), `"natural"`, or `"log10"`.
 #' @param ... Additional arguments passed to the underlying `nlme` coefficient extraction
 #'   functions (`nlme::fixef()`, `nlme::ranef()`, or `stats::coef.nlme()`).
 #'
@@ -1967,7 +2022,13 @@ glance.beezdemand_nlme <- function(x, ...) {
 #'   print(subject_coeffs)
 #' }
 #' }
-coef.beezdemand_nlme <- function(object, type = "combined", ...) {
+coef.beezdemand_nlme <- function(
+  object,
+  type = "combined",
+  report_space = c("internal", "natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   if (!inherits(object, "beezdemand_nlme")) {
     stop("Input 'object' must be of class 'beezdemand_nlme'.")
   }
@@ -1976,8 +2037,10 @@ coef.beezdemand_nlme <- function(object, type = "combined", ...) {
   }
 
   model <- object$model
+  internal_space <- object$param_space %||% object$param_info$param_space %||% "log10"
+  requested_space <- if (report_space == "internal") internal_space else report_space
 
-  switch(
+  res <- switch(
     type,
     fixed = {
       nlme::fixef(model, ...)
@@ -1992,6 +2055,37 @@ coef.beezdemand_nlme <- function(object, type = "combined", ...) {
     },
     stop("Invalid 'type'. Choose from 'fixed', 'random', or 'combined'.")
   )
+
+  if (identical(type, "random") || identical(requested_space, internal_space)) {
+    return(res)
+  }
+
+  if (is.numeric(res) && !is.null(names(res))) {
+    out <- res
+    idx <- grepl("^Q0", names(out)) | grepl("^alpha", names(out))
+    if (any(idx)) {
+      if (internal_space == "log10" && requested_space == "natural") {
+        out[idx] <- 10^out[idx]
+      } else if (internal_space == "natural" && requested_space == "log10") {
+        out[idx] <- log10(out[idx])
+      }
+    }
+    return(out)
+  }
+
+  if (is.data.frame(res)) {
+    out <- res
+    for (col in intersect(c("Q0", "alpha"), names(out))) {
+      if (internal_space == "log10" && requested_space == "natural") {
+        out[[col]] <- 10^out[[col]]
+      } else if (internal_space == "natural" && requested_space == "log10") {
+        out[[col]] <- log10(out[[col]])
+      }
+    }
+    return(out)
+  }
+
+  res
 }
 
 #' Extract Fixed Effects from a beezdemand_nlme Model

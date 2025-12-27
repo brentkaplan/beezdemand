@@ -4,7 +4,12 @@
 \alias{coef.beezdemand_nlme}
 \title{Extract Coefficients from a beezdemand_nlme Model}
 \usage{
-\method{coef}{beezdemand_nlme}(object, type = "combined", ...)
+\method{coef}{beezdemand_nlme}(
+  object,
+  type = "combined",
+  report_space = c("internal", "natural", "log10"),
+  ...
+)
 }
 \arguments{
 \item{object}{A `beezdemand_nlme` object.}
@@ -18,6 +23,8 @@
         and that subject's random effect deviation. This is equivalent to
         what `stats::coef()` on an `nlme` object returns.
 }}
+
+\item{report_space}{Character. One of `"internal"` (default), `"natural"`, or `"log10"`.}
 
 \item{...}{Additional arguments passed to the underlying `nlme` coefficient extraction
 functions (`nlme::fixef()`, `nlme::ranef()`, or `stats::coef.nlme()`).}

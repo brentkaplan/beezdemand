@@ -4,10 +4,13 @@
 \alias{tidy.beezdemand_hurdle}
 \title{Tidy a beezdemand_hurdle Model}
 \usage{
-\method{tidy}{beezdemand_hurdle}(x, ...)
+\method{tidy}{beezdemand_hurdle}(x, report_space = c("natural", "log10", "internal"), ...)
 }
 \arguments{
 \item{x}{An object of class \code{beezdemand_hurdle}.}
+
+\item{report_space}{Character. Reporting space for core demand parameters.
+One of `"internal"`, `"natural"`, or `"log10"`.}
 
 \item{...}{Additional arguments (currently unused).}
 }

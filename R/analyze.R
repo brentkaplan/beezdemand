@@ -44,7 +44,8 @@
 ##' @export
 FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", 
                       ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound,
-                      constrainq0 = NULL, startq0 = NULL, startalpha = NULL) {
+                      constrainq0 = NULL, startq0 = NULL, startalpha = NULL,
+                      param_space = c("natural", "log10")) {
 
     if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
     origcols <- colnames(dat)
@@ -53,6 +54,8 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     if (missing(equation)) stop("Need to specify an equation!", call. = FALSE)
     equation <- tolower(equation)
+
+    param_space <- match.arg(param_space)
     
     if (!is.numeric(constrainq0) & !is.null(constrainq0)) stop("Q0 constraint must be a number", call. = FALSE)
 
@@ -168,9 +171,32 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
     ## TODO: if groupcol is specified (or not), manufacture vector to loop (paste(agg, grps, sep = "-"))
    
-    fo <- switch(equation,
-                 "hs" = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha * q0 * x) - 1),
-                 "koff" = y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)))
+    k_term <- if (identical(kest, "fit") && identical(param_space, "log10")) {
+      "10^k"
+    } else {
+      "k"
+    }
+
+    fo <- switch(
+      equation,
+      "hs" = if (param_space == "log10") {
+        stats::as.formula(paste0(
+          "(log(y)/log(10)) ~ q0 + ", k_term,
+          " * (exp(-(10^alpha) * (10^q0) * x) - 1)"
+        ))
+      } else {
+        (log(y) / log(10)) ~ (log(q0) / log(10)) + k * (exp(-alpha * q0 * x) - 1)
+      },
+      "koff" = if (param_space == "log10") {
+        stats::as.formula(paste0(
+          "y ~ (10^q0) * 10^(",
+          k_term,
+          " * (exp(-(10^alpha) * (10^q0) * x) - 1))"
+        ))
+      } else {
+        y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1))
+      }
+    )
     
     ## loop to fit data
     for (i in seq_len(np)) {
@@ -195,14 +221,14 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
         }
         adf[, "k"] <- k
         if (!is.null(constrainq0)) {
-          adf[, "q0"] <- constrainq0
+          adf[, "q0"] <- if (param_space == "log10") log10(constrainq0) else constrainq0
         }
         
         if (is.null(startq0)) {
-          startq0 <- max(adf$y)
+          startq0 <- if (param_space == "log10") log10(max(adf$y)) else max(adf$y)
         }
         if (is.null(startalpha)) {
-          startalpha <- 0.01
+          startalpha <- if (param_space == "log10") log10(0.01) else 0.01
         }
 
         if (!kest == "fit") {
@@ -250,6 +276,9 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
             }
         }
         } else {
+          if (param_space == "log10") {
+            kstart <- log10(kstart)
+          }
           suppressWarnings(fit <- try(nlsr::wrapnlsr(
                                 formula = fo,
                                 start = list(q0 = startq0, k = kstart, alpha = startalpha),
@@ -277,7 +306,8 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
 
         dfres[i, ] <- ExtractCoefs(ps[i], adf, fit, eq = equation, 
                                    cols = colnames(dfres), kest = kest,
-                                   constrainq0 = constrainq0)
+                                   constrainq0 = constrainq0,
+                                   param_space = param_space)
 
         newdat <- NULL
         newdat <- data.frame("id" = rep(i, length.out = 10000),
@@ -450,7 +480,7 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
 # cols Column names to populate the dataframe row
 # kest Specification of k value
 ##' @noRd
-ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0) {
+ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0, param_space) {
     dfrow <- data.frame(matrix(vector(),
                                1,
                                length(cols),
@@ -464,23 +494,49 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0) {
         dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) fit$m$deviance() else deviance(fit)
         dfrow[1, "SdRes"] <- sqrt(dfrow[1, "AbsSS"]/(length(adf$k) - length(fit$m$getPars())))
         if (is.null(constrainq0)) {
-          dfrow[1, c("Q0d", "Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("q0", "alpha")] else as.numeric(coef(fit)[c("q0", "alpha")])
+          q0_hat <- if (is.null(coef(fit))) fit$m$getPars()[c("q0")] else as.numeric(coef(fit)[c("q0")])
+          alpha_hat <- if (is.null(coef(fit))) fit$m$getPars()[c("alpha")] else as.numeric(coef(fit)[c("alpha")])
+          if (identical(param_space, "log10")) {
+            q0_hat <- 10^q0_hat
+            alpha_hat <- 10^alpha_hat
+          }
+          dfrow[1, c("Q0d", "Alpha")] <- c(q0_hat, alpha_hat)
         } else {
-          dfrow[1, c("Q0d")] <- min(adf$q0)
-          dfrow[1, c("Alpha")] <- if (is.null(coef(fit))) fit$m$getPars()[c("alpha")] else as.numeric(coef(fit)[c("alpha")])
+          dfrow[1, c("Q0d")] <- if (identical(param_space, "log10")) 10^min(adf$q0) else min(adf$q0)
+          alpha_hat <- if (is.null(coef(fit))) fit$m$getPars()[c("alpha")] else as.numeric(coef(fit)[c("alpha")])
+          if (identical(param_space, "log10")) alpha_hat <- 10^alpha_hat
+          dfrow[1, c("Alpha")] <- alpha_hat
         }
         dfrow[1, "Notes"] <- if ("nls2" %in% class(fit)) "wrapnls failed to converge, reverted to nlxb" else fit$convInfo$stopMessage
-        dfrow[1, "K"] <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+        k_hat <- if (kest == "fit") as.numeric(coef(fit)["k"]) else min(adf$k)
+        if (kest == "fit" && identical(param_space, "log10")) k_hat <- 10^k_hat
+        dfrow[1, "K"] <- k_hat
         if (!inherits(fit, what = "error")) {
           if (is.null(constrainq0)) {
-            dfrow[1, c("Q0se", "Alphase")] <- summary(fit)[[10]][c("q0", "alpha"), "Std. Error"]
-            dfrow[1, c("Q0Low", "Q0High")] <- nlstools::confint2(fit)["q0", ]
-            dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)["alpha", ]
+            se_q0 <- summary(fit)[[10]]["q0", "Std. Error"]
+            se_alpha <- summary(fit)[[10]]["alpha", "Std. Error"]
+            ci_q0 <- nlstools::confint2(fit)["q0", ]
+            ci_alpha <- nlstools::confint2(fit)["alpha", ]
+            if (identical(param_space, "log10")) {
+              se_q0 <- log(10) * (10^as.numeric(coef(fit)["q0"])) * se_q0
+              se_alpha <- log(10) * (10^as.numeric(coef(fit)["alpha"])) * se_alpha
+              ci_q0 <- 10^ci_q0
+              ci_alpha <- 10^ci_alpha
+            }
+            dfrow[1, c("Q0se", "Alphase")] <- c(se_q0, se_alpha)
+            dfrow[1, c("Q0Low", "Q0High")] <- ci_q0
+            dfrow[1, c("AlphaLow", "AlphaHigh")] <- ci_alpha
           } else {
           dfrow[1, c("Q0se")] <- NA
-          dfrow[1, c("Alphase")] <- summary(fit)[[10]][c("alpha"), "Std. Error"]
+          se_alpha <- summary(fit)[[10]]["alpha", "Std. Error"]
+          ci_alpha <- nlstools::confint2(fit)["alpha", ]
+          if (identical(param_space, "log10")) {
+            se_alpha <- log(10) * (10^as.numeric(coef(fit)["alpha"])) * se_alpha
+            ci_alpha <- 10^ci_alpha
+          }
+          dfrow[1, c("Alphase")] <- se_alpha
           dfrow[1, c("Q0Low", "Q0High")] <- NA
-          dfrow[1, c("AlphaLow", "AlphaHigh")] <- nlstools::confint2(fit)["alpha", ]
+          dfrow[1, c("AlphaLow", "AlphaHigh")] <- ci_alpha
           }
         }
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)

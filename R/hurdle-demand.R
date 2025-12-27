@@ -19,6 +19,14 @@ NULL
 #'   and \code{"alpha"} (c_i for elasticity). Default is \code{c("zeros", "q0", "alpha")}
 #'   for the full 3-random-effect model. Use \code{c("zeros", "q0")} for the
 #'   simplified 2-random-effect model (fixed alpha across subjects).
+#' @param param_space Character. Parameterization used for fitting core demand
+#'   parameters. One of:
+#'   - `"natural"`: optimize using natural `Q0`, `alpha`, `k` (internally mapped to the TMB working space)
+#'   - `"log10"`: optimize using `log10(Q0)`, `log10(alpha)`, `log10(k)` (internally mapped)
+#'
+#'   This argument controls the optimization parameterization; model storage remains
+#'   compatible with existing TMB internals and reporting can be controlled via
+#'   `report_space` in `summary()`, `tidy()`, and `coef()`.
 #' @param epsilon Small constant added to price before log transformation in Part I.
 #'   Used to handle zero prices: \code{log(price + epsilon)}. Default is 0.001.
 #' @param start_values Optional named list of starting values for optimization.
@@ -102,6 +110,7 @@ fit_demand_hurdle <- function(
   x_var,
   id_var,
   random_effects = c("zeros", "q0", "alpha"),
+  param_space = c("natural", "log10"),
   epsilon = 0.001,
   start_values = NULL,
   tmb_control = list(
@@ -115,6 +124,7 @@ fit_demand_hurdle <- function(
   # Capture call
 
   cl <- match.call()
+  param_space <- match.arg(param_space)
 
   # Validate random_effects argument
   valid_re <- c("zeros", "q0", "alpha")
@@ -273,12 +283,84 @@ fit_demand_hurdle <- function(
     message("  Optimizing...")
   }
 
+  wrap_tmb_param_space <- function(obj, param_space) {
+    par_names <- names(obj$par)
+    if (is.null(par_names) || !all(c("logQ0", "alpha", "k") %in% par_names)) {
+      return(list(
+        start = obj$par,
+        fn = obj$fn,
+        gr = obj$gr,
+        to_internal = function(p) p,
+        from_internal = function(p) p
+      ))
+    }
+
+    ln10 <- log(10)
+
+    to_internal <- function(p_work) {
+      if (is.null(names(p_work))) names(p_work) <- par_names
+      p <- p_work
+      if (param_space == "natural") {
+        p[["logQ0"]] <- log(p_work[["logQ0"]])
+      } else if (param_space == "log10") {
+        p[["logQ0"]] <- p_work[["logQ0"]] * ln10
+        p[["alpha"]] <- 10^p_work[["alpha"]]
+        p[["k"]] <- 10^p_work[["k"]]
+      }
+      p
+    }
+
+    from_internal <- function(p_int) {
+      if (is.null(names(p_int))) names(p_int) <- par_names
+      p <- p_int
+      if (param_space == "natural") {
+        p[["logQ0"]] <- exp(p_int[["logQ0"]])
+      } else if (param_space == "log10") {
+        p[["logQ0"]] <- p_int[["logQ0"]] / ln10
+        p[["alpha"]] <- log10(p_int[["alpha"]])
+        p[["k"]] <- log10(p_int[["k"]])
+      }
+      p
+    }
+
+    fn <- function(p_work) {
+      if (is.null(names(p_work))) names(p_work) <- par_names
+      obj$fn(to_internal(p_work))
+    }
+    gr <- function(p_work) {
+      if (is.null(names(p_work))) names(p_work) <- par_names
+      p_int <- to_internal(p_work)
+      g_int <- obj$gr(p_int)
+      if (is.null(names(g_int))) names(g_int) <- names(p_int)
+      g <- g_int
+
+      if (param_space == "natural") {
+        g[["logQ0"]] <- g_int[["logQ0"]] / p_work[["logQ0"]]
+      } else if (param_space == "log10") {
+        g[["logQ0"]] <- g_int[["logQ0"]] * ln10
+        g[["alpha"]] <- g_int[["alpha"]] * ln10 * p_int[["alpha"]]
+        g[["k"]] <- g_int[["k"]] * ln10 * p_int[["k"]]
+      }
+      g
+    }
+
+    list(
+      start = from_internal(obj$par),
+      fn = fn,
+      gr = gr,
+      to_internal = to_internal,
+      from_internal = from_internal
+    )
+  }
+
+  wrapped <- wrap_tmb_param_space(obj, param_space)
+
   opt_warnings <- character(0)
   opt <- withCallingHandlers(
     nlminb(
-      start = obj$par,
-      objective = obj$fn,
-      gradient = obj$gr,
+      start = wrapped$start,
+      objective = wrapped$fn,
+      gradient = wrapped$gr,
       control = list(
         eval.max = tmb_control$eval_max,
         iter.max = tmb_control$max_iter,
@@ -295,6 +377,8 @@ fit_demand_hurdle <- function(
   )
 
   converged <- opt$convergence == 0
+  opt$par_internal <- wrapped$to_internal(opt$par)
+  try(obj$fn(opt$par_internal), silent = TRUE)
 
   if (verbose >= 1) {
     if (converged) {
@@ -368,7 +452,7 @@ fit_demand_hurdle <- function(
     rho_names <- c("rho_ab")
   }
 
-  coefficients <- opt$par[fixed_names]
+  coefficients <- opt$par_internal[fixed_names]
 
   # Extract standard errors and derived quantities (handle NULL sdr)
   if (!is.null(sdr)) {
@@ -421,7 +505,15 @@ fit_demand_hurdle <- function(
       nrow = 3
     )
 
-    L <- t(chol(Sigma))
+    L <- tryCatch(
+      t(chol(Sigma)),
+      error = function(e) {
+        # Numeric stability: rho parameters can imply a non-PD correlation matrix.
+        # Fall back to an uncorrelated covariance to allow downstream reporting.
+        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2, sigma_c^2), nrow = 3)
+        t(chol(Sigma_fallback))
+      }
+    )
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
 
@@ -464,7 +556,13 @@ fit_demand_hurdle <- function(
       nrow = 2
     )
 
-    L <- t(chol(Sigma))
+    L <- tryCatch(
+      t(chol(Sigma)),
+      error = function(e) {
+        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2), nrow = 2)
+        t(chol(Sigma_fallback))
+      }
+    )
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i")
 
@@ -499,11 +597,11 @@ fit_demand_hurdle <- function(
   names(subject_pars)[1] <- id_var
 
   # Compute fit statistics
-  nll <- opt$objective
-  loglik <- -nll
+  nll <- as.numeric(obj$fn(opt$par_internal))
+  loglik <- -as.numeric(nll)
   n_fixed <- length(coefficients)
-  AIC_val <- 2 * nll + 2 * n_fixed
-  BIC_val <- 2 * nll + log(nrow(data)) * n_fixed
+  AIC_val <- as.numeric(2 * nll + 2 * n_fixed)
+  BIC_val <- as.numeric(2 * nll + log(nrow(data)) * n_fixed)
 
   # Build result object
   result <- list(
@@ -530,6 +628,11 @@ fit_demand_hurdle <- function(
       n_random_effects = n_re,
       random_effects_spec = random_effects,
       epsilon = epsilon
+    ),
+    param_space = param_space,
+    param_space_details = beezdemand_param_space_details_core(
+      internal_names = list(Q0 = "logQ0", alpha = "alpha", k = "k"),
+      internal_spaces = list(Q0 = "log", alpha = "natural", k = "natural")
     ),
     converged = converged,
     optimizer_warnings = unique(opt_warnings),

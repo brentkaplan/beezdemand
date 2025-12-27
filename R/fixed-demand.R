@@ -20,6 +20,9 @@ NULL
 #' @param x_var Character. Name of the price column. Default `"x"`.
 #' @param y_var Character. Name of the consumption column. Default `"y"`.
 #' @param id_var Character. Name of the subject identifier column. Default `"id"`.
+#' @param param_space Character. Parameterization used for fitting. One of:
+#'   - `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
+#'   - `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)
 #' @param ... Additional arguments passed to the underlying `FitCurves()` engine.
 #'
 #' @return An object of class `beezdemand_fixed` with components:
@@ -60,8 +63,10 @@ fit_demand_fixed <- function(data,
                              x_var = "x",
                              y_var = "y",
                              id_var = "id",
+                             param_space = c("natural", "log10"),
                              ...) {
   equation <- match.arg(equation)
+  param_space <- match.arg(param_space)
   call <- match.call()
 
   # Call legacy engine with detailed = TRUE to get all outputs
@@ -76,6 +81,7 @@ fit_demand_fixed <- function(data,
       xcol = x_var,
       ycol = y_var,
       idcol = id_var,
+      param_space = param_space,
       ...
     ),
     warning = function(w) {
@@ -145,6 +151,15 @@ fit_demand_fixed <- function(data,
       x_var = x_var,
       y_var = y_var,
       id_var = id_var,
+      param_space = param_space,
+      param_space_details = beezdemand_param_space_details_core(
+        internal_names = list(Q0 = "q0", alpha = "alpha", k = "k"),
+        internal_spaces = list(
+          Q0 = if (param_space == "log10") "log10" else "natural",
+          alpha = if (param_space == "log10") "log10" else "natural",
+          k = if (is.character(k) && identical(k, "fit") && param_space == "log10") "log10" else "natural"
+        )
+      ),
       n_total = n_total,
       n_success = n_success,
       n_fail = n_fail

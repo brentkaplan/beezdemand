@@ -4,11 +4,17 @@
 \alias{summary.beezdemand_hurdle}
 \title{Summarize a Hurdle Demand Model Fit}
 \usage{
-\method{summary}{beezdemand_hurdle}(object, ...)
+\method{summary}{beezdemand_hurdle}(object, report_space = c("natural", "log10", "internal"), ...)
 }
 \arguments{
 \item{object}{An object of class \code{beezdemand_hurdle} from
 \code{\link{fit_demand_hurdle}}.}
+
+\item{report_space}{Character. Reporting space for core demand parameters.
+One of:
+- `"internal"`: report internal/fitting parameters (default internal naming)
+- `"natural"`: report natural-scale parameters when a natural mapping exists
+- `"log10"`: report `log10()`-scale parameters when a mapping exists}
 
 \item{...}{Additional arguments (currently unused).}
 }

@@ -4,10 +4,13 @@
 \alias{summary.beezdemand_nlme}
 \title{Summary method for beezdemand_nlme}
 \usage{
-\method{summary}{beezdemand_nlme}(object, ...)
+\method{summary}{beezdemand_nlme}(object, report_space = c("natural", "log10"), ...)
 }
 \arguments{
 \item{object}{A beezdemand_nlme object}
+
+\item{report_space}{Character. Reporting space for core parameters. One of
+`"natural"` or `"log10"` (default depends on `param_space` used for fitting).}
 
 \item{...}{Additional arguments (passed to summary.nlme)}
 }

@@ -27,6 +27,14 @@
 #'           Model parameter `Q0` represents `log10(True Max Consumption)`.
 #'           Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
 #'   }
+#' @param param_space Character. Parameterization used for fitting core demand
+#'   parameters. One of:
+#'   - `"log10"`: treat `Q0` and `alpha` as `log10(Q0)` and `log10(alpha)` (default)
+#'   - `"natural"`: treat `Q0` and `alpha` as natural-scale parameters
+#'
+#'   Notes:
+#'   - For `equation_form = "zben"`, only `"log10"` is currently supported.
+#'   - For `equation_form = "simplified"`, both `"log10"` and `"natural"` are supported.
 #' @param custom_model_formula An optional custom nonlinear model formula (nlme format).
 #'   If provided, this overrides `equation_form`. The user is responsible for ensuring
 #'   the `y_var` scale matches the formula and that starting values are appropriate.
@@ -79,6 +87,7 @@ fit_demand_mixed <- function(
   factors = NULL,
   factor_interaction = FALSE,
   equation_form = c("zben", "simplified"),
+  param_space = c("log10", "natural"),
   custom_model_formula = NULL,
   fixed_rhs = NULL,
   continuous_covariates = NULL,
@@ -104,6 +113,7 @@ fit_demand_mixed <- function(
 ) {
   call <- match.call()
   equation_form <- match.arg(equation_form)
+  param_space <- match.arg(param_space)
   start_value_method <- match.arg(start_value_method)
   covariance_structure <- match.arg(covariance_structure)
 
@@ -233,6 +243,14 @@ fit_demand_mixed <- function(
     }
   } else {
     if (equation_form == "zben") {
+      if (param_space != "log10") {
+        stop(
+          "'param_space = \"",
+          param_space,
+          "\"' is not supported for equation_form = \"zben\". Use 'param_space = \"log10\"'.",
+          call. = FALSE
+        )
+      }
       nlme_model_formula_str <- paste0(
         y_var,
         " ~ Q0 * exp(-(10^alpha / Q0) * (10^Q0) * ",
@@ -240,12 +258,21 @@ fit_demand_mixed <- function(
         ")"
       )
     } else if (equation_form == "simplified") {
-      nlme_model_formula_str <- paste0(
-        y_var,
-        " ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * ",
-        x_var,
-        ")"
-      )
+      nlme_model_formula_str <- if (param_space == "log10") {
+        paste0(
+          y_var,
+          " ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * ",
+          x_var,
+          ")"
+        )
+      } else {
+        paste0(
+          y_var,
+          " ~ Q0 * exp(-(alpha) * (Q0) * ",
+          x_var,
+          ")"
+        )
+      }
     }
     nlme_model_formula_obj <- stats::as.formula(nlme_model_formula_str)
   }
@@ -388,9 +415,21 @@ fit_demand_mixed <- function(
         ) {
           median_y_val_at_low_x <- 100
         }
-        q0_start_intercept <- log10(median_y_val_at_low_x)
+        q0_start_intercept <- if (param_space == "log10") {
+          log10(median_y_val_at_low_x)
+        } else {
+          median_y_val_at_low_x
+        }
       }
-      alpha_start_intercept <- log10(0.001)
+      alpha_start_intercept <- if (param_space == "log10") log10(0.001) else 0.001
+    }
+
+    if (equation_form == "simplified" && param_space == "natural" &&
+        !is.null(pooled_starts) &&
+        !any(is.na(unlist(pooled_starts)))) {
+      # pooled starts are on log10 scale (current helper); convert to natural if needed
+      q0_start_intercept <- 10^q0_start_intercept
+      alpha_start_intercept <- 10^alpha_start_intercept
     }
 
     # Calculate parameter count for Q0
@@ -462,6 +501,7 @@ fit_demand_mixed <- function(
 
   message("--- Fitting NLME Model ---")
   message("Equation Form: ", equation_form)
+  message("Param Space: ", param_space)
   message("NLME Formula: ", deparse(nlme_model_formula_obj))
   message(
     "Start values (first few): Q0_int=",
@@ -551,7 +591,17 @@ fit_demand_mixed <- function(
       factor_interaction = factor_interaction,
       continuous_covariates = continuous_covariates,
       num_params_Q0 = num_params_Q0,
-      num_params_alpha = num_params_alpha
+      num_params_alpha = num_params_alpha,
+      param_space = param_space
+    ),
+    param_space = param_space,
+    param_space_details = beezdemand_param_space_details_core(
+      internal_names = list(Q0 = "Q0", alpha = "alpha", k = "k"),
+      internal_spaces = list(
+        Q0 = param_space,
+        alpha = param_space,
+        k = "natural"
+      )
     ),
     start_values_used = start_values$fixed,
     collapse_info = if (

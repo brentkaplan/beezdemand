@@ -4,12 +4,20 @@
 \alias{tidy.beezdemand_nlme}
 \title{Tidy method for beezdemand_nlme}
 \usage{
-\method{tidy}{beezdemand_nlme}(x, effects = c("fixed", "ran_pars"), ...)
+\method{tidy}{beezdemand_nlme}(
+  x,
+  effects = c("fixed", "ran_pars"),
+  report_space = c("natural", "log10"),
+  ...
+)
 }
 \arguments{
 \item{x}{A beezdemand_nlme object}
 
 \item{effects}{Which effects to include: "fixed" (default), "ran_pars", or both}
+
+\item{report_space}{Character. Reporting space for core parameters. One of
+`"natural"` or `"log10"` (default depends on `param_space` used for fitting).}
 
 \item{...}{Additional arguments (ignored)}
 }

@@ -320,10 +320,18 @@ plot.beezdemand_fixed <- function(
 #' Summary Method for beezdemand_fixed
 #'
 #' @param object A beezdemand_fixed object
+#' @param report_space Character. Reporting space for core parameters. One of:
+#'   - `"natural"`: report natural-scale parameters (default)
+#'   - `"log10"`: report `log10()`-scale parameters when defined
 #' @param ... Additional arguments (ignored)
 #' @return A summary.beezdemand_fixed object (inherits from beezdemand_summary)
 #' @export
-summary.beezdemand_fixed <- function(object, ...) {
+summary.beezdemand_fixed <- function(
+  object,
+  report_space = c("natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   # Build coefficients tibble from results if available
   if (!is.null(object$results) && is.data.frame(object$results) &&
       nrow(object$results) > 0) {
@@ -347,6 +355,31 @@ summary.beezdemand_fixed <- function(object, ...) {
       )
     })
     coefficients <- dplyr::bind_rows(coefficients_list)
+    if (report_space == "log10") {
+      coefficients <- coefficients |>
+        dplyr::mutate(
+          estimate_internal = .data$estimate,
+          estimate = dplyr::case_when(
+            .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+            TRUE ~ .data$estimate
+          ),
+          std.error = dplyr::case_when(
+            .data$term %in% c("Q0", "alpha", "k") & .data$estimate_internal > 0 ~
+              .data$std.error / (.data$estimate_internal * log(10)),
+            TRUE ~ .data$std.error
+          ),
+          estimate_scale = dplyr::case_when(
+            .data$term %in% c("Q0", "alpha", "k") ~ "log10",
+            TRUE ~ .data$estimate_scale
+          ),
+          term_display = dplyr::case_when(
+            .data$term == "Q0" ~ "log10(Q0)",
+            .data$term == "alpha" ~ "log10(alpha)",
+            .data$term == "k" ~ "log10(k)",
+            TRUE ~ .data$term_display
+          )
+        )
+    }
 
     param_summary <- lapply(names(param_specs), function(term_name) {
       vals <- results[[param_specs[[term_name]]$estimate]]
@@ -381,6 +414,8 @@ summary.beezdemand_fixed <- function(object, ...) {
       model_class = "beezdemand_fixed",
       backend = "legacy",
       equation = object$equation,
+      param_space = object$param_space %||% "natural",
+      report_space = report_space,
       k_spec = object$k_spec,
       agg = object$agg,
       nobs = nobs,
@@ -491,11 +526,18 @@ print.summary.beezdemand_fixed <- function(x, digits = 4, n = 20, ...) {
 #' Tidy Method for beezdemand_fixed
 #'
 #' @param x A beezdemand_fixed object
+#' @param report_space Character. Reporting space for core parameters. One of
+#'   `"natural"` (default) or `"log10"`.
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model coefficients with columns: id, term, estimate,
 #'   std.error, statistic, p.value, component
 #' @export
-tidy.beezdemand_fixed <- function(x, ...) {
+tidy.beezdemand_fixed <- function(
+  x,
+  report_space = c("natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   if (is.null(x$results) || !is.data.frame(x$results) || nrow(x$results) == 0) {
     return(tibble::tibble(
       id = character(),
@@ -520,11 +562,143 @@ tidy.beezdemand_fixed <- function(x, ...) {
       std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
-      component = "fixed"
+      component = "fixed",
+      estimate_scale = "natural",
+      term_display = term_name
     )
   })
 
-  dplyr::bind_rows(coefficient_rows)
+  out <- dplyr::bind_rows(coefficient_rows)
+  if (report_space == "log10") {
+    out <- out |>
+      dplyr::mutate(
+        estimate_internal = .data$estimate,
+        estimate = dplyr::case_when(
+          .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+          TRUE ~ .data$estimate
+        ),
+        std.error = dplyr::case_when(
+          .data$term %in% c("Q0", "alpha", "k") & .data$estimate_internal > 0 ~
+            .data$std.error / (.data$estimate_internal * log(10)),
+          TRUE ~ .data$std.error
+        ),
+        estimate_scale = dplyr::case_when(
+          .data$term %in% c("Q0", "alpha", "k") ~ "log10",
+          TRUE ~ .data$estimate_scale
+        ),
+        term_display = dplyr::case_when(
+          .data$term == "Q0" ~ "log10(Q0)",
+          .data$term == "alpha" ~ "log10(alpha)",
+          .data$term == "k" ~ "log10(k)",
+          TRUE ~ .data$term_display
+        )
+      )
+  }
+  out
+}
+
+#' Extract Coefficients from Fixed-Effect Demand Fit
+#'
+#' @param object A `beezdemand_fixed` object.
+#' @param report_space One of `"internal"`, `"natural"`, or `"log10"`. Default `"internal"`.
+#' @param ... Unused.
+#' @return A tibble with columns `id`, `term`, `estimate`, `estimate_scale`, `term_display`.
+#' @export
+coef.beezdemand_fixed <- function(
+  object,
+  report_space = c("internal", "natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
+
+  if (is.null(object$fits) || !length(object$fits)) {
+    # Fallback: no per-id model objects available; use results table (natural scale).
+    out <- tidy.beezdemand_fixed(object, report_space = "natural")
+    if (report_space == "internal") return(out)
+    return(tidy.beezdemand_fixed(object, report_space = report_space))
+  }
+
+  ids <- names(object$fits)
+  rows <- lapply(seq_along(object$fits), function(i) {
+    fit <- object$fits[[i]]
+    id <- if (!is.null(ids) && length(ids) >= i) ids[[i]] else NA_character_
+    if (inherits(fit, "try-error") || is.null(fit)) return(NULL)
+    cf <- tryCatch(stats::coef(fit), error = function(e) NULL)
+    if (is.null(cf)) return(NULL)
+    tibble::tibble(
+      id = as.character(id),
+      term = names(cf),
+      estimate = as.numeric(cf)
+    )
+  })
+
+  out <- dplyr::bind_rows(rows)
+  if (!nrow(out)) {
+    return(tibble::tibble(
+      id = character(),
+      term = character(),
+      estimate = numeric(),
+      estimate_scale = character(),
+      term_display = character()
+    ))
+  }
+
+  internal_space <- object$param_space %||% "natural"
+  internal_space <- if (internal_space == "log10") "log10" else "natural"
+  requested <- if (report_space == "internal") internal_space else report_space
+
+  out <- out |>
+    dplyr::mutate(
+      estimate_scale = internal_space,
+      term_display = .data$term
+    )
+
+  if (requested != internal_space) {
+    out <- out |>
+      dplyr::mutate(
+        estimate_internal = .data$estimate
+      )
+
+    if (internal_space == "natural" && requested == "log10") {
+      out <- out |>
+        dplyr::mutate(
+          estimate = dplyr::case_when(
+            .data$term %in% c("q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+            TRUE ~ .data$estimate
+          ),
+          estimate_scale = dplyr::case_when(
+            .data$term %in% c("q0", "alpha", "k") ~ "log10",
+            TRUE ~ .data$estimate_scale
+          ),
+          term_display = dplyr::case_when(
+            .data$term == "q0" ~ "log10(Q0)",
+            .data$term == "alpha" ~ "log10(alpha)",
+            .data$term == "k" ~ "log10(k)",
+            TRUE ~ .data$term
+          )
+        )
+    } else if (internal_space == "log10" && requested == "natural") {
+      out <- out |>
+        dplyr::mutate(
+          estimate = dplyr::case_when(
+            .data$term %in% c("q0", "alpha", "k") ~ 10^.data$estimate,
+            TRUE ~ .data$estimate
+          ),
+          estimate_scale = dplyr::case_when(
+            .data$term %in% c("q0", "alpha", "k") ~ "natural",
+            TRUE ~ .data$estimate_scale
+          ),
+          term_display = dplyr::case_when(
+            .data$term == "q0" ~ "Q0",
+            .data$term == "alpha" ~ "alpha",
+            .data$term == "k" ~ "k",
+            TRUE ~ .data$term
+          )
+        )
+    }
+  }
+
+  out
 }
 
 #' Glance Method for beezdemand_fixed
