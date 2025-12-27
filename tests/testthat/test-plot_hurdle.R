@@ -84,7 +84,7 @@ test_that("plot type='individual' shows correct subjects", {
   expect_s3_class(p1, "ggplot")
 
   # Specific subjects
-  p2 <- plot(fit, type = "individual", subjects = c("1", "2", "3"))
+  p2 <- plot(fit, type = "individual", ids = c("1", "2", "3"))
   expect_s3_class(p2, "ggplot")
 })
 
@@ -128,7 +128,7 @@ test_that("plot_subject errors for invalid subject", {
   )
 })
 
-test_that("plot with log_scale option works", {
+test_that("plot with x_trans/y_trans works", {
   skip_on_cran()
   skip_if_not_installed("TMB")
   skip_if_not_installed("ggplot2")
@@ -143,7 +143,7 @@ test_that("plot with log_scale option works", {
     verbose = 0
   )
 
-  p <- plot(fit, type = "demand", log_scale = TRUE)
+  p <- plot(fit, type = "demand", x_trans = "log10", y_trans = "log10")
 
   expect_s3_class(p, "ggplot")
 })

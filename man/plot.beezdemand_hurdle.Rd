@@ -6,12 +6,30 @@
 \usage{
 \method{plot}{beezdemand_hurdle}(
   x,
-  type = c("demand", "probability", "parameters", "individual"),
+  type = c("demand", "population", "probability", "parameters", "individual", "both"),
+  ids = NULL,
+  subjects = NULL,
   parameters = c("Q0", "alpha", "breakpoint", "Pmax", "Omax"),
   prices = NULL,
-  subjects = NULL,
   show_population = TRUE,
-  log_scale = FALSE,
+  show_pred = NULL,
+  show_observed = TRUE,
+  x_trans = c("log10", "log", "linear", "pseudo_log"),
+  y_trans = NULL,
+  free_trans = 0.01,
+  x_limits = NULL,
+  y_limits = NULL,
+  x_lab = NULL,
+  y_lab = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  style = c("modern", "apa"),
+  observed_point_alpha = 0.5,
+  observed_point_size = 1.8,
+  pop_line_alpha = 0.9,
+  pop_line_size = 1,
+  ind_line_alpha = 0.35,
+  ind_line_size = 0.7,
   ...
 )
 }
@@ -21,10 +39,16 @@
 \item{type}{Character string specifying the plot type:
 \describe{
   \item{\code{"demand"}}{Predicted demand curves (default)}
+  \item{\code{"population"}}{Alias for \code{"demand"}}
   \item{\code{"probability"}}{Probability of zero consumption}
   \item{\code{"parameters"}}{Distribution of subject-specific parameters}
   \item{\code{"individual"}}{Individual demand curves for selected subjects}
 }}
+
+\item{ids}{Optional vector of subject IDs to plot (alias of \code{subjects}).}
+
+\item{subjects}{Character or numeric vector of subject IDs to plot for
+\code{type = "individual"}. If \code{NULL}, plots first 9 subjects.}
 
 \item{parameters}{Character vector specifying which parameters to plot when
 \code{type = "parameters"}. Options are: \code{"Q0"}, \code{"alpha"},
@@ -33,14 +57,27 @@
 \item{prices}{Numeric vector of prices for plotting. If \code{NULL},
 uses a sequence from 0 to max observed price.}
 
-\item{subjects}{Character or numeric vector of subject IDs to plot for
-\code{type = "individual"}. If \code{NULL}, plots first 9 subjects.}
-
 \item{show_population}{Logical; if \code{TRUE}, overlay population-level
 curve on individual plots. Default is \code{TRUE}.}
 
-\item{log_scale}{Logical; if \code{TRUE}, use log scale for consumption
-axis. Default is \code{FALSE}.}
+\item{show_observed}{Logical; if \code{TRUE}, overlay observed data points.}
+
+\item{x_trans}{Character. Transformation for x-axis. Default "log".}
+
+\item{y_trans}{Character. Transformation for y-axis. Default "log".}
+
+\item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
+to drop x <= 0 values instead.}
+
+\item{x_lab}{Optional x-axis label.}
+
+\item{y_lab}{Optional y-axis label.}
+
+\item{xlab}{Deprecated alias for \code{x_lab}.}
+
+\item{ylab}{Deprecated alias for \code{y_lab}.}
+
+\item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
 
 \item{...}{Additional arguments (currently unused).}
 }

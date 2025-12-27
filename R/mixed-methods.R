@@ -2211,16 +2211,15 @@ predict.beezdemand_nlme <- function(
 #' showing observed data points and/or model prediction lines.
 #'
 #' @param x A `beezdemand_nlme` object.
-#' @param y Ignored. Placeholder for S3 consistency.
-#' @param show_observed_data Logical. If TRUE, plots the original data points. Default `TRUE`.
+#' @param type Plot type: "demand", "population", "individual", or "both".
+#' @param ids Optional vector of subject IDs to plot.
+#' @param show_observed Logical. If TRUE, plots the original data points. Default `TRUE`.
 #' @param observed_point_alpha Alpha for observed points. Default `0.6`.
-#' @param show_pred_lines Logical or Character Vector.
-#'   If `TRUE` (or `"population"`), plots population-level prediction lines.
-#'   If `"individual"`, plots individual/group-level prediction lines.
-#'   If `c("population", "individual")`, plots both. Default `TRUE` (which means "population").
-#' @param n_points_pred Integer. Number of points for prediction lines. Default `100`.
+#' @param show_pred Which prediction layers to plot: "population", "individual",
+#'   or "both".
+#' @param n_points Integer. Number of points for prediction lines. Default `100`.
 #' @param inv_fun Optional function to inverse-transform y-axis and predictions. Default `identity`.
-#' @param facet_formula Optional faceting formula (e.g., `~ dose`).
+#' @param facet Optional faceting formula (e.g., `~ dose`).
 #' @param at Optional named list giving values for continuous covariates used in the
 #'   fixed-effects RHS. When building prediction grids for population- or individual-
 #'   level lines, these values will be used. If not provided, the function will
@@ -2234,11 +2233,19 @@ predict.beezdemand_nlme <- function(
 #'   Must be a model factor in `x$param_info$factors`.
 #' @param shape_by Optional character string: name of a factor for shapes of observed points.
 #'   Must be a column in `x$data`.
-#' @param x_trans Character. Transformation for x-axis. Default "identity".
-#' @param y_trans Character. Transformation for y-axis. Default "identity".
+#' @param x_trans Character. Transformation for x-axis. Default "log".
+#' @param y_trans Character. Transformation for y-axis. Default "log".
+#' @param free_trans Value used to display free (x = 0) on log scales. Use NULL
+#'   to drop x <= 0 values instead.
+#' @param x_limits Optional numeric vector of length 2 for x-axis limits.
+#' @param y_limits Optional numeric vector of length 2 for y-axis limits.
+#' @param style Plot styling, passed to \code{theme_beezdemand()}.
 #' @param title Optional plot title.
-#' @param xlab Optional x-axis label.
-#' @param ylab Optional y-axis label.
+#' @param subtitle Optional subtitle for the plot.
+#' @param x_lab Optional x-axis label.
+#' @param y_lab Optional y-axis label.
+#' @param xlab Deprecated alias for \code{x_lab}.
+#' @param ylab Deprecated alias for \code{y_lab}.
 #' @param observed_point_size Size for observed points. Default `2`.
 #' @param pop_line_size Size for population prediction lines. Default `1`.
 #' @param ind_line_size Size for individual prediction lines. Default `0.6`.
@@ -2258,20 +2265,28 @@ predict.beezdemand_nlme <- function(
 #' @method plot beezdemand_nlme
 plot.beezdemand_nlme <- function(
   x,
-  y = NULL,
-  show_observed_data = TRUE,
+  type = c("demand", "population", "individual", "both"),
+  ids = NULL,
+  show_observed = TRUE,
   observed_point_alpha = 0.6,
-  show_pred_lines = TRUE, # Can be TRUE/FALSE or c("population", "individual")
-  n_points_pred = 100,
+  show_pred = "population",
+  n_points = 200,
   inv_fun = identity,
-  facet_formula = NULL,
+  facet = NULL,
   at = NULL,
   color_by = NULL,
   linetype_by = NULL,
   shape_by = NULL,
-  x_trans = "identity",
-  y_trans = "identity",
+  x_trans = c("log10", "log", "linear", "pseudo_log"),
+  y_trans = NULL,
+  free_trans = 0.01,
+  x_limits = NULL,
+  y_limits = NULL,
+  style = c("modern", "apa"),
   title = NULL,
+  subtitle = NULL,
+  x_lab = NULL,
+  y_lab = NULL,
   xlab = NULL,
   ylab = NULL,
   observed_point_size = 2,
@@ -2285,6 +2300,27 @@ plot.beezdemand_nlme <- function(
   if (!inherits(fit_obj, "beezdemand_nlme") || is.null(fit_obj$model)) {
     stop("A valid 'beezdemand_nlme' object with a fitted model is required.")
   }
+  type <- match.arg(type)
+  style <- match.arg(style)
+  x_trans <- match.arg(x_trans)
+  y_trans_missing <- is.null(y_trans)
+
+  labels <- beezdemand_normalize_plot_labels(x_lab, y_lab, xlab, ylab)
+  xlab <- labels$x_lab
+  ylab <- labels$y_lab
+
+  if (type == "population") {
+    show_pred <- "population"
+  } else if (type == "individual") {
+    show_pred <- "individual"
+  } else if (type == "both") {
+    show_pred <- "both"
+  }
+
+  show_pred_lines <- beezdemand_normalize_show_pred(show_pred)
+  show_observed_data <- show_observed
+  n_points_pred <- n_points
+  facet_formula <- facet
 
   plot_data_orig <- fit_obj$data
   y_var_name <- fit_obj$param_info$y_var
@@ -2359,6 +2395,35 @@ plot.beezdemand_nlme <- function(
 
   y_plot_col_name <- paste0(y_var_name, "_plotscale")
   plot_data_orig[[y_plot_col_name]] <- inv_fun(plot_data_orig[[y_var_name]])
+
+  y_is_log <- identical(inv_fun, identity) &&
+    grepl("^log", y_var_name, ignore.case = TRUE)
+  if (y_trans_missing) {
+    y_trans <- beezdemand_default_y_trans(type = type, y_is_log = y_is_log)
+  }
+  y_trans <- match.arg(y_trans, c("log10", "log", "linear", "pseudo_log"))
+  y_trans_res <- beezdemand_resolve_y_trans(y_trans, y_is_log = y_is_log)
+  y_trans <- y_trans_res$y_trans
+  beezdemand_warn_log_override(y_trans_res$adjusted)
+
+  if (!is.null(ids) && id_var_name %in% names(plot_data_orig)) {
+    ids <- as.character(ids)
+    plot_data_orig <- plot_data_orig[
+      as.character(plot_data_orig[[id_var_name]]) %in% ids,
+      ,
+      drop = FALSE
+    ]
+  }
+
+  free_trans_used <- FALSE
+  subtitle_note <- FALSE
+  free_obs <- beezdemand_apply_free_trans(plot_data_orig, x_var_name, x_trans, free_trans)
+  plot_data_orig <- free_obs$data
+  free_trans_used <- free_trans_used || free_obs$replaced
+
+  obs_y <- beezdemand_drop_nonpositive_y(plot_data_orig, y_plot_col_name, y_trans)
+  plot_data_orig <- obs_y$data
+  subtitle_note <- subtitle_note || obs_y$dropped
 
   if (is.null(xlab)) {
     xlab <- x_var_name
@@ -2582,6 +2647,23 @@ plot.beezdemand_nlme <- function(
     )
     pred_newdata$predicted_y_plotscale <- inv_fun(predicted_values_model_scale)
 
+    free_pred <- beezdemand_apply_free_trans(
+      pred_newdata,
+      x_var_name,
+      x_trans,
+      free_trans
+    )
+    pred_newdata <- free_pred$data
+    free_trans_used <- free_trans_used || free_pred$replaced
+
+    pred_y <- beezdemand_drop_nonpositive_y(
+      pred_newdata,
+      "predicted_y_plotscale",
+      y_trans
+    )
+    pred_newdata <- pred_y$data
+    subtitle_note <- subtitle_note || pred_y$dropped
+
     # Sort pred_newdata
     grouping_vars_for_sort <- character(0)
     if (current_pred_level > 0 && id_var_name %in% names(pred_newdata)) {
@@ -2692,17 +2774,18 @@ plot.beezdemand_nlme <- function(
       )
   } # End loop over pred_level_type
 
-  get_trans_fn <- function(trans_name_char) {
-    switch(
-      trans_name_char,
-      log10 = scales::log10_trans(),
-      pseudo_log = scales::pseudo_log_trans(),
-      identity = scales::identity_trans(),
-      scales::identity_trans()
-    )
-  }
-  p <- p + ggplot2::scale_x_continuous(trans = get_trans_fn(x_trans))
-  p <- p + ggplot2::scale_y_continuous(trans = get_trans_fn(y_trans))
+  x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
+  y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
+  p <- p + ggplot2::scale_x_continuous(
+    trans = beezdemand_get_trans(x_trans),
+    limits = x_limits,
+    labels = beezdemand_axis_labels()
+  )
+  p <- p + ggplot2::scale_y_continuous(
+    trans = beezdemand_get_trans(y_trans),
+    limits = y_limits,
+    labels = beezdemand_axis_labels()
+  )
 
   if (x_trans == "log10") {
     p <- p + ggplot2::annotation_logticks(sides = "b")
@@ -2718,9 +2801,18 @@ plot.beezdemand_nlme <- function(
     p <- p + ggplot2::facet_wrap(facet_formula)
   }
 
+  if (isTRUE(subtitle_note)) {
+    if (is.null(subtitle)) {
+      subtitle <- "Zeros omitted on log scale."
+    } else {
+      subtitle <- paste(subtitle, "Zeros omitted on log scale.")
+    }
+  }
+  beezdemand_warn_free_trans(free_trans_used, free_trans)
+
   p <- p +
-    ggplot2::labs(title = title, x = xlab, y = ylab) +
-    ggplot2::theme_bw()
+    ggplot2::labs(title = title, subtitle = subtitle, x = xlab, y = ylab) +
+    theme_beezdemand(style = style)
 
   legend_labs_list <- list()
   if (!is.null(color_by)) {
@@ -2735,6 +2827,10 @@ plot.beezdemand_nlme <- function(
 
   if (length(legend_labs_list) > 0) {
     p <- p + do.call(ggplot2::labs, legend_labs_list)
+  }
+
+  if (!is.null(color_by)) {
+    p <- beezdemand_apply_color_scale(p, style, plot_data_orig, color_by)
   }
 
   return(p)

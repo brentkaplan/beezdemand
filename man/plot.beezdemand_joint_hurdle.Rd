@@ -6,17 +6,56 @@
 \usage{
 \method{plot}{beezdemand_joint_hurdle}(
   x,
-  type = c("demand", "probability", "individual", "parameters"),
+  type = c("demand", "population", "probability", "individual", "parameters"),
   stream = c("all", "alone.target", "own.target", "own.alt"),
+  x_trans = c("log10", "log", "linear", "pseudo_log"),
+  y_trans = NULL,
+  free_trans = 0.01,
+  x_limits = NULL,
+  y_limits = NULL,
+  x_lab = NULL,
+  y_lab = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  style = c("modern", "apa"),
+  observed_point_alpha = 0.5,
+  observed_point_size = 1.8,
+  pop_line_alpha = 0.9,
+  pop_line_size = 1,
   ...
 )
 }
 \arguments{
 \item{x}{A \code{beezdemand_joint_hurdle} object.}
 
-\item{type}{One of "demand", "probability", "individual", "parameters".}
+\item{type}{One of "demand", "population", "probability", "individual", "parameters".}
 
 \item{stream}{Which stream(s) to plot.}
+
+\item{x_trans}{Character. Transformation for x-axis. Default "log".}
+
+\item{y_trans}{Character. Transformation for y-axis. Default "log".}
+
+\item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
+to drop x <= 0 values instead.}
+
+\item{x_lab}{Optional x-axis label.}
+
+\item{y_lab}{Optional y-axis label.}
+
+\item{xlab}{Deprecated alias for \code{x_lab}.}
+
+\item{ylab}{Deprecated alias for \code{y_lab}.}
+
+\item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
+
+\item{observed_point_alpha}{Alpha for observed points.}
+
+\item{observed_point_size}{Size for observed points.}
+
+\item{pop_line_alpha}{Alpha for population curve.}
+
+\item{pop_line_size}{Line size for population curve.}
 
 \item{...}{Additional arguments passed to ggplot.}
 }

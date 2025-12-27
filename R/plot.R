@@ -158,6 +158,7 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
 ##' @param dfrow A row of results from FitCurves
 ##' @param newdats A newdat dataframe from FitCurves
 ##' @param yscale Scaling of y axis. Default is "log". Can also take "linear"
+##' @param style Plot styling, passed to \code{theme_beezdemand()}.
 ##' @return ggplot2 graphical object
 ##' @author Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @import ggplot2
@@ -168,7 +169,8 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
 ##' PlotCurve(fc$adfs[[1]], fc$dfres[1, ], fc$newdats[[1]])
 ##' }
 ##' @export
-PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
+PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "apa")) {
+  style <- match.arg(style)
   if (!any(adf$y > 0)) {
    return(print("Warning: No positive consumption values!"))
   }
@@ -216,7 +218,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
-        beezdemand::theme_apa() +
+        beezdemand::theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -250,7 +252,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         annotation_logticks(sides = "b") +
-        beezdemand::theme_apa() +
+        beezdemand::theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -300,7 +302,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
-        beezdemand::theme_apa() +
+        beezdemand::theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -336,7 +338,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log") {
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         ggplot2::annotation_logticks(sides = "b") +
-        beezdemand::theme_apa() +
+        beezdemand::theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
