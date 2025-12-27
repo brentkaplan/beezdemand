@@ -4,7 +4,7 @@
 \alias{PlotCurve}
 \title{Plot Curve}
 \usage{
-PlotCurve(adf, dfrow, newdats, yscale = "log")
+PlotCurve(adf, dfrow, newdats, yscale = "log", style = c("modern", "apa"))
 }
 \arguments{
 \item{adf}{Data frame (long form) of purchase task data.}
@@ -14,6 +14,8 @@ PlotCurve(adf, dfrow, newdats, yscale = "log")
 \item{newdats}{A newdat dataframe from FitCurves}
 
 \item{yscale}{Scaling of y axis. Default is "log". Can also take "linear"}
+
+\item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
 }
 \value{
 ggplot2 graphical object

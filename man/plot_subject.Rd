@@ -9,7 +9,8 @@ plot_subject(
   subject_id,
   prices = NULL,
   show_data = TRUE,
-  show_population = TRUE
+  show_population = TRUE,
+  style = c("modern", "apa")
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ Default is \code{TRUE}.}
 
 \item{show_population}{Logical; if \code{TRUE}, show population curve.
 Default is \code{TRUE}.}
+
+\item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
 }
 \value{
 A ggplot2 object.

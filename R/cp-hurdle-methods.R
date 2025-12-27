@@ -442,22 +442,92 @@ predict.beezdemand_cp_hurdle <- function(
 #' Plot method for beezdemand_cp_hurdle
 #'
 #' @param x A beezdemand_cp_hurdle object
-#' @param type Type of plot: "demand", "probability", "individual", or "parameters"
+#' @param type Type of plot: "demand", "population", "probability", "individual", or "parameters"
+#' @param ids Optional vector of subject IDs to plot (type = "individual").
 #' @param n_points Number of points for smooth curves
-#' @param show_data Whether to show observed data points
+#' @param show_observed Whether to show observed data points
+#' @param show_pred Which prediction layers to plot: "population", "individual",
+#'   or "both".
+#' @param show_data Deprecated alias for \code{show_observed}.
+#' @param x_trans Character. Transformation for x-axis. Default "log".
+#' @param y_trans Character. Transformation for y-axis. Default "log".
+#' @param free_trans Value used to display free (x = 0) on log scales. Use NULL
+#'   to drop x <= 0 values instead.
+#' @param x_limits Optional numeric vector of length 2 for x-axis limits.
+#' @param y_limits Optional numeric vector of length 2 for y-axis limits.
+#' @param x_lab Optional x-axis label.
+#' @param y_lab Optional y-axis label.
+#' @param xlab Deprecated alias for \code{x_lab}.
+#' @param ylab Deprecated alias for \code{y_lab}.
+#' @param style Plot styling, passed to \code{theme_beezdemand()}.
+#' @param observed_point_alpha Alpha for observed points.
+#' @param observed_point_size Size for observed points.
+#' @param pop_line_alpha Alpha for population curve.
+#' @param pop_line_size Line size for population curve.
+#' @param ind_line_alpha Alpha for individual curves.
+#' @param ind_line_size Line size for individual curves.
 #' @param ... Additional arguments passed to ggplot
 #' @return A ggplot2 object
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_bw scale_color_viridis_d
 plot.beezdemand_cp_hurdle <- function(
   x,
-  type = c("demand", "probability", "individual", "parameters"),
-  n_points = 100,
-  show_data = TRUE,
+  type = c("demand", "population", "probability", "individual", "parameters", "both"),
+  ids = NULL,
+  n_points = 200,
+  show_observed = TRUE,
+  show_pred = NULL,
+  show_data = NULL,
+  x_trans = c("log10", "log", "linear", "pseudo_log"),
+  y_trans = NULL,
+  free_trans = 0.01,
+  x_limits = NULL,
+  y_limits = NULL,
+  x_lab = NULL,
+  y_lab = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  style = c("modern", "apa"),
+  observed_point_alpha = 0.5,
+  observed_point_size = 1.8,
+  pop_line_alpha = 0.9,
+  pop_line_size = 1.0,
+  ind_line_alpha = 0.35,
+  ind_line_size = 0.7,
   ...
 ) {
+  y_trans_missing <- is.null(y_trans)
   type <- match.arg(type)
+  if (type == "population") {
+    type <- "demand"
+  }
+  if (type == "both") {
+    type <- "individual"
+    show_pred <- "both"
+  }
+  style <- match.arg(style)
+  x_trans <- match.arg(x_trans)
+  if (y_trans_missing) {
+    y_trans <- beezdemand_default_y_trans(type = type)
+  }
+  y_trans <- match.arg(y_trans, c("log10", "log", "linear", "pseudo_log"))
   object <- x
+
+  labels <- beezdemand_normalize_plot_labels(x_lab, y_lab, xlab, ylab)
+  x_lab <- labels$x_lab %||% "Price"
+  y_lab <- labels$y_lab %||% "Consumption"
+
+  if (!is.null(show_data)) {
+    lifecycle::deprecate_warn(
+      "0.2.0",
+      "plot(x, show_data = )",
+      "plot(x, show_observed = )"
+    )
+    show_observed <- show_data
+  }
+
+  subtitle_note <- FALSE
+  free_trans_used <- FALSE
 
   coefs <- object$model$coefficients
   beta_param <- object$model$beta
@@ -467,29 +537,71 @@ plot.beezdemand_cp_hurdle <- function(
   x_seq <- seq(x_range[1], x_range[2], length.out = n_points)
 
   if (type == "demand") {
+    show_pred <- "population"
     # Population demand curve
     logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x_seq)
     Q <- exp(logQ)
 
     pred_df <- data.frame(x = x_seq, y = Q)
+    free_pred <- beezdemand_apply_free_trans(pred_df, "x", x_trans, free_trans)
+    pred_df <- free_pred$data
+    free_trans_used <- free_trans_used || free_pred$replaced
+
+    pred_y <- beezdemand_drop_nonpositive_y(pred_df, "y", y_trans)
+    pred_df <- pred_y$data
+    subtitle_note <- subtitle_note || pred_y$dropped
+
+    x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
+    y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
 
     p <- ggplot2::ggplot(pred_df, ggplot2::aes(x = x, y = y)) +
-      ggplot2::geom_line(linewidth = 1, color = "blue") +
+      ggplot2::geom_line(
+        linewidth = pop_line_size,
+        alpha = pop_line_alpha,
+        color = beezdemand_style_color(style, "primary")
+      ) +
       ggplot2::labs(
-        x = "Alternative Price",
-        y = "Predicted Consumption",
+        x = x_lab,
+        y = y_lab,
         title = "Population Cross-Price Demand Curve"
       ) +
-      ggplot2::theme_bw()
+      ggplot2::scale_x_continuous(
+        trans = beezdemand_get_trans(x_trans),
+        limits = x_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      ggplot2::scale_y_continuous(
+        trans = beezdemand_get_trans(y_trans),
+        limits = y_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      theme_beezdemand(style = style)
 
-    if (show_data) {
+    if (show_observed) {
       obs_df <- object$data[object$data$delta == 0, ]
+      obs_df <- data.frame(x = obs_df$x, y = obs_df$y)
+      free_obs <- beezdemand_apply_free_trans(obs_df, "x", x_trans, free_trans)
+      obs_df <- free_obs$data
+      free_trans_used <- free_trans_used || free_obs$replaced
+
+      obs_y <- beezdemand_drop_nonpositive_y(obs_df, "y", y_trans)
+      obs_df <- obs_y$data
+      subtitle_note <- subtitle_note || obs_y$dropped
+
       p <- p +
         ggplot2::geom_point(
           data = obs_df,
-          ggplot2::aes(x = x, y = exp(logQ)),
-          alpha = 0.3
+          ggplot2::aes(x = x, y = y),
+          alpha = observed_point_alpha,
+          size = observed_point_size
         )
+    }
+
+    if (x_trans == "log10") {
+      p <- p + ggplot2::annotation_logticks(sides = "b")
+    }
+    if (y_trans == "log10") {
+      p <- p + ggplot2::annotation_logticks(sides = "l")
     }
   } else if (type == "probability") {
     # Probability of zero curve
@@ -498,19 +610,53 @@ plot.beezdemand_cp_hurdle <- function(
 
     pred_df <- data.frame(x = x_seq, prob = prob)
 
+    pred_df <- data.frame(x = x_seq, prob = prob)
+    free_pred <- beezdemand_apply_free_trans(pred_df, "x", x_trans, free_trans)
+    pred_df <- free_pred$data
+    free_trans_used <- free_trans_used || free_pred$replaced
+
+    x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
+    y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
+
     p <- ggplot2::ggplot(pred_df, ggplot2::aes(x = x, y = prob)) +
-      ggplot2::geom_line(linewidth = 1, color = "red") +
+      ggplot2::geom_line(
+        linewidth = pop_line_size,
+        alpha = pop_line_alpha,
+        color = beezdemand_style_color(style, "secondary")
+      ) +
       ggplot2::labs(
-        x = "Alternative Price",
+        x = x_lab,
         y = "P(Zero Consumption)",
         title = "Probability of Zero Consumption"
       ) +
       ggplot2::ylim(0, 1) +
-      ggplot2::theme_bw()
+      ggplot2::scale_x_continuous(
+        trans = beezdemand_get_trans(x_trans),
+        limits = x_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      ggplot2::scale_y_continuous(
+        trans = beezdemand_get_trans(y_trans),
+        limits = y_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      theme_beezdemand(style = style)
   } else if (type == "individual") {
+    if (is.null(show_pred)) {
+      show_pred <- "individual"
+    }
+    show_pred <- beezdemand_normalize_show_pred(show_pred)
+
     # Individual demand curves
     n_subj <- min(20, object$param_info$n_subjects)
-    subj_ids <- object$subject_pars$id[1:n_subj]
+    subj_ids <- object$subject_pars$id
+    if (!is.null(ids)) {
+      subj_ids <- subj_ids[as.character(subj_ids) %in% as.character(ids)]
+    }
+    subj_ids <- utils::head(subj_ids, n_subj)
+    if (length(subj_ids) == 0) {
+      stop("No matching ids found in fit results.")
+    }
 
     ind_preds <- lapply(subj_ids, function(sid) {
       newdata <- data.frame(x = x_seq, id = sid)
@@ -522,36 +668,110 @@ plot.beezdemand_cp_hurdle <- function(
     })
     ind_df <- do.call(rbind, ind_preds)
 
-    p <- ggplot2::ggplot(
-      ind_df,
-      ggplot2::aes(x = x, y = y, color = id, group = id)
-    ) +
-      ggplot2::geom_line(alpha = 0.7) +
+    if (any(show_pred %in% "population")) {
+      logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x_seq)
+      Q <- exp(logQ)
+      pop_pred <- data.frame(x = x_seq, y = Q)
+      free_pop <- beezdemand_apply_free_trans(pop_pred, "x", x_trans, free_trans)
+      pop_pred <- free_pop$data
+      free_trans_used <- free_trans_used || free_pop$replaced
+
+      pop_y <- beezdemand_drop_nonpositive_y(pop_pred, "y", y_trans)
+      pop_pred <- pop_y$data
+      subtitle_note <- subtitle_note || pop_y$dropped
+
+      p <- ggplot2::ggplot(pop_pred, ggplot2::aes(x = x, y = y)) +
+        ggplot2::geom_line(
+          linewidth = pop_line_size,
+          alpha = pop_line_alpha,
+          color = beezdemand_style_color(style, "primary"),
+          linetype = "dashed"
+        )
+    } else {
+      p <- ggplot2::ggplot()
+    }
+
+    free_ind <- beezdemand_apply_free_trans(ind_df, "x", x_trans, free_trans)
+    ind_df <- free_ind$data
+    free_trans_used <- free_trans_used || free_ind$replaced
+
+    ind_y <- beezdemand_drop_nonpositive_y(ind_df, "y", y_trans)
+    ind_df <- ind_y$data
+    subtitle_note <- subtitle_note || ind_y$dropped
+
+    x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
+    y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
+
+    p <- p +
+      ggplot2::geom_line(
+        data = ind_df,
+        ggplot2::aes(x = x, y = y, color = id, group = id),
+        alpha = ind_line_alpha,
+        linewidth = ind_line_size
+      ) +
       ggplot2::labs(
-        x = "Alternative Price",
-        y = "Predicted Consumption",
+        x = x_lab,
+        y = y_lab,
         title = "Individual Cross-Price Demand Curves",
         color = "Subject"
       ) +
-      ggplot2::theme_bw() +
+      ggplot2::scale_x_continuous(
+        trans = beezdemand_get_trans(x_trans),
+        limits = x_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      ggplot2::scale_y_continuous(
+        trans = beezdemand_get_trans(y_trans),
+        limits = y_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      theme_beezdemand(style = style) +
       ggplot2::theme(legend.position = "none")
+
+    p <- beezdemand_apply_color_scale(p, style, ind_df, "id")
+
+    if (x_trans == "log10") {
+      p <- p + ggplot2::annotation_logticks(sides = "b")
+    }
+    if (y_trans == "log10") {
+      p <- p + ggplot2::annotation_logticks(sides = "l")
+    }
   } else if (type == "parameters") {
     # Parameter distributions
     sp <- object$subject_pars
 
+    x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
     p1 <- ggplot2::ggplot(sp, ggplot2::aes(x = Qalone)) +
-      ggplot2::geom_histogram(bins = 20, fill = "steelblue", color = "white") +
+      ggplot2::geom_histogram(
+        bins = 20,
+        fill = beezdemand_style_color(style, "accent"),
+        color = "white"
+      ) +
       ggplot2::labs(x = "Q_alone", title = "Distribution of Q_alone") +
-      ggplot2::theme_bw()
+      ggplot2::scale_x_continuous(
+        trans = beezdemand_get_trans(x_trans),
+        limits = x_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      theme_beezdemand(style = style)
 
     p2 <- ggplot2::ggplot(sp, ggplot2::aes(x = I_individual)) +
-      ggplot2::geom_histogram(bins = 20, fill = "coral", color = "white") +
+      ggplot2::geom_histogram(
+        bins = 20,
+        fill = beezdemand_style_color(style, "secondary"),
+        color = "white"
+      ) +
       ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
       ggplot2::labs(
         x = "I (individual)",
         title = "Distribution of Interaction Parameter"
       ) +
-      ggplot2::theme_bw()
+      ggplot2::scale_x_continuous(
+        trans = beezdemand_get_trans(x_trans),
+        limits = x_limits,
+        labels = beezdemand_axis_labels()
+      ) +
+      theme_beezdemand(style = style)
 
     if (requireNamespace("patchwork", quietly = TRUE)) {
       p <- p1 + p2
@@ -560,6 +780,11 @@ plot.beezdemand_cp_hurdle <- function(
       message("Install 'patchwork' package for combined parameter plots")
     }
   }
+
+  if (isTRUE(subtitle_note) && !is.null(p)) {
+    p <- p + ggplot2::labs(subtitle = "Zeros omitted on log scale.")
+  }
+  beezdemand_warn_free_trans(free_trans_used, free_trans)
 
   return(p)
 }

@@ -43,13 +43,13 @@ test_that("plot.beezdemand_nlme uses observed id × factor combos for individual
   expect_s3_class(fit, "beezdemand_nlme")
   expect_false(is.null(fit$model))
 
-  # Plot individual lines faceted by Gender with controlled n_points_pred
+  # Plot individual lines faceted by Gender with controlled n_points
   p <- plot(
     fit,
-    show_observed_data = FALSE,
-    show_pred_lines = "individual",
-    facet_formula = ~ Gender,
-    n_points_pred = 50
+    show_observed = FALSE,
+    show_pred = "individual",
+    facet = ~ Gender,
+    n_points = 50
   )
   expect_s3_class(p, "ggplot")
 
@@ -127,10 +127,10 @@ test_that("plot.beezdemand_nlme supports within-subject factors for individual l
 
   p <- plot(
     fit,
-    show_observed_data = FALSE,
-    show_pred_lines = "individual",
-    facet_formula = ~ Condition,
-    n_points_pred = 40
+    show_observed = FALSE,
+    show_pred = "individual",
+    facet = ~ Condition,
+    n_points = 40
   )
   expect_s3_class(p, "ggplot")
 

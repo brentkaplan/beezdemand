@@ -6,20 +6,28 @@
 \usage{
 \method{plot}{beezdemand_nlme}(
   x,
-  y = NULL,
-  show_observed_data = TRUE,
+  type = c("demand", "population", "individual", "both"),
+  ids = NULL,
+  show_observed = TRUE,
   observed_point_alpha = 0.6,
-  show_pred_lines = TRUE,
-  n_points_pred = 100,
+  show_pred = "population",
+  n_points = 200,
   inv_fun = identity,
-  facet_formula = NULL,
+  facet = NULL,
   at = NULL,
   color_by = NULL,
   linetype_by = NULL,
   shape_by = NULL,
-  x_trans = "identity",
-  y_trans = "identity",
+  x_trans = c("log10", "log", "linear", "pseudo_log"),
+  y_trans = NULL,
+  free_trans = 0.01,
+  x_limits = NULL,
+  y_limits = NULL,
+  style = c("modern", "apa"),
   title = NULL,
+  subtitle = NULL,
+  x_lab = NULL,
+  y_lab = NULL,
   xlab = NULL,
   ylab = NULL,
   observed_point_size = 2,
@@ -33,22 +41,22 @@
 \arguments{
 \item{x}{A `beezdemand_nlme` object.}
 
-\item{y}{Ignored. Placeholder for S3 consistency.}
+\item{type}{Plot type: "demand", "population", "individual", or "both".}
 
-\item{show_observed_data}{Logical. If TRUE, plots the original data points. Default `TRUE`.}
+\item{ids}{Optional vector of subject IDs to plot.}
+
+\item{show_observed}{Logical. If TRUE, plots the original data points. Default `TRUE`.}
 
 \item{observed_point_alpha}{Alpha for observed points. Default `0.6`.}
 
-\item{show_pred_lines}{Logical or Character Vector.
-If `TRUE` (or `"population"`), plots population-level prediction lines.
-If `"individual"`, plots individual/group-level prediction lines.
-If `c("population", "individual")`, plots both. Default `TRUE` (which means "population").}
+\item{show_pred}{Which prediction layers to plot: "population", "individual",
+or "both".}
 
-\item{n_points_pred}{Integer. Number of points for prediction lines. Default `100`.}
+\item{n_points}{Integer. Number of points for prediction lines. Default `100`.}
 
 \item{inv_fun}{Optional function to inverse-transform y-axis and predictions. Default `identity`.}
 
-\item{facet_formula}{Optional faceting formula (e.g., `~ dose`).}
+\item{facet}{Optional faceting formula (e.g., `~ dose`).}
 
 \item{at}{Optional named list giving values for continuous covariates used in the
 fixed-effects RHS. When building prediction grids for population- or individual-
@@ -67,15 +75,26 @@ Must be a model factor in `x$param_info$factors`.}
 \item{shape_by}{Optional character string: name of a factor for shapes of observed points.
 Must be a column in `x$data`.}
 
-\item{x_trans}{Character. Transformation for x-axis. Default "identity".}
+\item{x_trans}{Character. Transformation for x-axis. Default "log".}
 
-\item{y_trans}{Character. Transformation for y-axis. Default "identity".}
+\item{y_trans}{Character. Transformation for y-axis. Default "log".}
+
+\item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
+to drop x <= 0 values instead.}
+
+\item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
 
 \item{title}{Optional plot title.}
 
-\item{xlab}{Optional x-axis label.}
+\item{subtitle}{Optional subtitle for the plot.}
 
-\item{ylab}{Optional y-axis label.}
+\item{x_lab}{Optional x-axis label.}
+
+\item{y_lab}{Optional y-axis label.}
+
+\item{xlab}{Deprecated alias for \code{x_lab}.}
+
+\item{ylab}{Deprecated alias for \code{y_lab}.}
 
 \item{observed_point_size}{Size for observed points. Default `2`.}
 
