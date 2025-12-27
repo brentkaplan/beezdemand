@@ -79,8 +79,8 @@ summary.beezdemand_hurdle <- function(object, ...) {
 
   # Determine component for each coefficient
   component <- dplyr::case_when(
-    coef_names %in% c("gamma0", "gamma1") ~ "probability",
-    coef_names %in% c("logQ0", "log_alpha") ~ "consumption",
+    coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
+    coef_names %in% c("logQ0", "log_alpha", "k") ~ "consumption",
     grepl("^logsigma_|^rho_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
@@ -91,11 +91,32 @@ summary.beezdemand_hurdle <- function(object, ...) {
     std.error = unname(object$model$se),
     statistic = unname(z_val),
     p.value = unname(p_val),
-    component = component
+    component = component,
+    estimate_scale = dplyr::case_when(
+      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+      grepl("^log", coef_names) ~ "log",
+      TRUE ~ "natural"
+    ),
+    term_display = coef_names
   )
 
   # Compute group-level demand metrics (Omax, Pmax)
   group_metrics <- calc_group_metrics(object)
+
+  derived_metrics <- dplyr::bind_rows(
+    beezdemand_empty_derived_metrics(),
+    tibble::tibble(
+      metric = c("Pmax", "Omax"),
+      estimate = c(group_metrics$Pmax, group_metrics$Omax),
+      std.error = NA_real_,
+      conf.low = NA_real_,
+      conf.high = NA_real_,
+      method = "none",
+      component = "consumption",
+      level = "population",
+      id = NA_character_
+    )
+  )
 
   # Compute summary of individual-level metrics
   individual_metrics <- list(
@@ -128,6 +149,7 @@ summary.beezdemand_hurdle <- function(object, ...) {
       AIC = object$AIC,
       BIC = object$BIC,
       group_metrics = group_metrics,
+      derived_metrics = derived_metrics,
       individual_metrics = individual_metrics,
       notes = character(0)
     ),
@@ -140,10 +162,11 @@ summary.beezdemand_hurdle <- function(object, ...) {
 #'
 #' @param x An object of class \code{summary.beezdemand_hurdle}.
 #' @param digits Number of significant digits to print. Default is 4.
+#' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments passed to \code{print}.
 #'
 #' @export
-print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
+print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("\nTwo-Part Mixed Effects Hurdle Demand Model\n")
   cat("============================================\n\n")
 
@@ -185,12 +208,15 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, ...) {
 
   cat("Demand Metrics (Group-Level):\n")
   cat("-----------------------------\n")
-  if (!is.na(x$group_metrics$Pmax)) {
+  dm <- x$derived_metrics
+  pmax_val <- dm$estimate[dm$metric == "Pmax"][1]
+  omax_val <- dm$estimate[dm$metric == "Omax"][1]
+  if (!is.na(pmax_val)) {
     cat(sprintf(
       "  Pmax (price at max expenditure): %.4f\n",
-      x$group_metrics$Pmax
+      pmax_val
     ))
-    cat(sprintf("  Omax (max expenditure): %.4f\n", x$group_metrics$Omax))
+    cat(sprintf("  Omax (max expenditure): %.4f\n", omax_val))
   } else {
     cat("  Pmax/Omax: NA (k < e, no local maximum exists)\n")
   }
@@ -1043,9 +1069,8 @@ tidy.beezdemand_hurdle <- function(x, ...) {
 
   # Determine component for each coefficient
   component <- dplyr::case_when(
-    coef_names %in% c("gamma0", "gamma1") ~ "probability",
-    coef_names %in% c("logQ0", "log_alpha") ~ "consumption",
-    coef_names %in% c("beta0", "beta1") ~ "probability",
+    coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
+    coef_names %in% c("logQ0", "log_alpha", "alpha", "k") ~ "consumption",
     grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )

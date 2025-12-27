@@ -40,7 +40,19 @@ test_that("fit_demand_fixed summary method works", {
   expect_equal(s$model_class, "beezdemand_fixed")
   expect_equal(s$backend, "legacy")
   expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
   expect_s3_class(s$coefficients, "tbl_df")
+})
+
+test_that("print.summary.beezdemand_fixed supports n truncation", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small)
+  s <- summary(fit)
+
+  expect_output(print(s, n = 1), "Per-subject coefficients")
+  expect_output(print(s, n = 1), "Showing first 1 ids")
 })
 
 

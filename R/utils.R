@@ -657,6 +657,31 @@ validate_collapse_levels <- function(collapse_levels) {
 # Base class for summary objects
 #-------------------------------------------------------------------------------
 
+beezdemand_empty_coefficients <- function() {
+  tibble::tibble(
+    term = character(),
+    estimate = numeric(),
+    std.error = numeric(),
+    statistic = numeric(),
+    p.value = numeric(),
+    component = character()
+  )
+}
+
+beezdemand_empty_derived_metrics <- function() {
+  tibble::tibble(
+    metric = character(),
+    estimate = numeric(),
+    std.error = numeric(),
+    conf.low = numeric(),
+    conf.high = numeric(),
+    method = character(),
+    component = character(),
+    level = character(),
+    id = character()
+  )
+}
+
 #' Print Method for beezdemand Summary Objects
 #'
 #' Fallback print method for summary objects inheriting from `beezdemand_summary`.

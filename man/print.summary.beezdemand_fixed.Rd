@@ -4,12 +4,14 @@
 \alias{print.summary.beezdemand_fixed}
 \title{Print Method for summary.beezdemand_fixed}
 \usage{
-\method{print}{summary.beezdemand_fixed}(x, digits = 4, ...)
+\method{print}{summary.beezdemand_fixed}(x, digits = 4, n = 20, ...)
 }
 \arguments{
 \item{x}{A summary.beezdemand_fixed object}
 
 \item{digits}{Number of significant digits to print}
+
+\item{n}{Number of subjects (ids) to print (default 20)}
 
 \item{...}{Additional arguments (ignored)}
 }

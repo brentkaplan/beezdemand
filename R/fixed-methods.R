@@ -341,7 +341,9 @@ summary.beezdemand_fixed <- function(object, ...) {
         std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
         statistic = NA_real_,
         p.value = NA_real_,
-        component = "fixed"
+        component = "fixed",
+        estimate_scale = "natural",
+        term_display = term_name
       )
     })
     coefficients <- dplyr::bind_rows(coefficients_list)
@@ -390,6 +392,7 @@ summary.beezdemand_fixed <- function(object, ...) {
       AIC = NA_real_,
       BIC = NA_real_,
       coefficients = coefficients,
+      derived_metrics = beezdemand_empty_derived_metrics(),
       param_summary = param_summary,
       results = object$results,
       notes = character(0)
@@ -402,9 +405,10 @@ summary.beezdemand_fixed <- function(object, ...) {
 #'
 #' @param x A summary.beezdemand_fixed object
 #' @param digits Number of significant digits to print
+#' @param n Number of subjects (ids) to print (default 20)
 #' @param ... Additional arguments (ignored)
 #' @export
-print.summary.beezdemand_fixed <- function(x, digits = 4, ...) {
+print.summary.beezdemand_fixed <- function(x, digits = 4, n = 20, ...) {
   cat("\n")
   cat("Fixed-Effect Demand Model Summary\n")
   cat(strrep("=", 50), "\n\n")
@@ -442,6 +446,35 @@ print.summary.beezdemand_fixed <- function(x, digits = 4, ...) {
       cat("    Median:", round(alpha_sum["Median"], 6), "\n")
       cat("    Range: [", round(alpha_sum["Min."], 6), ",",
           round(alpha_sum["Max."], 6), "]\n")
+    }
+  }
+
+  if (!is.null(x$coefficients) && nrow(x$coefficients) > 0) {
+    n_to_print <- n
+    if (is.null(n_to_print)) {
+      n_to_print <- 20
+    }
+
+    coef_all <- x$coefficients |>
+      dplyr::mutate(id = as.character(.data$id), term = as.character(.data$term)) |>
+      dplyr::arrange(.data$id, .data$term)
+
+    ids <- unique(coef_all$id)
+    ids_to_print <- ids
+    if (is.finite(n_to_print) && length(ids) > n_to_print) {
+      ids_to_print <- utils::head(ids, n_to_print)
+    }
+
+    coef_print <- coef_all |>
+      dplyr::filter(.data$id %in% ids_to_print) |>
+      dplyr::arrange(.data$id, .data$term)
+
+    cat("\nPer-subject coefficients:\n")
+    cat("-------------------------\n")
+    print(coef_print, row.names = FALSE)
+
+    if (is.finite(n_to_print) && length(ids) > n_to_print) {
+      cat("\n(Showing first", n_to_print, "ids of", length(ids), ")\n")
     }
   }
 
@@ -523,4 +556,3 @@ glance.beezdemand_fixed <- function(x, ...) {
     BIC = NA_real_
   )
 }
-

@@ -33,12 +33,29 @@ test_that("summary.beezdemand_hurdle meets contract", {
   expect_true("AIC" %in% names(s))
   expect_true("BIC" %in% names(s))
   expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
   expect_true("notes" %in% names(s))
 
   # coefficients is tibble with required columns
   expect_s3_class(s$coefficients, "tbl_df")
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
                     "component") %in% names(s$coefficients)))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(s$coefficients)))
+  expect_true(all(s$coefficients$estimate_scale %in% c("natural", "log", "log10", "logit")))
+
+  # derived_metrics is tibble with required columns
+  expect_s3_class(s$derived_metrics, "tbl_df")
+  expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
+  expect_true(all(c("Pmax", "Omax") %in% s$derived_metrics$metric))
+
+  # Canonical components (probability part)
+  prob_terms <- c("beta0", "beta1", "gamma0", "gamma1")
+  present_prob_terms <- intersect(prob_terms, s$coefficients$term)
+  expect_true(length(present_prob_terms) > 0)
+  expect_true(all(
+    s$coefficients$component[s$coefficients$term %in% present_prob_terms] ==
+      "zero_probability"
+  ))
 })
 
 
@@ -84,11 +101,31 @@ test_that("summary.beezdemand_cp_hurdle meets contract", {
   expect_true("converged" %in% names(s))
   expect_true("logLik" %in% names(s))
   expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
                     "component") %in% names(s$coefficients)))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(s$coefficients)))
+  expect_true(all(s$coefficients$estimate_scale %in% c("natural", "log", "log10", "logit")))
+
+  # derived metrics are not in coefficients
+  expect_false(any(s$coefficients$term %in% c("Qalone", "beta")))
+
+  # derived_metrics contains beta and Qalone
+  expect_s3_class(s$derived_metrics, "tbl_df")
+  expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
+  expect_true(all(c("Qalone", "beta") %in% s$derived_metrics$metric))
+  expect_true(all(c("std.error", "method") %in% names(s$derived_metrics)))
+  expect_true(all(s$derived_metrics$method[s$derived_metrics$metric %in% c("Qalone", "beta")] == "delta"))
+  # SEs may be NA when the Hessian/SE computation is unavailable
+  se_vals <- s$derived_metrics$std.error[s$derived_metrics$metric %in% c("Qalone", "beta")]
+  expect_true(all(is.na(se_vals) | is.finite(se_vals)))
+
+  # Canonical components
+  expect_true(any(s$coefficients$component == "zero_probability"))
+  expect_true(any(s$coefficients$component == "consumption"))
 })
 
 
@@ -126,11 +163,18 @@ test_that("summary.beezdemand_nlme meets contract", {
   expect_true("converged" %in% names(s))
   expect_true("logLik" %in% names(s))
   expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
                     "component") %in% names(s$coefficients)))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(s$coefficients)))
+  expect_true(all(s$coefficients$estimate_scale %in% c("natural", "log", "log10", "logit")))
+
+  # derived_metrics exists (may be empty)
+  expect_s3_class(s$derived_metrics, "tbl_df")
+  expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
 })
 
 
@@ -150,11 +194,18 @@ test_that("summary.beezdemand_fixed meets contract", {
   expect_equal(s$backend, "legacy")
   expect_true("nobs" %in% names(s) || "n_subjects" %in% names(s))
   expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
 
   # coefficients is tibble
   expect_s3_class(s$coefficients, "tbl_df")
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value",
                     "component") %in% names(s$coefficients)))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(s$coefficients)))
+  expect_true(all(s$coefficients$estimate_scale %in% c("natural", "log", "log10", "logit")))
+
+  # derived_metrics exists (may be empty)
+  expect_s3_class(s$derived_metrics, "tbl_df")
+  expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
 })
 
 

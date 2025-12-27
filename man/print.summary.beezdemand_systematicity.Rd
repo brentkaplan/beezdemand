@@ -4,10 +4,12 @@
 \alias{print.summary.beezdemand_systematicity}
 \title{Print Method for summary.beezdemand_systematicity}
 \usage{
-\method{print}{summary.beezdemand_systematicity}(x, ...)
+\method{print}{summary.beezdemand_systematicity}(x, n = 20, ...)
 }
 \arguments{
 \item{x}{A summary.beezdemand_systematicity object}
+
+\item{n}{Number of IDs to display (default 20)}
 
 \item{...}{Additional arguments (ignored)}
 }
