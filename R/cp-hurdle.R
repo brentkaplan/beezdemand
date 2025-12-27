@@ -22,9 +22,9 @@
 #' @export
 fit_cp_hurdle <- function(
   data,
-  y_var,
-  x_var,
-  id_var,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
   random_effects = c("zeros", "qalone", "I"),
   epsilon = 0.001,
   start_values = NULL,
@@ -195,17 +195,27 @@ fit_cp_hurdle <- function(
     message("Optimizing...")
   }
 
+  opt_warnings <- character(0)
   opt <- tryCatch(
-    nlminb(
-      start = obj$par,
-      objective = obj$fn,
-      gradient = obj$gr,
-      control = list(
-        iter.max = tmb_control$max_iter,
-        eval.max = tmb_control$eval_max,
-        trace = tmb_control$trace
+    withCallingHandlers(
+      nlminb(
+        start = obj$par,
+        objective = obj$fn,
+        gradient = obj$gr,
+        control = list(
+          iter.max = tmb_control$max_iter,
+          eval.max = tmb_control$eval_max,
+          trace = tmb_control$trace
+        ),
+        ...
       ),
-      ...
+      warning = function(w) {
+        msg <- conditionMessage(w)
+        opt_warnings <<- c(opt_warnings, msg)
+        if (grepl("NA/NaN function evaluation|non-finite value supplied", msg)) {
+          invokeRestart("muffleWarning")
+        }
+      }
     ),
     error = function(e) {
       stop("Optimization failed: ", e$message)
@@ -218,7 +228,7 @@ fit_cp_hurdle <- function(
     if (converged) {
       message("Optimization converged successfully")
     } else {
-      warning(
+      message(
         "Optimization may not have converged (code: ",
         opt$convergence,
         ")"
@@ -233,33 +243,51 @@ fit_cp_hurdle <- function(
 
   sdr <- tryCatch(
     TMB::sdreport(obj),
-    error = function(e) {
-      warning("Failed to compute standard errors: ", e$message)
-      NULL
+    error = function(e1) {
+      # Fallback: try without joint precision (more robust; may yield NA SEs).
+      sdr2 <- tryCatch(
+        TMB::sdreport(obj, getJointPrecision = FALSE),
+        error = function(e2) NULL
+      )
+      if (is.null(sdr2) && verbose >= 1) {
+        warning("Failed to compute standard errors: ", e1$message)
+      }
+      sdr2
     }
   )
 
   # Extract coefficients
-  coef_summary <- summary(sdr, "fixed")
-  coefficients <- coef_summary[, "Estimate"]
-  names(coefficients) <- rownames(coef_summary)
+  if (is.null(sdr)) {
+    coefficients <- opt$par
+    names(coefficients) <- names(obj$par)
+    se <- setNames(rep(NA_real_, length(coefficients)), names(coefficients))
+  } else {
+    coef_summary <- summary(sdr, "fixed")
+    coefficients <- coef_summary[, "Estimate"]
+    names(coefficients) <- rownames(coef_summary)
 
-  se <- coef_summary[, "Std. Error"]
-  names(se) <- rownames(coef_summary)
+    se <- coef_summary[, "Std. Error"]
+    names(se) <- rownames(coef_summary)
+  }
 
   # Transform log_beta to beta for reporting
   beta_val <- exp(coefficients["log_beta"])
   names(beta_val) <- "beta"
 
   # Get derived quantities
-  derived <- tryCatch(
-    summary(sdr, "report"),
-    error = function(e) NULL
-  )
+  derived <- if (is.null(sdr)) {
+    NULL
+  } else {
+    tryCatch(summary(sdr, "report"), error = function(e) NULL)
+  }
 
   # Extract random effects
-  re_summary <- summary(sdr, "random")
-  u_est <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
+  if (is.null(sdr)) {
+    u_est <- matrix(NA_real_, nrow = n_subjects, ncol = n_re)
+  } else {
+    re_summary <- summary(sdr, "random")
+    u_est <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
+  }
 
   # Get actual random effects (transformed)
   if (!is.null(derived) && "re" %in% rownames(derived)) {
@@ -378,6 +406,7 @@ fit_cp_hurdle <- function(
       epsilon = epsilon
     ),
     converged = converged,
+    optimizer_warnings = unique(opt_warnings),
     loglik = loglik,
     AIC = AIC,
     BIC = BIC

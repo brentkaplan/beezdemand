@@ -1686,11 +1686,22 @@ summary.beezdemand_nlme <- function(object, ...) {
   random_effects <- nlme::VarCorr(object$model)
 
   # Get n_obs and n_subjects
-  n_obs <- tryCatch(nrow(object$model$data), error = function(e) NA_integer_)
-  n_subjects <- tryCatch(
-    length(unique(object$model$groups[[1]])),
+  n_obs <- tryCatch(
+    NROW(object$data) %||% NA_integer_,
     error = function(e) NA_integer_
   )
+  if (is.na(n_obs) || length(n_obs) == 0) {
+    n_obs <- tryCatch(NROW(nlme::getData(object$model)), error = function(e) NA_integer_)
+  }
+
+  n_subjects <- tryCatch({
+    id_var <- object$param_info$id_var
+    if (!is.null(id_var) && !is.null(object$data) && id_var %in% names(object$data)) {
+      length(unique(object$data[[id_var]]))
+    } else {
+      length(unique(object$model$groups[[1]]))
+    }
+  }, error = function(e) NA_integer_)
 
   structure(
     list(
@@ -1877,11 +1888,22 @@ glance.beezdemand_nlme <- function(x, ...) {
     ))
   }
 
-  n_obs <- tryCatch(nrow(x$model$data), error = function(e) NA_integer_)
-  n_subjects <- tryCatch(
-    length(unique(x$model$groups[[1]])),
+  n_obs <- tryCatch(
+    NROW(x$data) %||% NA_integer_,
     error = function(e) NA_integer_
   )
+  if (is.na(n_obs) || length(n_obs) == 0) {
+    n_obs <- tryCatch(NROW(nlme::getData(x$model)), error = function(e) NA_integer_)
+  }
+
+  n_subjects <- tryCatch({
+    id_var <- x$param_info$id_var
+    if (!is.null(id_var) && !is.null(x$data) && id_var %in% names(x$data)) {
+      length(unique(x$data[[id_var]]))
+    } else {
+      length(unique(x$model$groups[[1]]))
+    }
+  }, error = function(e) NA_integer_)
 
   tibble::tibble(
     model_class = "beezdemand_nlme",

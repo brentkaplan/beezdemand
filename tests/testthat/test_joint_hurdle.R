@@ -128,11 +128,24 @@ test_that("prepare_joint_data creates correct stream mapping", {
   expect_true(all(prep$data$stream[alt_rows] == 2))
 })
 
+capture_warnings <- function(expr) {
+  warn_msgs <- character(0)
+  val <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      warn_msgs <<- c(warn_msgs, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(value = val, warnings = warn_msgs)
+}
+
 test_that("prepare_joint_data warns for missing streams", {
   # Data with only alone
   alone_only <- data.frame(id = 1:5, x = 1:5, y = 1:5, target = "alone")
-  expect_warning(prepare_joint_data(alone_only), "own.target not observed")
-  expect_warning(prepare_joint_data(alone_only), "own.alt not observed")
+  res <- capture_warnings(prepare_joint_data(alone_only))
+  expect_true(any(grepl("own.target not observed", res$warnings, fixed = TRUE)))
+  expect_true(any(grepl("own.alt not observed", res$warnings, fixed = TRUE)))
 })
 
 test_that("prepare_joint_data warns for single subject", {
@@ -142,7 +155,8 @@ test_that("prepare_joint_data warns for single subject", {
     y = runif(9, 1, 10),
     target = rep(c("alone", "own", "alt"), each = 3)
   )
-  expect_warning(prepare_joint_data(single_subj), "Single subject")
+  res <- capture_warnings(prepare_joint_data(single_subj))
+  expect_true(any(grepl("Single subject", res$warnings)))
 })
 
 test_that("prepare_joint_data warns for constant price", {
@@ -152,7 +166,8 @@ test_that("prepare_joint_data warns for constant price", {
     y = runif(9, 1, 10),
     target = rep(c("alone", "own", "alt"), 3)
   )
-  expect_warning(prepare_joint_data(const_price), "Constant target price")
+  res <- capture_warnings(prepare_joint_data(const_price))
+  expect_true(any(grepl("Constant target price", res$warnings)))
 })
 
 test_that("prepare_joint_data warns for all zeros in a stream", {
@@ -162,7 +177,8 @@ test_that("prepare_joint_data warns for all zeros in a stream", {
     y = c(rep(0, 6), runif(6, 1, 10), runif(6, 1, 10)),
     target = rep(c("alone", "own", "alt"), each = 6)
   )
-  expect_warning(prepare_joint_data(all_zeros), "All zeros in alone.target")
+  res <- capture_warnings(prepare_joint_data(all_zeros))
+  expect_true(any(grepl("All zeros in alone.target", res$warnings)))
 })
 
 
@@ -438,10 +454,8 @@ test_that("D3: Constant price - warning is emitted", {
     target = rep(rep(c("alone", "own", "alt"), each = 3), 5)
   )
 
-  expect_warning(
-    prepare_joint_data(const_price_data),
-    "Constant target price"
-  )
+  res <- capture_warnings(prepare_joint_data(const_price_data))
+  expect_true(any(grepl("Constant target price", res$warnings)))
 })
 
 test_that("D5: Single subject - model runs with warning", {

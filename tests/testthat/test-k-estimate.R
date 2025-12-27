@@ -103,20 +103,24 @@ test_that("fit_joint_hurdle k = 'estimate' works with warning", {
 
   test_data <- create_joint_k_test_data(n_subjects = 8, n_prices = 8, seed = 456)
 
-  # Should emit identifiability warning
+  warn_msgs <- character(0)
   fit <- tryCatch(
-    expect_warning(
+    withCallingHandlers(
       fit_joint_hurdle(
         test_data,
         k = "estimate",
         verbose = 0,
         control = list(eval.max = 300, iter.max = 300)
       ),
-      regexp = "identifiability"
+      warning = function(w) {
+        warn_msgs <<- c(warn_msgs, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
     ),
     error = function(e) NULL
   )
   skip_if(is.null(fit), "Model fitting failed")
+  expect_true(any(grepl("identifiability", warn_msgs, ignore.case = TRUE)))
 
   g <- glance(fit)
   expect_false(g$k_fixed)

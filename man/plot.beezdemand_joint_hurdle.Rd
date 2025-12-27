@@ -8,6 +8,7 @@
   x,
   type = c("demand", "population", "probability", "individual", "parameters"),
   stream = c("all", "alone.target", "own.target", "own.alt"),
+  n_points = 200,
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   y_trans = NULL,
   free_trans = 0.01,
@@ -32,12 +33,18 @@
 
 \item{stream}{Which stream(s) to plot.}
 
+\item{n_points}{Number of points for smooth curves (default 200).}
+
 \item{x_trans}{Character. Transformation for x-axis. Default "log".}
 
 \item{y_trans}{Character. Transformation for y-axis. Default "log".}
 
 \item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
 to drop x <= 0 values instead.}
+
+\item{x_limits}{Optional numeric vector of length 2 for x-axis limits.}
+
+\item{y_limits}{Optional numeric vector of length 2 for y-axis limits.}
 
 \item{x_lab}{Optional x-axis label.}
 
