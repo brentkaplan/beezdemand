@@ -12,6 +12,7 @@ fit_demand_fixed(
   x_var = "x",
   y_var = "y",
   id_var = "id",
+  param_space = c("natural", "log10"),
   ...
 )
 }
@@ -32,6 +33,10 @@ for individual fits. Default `NULL`.}
 \item{y_var}{Character. Name of the consumption column. Default `"y"`.}
 
 \item{id_var}{Character. Name of the subject identifier column. Default `"id"`.}
+
+\item{param_space}{Character. Parameterization used for fitting. One of:
+- `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
+- `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)}
 
 \item{...}{Additional arguments passed to the underlying `FitCurves()` engine.}
 }

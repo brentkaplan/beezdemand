@@ -4,10 +4,14 @@
 \alias{summary.beezdemand_fixed}
 \title{Summary Method for beezdemand_fixed}
 \usage{
-\method{summary}{beezdemand_fixed}(object, ...)
+\method{summary}{beezdemand_fixed}(object, report_space = c("natural", "log10"), ...)
 }
 \arguments{
 \item{object}{A beezdemand_fixed object}
+
+\item{report_space}{Character. Reporting space for core parameters. One of:
+- `"natural"`: report natural-scale parameters (default)
+- `"log10"`: report `log10()`-scale parameters when defined}
 
 \item{...}{Additional arguments (ignored)}
 }

@@ -10,6 +10,7 @@ fit_demand_hurdle(
   x_var,
   id_var,
   random_effects = c("zeros", "q0", "alpha"),
+  param_space = c("natural", "log10"),
   epsilon = 0.001,
   start_values = NULL,
   tmb_control = list(max_iter = 200, eval_max = 1000, trace = 0),
@@ -31,6 +32,15 @@ Options are \code{"zeros"} (a_i for Part I), \code{"q0"} (b_i for intensity),
 and \code{"alpha"} (c_i for elasticity). Default is \code{c("zeros", "q0", "alpha")}
 for the full 3-random-effect model. Use \code{c("zeros", "q0")} for the
 simplified 2-random-effect model (fixed alpha across subjects).}
+
+\item{param_space}{Character. Parameterization used for fitting core demand
+  parameters. One of:
+  - `"natural"`: optimize using natural `Q0`, `alpha`, `k` (internally mapped to the TMB working space)
+  - `"log10"`: optimize using `log10(Q0)`, `log10(alpha)`, `log10(k)` (internally mapped)
+
+  This argument controls the optimization parameterization; model storage remains
+  compatible with existing TMB internals and reporting can be controlled via
+  `report_space` in `summary()`, `tidy()`, and `coef()`.}
 
 \item{epsilon}{Small constant added to price before log transformation in Part I.
 Used to handle zero prices: \code{log(price + epsilon)}. Default is 0.001.}

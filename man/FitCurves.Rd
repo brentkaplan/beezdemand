@@ -18,7 +18,8 @@ FitCurves(
   hibound,
   constrainq0 = NULL,
   startq0 = NULL,
-  startalpha = NULL
+  startalpha = NULL,
+  param_space = c("natural", "log10")
 )
 }
 \arguments{

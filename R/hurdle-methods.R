@@ -34,6 +34,11 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'
 #' @param object An object of class \code{beezdemand_hurdle} from
 #'   \code{\link{fit_demand_hurdle}}.
+#' @param report_space Character. Reporting space for core demand parameters.
+#'   One of:
+#'   - `"internal"`: report internal/fitting parameters (default internal naming)
+#'   - `"natural"`: report natural-scale parameters when a natural mapping exists
+#'   - `"log10"`: report `log10()`-scale parameters when a mapping exists
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_hurdle} (also inherits
@@ -64,7 +69,12 @@ print.beezdemand_hurdle <- function(x, ...) {
 #' }
 #'
 #' @export
-summary.beezdemand_hurdle <- function(object, ...) {
+summary.beezdemand_hurdle <- function(
+  object,
+  report_space = c("natural", "log10", "internal"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   # Build coefficient table (matrix form for printing)
   coef_matrix <- cbind(
     Estimate = object$model$coefficients,
@@ -94,11 +104,66 @@ summary.beezdemand_hurdle <- function(object, ...) {
     component = component,
     estimate_scale = dplyr::case_when(
       coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      grepl("^log", coef_names) ~ "log",
+      coef_names == "logQ0" ~ "log",
       TRUE ~ "natural"
     ),
     term_display = coef_names
   )
+
+  if (report_space != "internal") {
+    # Only transform demand parameters with a natural mapping.
+    demand_terms <- coefficients$term %in% c("logQ0", "alpha", "k")
+    coefficients <- coefficients |>
+      dplyr::mutate(estimate_internal = .data$estimate)
+
+    for (i in which(demand_terms)) {
+      term_i <- coefficients$term[i]
+      from_space <- coefficients$estimate_scale[i]
+      to_space <- report_space
+
+      if (term_i == "logQ0" && report_space == "natural") {
+        to_space <- "natural"
+      } else if (term_i == "logQ0" && report_space == "log10") {
+        to_space <- "log10"
+      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
+        to_space <- "natural"
+      } else if (term_i %in% c("alpha", "k") && report_space == "log10") {
+        to_space <- "log10"
+      }
+
+      trans <- beezdemand_transform_est_se(
+        estimate = coefficients$estimate[i],
+        se = coefficients$std.error[i],
+        from = from_space,
+        to = to_space
+      )
+      coefficients$estimate[i] <- trans$estimate
+      coefficients$std.error[i] <- trans$se
+      coefficients$statistic[i] <- coefficients$estimate[i] / coefficients$std.error[i]
+      coefficients$p.value[i] <- 2 * stats::pnorm(-abs(coefficients$statistic[i]))
+
+      if (term_i == "logQ0" && report_space == "natural") {
+        coefficients$term[i] <- "Q0"
+        coefficients$term_display[i] <- "Q0"
+        coefficients$estimate_scale[i] <- "natural"
+      } else if (term_i == "logQ0" && report_space == "log10") {
+        coefficients$term[i] <- "log10(Q0)"
+        coefficients$term_display[i] <- "log10(Q0)"
+        coefficients$estimate_scale[i] <- "log10"
+      } else if (term_i == "alpha" && report_space == "log10") {
+        coefficients$term[i] <- "log10(alpha)"
+        coefficients$term_display[i] <- "log10(alpha)"
+        coefficients$estimate_scale[i] <- "log10"
+      } else if (term_i == "k" && report_space == "log10") {
+        coefficients$term[i] <- "log10(k)"
+        coefficients$term_display[i] <- "log10(k)"
+        coefficients$estimate_scale[i] <- "log10"
+      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
+        coefficients$term_display[i] <- term_i
+        coefficients$estimate_scale[i] <- "natural"
+      }
+    }
+  }
 
   # Compute group-level demand metrics (Omax, Pmax)
   group_metrics <- calc_group_metrics(object)
@@ -136,6 +201,8 @@ summary.beezdemand_hurdle <- function(object, ...) {
       call = object$call,
       model_class = "beezdemand_hurdle",
       backend = "TMB",
+      param_space = object$param_space %||% "natural",
+      report_space = report_space,
       coefficients = coefficients,
       coefficients_matrix = coef_matrix,
       variance_components = object$model$variance_components,
@@ -244,13 +311,41 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
 #' Extract Coefficients from Hurdle Demand Model
 #'
 #' @param object An object of class \code{beezdemand_hurdle}.
+#' @param report_space Character. One of `"internal"` (default), `"natural"`, or `"log10"`.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return Named numeric vector of fixed effect coefficients.
 #'
 #' @export
-coef.beezdemand_hurdle <- function(object, ...) {
-  object$model$coefficients
+coef.beezdemand_hurdle <- function(
+  object,
+  report_space = c("internal", "natural", "log10"),
+  ...
+) {
+  report_space <- match.arg(report_space)
+  coefs <- object$model$coefficients
+  if (report_space == "internal") return(coefs)
+
+  out <- coefs
+
+  if ("logQ0" %in% names(out)) {
+    if (report_space == "natural") {
+      out[["Q0"]] <- exp(out[["logQ0"]])
+    } else if (report_space == "log10") {
+      out[["log10(Q0)"]] <- out[["logQ0"]] / log(10)
+    }
+    out <- out[names(out) != "logQ0"]
+  }
+
+  for (nm in c("alpha", "k")) {
+    if (!nm %in% names(out)) next
+    if (report_space == "log10") {
+      out[[paste0("log10(", nm, ")")]] <- log10(out[[nm]])
+      out <- out[names(out) != nm]
+    }
+  }
+
+  out
 }
 
 
@@ -1047,6 +1142,8 @@ plot_subject <- function(
 #' Returns a tibble of model coefficients in tidy format.
 #'
 #' @param x An object of class \code{beezdemand_hurdle}.
+#' @param report_space Character. Reporting space for core demand parameters.
+#'   One of `"internal"`, `"natural"`, or `"log10"`.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A tibble with columns:
@@ -1060,7 +1157,12 @@ plot_subject <- function(
 #'   }
 #'
 #' @export
-tidy.beezdemand_hurdle <- function(x, ...) {
+tidy.beezdemand_hurdle <- function(
+  x,
+  report_space = c("natural", "log10", "internal"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   coef_names <- names(x$model$coefficients)
   coefs <- x$model$coefficients
   se <- x$model$se
@@ -1075,14 +1177,64 @@ tidy.beezdemand_hurdle <- function(x, ...) {
     TRUE ~ "fixed"
   )
 
-  tibble::tibble(
+  out <- tibble::tibble(
     term = coef_names,
     estimate = unname(coefs),
     std.error = unname(se),
     statistic = unname(z_val),
     p.value = unname(p_val),
-    component = component
+    component = component,
+    estimate_scale = dplyr::case_when(
+      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+      coef_names == "logQ0" ~ "log",
+      TRUE ~ "natural"
+    ),
+    term_display = coef_names
   )
+
+  if (report_space != "internal") {
+    demand_terms <- out$term %in% c("logQ0", "alpha", "k")
+    out$estimate_internal <- out$estimate
+
+    for (i in which(demand_terms)) {
+      term_i <- out$term[i]
+      from_space <- out$estimate_scale[i]
+      to_space <- if (report_space == "natural") "natural" else "log10"
+
+      trans <- beezdemand_transform_est_se(
+        estimate = out$estimate[i],
+        se = out$std.error[i],
+        from = from_space,
+        to = to_space
+      )
+      out$estimate[i] <- trans$estimate
+      out$std.error[i] <- trans$se
+      out$statistic[i] <- out$estimate[i] / out$std.error[i]
+      out$p.value[i] <- 2 * stats::pnorm(-abs(out$statistic[i]))
+
+      if (term_i == "logQ0" && report_space == "natural") {
+        out$term[i] <- "Q0"
+        out$term_display[i] <- "Q0"
+        out$estimate_scale[i] <- "natural"
+      } else if (term_i == "logQ0" && report_space == "log10") {
+        out$term[i] <- "log10(Q0)"
+        out$term_display[i] <- "log10(Q0)"
+        out$estimate_scale[i] <- "log10"
+      } else if (term_i == "alpha" && report_space == "log10") {
+        out$term[i] <- "log10(alpha)"
+        out$term_display[i] <- "log10(alpha)"
+        out$estimate_scale[i] <- "log10"
+      } else if (term_i == "k" && report_space == "log10") {
+        out$term[i] <- "log10(k)"
+        out$term_display[i] <- "log10(k)"
+        out$estimate_scale[i] <- "log10"
+      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
+        out$estimate_scale[i] <- "natural"
+      }
+    }
+  }
+
+  out
 }
 
 

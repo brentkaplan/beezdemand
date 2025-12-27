@@ -12,6 +12,7 @@ fit_demand_mixed(
   factors = NULL,
   factor_interaction = FALSE,
   equation_form = c("zben", "simplified"),
+  param_space = c("log10", "natural"),
   custom_model_formula = NULL,
   fixed_rhs = NULL,
   continuous_covariates = NULL,
@@ -56,6 +57,15 @@ Options are:
         Model parameter `Q0` represents `log10(True Max Consumption)`.
         Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
 }}
+
+\item{param_space}{Character. Parameterization used for fitting core demand
+  parameters. One of:
+  - `"log10"`: treat `Q0` and `alpha` as `log10(Q0)` and `log10(alpha)` (default)
+  - `"natural"`: treat `Q0` and `alpha` as natural-scale parameters
+
+  Notes:
+  - For `equation_form = "zben"`, only `"log10"` is currently supported.
+  - For `equation_form = "simplified"`, both `"log10"` and `"natural"` are supported.}
 
 \item{custom_model_formula}{An optional custom nonlinear model formula (nlme format).
 If provided, this overrides `equation_form`. The user is responsible for ensuring

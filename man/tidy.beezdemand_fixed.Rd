@@ -4,10 +4,13 @@
 \alias{tidy.beezdemand_fixed}
 \title{Tidy Method for beezdemand_fixed}
 \usage{
-\method{tidy}{beezdemand_fixed}(x, ...)
+\method{tidy}{beezdemand_fixed}(x, report_space = c("natural", "log10"), ...)
 }
 \arguments{
 \item{x}{A beezdemand_fixed object}
+
+\item{report_space}{Character. Reporting space for core parameters. One of
+`"natural"` (default) or `"log10"`.}
 
 \item{...}{Additional arguments (ignored)}
 }
