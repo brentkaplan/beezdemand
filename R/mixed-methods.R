@@ -1653,14 +1653,8 @@ summary.beezdemand_nlme <- function(object, ...) {
         logLik = NA_real_,
         AIC = NA_real_,
         BIC = NA_real_,
-        coefficients = tibble::tibble(
-          term = character(),
-          estimate = numeric(),
-          std.error = numeric(),
-          statistic = numeric(),
-          p.value = numeric(),
-          component = character()
-        ),
+        coefficients = beezdemand_empty_coefficients(),
+        derived_metrics = beezdemand_empty_derived_metrics(),
         fixed_effects = NULL,
         random_effects = NULL,
         notes = c("Model fitting failed", object$error_message)
@@ -1679,7 +1673,9 @@ summary.beezdemand_nlme <- function(object, ...) {
     std.error = ttable[, "Std.Error"],
     statistic = ttable[, "t-value"],
     p.value = ttable[, "p-value"],
-    component = "fixed"
+    component = "fixed",
+    estimate_scale = "log10",
+    term_display = rownames(ttable)
   )
 
   # Random effects structure
@@ -1723,6 +1719,7 @@ summary.beezdemand_nlme <- function(object, ...) {
       BIC = stats::BIC(object$model),
       sigma = object$model$sigma,
       coefficients = coefficients,
+      derived_metrics = beezdemand_empty_derived_metrics(),
       fixed_effects = ttable,
       random_effects = random_effects,
       notes = character(0)
@@ -1735,9 +1732,10 @@ summary.beezdemand_nlme <- function(object, ...) {
 #'
 #' @param x A summary.beezdemand_nlme object
 #' @param digits Number of significant digits to print
+#' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
 #' @export
-print.summary.beezdemand_nlme <- function(x, digits = 4, ...) {
+print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
   cat("\n")
   cat("Nonlinear Mixed-Effects Demand Model Summary\n")
   cat(strrep("=", 50), "\n\n")

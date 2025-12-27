@@ -293,6 +293,20 @@ test_that("summary.beezdemand_joint_hurdle works", {
   # summary() now returns a structured object; output comes from print()
   summ <- summary(fit)
   expect_s3_class(summ, "summary.beezdemand_joint_hurdle")
+
+  # Contract: derived metrics are separate from coefficients
+  expect_true("derived_metrics" %in% names(summ))
+  expect_s3_class(summ$derived_metrics, "tbl_df")
+  expect_true(all(c("metric", "estimate") %in% names(summ$derived_metrics)))
+
+  expect_true(all(c("Q0_AT", "Q0_OT", "Qalone_OA") %in% summ$derived_metrics$metric))
+  expect_false(any(summ$coefficients$term %in% c("Q0_AT", "Q0_OT", "Qalone_OA")))
+
+  # Canonical components (allow stream:<name> and shared)
+  allowed_components <- c("fixed", "zero_probability", "consumption", "variance", "shared")
+  components <- unique(summ$coefficients$component)
+  expect_true(all(components %in% allowed_components | grepl("^stream:", components)))
+
   expect_output(print(summ), "Part I")
   expect_output(print(summ), "Part II")
   expect_output(print(summ), "Variance Components")

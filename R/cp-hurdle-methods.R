@@ -82,7 +82,9 @@ summary.beezdemand_cp_hurdle <- function(object, ...) {
     std.error = unname(part1_se),
     statistic = unname(part1_z),
     p.value = unname(part1_p),
-    component = "part1_probability"
+    component = "zero_probability",
+    estimate_scale = "logit",
+    term_display = part1_params
   )
 
   # Part II coefficients (consumption model)
@@ -98,20 +100,44 @@ summary.beezdemand_cp_hurdle <- function(object, ...) {
     std.error = unname(part2_se),
     statistic = unname(part2_z),
     p.value = unname(part2_p),
-    component = "part2_consumption"
+    component = "consumption",
+    estimate_scale = dplyr::case_when(
+      part2_params %in% c("logQalone", "log_beta") ~ "log",
+      TRUE ~ "natural"
+    ),
+    term_display = part2_params
   )
 
   # Combined coefficients tibble
   coefficients <- dplyr::bind_rows(coefficients_part1, coefficients_part2)
 
-  # Transformed parameters
+  derived_metrics <- dplyr::bind_rows(
+    beezdemand_empty_derived_metrics(),
+    tibble::tibble(
+      metric = c("Qalone", "beta"),
+      estimate = c(exp(coefs["logQalone"]), object$model$beta),
+      std.error = c(
+        # Delta method approximation for Qalone
+        se["logQalone"] * exp(coefs["logQalone"]),
+        # Delta method approximation for beta
+        se["log_beta"] * object$model$beta
+      ),
+      conf.low = NA_real_,
+      conf.high = NA_real_,
+      method = "delta",
+      component = "consumption",
+      level = "population",
+      id = NA_character_
+    )
+  )
+
   transformed_params <- tibble::tibble(
     term = c("Qalone", "beta"),
     estimate = c(exp(coefs["logQalone"]), object$model$beta),
     std.error = NA_real_,
     statistic = NA_real_,
     p.value = NA_real_,
-    component = "derived"
+    component = "consumption"
   )
 
   # Variance components
@@ -189,6 +215,7 @@ summary.beezdemand_cp_hurdle <- function(object, ...) {
       coefficients = coefficients,
       coefficients_part1 = coefficients_part1,
       coefficients_part2 = coefficients_part2,
+      derived_metrics = derived_metrics,
       transformed_params = transformed_params,
       variance_components = variance_components,
       correlations = correlations,
@@ -203,9 +230,10 @@ summary.beezdemand_cp_hurdle <- function(object, ...) {
 #'
 #' @param x A summary.beezdemand_cp_hurdle object
 #' @param digits Number of significant digits to print
+#' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
 #' @export
-print.summary.beezdemand_cp_hurdle <- function(x, digits = 4, ...) {
+print.summary.beezdemand_cp_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("Two-Part Mixed Effects Hurdle Cross-Price Demand Model\n")
   cat("======================================================\n\n")
 
@@ -249,9 +277,11 @@ print.summary.beezdemand_cp_hurdle <- function(x, digits = 4, ...) {
   print(round(part2_print, digits))
 
   # Transformed parameters
-  tp <- x$transformed_params
-  cat("\n  Transformed: beta =", round(tp$estimate[tp$term == "beta"], digits), "\n")
-  cat("               Qalone =", round(tp$estimate[tp$term == "Qalone"], digits), "\n\n")
+  dm <- x$derived_metrics
+  beta_val <- dm$estimate[dm$metric == "beta"][1]
+  qalone_val <- dm$estimate[dm$metric == "Qalone"][1]
+  cat("\n  Transformed: beta =", round(beta_val, digits), "\n")
+  cat("               Qalone =", round(qalone_val, digits), "\n\n")
 
   # Variance components
   cat("Variance Components:\n")
@@ -810,8 +840,8 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
   # Determine components for each parameter (include variance/correlation terms)
   component <- rep("fixed", length(coefs))
   names(component) <- names(coefs)
-  component[names(coefs) %in% c("beta0", "beta1")] <- "part1_probability"
-  component[names(coefs) %in% c("logQalone", "I", "log_beta")] <- "part2_consumption"
+  component[names(coefs) %in% c("beta0", "beta1")] <- "zero_probability"
+  component[names(coefs) %in% c("logQalone", "I", "log_beta")] <- "consumption"
   component[grepl("^logsigma_|^rho_|^sigma_|^var_|^cov_", names(coefs))] <- "variance"
 
   # Build tibble for fixed effects
@@ -836,7 +866,7 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
     ),
     statistic = NA_real_,
     p.value = NA_real_,
-    component = "derived"
+    component = "derived_metrics"
   )
 
   dplyr::bind_rows(fixed_tidy, derived_tidy)

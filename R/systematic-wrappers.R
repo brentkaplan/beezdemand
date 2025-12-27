@@ -421,9 +421,10 @@ summary.beezdemand_systematicity <- function(object, ...) {
 #' Print Method for summary.beezdemand_systematicity
 #'
 #' @param x A summary.beezdemand_systematicity object
+#' @param n Number of IDs to display (default 20)
 #' @param ... Additional arguments (ignored)
 #' @export
-print.summary.beezdemand_systematicity <- function(x, ...) {
+print.summary.beezdemand_systematicity <- function(x, n = 20, ...) {
   cat("\n")
   cat("Systematicity Check Summary (", x$type, ")\n", sep = "")
   cat(strrep("=", 50), "\n\n")
@@ -438,11 +439,19 @@ print.summary.beezdemand_systematicity <- function(x, ...) {
   print(x$counts, n = Inf)
   cat("\n")
 
-  if (length(x$problem_ids) > 0 && length(x$problem_ids) <= 20) {
+  n_to_print <- n
+  if (is.null(n_to_print)) {
+    n_to_print <- 20
+  }
+  if (!is.finite(n_to_print)) {
+    n_to_print <- length(x$problem_ids)
+  }
+
+  if (length(x$problem_ids) > 0 && length(x$problem_ids) <= n_to_print) {
     cat("Unsystematic IDs:", paste(x$problem_ids, collapse = ", "), "\n")
-  } else if (length(x$problem_ids) > 20) {
-    cat("Unsystematic IDs (first 20):",
-        paste(utils::head(x$problem_ids, 20), collapse = ", "), "...\n")
+  } else if (length(x$problem_ids) > n_to_print) {
+    cat("Unsystematic IDs (first", n_to_print, "):",
+        paste(utils::head(x$problem_ids, n_to_print), collapse = ", "), "...\n")
   }
 
   invisible(x)

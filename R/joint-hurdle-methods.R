@@ -97,7 +97,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
     std.error = unname(se[hurdle_params]),
     statistic = coef_nat[hurdle_params] / se[hurdle_params],
     p.value = 2 * stats::pnorm(-abs(coef_nat[hurdle_params] / se[hurdle_params])),
-    component = "hurdle"
+    component = "zero_probability",
+    estimate_scale = "logit",
+    term_display = hurdle_params
   )
 
   # Stream-specific coefficients depend on joint_type
@@ -110,7 +112,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = unname(se[at_params]),
       statistic = coef_nat[at_params] / se[at_params],
       p.value = 2 * stats::pnorm(-abs(coef_nat[at_params] / se[at_params])),
-      component = "alone.target"
+      component = "stream:alone.target",
+      estimate_scale = dplyr::case_when(grepl("^log", at_params) ~ "log", TRUE ~ "natural"),
+      term_display = at_params
     )
 
     # own.target stream
@@ -121,7 +125,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = unname(se[ot_params]),
       statistic = coef_nat[ot_params] / se[ot_params],
       p.value = 2 * stats::pnorm(-abs(coef_nat[ot_params] / se[ot_params])),
-      component = "own.target"
+      component = "stream:own.target",
+      estimate_scale = dplyr::case_when(grepl("^log", ot_params) ~ "log", TRUE ~ "natural"),
+      term_display = ot_params
     )
 
     # own.alt stream
@@ -132,7 +138,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = unname(se[oa_params]),
       statistic = coef_nat[oa_params] / se[oa_params],
       p.value = 2 * stats::pnorm(-abs(coef_nat[oa_params] / se[oa_params])),
-      component = "own.alt"
+      component = "stream:own.alt",
+      estimate_scale = dplyr::case_when(grepl("^log", oa_params) ~ "log", TRUE ~ "natural"),
+      term_display = oa_params
     )
 
     # Derived parameters
@@ -146,7 +154,22 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
-      component = "derived"
+      component = "consumption"
+    )
+
+    derived_metrics <- dplyr::bind_rows(
+      beezdemand_empty_derived_metrics(),
+      tibble::tibble(
+        metric = c("Q0_AT", "Q0_OT", "Qalone_OA"),
+        estimate = derived_params$estimate,
+        std.error = NA_real_,
+        conf.low = NA_real_,
+        conf.high = NA_real_,
+        method = "none",
+        component = "consumption",
+        level = "population",
+        id = NA_character_
+      )
     )
 
     coefficients_by_stream <- list(
@@ -191,7 +214,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = unname(se[theta_params]),
       statistic = coef_nat[theta_params] / se[theta_params],
       p.value = 2 * stats::pnorm(-abs(coef_nat[theta_params] / se[theta_params])),
-      component = "population_means"
+      component = "shared",
+      estimate_scale = dplyr::case_when(grepl("^log", theta_params) ~ "log", TRUE ~ "natural"),
+      term_display = theta_params
     )
 
     # Latent trait loadings
@@ -202,7 +227,9 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       std.error = unname(se[lambda_params]),
       statistic = coef_nat[lambda_params] / se[lambda_params],
       p.value = 2 * stats::pnorm(-abs(coef_nat[lambda_params] / se[lambda_params])),
-      component = "latent_loadings"
+      component = "shared",
+      estimate_scale = "natural",
+      term_display = lambda_params
     )
 
     coefficients_by_stream <- list(
@@ -213,6 +240,7 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       term = character(0), estimate = numeric(0), std.error = numeric(0),
       statistic = numeric(0), p.value = numeric(0), component = character(0)
     )
+    derived_metrics <- beezdemand_empty_derived_metrics()
 
     # Latent trait SDs
     latent_sds <- tibble::tibble(
@@ -252,14 +280,15 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
     std.error = if (!object$k_fixed && !is.null(se["k"])) se["k"] else NA_real_,
     statistic = NA_real_,
     p.value = NA_real_,
-    component = "shared"
+    component = "shared",
+    estimate_scale = "natural",
+    term_display = "k"
   )
 
   # Combine all coefficients
   coefficients <- dplyr::bind_rows(
     coefficients_hurdle,
     do.call(dplyr::bind_rows, coefficients_by_stream),
-    derived_params,
     k_param
   )
 
@@ -284,6 +313,7 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
       AIC = object$AIC,
       BIC = object$BIC,
       coefficients = coefficients,
+      derived_metrics = derived_metrics,
       coefficients_hurdle = coefficients_hurdle,
       coefficients_by_stream = coefficients_by_stream,
       derived_params = derived_params,
@@ -301,9 +331,10 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
 #'
 #' @param x A summary.beezdemand_joint_hurdle object
 #' @param digits Number of significant digits to print
+#' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
 #' @export
-print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, ...) {
+print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("\nJoint Hurdle Cross-Price Model Summary\n")
   cat("=======================================\n\n")
 
@@ -341,21 +372,21 @@ print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, ...) {
     for (i in seq_len(nrow(at))) {
       cat(sprintf("  %-24s %.4f\n", paste0(at$term[i], ":"), at$estimate[i]))
     }
-    q0_at <- x$derived_params$estimate[x$derived_params$term == "Q0_AT"]
+    q0_at <- x$derived_metrics$estimate[x$derived_metrics$metric == "Q0_AT"][1]
     cat(sprintf("  %-24s %.4f\n", "Q0_AT:", q0_at))
 
     cat("\nPart II - Target Demand (own.target):\n")
     for (i in seq_len(nrow(ot))) {
       cat(sprintf("  %-24s %.4f\n", paste0(ot$term[i], ":"), ot$estimate[i]))
     }
-    q0_ot <- x$derived_params$estimate[x$derived_params$term == "Q0_OT"]
+    q0_ot <- x$derived_metrics$estimate[x$derived_metrics$metric == "Q0_OT"][1]
     cat(sprintf("  %-24s %.4f\n", "Q0_OT:", q0_ot))
 
     cat("\nPart II - Cross-Price (own.alt):\n")
     for (i in seq_len(nrow(oa))) {
       cat(sprintf("  %-24s %.4f\n", paste0(oa$term[i], ":"), oa$estimate[i]))
     }
-    qalone_oa <- x$derived_params$estimate[x$derived_params$term == "Qalone_OA"]
+    qalone_oa <- x$derived_metrics$estimate[x$derived_metrics$metric == "Qalone_OA"][1]
     cat(sprintf("  %-24s %.4f\n", "Qalone_OA:", qalone_oa))
 
     # Shared k

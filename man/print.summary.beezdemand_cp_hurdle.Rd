@@ -4,12 +4,14 @@
 \alias{print.summary.beezdemand_cp_hurdle}
 \title{Print method for summary.beezdemand_cp_hurdle}
 \usage{
-\method{print}{summary.beezdemand_cp_hurdle}(x, digits = 4, ...)
+\method{print}{summary.beezdemand_cp_hurdle}(x, digits = 4, n = Inf, ...)
 }
 \arguments{
 \item{x}{A summary.beezdemand_cp_hurdle object}
 
 \item{digits}{Number of significant digits to print}
+
+\item{n}{Number of rows to print for any tables (unused for this class).}
 
 \item{...}{Additional arguments (ignored)}
 }
