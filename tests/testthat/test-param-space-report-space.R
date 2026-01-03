@@ -76,6 +76,12 @@ test_that("Spec 2.4: summary()/tidy()/coef() can report hurdle demand params on 
   expect_true("log10(Q0)" %in% names(c_log))
   expect_equal(c_log[["log10(Q0)"]], c_int[["logQ0"]] / log(10), tolerance = 1e-6)
 
+  expect_true("log10(alpha)" %in% names(c_log))
+  expect_equal(c_log[["log10(alpha)"]], c_int[["log_alpha"]] / log(10), tolerance = 1e-6)
+
+  expect_true("log10(k)" %in% names(c_log))
+  expect_equal(c_log[["log10(k)"]], c_int[["log_k"]] / log(10), tolerance = 1e-6)
+
   s_log <- summary(fit, report_space = "log10")
   expect_true(any(s_log$coefficients$term == "log10(Q0)"))
 
@@ -111,4 +117,3 @@ test_that("Spec 2.4: bind_rows() works across tidy outputs (fixed + hurdle)", {
   expect_true("estimate_scale" %in% names(combined))
   expect_true(is.character(combined$estimate_scale) || all(is.na(combined$estimate_scale)))
 })
-

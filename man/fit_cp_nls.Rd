@@ -9,8 +9,7 @@ fit_cp_nls(
   equation = c("exponentiated", "exponential", "additive"),
   start_vals = NULL,
   iter = 100,
-  bounds = list(lower = c(qalone = 0.1, I = -2, beta = 1e-05), upper = c(qalone = NA, I =
-    2, beta = 5)),
+  bounds = NULL,
   fallback_to_nlsr = TRUE,
   return_all = TRUE
 )
@@ -23,14 +22,13 @@ Additional columns are ignored. Input is validated internally.}
 `c("exponentiated", "exponential", "additive")`. Default is `"exponentiated"`.}
 
 \item{start_vals}{Optional **named list** of initial values for parameters
-`qalone`, `I`, and `beta`. If `NULL`, the function derives plausible ranges
-from the data and uses multi-start search.}
+`log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
+plausible ranges from the data and uses multi-start search.}
 
 \item{iter}{Integer; number of random starts for `nls.multstart` (default `100`).}
 
-\item{bounds}{A list with numeric vectors `lower` and `upper` giving parameter
-bounds in the order `c(qalone, I, beta)`. `NA` entries mean “no bound”.
-Defaults set wide, conservative ranges (see source).}
+\item{bounds}{Deprecated. Log10-parameterized parameters are naturally unbounded.
+This argument is ignored but retained for backwards compatibility.}
 
 \item{fallback_to_nlsr}{Logical; if `TRUE` (default), try `nlsr::wrapnlsr` when
 both multi-start NLS and `nlsLM` fail.}
@@ -51,23 +49,36 @@ If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
 If `return_all = FALSE`: the fitted model object from the successful backend.
 }
 \description{
-Fits a **cross-price demand** curve of the form
+Fits a **cross-price demand** curve using log10-parameterization for numerical
+stability. The optimizer estimates parameters on the log10 scale where applicable,
+ensuring positive constraints are naturally satisfied.
 
-- **Exponentiated** (default): \eqn{y = q_{alone} \cdot \exp(I \exp(-\beta x))}
+**Equation forms:**
 
-- **Exponential** (additive on \eqn{\ln y}): \eqn{\ln(y) = \ln(q_{alone}) + I \exp(-\beta x)}
+- **Exponentiated** (default):
+  \deqn{y = Q_{alone} \cdot 10^{I \cdot \exp(-\beta \cdot x)}}
 
-- **Additive** (level on \eqn{y}): \eqn{y = q_{alone} + I \exp(-\beta x)}
+- **Exponential** (fits on log10 response scale):
+  \deqn{\log_{10}(y) = \log_{10}(Q_{alone}) + I \cdot \exp(-\beta \cdot x)}
 
-where \eqn{x} is the alternative product price (or “cross” price) and \eqn{y}
-is consumption of the target good. Parameters:
+- **Additive** (level on \eqn{y}):
+  \deqn{y = Q_{alone} + I \cdot \exp(-\beta \cdot x)}
+
+where \eqn{x} is the alternative product price (or "cross" price) and \eqn{y}
+is consumption of the target good.
+
+**Optimizer parameters (log10 parameterization):**
 \itemize{
-  \item \eqn{q_{alone}}: consumption when the alternative is effectively absent
-        (interpretable as a baseline or “alone” level).
-  \item \eqn{I}: cross-price **interaction intensity**; sign and magnitude reflect
-        substitution/complementarity.
-  \item \eqn{\beta}: rate at which cross-price influence decays as \eqn{x} increases.
+  \item \code{log10_qalone}: \eqn{\log_{10}(Q_{alone})} - baseline consumption
+        when the alternative is effectively absent.
+  \item \code{I}: cross-price **interaction intensity**; sign and magnitude reflect
+        substitution/complementarity. Unconstrained (can be negative for substitutes).
+  \item \code{log10_beta}: \eqn{\log_{10}(\beta)} - rate at which cross-price
+        influence decays as \eqn{x} increases.
 }
+
+Natural-scale values are recovered as \eqn{Q_{alone} = 10^{log10\_qalone}} and
+\eqn{\beta = 10^{log10\_beta}}.
 
 The function first attempts a multi-start nonlinear least squares fit
 (`nls.multstart`). If that fails—or if explicit `start_vals` are provided—it
@@ -76,15 +87,19 @@ with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
 with metadata for downstream methods.
 }
 \details{
-**Start values & bounds.** When `start_vals` is missing, the function:
-(1) estimates a reasonable range for `qalone` from the observed `y`,
-(2) respects user-provided bounds, and (3) launches a multi-start grid in
-`nls.multstart`. For the `"exponential"` form, `qalone` is interpreted on the
-natural log scale; for `"exponentiated"`/`"additive"`, it is on the `y` scale.
+**Start values.** When `start_vals` is missing, the function:
+(1) estimates a reasonable range for `log10_qalone` from the observed `y`,
+(2) estimates `log10_beta` from the price range, and (3) launches a multi-start
+grid in `nls.multstart`.
+
+**Zero handling for exponential equation.** Since the exponential equation fits
+on the \eqn{\log_{10}(y)} scale, observations with \eqn{y \le 0} are automatically
+removed with a warning. Use the exponentiated or additive forms if you need to
+retain zero consumption values.
 
 **Fitting pipeline (short-circuiting):**
 \enumerate{
-  \item `nls.multstart::nls_multstart()` with random starts within `bounds`.
+  \item `nls.multstart::nls_multstart()` with random starts.
   \item If that fails (or if `start_vals` provided): `minpack.lm::nlsLM()` using
         `start_vals` (user or internally estimated).
   \item If that fails and `fallback_to_nlsr = TRUE`: `nlsr::wrapnlsr()`.
@@ -98,9 +113,8 @@ print/summary/plot methods.
 \section{Convergence & warnings}{
 
 - Check convergence codes and residual diagnostics from the underlying fit.
-- Poor scaling or extreme `y` dispersion can make `qalone`/`I`/`beta`
-  weakly identified. Consider transforming units or tightening `bounds`.
-- For `"exponential"`, remember `qalone` is on the \eqn{\log_{10} y} scale.
+- Poor scaling or extreme `y` dispersion can make parameters weakly identified.
+- For `"exponential"`, the model fits on the \eqn{\log_{10}(y)} scale internally.
 }
 
 \examples{
@@ -118,7 +132,7 @@ dat <- structure(list(
 fit_ecig <- fit_cp_nls(dat, equation = "exponentiated", return_all = TRUE)
 summary(fit_ecig)         # model summary
 fit_ecig$method           # backend actually used (e.g., "nls_multstart")
-coef(fit_ecig$model)      # parameter estimates: qalone, I, beta
+coef(fit_ecig$model)      # parameter estimates: log10_qalone, I, log10_beta
 }
 \seealso{
 \code{\link{check_unsystematic_cp}} for pre-fit data screening,

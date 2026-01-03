@@ -4,8 +4,15 @@
 ///
 /// MODEL STRUCTURE:
 /// Part I (Binary):  logit(pi_ij) = beta0 + beta1*log(price+epsilon) + a_i
-/// Part II (Continuous): log(Q_ij) = (logQ0 + b_i) + k*(exp(-(alpha + c_i)*price) - 1) + e_ij
+/// Part II (Continuous): log(Q_ij) = (logQ0 + b_i) + k*(exp(-alpha_i*price) - 1) + e_ij
+///   where alpha_i = exp(log_alpha + c_i) (multiplicative random effect)
+///   and k = exp(log_k) (positive-constrained)
 /// Random Effects: (a_i, b_i, c_i) ~ MVN(0, Sigma_3x3)
+///
+/// Per EQUATIONS_CONTRACT.md:
+/// - Alpha is parameterized in log space to ensure positivity: log_alpha is estimated
+/// - Random effect c_i is multiplicative: alpha_i = exp(log_alpha + c_i)
+/// - Subject-specific alpha follows a log-normal distribution
 ///
 /// =============================================================================
 
@@ -26,8 +33,8 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
   PARAMETER(beta0);
   PARAMETER(beta1);
   PARAMETER(logQ0);
-  PARAMETER(k);
-  PARAMETER(alpha);
+  PARAMETER(log_k);      // Log-space k to ensure positivity
+  PARAMETER(log_alpha);  // Log-space alpha to ensure positivity
 
   // VARIANCE PARAMETERS (log-scale)
   PARAMETER(logsigma_a);
@@ -44,6 +51,8 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
   PARAMETER_MATRIX(u);
 
   // TRANSFORM PARAMETERS
+  Type k = exp(log_k);          // Population-level k (for reporting)
+  Type alpha = exp(log_alpha);  // Population-level alpha (for reporting)
   Type sigma_a = exp(logsigma_a);
   Type sigma_b = exp(logsigma_b);
   Type sigma_c = exp(logsigma_c);
@@ -104,10 +113,14 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
     Type b_i = re(subj, 1);
     Type c_i = re(subj, 2);
 
+    // Subject-specific alpha via multiplicative random effect
+    // alpha_i = exp(log_alpha + c_i) ensures alpha_i > 0 always
+    Type alpha_i = exp(log_alpha + c_i);
+
     Type eta = beta0 + beta1 * log(price(i) + epsilon) + a_i;
     Type exp_eta = exp(eta);
     Type pi_ij = exp_eta / (Type(1.0) + exp_eta);
-    Type mu_ij = (logQ0 + b_i) + k * (exp(-(alpha + c_i) * price(i)) - Type(1.0));
+    Type mu_ij = (logQ0 + b_i) + k * (exp(-alpha_i * price(i)) - Type(1.0));
 
     if (delta(i) == 1) {
       nll -= log(pi_ij);
@@ -119,6 +132,8 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
   }
 
   // ADREPORT derived quantities
+  ADREPORT(k);      // Population-level natural-scale k
+  ADREPORT(alpha);  // Population-level natural-scale alpha
   ADREPORT(var_a);
   ADREPORT(var_b);
   ADREPORT(var_c);

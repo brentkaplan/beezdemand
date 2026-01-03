@@ -5,7 +5,9 @@
 /// MODEL STRUCTURE:
 /// Part I (Binary):  logit(pi_ij) = beta0 + beta1*log(price+epsilon) + a_i
 /// Part II (Continuous): log(Q_ij) = (logQ0 + b_i) + k*(exp(-alpha*price) - 1) + e_ij
-///   NOTE: alpha is FIXED (no c_i random effect)
+///   NOTE: alpha is FIXED (no c_i random effect), parameterized as log_alpha
+///   to ensure positivity: alpha = exp(log_alpha)
+///   NOTE: k is parameterized as log_k to ensure positivity: k = exp(log_k)
 /// Random Effects: (a_i, b_i) ~ MVN(0, Sigma_2x2)
 ///
 /// =============================================================================
@@ -27,8 +29,8 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
   PARAMETER(beta0);
   PARAMETER(beta1);
   PARAMETER(logQ0);
-  PARAMETER(k);
-  PARAMETER(alpha);
+  PARAMETER(log_k);      // Log-space k to ensure positivity
+  PARAMETER(log_alpha);  // Log-space alpha to ensure positivity
 
   // VARIANCE PARAMETERS (log-scale)
   PARAMETER(logsigma_a);
@@ -42,6 +44,8 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
   PARAMETER_MATRIX(u);
 
   // TRANSFORM PARAMETERS
+  Type k = exp(log_k);        // Ensure k > 0
+  Type alpha = exp(log_alpha);  // Ensure alpha > 0
   Type sigma_a = exp(logsigma_a);
   Type sigma_b = exp(logsigma_b);
   Type sigma_e = exp(logsigma_e);
@@ -104,6 +108,8 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
   }
 
   // ADREPORT derived quantities
+  ADREPORT(k);      // Natural-scale k for reporting
+  ADREPORT(alpha);  // Natural-scale alpha for reporting
   ADREPORT(var_a);
   ADREPORT(var_b);
   ADREPORT(cov_ab);

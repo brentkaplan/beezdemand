@@ -10,7 +10,6 @@ fit_demand_hurdle(
   x_var,
   id_var,
   random_effects = c("zeros", "q0", "alpha"),
-  param_space = c("natural", "log10"),
   epsilon = 0.001,
   start_values = NULL,
   tmb_control = list(max_iter = 200, eval_max = 1000, trace = 0),
@@ -32,15 +31,6 @@ Options are \code{"zeros"} (a_i for Part I), \code{"q0"} (b_i for intensity),
 and \code{"alpha"} (c_i for elasticity). Default is \code{c("zeros", "q0", "alpha")}
 for the full 3-random-effect model. Use \code{c("zeros", "q0")} for the
 simplified 2-random-effect model (fixed alpha across subjects).}
-
-\item{param_space}{Character. Parameterization used for fitting core demand
-  parameters. One of:
-  - `"natural"`: optimize using natural `Q0`, `alpha`, `k` (internally mapped to the TMB working space)
-  - `"log10"`: optimize using `log10(Q0)`, `log10(alpha)`, `log10(k)` (internally mapped)
-
-  This argument controls the optimization parameterization; model storage remains
-  compatible with existing TMB internals and reporting can be controlled via
-  `report_space` in `summary()`, `tidy()`, and `coef()`.}
 
 \item{epsilon}{Small constant added to price before log transformation in Part I.
 Used to handle zero prices: \code{log(price + epsilon)}. Default is 0.001.}
@@ -94,15 +84,29 @@ The model structure is:
 \strong{Part II (Continuous - log consumption given positive):}
 
 With 3 random effects (\code{random_effects = c("zeros", "q0", "alpha")}):
-\deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon_{ij}}
+\deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot price) - 1) + \epsilon_{ij}}
+where \eqn{\alpha_i = \exp(\log(\alpha) + c_i)} and \eqn{k = \exp(\log(k))}.
 
 With 2 random effects (\code{random_effects = c("zeros", "q0")}):
 \deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha \cdot price) - 1) + \epsilon_{ij}}
+where \eqn{\alpha = \exp(\log(\alpha))} and \eqn{k = \exp(\log(k))}.
 
 Random effects follow a multivariate normal distribution with unstructured
 covariance matrix. Use \code{\link{compare_hurdle_models}} for likelihood
 ratio tests comparing nested models.
 }
+\section{Parameterization and comparability}{
+
+The TMB backend estimates positive-constrained parameters on the natural-log
+scale: \eqn{\log(Q_0)}, \eqn{\log(\alpha)}, and \eqn{\log(k)}. Reporting methods
+(`summary()`, `tidy()`, `coef()`) can back-transform to the natural scale or
+present parameters on the \eqn{\log_{10}} scale.
+
+To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
+use:
+\deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
+}
+
 \examples{
 \dontrun{
 # Load example data

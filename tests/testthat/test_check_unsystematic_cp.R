@@ -50,3 +50,85 @@ test_that("summary.cp_unsystematic works with valid input", {
   expect_true("trend_counts" %in% names(summary_obj))
   expect_true("bounce_counts" %in% names(summary_obj))
 })
+
+
+test_that("fit_cp_nls uses log10 parameterization and predict returns natural scale", {
+  skip_if_not_installed("minpack.lm")
+
+  set.seed(1)
+  x <- c(1, 2, 4, 8, 16, 32)
+  qalone_true <- 5
+  beta_true <- 0.2
+  I_true <- -0.6
+
+  log10_y_true <- log10(qalone_true) + I_true * exp(-beta_true * x)
+  y <- 10^(log10_y_true + rnorm(length(x), mean = 0, sd = 0.01))
+  dat <- data.frame(x = x, y = y)
+
+  fit_exp <- fit_cp_nls(
+    dat,
+    equation = "exponential",
+    start_vals = list(
+      log10_qalone = log10(qalone_true),
+      I = I_true,
+      log10_beta = log10(beta_true)
+    ),
+    iter = 5,
+    return_all = TRUE
+  )
+  expect_s3_class(fit_exp, "cp_model_nls")
+
+  coefs <- coef(fit_exp$model)
+  expect_true(all(c("log10_qalone", "I", "log10_beta") %in% names(coefs)))
+
+  preds <- predict(fit_exp, newdata = data.frame(x = x))
+  expect_true(all(c("y_pred", "y_pred_log10") %in% names(preds)))
+
+  beta_hat <- 10^coefs[["log10_beta"]]
+  log10_y_hat <- coefs[["log10_qalone"]] + coefs[["I"]] * exp(-beta_hat * x)
+  expect_equal(preds$y_pred_log10, unname(log10_y_hat), tolerance = 1e-12)
+  expect_equal(preds$y_pred, unname(10^log10_y_hat), tolerance = 1e-12)
+
+  summ <- summary(fit_exp)
+  dm <- summ$derived_metrics
+  expect_true(all(c("qalone", "beta", "log10_qalone", "log10_beta") %in% names(dm)))
+  if (is.finite(dm$log10_qalone_se) && is.finite(dm$qalone_se)) {
+    expect_equal(dm$qalone_se, log(10) * dm$qalone * dm$log10_qalone_se, tolerance = 1e-12)
+  }
+  if (is.finite(dm$log10_beta_se) && is.finite(dm$beta_se)) {
+    expect_equal(dm$beta_se, log(10) * dm$beta * dm$log10_beta_se, tolerance = 1e-12)
+  }
+
+  fit_expt <- fit_cp_nls(
+    dat,
+    equation = "exponentiated",
+    start_vals = list(
+      log10_qalone = log10(qalone_true),
+      I = I_true,
+      log10_beta = log10(beta_true)
+    ),
+    iter = 5,
+    return_all = TRUE
+  )
+  preds_expt <- predict(fit_expt, newdata = data.frame(x = x))
+  expect_true("y_pred" %in% names(preds_expt))
+  expect_false("y_pred_log10" %in% names(preds_expt))
+})
+
+
+test_that("fit_cp_nls exponential filters y <= 0 with warning", {
+  skip_if_not_installed("minpack.lm")
+
+  dat <- data.frame(x = c(1, 2, 3, 4), y = c(1, 0, 2, 3))
+  expect_warning(
+    fit <- fit_cp_nls(
+      dat,
+      equation = "exponential",
+      start_vals = list(log10_qalone = 0, I = 0, log10_beta = 0),
+      iter = 5,
+      return_all = TRUE
+    ),
+    "Removing"
+  )
+  expect_true(all(fit$data$y > 0))
+})

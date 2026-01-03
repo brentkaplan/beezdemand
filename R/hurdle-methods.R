@@ -90,7 +90,7 @@ summary.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("logQ0", "log_alpha", "k") ~ "consumption",
+    coef_names %in% c("logQ0", "log_alpha", "log_k", "k") ~ "consumption",
     grepl("^logsigma_|^rho_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
@@ -104,32 +104,22 @@ summary.beezdemand_hurdle <- function(
     component = component,
     estimate_scale = dplyr::case_when(
       coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names == "logQ0" ~ "log",
+      coef_names %in% c("logQ0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
     term_display = coef_names
   )
 
   if (report_space != "internal") {
-    # Only transform demand parameters with a natural mapping.
-    demand_terms <- coefficients$term %in% c("logQ0", "alpha", "k")
+    # Backwards compatibility: older objects stored `k` on the natural scale.
+    demand_terms <- coefficients$term %in% c("logQ0", "log_alpha", "log_k", "k")
     coefficients <- coefficients |>
       dplyr::mutate(estimate_internal = .data$estimate)
 
     for (i in which(demand_terms)) {
       term_i <- coefficients$term[i]
       from_space <- coefficients$estimate_scale[i]
-      to_space <- report_space
-
-      if (term_i == "logQ0" && report_space == "natural") {
-        to_space <- "natural"
-      } else if (term_i == "logQ0" && report_space == "log10") {
-        to_space <- "log10"
-      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
-        to_space <- "natural"
-      } else if (term_i %in% c("alpha", "k") && report_space == "log10") {
-        to_space <- "log10"
-      }
+      to_space <- if (report_space == "natural") "natural" else "log10"
 
       trans <- beezdemand_transform_est_se(
         estimate = coefficients$estimate[i],
@@ -137,6 +127,7 @@ summary.beezdemand_hurdle <- function(
         from = from_space,
         to = to_space
       )
+
       coefficients$estimate[i] <- trans$estimate
       coefficients$std.error[i] <- trans$se
       coefficients$statistic[i] <- coefficients$estimate[i] / coefficients$std.error[i]
@@ -150,17 +141,26 @@ summary.beezdemand_hurdle <- function(
         coefficients$term[i] <- "log10(Q0)"
         coefficients$term_display[i] <- "log10(Q0)"
         coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "alpha" && report_space == "log10") {
+      } else if (term_i == "log_alpha" && report_space == "natural") {
+        coefficients$term[i] <- "alpha"
+        coefficients$term_display[i] <- "alpha"
+        coefficients$estimate_scale[i] <- "natural"
+      } else if (term_i == "log_alpha" && report_space == "log10") {
         coefficients$term[i] <- "log10(alpha)"
         coefficients$term_display[i] <- "log10(alpha)"
+        coefficients$estimate_scale[i] <- "log10"
+      } else if (term_i == "log_k" && report_space == "natural") {
+        coefficients$term[i] <- "k"
+        coefficients$term_display[i] <- "k"
+        coefficients$estimate_scale[i] <- "natural"
+      } else if (term_i == "log_k" && report_space == "log10") {
+        coefficients$term[i] <- "log10(k)"
+        coefficients$term_display[i] <- "log10(k)"
         coefficients$estimate_scale[i] <- "log10"
       } else if (term_i == "k" && report_space == "log10") {
         coefficients$term[i] <- "log10(k)"
         coefficients$term_display[i] <- "log10(k)"
         coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
-        coefficients$term_display[i] <- term_i
-        coefficients$estimate_scale[i] <- "natural"
       }
     }
   }
@@ -337,12 +337,28 @@ coef.beezdemand_hurdle <- function(
     out <- out[names(out) != "logQ0"]
   }
 
-  for (nm in c("alpha", "k")) {
-    if (!nm %in% names(out)) next
-    if (report_space == "log10") {
-      out[[paste0("log10(", nm, ")")]] <- log10(out[[nm]])
-      out <- out[names(out) != nm]
+  if ("log_alpha" %in% names(out)) {
+    if (report_space == "natural") {
+      out[["alpha"]] <- exp(out[["log_alpha"]])
+    } else if (report_space == "log10") {
+      out[["log10(alpha)"]] <- out[["log_alpha"]] / log(10)
     }
+    out <- out[names(out) != "log_alpha"]
+  }
+
+  if ("log_k" %in% names(out)) {
+    if (report_space == "natural") {
+      out[["k"]] <- exp(out[["log_k"]])
+    } else if (report_space == "log10") {
+      out[["log10(k)"]] <- out[["log_k"]] / log(10)
+    }
+    out <- out[names(out) != "log_k"]
+  }
+
+  # Backwards compatibility: older objects stored `k` on the natural scale.
+  if ("k" %in% names(out) && report_space == "log10") {
+    out[["log10(k)"]] <- log10(out[["k"]])
+    out <- out[names(out) != "k"]
   }
 
   out
@@ -472,8 +488,8 @@ predict.beezdemand_hurdle <- function(
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
   logQ0 <- coefs["logQ0"]
-  k <- coefs["k"]
-  alpha_fixed <- coefs["alpha"]
+  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  log_alpha <- coefs["log_alpha"]
 
   # Get random effects
   a_i <- object$random_effects[, "a_i"]
@@ -529,8 +545,10 @@ predict.beezdemand_hurdle <- function(
       p <- results$x[idx]
 
       # Log consumption (Part II)
-      # For 2 RE model, c_i[i] = 0, so alpha is fixed
-      alpha_i <- alpha_fixed + c_i[i]
+      # Per EQUATIONS_CONTRACT.md:
+      # - 3-RE: alpha_i = exp(log_alpha + c_i)
+      # - 2-RE: alpha = exp(log_alpha) (c_i = 0)
+      alpha_i <- exp(log_alpha + c_i[i])
       mu_ij <- (logQ0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
       results$predicted_log_consumption[idx] <- mu_ij
       results$predicted_consumption[idx] <- exp(mu_ij)
@@ -693,8 +711,8 @@ plot.beezdemand_hurdle <- function(
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
   logQ0 <- coefs["logQ0"]
-  k <- coefs["k"]
-  alpha <- coefs["alpha"]
+  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  alpha <- exp(coefs["log_alpha"])
 
   if (type == "demand") {
     # Population demand curve
@@ -1092,8 +1110,8 @@ plot_subject <- function(
   # Population curve
   coefs <- object$model$coefficients
   logQ0 <- coefs["logQ0"]
-  k <- coefs["k"]
-  alpha <- coefs["alpha"]
+  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  alpha <- exp(coefs["log_alpha"])
 
   pop_data <- data.frame(
     price = prices,
@@ -1172,7 +1190,7 @@ tidy.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("logQ0", "log_alpha", "alpha", "k") ~ "consumption",
+    coef_names %in% c("logQ0", "log_alpha", "log_k", "k") ~ "consumption",
     grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
@@ -1186,14 +1204,15 @@ tidy.beezdemand_hurdle <- function(
     component = component,
     estimate_scale = dplyr::case_when(
       coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names == "logQ0" ~ "log",
+      coef_names %in% c("logQ0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
     term_display = coef_names
   )
 
   if (report_space != "internal") {
-    demand_terms <- out$term %in% c("logQ0", "alpha", "k")
+    # Backwards compatibility: older objects stored `k` on the natural scale.
+    demand_terms <- out$term %in% c("logQ0", "log_alpha", "log_k", "k")
     out$estimate_internal <- out$estimate
 
     for (i in which(demand_terms)) {
@@ -1220,16 +1239,26 @@ tidy.beezdemand_hurdle <- function(
         out$term[i] <- "log10(Q0)"
         out$term_display[i] <- "log10(Q0)"
         out$estimate_scale[i] <- "log10"
-      } else if (term_i == "alpha" && report_space == "log10") {
+      } else if (term_i == "log_alpha" && report_space == "natural") {
+        out$term[i] <- "alpha"
+        out$term_display[i] <- "alpha"
+        out$estimate_scale[i] <- "natural"
+      } else if (term_i == "log_alpha" && report_space == "log10") {
         out$term[i] <- "log10(alpha)"
         out$term_display[i] <- "log10(alpha)"
+        out$estimate_scale[i] <- "log10"
+      } else if (term_i == "log_k" && report_space == "natural") {
+        out$term[i] <- "k"
+        out$term_display[i] <- "k"
+        out$estimate_scale[i] <- "natural"
+      } else if (term_i == "log_k" && report_space == "log10") {
+        out$term[i] <- "log10(k)"
+        out$term_display[i] <- "log10(k)"
         out$estimate_scale[i] <- "log10"
       } else if (term_i == "k" && report_space == "log10") {
         out$term[i] <- "log10(k)"
         out$term_display[i] <- "log10(k)"
         out$estimate_scale[i] <- "log10"
-      } else if (term_i %in% c("alpha", "k") && report_space == "natural") {
-        out$estimate_scale[i] <- "natural"
       }
     }
   }
