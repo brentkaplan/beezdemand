@@ -62,12 +62,61 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
 
   if (k < e_const) {
     # No local maximum - expenditure is monotonically increasing
-    # Return NA to indicate undefined Pmax for this parameter combination
+    # Per EQUATIONS_CONTRACT.md: Pmax closed-form via Lambert W requires k >= e
+    # Implementation returns a bounded-range maximum when k < e
+    message(
+      sprintf(
+        paste0(
+          "Note: k (%.3f) < e (~2.718); the expenditure function has no interior maximum. ",
+          "Returning the maximum over a bounded search interval via numerical optimization."
+        ),
+        k
+      )
+    )
+
+    # Try numerical optimization as fallback
+    demand_fn <- function(p) {
+      Q0 * exp(k * (exp(-alpha * p) - 1))
+    }
+    expenditure_fn <- function(p) {
+      p * demand_fn(p)
+    }
+
+    # Search for maximum numerically
+    price_range_fallback <- c(0.001, min(100, 10 / alpha))
+    opt_result <- tryCatch(
+      {
+        optimize(f = function(p) -expenditure_fn(p), interval = price_range_fallback)
+      },
+      error = function(e) list(minimum = NA_real_, objective = NA_real_)
+    )
+
+    if (!is.na(opt_result$minimum) && !is.na(opt_result$objective)) {
+      Pmax <- opt_result$minimum
+      Omax <- -opt_result$objective
+      Qmax <- demand_fn(Pmax)
+      return(list(
+        Pmax = Pmax,
+        Omax = Omax,
+        Qmax = Qmax,
+        note = sprintf(
+          "k < e: bounded-range maximum over [%.3f, %.3f] via numerical optimization",
+          price_range_fallback[1],
+          price_range_fallback[2]
+        )
+      ))
+    }
+
+    # If numerical optimization also fails, return NA
     return(list(
       Pmax = NA_real_,
       Omax = NA_real_,
       Qmax = NA_real_,
-      note = "k < e: no local maximum exists"
+      note = sprintf(
+        "k < e: bounded-range maximum over [%.3f, %.3f] failed",
+        price_range_fallback[1],
+        price_range_fallback[2]
+      )
     ))
   }
 
@@ -199,8 +248,8 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
   # Extract group-level parameters
   coefs <- object$model$coefficients
   Q0 <- exp(coefs["logQ0"])
-  k <- coefs["k"]
-  alpha <- coefs["alpha"]
+  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  alpha <- exp(coefs["log_alpha"])
 
   calc_omax_pmax(Q0, k, alpha)
 }

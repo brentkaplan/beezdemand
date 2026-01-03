@@ -19,14 +19,6 @@ NULL
 #'   and \code{"alpha"} (c_i for elasticity). Default is \code{c("zeros", "q0", "alpha")}
 #'   for the full 3-random-effect model. Use \code{c("zeros", "q0")} for the
 #'   simplified 2-random-effect model (fixed alpha across subjects).
-#' @param param_space Character. Parameterization used for fitting core demand
-#'   parameters. One of:
-#'   - `"natural"`: optimize using natural `Q0`, `alpha`, `k` (internally mapped to the TMB working space)
-#'   - `"log10"`: optimize using `log10(Q0)`, `log10(alpha)`, `log10(k)` (internally mapped)
-#'
-#'   This argument controls the optimization parameterization; model storage remains
-#'   compatible with existing TMB internals and reporting can be controlled via
-#'   `report_space` in `summary()`, `tidy()`, and `coef()`.
 #' @param epsilon Small constant added to price before log transformation in Part I.
 #'   Used to handle zero prices: \code{log(price + epsilon)}. Default is 0.001.
 #' @param start_values Optional named list of starting values for optimization.
@@ -68,14 +60,26 @@ NULL
 #' \strong{Part II (Continuous - log consumption given positive):}
 #'
 #' With 3 random effects (\code{random_effects = c("zeros", "q0", "alpha")}):
-#' \deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon_{ij}}
+#' \deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot price) - 1) + \epsilon_{ij}}
+#' where \eqn{\alpha_i = \exp(\log(\alpha) + c_i)} and \eqn{k = \exp(\log(k))}.
 #'
 #' With 2 random effects (\code{random_effects = c("zeros", "q0")}):
 #' \deqn{\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha \cdot price) - 1) + \epsilon_{ij}}
+#' where \eqn{\alpha = \exp(\log(\alpha))} and \eqn{k = \exp(\log(k))}.
 #'
 #' Random effects follow a multivariate normal distribution with unstructured
 #' covariance matrix. Use \code{\link{compare_hurdle_models}} for likelihood
 #' ratio tests comparing nested models.
+#'
+#' @section Parameterization and comparability:
+#' The TMB backend estimates positive-constrained parameters on the natural-log
+#' scale: \eqn{\log(Q_0)}, \eqn{\log(\alpha)}, and \eqn{\log(k)}. Reporting methods
+#' (`summary()`, `tidy()`, `coef()`) can back-transform to the natural scale or
+#' present parameters on the \eqn{\log_{10}} scale.
+#'
+#' To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
+#' use:
+#' \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
 #'
 #' @seealso \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}},
 #'   \code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
@@ -110,7 +114,6 @@ fit_demand_hurdle <- function(
   x_var,
   id_var,
   random_effects = c("zeros", "q0", "alpha"),
-  param_space = c("natural", "log10"),
   epsilon = 0.001,
   start_values = NULL,
   tmb_control = list(
@@ -124,7 +127,6 @@ fit_demand_hurdle <- function(
   # Capture call
 
   cl <- match.call()
-  param_space <- match.arg(param_space)
 
   # Validate random_effects argument
   valid_re <- c("zeros", "q0", "alpha")
@@ -231,8 +233,8 @@ fit_demand_hurdle <- function(
         beta0 = -2.5,
         beta1 = 1.0,
         logQ0 = log(mean_positive_consumption),
-        k = 2.0,
-        alpha = 0.5,
+        log_k = log(2.0),
+        log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
         logsigma_b = -0.5,
         logsigma_c = -1.5,
@@ -247,14 +249,30 @@ fit_demand_hurdle <- function(
         beta0 = -2.5,
         beta1 = 1.0,
         logQ0 = log(mean_positive_consumption),
-        k = 2.0,
-        alpha = 0.5,
+        log_k = log(2.0),
+        log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
         logsigma_b = -0.5,
         logsigma_e = -0.5,
         rho_ab_raw = 0
       )
     }
+  }
+
+  # Backwards-compatibility for user-provided start values (older versions used `k`)
+  if (!is.null(start_values$k) && is.null(start_values$log_k)) {
+    if (!is.numeric(start_values$k) || length(start_values$k) != 1 || !is.finite(start_values$k) || start_values$k <= 0) {
+      stop("'start_values$k' must be a single positive numeric value.", call. = FALSE)
+    }
+    start_values$log_k <- log(start_values$k)
+    start_values$k <- NULL
+  }
+  if (!is.null(start_values$alpha) && is.null(start_values$log_alpha)) {
+    if (!is.numeric(start_values$alpha) || length(start_values$alpha) != 1 || !is.finite(start_values$alpha) || start_values$alpha <= 0) {
+      stop("'start_values$alpha' must be a single positive numeric value.", call. = FALSE)
+    }
+    start_values$log_alpha <- log(start_values$alpha)
+    start_values$alpha <- NULL
   }
   start_values$u <- matrix(0, nrow = n_subjects, ncol = n_re)
 
@@ -283,84 +301,12 @@ fit_demand_hurdle <- function(
     message("  Optimizing...")
   }
 
-  wrap_tmb_param_space <- function(obj, param_space) {
-    par_names <- names(obj$par)
-    if (is.null(par_names) || !all(c("logQ0", "alpha", "k") %in% par_names)) {
-      return(list(
-        start = obj$par,
-        fn = obj$fn,
-        gr = obj$gr,
-        to_internal = function(p) p,
-        from_internal = function(p) p
-      ))
-    }
-
-    ln10 <- log(10)
-
-    to_internal <- function(p_work) {
-      if (is.null(names(p_work))) names(p_work) <- par_names
-      p <- p_work
-      if (param_space == "natural") {
-        p[["logQ0"]] <- log(p_work[["logQ0"]])
-      } else if (param_space == "log10") {
-        p[["logQ0"]] <- p_work[["logQ0"]] * ln10
-        p[["alpha"]] <- 10^p_work[["alpha"]]
-        p[["k"]] <- 10^p_work[["k"]]
-      }
-      p
-    }
-
-    from_internal <- function(p_int) {
-      if (is.null(names(p_int))) names(p_int) <- par_names
-      p <- p_int
-      if (param_space == "natural") {
-        p[["logQ0"]] <- exp(p_int[["logQ0"]])
-      } else if (param_space == "log10") {
-        p[["logQ0"]] <- p_int[["logQ0"]] / ln10
-        p[["alpha"]] <- log10(p_int[["alpha"]])
-        p[["k"]] <- log10(p_int[["k"]])
-      }
-      p
-    }
-
-    fn <- function(p_work) {
-      if (is.null(names(p_work))) names(p_work) <- par_names
-      obj$fn(to_internal(p_work))
-    }
-    gr <- function(p_work) {
-      if (is.null(names(p_work))) names(p_work) <- par_names
-      p_int <- to_internal(p_work)
-      g_int <- obj$gr(p_int)
-      if (is.null(names(g_int))) names(g_int) <- names(p_int)
-      g <- g_int
-
-      if (param_space == "natural") {
-        g[["logQ0"]] <- g_int[["logQ0"]] / p_work[["logQ0"]]
-      } else if (param_space == "log10") {
-        g[["logQ0"]] <- g_int[["logQ0"]] * ln10
-        g[["alpha"]] <- g_int[["alpha"]] * ln10 * p_int[["alpha"]]
-        g[["k"]] <- g_int[["k"]] * ln10 * p_int[["k"]]
-      }
-      g
-    }
-
-    list(
-      start = from_internal(obj$par),
-      fn = fn,
-      gr = gr,
-      to_internal = to_internal,
-      from_internal = from_internal
-    )
-  }
-
-  wrapped <- wrap_tmb_param_space(obj, param_space)
-
   opt_warnings <- character(0)
   opt <- withCallingHandlers(
     nlminb(
-      start = wrapped$start,
-      objective = wrapped$fn,
-      gradient = wrapped$gr,
+      start = obj$par,
+      objective = obj$fn,
+      gradient = obj$gr,
       control = list(
         eval.max = tmb_control$eval_max,
         iter.max = tmb_control$max_iter,
@@ -377,8 +323,8 @@ fit_demand_hurdle <- function(
   )
 
   converged <- opt$convergence == 0
-  opt$par_internal <- wrapped$to_internal(opt$par)
-  try(obj$fn(opt$par_internal), silent = TRUE)
+  opt$par_internal <- opt$par
+  try(obj$fn(opt$par), silent = TRUE)
 
   if (verbose >= 1) {
     if (converged) {
@@ -416,8 +362,8 @@ fit_demand_hurdle <- function(
       "beta0",
       "beta1",
       "logQ0",
-      "k",
-      "alpha",
+      "log_k",
+      "log_alpha",
       "logsigma_a",
       "logsigma_b",
       "logsigma_c",
@@ -427,6 +373,8 @@ fit_demand_hurdle <- function(
       "rho_bc_raw"
     )
     var_names <- c(
+      "alpha",  # Natural-scale alpha from ADREPORT
+      "k",      # Natural-scale k from ADREPORT
       "var_a",
       "var_b",
       "var_c",
@@ -441,14 +389,14 @@ fit_demand_hurdle <- function(
       "beta0",
       "beta1",
       "logQ0",
-      "k",
-      "alpha",
+      "log_k",
+      "log_alpha",
       "logsigma_a",
       "logsigma_b",
       "logsigma_e",
       "rho_ab_raw"
     )
-    var_names <- c("var_a", "var_b", "cov_ab", "var_e")
+    var_names <- c("alpha", "k", "var_a", "var_b", "cov_ab", "var_e")  # alpha, k from ADREPORT
     rho_names <- c("rho_ab")
   }
 
@@ -517,14 +465,15 @@ fit_demand_hurdle <- function(
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
 
-    # Subject-specific parameters (with c_i)
+    # Subject-specific parameters (with multiplicative c_i for alpha)
+    # Per EQUATIONS_CONTRACT.md: alpha_i = exp(log_alpha + c_i)
     subj_Q0 <- exp(coefficients["logQ0"] + random_effects_mat[, "b_i"])
-    subj_alpha <- coefficients["alpha"] + random_effects_mat[, "c_i"]
+    subj_alpha <- exp(coefficients["log_alpha"] + random_effects_mat[, "c_i"])
 
     # Calculate Omax and Pmax for each subject
     omax_pmax <- calc_omax_pmax_vec(
       Q0 = subj_Q0,
-      k = coefficients["k"],
+      k = exp(coefficients["log_k"]),
       alpha = subj_alpha
     )
 
@@ -567,13 +516,14 @@ fit_demand_hurdle <- function(
     colnames(random_effects_mat) <- c("a_i", "b_i")
 
     # Subject-specific parameters (alpha is fixed, no c_i)
+    # Per EQUATIONS_CONTRACT.md: alpha = exp(log_alpha)
     subj_Q0 <- exp(coefficients["logQ0"] + random_effects_mat[, "b_i"])
-    subj_alpha <- rep(coefficients["alpha"], n_subjects)
+    subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
 
     # Calculate Omax and Pmax for each subject
     omax_pmax <- calc_omax_pmax_vec(
       Q0 = subj_Q0,
-      k = coefficients["k"],
+      k = exp(coefficients["log_k"]),
       alpha = subj_alpha
     )
 
@@ -629,10 +579,10 @@ fit_demand_hurdle <- function(
       random_effects_spec = random_effects,
       epsilon = epsilon
     ),
-    param_space = param_space,
+    param_space = "log",
     param_space_details = beezdemand_param_space_details_core(
-      internal_names = list(Q0 = "logQ0", alpha = "alpha", k = "k"),
-      internal_spaces = list(Q0 = "log", alpha = "natural", k = "natural")
+      internal_names = list(Q0 = "logQ0", alpha = "log_alpha", k = "log_k"),
+      internal_spaces = list(Q0 = "log", alpha = "log", k = "log")
     ),
     converged = converged,
     optimizer_warnings = unique(opt_warnings),

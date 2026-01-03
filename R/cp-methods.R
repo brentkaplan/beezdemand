@@ -48,9 +48,9 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
       equation = equation,
       equation_text = switch(
         equation,
-        exponential = "y ~ log(qalone) + I * exp(-beta * x)",
-        exponentiated = "y ~ qalone * exp(I * exp(-beta * x))",
-        additive = "y ~ qalone + I * exp(-beta * x)",
+        exponential = "log10(y) ~ log10_qalone + I * exp(-(10^log10_beta) * x)",
+        exponentiated = "y ~ (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))",
+        additive = "y ~ (10^log10_qalone) + I * exp(-(10^log10_beta) * x)",
         "Unknown equation type"
       ),
       method = method,
@@ -102,18 +102,27 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
     )
   }
 
-  # Calculate R2: If transformation was applied, compute on the original scale.
-  if (!identical(inv_fun, identity) && equation == "exponential") {
-    y_orig <- inv_fun(data$y)
-    y_pred <- fitted(model)
-    y_pred_orig <- inv_fun(y_pred)
-    r_squared <- 1 -
-      (sum((y_orig - y_pred_orig)^2) / sum((y_orig - mean(y_orig))^2))
-    transform_info <- deparse(substitute(inv_fun))
-  } else {
-    r_squared <- 1 - (sum(residuals(model)^2) / sum((data$y - mean(data$y))^2))
-    transform_info <- "none"
-  }
+  # Calculate R2 on the fitted response scale:
+  # - For exponential: the model fits log10(y) as the response.
+  # - For exponentiated/additive: the model fits y on the natural scale.
+  r_squared <- tryCatch(
+    {
+      if (equation == "exponential") {
+        if (any(data$y <= 0, na.rm = TRUE)) {
+          return(NA_real_)
+        }
+        y_lhs <- log10(data$y)
+        y_hat <- fitted(model) # predicted log10(y)
+        1 - (sum((y_lhs - y_hat)^2) / sum((y_lhs - mean(y_lhs))^2))
+      } else {
+        y_lhs <- data$y
+        y_hat <- fitted(model)
+        1 - (sum((y_lhs - y_hat)^2) / sum((y_lhs - mean(y_lhs))^2))
+      }
+    },
+    error = function(e) NA_real_
+  )
+  transform_info <- if (equation == "exponential") "log10(y)" else "none"
 
   # Fit statistics
   aic <- tryCatch(AIC(model), error = function(e) NA)
@@ -129,9 +138,9 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
 
   equation_text <- switch(
     equation,
-    exponential = "y ~ log(qalone) + I * exp(-beta * x)",
-    exponentiated = "y ~ qalone * exp(I * exp(-beta * x))",
-    additive = "y ~ qalone + I * exp(-beta * x)",
+    exponential = "log10(y) ~ log10_qalone + I * exp(-(10^log10_beta) * x)",
+    exponentiated = "y ~ (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))",
+    additive = "y ~ (10^log10_qalone) + I * exp(-(10^log10_beta) * x)",
     "Unknown equation type"
   )
 
@@ -149,10 +158,40 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
 
   if (inherits(object, "cp_model_nls") && !is.null(data)) {
     coefs <- coef(model)
+    # Extract log10-parameterized coefficients and compute natural-scale values
+    log10_qalone <- coefs["log10_qalone"]
+    I_param <- coefs["I"]
+    log10_beta <- coefs["log10_beta"]
+
+    se_log10_qalone <- NA_real_
+    se_I <- NA_real_
+    se_log10_beta <- NA_real_
+    if (is.matrix(coef_summary) || is.data.frame(coef_summary)) {
+      if ("Std. Error" %in% colnames(coef_summary)) {
+        se_log10_qalone <- suppressWarnings(as.numeric(coef_summary["log10_qalone", "Std. Error"]))
+        se_I <- suppressWarnings(as.numeric(coef_summary["I", "Std. Error"]))
+        se_log10_beta <- suppressWarnings(as.numeric(coef_summary["log10_beta", "Std. Error"]))
+      }
+    }
+
+    ln10 <- log(10)
+    qalone_nat <- 10^log10_qalone
+    beta_nat <- 10^log10_beta
+    qalone_se <- if (is.finite(se_log10_qalone)) ln10 * qalone_nat * se_log10_qalone else NA_real_
+    beta_se <- if (is.finite(se_log10_beta)) ln10 * beta_nat * se_log10_beta else NA_real_
+
     derived_metrics <- list(
-      beta = coefs["beta"],
-      I = coefs["I"],
-      qalone = coefs["qalone"]
+      log10_qalone = log10_qalone,
+      I = I_param,
+      log10_beta = log10_beta,
+      log10_qalone_se = se_log10_qalone,
+      I_se = se_I,
+      log10_beta_se = se_log10_beta,
+      # Natural-scale values (back-transformed)
+      qalone = qalone_nat,
+      beta = beta_nat,
+      qalone_se = qalone_se,
+      beta_se = beta_se
     )
   } else {
     derived_metrics <- NULL
@@ -224,9 +263,9 @@ print.summary.cp_model_nls <- function(x, ...) {
   }
 
   if (!is.null(x$derived_metrics)) {
-    cat("\nParameter Interpretation:\n")
+    cat("\nParameter Interpretation (natural scale):\n")
     cat(
-      "qalone:",
+      "qalone (Q_alone):",
       format(x$derived_metrics$qalone, digits = 4),
       " - consumption at zero alternative price\n"
     )
@@ -238,7 +277,18 @@ print.summary.cp_model_nls <- function(x, ...) {
     cat(
       "beta:",
       format(x$derived_metrics$beta, digits = 4),
-      " - sensitivity parameter (sensitivity of relationto price)\n"
+      " - sensitivity parameter (sensitivity of relation to price)\n"
+    )
+    cat("\nOptimizer parameters (log10 scale):\n")
+    cat(
+      "log10_qalone:",
+      format(x$derived_metrics$log10_qalone, digits = 4),
+      "\n"
+    )
+    cat(
+      "log10_beta:",
+      format(x$derived_metrics$log10_beta, digits = 4),
+      "\n"
     )
   }
   invisible(x)
@@ -452,28 +502,45 @@ predict.cp_model_nls <- function(
     stop("Could not extract coefficients from model: ", e$message)
   })
 
-  if (!all(c("qalone", "I", "beta") %in% names(coefs))) {
-    stop("Missing required coefficients: qalone, I, or beta")
+  if (!all(c("log10_qalone", "I", "log10_beta") %in% names(coefs))) {
+    stop("Missing required coefficients: log10_qalone, I, or log10_beta")
   }
 
-  qalone <- coefs["qalone"]
+  # Extract log10-parameterized coefficients
+  log10_qalone <- coefs["log10_qalone"]
   I_param <- coefs["I"]
-  beta <- coefs["beta"]
+  log10_beta <- coefs["log10_beta"]
+
+  # Compute natural-scale parameters
+  qalone <- 10^log10_qalone
+  beta <- 10^log10_beta
 
   x_vals <- newdata$x
-  y_pred <- switch(
+
+  # Predictions per EQUATIONS_CONTRACT.md (log10 parameterization):
+  # - Exponentiated: y = (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))
+  # - Exponential (on log10 scale): log10(y) = log10_qalone + I * exp(-(10^log10_beta) * x)
+  # - Additive: y = (10^log10_qalone) + I * exp(-(10^log10_beta) * x)
+  y_pred_internal <- switch(
     equation,
-    exponentiated = qalone * exp(I_param * exp(-beta * x_vals)),
-    exponential = log(qalone) + I_param * exp(-beta * x_vals),
+    exponentiated = qalone * 10^(I_param * exp(-beta * x_vals)),
+    exponential = log10_qalone + I_param * exp(-beta * x_vals),  # Returns log10(y)
     additive = qalone + I_param * exp(-beta * x_vals),
     stop("Unsupported equation type: ", equation)
   )
 
-  result <- tibble::tibble(x = x_vals, y_pred = y_pred)
-  if (!identical(inv_fun, identity) && equation == "exponential") {
+  if (equation == "exponential") {
+    log10_y_pred <- y_pred_internal
+    y_pred <- 10^log10_y_pred
+    result <- tibble::tibble(x = x_vals, y_pred = y_pred, y_pred_log10 = log10_y_pred)
+  } else {
+    result <- tibble::tibble(x = x_vals, y_pred = y_pred_internal)
+  }
+
+  if (!identical(inv_fun, identity)) {
     tryCatch(
       {
-        result$y_pred_untransformed <- inv_fun(y_pred)
+        result$y_pred_untransformed <- inv_fun(result$y_pred)
       },
       error = function(e) {
         warning("Failed to apply inverse transformation: ", e$message)

@@ -12,12 +12,28 @@ test_that("calc_omax_pmax returns correct values for valid parameters", {
   expect_true(result$Omax > 0)
 })
 
-test_that("calc_omax_pmax handles k < e (no local maximum)", {
-  # With k < e, no local maximum exists
-  result <- calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
+test_that("calc_omax_pmax handles k < e with numerical fallback", {
+  # With k < e, no closed-form Lambert W solution exists,
 
-  expect_true(is.na(result$Pmax))
-  expect_true(is.na(result$Omax))
+  # but numerical optimization can still find the maximum.
+  # Per EQUATIONS_CONTRACT.md: implementation should fall back to numerical methods.
+
+  # Expect a message about k < e and numerical optimization
+  expect_message(
+    result <- calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5),
+    "k.*< e.*numerical optimization"
+  )
+
+  # Numerical fallback should still return valid values
+  expect_true(is.numeric(result$Pmax))
+  expect_true(is.numeric(result$Omax))
+  expect_true(!is.na(result$Pmax))
+  expect_true(!is.na(result$Omax))
+  expect_true(result$Pmax > 0)
+  expect_true(result$Omax > 0)
+
+  # Should have a note explaining the fallback
+  expect_true(!is.null(result$note))
 })
 
 test_that("calc_omax_pmax handles edge cases", {

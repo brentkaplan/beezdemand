@@ -51,6 +51,11 @@ beezdemand_term_display_space <- function(term, report_space) {
     prefix <- if (report_space == "log10") "log10(alpha)" else "alpha"
     return(paste0(prefix, suffix))
   }
+  if (grepl("^k", term)) {
+    suffix <- sub("^k", "", term)
+    prefix <- if (report_space == "log10") "log10(k)" else "k"
+    return(paste0(prefix, suffix))
+  }
   term
 }
 
@@ -193,4 +198,3 @@ beezdemand_transform_coef_table <- function(
 
   out
 }
-

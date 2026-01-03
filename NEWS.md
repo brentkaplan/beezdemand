@@ -7,6 +7,17 @@
   printing directly. Use `print(summary(fit))` for console output.
   Programmatic access is now possible: `s <- summary(fit); s$coefficients`.
 
+* `fit_demand_hurdle()` now fits demand parameters in natural-log space
+  (`logQ0`, `log_alpha`, `log_k`) and reports back-transformed values; the
+  `param_space` argument has been removed.
+
+* `fit_cp_nls()` now uses log10-parameterized optimizer coefficients
+  (`log10_qalone`, `I`, `log10_beta`) across equation forms; the `"exponential"`
+  form fits on the `log10(y)` response scale and filters `y <= 0` with a warning.
+  `predict.cp_model_nls()` now always returns `y_pred` on the natural `y` scale;
+  for `"exponential"` it additionally returns `y_pred_log10` (and no longer returns
+  `y_pred_natural`).
+
 ## New Features
 
 * `fit_joint_hurdle()` now accepts `k = "estimate"` to estimate the scaling
