@@ -63,7 +63,7 @@ test_that("simulate_hurdle_data stores true_params as attribute", {
 
   expect_true(is.list(true_params))
   expect_true(all(
-    c("beta0", "beta1", "logQ0", "k", "alpha") %in% names(true_params)
+    c("beta0", "beta1", "log_q0", "k", "alpha") %in% names(true_params)
   ))
 })
 
@@ -166,7 +166,7 @@ test_that("run_hurdle_monte_carlo accepts custom true_params", {
   custom_params <- list(
     beta0 = -3,
     beta1 = 1.5,
-    logQ0 = log(8),
+    log_q0 = log(8),
     k = 2.5,
     alpha = 0.3,
     sigma_a = 0.8,

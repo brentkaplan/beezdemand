@@ -75,36 +75,46 @@ summary.beezdemand_hurdle <- function(
   ...
 ) {
   report_space <- match.arg(report_space)
+  # Normalize coefficient names (older versions used `logQ0`)
+  coefs <- object$model$coefficients
+  se_vec <- object$model$se
+  if ("logQ0" %in% names(coefs) && !("log_q0" %in% names(coefs))) {
+    names(coefs)[names(coefs) == "logQ0"] <- "log_q0"
+  }
+  if ("logQ0" %in% names(se_vec) && !("log_q0" %in% names(se_vec))) {
+    names(se_vec)[names(se_vec) == "logQ0"] <- "log_q0"
+  }
+
   # Build coefficient table (matrix form for printing)
   coef_matrix <- cbind(
-    Estimate = object$model$coefficients,
-    `Std. Error` = object$model$se,
-    `t value` = object$model$coefficients / object$model$se
+    Estimate = coefs,
+    `Std. Error` = se_vec,
+    `t value` = coefs / se_vec
   )
 
   # Build coefficient tibble (for contract compliance)
-  coef_names <- names(object$model$coefficients)
-  z_val <- object$model$coefficients / object$model$se
+  coef_names <- names(coefs)
+  z_val <- coefs / se_vec
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("logQ0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
     grepl("^logsigma_|^rho_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
 
   coefficients <- tibble::tibble(
     term = coef_names,
-    estimate = unname(object$model$coefficients),
-    std.error = unname(object$model$se),
+    estimate = unname(coefs),
+    std.error = unname(se_vec),
     statistic = unname(z_val),
     p.value = unname(p_val),
     component = component,
     estimate_scale = dplyr::case_when(
       coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("logQ0", "log_alpha", "log_k") ~ "log",
+      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
     term_display = coef_names
@@ -112,7 +122,7 @@ summary.beezdemand_hurdle <- function(
 
   if (report_space != "internal") {
     # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- coefficients$term %in% c("logQ0", "log_alpha", "log_k", "k")
+    demand_terms <- coefficients$term %in% c("log_q0", "log_alpha", "log_k", "k")
     coefficients <- coefficients |>
       dplyr::mutate(estimate_internal = .data$estimate)
 
@@ -133,11 +143,11 @@ summary.beezdemand_hurdle <- function(
       coefficients$statistic[i] <- coefficients$estimate[i] / coefficients$std.error[i]
       coefficients$p.value[i] <- 2 * stats::pnorm(-abs(coefficients$statistic[i]))
 
-      if (term_i == "logQ0" && report_space == "natural") {
+      if (term_i == "log_q0" && report_space == "natural") {
         coefficients$term[i] <- "Q0"
         coefficients$term_display[i] <- "Q0"
         coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "logQ0" && report_space == "log10") {
+      } else if (term_i == "log_q0" && report_space == "log10") {
         coefficients$term[i] <- "log10(Q0)"
         coefficients$term_display[i] <- "log10(Q0)"
         coefficients$estimate_scale[i] <- "log10"
@@ -324,17 +334,20 @@ coef.beezdemand_hurdle <- function(
 ) {
   report_space <- match.arg(report_space)
   coefs <- object$model$coefficients
+  if ("logQ0" %in% names(coefs) && !("log_q0" %in% names(coefs))) {
+    names(coefs)[names(coefs) == "logQ0"] <- "log_q0"
+  }
   if (report_space == "internal") return(coefs)
 
   out <- coefs
 
-  if ("logQ0" %in% names(out)) {
+  if ("log_q0" %in% names(out)) {
     if (report_space == "natural") {
-      out[["Q0"]] <- exp(out[["logQ0"]])
+      out[["Q0"]] <- exp(out[["log_q0"]])
     } else if (report_space == "log10") {
-      out[["log10(Q0)"]] <- out[["logQ0"]] / log(10)
+      out[["log10(Q0)"]] <- out[["log_q0"]] / log(10)
     }
-    out <- out[names(out) != "logQ0"]
+    out <- out[names(out) != "log_q0"]
   }
 
   if ("log_alpha" %in% names(out)) {
@@ -487,7 +500,7 @@ predict.beezdemand_hurdle <- function(
   coefs <- object$model$coefficients
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
-  logQ0 <- coefs["logQ0"]
+  log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
   k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
   log_alpha <- coefs["log_alpha"]
 
@@ -549,7 +562,7 @@ predict.beezdemand_hurdle <- function(
       # - 3-RE: alpha_i = exp(log_alpha + c_i)
       # - 2-RE: alpha = exp(log_alpha) (c_i = 0)
       alpha_i <- exp(log_alpha + c_i[i])
-      mu_ij <- (logQ0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+      mu_ij <- (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
       results$predicted_log_consumption[idx] <- mu_ij
       results$predicted_consumption[idx] <- exp(mu_ij)
 
@@ -710,7 +723,7 @@ plot.beezdemand_hurdle <- function(
   coefs <- x$model$coefficients
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
-  logQ0 <- coefs["logQ0"]
+  log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
   k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
   alpha <- exp(coefs["log_alpha"])
 
@@ -718,7 +731,7 @@ plot.beezdemand_hurdle <- function(
     # Population demand curve
     pop_data <- data.frame(
       price = prices,
-      log_consumption = logQ0 + k * (exp(-alpha * prices) - 1)
+      log_consumption = log_q0 + k * (exp(-alpha * prices) - 1)
     )
     pop_data$consumption <- exp(pop_data$log_consumption)
 
@@ -927,7 +940,7 @@ plot.beezdemand_hurdle <- function(
     # Population curve for reference
     pop_data <- data.frame(
       price = prices,
-      consumption = exp(logQ0 + k * (exp(-alpha * prices) - 1))
+      consumption = exp(log_q0 + k * (exp(-alpha * prices) - 1))
     )
 
     pred_df <- NULL
@@ -1109,13 +1122,13 @@ plot_subject <- function(
 
   # Population curve
   coefs <- object$model$coefficients
-  logQ0 <- coefs["logQ0"]
+  log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
   k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
   alpha <- exp(coefs["log_alpha"])
 
   pop_data <- data.frame(
     price = prices,
-    consumption = exp(logQ0 + k * (exp(-alpha * prices) - 1))
+    consumption = exp(log_q0 + k * (exp(-alpha * prices) - 1))
   )
 
   # Build plot
@@ -1181,16 +1194,22 @@ tidy.beezdemand_hurdle <- function(
   ...
 ) {
   report_space <- match.arg(report_space)
-  coef_names <- names(x$model$coefficients)
   coefs <- x$model$coefficients
   se <- x$model$se
+  if ("logQ0" %in% names(coefs) && !("log_q0" %in% names(coefs))) {
+    names(coefs)[names(coefs) == "logQ0"] <- "log_q0"
+  }
+  if ("logQ0" %in% names(se) && !("log_q0" %in% names(se))) {
+    names(se)[names(se) == "logQ0"] <- "log_q0"
+  }
+  coef_names <- names(coefs)
   z_val <- coefs / se
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("logQ0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
     grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
@@ -1204,7 +1223,7 @@ tidy.beezdemand_hurdle <- function(
     component = component,
     estimate_scale = dplyr::case_when(
       coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("logQ0", "log_alpha", "log_k") ~ "log",
+      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
     term_display = coef_names
@@ -1212,7 +1231,7 @@ tidy.beezdemand_hurdle <- function(
 
   if (report_space != "internal") {
     # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- out$term %in% c("logQ0", "log_alpha", "log_k", "k")
+    demand_terms <- out$term %in% c("log_q0", "log_alpha", "log_k", "k")
     out$estimate_internal <- out$estimate
 
     for (i in which(demand_terms)) {
@@ -1231,11 +1250,11 @@ tidy.beezdemand_hurdle <- function(
       out$statistic[i] <- out$estimate[i] / out$std.error[i]
       out$p.value[i] <- 2 * stats::pnorm(-abs(out$statistic[i]))
 
-      if (term_i == "logQ0" && report_space == "natural") {
+      if (term_i == "log_q0" && report_space == "natural") {
         out$term[i] <- "Q0"
         out$term_display[i] <- "Q0"
         out$estimate_scale[i] <- "natural"
-      } else if (term_i == "logQ0" && report_space == "log10") {
+      } else if (term_i == "log_q0" && report_space == "log10") {
         out$term[i] <- "log10(Q0)"
         out$term_display[i] <- "log10(Q0)"
         out$estimate_scale[i] <- "log10"

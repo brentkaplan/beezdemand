@@ -131,7 +131,7 @@ test_that("fit_demand_hurdle accepts custom start values", {
   custom_starts <- list(
     beta0 = -3.0,
     beta1 = 1.5,
-    logQ0 = log(8),
+    log_q0 = log(8),
     log_k = log(2.5),
     log_alpha = log(0.3),  # log-space alpha per EQUATIONS_CONTRACT.md
     logsigma_a = 0.3,

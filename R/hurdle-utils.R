@@ -247,7 +247,12 @@ calc_group_metrics <- function(object) {
 calc_group_metrics.beezdemand_hurdle <- function(object) {
   # Extract group-level parameters
   coefs <- object$model$coefficients
-  Q0 <- exp(coefs["logQ0"])
+  if ("log_q0" %in% names(coefs)) {
+    Q0 <- exp(coefs["log_q0"])
+  } else {
+    # Backwards compatibility for older fitted objects
+    Q0 <- exp(coefs["logQ0"])
+  }
   k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
   alpha <- exp(coefs["log_alpha"])
 
