@@ -74,7 +74,7 @@ test_that("Spec 2.4: summary()/tidy()/coef() can report hurdle demand params on 
   c_log <- coef(fit, report_space = "log10")
 
   expect_true("log10(Q0)" %in% names(c_log))
-  expect_equal(c_log[["log10(Q0)"]], c_int[["logQ0"]] / log(10), tolerance = 1e-6)
+  expect_equal(c_log[["log10(Q0)"]], c_int[["log_q0"]] / log(10), tolerance = 1e-6)
 
   expect_true("log10(alpha)" %in% names(c_log))
   expect_equal(c_log[["log10(alpha)"]], c_int[["log_alpha"]] / log(10), tolerance = 1e-6)

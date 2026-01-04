@@ -87,7 +87,7 @@ test_that("coef.beezdemand_hurdle extracts coefficients", {
 
   expect_true(is.numeric(coefs))
   expect_true(length(coefs) > 0)
-  expect_true(all(c("beta0", "beta1", "logQ0", "log_k", "log_alpha") %in% names(coefs)))
+  expect_true(all(c("beta0", "beta1", "log_q0", "log_k", "log_alpha") %in% names(coefs)))
 })
 
 test_that("logLik returns correct class and attributes", {

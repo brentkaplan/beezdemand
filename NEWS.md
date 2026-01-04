@@ -8,7 +8,7 @@
   Programmatic access is now possible: `s <- summary(fit); s$coefficients`.
 
 * `fit_demand_hurdle()` now fits demand parameters in natural-log space
-  (`logQ0`, `log_alpha`, `log_k`) and reports back-transformed values; the
+  (`log_q0`, `log_alpha`, `log_k`) and reports back-transformed values; the
   `param_space` argument has been removed.
 
 * `fit_cp_nls()` now uses log10-parameterized optimizer coefficients

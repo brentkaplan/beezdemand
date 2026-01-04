@@ -4,7 +4,7 @@
 ///
 /// MODEL STRUCTURE:
 /// Part I (Binary):  logit(pi_ij) = beta0 + beta1*log(price+epsilon) + a_i
-/// Part II (Continuous): log(Q_ij) = (logQ0 + b_i) + k*(exp(-alpha*price) - 1) + e_ij
+/// Part II (Continuous): log(Q_ij) = (log_q0 + b_i) + k*(exp(-alpha*price) - 1) + e_ij
 ///   NOTE: alpha is FIXED (no c_i random effect), parameterized as log_alpha
 ///   to ensure positivity: alpha = exp(log_alpha)
 ///   NOTE: k is parameterized as log_k to ensure positivity: k = exp(log_k)
@@ -28,7 +28,7 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
   // FIXED EFFECT PARAMETERS
   PARAMETER(beta0);
   PARAMETER(beta1);
-  PARAMETER(logQ0);
+  PARAMETER(log_q0);
   PARAMETER(log_k);      // Log-space k to ensure positivity
   PARAMETER(log_alpha);  // Log-space alpha to ensure positivity
 
@@ -96,7 +96,7 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
     Type eta = beta0 + beta1 * log(price(i) + epsilon) + a_i;
     Type exp_eta = exp(eta);
     Type pi_ij = exp_eta / (Type(1.0) + exp_eta);
-    Type mu_ij = (logQ0 + b_i) + k * (exp(-alpha * price(i)) - Type(1.0));
+    Type mu_ij = (log_q0 + b_i) + k * (exp(-alpha * price(i)) - Type(1.0));
 
     if (delta(i) == 1) {
       nll -= log(pi_ij);

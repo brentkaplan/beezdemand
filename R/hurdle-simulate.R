@@ -9,8 +9,9 @@
 #'   Default is \code{seq(0, 11, by = 0.5)}.
 #' @param beta0 Intercept for Part I (logistic). Default is -2.
 #' @param beta1 Slope for Part I (on log(price + epsilon)). Default is 1.
-#' @param logQ0 Log of intensity parameter (Q0). Default is log(10), meaning
-#'   Q0 = 10. To specify Q0 directly, use \code{logQ0 = log(your_Q0)}.
+#' @param log_q0 Log of intensity parameter (Q0). Default is log(10), meaning
+#'   Q0 = 10. To specify Q0 directly, use \code{log_q0 = log(your_Q0)}.
+#' @param logQ0 `r lifecycle::badge("deprecated")` Use `log_q0` instead.
 #' @param k Scaling parameter for demand decay. Default is 2.
 #' @param alpha Elasticity parameter controlling rate of demand decay. Default is 0.5.
 #' @param sigma_a Standard deviation of random intercept for Part I. Default is 1.
@@ -64,7 +65,7 @@
 #' # Simulate with custom parameters (Q0 = 15, alpha = 0.1)
 #' sim_custom <- simulate_hurdle_data(
 #'   n_subjects = 100,
-#'   logQ0 = log(15),
+#'   log_q0 = log(15),
 #'   alpha = 0.1,
 #'   seed = 123
 #' )
@@ -86,7 +87,8 @@ simulate_hurdle_data <- function(
   prices = seq(0, 11, by = 0.5),
   beta0 = -2,
   beta1 = 1,
-  logQ0 = log(10),
+  log_q0 = log(10),
+  logQ0 = deprecated(),
   k = 2,
   alpha = 0.5,
   sigma_a = 1,
@@ -103,6 +105,16 @@ simulate_hurdle_data <- function(
 ) {
   if (!is.null(seed)) {
     set.seed(seed)
+  }
+
+  # Handle deprecated logQ0 argument
+  if (lifecycle::is_present(logQ0)) {
+    lifecycle::deprecate_warn(
+      "0.2.0",
+      "simulate_hurdle_data(logQ0)",
+      "simulate_hurdle_data(log_q0)"
+    )
+    log_q0 <- logQ0
   }
 
   # Validate inputs
@@ -183,7 +195,7 @@ simulate_hurdle_data <- function(
       } else {
         # Part II: Positive consumption
         alpha_i <- alpha + c_i[i]
-        mu <- (logQ0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+        mu <- (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
         log_y <- rnorm(1, mean = mu, sd = sigma_e)
         y <- exp(log_y)
       }
@@ -225,7 +237,7 @@ simulate_hurdle_data <- function(
   attr(sim_data, "true_params") <- list(
     beta0 = beta0,
     beta1 = beta1,
-    logQ0 = logQ0,
+    log_q0 = log_q0,
     k = k,
     alpha = alpha,
     sigma_a = sigma_a,
@@ -303,7 +315,7 @@ run_hurdle_monte_carlo <- function(
     true_params <- list(
       beta0 = -2,
       beta1 = 1,
-      logQ0 = log(10),
+      log_q0 = log(10),
       k = 2,
       alpha = 0.5,
       sigma_a = 1,
@@ -316,12 +328,17 @@ run_hurdle_monte_carlo <- function(
     )
   }
 
+  # Backwards compatibility: older code/tests used `logQ0`
+  if (!is.null(true_params$logQ0) && is.null(true_params$log_q0)) {
+    true_params$log_q0 <- true_params$logQ0
+  }
+
   # Parameter names to track
   if (n_random_effects == 2) {
     param_names <- c(
       "beta0",
       "beta1",
-      "logQ0",
+      "log_q0",
       "k",
       "alpha",
       "logsigma_a",
@@ -333,7 +350,7 @@ run_hurdle_monte_carlo <- function(
     param_names <- c(
       "beta0",
       "beta1",
-      "logQ0",
+      "log_q0",
       "k",
       "alpha",
       "logsigma_a",
@@ -354,7 +371,7 @@ run_hurdle_monte_carlo <- function(
       prices = prices,
       beta0 = true_params$beta0,
       beta1 = true_params$beta1,
-      logQ0 = true_params$logQ0,
+      log_q0 = true_params$log_q0,
       k = true_params$k,
       alpha = true_params$alpha,
       sigma_a = true_params$sigma_a,
@@ -442,7 +459,7 @@ run_hurdle_monte_carlo <- function(
   true_values <- c(
     beta0 = true_params$beta0,
     beta1 = true_params$beta1,
-    logQ0 = true_params$logQ0,
+    log_q0 = true_params$log_q0,
     k = true_params$k,
     alpha = true_params$alpha,
     logsigma_a = log(true_params$sigma_a),

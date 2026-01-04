@@ -9,7 +9,8 @@ simulate_hurdle_data(
   prices = seq(0, 11, by = 0.5),
   beta0 = -2,
   beta1 = 1,
-  logQ0 = log(10),
+  log_q0 = log(10),
+  logQ0 = deprecated(),
   k = 2,
   alpha = 0.5,
   sigma_a = 1,
@@ -35,8 +36,10 @@ Default is \code{seq(0, 11, by = 0.5)}.}
 
 \item{beta1}{Slope for Part I (on log(price + epsilon)). Default is 1.}
 
-\item{logQ0}{Log of intensity parameter (Q0). Default is log(10), meaning
-Q0 = 10. To specify Q0 directly, use \code{logQ0 = log(your_Q0)}.}
+\item{log_q0}{Log of intensity parameter (Q0). Default is log(10), meaning
+Q0 = 10. To specify Q0 directly, use \code{log_q0 = log(your_Q0)}.}
+
+\item{logQ0}{`r lifecycle::badge("deprecated")` Use `log_q0` instead.}
 
 \item{k}{Scaling parameter for demand decay. Default is 2.}
 
@@ -108,7 +111,7 @@ sim_apt <- simulate_hurdle_data(n_subjects = 100, prices = apt_prices, seed = 12
 # Simulate with custom parameters (Q0 = 15, alpha = 0.1)
 sim_custom <- simulate_hurdle_data(
   n_subjects = 100,
-  logQ0 = log(15),
+  log_q0 = log(15),
   alpha = 0.1,
   seed = 123
 )

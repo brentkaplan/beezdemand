@@ -232,7 +232,7 @@ fit_demand_hurdle <- function(
       start_values <- list(
         beta0 = -2.5,
         beta1 = 1.0,
-        logQ0 = log(mean_positive_consumption),
+        log_q0 = log(mean_positive_consumption),
         log_k = log(2.0),
         log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
@@ -248,7 +248,7 @@ fit_demand_hurdle <- function(
       start_values <- list(
         beta0 = -2.5,
         beta1 = 1.0,
-        logQ0 = log(mean_positive_consumption),
+        log_q0 = log(mean_positive_consumption),
         log_k = log(2.0),
         log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
@@ -260,6 +260,10 @@ fit_demand_hurdle <- function(
   }
 
   # Backwards-compatibility for user-provided start values (older versions used `k`)
+  if (!is.null(start_values$logQ0) && is.null(start_values$log_q0)) {
+    start_values$log_q0 <- start_values$logQ0
+    start_values$logQ0 <- NULL
+  }
   if (!is.null(start_values$k) && is.null(start_values$log_k)) {
     if (!is.numeric(start_values$k) || length(start_values$k) != 1 || !is.finite(start_values$k) || start_values$k <= 0) {
       stop("'start_values$k' must be a single positive numeric value.", call. = FALSE)
@@ -361,7 +365,7 @@ fit_demand_hurdle <- function(
     fixed_names <- c(
       "beta0",
       "beta1",
-      "logQ0",
+      "log_q0",
       "log_k",
       "log_alpha",
       "logsigma_a",
@@ -388,7 +392,7 @@ fit_demand_hurdle <- function(
     fixed_names <- c(
       "beta0",
       "beta1",
-      "logQ0",
+      "log_q0",
       "log_k",
       "log_alpha",
       "logsigma_a",
@@ -467,7 +471,7 @@ fit_demand_hurdle <- function(
 
     # Subject-specific parameters (with multiplicative c_i for alpha)
     # Per EQUATIONS_CONTRACT.md: alpha_i = exp(log_alpha + c_i)
-    subj_Q0 <- exp(coefficients["logQ0"] + random_effects_mat[, "b_i"])
+    subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- exp(coefficients["log_alpha"] + random_effects_mat[, "c_i"])
 
     # Calculate Omax and Pmax for each subject
@@ -517,7 +521,7 @@ fit_demand_hurdle <- function(
 
     # Subject-specific parameters (alpha is fixed, no c_i)
     # Per EQUATIONS_CONTRACT.md: alpha = exp(log_alpha)
-    subj_Q0 <- exp(coefficients["logQ0"] + random_effects_mat[, "b_i"])
+    subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
 
     # Calculate Omax and Pmax for each subject
@@ -581,7 +585,7 @@ fit_demand_hurdle <- function(
     ),
     param_space = "log",
     param_space_details = beezdemand_param_space_details_core(
-      internal_names = list(Q0 = "logQ0", alpha = "log_alpha", k = "log_k"),
+      internal_names = list(Q0 = "log_q0", alpha = "log_alpha", k = "log_k"),
       internal_spaces = list(Q0 = "log", alpha = "log", k = "log")
     ),
     converged = converged,
