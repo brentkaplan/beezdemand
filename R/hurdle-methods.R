@@ -175,22 +175,32 @@ summary.beezdemand_hurdle <- function(
     }
   }
 
-  # Compute group-level demand metrics (Omax, Pmax)
+  # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)
 
   derived_metrics <- dplyr::bind_rows(
     beezdemand_empty_derived_metrics(),
     tibble::tibble(
-      metric = c("Pmax", "Omax"),
-      estimate = c(group_metrics$Pmax, group_metrics$Omax),
+      metric = c("pmax_model", "omax_model", "q_at_pmax_model", 
+                 "elasticity_at_pmax_model"),
+      estimate = c(group_metrics$Pmax, group_metrics$Omax, 
+                   group_metrics$Qmax, group_metrics$elasticity_at_pmax),
       std.error = NA_real_,
       conf.low = NA_real_,
       conf.high = NA_real_,
-      method = "none",
+      method = group_metrics$method %||% "unknown",
       component = "consumption",
       level = "population",
       id = NA_character_
     )
+  )
+  
+  # Add method metadata
+  pmax_method_info <- list(
+    method_model = group_metrics$method,
+    is_boundary_model = group_metrics$is_boundary,
+    unit_elasticity_pass_model = group_metrics$unit_elasticity_pass,
+    note_model = group_metrics$note
   )
 
   # Compute summary of individual-level metrics
@@ -228,6 +238,7 @@ summary.beezdemand_hurdle <- function(
       group_metrics = group_metrics,
       derived_metrics = derived_metrics,
       individual_metrics = individual_metrics,
+      pmax_method_info = pmax_method_info,
       notes = character(0)
     ),
     class = c("summary.beezdemand_hurdle", "beezdemand_summary")
@@ -286,16 +297,30 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("Demand Metrics (Group-Level):\n")
   cat("-----------------------------\n")
   dm <- x$derived_metrics
-  pmax_val <- dm$estimate[dm$metric == "Pmax"][1]
-  omax_val <- dm$estimate[dm$metric == "Omax"][1]
+  pmax_val <- dm$estimate[dm$metric == "pmax_model"][1]
+  omax_val <- dm$estimate[dm$metric == "omax_model"][1]
+  q_at_pmax <- dm$estimate[dm$metric == "q_at_pmax_model"][1]
+  elasticity <- dm$estimate[dm$metric == "elasticity_at_pmax_model"][1]
+  method <- dm$method[dm$metric == "pmax_model"][1]
+  
   if (!is.na(pmax_val)) {
     cat(sprintf(
       "  Pmax (price at max expenditure): %.4f\n",
       pmax_val
     ))
     cat(sprintf("  Omax (max expenditure): %.4f\n", omax_val))
+    if (!is.na(q_at_pmax)) {
+      cat(sprintf("  Q at Pmax: %.4f\n", q_at_pmax))
+    }
+    if (!is.na(elasticity)) {
+      cat(sprintf("  Elasticity at Pmax: %.4f\n", elasticity))
+    }
+    cat(sprintf("  Method: %s\n", method %||% "unknown"))
   } else {
     cat("  Pmax/Omax: NA (k < e, no local maximum exists)\n")
+    if (!is.null(x$group_metrics$note)) {
+      cat(sprintf("  Note: %s\n", x$group_metrics$note))
+    }
   }
 
   cat("\n")

@@ -245,18 +245,70 @@ calc_group_metrics <- function(object) {
 
 #' @export
 calc_group_metrics.beezdemand_hurdle <- function(object) {
-  # Extract group-level parameters
+  # Extract group-level parameters (hurdle uses ln parameterization)
   coefs <- object$model$coefficients
-  if ("log_q0" %in% names(coefs)) {
-    Q0 <- exp(coefs["log_q0"])
+  
+  # Get log-scale parameters
+  log_q0 <- if ("log_q0" %in% names(coefs)) {
+    coefs["log_q0"]
   } else {
-    # Backwards compatibility for older fitted objects
-    Q0 <- exp(coefs["logQ0"])
-  }
-  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
-  alpha <- exp(coefs["log_alpha"])
+    coefs["logQ0"]  # Backwards compatibility
 
-  calc_omax_pmax(Q0, k, alpha)
+  }
+  log_k <- if ("log_k" %in% names(coefs)) coefs["log_k"] else log(coefs["k"])
+  log_alpha <- coefs["log_alpha"]
+  
+  # Get observed price range from fitted data if available
+  price_obs <- NULL
+  if (!is.null(object$data) && "x" %in% names(object$data)) {
+    price_obs <- object$data$x
+  } else if (!is.null(object$data) && !is.null(object$call$x_var)) {
+    x_var <- as.character(object$call$x_var)
+    if (x_var %in% names(object$data)) {
+      price_obs <- object$data[[x_var]]
+    }
+  }
+  
+  # Use new engine with explicit parameter scales (hurdle uses ln)
+  engine_result <- beezdemand_calc_pmax_omax(
+    model_type = "hurdle",
+    params = list(
+      log_alpha = as.numeric(log_alpha),
+      log_q0 = as.numeric(log_q0),
+      log_k = as.numeric(log_k)
+    ),
+    param_scales = list(
+      log_alpha = "log",
+      log_q0 = "log",
+      log_k = "log"
+    ),
+    price_obs = price_obs,
+    compute_observed = FALSE
+  )
+  
+  # Return in legacy format for backwards compatibility
+  Q0 <- exp(log_q0)
+  k <- exp(log_k)
+  alpha <- exp(log_alpha)
+  
+  # Build demand function for Qmax
+  demand_fn <- function(p) Q0 * exp(k * (exp(-alpha * p) - 1))
+  Qmax <- if (!is.na(engine_result$pmax_model)) {
+    demand_fn(engine_result$pmax_model)
+  } else {
+    NA_real_
+  }
+  
+  list(
+    Pmax = engine_result$pmax_model,
+    Omax = engine_result$omax_model,
+    Qmax = Qmax,
+    method = engine_result$method_model,
+    is_boundary = engine_result$is_boundary_model,
+    elasticity_at_pmax = engine_result$elasticity_at_pmax_model,
+    unit_elasticity_pass = engine_result$unit_elasticity_pass_model,
+    note = engine_result$note_model
+  )
 }
 
 

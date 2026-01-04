@@ -46,7 +46,7 @@ test_that("summary.beezdemand_hurdle meets contract", {
   # derived_metrics is tibble with required columns
   expect_s3_class(s$derived_metrics, "tbl_df")
   expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
-  expect_true(all(c("Pmax", "Omax") %in% s$derived_metrics$metric))
+  expect_true(all(c("pmax_model", "omax_model") %in% s$derived_metrics$metric))
 
   # Canonical components (probability part)
   prob_terms <- c("beta0", "beta1", "gamma0", "gamma1")
