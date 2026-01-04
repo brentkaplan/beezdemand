@@ -36,6 +36,7 @@
 ##' @param constrainq0 Optional. A number that will be used to constrain Q0 in the fitting process. Currently experimental and only works with a fixed k value.
 ##' @param startq0 Optional. A number that will be used to start Q0 in the fitting process. Currently experimental.
 ##' @param startalpha Optional. A number that will be used to start Alpha in the fitting process. Currently experimental.
+##' @param param_space Character. One of "natural" (default) or "log10". Specifies whether parameters (Q0, alpha) are estimated in natural space or log10-transformed space.
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @examples

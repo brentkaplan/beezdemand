@@ -643,6 +643,14 @@ predict.beezdemand_hurdle <- function(
 #' @param xlab Deprecated alias for \code{x_lab}.
 #' @param ylab Deprecated alias for \code{y_lab}.
 #' @param style Plot styling, passed to \code{theme_beezdemand()}.
+#' @param show_pred Which prediction layers to plot: "population", "individual",
+#'   or "both".
+#' @param observed_point_alpha Alpha for observed points.
+#' @param observed_point_size Size for observed points.
+#' @param pop_line_alpha Alpha for population curve.
+#' @param pop_line_size Line size for population curve.
+#' @param ind_line_alpha Alpha for individual curves.
+#' @param ind_line_size Line size for individual curves.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A ggplot2 object.
