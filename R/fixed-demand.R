@@ -116,22 +116,46 @@ fit_demand_fixed <- function(data,
     data_used <- NULL
   }
 
-  # Count successes/failures
+  # Count successes/failures based on Notes column and parameter validity
+
   if (is.data.frame(results) && nrow(results) > 0) {
     n_total <- nrow(results)
-    success_flag <- NULL
+    success_flag <- rep(TRUE, n_total)
+
+    # Check Notes column for convergence failures
+    if ("Notes" %in% names(results)) {
+      notes_lower <- tolower(results$Notes)
+      # Mark as failed if Notes indicates convergence issues
+      failed_notes <- grepl("failed|reverted|singular|error", notes_lower)
+      success_flag <- success_flag & !failed_notes
+    }
+
+    # Check for NA parameters
     if ("Alpha" %in% names(results)) {
-      success_flag <- !is.na(results$Alpha)
-    } else if (all(c("L", "b", "a") %in% names(results))) {
-      success_flag <- !is.na(results$L) & !is.na(results$b) & !is.na(results$a)
-    } else if ("R2" %in% names(results)) {
-      success_flag <- !is.na(results$R2)
-    } else {
-      success_flag <- rep(TRUE, n_total)
+      success_flag <- success_flag & !is.na(results$Alpha)
+    }
+    if ("Q0d" %in% names(results)) {
+      success_flag <- success_flag & !is.na(results$Q0d)
+    }
+
+    # Check for physiologically implausible values (negative Q0 or alpha)
+    if ("Q0d" %in% names(results)) {
+      success_flag <- success_flag & (is.na(results$Q0d) | results$Q0d >= 0)
+    }
+    if ("Alpha" %in% names(results)) {
+      success_flag <- success_flag & (is.na(results$Alpha) | results$Alpha >= 0)
+    }
+
+    # Handle linear equation parameters
+    if (all(c("L", "b", "a") %in% names(results))) {
+      success_flag <- success_flag & !is.na(results$L) & !is.na(results$b) & !is.na(results$a)
     }
 
     n_success <- sum(success_flag)
     n_fail <- n_total - n_success
+
+    # Add a converged column to results for downstream use
+    results$converged <- success_flag
   } else {
     n_total <- n_success <- n_fail <- NA_integer_
   }

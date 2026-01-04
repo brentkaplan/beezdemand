@@ -320,10 +320,33 @@ calculate_amplitude_persistence.beezdemand_fixed <- function(fit,
   # fit$results contains the metrics
   results <- fit$results
   
-  # Standardize column names if needed or rely on user defaults
-  # beezdemand_fixed usually has: Intensity, BP0, Pmaxe, Omaxe, Alpha, Q0d
+  # Filter out non-converged subjects if 'converged' column exists
+  if ("converged" %in% names(results)) {
+    n_nonconverged <- sum(!results$converged, na.rm = TRUE)
+    if (n_nonconverged > 0) {
+      message(
+        "Excluding ", n_nonconverged, " non-converged subject(s) from amplitude/persistence calculation."
+      )
+      results <- results[results$converged == TRUE, , drop = FALSE]
+    }
+  }
   
-  # Just pass to default
+  # Set invalid parameter values to NA to avoid downstream issues
+  # This handles cases where fit "converged" but produced physiologically implausible values
+  if ("Alpha" %in% names(results)) {
+    invalid_alpha <- !is.na(results$Alpha) & results$Alpha <= 0
+    if (any(invalid_alpha)) {
+      results$Alpha[invalid_alpha] <- NA_real_
+    }
+  }
+  if ("Q0d" %in% names(results)) {
+    invalid_q0 <- !is.na(results$Q0d) & results$Q0d <= 0
+    if (any(invalid_q0)) {
+      results$Q0d[invalid_q0] <- NA_real_
+    }
+  }
+  
+  # Pass to default
   calculate_amplitude_persistence.default(results, 
                                           amplitude = amplitude, 
                                           persistence = persistence,
