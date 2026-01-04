@@ -167,3 +167,57 @@ test_that("case-insensitive matching includes alpha when present as lowercase", 
 # But `coef` is S3.
 # For simplicity, we trust the integration test structure or skip mock if too complex.
 # We will skip NLME mock test here to avoid fragility, trusting logic is similar to others + prediction loop.
+
+
+test_that("calculate_amplitude_persistence.beezdemand_fixed filters non-converged", {
+  # Mock a beezdemand_fixed object with converged column
+  fit_fixed <- list(
+    results = data.frame(
+      id = 1:5,
+      Intensity = c(10, 20, 30, 40, 50),
+      BP0 = seq(100, 500, 100),
+      Pmaxe = seq(10, 50, 10),
+      Omaxe = seq(100, 500, 100),
+      Alpha = c(0.01, 0.02, 0.03, 0.04, 0.05),
+      converged = c(TRUE, FALSE, TRUE, FALSE, TRUE)
+    )
+  )
+  class(fit_fixed) <- "beezdemand_fixed"
+
+  # Should filter out 2 non-converged subjects
+  expect_message(
+    res <- calculate_amplitude_persistence(fit_fixed),
+    "Excluding 2 non-converged"
+  )
+
+  expect_equal(nrow(res), 3)  # Only 3 converged subjects
+  expect_true(all(res$id %in% c(1, 3, 5)))
+})
+
+
+test_that("calculate_amplitude_persistence.beezdemand_fixed sets invalid params to NA", {
+  # Mock a beezdemand_fixed object with invalid parameter values
+  fit_fixed <- list(
+    results = data.frame(
+      id = 1:4,
+      Intensity = c(10, 20, 30, 40),
+      BP0 = seq(100, 400, 100),
+      Pmaxe = seq(10, 40, 10),
+      Omaxe = seq(100, 400, 100),
+      Alpha = c(0.01, -0.02, 0.03, 0),  # Subject 2 and 4 have invalid alpha
+      Q0d = c(10, 20, -5, 40),  # Subject 3 has invalid Q0d
+      converged = c(TRUE, TRUE, TRUE, TRUE)
+    )
+  )
+  class(fit_fixed) <- "beezdemand_fixed"
+
+  # Should not error, but set invalid values to NA
+  res <- calculate_amplitude_persistence(fit_fixed, amplitude = "Intensity")
+
+  # All 4 subjects should still be in the result
+  expect_equal(nrow(res), 4)
+
+  # z_inv_alpha should have NA for subjects 2 and 4 (invalid alpha)
+  expect_true(is.na(res$z_inv_alpha[2]))
+  expect_true(is.na(res$z_inv_alpha[4]))
+})

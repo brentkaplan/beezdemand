@@ -346,7 +346,8 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
 #' Extract Coefficients from Hurdle Demand Model
 #'
 #' @param object An object of class \code{beezdemand_hurdle}.
-#' @param report_space Character. One of `"internal"` (default), `"natural"`, or `"log10"`.
+#' @param report_space Character. One of `"natural"` (default), `"log10"`, or `"internal"`.
+#'   Default is `"natural"` for consistency with `tidy()`.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return Named numeric vector of fixed effect coefficients.
@@ -354,7 +355,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
 #' @export
 coef.beezdemand_hurdle <- function(
   object,
-  report_space = c("internal", "natural", "log10"),
+  report_space = c("natural", "log10", "internal"),
   ...
 ) {
   report_space <- match.arg(report_space)

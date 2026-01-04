@@ -1787,9 +1787,32 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
   cat("  Subjects:", x$n_subjects, "\n")
   cat("  Observations:", x$nobs, "\n\n")
 
-  # Fixed effects
+  # Fixed effects - use transformed coefficients if available
   cat("Fixed Effects:\n")
-  stats::printCoefmat(x$fixed_effects, digits = digits, ...)
+  if (!is.null(x$coefficients) && nrow(x$coefficients) > 0) {
+    # Build a coefficient matrix from the transformed coefficients tibble
+    coef_df <- x$coefficients[x$coefficients$component == "fixed", , drop = FALSE]
+    if (nrow(coef_df) > 0) {
+      coef_mat <- matrix(
+        c(coef_df$estimate, coef_df$std.error, coef_df$statistic, coef_df$p.value),
+        ncol = 4,
+        dimnames = list(
+          coef_df$term_display,
+          c("Value", "Std.Error", "t-value", "p-value")
+        )
+      )
+      # Use DF from original fixed_effects if available
+      if (!is.null(x$fixed_effects) && "DF" %in% colnames(x$fixed_effects)) {
+        df_col <- x$fixed_effects[, "DF", drop = TRUE]
+        coef_mat <- cbind(coef_mat[, 1:2, drop = FALSE], DF = df_col, coef_mat[, 3:4, drop = FALSE])
+      }
+      stats::printCoefmat(coef_mat, digits = digits, ...)
+    } else {
+      stats::printCoefmat(x$fixed_effects, digits = digits, ...)
+    }
+  } else {
+    stats::printCoefmat(x$fixed_effects, digits = digits, ...)
+  }
   cat("\n")
 
   # Random effects

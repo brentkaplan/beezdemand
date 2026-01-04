@@ -4,12 +4,13 @@
 \alias{coef.beezdemand_hurdle}
 \title{Extract Coefficients from Hurdle Demand Model}
 \usage{
-\method{coef}{beezdemand_hurdle}(object, report_space = c("internal", "natural", "log10"), ...)
+\method{coef}{beezdemand_hurdle}(object, report_space = c("natural", "log10", "internal"), ...)
 }
 \arguments{
 \item{object}{An object of class \code{beezdemand_hurdle}.}
 
-\item{report_space}{Character. One of `"internal"` (default), `"natural"`, or `"log10"`.}
+\item{report_space}{Character. One of `"natural"` (default), `"log10"`, or `"internal"`.
+Default is `"natural"` for consistency with `tidy()`.}
 
 \item{...}{Additional arguments (currently unused).}
 }

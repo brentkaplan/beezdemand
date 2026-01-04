@@ -87,7 +87,13 @@ test_that("coef.beezdemand_hurdle extracts coefficients", {
 
   expect_true(is.numeric(coefs))
   expect_true(length(coefs) > 0)
-  expect_true(all(c("beta0", "beta1", "log_q0", "log_k", "log_alpha") %in% names(coefs)))
+  # Default report_space is now "natural", so expect natural-scale names
+
+  expect_true(all(c("beta0", "beta1", "Q0", "k", "alpha") %in% names(coefs)))
+
+  # Check that internal space returns log-scale names
+  coefs_internal <- coef(fit, report_space = "internal")
+  expect_true(all(c("beta0", "beta1", "log_q0", "log_k", "log_alpha") %in% names(coefs_internal)))
 })
 
 test_that("logLik returns correct class and attributes", {

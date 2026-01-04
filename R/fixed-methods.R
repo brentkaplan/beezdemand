@@ -356,11 +356,14 @@ summary.beezdemand_fixed <- function(
     })
     coefficients <- dplyr::bind_rows(coefficients_list)
     if (report_space == "log10") {
-      coefficients <- coefficients |>
+      # Use suppressWarnings to avoid NaN warnings from log10 of non-positive values
+      # The case_when condition handles these cases, but log10 is evaluated first
+      coefficients <- suppressWarnings(coefficients |>
         dplyr::mutate(
           estimate_internal = .data$estimate,
           estimate = dplyr::case_when(
             .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+            .data$term %in% c("Q0", "alpha", "k") & .data$estimate <= 0 ~ NA_real_,
             TRUE ~ .data$estimate
           ),
           std.error = dplyr::case_when(
@@ -378,12 +381,20 @@ summary.beezdemand_fixed <- function(
             .data$term == "k" ~ "log10(k)",
             TRUE ~ .data$term_display
           )
-        )
+        ))
     }
 
     param_summary <- lapply(names(param_specs), function(term_name) {
       vals <- results[[param_specs[[term_name]]$estimate]]
       vals <- vals[!is.na(vals)]
+      # Transform to log10 scale if requested and parameter supports it
+      if (report_space == "log10" && term_name %in% c("Q0", "alpha", "k")) {
+        # Only transform positive values; filter out non-positive
+        vals <- vals[vals > 0]
+        if (length(vals) > 0) {
+          vals <- log10(vals)
+        }
+      }
       if (length(vals) > 0) summary(vals) else NULL
     })
     names(param_summary) <- names(param_specs)
@@ -644,11 +655,13 @@ tidy.beezdemand_fixed <- function(
 
   out <- dplyr::bind_rows(coefficient_rows)
   if (report_space == "log10") {
-    out <- out |>
+    # Use suppressWarnings to avoid NaN warnings from log10 of non-positive values
+    out <- suppressWarnings(out |>
       dplyr::mutate(
         estimate_internal = .data$estimate,
         estimate = dplyr::case_when(
           .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+          .data$term %in% c("Q0", "alpha", "k") & .data$estimate <= 0 ~ NA_real_,
           TRUE ~ .data$estimate
         ),
         std.error = dplyr::case_when(
@@ -666,7 +679,7 @@ tidy.beezdemand_fixed <- function(
           .data$term == "k" ~ "log10(k)",
           TRUE ~ .data$term_display
         )
-      )
+      ))
   }
   out
 }

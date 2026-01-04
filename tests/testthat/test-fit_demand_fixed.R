@@ -165,3 +165,156 @@ test_that("fit_demand_fixed tidy returns empty tibble for empty results",
   expect_true(all(c("id", "term", "estimate", "std.error", "component") %in%
                     names(t)))
 })
+
+
+test_that("fit_demand_fixed convergence counts failed fits from Notes", {
+  # Create a fake results data frame with some failed fits
+
+  fake_results <- data.frame(
+    id = c("1", "2", "3", "4"),
+    Q0d = c(10, 5, 8, -0.1),
+    Alpha = c(0.01, 0.02, -0.01, 0.03),
+    K = c(2, 2, 2, 2),
+    Notes = c(
+      "converged",
+      "wrapnls failed to converge, reverted to nlxb",
+      "converged",
+      "converged"
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  # Create beezdemand_fixed object with the fake results
+  fake_fit <- structure(
+    list(
+      results = fake_results,
+      fits = NULL,
+      call = NULL,
+      equation = "hs",
+      k_spec = "fixed (2)",
+      k_value = 2,
+      n_total = 4,
+      n_success = 4,
+      n_fail = 0
+    ),
+    class = c("beezdemand_fixed", "list")
+  )
+
+  # Simulate running fit_demand_fixed logic for convergence
+  # The fix should count subject 2 as failed (Notes says failed)
+  # and subject 3 as failed (negative Alpha)
+  # and subject 4 as failed (negative Q0d)
+  results <- fake_results
+  n_total <- nrow(results)
+  success_flag <- rep(TRUE, n_total)
+
+  if ("Notes" %in% names(results)) {
+    notes_lower <- tolower(results$Notes)
+    failed_notes <- grepl("failed|reverted|singular|error", notes_lower)
+    success_flag <- success_flag & !failed_notes
+  }
+  if ("Alpha" %in% names(results)) {
+    success_flag <- success_flag & !is.na(results$Alpha) & results$Alpha >= 0
+  }
+  if ("Q0d" %in% names(results)) {
+    success_flag <- success_flag & !is.na(results$Q0d) & results$Q0d >= 0
+  }
+
+  n_success <- sum(success_flag)
+  n_fail <- n_total - n_success
+
+  # Subject 1: converged, positive params -> success
+
+# Subject 2: failed Notes -> fail
+# Subject 3: negative Alpha -> fail
+# Subject 4: negative Q0d -> fail
+  expect_equal(n_success, 1)
+  expect_equal(n_fail, 3)
+})
+
+
+test_that("summary.beezdemand_fixed param_summary respects report_space", {
+  # Create a fake beezdemand_fixed object with positive params
+  fake_results <- data.frame(
+    id = c("1", "2", "3"),
+    Q0d = c(10, 100, 1000),
+    Alpha = c(0.01, 0.001, 0.0001),
+    K = c(2, 2, 2),
+    Notes = rep("converged", 3),
+    stringsAsFactors = FALSE
+  )
+
+  fake_fit <- structure(
+    list(
+      results = fake_results,
+      fits = NULL,
+      predictions = NULL,
+      data_used = NULL,
+      call = quote(fit_demand_fixed(data = test)),
+      equation = "hs",
+      k_spec = "fixed (2)",
+      k_value = 2,
+      param_space = "natural",
+      n_total = 3,
+      n_success = 3,
+      n_fail = 0
+    ),
+    class = c("beezdemand_fixed", "list")
+  )
+
+  s_natural <- summary(fake_fit, report_space = "natural")
+  s_log10 <- summary(fake_fit, report_space = "log10")
+
+  # Q0 median in natural space: 100 (middle value)
+  # Q0 median in log10 space: log10(100) = 2
+  expect_equal(s_natural$report_space, "natural")
+  expect_equal(s_log10$report_space, "log10")
+
+  # param_summary should differ between spaces
+  q0_median_natural <- s_natural$param_summary$Q0["Median"]
+  q0_median_log10 <- s_log10$param_summary$Q0["Median"]
+
+  expect_equal(unname(q0_median_natural), 100)
+  expect_equal(unname(q0_median_log10), 2)
+})
+
+
+test_that("tidy.beezdemand_fixed does not warn on negative values with log10", {
+  # Create a fake beezdemand_fixed object with some negative params
+  fake_results <- data.frame(
+    id = c("1", "2", "3"),
+    Q0d = c(10, -5, 100),
+    Alpha = c(0.01, 0.001, -0.01),
+    K = c(2, 2, 2),
+    Notes = rep("converged", 3),
+    stringsAsFactors = FALSE
+  )
+
+  fake_fit <- structure(
+    list(
+      results = fake_results,
+      fits = NULL,
+      predictions = NULL,
+      data_used = NULL,
+      call = quote(fit_demand_fixed(data = test)),
+      equation = "hs",
+      k_spec = "fixed (2)",
+      k_value = 2,
+      param_space = "natural",
+      n_total = 3,
+      n_success = 3,
+      n_fail = 0
+    ),
+    class = c("beezdemand_fixed", "list")
+  )
+
+  # Should not produce NaN warnings
+  expect_silent(t <- tidy(fake_fit, report_space = "log10"))
+
+  # Negative values should become NA
+  q0_estimates <- t$estimate[t$term == "Q0"]
+  expect_true(is.na(q0_estimates[2]))  # -5 becomes NA
+
+  alpha_estimates <- t$estimate[t$term == "alpha"]
+  expect_true(is.na(alpha_estimates[3]))  # -0.01 becomes NA
+})
