@@ -408,6 +408,79 @@ summary.beezdemand_fixed <- function(
     nobs <- NA_integer_
   }
 
+  # Compute derived metrics (pmax/omax) per subject using unified engine
+  derived_metrics <- beezdemand_empty_derived_metrics()
+  pmax_method_info <- list()
+  
+  if (!is.null(object$results) && is.data.frame(object$results) &&
+      nrow(object$results) > 0 && object$equation %in% c("hs", "koff")) {
+    # Get parameter columns
+    q0_col <- if ("Q0" %in% names(object$results)) "Q0" else NULL
+    alpha_col <- if ("Alpha" %in% names(object$results)) "Alpha" else NULL
+    k_col <- if ("K" %in% names(object$results)) "K" else NULL
+    
+    if (!is.null(q0_col) && !is.null(alpha_col) && !is.null(k_col)) {
+      # Determine parameter scale based on param_space
+      param_scale <- object$param_space %||% "natural"
+      
+      # For each subject, compute pmax/omax
+      pmax_results <- lapply(seq_len(nrow(object$results)), function(i) {
+        row <- object$results[i, ]
+        
+        # Get price observations for this subject if available
+        price_obs <- NULL
+        if (!is.null(object$data_used) && length(object$data_used) >= i) {
+          price_obs <- object$data_used[[i]]$x
+        }
+        
+        beezdemand_calc_pmax_omax(
+          model_type = object$equation,
+          params = list(
+            alpha = row[[alpha_col]],
+            q0 = row[[q0_col]],
+            k = row[[k_col]]
+          ),
+          param_scales = list(
+            alpha = param_scale,
+            q0 = param_scale,
+            k = "natural"  # k is typically natural even when others are log10
+          ),
+          price_obs = price_obs,
+          compute_observed = FALSE
+        )
+      })
+      
+      # Aggregate results
+      pmax_vals <- sapply(pmax_results, function(x) x$pmax_model)
+      omax_vals <- sapply(pmax_results, function(x) x$omax_model)
+      methods <- sapply(pmax_results, function(x) x$method_model)
+      
+      # Store per-subject in results
+      object$results$pmax_model <- pmax_vals
+      object$results$omax_model <- omax_vals
+      object$results$pmax_method <- methods
+      
+      # Summary metrics
+      pmax_summary <- if (any(!is.na(pmax_vals))) summary(pmax_vals[!is.na(pmax_vals)]) else NULL
+      omax_summary <- if (any(!is.na(omax_vals))) summary(omax_vals[!is.na(omax_vals)]) else NULL
+      
+      param_summary$pmax_model <- pmax_summary
+      param_summary$omax_model <- omax_summary
+      
+      # Method info (use most common method)
+      if (length(methods) > 0) {
+        method_table <- table(methods[!is.na(methods)])
+        if (length(method_table) > 0) {
+          pmax_method_info <- list(
+            method_model = names(which.max(method_table)),
+            n_analytic = sum(grepl("analytic", methods, ignore.case = TRUE)),
+            n_numerical = sum(grepl("numerical", methods, ignore.case = TRUE))
+          )
+        }
+      }
+    }
+  }
+
   structure(
     list(
       call = object$call,
@@ -427,8 +500,9 @@ summary.beezdemand_fixed <- function(
       AIC = NA_real_,
       BIC = NA_real_,
       coefficients = coefficients,
-      derived_metrics = beezdemand_empty_derived_metrics(),
+      derived_metrics = derived_metrics,
       param_summary = param_summary,
+      pmax_method_info = pmax_method_info,
       results = object$results,
       notes = character(0)
     ),
