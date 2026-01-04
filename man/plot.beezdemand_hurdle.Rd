@@ -60,6 +60,9 @@ uses a sequence from 0 to max observed price.}
 \item{show_population}{Logical; if \code{TRUE}, overlay population-level
 curve on individual plots. Default is \code{TRUE}.}
 
+\item{show_pred}{Which prediction layers to plot: "population", "individual",
+or "both".}
+
 \item{show_observed}{Logical; if \code{TRUE}, overlay observed data points.}
 
 \item{x_trans}{Character. Transformation for x-axis. Default "log".}
@@ -82,6 +85,18 @@ to drop x <= 0 values instead.}
 \item{ylab}{Deprecated alias for \code{y_lab}.}
 
 \item{style}{Plot styling, passed to \code{theme_beezdemand()}.}
+
+\item{observed_point_alpha}{Alpha for observed points.}
+
+\item{observed_point_size}{Size for observed points.}
+
+\item{pop_line_alpha}{Alpha for population curve.}
+
+\item{pop_line_size}{Line size for population curve.}
+
+\item{ind_line_alpha}{Alpha for individual curves.}
+
+\item{ind_line_size}{Line size for individual curves.}
 
 \item{...}{Additional arguments (currently unused).}
 }
