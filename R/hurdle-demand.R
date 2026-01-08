@@ -278,6 +278,42 @@ fit_demand_hurdle <- function(
     start_values$log_alpha <- log(start_values$alpha)
     start_values$alpha <- NULL
   }
+
+  # Backwards-compatibility + stability: the TMB template parameterizes the
+  # 3x3 correlation matrix with a partial correlation for rho_bc. Older versions
+  # treated `rho_bc_raw` like the other correlations (tanh -> rho_bc), so we
+  # convert any provided value to the new parameterization.
+  if (n_re == 3) {
+    r_ab <- if (!is.null(start_values$rho_ab_raw)) tanh(start_values$rho_ab_raw) else 0
+    r_ac <- if (!is.null(start_values$rho_ac_raw)) tanh(start_values$rho_ac_raw) else 0
+    denom <- sqrt((1 - r_ab^2) * (1 - r_ac^2))
+
+    rho_bc_target <- NULL
+    if (!is.null(start_values$rho_bc)) {
+      rho_bc_target <- start_values$rho_bc
+      start_values$rho_bc <- NULL
+    } else if (!is.null(start_values$rho_bc_raw)) {
+      # Interpret as old-style "raw correlation parameter"
+      rho_bc_target <- tanh(start_values$rho_bc_raw)
+    }
+
+    if (!is.null(rho_bc_target)) {
+      if (!is.numeric(rho_bc_target) || length(rho_bc_target) != 1 || !is.finite(rho_bc_target)) {
+        stop("'start_values$rho_bc' must be a single finite numeric value.", call. = FALSE)
+      }
+      if (rho_bc_target <= -1 || rho_bc_target >= 1) {
+        stop("'start_values$rho_bc' must be in (-1, 1).", call. = FALSE)
+      }
+
+      rho_bc_partial <- if (is.finite(denom) && denom > 1e-8) {
+        (rho_bc_target - r_ab * r_ac) / denom
+      } else {
+        0
+      }
+      rho_bc_partial <- max(min(rho_bc_partial, 0.999999), -0.999999)
+      start_values$rho_bc_raw <- atanh(rho_bc_partial)
+    }
+  }
   start_values$u <- matrix(0, nrow = n_subjects, ncol = n_re)
 
   # Create TMB objective function
@@ -440,7 +476,12 @@ fit_demand_hurdle <- function(
   if (n_re == 3) {
     sigma_c <- exp(coefficients["logsigma_c"])
     rho_ac <- tanh(coefficients["rho_ac_raw"])
-    rho_bc <- tanh(coefficients["rho_bc_raw"])
+    rho_bc_partial <- tanh(coefficients["rho_bc_raw"])
+    # Match the TMB template's PD correlation parameterization:
+    # rho_bc is defined via a partial correlation to ensure the 3x3 correlation
+    # matrix is positive definite for all real-valued raw parameters.
+    rho_bc <- rho_ab * rho_ac +
+      rho_bc_partial * sqrt((1 - rho_ab^2) * (1 - rho_ac^2))
 
     Sigma <- matrix(
       c(

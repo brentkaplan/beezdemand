@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo=TRUE, comment=NA, fig.path = "man/figures/")
 plotdir <- "man/figures/"
 ```
 
-# Behavioral Economic (be) Easy (ez) Demand <a><img src="hex-beezdemand.png" align="right" height="200" /></a>
+# Behavioral Economic (be) Easy (ez) Demand <a><img src="man/figures/hex-beezdemand.png" align="right" height="200" /></a>
 
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/beezdemand)](https://cran.r-project.org/package=beezdemand)
 [![downloads](https://cranlogs.r-pkg.org/badges/beezdemand)](https://cranlogs.r-pkg.org/)

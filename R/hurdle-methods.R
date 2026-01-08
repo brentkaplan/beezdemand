@@ -558,7 +558,7 @@ predict.beezdemand_hurdle <- function(
     for (i in seq_len(n_subjects)) {
       idx <- results$id == subjects[i]
       eta <- beta0 + beta1 * log(results$x[idx] + epsilon) + a_i[i]
-      results$prob_zero[idx] <- exp(eta) / (1 + exp(eta))
+      results$prob_zero[idx] <- stats::plogis(eta)
     }
 
     names(results)[1] <- id_var
@@ -594,7 +594,7 @@ predict.beezdemand_hurdle <- function(
 
       # Probability of zero (Part I)
       eta <- beta0 + beta1 * log(p + epsilon) + a_i[i]
-      results$prob_zero[idx] <- exp(eta) / (1 + exp(eta))
+      results$prob_zero[idx] <- stats::plogis(eta)
     }
 
     # Expected consumption accounting for probability of zero
@@ -637,6 +637,7 @@ predict.beezdemand_hurdle <- function(
 #' @param y_trans Character. Transformation for y-axis. Default "log".
 #' @param free_trans Value used to display free (x = 0) on log scales. Use NULL
 #'   to drop x <= 0 values instead.
+#' @param facet Faceting specification (TRUE for \code{~id} or a formula).
 #' @param x_limits Optional numeric vector of length 2 for x-axis limits.
 #' @param y_limits Optional numeric vector of length 2 for y-axis limits.
 #' @param x_lab Optional x-axis label.
@@ -666,6 +667,10 @@ predict.beezdemand_hurdle <- function(
 #' # Plot probability curves
 #' plot(fit, type = "probability")
 #'
+#' # Plot subject-specific probability curves (with population overlay)
+#' plot(fit, type = "probability", ids = c("1", "2", "3"))
+#' plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
+#'
 #' # Plot parameter distributions
 #' plot(fit, type = "parameters")
 #'
@@ -690,6 +695,7 @@ plot.beezdemand_hurdle <- function(
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   y_trans = NULL,
   free_trans = 0.01,
+  facet = NULL,
   x_limits = NULL,
   y_limits = NULL,
   x_lab = NULL,
@@ -844,38 +850,103 @@ plot.beezdemand_hurdle <- function(
   }
 
   if (type == "probability") {
-    # Population probability curve
-    pop_data <- data.frame(
-      price = prices,
-      eta = beta0 + beta1 * log(prices + epsilon)
-    )
-    pop_data$prob_zero <- exp(pop_data$eta) / (1 + exp(pop_data$eta))
+    if (is.null(show_pred)) {
+      show_pred <- if (is.null(subjects)) {
+        "population"
+      } else if (isTRUE(show_population)) {
+        "both"
+      } else {
+        "individual"
+      }
+    }
+    show_pred <- beezdemand_normalize_show_pred(show_pred)
 
-    pop_df <- data.frame(x = pop_data$price, y = pop_data$prob_zero)
-    free_pop <- beezdemand_apply_free_trans(pop_df, "x", x_trans, free_trans)
-    pop_df <- free_pop$data
-    free_trans_used <- free_trans_used || free_pop$replaced
+    p <- ggplot2::ggplot()
+
+    if (any(show_pred %in% "individual")) {
+      if (is.null(subjects)) {
+        subjects <- utils::head(x$param_info$subject_levels, 9)
+      }
+      pred <- predict(x, type = "probability", prices = prices)
+      pred <- pred[pred[[id_var]] %in% subjects, , drop = FALSE]
+
+      pred_df <- data.frame(
+        id = as.character(pred[[id_var]]),
+        x = pred[[x_var]],
+        y = pred$prob_zero
+      )
+      free_pred <- beezdemand_apply_free_trans(pred_df, "x", x_trans, free_trans)
+      pred_df <- free_pred$data
+      free_trans_used <- free_trans_used || free_pred$replaced
+
+      pred_y <- beezdemand_drop_nonpositive_y(pred_df, "y", y_trans)
+      pred_df <- pred_y$data
+      subtitle_note <- subtitle_note || pred_y$dropped
+
+      p <- p +
+        ggplot2::geom_line(
+          data = pred_df,
+          ggplot2::aes(x = .data$x, y = .data$y, color = .data$id),
+          linewidth = ind_line_size,
+          alpha = ind_line_alpha
+        )
+    }
+
+    if (any(show_pred %in% "population")) {
+      pop_data <- data.frame(
+        price = prices,
+        eta = beta0 + beta1 * log(prices + epsilon)
+      )
+      pop_data$prob_zero <- stats::plogis(pop_data$eta)
+
+      pop_df <- data.frame(x = pop_data$price, y = pop_data$prob_zero)
+      free_pop <- beezdemand_apply_free_trans(pop_df, "x", x_trans, free_trans)
+      pop_df <- free_pop$data
+      free_trans_used <- free_trans_used || free_pop$replaced
+
+      pop_y <- beezdemand_drop_nonpositive_y(pop_df, "y", y_trans)
+      pop_df <- pop_y$data
+      subtitle_note <- subtitle_note || pop_y$dropped
+
+      p <- p +
+        ggplot2::geom_line(
+          data = pop_df,
+          ggplot2::aes(x = .data$x, y = .data$y),
+          linewidth = pop_line_size,
+          alpha = pop_line_alpha,
+          color = beezdemand_style_color(style, "secondary"),
+          linetype = if (any(show_pred %in% "individual")) "dashed" else "solid"
+        )
+    }
 
     x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
     y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
 
-    p <- ggplot(pop_df, aes(x = .data$x, y = .data$y)) +
-      geom_line(
-        linewidth = pop_line_size,
-        alpha = pop_line_alpha,
-        color = beezdemand_style_color(style, "secondary")
-      ) +
-      labs(
+    if (!is.null(facet)) {
+      if (any(show_pred %in% "individual")) {
+        if (isTRUE(facet)) {
+          p <- p + ggplot2::facet_wrap(~id)
+        } else if (is.character(facet)) {
+          p <- p + ggplot2::facet_wrap(stats::as.formula(facet))
+        } else if (inherits(facet, "formula")) {
+          p <- p + ggplot2::facet_wrap(facet)
+        }
+      }
+    }
+
+    p <- p +
+      ggplot2::labs(
         title = "Probability of Zero Consumption",
+        subtitle = if (isTRUE(subtitle_note)) "Zeros omitted on log scale." else NULL,
         x = x_lab,
         y = "P(Consumption = 0)"
       ) +
-      scale_x_continuous(
+      ggplot2::scale_x_continuous(
         trans = beezdemand_get_trans(x_trans),
         limits = x_limits,
         labels = beezdemand_axis_labels()
       ) +
-      scale_y_continuous(
+      ggplot2::scale_y_continuous(
         trans = beezdemand_get_trans(y_trans),
         limits = if (is.null(y_limits)) c(0, 1) else y_limits,
         labels = beezdemand_axis_labels()
