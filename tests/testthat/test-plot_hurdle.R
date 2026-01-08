@@ -40,6 +40,31 @@ test_that("plot type='probability' returns ggplot", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("plot type='probability' supports ids and faceting", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  skip_if_not_installed("ggplot2")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  p_ids <- plot(fit, type = "probability", ids = c("1", "2", "3"))
+  expect_s3_class(p_ids, "ggplot")
+  expect_true(inherits(p_ids$facet, "FacetNull"))
+  expect_gte(length(p_ids$layers), 2)
+
+  p_facet <- plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
+  expect_s3_class(p_facet, "ggplot")
+  expect_false(inherits(p_facet$facet, "FacetNull"))
+})
+
 test_that("plot type='parameters' works with parameter selection", {
   skip_on_cran()
   skip_if_not_installed("TMB")

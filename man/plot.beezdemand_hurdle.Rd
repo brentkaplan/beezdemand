@@ -17,6 +17,7 @@
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   y_trans = NULL,
   free_trans = 0.01,
+  facet = NULL,
   x_limits = NULL,
   y_limits = NULL,
   x_lab = NULL,
@@ -72,6 +73,8 @@ or "both".}
 \item{free_trans}{Value used to display free (x = 0) on log scales. Use NULL
 to drop x <= 0 values instead.}
 
+\item{facet}{Faceting specification (TRUE for \code{~id} or a formula).}
+
 \item{x_limits}{Optional numeric vector of length 2 for x-axis limits.}
 
 \item{y_limits}{Optional numeric vector of length 2 for y-axis limits.}
@@ -115,6 +118,10 @@ plot(fit)
 
 # Plot probability curves
 plot(fit, type = "probability")
+
+# Plot subject-specific probability curves (with population overlay)
+plot(fit, type = "probability", ids = c("1", "2", "3"))
+plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
 
 # Plot parameter distributions
 plot(fit, type = "parameters")

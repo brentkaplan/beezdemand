@@ -94,14 +94,14 @@ Type HurdleDemand2RE(objective_function<Type>* obj) {
     Type b_i = re(subj, 1);
 
     Type eta = beta0 + beta1 * log(price(i) + epsilon) + a_i;
-    Type exp_eta = exp(eta);
-    Type pi_ij = exp_eta / (Type(1.0) + exp_eta);
     Type mu_ij = (log_q0 + b_i) + k * (exp(-alpha * price(i)) - Type(1.0));
 
     if (delta(i) == 1) {
-      nll -= log(pi_ij);
+      // -log(invlogit(eta)) = log(1 + exp(-eta))
+      nll += logspace_add(Type(0.0), -eta);
     } else {
-      nll -= log(Type(1.0) - pi_ij);
+      // -log(1 - invlogit(eta)) = log(1 + exp(eta))
+      nll += logspace_add(Type(0.0), eta);
       Type resid = (logQ(i) - mu_ij) / sigma_e;
       nll -= -logsigma_e - Type(0.5) * log2pi - Type(0.5) * resid * resid;
     }

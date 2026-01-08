@@ -58,9 +58,15 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
   Type sigma_c = exp(logsigma_c);
   Type sigma_e = exp(logsigma_e);
 
+  // Correlations:
+  // rho_ab and rho_ac are mapped directly to (-1, 1) via tanh.
+  // rho_bc is parameterized via a partial correlation to guarantee the 3x3
+  // correlation matrix is positive definite for all real-valued raw parameters.
   Type rho_ab = tanh(rho_ab_raw);
   Type rho_ac = tanh(rho_ac_raw);
-  Type rho_bc = tanh(rho_bc_raw);
+  Type rho_bc_partial = tanh(rho_bc_raw);
+  Type rho_bc = rho_ab * rho_ac +
+    rho_bc_partial * sqrt((Type(1.0) - rho_ab * rho_ab) * (Type(1.0) - rho_ac * rho_ac));
 
   Type var_a = sigma_a * sigma_a;
   Type var_b = sigma_b * sigma_b;
@@ -118,14 +124,14 @@ Type HurdleDemand3RE(objective_function<Type>* obj) {
     Type alpha_i = exp(log_alpha + c_i);
 
     Type eta = beta0 + beta1 * log(price(i) + epsilon) + a_i;
-    Type exp_eta = exp(eta);
-    Type pi_ij = exp_eta / (Type(1.0) + exp_eta);
     Type mu_ij = (log_q0 + b_i) + k * (exp(-alpha_i * price(i)) - Type(1.0));
 
     if (delta(i) == 1) {
-      nll -= log(pi_ij);
+      // -log(invlogit(eta)) = log(1 + exp(-eta))
+      nll += logspace_add(Type(0.0), -eta);
     } else {
-      nll -= log(Type(1.0) - pi_ij);
+      // -log(1 - invlogit(eta)) = log(1 + exp(eta))
+      nll += logspace_add(Type(0.0), eta);
       Type resid = (logQ(i) - mu_ij) / sigma_e;
       nll -= -logsigma_e - Type(0.5) * log2pi - Type(0.5) * resid * resid;
     }
