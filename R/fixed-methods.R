@@ -760,6 +760,172 @@ coef.beezdemand_fixed <- function(
   out
 }
 
+#' Predict Method for beezdemand_fixed
+#'
+#' @param object A `beezdemand_fixed` object.
+#' @param newdata A data frame containing a price column matching the fitted
+#'   object's `x_var`. If `NULL`, uses the unique observed prices when available.
+#' @param type One of `"response"` (default) or `"link"`.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because vcov is not available from legacy fixed fits).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA` because vcov is unavailable.
+#' @param level Confidence level when `interval = "confidence"`. Currently used
+#'   only for validation.
+#' @param ... Unused.
+#'
+#' @return A tibble containing the original `newdata` columns, plus `.fitted`
+#'   and, when requested, `.se.fit` and `.lower`/`.upper`. If `newdata` does not
+#'   include an id column, predictions are returned for all subjects (cross
+#'   product of `newdata` × subjects) unless `k` is subject-specific (`k = "ind"`).
+#' @export
+predict.beezdemand_fixed <- function(
+  object,
+  newdata = NULL,
+  type = c("response", "link"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  level = 0.95,
+  ...
+) {
+  type <- match.arg(type)
+  interval <- match.arg(interval)
+
+  if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||
+    level <= 0 || level >= 1)) {
+    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  x_var <- object$x_var %||% "x"
+  id_var <- object$id_var %||% "id"
+
+  results <- object$results
+  if (is.null(results) || !is.data.frame(results) || nrow(results) == 0) {
+    return(tibble::tibble())
+  }
+
+  ids <- beezdemand_fixed_id_values(results)
+  if (all(is.na(ids))) {
+    ids <- as.character(seq_len(nrow(results)))
+  }
+
+  if (is.null(newdata)) {
+    prices <- NULL
+    if (!is.null(object$data_used) && length(object$data_used) > 0 &&
+      x_var %in% names(object$data_used[[1]])) {
+      prices <- sort(unique(unlist(lapply(object$data_used, `[[`, x_var))))
+    } else if (!is.null(object$predictions) && length(object$predictions) > 0 &&
+      x_var %in% names(object$predictions[[1]])) {
+      prices <- sort(unique(unlist(lapply(object$predictions, `[[`, x_var))))
+    }
+    if (is.null(prices) || !length(prices)) {
+      stop("`newdata` is required when the fit object does not retain observed prices.", call. = FALSE)
+    }
+    newdata <- data.frame(prices, stringsAsFactors = FALSE)
+    names(newdata) <- x_var
+  }
+
+  if (!is.data.frame(newdata)) {
+    newdata <- as.data.frame(newdata)
+  }
+  if (!(x_var %in% names(newdata))) {
+    stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+  }
+
+  prices <- newdata[[x_var]]
+  if (!is.numeric(prices)) {
+    stop("`newdata[[", x_var, "]]` must be numeric.", call. = FALSE)
+  }
+
+  if (isTRUE(object$k_spec == "ind") && !(id_var %in% names(newdata))) {
+    stop("Subject-specific k requires `newdata` to include the id column `", id_var, "`.", call. = FALSE)
+  }
+
+  eq <- object$equation %||% "hs"
+  param_specs <- beezdemand_fixed_param_specs(results)
+
+  get_param <- function(name) {
+    spec <- param_specs[[name]] %||% NULL
+    col <- spec$estimate %||% NULL
+    if (is.null(col) || !(col %in% names(results))) {
+      return(rep(NA_real_, nrow(results)))
+    }
+    as.numeric(results[[col]])
+  }
+
+  pars <- tibble::tibble(
+    !!id_var := ids,
+    Q0 = get_param("Q0"),
+    alpha = get_param("alpha"),
+    k = get_param("k"),
+    L = get_param("L"),
+    b = get_param("b"),
+    a = get_param("a")
+  )
+
+  if (id_var %in% names(newdata)) {
+    newdata[[id_var]] <- as.character(newdata[[id_var]])
+    idx <- match(newdata[[id_var]], pars[[id_var]])
+    if (anyNA(idx)) {
+      missing_ids <- unique(newdata[[id_var]][is.na(idx)])
+      stop(
+        "Unknown id values in `newdata`: ",
+        paste(missing_ids, collapse = ", "),
+        ".",
+        call. = FALSE
+      )
+    }
+    out <- tibble::as_tibble(newdata)
+    pars_row <- pars[idx, , drop = FALSE]
+  } else {
+    n_subjects <- nrow(pars)
+    n_rows <- nrow(newdata)
+    grid <- expand.grid(
+      subject_row = seq_len(n_subjects),
+      data_row = seq_len(n_rows)
+    )
+    out <- tibble::as_tibble(newdata[grid$data_row, , drop = FALSE])
+    out[[id_var]] <- pars[[id_var]][grid$subject_row]
+    pars_row <- pars[grid$subject_row, , drop = FALSE]
+  }
+
+  price_vec <- out[[x_var]]
+
+  fitted_link <- rep(NA_real_, length(price_vec))
+  if (eq %in% c("hs", "koff")) {
+    log10_q0 <- ifelse(is.finite(pars_row$Q0) & pars_row$Q0 > 0, log10(pars_row$Q0), NA_real_)
+    fitted_link <- log10_q0 +
+      pars_row$k * (exp(-pars_row$alpha * pars_row$Q0 * price_vec) - 1)
+  } else if (eq == "linear") {
+    log_l <- ifelse(is.finite(pars_row$L) & pars_row$L > 0, log(pars_row$L), NA_real_)
+    log_x <- ifelse(is.finite(price_vec) & price_vec > 0, log(price_vec), NA_real_)
+    fitted_link <- log_l +
+      pars_row$b * log_x -
+      pars_row$a * price_vec
+  } else {
+    stop("Unsupported equation `", eq, "` for `predict.beezdemand_fixed()`.", call. = FALSE)
+  }
+
+  fitted_response <- if (eq == "linear") exp(fitted_link) else 10^fitted_link
+
+  out$.fitted <- if (type == "response") fitted_response else fitted_link
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not available for `beezdemand_fixed` predictions ",
+      "(vcov is unavailable from legacy fixed fits); returning NA for uncertainty columns.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
+    }
+  }
+
+  out
+}
+
 #' Glance Method for beezdemand_fixed
 #'
 #' @param x A beezdemand_fixed object
