@@ -24,6 +24,12 @@ jobs:
         with:
           use-public-rspm: true
 
+      - name: Work around ubuntu apt azure-cli repo 403
+        run: |
+          set -euxo pipefail
+          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/azure-cli.sources || true
+          sudo apt-get update
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::covr, any::xml2, any::DT, any::htmltools
