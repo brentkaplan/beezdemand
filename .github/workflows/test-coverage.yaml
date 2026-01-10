@@ -36,15 +36,34 @@ jobs:
             install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
           )
           covr::to_cobertura(cov)
+          covr::report(cov, file = "coverage.html", browse = FALSE)
         shell: Rscript {0}
 
-      - uses: codecov/codecov-action@v4
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
-          file: ./cobertura.xml
-          plugin: noop
-          disable_search: true
+          name: coverage-reports
+          path: |
+            cobertura.xml
+            coverage.html
+
+      - uses: codecov/codecov-action@v5
+        # Codecov uploads from `push` events require a valid CODECOV_TOKEN secret.
+        # Without it, codecov-action exits non-zero and fails the workflow.
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: cobertura.xml
+          disable_search: true
+          fail_ci_if_error: ${{ github.event_name != 'pull_request' }}
+
+      - name: Codecov skipped (missing CODECOV_TOKEN)
+        if: ${{ secrets.CODECOV_TOKEN == '' }}
+        run: |
+          echo "Skipping Codecov upload because secrets.CODECOV_TOKEN is not set."
+          echo "Set CODECOV_TOKEN in repo settings (Actions secrets) to enable coverage uploads."
+        shell: bash
 
       - name: Show testthat output
         if: always()
