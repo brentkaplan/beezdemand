@@ -34,6 +34,13 @@ lib/*
 /src/*.dll
 /src/symbols.rds
 
+internal_docs/*
+PRD.md
+CLAUDE.md
+.agents/
+.claude/
+engineering/
+
 # Vignette outputs #
 ####################
 vignettes/*_cache/
@@ -49,3 +56,4 @@ beezdemand_*.tar.gz
 # Test artifacts #
 ##################
 tests/testthat/Rplots.pdf
+.env

@@ -66,7 +66,8 @@ FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x"
     }
 
     cnames <- c("id", "Equation", "Q0d", "K",
-                    "Alpha", "R2", "Q0se", "Alphase", "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
+                    "Alpha", "R2", "Q0se", "Alphase", "alpha_star", "alpha_star_se",
+                    "N", "AbsSS", "SdRes", "Q0Low", "Q0High",
                     "AlphaLow", "AlphaHigh", "EV", "Omaxd", "Pmaxd", "Omaxa", "Pmaxa", "Notes")
 
     if (!is.null(agg)) {
@@ -540,6 +541,62 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0, param_space
           dfrow[1, c("AlphaLow", "AlphaHigh")] <- ci_alpha
           }
         }
+
+        if (!inherits(fit, what = "error")) {
+          # Strategy B alpha* (normalized alpha), per Rzeszutek et al. (2025)
+          # HS/Koff use base-10 log convention.
+          alpha_star_res <- tryCatch(
+            .calc_alpha_star(
+              params = list(
+                alpha = if (is.null(coef(fit))) fit$m$getPars()[c("alpha")] else as.numeric(coef(fit)[c("alpha")]),
+                k = if (kest == "fit") {
+                  if (is.null(coef(fit))) fit$m$getPars()[c("k")] else as.numeric(coef(fit)[c("k")])
+                } else {
+                  dfrow[1, "K"]
+                }
+              ),
+              param_scales = list(
+                alpha = if (identical(param_space, "log10")) "log10" else "natural",
+                k = if (kest == "fit" && identical(param_space, "log10")) "log10" else "natural"
+              ),
+              vcov = {
+                vc <- tryCatch(stats::vcov(fit), error = function(e) NULL)
+                if (!is.null(vc) && is.matrix(vc)) {
+                  keep <- intersect(c("alpha", "k"), colnames(vc))
+                  vc[keep, keep, drop = FALSE]
+                } else {
+                  se_mat <- summary(fit)[[10]]
+                  se_vec <- c(alpha = se_mat["alpha", "Std. Error"])
+                  if (kest == "fit" && "k" %in% rownames(se_mat)) {
+                    se_vec <- c(se_vec, k = se_mat["k", "Std. Error"])
+                  }
+                  se_vec
+                }
+              },
+              base = "10"
+            ),
+            error = function(e) list(
+              estimate = NA_real_,
+              se = NA_real_,
+              note = paste0("alpha_star computation failed: ", conditionMessage(e))
+            )
+          )
+
+          dfrow[1, "alpha_star"] <- alpha_star_res$estimate
+          dfrow[1, "alpha_star_se"] <- alpha_star_res$se
+          note_txt <- alpha_star_res$note
+          if (!is.null(note_txt) &&
+            is.finite(nchar(note_txt)) &&
+            nchar(note_txt) > 0 &&
+            !grepl("^Covariance assumed 0", note_txt)) {
+            if (is.na(dfrow[1, "Notes"]) || dfrow[1, "Notes"] == "") {
+              dfrow[1, "Notes"] <- note_txt
+            } else {
+              dfrow[1, "Notes"] <- paste(dfrow[1, "Notes"], note_txt, sep = "; ")
+            }
+          }
+        }
+
         dfrow[1, "EV"] <- 1/(dfrow[1, "Alpha"] * (dfrow[1, "K"] ^ 1.5) * 100)
         dfrow[1, "Pmaxd"] <- 1/(dfrow[1, "Q0d"] * dfrow[1, "Alpha"] *
                                 (dfrow[1, "K"] ^ 1.5)) * (0.083 * dfrow[1, "K"] + 0.65)

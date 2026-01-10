@@ -31,6 +31,10 @@ NULL
 #'   }
 #' @param verbose Integer controlling output verbosity: 0 = silent, 1 = progress
 #'   messages, 2 = detailed optimization trace. Default is 1.
+#' @param part2 Character string selecting the Part II mean function. Options are
+#'   \code{"zhao_exponential"} (default; no Q0 normalization in the exponent),
+#'   \code{"exponential"} (HS-standardized; Q0 inside the exponent), and
+#'   \code{"simplified_exponential"} (SND/log-linear; no \code{k} parameter).
 #' @param ... Additional arguments (reserved for future use).
 #'
 #' @return An object of class \code{beezdemand_hurdle} containing:
@@ -122,11 +126,30 @@ fit_demand_hurdle <- function(
     trace = 0
   ),
   verbose = 1,
+  part2 = c("zhao_exponential", "exponential", "simplified_exponential"),
   ...
 ) {
   # Capture call
 
   cl <- match.call()
+
+  # Normalize Part II equation selector (keep defaults behavior-preserving)
+  part2 <- as.character(part2[1])
+  part2 <- tolower(part2)
+  part2 <- switch(part2,
+    zhao = "zhao_exponential",
+    zhao_exponential = "zhao_exponential",
+    exponential = "exponential",
+    hs_stdq0 = "exponential",
+    snd = "simplified_exponential",
+    simplified = "simplified_exponential",
+    simplified_exponential = "simplified_exponential",
+    stop(
+      "Unsupported 'part2' value: ",
+      part2,
+      ". Supported: 'zhao_exponential' (alias: 'zhao'), 'exponential' (alias: 'hs_stdq0'), 'simplified_exponential' (alias: 'snd')."
+    )
+  )
 
   # Validate random_effects argument
   valid_re <- c("zeros", "q0", "alpha")
@@ -173,7 +196,11 @@ fit_demand_hurdle <- function(
   subject_id <- as.integer(subject_map[as.character(ids)])
 
   # Calculate number of parameters and check sample size
-  n_fixed_params <- if (n_re == 3) 12 else 9
+  n_fixed_params <- if (identical(part2, "simplified_exponential")) {
+    if (n_re == 3) 11 else 8
+  } else {
+    if (n_re == 3) 12 else 9
+  }
   min_recommended <- n_fixed_params * 5
 
   if (n_subjects < min_recommended && verbose >= 1) {
@@ -186,11 +213,17 @@ fit_demand_hurdle <- function(
   }
 
   # Determine model name for TMB dispatcher
-  model_name <- if (n_re == 3) "HurdleDemand3RE" else "HurdleDemand2RE"
+  model_name <- switch(part2,
+    zhao_exponential = if (n_re == 3) "HurdleDemand3RE" else "HurdleDemand2RE",
+    exponential = if (n_re == 3) "HurdleDemand3RE_StdQ0" else "HurdleDemand2RE_StdQ0",
+    simplified_exponential = if (n_re == 3) "HurdleDemand3RE_SND" else "HurdleDemand2RE_SND",
+    stop("Internal error: unsupported part2: ", part2)
+  )
 
   # Progress message
   if (verbose >= 1) {
     message(sprintf("Fitting %s model...", model_name))
+    message(sprintf("  Part II: %s", part2))
     message(sprintf(
       "  Subjects: %d, Observations: %d",
       n_subjects,
@@ -233,7 +266,6 @@ fit_demand_hurdle <- function(
         beta0 = -2.5,
         beta1 = 1.0,
         log_q0 = log(mean_positive_consumption),
-        log_k = log(2.0),
         log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
         logsigma_b = -0.5,
@@ -243,19 +275,24 @@ fit_demand_hurdle <- function(
         rho_ac_raw = 0,
         rho_bc_raw = 0
       )
+      if (!identical(part2, "simplified_exponential")) {
+        start_values$log_k <- log(2.0)
+      }
     } else {
       # 2 random effects model
       start_values <- list(
         beta0 = -2.5,
         beta1 = 1.0,
         log_q0 = log(mean_positive_consumption),
-        log_k = log(2.0),
         log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
         logsigma_a = 0.5,
         logsigma_b = -0.5,
         logsigma_e = -0.5,
         rho_ab_raw = 0
       )
+      if (!identical(part2, "simplified_exponential")) {
+        start_values$log_k <- log(2.0)
+      }
     }
   }
 
@@ -277,6 +314,14 @@ fit_demand_hurdle <- function(
     }
     start_values$log_alpha <- log(start_values$alpha)
     start_values$alpha <- NULL
+  }
+
+  if (identical(part2, "simplified_exponential") && !is.null(start_values$log_k)) {
+    warning(
+      "Ignoring 'start_values$log_k' for part2 = 'simplified_exponential' (SND).",
+      call. = FALSE
+    )
+    start_values$log_k <- NULL
   }
 
   # Backwards-compatibility + stability: the TMB template parameterizes the
@@ -396,13 +441,14 @@ fit_demand_hurdle <- function(
     }
   )
 
-  # Extract fixed effects (different for 2 vs 3 RE)
+  # Extract fixed effects (different for 2 vs 3 RE; some Part II forms omit k)
+  has_k <- !identical(part2, "simplified_exponential")
+
   if (n_re == 3) {
     fixed_names <- c(
       "beta0",
       "beta1",
       "log_q0",
-      "log_k",
       "log_alpha",
       "logsigma_a",
       "logsigma_b",
@@ -412,9 +458,10 @@ fit_demand_hurdle <- function(
       "rho_ac_raw",
       "rho_bc_raw"
     )
+    if (has_k) fixed_names <- append(fixed_names, "log_k", after = 3)
+
     var_names <- c(
       "alpha",  # Natural-scale alpha from ADREPORT
-      "k",      # Natural-scale k from ADREPORT
       "var_a",
       "var_b",
       "var_c",
@@ -423,20 +470,25 @@ fit_demand_hurdle <- function(
       "cov_bc",
       "var_e"
     )
+    if (has_k) var_names <- append(var_names, "k", after = 1) # Natural-scale k from ADREPORT
+
     rho_names <- c("rho_ab", "rho_ac", "rho_bc")
   } else {
     fixed_names <- c(
       "beta0",
       "beta1",
       "log_q0",
-      "log_k",
       "log_alpha",
       "logsigma_a",
       "logsigma_b",
       "logsigma_e",
       "rho_ab_raw"
     )
-    var_names <- c("alpha", "k", "var_a", "var_b", "cov_ab", "var_e")  # alpha, k from ADREPORT
+    if (has_k) fixed_names <- append(fixed_names, "log_k", after = 3)
+
+    var_names <- c("alpha", "var_a", "var_b", "cov_ab", "var_e")  # alpha from ADREPORT
+    if (has_k) var_names <- append(var_names, "k", after = 1) # k from ADREPORT
+
     rho_names <- c("rho_ab")
   }
 
@@ -515,12 +567,51 @@ fit_demand_hurdle <- function(
     subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- exp(coefficients["log_alpha"] + random_effects_mat[, "c_i"])
 
-    # Calculate Omax and Pmax for each subject
-    omax_pmax <- calc_omax_pmax_vec(
-      Q0 = subj_Q0,
-      k = exp(coefficients["log_k"]),
-      alpha = subj_alpha
-    )
+    # Calculate Omax and Pmax for each subject (Part II mean)
+    if (identical(part2, "zhao_exponential")) {
+      omax_pmax <- calc_omax_pmax_vec(
+        Q0 = subj_Q0,
+        k = exp(coefficients["log_k"]),
+        alpha = subj_alpha
+      )
+    } else if (identical(part2, "exponential")) {
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0,
+          k = rep(exp(coefficients["log_k"]), n_subjects)
+        ),
+        model_type = "hurdle_hs_stdq0",
+        param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
+      )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+    } else if (identical(part2, "simplified_exponential")) {
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0
+        ),
+        model_type = "snd",
+        param_scales = list(alpha = "natural", q0 = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
+      )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+    } else {
+      stop("Internal error: unsupported part2: ", part2)
+    }
 
     subject_pars <- data.frame(
       id = subject_levels,
@@ -565,12 +656,51 @@ fit_demand_hurdle <- function(
     subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
 
-    # Calculate Omax and Pmax for each subject
-    omax_pmax <- calc_omax_pmax_vec(
-      Q0 = subj_Q0,
-      k = exp(coefficients["log_k"]),
-      alpha = subj_alpha
-    )
+    # Calculate Omax and Pmax for each subject (Part II mean)
+    if (identical(part2, "zhao_exponential")) {
+      omax_pmax <- calc_omax_pmax_vec(
+        Q0 = subj_Q0,
+        k = exp(coefficients["log_k"]),
+        alpha = subj_alpha
+      )
+    } else if (identical(part2, "exponential")) {
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0,
+          k = rep(exp(coefficients["log_k"]), n_subjects)
+        ),
+        model_type = "hurdle_hs_stdq0",
+        param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
+      )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+    } else if (identical(part2, "simplified_exponential")) {
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0
+        ),
+        model_type = "snd",
+        param_scales = list(alpha = "natural", q0 = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
+      )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+    } else {
+      stop("Internal error: unsupported part2: ", part2)
+    }
 
     subject_pars <- data.frame(
       id = subject_levels,
@@ -617,6 +747,7 @@ fit_demand_hurdle <- function(
       y_var = y_var,
       x_var = x_var,
       id_var = id_var,
+      part2 = part2,
       subject_levels = subject_levels,
       n_subjects = n_subjects,
       n_obs = nrow(data),
@@ -626,8 +757,12 @@ fit_demand_hurdle <- function(
     ),
     param_space = "log",
     param_space_details = beezdemand_param_space_details_core(
-      internal_names = list(Q0 = "log_q0", alpha = "log_alpha", k = "log_k"),
-      internal_spaces = list(Q0 = "log", alpha = "log", k = "log")
+      internal_names = list(
+        Q0 = "log_q0",
+        alpha = "log_alpha",
+        k = if (has_k) "log_k" else NA_character_
+      ),
+      internal_spaces = list(Q0 = "log", alpha = "log", k = if (has_k) "log" else NA_character_)
     ),
     converged = converged,
     optimizer_warnings = unique(opt_warnings),

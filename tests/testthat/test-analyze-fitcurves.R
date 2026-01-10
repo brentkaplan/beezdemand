@@ -32,12 +32,19 @@ test_that("FitCurves with HS equation and fixed k produces correct results", {
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 3)
   expect_true(all(c("id", "Equation", "Q0d", "K", "Alpha", "R2", "Pmaxd", "Omaxd") %in% names(result)))
+  expect_true(all(c("alpha_star", "alpha_star_se") %in% names(result)))
 
   # Golden values for ID 19
   row_19 <- result[result$id == 19, ]
   expect_equal_numeric(row_19$Q0d, 10.158664, tolerance = 0.01)
   expect_equal(row_19$K, 2)
   expect_equal_numeric(row_19$Alpha, 0.002047574, tolerance = 1e-5)
+  expect_equal_numeric(
+    row_19$alpha_star,
+    -row_19$Alpha / log(1 - 1 / (row_19$K * log(10))),
+    tolerance = 1e-8
+  )
+  expect_true(is.finite(row_19$alpha_star_se) && row_19$alpha_star_se >= 0)
   expect_equal_numeric(row_19$R2, 0.9804182, tolerance = 0.01)
   expect_equal_numeric(row_19$Pmaxd, 13.86976, tolerance = 0.1)
   expect_equal_numeric(row_19$Omaxd, 44.43035, tolerance = 0.1)
@@ -85,6 +92,12 @@ test_that("FitCurves with Koff equation and fixed k produces correct results", {
   expect_equal(row_19$Equation, "koff")
   expect_equal_numeric(row_19$Q0d, 10.072114, tolerance = 0.01)
   expect_equal_numeric(row_19$Alpha, 0.002003155, tolerance = 1e-5)
+  expect_equal_numeric(
+    row_19$alpha_star,
+    -row_19$Alpha / log(1 - 1 / (row_19$K * log(10))),
+    tolerance = 1e-8
+  )
+  expect_true(is.finite(row_19$alpha_star_se) && row_19$alpha_star_se >= 0)
   expect_equal_numeric(row_19$R2, 0.9676372, tolerance = 0.01)
   expect_equal_numeric(row_19$Pmaxd, 14.29914, tolerance = 0.1)
 
