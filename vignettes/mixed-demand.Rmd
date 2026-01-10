@@ -1,0 +1,1190 @@
+---
+title: "Mixed-Effects Demand Modeling with `beezdemand`"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Mixed-Effects Demand Modeling with `beezdemand`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE, # Keep code chunks separate
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE, # Suppress warnings for cleaner output in vignette
+  message = FALSE  # Suppress messages for cleaner output in vignette
+)
+
+library(beezdemand)
+library(dplyr)
+library(ggplot2)
+```
+
+# Introduction
+
+This vignette demonstrates how to perform mixed-effects nonlinear modeling
+of behavioral economic demand data using the beezdemand package. We will focus
+on the fit_demand_mixed() function and its associated helper functions for
+extracting results, making predictions, and performing comparisons. These models
+allow for individual differences (random effects) and the examination of how
+various factors (fixed effects) influence demand parameters like $Q_{0}$ (maximum
+consumption at zero price) and $\alpha$ (sensitivity of demand to price). The
+parameters $Q_{0}$ and $\alpha$ are estimated on a log10 scale for numerical stability,
+but reporting functions will provide them on their natural, interpretable scale.
+
+## Data Preparation
+
+For these examples, we will use the apt and ko datasets, which is
+assumed to be available and pre-processed.
+
+The apt dataset should contain:
+
+- id: A unique identifier for each subject.
+
+- x: The price of the drug.
+
+- y: The consumption of the drug.
+
+The ko dataset should contain:
+
+- monkey: A subject or group identifier for random effects.
+
+- x: The price of the commodity (in this case the fixed-ratio requirement).
+
+- y: Raw consumption values. This is typically used with the simplified exponentiated equation.
+
+- y_ll4: Consumption, ll4 transformed. This is typically used with the zben equation.
+
+- Factor columns like drug and dose.
+
+
+```{r}
+quick_nlme_control <- nlme::nlmeControl(
+  msMaxIter = 100,
+  niterEM = 20,
+  maxIter = 100, # Low iterations for speed
+  pnlsTol = 0.1,
+  tolerance = 1e-4, # Looser tolerance
+  opt = "nlminb",
+  msVerbose = FALSE
+)
+```
+
+## Fitting Demand Models with fit_demand_mixed()
+
+The core function for fitting nonlinear mixed-effects demand models is `fit_demand_mixed()`.
+
+### APT Fit and Plot
+
+#### LL4 transformation with ZBEn
+
+```{r}
+
+apt_ll4 <- apt |>
+    mutate(y_ll4 = ll4(y))
+
+fit_apt <- fit_demand_mixed(
+  data = apt_ll4,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "id",
+  equation_form = "zben",
+  nlme_control = quick_nlme_control,
+  start_value_method = "heuristic"
+)
+print(fit_apt)
+
+
+plot(
+    fit_apt,
+    inv_fun = ll4_inv,
+    y_trans = "pseudo_log",
+    x_trans = "pseudo_log",
+    show_pred_lines = c("population", "individual")
+) +
+    facet_wrap(
+        ~ id
+    )
+
+```
+
+#### Simplified Exponential
+
+```{r}
+fit_apt <- fit_demand_mixed(
+  data = apt_ll4,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  equation_form = "simplified",
+  nlme_control = quick_nlme_control,
+  start_value_method = "heuristic"
+)
+print(fit_apt)
+
+
+plot(
+  fit_apt,
+  x_trans = "pseudo_log",
+  show_pred_lines = c("population", "individual")
+) +
+  facet_wrap(
+    ~id
+  )
+
+
+```
+
+### Basic Model (No Factors)
+
+This model estimates global $Q_{0}$ and $\alpha$ parameters with random effects for subjects.
+
+```{r}
+# Make sure a similar 'fit_no_factors' was created successfully in your environment
+# For the vignette, let's create one that is more likely to converge quickly
+# by using only Alfentanil data, which is less complex than the full dataset.
+ko_alf <- ko[ko$drug == "Alfentanil", ]
+
+fit_no_factors_vignette <- fit_demand_mixed(
+  data = ko_alf,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey",
+  equation_form = "zben",
+  nlme_control = quick_nlme_control, # Use quicker control for vignette
+  start_value_method = "heuristic" # Heuristic is faster for simple model
+)
+print(fit_no_factors_vignette)
+```
+
+The output shows the model call, selected equation form, and if the model converged, it prints the nlme model summary.
+
+### Model with One Factor
+
+Let's model $Q_{0}$ and $\alpha$ as varying by dose for Alfentanil.
+
+```{r}
+fit_one_factor_dose <- fit_demand_mixed(
+  data = ko[ko$drug == "Remifentanil", ],
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey",
+  factors = "dose",
+  equation_form = "zben",
+  nlme_control = quick_nlme_control,
+  start_value_method = "heuristic"
+)
+print(fit_one_factor_dose)
+```
+
+### Model with Two Factors (Additive)
+
+Here, $Q_{0}$ and $\alpha$ vary by drug and dose additively.
+For this, we need more data than just ko_alf. We'll use the small ko sample defined earlier.
+Note: With complex models and small sample sizes, convergence can be challenging.
+The start_value_method = "pooled_nls" is often more robust for complex models.
+
+```{r}
+# This model might be slow or fail to converge with the small 'ko' and quick_nlme_control
+# In a real vignette, use a dataset known to converge or increase iterations.
+# For demonstration, we'll proceed.
+fit_two_factors_add <- try(
+  fit_demand_mixed(
+    data = ko,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = c("drug", "dose"),
+    factor_interaction = FALSE, # Additive effects
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_two_factors_add, "try-error")) {
+  print(fit_two_factors_add)
+} else {
+  cat(
+    "Two-factor additive model failed to converge with current settings for the vignette.\n"
+  )
+  fit_two_factors_add <- NULL # Ensure it's NULL for later checks
+}
+```
+
+### Model with Two Factors and Interaction
+
+This allows the effect of dose to be different for each drug (and vice-versa).
+
+```{r}
+fit_two_factors_int <- try(
+  fit_demand_mixed(
+    data = ko,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = c("drug", "dose"),
+    factor_interaction = TRUE, # Interaction effect
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_two_factors_int, "try-error")) {
+  print(fit_two_factors_int)
+} else {
+  cat(
+    "Two-factor interaction model failed to converge with current settings for the vignette.\n"
+  )
+  fit_two_factors_int <- NULL
+}
+```
+
+### Using Different equation_form and y_var
+
+The simplified equation form expects y_var to be raw consumption.
+
+```{r}
+better_nlme_control <- nlme::nlmeControl(
+  msMaxIter = 100, # Max iterations for nlmeStruct optimization
+  niterEM = 50, # Max EM iterations
+  maxIter = 100, # Max iterations for the optim call for fixed effects
+  pnlsTol = 1e-4, # Tolerance for PNLS convergence
+  tolerance = 1e-7, # Tolerance for outer optimization loop
+  opt = "nlminb",
+  msVerbose = TRUE # Set to TRUE to see optimization steps
+)
+
+fit_simplified_example <- try(
+  fit_demand_mixed(
+    data = ko_alf, # Using simpler Alfentanil data
+    y_var = "y", # Raw consumption
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    equation_form = "simplified",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_simplified_example, "try-error")) {
+  print(fit_simplified_example)
+} else {
+  cat(
+    "Simplified equation model failed to converge with current settings for the vignette.\n"
+  )
+  fit_simplified_example <- NULL
+}
+```
+
+### Collapsing Factor Levels
+
+Sometimes you might want to group levels of a factor, and you may want different
+groupings for $Q_{0}$ versus $\alpha$. The `collapse_levels` argument allows you
+to specify separate collapsing schemes for each parameter.
+
+**Structure:**
+```r
+collapse_levels = list(
+  Q0 = list(factor_name = list(new_level = c("old_level1", "old_level2"), ...)),
+  alpha = list(factor_name = list(new_level = c("old_level1", ...), ...))
+)
+```
+
+Either `Q0` or `alpha` (or both) can be omitted to keep original levels for that parameter.
+
+#### Example: Same collapsing for both parameters
+
+```{r}
+# Ensure levels to collapse are present in ko_alf$dose
+# levels(ko_alf$dose) are "0.001", "0.003", "3e-04"
+fit_collapsed_same <- try(
+  fit_demand_mixed(
+    data = ko_alf,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    collapse_levels = list(
+      Q0 = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003")),
+      alpha = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003"))
+    ),
+    equation_form = "zben",
+    nlme_control = quick_nlme_control
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_collapsed_same, "try-error") && !is.null(fit_collapsed_same$model)) {
+  print(fit_collapsed_same)
+  cat("\nQ0 params:", fit_collapsed_same$param_info$num_params_Q0, "\n")
+  cat("alpha params:", fit_collapsed_same$param_info$num_params_alpha, "\n")
+} else {
+  cat("Collapsed levels model failed to converge.\n")
+}
+```
+
+#### Example: Different collapsing for Q0 and alpha
+
+This is particularly useful when you want fine-grained distinctions for one
+parameter but not the other. For instance, you might hypothesize that maximum
+consumption ($Q_{0}$) varies by dose, but sensitivity ($\alpha$) does not.
+
+```{r}
+# Q0: keep 2 collapsed levels (low vs high)
+# alpha: collapse all to 1 level (intercept only)
+fit_collapsed_asymmetric <- try(
+  fit_demand_mixed(
+    data = ko_alf,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    collapse_levels = list(
+      Q0 = list(dose = list(low_doses = c("3e-04", "0.001"), high_dose = "0.003")),
+      alpha = list(dose = list(all_doses = c("3e-04", "0.001", "0.003")))
+    ),
+    equation_form = "zben",
+    nlme_control = quick_nlme_control
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_collapsed_asymmetric, "try-error") && !is.null(fit_collapsed_asymmetric$model)) {
+  print(fit_collapsed_asymmetric)
+  cat("\nQ0 params:", fit_collapsed_asymmetric$param_info$num_params_Q0, "\n")
+  cat("alpha params:", fit_collapsed_asymmetric$param_info$num_params_alpha, "\n")
+  cat("\nQ0 formula:", fit_collapsed_asymmetric$formula_details$fixed_effects_formula_str_Q0, "\n")
+  cat("alpha formula:", fit_collapsed_asymmetric$formula_details$fixed_effects_formula_str_alpha, "\n")
+} else {
+  cat("Asymmetric collapsed levels model failed to converge.\n")
+}
+```
+
+**Note:** When all levels of a factor are collapsed to a single level for a
+parameter, that factor is automatically removed from the formula for that
+parameter (it contributes only to the intercept). A message will inform you
+when this occurs.
+
+#### EMMs and Comparisons with Collapsed Factors
+
+When using `collapse_levels`, the `get_demand_param_emms()` and
+`get_demand_comparisons()` functions automatically handle the asymmetric
+factor structures. EMMs will be computed using the collapsed levels, and
+comparisons will only be performed when there are multiple levels to compare.
+
+**Differential Collapsing Output:** When Q0 and alpha have different numbers
+of factor levels (e.g., Q0 keeps original `dose` levels while alpha collapses
+to fewer groups), the EMM output will include separate factor columns:
+
+- Original factor column (e.g., `dose`) for the uncollapsed parameter (Q0)
+- Suffixed column (e.g., `dose_alpha`) for the collapsed parameter (alpha)
+
+This results in a cross-joined table showing all combinations of Q0 levels
+and alpha levels. For example, if dose has 5 original levels and alpha
+collapses to 2 groups, the EMM table will have 10 rows (5 × 2).
+
+```{r}
+# Using the asymmetric collapsed model from above (if it converged)
+if (!inherits(fit_collapsed_asymmetric, "try-error") &&
+    !is.null(fit_collapsed_asymmetric$model)) {
+
+  cat("--- EMMs with collapsed factors ---\n")
+  # EMMs will show collapsed Q0 levels but single alpha value
+  collapsed_emms <- get_demand_param_emms(
+    fit_obj = fit_collapsed_asymmetric,
+    factors_in_emm = "dose",  # Use original factor name
+    include_ev = TRUE
+  )
+  print(collapsed_emms)
+
+  cat("\n--- Comparisons with collapsed factors ---\n")
+  # Q0 will have comparisons (2 levels), alpha will have none (1 level)
+  collapsed_comparisons <- get_demand_comparisons(
+    fit_obj = fit_collapsed_asymmetric,
+    compare_specs = ~ dose,  # Use original factor name
+    params_to_compare = c("Q0", "alpha")
+  )
+
+  cat("\nQ0 contrasts (collapsed levels):\n")
+  print(collapsed_comparisons$Q0$contrasts_log10)
+
+  cat("\nalpha contrasts (intercept-only, no comparisons):\n")
+  print(collapsed_comparisons$alpha$contrasts_log10)
+} else {
+  cat("Asymmetric collapsed model not available for EMM demonstration.\n")
+}
+```
+
+### More Complex Random Effects Structures
+
+```{r}
+# random_effects_drug_by_monkey <- list(nlme::pdDiag(Q0 + alpha ~ drug))
+
+
+robust_nlme_control <- nlme::nlmeControl(
+  msMaxIter = 100,
+  niterEM = 50,
+  maxIter = 100,
+  pnlsTol = 1e-4,
+  tolerance = 1e-7,
+  opt = "nlminb",
+  msVerbose = TRUE # Set to FALSE for less output once working
+)
+
+fit_drug_slope_random <- fit_demand_mixed(
+  data = ko,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey", # This is your 'monkey' identifier
+  factors = c("drug", "dose"),
+  factor_interaction = FALSE, # Additive fixed effects as requested
+  equation_form = "zben",
+  random_effects = Q0 + alpha ~ drug, # Key change here
+  covariance_structure = "pdDiag",
+  nlme_control = robust_nlme_control,
+  start_value_method = "pooled_nls" # Good for more complex models
+)
+
+
+# --- 4. Examine the Fit ---
+print(fit_drug_slope_random)
+if (!is.null(fit_drug_slope_random$model)) {
+  summary(fit_drug_slope_random)
+
+  cat("\nFixed Effects:\n")
+  print(nlme::fixef(fit_drug_slope_random))
+
+  cat("\nRandom Effects Structure (Standard Deviations and Correlations):\n")
+  print(nlme::VarCorr(fit_drug_slope_random$model))
+
+  cat(
+    "\nRandom Effect Estimates for each Monkey (deviations from fixed effects):\n"
+  )
+  print(utils::head(nlme::ranef(fit_drug_slope_random)))
+
+  cat("\nSubject-Specific Coefficients (Fixed + Random, log10 scale):\n")
+  print(head(coef(fit_drug_slope_random))) # type="combined" is default
+} else {
+  message("Model fitting failed.")
+}
+
+all_params_emms <- get_demand_param_emms(
+  fit_obj = fit_drug_slope_random,
+  factors_in_emm = c("drug", "dose"), # Get all cells
+  at = list(monkey = "A"), # Condition on monkey A
+  include_ev = TRUE # Or FALSE if not needed
+)
+
+observed_params_emms <- get_observed_demand_param_emms(
+  fit_obj = fit_drug_slope_random,
+  factors_in_emm = c("drug", "dose"), # Get all cells
+  at = list(monkey = "A"), # Condition on monkey A
+  include_ev = TRUE # Or FALSE if not needed
+)
+
+
+```
+
+Now let's demonstrate how to extract individual-level predicted coefficients using the `get_individual_coefficients()` function. This function combines fixed and random effects to calculate individual-level parameter estimates for each subject.
+
+```{r}
+if (!is.null(fit_drug_slope_random$model)) {
+  # Get individual coefficients in wide format (default)
+  individual_coefs_wide <- get_individual_coefficients(
+    fit_drug_slope_random,
+    params = c("Q0", "alpha"),
+    format = "wide"
+  )
+
+  cat("Individual coefficients (wide format, log10 scale):\n")
+  print(individual_coefs_wide)
+
+  # Get individual coefficients in long format
+  individual_coefs_long <- get_individual_coefficients(
+    fit_drug_slope_random,
+    params = c("Q0", "alpha"),
+    format = "long"
+  )
+
+  cat("\nIndividual coefficients (long format, log10 scale):\n")
+  print(head(individual_coefs_long, 10))
+
+  # Convert to natural scale for interpretation
+  individual_coefs_natural <- individual_coefs_wide
+
+  # Convert Q0 coefficients to natural scale
+  q0_cols <- grep("^estimated_Q0_", names(individual_coefs_natural), value = TRUE)
+  for (col in q0_cols) {
+    natural_col <- gsub("estimated_Q0_", "Q0_natural_", col)
+    individual_coefs_natural[[natural_col]] <- 10^individual_coefs_natural[[col]]
+  }
+
+  # Convert alpha coefficients to natural scale
+  alpha_cols <- grep("^estimated_alpha_", names(individual_coefs_natural), value = TRUE)
+  for (col in alpha_cols) {
+    natural_col <- gsub("estimated_alpha_", "alpha_natural_", col)
+    individual_coefs_natural[[natural_col]] <- 10^individual_coefs_natural[[col]]
+  }
+
+  cat("\nExample individual coefficients on natural scale:\n")
+  print(individual_coefs_natural[1:3, c("id",
+                                       grep("Q0_natural_", names(individual_coefs_natural), value = TRUE)[1:2],
+                                       grep("alpha_natural_", names(individual_coefs_natural), value = TRUE)[1:2])])
+
+  # You can also get coefficients for specific parameters only
+  q0_only <- get_individual_coefficients(
+    fit_drug_slope_random,
+    params = "Q0",
+    format = "wide"
+  )
+
+  cat("\nQ0 coefficients only:\n")
+  print(q0_only)
+
+} else {
+  cat("Model fitting failed - cannot demonstrate individual coefficient extraction.\n")
+}
+```
+
+The `get_individual_coefficients()` function provides several key benefits:
+
+- **Automatic factor detection**: Works with any factor structure in your model
+- **Flexible output formats**: Wide format (one row per subject) or long format (one row per parameter-condition)
+- **Parameter selection**: Extract $Q_{0}$, $\alpha$ or both parameters
+- **Robust calculation**: Handles missing random effects and complex factor structures
+- **Natural scale conversion**: Coefficients are on log10 scale (model estimation scale) but can be easily converted to natural scale using `10^coefficient`
+
+This is particularly useful for:
+
+- Examining individual differences in demand parameters
+- Creating subject-specific predictions
+- Understanding how treatments affect individual subjects
+- Quality control and outlier detection
+
+### Inspecting Model Fits
+
+Once a model is fit, you can inspect it using several S3 methods. We'll use `fit_one_factor_dose` if it converged.
+
+```{r}
+# Use a fit that is likely to have converged, e.g., fit_one_factor_dose
+active_fit <- if (!is.null(fit_one_factor_dose$model)) fit_one_factor_dose else
+  fit_no_factors_vignette
+
+if (!is.null(active_fit$model)) {
+  cat("--- Using S3 print() method: ---\n")
+  print(active_fit)
+
+  cat("\n--- Using S3 summary() method: ---\n")
+  # The summary.beezdemand_nlme method calls summary.nlme and formats it
+  model_summary <- summary(active_fit)
+  print(model_summary)
+
+  cat("\n--- Extracting Coefficients using S3 coef(): ---\n")
+  cat("Fixed effects:\n")
+  print(coef(active_fit, type = "fixed"))
+
+  cat("\nRandom effects (deviations):\n")
+  # Printing ranef can be long, so let's show head
+  print(head(coef(active_fit, type = "random")))
+
+  cat("\nSubject-specific coefficients (fixed + random):\n")
+  print(head(coef(active_fit, type = "combined"))) # Default type
+
+  cat("\nUsing S3 fixef() and ranef():\n")
+  print(nlme::fixef(active_fit))
+  print(utils::head(nlme::ranef(active_fit)))
+
+  cat("\nStart values that were used for the NLME fit:\n")
+  print(active_fit$start_values_used)
+} else {
+  cat("No suitable model converged for detailed inspection in the vignette.\n")
+}
+```
+
+### Making Predictions (predict())
+
+The S3 `predict()` method can generate population-level or group-level predictions.
+
+```{r}
+if (!is.null(active_fit$model)) {
+  cat("--- Population-level predictions (log10 scale for 'zben'): ---\n")
+  preds_pop_log <- predict(active_fit, level = 0)
+  print(head(preds_pop_log))
+
+  cat(
+    "\n--- Population-level predictions (natural scale, back-transformed): ---\n"
+  )
+  # Assuming y_var was ll4, inv_fun is ll4_inv
+  preds_pop_natural <- predict(
+    active_fit,
+    level = 0,
+    inv_fun = ll4_inv
+  )
+  print(head(preds_pop_natural))
+
+  cat(
+    "\n--- Group-level predictions for first few data points (log10 scale): ---\n"
+  )
+  # Need to ensure newdata has factors with correct levels if different from original
+  # For simplicity, predict on a subset of the original data
+  sample_newdata <- active_fit$data[1:5, ]
+  preds_group_log <- predict(active_fit, newdata = sample_newdata, level = 1)
+  print(preds_group_log)
+} else {
+  cat("No suitable model converged for predictions in the vignette.\n")
+}
+```
+
+## Analyzing Estimated Marginal Means (`get_demand_param_emms`)
+
+This function helps interpret how factors affect $Q_{0}$ and $\alpha$, providing estimates on both log10 and natural scales, and optionally Essential Value (EV).
+
+**Note on `collapse_levels`:** When a model is fit using `collapse_levels` with
+asymmetric specifications (different collapsing for Q0 and alpha), the EMM functions
+automatically use the appropriate collapsed factor names for each parameter. You
+still specify the original factor name in `factors_in_emm`, and the output will
+show the collapsed levels. If a parameter has only one level (intercept-only),
+that parameter's values will be the same across all rows.
+
+```{r}
+# We'll use a model with factors.
+# If fit_two_factors_add converged, use it. Otherwise, use fit_one_factor_dose.
+# For the vignette, let's ensure we use one that is likely available.
+# If fit_two_factors_add is NULL (failed to converge in example), this will use fit_one_factor_dose
+emm_model_to_use <- if (
+  !is.null(fit_two_factors_add) && !is.null(fit_two_factors_add$model)
+) {
+  fit_two_factors_add
+} else if (!is.null(fit_one_factor_dose$model)) {
+  fit_one_factor_dose
+} else {
+  NULL
+}
+
+if (!is.null(emm_model_to_use)) {
+  cat(
+    "--- EMMs for model with factors:",
+    paste(emm_model_to_use$param_info$factors, collapse = ", "),
+    "---\n"
+  )
+
+  factors_for_emms <- emm_model_to_use$param_info$factors
+
+  demand_emms_output <- get_demand_param_emms(
+    fit_obj = emm_model_to_use,
+    factors_in_emm = factors_for_emms, # Use factors from the model
+    include_ev = TRUE
+  )
+  print(demand_emms_output)
+
+  cat("\n--- EMMs for observed factor combinations only: ---\n")
+  # This is useful if the EMM grid includes combinations not in data
+  observed_demand_emms <- get_observed_demand_param_emms(
+    fit_obj = emm_model_to_use,
+    factors_in_emm = factors_for_emms,
+    include_ev = TRUE
+  )
+  print(observed_demand_emms)
+} else {
+  cat(
+    "No suitable model with factors converged for EMM analysis in the vignette.\n"
+  )
+}
+```
+
+## Performing Pairwise Comparisons (`get_demand_comparisons`)
+
+Compare levels of factors for $Q_{0}$ and $\alpha$.
+
+**Note on `collapse_levels`:** When using models fit with asymmetric
+`collapse_levels`, comparisons are only performed for parameters that have
+multiple levels. If a parameter was collapsed to a single level (intercept-only),
+the comparisons for that parameter will be empty.
+
+```{r}
+# Using the same emm_model_to_use
+if (
+  !is.null(emm_model_to_use) && length(emm_model_to_use$param_info$factors) > 0
+) {
+  factors_present <- emm_model_to_use$param_info$factors
+
+  if ("dose" %in% factors_present) {
+    cat(
+      "--- Pairwise comparisons for 'dose' (averaging over other factors if any): ---\n"
+    )
+    comparisons_dose <- get_demand_comparisons(
+      fit_obj = emm_model_to_use,
+      compare_specs = ~dose,
+      contrast_type = "pairwise",
+      adjust = "fdr",
+      report_ratios = TRUE
+    )
+    print(comparisons_dose)
+  }
+
+  if (all(c("drug", "dose") %in% factors_present)) {
+    cat(
+      "\n--- Pairwise comparisons for 'drug' within each level of 'dose': ---\n"
+    )
+    # EMMs calculated over drug*dose, then contrast drug within each dose
+    comparisons_drug_by_dose <- get_demand_comparisons(
+      fit_obj = emm_model_to_use,
+      compare_specs = ~ drug * dose,
+      contrast_type = "pairwise",
+      contrast_by = "dose", # Compare 'drug' levels, holding 'dose' constant
+      adjust = "fdr",
+      report_ratios = TRUE
+    )
+    print(comparisons_drug_by_dose)
+  }
+} else {
+  cat(
+    "No suitable model with factors converged for comparisons in the vignette.\n"
+  )
+}
+```
+
+## Visualizing Model Fits with `plot()`
+
+The `beezdemand` package provides an S3 `plot()` method for `beezdemand_nlme`
+objects, built using `ggplot2`, to help visualize the fitted demand curves against observed data.
+
+**Key Features:**
+
+*   **Observed Data:** Can display the original data points.
+
+*   **Prediction Lines:** Plots model-predicted demand curves at the
+population level (fixed effects, `pred_level = 0`) or group/subject level
+(fixed + random effects, `pred_level = 1`).
+
+*   **Inverse Transformation (`inv_fun`):** Allows back-transformation of
+the y-axis and predictions to the natural scale (e.g., from log10 consumption
+back to raw consumption units).
+
+*   **Aesthetic Mapping:** Factors can be mapped to `color`, `linetype`
+(for lines), and `shape` (for points).
+
+*   **Faceting:** Supports `ggplot2` faceting via `facet_formula`.
+
+*   **Axis Transformations:** Allows `x_trans` and `y_trans` (e.g., "log10", "pseudo_log").
+
+### Example 1: Plotting a Single-Factor Model
+
+Let's use `fit_one_factor_dose` (modeling demand for Alfentanil
+by `dose`, with `y_ll4` as the dependent variable).
+
+```{r plot_one_factor, fig.cap="Demand curves for Alfentanil by dose (population level). y-axis on natural scale."}
+# Assuming fit_one_factor_dose was successfully created earlier in the vignette
+if (!is.null(fit_one_factor_dose$model)) {
+  # Define the inverse transformation function (if y_ll4 is log10(y))
+#   ll4_inv <- function(y_log10) 10^y_log10
+
+  plot(fit_one_factor_dose,
+       inv_fun = ll4_inv,
+       color_by = "dose",    # Color lines and points by dose
+       shape_by = "dose",    # Different shapes for points by dose
+       observed_point_alpha = 0.7,
+       title = "Alfentanil Demand by Dose (Population Fit)")
+} else {
+  cat("fit_one_factor_dose model object not available for plotting.\n")
+}
+```
+
+This plot shows the population-level demand curves for each dose of Alfentanil.
+The y-axis has been back-transformed to the natural consumption scale using inv_fun.
+
+### Example 2: Plotting Subject-Specific Lines
+
+We can also visualize the individual subject fits by setting `show_pred_lines = "individual"`.
+
+```{r}
+if (!is.null(fit_one_factor_dose$model)) {
+  plot(
+    fit_one_factor_dose,
+    show_pred_lines = "individual",
+    inv_fun = ll4_inv,
+    color_by = "dose", # Color lines by dose
+    observed_point_alpha = 0.4,
+    y_trans = "pseudo_log",
+    ind_line_alpha = .5, # Make subject lines semi-transparent
+    title = "Alfentanil Demand by Dose (Subject-Specific Fits)"
+  ) +
+    ggplot2::guides(color = guide_legend(override.aes = list(alpha = 1))) +# Make legend opaque
+    facet_grid(~monkey)
+} else {
+  cat("fit_one_factor_dose model object not available for plotting.\n")
+}
+```
+
+Here, each thin line represents the fitted curve for an individual subject (monkey), colored by dose.
+
+### Example 3: Plotting a Two-Factor Model with Faceting
+
+Let's use fit_two_factors_add (if it converged: y_ll4 ~ drug + dose). We can
+facet by one factor and color by another.
+
+```{r}
+# Assuming fit_two_factors_add was successfully created earlier
+# If it failed, this chunk won't produce a plot.
+active_two_factor_fit <- if (
+  !is.null(fit_two_factors_add) && !is.null(fit_two_factors_add$model)
+) {
+  fit_two_factors_add
+} else {
+  # Fallback to a simpler model if the two-factor one failed in the vignette
+  if (!is.null(fit_one_factor_dose$model)) fit_one_factor_dose else NULL
+}
+
+if (
+  !is.null(active_two_factor_fit$model) &&
+    !is.null(active_two_factor_fit$param_info$factors) &&
+    length(active_two_factor_fit$param_info$factors) >= 1
+) {
+  # Determine factors for aesthetics based on what's in active_two_factor_fit
+  color_factor <- if ("dose" %in% active_two_factor_fit$param_info$factors)
+    "dose" else NULL
+  facet_factor_name <- if ("drug" %in% active_two_factor_fit$param_info$factors)
+    "drug" else {
+    # If only 'dose' is available from fit_one_factor_dose, we can't facet by 'drug'
+    # So, maybe facet by dose instead, or don't facet.
+    if (
+      "dose" %in%
+        active_two_factor_fit$param_info$factors &&
+        is.null(color_factor)
+    ) {
+      color_factor <- "dose" # color by dose if not faceting by it
+      NULL # No faceting
+    } else {
+      NULL
+    }
+  }
+
+  facet_formula_plot <- if (!is.null(facet_factor_name))
+    stats::as.formula(paste("~", facet_factor_name)) else NULL
+
+  plot(
+    active_two_factor_fit,
+    inv_fun = ll4_inv,
+    color_by = color_factor,
+    # linetype_by = if("dose" %in% active_two_factor_fit$param_info$factors) "dose" else NULL, # Example
+    facet_formula = facet_formula_plot,
+    title = "Demand Curves (Population Fit)",
+    observed_point_alpha = 0.5,
+    ind_line_alpha = .5
+  )
+} else {
+  cat(
+    "A suitable two-factor or one-factor model object not available for this plotting example.\n"
+  )
+}
+```
+
+This example attempts to use fit_two_factors_add. If that model didn't converge
+(common with minimal iterations for vignette speed), it falls back to
+fit_one_factor_dose and adjusts aesthetics. The plot will show population lines,
+colored by one factor and faceted by another (if two factors are available).
+
+### Example 4: Customizing Axes (e.g., Log Scale)
+
+You can use `x_trans` and `y_trans` for axis transformations.
+
+```{r}
+if (!is.null(fit_one_factor_dose$model)) {
+  plot(
+    fit_one_factor_dose,
+    inv_fun = ll4_inv,
+    color_by = "dose",
+    x_trans = "pseudo_log", # Log10 transform the x-axis
+    y_trans = "pseudo_log", # Pseudo-log transform the y-axis
+    title = "Alfentanil Demand (Log10 Price Scale)"
+  )
+} else {
+  cat("fit_one_factor_dose model object not available for plotting.\n")
+}
+```
+
+### Example 5: Plotting a Model Fit with equation_form = "simplified"
+
+If you fit a model using equation_form = "simplified" (which models raw y), the
+inv_fun is typically identity because predictions are already on the natural scale.
+
+```{r}
+# Assuming fit_simplified_example converged earlier
+if (
+  !is.null(fit_simplified_example) && !is.null(fit_simplified_example$model)
+) {
+  plot(
+    fit_simplified_example,
+    inv_fun = identity, # Predictions are already on raw y scale
+    color_by = "dose",
+    shape_by = "dose",
+    title = "Demand Model ('simplified' equation, Raw Y)"
+  )
+} else {
+  cat("fit_simplified_example model object not available for plotting.\n")
+}
+```
+
+These examples demonstrate the main capabilities of the
+plot.beezdemand_nlme method. Users can further customize the returned ggplot
+object by adding more layers or theme adjustments. For instance, to add custom
+axis limits or breaks:
+
+```r
+plot_object +
+    ggplot2::scale_x_continuous(
+        limits = c(0, 1000),
+        breaks = c(0, 100, 500, 1000)
+    )
+```
+
+## Continuous Covariates and `fixed_rhs`
+
+In addition to factor predictors, you can include continuous covariates in the fixed-effects
+linear models for `Q0` and `alpha`.
+
+There are two convenient ways to do this:
+
+1. Add continuous covariates additively using the `continuous_covariates` argument (no formula writing required).
+2. Specify a full right-hand-side using `fixed_rhs` (formula), which gives you complete control,
+   including interactions (e.g., factor-by-continuous).
+
+Below we demonstrate both, using a made-up continuous covariate `age` assigned per subject (`monkey`).
+
+```{r}
+set.seed(123)
+
+# Create a per-monkey continuous covariate: age
+monkey_age <- unique(ko[ , c("monkey")]) |>
+  dplyr::mutate(age = round(runif(dplyr::n(), min = 18, max = 25), 1))
+
+ko_age <- dplyr::left_join(ko, monkey_age, by = "monkey")
+# Ensure a numeric version of dose is available for continuous modeling
+ko_age <- ko_age |>
+  dplyr::mutate(dose_num = suppressWarnings(as.numeric(as.character(dose))))
+
+# Robust median for dose_num (fallbacks if all values are NA)
+median_dose_num <- suppressWarnings(stats::median(ko_age$dose_num, na.rm = TRUE))
+if (is.na(median_dose_num) || !is.finite(median_dose_num)) {
+  finite_vals <- ko_age$dose_num[is.finite(ko_age$dose_num)]
+  if (length(finite_vals) > 0) {
+    median_dose_num <- finite_vals[1]
+  } else {
+    median_dose_num <- 0
+  }
+}
+
+# Sanity check
+head(ko_age[, c("monkey", "age")])
+```
+
+### A) Additive continuous covariate via `continuous_covariates`
+
+Here we keep a single factor (`dose`) and add `age` as an additive continuous covariate. The RHS becomes
+`~ 1 + dose + age` for both parameters.
+
+```{r}
+fit_age_add <- try(
+  fit_demand_mixed(
+    data = ko_age,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = "dose",
+    continuous_covariates = c("age"),
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_age_add, "try-error") && !is.null(fit_age_add$model)) {
+  print(fit_age_add)
+
+  # EMMs over dose at age = 21
+  emms_age_add <- get_demand_param_emms(
+    fit_obj = fit_age_add,
+    factors_in_emm = c("dose"),
+    at = list(age = 21),
+    include_ev = TRUE
+  )
+  cat("\nEMMs (age = 21):\n")
+  print(emms_age_add)
+
+  # Pairwise comparisons for dose at age = 21 (log10 scale; ratios reported too)
+  comps_age_add <- get_demand_comparisons(
+    fit_obj = fit_age_add,
+    compare_specs = ~ dose,
+    contrast_type = "pairwise",
+    at = list(age = 21),
+    adjust = "fdr",
+    report_ratios = TRUE
+  )
+  cat("\nPairwise comparisons for dose (age = 21):\n")
+  print(comps_age_add)
+
+  # Plot population lines at age = 21 (natural scale on y)
+  plot(
+    fit_age_add,
+    at = list(age = 21),
+    inv_fun = ll4_inv,
+    color_by = "dose",
+    x_trans = "pseudo_log",
+    y_trans = "pseudo_log",
+    title = "Demand by Dose with Age as Covariate (Population Fit at age = 21)"
+  )
+} else {
+  cat("\nAdditive continuous covariate model failed to converge for the vignette settings.\n")
+}
+```
+
+### B) fixed_rhs with a factor (drug) and a continuous covariate (dose)
+
+Here we specify `drug` as a factor but treat `dose` as a continuous covariate
+(`dose_num`, a numeric version of `dose`),
+and include `age` as an additional continuous covariate. This uses a shared RHS
+for `Q0` and `alpha`:
+`~ 1 + drug + dose_num + age`.
+
+```{r}
+fit_age_rhs <- try(
+  fit_demand_mixed(
+    data = ko_age,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "monkey",
+    factors = c("drug"),  # only 'drug' is treated as a factor
+    fixed_rhs = "~ 1 + drug + dose_num + age",
+    equation_form = "zben",
+    nlme_control = quick_nlme_control,
+    start_value_method = "pooled_nls"
+  ),
+  silent = TRUE
+)
+
+if (!inherits(fit_age_rhs, "try-error") && !is.null(fit_age_rhs$model)) {
+  print(fit_age_rhs)
+
+  # EMMs over drug (factor) at age = 21 and dose set to its median
+  emms_age_rhs <- get_demand_param_emms(
+    fit_obj = fit_age_rhs,
+    factors_in_emm = c("drug"),
+    at = list(age = 21, dose_num = median_dose_num),
+    include_ev = TRUE
+  )
+  cat("\nEMMs (drug; age = 21, dose_num = median):\n")
+  print(emms_age_rhs)
+
+  # Pairwise comparisons: drug at age = 21 and dose set to its median
+  comps_drug_by_dose_age <- get_demand_comparisons(
+    fit_obj = fit_age_rhs,
+    compare_specs = ~ drug,
+    contrast_type = "pairwise",
+    at = list(age = 21, dose_num = median_dose_num),
+    adjust = "fdr",
+    report_ratios = TRUE
+  )
+  cat("\nPairwise comparisons of drug (age = 21, dose_num = median):\n")
+  print(comps_drug_by_dose_age)
+
+  # Plot population lines at age = 21 and dose_num = median, color by drug and facet by drug
+  plot(
+    fit_age_rhs,
+    at = list(age = 21, dose_num = median_dose_num),
+    inv_fun = ll4_inv,
+    color_by = "drug",
+    facet_formula = ~ drug,
+    x_trans = "pseudo_log",
+    y_trans = "pseudo_log",
+    title = "Demand by Drug with Dose Continuous (Population Fit at age = 21; dose_num = median)"
+  )
+} else {
+  cat("\nfixed_rhs model (drug factor, dose continuous) failed to converge for the vignette settings.\n")
+}
+```
+
+## Trends with `emtrends`
+
+We can examine how the parameters change with continuous covariates using
+`get_demand_param_trends()`, which wraps `emmeans::emtrends()` and returns
+tidy results for Q0 and alpha trends on the log10 scale.
+
+Below we compute trends with respect to `age` and `dose_num`, first overall and
+then by `drug` (if the model includes `drug` as a factor).
+
+```{r}
+# Choose a fitted model for trends (prefer fixed_rhs fit)
+fit_for_trends <- NULL
+if (exists("fit_age_rhs") && !is.null(fit_age_rhs) && !is.null(fit_age_rhs$model)) {
+  fit_for_trends <- fit_age_rhs
+} else if (exists("fit_age_add") && !is.null(fit_age_add) && !is.null(fit_age_add$model)) {
+  fit_for_trends <- fit_age_add
+}
+
+if (!is.null(fit_for_trends)) {
+  # Determine which of the candidate covariates are actually present in the model RHS
+  # Use Q0 formula (or alpha if Q0 is NULL) - they may differ if collapse_levels was used
+  rhs_formula_str <- fit_for_trends$formula_details$fixed_effects_formula_str_Q0 %||%
+    fit_for_trends$formula_details$fixed_effects_formula_str_alpha
+  rhs_vars_tr <- tryCatch(
+    all.vars(as.formula(rhs_formula_str)),
+    error = function(e) character(0)
+  )
+  covariates_candidate <- c("age", "dose_num")
+  covariates_in_model <- intersect(rhs_vars_tr, covariates_candidate)
+
+  if (length(covariates_in_model) > 0) {
+    cat("\n--- Trends (overall) at age = 21 and dose_num = median ---\n")
+    trends_overall <- get_demand_param_trends(
+      fit_obj = fit_for_trends,
+      params = c("Q0", "alpha"),
+      covariates = covariates_in_model,
+      specs = ~ 1,
+      at = list(age = 21, dose_num = median_dose_num)
+    )
+    print(trends_overall)
+
+    # If 'drug' is a model factor, show trends by drug as well
+    model_factors_tr <- fit_for_trends$param_info$factors
+    if (!is.null(model_factors_tr) && ("drug" %in% model_factors_tr)) {
+      cat("\n--- Trends by drug at age = 21 and dose_num = median ---\n")
+      trends_by_drug <- get_demand_param_trends(
+        fit_obj = fit_for_trends,
+        params = c("Q0", "alpha"),
+        covariates = covariates_in_model,
+        specs = ~ drug,
+        at = list(age = 21, dose_num = median_dose_num)
+      )
+      print(trends_by_drug)
+    } else {
+      cat("\nNote: The selected model does not include 'drug' as a factor; skipping by-drug trends.\n")
+    }
+  } else {
+    cat("\nNo candidate continuous covariates ('age', 'dose_num') are present in the model RHS; skipping trends.\n")
+  }
+} else {
+  cat("\nNo suitable fitted model available for computing trends in the vignette.\n")
+}
+```
+
+# Conclusion
+
+The beezdemand package provides a suite of tools for robustly fitting
+nonlinear mixed-effects demand models and interpreting their parameters. By
+parameterizing $Q_{0}$ and $\alpha$ on the log10 scale, numerical stability is enhanced,
+while helper functions allow for easy back-transformation and interpretation on
+the natural scale.
+
+Further exploration might involve trying different random effects structures,
+more complex fixed effects, or comparing model fits using AIC/BIC.

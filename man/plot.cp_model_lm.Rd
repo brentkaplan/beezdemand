@@ -7,12 +7,13 @@
 \method{plot}{cp_model_lm}(
   x,
   data = NULL,
-  x_trans = "identity",
-  y_trans = "identity",
+  inv_fun = identity,
   n_points = 100,
+  title = NULL,
   xlab = "Price",
   ylab = "Consumption",
-  title = NULL,
+  x_trans = "identity",
+  y_trans = "identity",
   point_size = 3,
   ...
 )
@@ -23,19 +24,22 @@
 \item{data}{Optional data frame containing columns \code{x} and \code{y} to plot.
 If not provided, the function uses \code{object$data} if available.}
 
-\item{x_trans}{Transformation for the x-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
-Default is \code{"identity"}.}
-
-\item{y_trans}{Transformation for the y-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
-Default is \code{"identity"}.}
+\item{inv_fun}{Optional function to inverse-transform predictions. Default is `identity`.
+Not typically used for linear models but included for API consistency.}
 
 \item{n_points}{Number of points to create in the prediction grid. Default is \code{100}.}
+
+\item{title}{Optional title for the plot; default is \code{NULL}.}
 
 \item{xlab}{Label for the x-axis. Default is \code{"Price"}.}
 
 \item{ylab}{Label for the y-axis. Default is \code{"Consumption"}.}
 
-\item{title}{Optional title for the plot; default is \code{NULL}.}
+\item{x_trans}{Transformation for the x-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
+Default is \code{"identity"}.}
+
+\item{y_trans}{Transformation for the y-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
+Default is \code{"identity"}.}
 
 \item{point_size}{Size of the data points in the plot. Default is \code{3}.}
 
