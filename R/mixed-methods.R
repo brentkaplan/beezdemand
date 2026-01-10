@@ -1888,20 +1888,19 @@ tidy.beezdemand_nlme <- function(
       estimate_scale = internal_space,
       term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
     )
+
+    fixed <- beezdemand_transform_coef_table(
+      coef_tbl = fixed,
+      report_space = report_space,
+      internal_space = internal_space
+    )
+
     if (report_space != internal_space) {
-      fixed$estimate_internal <- fixed$estimate
-      trans <- beezdemand_transform_est_se(
-        estimate = fixed$estimate,
-        se = fixed$std.error,
-        from = internal_space,
-        to = report_space
-      )
-      fixed$estimate <- trans$estimate
-      fixed$std.error <- trans$se
-      fixed$statistic <- fixed$estimate / fixed$std.error
-      fixed$p.value <- 2 * stats::pnorm(-abs(fixed$statistic))
-      fixed$estimate_scale <- report_space
-      fixed$term_display <- vapply(fixed$term, beezdemand_term_display_space, character(1), report_space = report_space)
+      fixed <- fixed |>
+        dplyr::mutate(
+          statistic = .data$estimate / .data$std.error,
+          p.value = 2 * stats::pnorm(-abs(.data$statistic))
+        )
     }
     result <- dplyr::bind_rows(result, fixed)
   }

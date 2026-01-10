@@ -1403,13 +1403,20 @@ tidy.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
     grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
 
+  term <- dplyr::case_when(
+    coef_names == "log_q0" ~ "Q0",
+    coef_names == "log_alpha" ~ "alpha",
+    coef_names == "log_k" ~ "k",
+    TRUE ~ coef_names
+  )
+
   out <- tibble::tibble(
-    term = coef_names,
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se),
     statistic = unname(z_val),
@@ -1420,63 +1427,20 @@ tidy.beezdemand_hurdle <- function(
       coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
-    term_display = coef_names
+    term_display = term
   )
 
-  if (report_space != "internal") {
-    # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- out$term %in% c("log_q0", "log_alpha", "log_k", "k")
-    out$estimate_internal <- out$estimate
+  out <- beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = report_space,
+    internal_space = "natural"
+  )
 
-    for (i in which(demand_terms)) {
-      term_i <- out$term[i]
-      from_space <- out$estimate_scale[i]
-      to_space <- if (report_space == "natural") "natural" else "log10"
-
-      trans <- beezdemand_transform_est_se(
-        estimate = out$estimate[i],
-        se = out$std.error[i],
-        from = from_space,
-        to = to_space
-      )
-      out$estimate[i] <- trans$estimate
-      out$std.error[i] <- trans$se
-      out$statistic[i] <- out$estimate[i] / out$std.error[i]
-      out$p.value[i] <- 2 * stats::pnorm(-abs(out$statistic[i]))
-
-      if (term_i == "log_q0" && report_space == "natural") {
-        out$term[i] <- "Q0"
-        out$term_display[i] <- "Q0"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_q0" && report_space == "log10") {
-        out$term[i] <- "log10(Q0)"
-        out$term_display[i] <- "log10(Q0)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_alpha" && report_space == "natural") {
-        out$term[i] <- "alpha"
-        out$term_display[i] <- "alpha"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_alpha" && report_space == "log10") {
-        out$term[i] <- "log10(alpha)"
-        out$term_display[i] <- "log10(alpha)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_k" && report_space == "natural") {
-        out$term[i] <- "k"
-        out$term_display[i] <- "k"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_k" && report_space == "log10") {
-        out$term[i] <- "log10(k)"
-        out$term_display[i] <- "log10(k)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "k" && report_space == "log10") {
-        out$term[i] <- "log10(k)"
-        out$term_display[i] <- "log10(k)"
-        out$estimate_scale[i] <- "log10"
-      }
-    }
-  }
-
-  out
+  out |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 }
 
 

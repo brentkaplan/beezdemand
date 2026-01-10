@@ -1008,13 +1008,24 @@ tidy.beezdemand_joint_hurdle <- function(x, ...) {
   z_val <- coef / se
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
-  tibble::tibble(
+  out <- tibble::tibble(
     term = names(coef),
     estimate = unname(coef),
     std.error = unname(se),
     statistic = unname(z_val),
     p.value = unname(p_val),
-    component = component
+    component = component,
+    estimate_scale = dplyr::case_when(
+      grepl("^log|^logsigma_", names(coef)) ~ "log",
+      TRUE ~ "natural"
+    ),
+    term_display = names(coef)
+  )
+
+  beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = "natural",
+    internal_space = "natural"
   )
 }
 

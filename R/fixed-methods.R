@@ -654,34 +654,11 @@ tidy.beezdemand_fixed <- function(
   })
 
   out <- dplyr::bind_rows(coefficient_rows)
-  if (report_space == "log10") {
-    # Use suppressWarnings to avoid NaN warnings from log10 of non-positive values
-    out <- suppressWarnings(out |>
-      dplyr::mutate(
-        estimate_internal = .data$estimate,
-        estimate = dplyr::case_when(
-          .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
-          .data$term %in% c("Q0", "alpha", "k") & .data$estimate <= 0 ~ NA_real_,
-          TRUE ~ .data$estimate
-        ),
-        std.error = dplyr::case_when(
-          .data$term %in% c("Q0", "alpha", "k") & .data$estimate_internal > 0 ~
-            .data$std.error / (.data$estimate_internal * log(10)),
-          TRUE ~ .data$std.error
-        ),
-        estimate_scale = dplyr::case_when(
-          .data$term %in% c("Q0", "alpha", "k") ~ "log10",
-          TRUE ~ .data$estimate_scale
-        ),
-        term_display = dplyr::case_when(
-          .data$term == "Q0" ~ "log10(Q0)",
-          .data$term == "alpha" ~ "log10(alpha)",
-          .data$term == "k" ~ "log10(k)",
-          TRUE ~ .data$term_display
-        )
-      ))
-  }
-  out
+  beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = report_space,
+    internal_space = "natural"
+  )
 }
 
 #' Extract Coefficients from Fixed-Effect Demand Fit

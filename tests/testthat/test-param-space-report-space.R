@@ -86,8 +86,9 @@ test_that("Spec 2.4: summary()/tidy()/coef() can report hurdle demand params on 
   expect_true(any(s_log$coefficients$term == "log10(Q0)"))
 
   t_log <- tidy(fit, report_space = "log10")
-  expect_true(any(t_log$term == "log10(Q0)"))
-  expect_true(all(t_log$estimate_scale[t_log$term == "log10(Q0)"] == "log10"))
+  expect_true(any(t_log$term == "Q0"))
+  expect_true(all(t_log$estimate_scale[t_log$term == "Q0"] == "log10"))
+  expect_true(all(t_log$term_display[t_log$term == "Q0"] == "log10(Q0)"))
 })
 
 

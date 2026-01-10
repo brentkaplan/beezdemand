@@ -830,12 +830,14 @@ plot.beezdemand_cp_hurdle <- function(
 #'   - `p.value`: P-value
 #'   - `component`: One of "part1_probability", "part2_consumption", "derived"
 #' @export
-tidy.beezdemand_cp_hurdle <- function(x, ...) {
+tidy.beezdemand_cp_hurdle <- function(
+  x,
+  report_space = c("natural", "log10", "internal"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   coefs <- x$model$coefficients
   se <- x$model$se
-
-  z_val <- coefs / se
-  p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine components for each parameter (include variance/correlation terms)
   component <- rep("fixed", length(coefs))
@@ -844,32 +846,38 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
   component[names(coefs) %in% c("logQalone", "I", "log_beta")] <- "consumption"
   component[grepl("^logsigma_|^rho_|^sigma_|^var_|^cov_", names(coefs))] <- "variance"
 
-  # Build tibble for fixed effects
-  fixed_tidy <- tibble::tibble(
-    term = names(coefs),
+  term <- dplyr::case_when(
+    names(coefs) == "logQalone" ~ "Qalone",
+    names(coefs) == "log_beta" ~ "beta",
+    TRUE ~ names(coefs)
+  )
+
+  out <- tibble::tibble(
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se),
-    statistic = unname(z_val),
-    p.value = unname(p_val),
-    component = unname(component)
-  )
-
-  # Add derived parameters (beta and Qalone on natural scale)
-  derived_tidy <- tibble::tibble(
-    term = c("beta", "Qalone"),
-    estimate = c(x$model$beta, exp(coefs["logQalone"])),
-    std.error = c(
-      # Delta method approximation for beta
-      se["log_beta"] * x$model$beta,
-      # Delta method approximation for Qalone
-      se["logQalone"] * exp(coefs["logQalone"])
+    statistic = unname(coefs / se),
+    p.value = unname(2 * stats::pnorm(-abs(coefs / se))),
+    component = unname(component),
+    estimate_scale = dplyr::case_when(
+      names(coefs) %in% c("beta0", "beta1") ~ "logit",
+      names(coefs) %in% c("logQalone", "log_beta") ~ "log",
+      TRUE ~ "natural"
     ),
-    statistic = NA_real_,
-    p.value = NA_real_,
-    component = "derived_metrics"
+    term_display = term
   )
 
-  dplyr::bind_rows(fixed_tidy, derived_tidy)
+  out <- beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = report_space,
+    internal_space = "natural"
+  )
+
+  out |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 }
 
 #' Glance method for beezdemand_cp_hurdle
