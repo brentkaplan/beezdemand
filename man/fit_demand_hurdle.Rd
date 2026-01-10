@@ -14,6 +14,7 @@ fit_demand_hurdle(
   start_values = NULL,
   tmb_control = list(max_iter = 200, eval_max = 1000, trace = 0),
   verbose = 1,
+  part2 = c("zhao_exponential", "exponential", "simplified_exponential"),
   ...
 )
 }
@@ -47,6 +48,11 @@ If \code{NULL} (default), sensible defaults are used.}
 
 \item{verbose}{Integer controlling output verbosity: 0 = silent, 1 = progress
 messages, 2 = detailed optimization trace. Default is 1.}
+
+\item{part2}{Character string selecting the Part II mean function. Options are
+\code{"zhao_exponential"} (default; no Q0 normalization in the exponent),
+\code{"exponential"} (HS-standardized; Q0 inside the exponent), and
+\code{"simplified_exponential"} (SND/log-linear; no \code{k} parameter).}
 
 \item{...}{Additional arguments (reserved for future use).}
 }

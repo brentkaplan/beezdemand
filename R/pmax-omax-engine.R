@@ -251,6 +251,85 @@ NULL
   )
 }
 
+#' Analytic Pmax for HS-Standardized Hurdle Part II (Q0 inside exponent)
+#'
+#' For hurdle_hs_stdq0: Q(p) = Q0 * exp(k * (exp(-alpha * Q0 * p) - 1))
+#' Pmax = -W_0(-1/k) / (alpha * Q0)
+#'
+#' @param alpha_nat Natural-scale alpha
+#' @param q0_nat Natural-scale Q0
+#' @param k_nat Natural-scale k
+#' @return List with pmax, method, and notes
+#' @keywords internal
+.pmax_analytic_hurdle_hs_stdq0 <- function(alpha_nat, q0_nat, k_nat) {
+  # Real Lambert W solution requires k >= e
+  threshold <- exp(1)
+
+  if (is.na(alpha_nat) || is.na(q0_nat) || is.na(k_nat)) {
+    return(list(
+      pmax = NA_real_,
+      method = "analytic_lambert_w_hurdle_hs_stdq0",
+      success = FALSE,
+      note = "Missing parameter values"
+    ))
+  }
+
+  if (alpha_nat <= 0 || q0_nat <= 0 || k_nat <= 0) {
+    return(list(
+      pmax = NA_real_,
+      method = "analytic_lambert_w_hurdle_hs_stdq0",
+      success = FALSE,
+      note = "Parameters must be positive"
+    ))
+  }
+
+  if (k_nat < threshold) {
+    return(list(
+      pmax = NA_real_,
+      method = "analytic_lambert_w_hurdle_hs_stdq0",
+      success = FALSE,
+      note = sprintf(
+        "k (%.4f) < e (~%.4f): no interior maximum exists",
+        k_nat, threshold
+      )
+    ))
+  }
+
+  # Compute Lambert W: W_0(-1/k)
+  w_arg <- -1 / k_nat
+  w_val <- tryCatch(
+    lambertW(z = w_arg),
+    error = function(e) NA_real_
+  )
+
+  if (is.na(w_val) || !is.finite(w_val) || is.complex(w_val)) {
+    return(list(
+      pmax = NA_real_,
+      method = "analytic_lambert_w_hurdle_hs_stdq0",
+      success = FALSE,
+      note = "Lambert W computation failed"
+    ))
+  }
+
+  pmax <- -as.numeric(w_val) / (alpha_nat * q0_nat)
+
+  if (!is.finite(pmax) || pmax <= 0) {
+    return(list(
+      pmax = NA_real_,
+      method = "analytic_lambert_w_hurdle_hs_stdq0",
+      success = FALSE,
+      note = sprintf("Computed pmax (%.4g) is not positive finite", pmax)
+    ))
+  }
+
+  list(
+    pmax = pmax,
+    method = "analytic_lambert_w_hurdle_hs_stdq0",
+    success = TRUE,
+    note = NULL
+  )
+}
+
 #' Analytic Pmax for Simplified/SND Model
 #'
 #' For SND: Q(p) = Q0 * exp(-alpha * Q0 * p)
@@ -541,10 +620,11 @@ NULL
 #' (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
 #' observed (row-wise) metrics. Handles parameter-space conversions transparently.
 #'
-#' @param model_type Character: "hs", "koff", "hurdle", "snd", "simplified", or NULL
+#' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd", "simplified", or NULL
 #' @param params Named list of parameters. Names depend on model_type:
 #'   - hs/koff: alpha, q0, k
 #'   - hurdle: alpha, q0, k (note: hurdle uses different formula)
+#'   - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 #'   - snd/simplified: alpha, q0
 #' @param param_scales Named list mapping parameter names to their input scales:
 #'   "natural", "log", or "log10". Default assumes all natural.
@@ -732,6 +812,27 @@ beezdemand_calc_pmax_omax <- function(
       }
     }
     
+  } else if (model_type_lower %in% c("hurdle_hs_stdq0", "hurdle_stdq0")) {
+    # HS-standardized hurdle Part II: Pmax = -W_0(-1/k) / (alpha * Q0)
+    alpha_nat <- params_nat[["alpha"]] %||% params_nat[["log_alpha"]]
+    q0_nat <- params_nat[["q0"]] %||% params_nat[["log_q0"]]
+    k_nat <- params_nat[["k"]] %||% params_nat[["log_k"]]
+
+    model_result <- .pmax_analytic_hurdle_hs_stdq0(alpha_nat, q0_nat, k_nat)
+
+    if (model_result$success) {
+      result$pmax_model <- model_result$pmax
+      result$method_model <- model_result$method
+      result$is_boundary_model <- FALSE
+
+      # Construct demand function for Omax and elasticity
+      if (is.null(demand_fn)) {
+        demand_fn <- function(p) {
+          q0_nat * exp(k_nat * (exp(-alpha_nat * q0_nat * p) - 1))
+        }
+      }
+    }
+
   } else if (model_type_lower %in% c("snd", "simplified")) {
     # SND model: Pmax = 1 / (alpha * Q0)
     alpha_nat <- params_nat[["alpha"]] %||% params_nat[["log_alpha"]]
@@ -773,6 +874,10 @@ beezdemand_calc_pmax_omax <- function(
       } else if (model_type_lower == "hurdle") {
         demand_fn <- function(p) {
           q0_nat * exp(k_nat * (exp(-alpha_nat * p) - 1))
+        }
+      } else if (model_type_lower %in% c("hurdle_hs_stdq0", "hurdle_stdq0")) {
+        demand_fn <- function(p) {
+          q0_nat * exp(k_nat * (exp(-alpha_nat * q0_nat * p) - 1))
         }
       } else if (model_type_lower %in% c("snd", "simplified")) {
         demand_fn <- function(p) {

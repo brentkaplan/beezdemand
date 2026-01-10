@@ -192,6 +192,18 @@ NULL
     description = "Essential value",
     legacy_synonyms = c("EV")
   ),
+
+  alpha_star = list(
+    canonical = "alpha_star",
+    description = "Normalized alpha (Strategy B; comparable across k values)",
+    legacy_synonyms = character(0)
+  ),
+
+  alpha_star_se = list(
+    canonical = "alpha_star_se",
+    description = "Standard error of alpha_star (delta method)",
+    legacy_synonyms = character(0)
+  ),
   
   breakpoint = list(
     canonical = "breakpoint",

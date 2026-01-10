@@ -5,7 +5,7 @@
 \alias{.beezdemand_derived_registry}
 \title{Derived Metrics Registry}
 \format{
-An object of class \code{list} of length 8.
+An object of class \code{list} of length 10.
 }
 \usage{
 .beezdemand_derived_registry

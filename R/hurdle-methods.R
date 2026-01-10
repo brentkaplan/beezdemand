@@ -194,6 +194,52 @@ summary.beezdemand_hurdle <- function(
       id = NA_character_
     )
   )
+
+  # Strategy B alpha* (normalized alpha; depends on alpha and k)
+  notes <- character(0)
+  part2 <- object$param_info$part2 %||% "zhao_exponential"
+  if (!identical(part2, "simplified_exponential") &&
+    all(c("log_alpha", "log_k") %in% names(coefs))) {
+    vc <- NULL
+    if (!is.null(object$sdr) && !is.null(object$sdr$cov.fixed)) {
+      vc_try <- tryCatch(as.matrix(object$sdr$cov.fixed), error = function(e) NULL)
+      if (!is.null(vc_try) &&
+        all(c("log_alpha", "log_k") %in% colnames(vc_try))) {
+        vc <- vc_try[c("log_alpha", "log_k"), c("log_alpha", "log_k"), drop = FALSE]
+      }
+    }
+
+    if (is.null(vc)) {
+      se_theta <- object$model$se
+      vc <- c(log_alpha = se_theta[["log_alpha"]], log_k = se_theta[["log_k"]])
+    }
+
+    alpha_star_res <- .calc_alpha_star(
+      params = list(log_alpha = unname(coefs[["log_alpha"]]), log_k = unname(coefs[["log_k"]])),
+      param_scales = list(log_alpha = "log", log_k = "log"),
+      vcov = vc,
+      base = "e"
+    )
+
+    derived_metrics <- dplyr::bind_rows(
+      derived_metrics,
+      tibble::tibble(
+        metric = "alpha_star",
+        estimate = alpha_star_res$estimate,
+        std.error = alpha_star_res$se,
+        conf.low = NA_real_,
+        conf.high = NA_real_,
+        method = "delta_method",
+        component = "consumption",
+        level = "population",
+        id = NA_character_
+      )
+    )
+
+    if (!is.null(alpha_star_res$note) && nzchar(alpha_star_res$note)) {
+      notes <- c(notes, paste0("alpha_star: ", alpha_star_res$note))
+    }
+  }
   
   # Add method metadata
   pmax_method_info <- list(
@@ -239,7 +285,7 @@ summary.beezdemand_hurdle <- function(
       derived_metrics = derived_metrics,
       individual_metrics = individual_metrics,
       pmax_method_info = pmax_method_info,
-      notes = character(0)
+      notes = notes
     ),
     class = c("summary.beezdemand_hurdle", "beezdemand_summary")
   )
@@ -511,6 +557,7 @@ predict.beezdemand_hurdle <- function(
   id_var <- object$param_info$id_var
   x_var <- object$param_info$x_var
   epsilon <- object$param_info$epsilon
+  part2 <- object$param_info$part2 %||% "zhao_exponential"
 
   # For type = "parameters", just return subject-specific parameters
   if (type == "parameters") {
@@ -527,7 +574,11 @@ predict.beezdemand_hurdle <- function(
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
   log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
-  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  k <- if (!identical(part2, "simplified_exponential")) {
+    if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  } else {
+    NA_real_
+  }
   log_alpha <- coefs["log_alpha"]
 
   # Get random effects
@@ -588,7 +639,15 @@ predict.beezdemand_hurdle <- function(
       # - 3-RE: alpha_i = exp(log_alpha + c_i)
       # - 2-RE: alpha = exp(log_alpha) (c_i = 0)
       alpha_i <- exp(log_alpha + c_i[i])
-      mu_ij <- (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+      Q0_i <- exp(log_q0 + b_i[i])
+
+      mu_ij <- if (identical(part2, "simplified_exponential")) {
+        (log_q0 + b_i[i]) - alpha_i * Q0_i * p
+      } else if (identical(part2, "exponential")) {
+        (log_q0 + b_i[i]) + k * (exp(-alpha_i * Q0_i * p) - 1)
+      } else {
+        (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+      }
       results$predicted_log_consumption[idx] <- mu_ij
       results$predicted_consumption[idx] <- exp(mu_ij)
 
@@ -761,17 +820,29 @@ plot.beezdemand_hurdle <- function(
 
   # Extract population parameters
   coefs <- x$model$coefficients
+  part2 <- x$param_info$part2 %||% "zhao_exponential"
   beta0 <- coefs["beta0"]
   beta1 <- coefs["beta1"]
   log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
-  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
   alpha <- exp(coefs["log_alpha"])
+  Q0 <- exp(log_q0)
+  k <- if (!identical(part2, "simplified_exponential")) {
+    if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  } else {
+    NA_real_
+  }
 
   if (type == "demand") {
     # Population demand curve
     pop_data <- data.frame(
       price = prices,
-      log_consumption = log_q0 + k * (exp(-alpha * prices) - 1)
+      log_consumption = if (identical(part2, "simplified_exponential")) {
+        log_q0 - alpha * Q0 * prices
+      } else if (identical(part2, "exponential")) {
+        log_q0 + k * (exp(-alpha * Q0 * prices) - 1)
+      } else {
+        log_q0 + k * (exp(-alpha * prices) - 1)
+      }
     )
     pop_data$consumption <- exp(pop_data$log_consumption)
 
@@ -1045,7 +1116,13 @@ plot.beezdemand_hurdle <- function(
     # Population curve for reference
     pop_data <- data.frame(
       price = prices,
-      consumption = exp(log_q0 + k * (exp(-alpha * prices) - 1))
+      consumption = if (identical(part2, "simplified_exponential")) {
+        exp(log_q0 - alpha * Q0 * prices)
+      } else if (identical(part2, "exponential")) {
+        exp(log_q0 + k * (exp(-alpha * Q0 * prices) - 1))
+      } else {
+        exp(log_q0 + k * (exp(-alpha * prices) - 1))
+      }
     )
 
     pred_df <- NULL
@@ -1227,13 +1304,25 @@ plot_subject <- function(
 
   # Population curve
   coefs <- object$model$coefficients
+  part2 <- object$param_info$part2 %||% "zhao_exponential"
   log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
-  k <- if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  k <- if (!identical(part2, "simplified_exponential")) {
+    if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
+  } else {
+    NA_real_
+  }
   alpha <- exp(coefs["log_alpha"])
 
+  Q0 <- exp(log_q0)
   pop_data <- data.frame(
     price = prices,
-    consumption = exp(log_q0 + k * (exp(-alpha * prices) - 1))
+    consumption = if (identical(part2, "simplified_exponential")) {
+      exp(log_q0 - alpha * Q0 * prices)
+    } else if (identical(part2, "exponential")) {
+      exp(log_q0 + k * (exp(-alpha * Q0 * prices) - 1))
+    } else {
+      exp(log_q0 + k * (exp(-alpha * prices) - 1))
+    }
   )
 
   # Build plot

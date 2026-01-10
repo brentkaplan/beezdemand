@@ -248,6 +248,15 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
   # Extract group-level parameters (hurdle uses ln parameterization)
   coefs <- object$model$coefficients
   
+  part2 <- object$param_info$part2 %||% "zhao_exponential"
+  model_type <- if (identical(part2, "simplified_exponential")) {
+    "snd"
+  } else if (identical(part2, "exponential")) {
+    "hurdle_hs_stdq0"
+  } else {
+    "hurdle"
+  }
+
   # Get log-scale parameters
   log_q0 <- if ("log_q0" %in% names(coefs)) {
     coefs["log_q0"]
@@ -255,7 +264,11 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
     coefs["logQ0"]  # Backwards compatibility
 
   }
-  log_k <- if ("log_k" %in% names(coefs)) coefs["log_k"] else log(coefs["k"])
+  log_k <- if (!identical(model_type, "snd")) {
+    if ("log_k" %in% names(coefs)) coefs["log_k"] else log(coefs["k"])
+  } else {
+    NA_real_
+  }
   log_alpha <- coefs["log_alpha"]
   
   # Get observed price range from fitted data if available
@@ -270,29 +283,51 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
   }
   
   # Use new engine with explicit parameter scales (hurdle uses ln)
-  engine_result <- beezdemand_calc_pmax_omax(
-    model_type = "hurdle",
-    params = list(
-      log_alpha = as.numeric(log_alpha),
-      log_q0 = as.numeric(log_q0),
-      log_k = as.numeric(log_k)
-    ),
-    param_scales = list(
-      log_alpha = "log",
-      log_q0 = "log",
-      log_k = "log"
-    ),
-    price_obs = price_obs,
-    compute_observed = FALSE
-  )
+  engine_result <- if (identical(model_type, "snd")) {
+    beezdemand_calc_pmax_omax(
+      model_type = model_type,
+      params = list(
+        log_alpha = as.numeric(log_alpha),
+        log_q0 = as.numeric(log_q0)
+      ),
+      param_scales = list(
+        log_alpha = "log",
+        log_q0 = "log"
+      ),
+      price_obs = price_obs,
+      compute_observed = FALSE
+    )
+  } else {
+    beezdemand_calc_pmax_omax(
+      model_type = model_type,
+      params = list(
+        log_alpha = as.numeric(log_alpha),
+        log_q0 = as.numeric(log_q0),
+        log_k = as.numeric(log_k)
+      ),
+      param_scales = list(
+        log_alpha = "log",
+        log_q0 = "log",
+        log_k = "log"
+      ),
+      price_obs = price_obs,
+      compute_observed = FALSE
+    )
+  }
   
   # Return in legacy format for backwards compatibility
   Q0 <- exp(log_q0)
-  k <- exp(log_k)
+  k <- if (is.finite(log_k)) exp(log_k) else NA_real_
   alpha <- exp(log_alpha)
   
   # Build demand function for Qmax
-  demand_fn <- function(p) Q0 * exp(k * (exp(-alpha * p) - 1))
+  demand_fn <- if (identical(model_type, "snd")) {
+    function(p) Q0 * exp(-alpha * Q0 * p)
+  } else if (identical(model_type, "hurdle_hs_stdq0")) {
+    function(p) Q0 * exp(k * (exp(-alpha * Q0 * p) - 1))
+  } else {
+    function(p) Q0 * exp(k * (exp(-alpha * p) - 1))
+  }
   Qmax <- if (!is.na(engine_result$pmax_model)) {
     demand_fn(engine_result$pmax_model)
   } else {
