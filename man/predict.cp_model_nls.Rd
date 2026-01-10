@@ -4,14 +4,22 @@
 \alias{predict.cp_model_nls}
 \title{Predict from a Cross-Price Demand Model (Nonlinear)}
 \usage{
-\method{predict}{cp_model_nls}(object, newdata = NULL, inverse_fun = NULL, ...)
+\method{predict}{cp_model_nls}(
+  object,
+  newdata = NULL,
+  inv_fun = identity,
+  inverse_fun = deprecated(),
+  ...
+)
 }
 \arguments{
 \item{object}{A cross-price model object from fit_cp_nls with return_all=TRUE.}
 
 \item{newdata}{A data frame containing an 'x' column.}
 
-\item{inverse_fun}{Optional inverse transformation function.}
+\item{inv_fun}{Optional inverse transformation function. Default is `identity`.}
+
+\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
 
 \item{...}{Additional arguments.}
 }

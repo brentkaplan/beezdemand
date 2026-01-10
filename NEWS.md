@@ -1,6 +1,139 @@
-# beezdemand 0.1.3
+# beezdemand (development version)
+
+## Breaking Changes
+
+* `summary()` methods for `beezdemand_cp_hurdle`, `beezdemand_joint_hurdle`,
+  and `beezdemand_nlme` now return structured summary objects instead of
+  printing directly. Use `print(summary(fit))` for console output.
+  Programmatic access is now possible: `s <- summary(fit); s$coefficients`.
+
+* `fit_demand_hurdle()` now fits demand parameters in natural-log space
+  (`log_q0`, `log_alpha`, `log_k`) and reports back-transformed values; the
+  `param_space` argument has been removed.
+
+* `fit_cp_nls()` now uses log10-parameterized optimizer coefficients
+  (`log10_qalone`, `I`, `log10_beta`) across equation forms; the `"exponential"`
+  form fits on the `log10(y)` response scale and filters `y <= 0` with a warning.
+  `predict.cp_model_nls()` now always returns `y_pred` on the natural `y` scale;
+  for `"exponential"` it additionally returns `y_pred_log10` (and no longer returns
+  `y_pred_natural`).
 
 ## New Features
+
+* `fit_joint_hurdle()` now accepts `k = "estimate"` to estimate the scaling
+  constant as a free parameter. Default remains `k = 2` (fixed). Estimating
+  k will emit a warning about potential identifiability issues.
+
+* New `fit_demand_fixed()` function provides a modern interface for individual
+  demand curve fitting. Returns a structured S3 object with `summary()`,
+  `tidy()`, and `glance()` methods. This wrapper offers the same functionality
+  as `FitCurves()` but with a standardized API.
+
+* New systematicity wrappers with unified output vocabulary:
+  - `check_systematic_demand()` for purchase task data (wraps `CheckUnsystematic()`)
+  - `check_systematic_cp()` for cross-price data (wraps `check_unsystematic_cp()`)
+
+  Both return `beezdemand_systematicity` objects with identical column
+  schemas (differing only in NA values for domain-specific fields).
+
+* First-class `tidy()` and `glance()` support is now guaranteed across all
+  beezdemand model classes. All methods return tibbles with standardized
+  columns including `model_class` and `backend`.
+
+* All summary objects now inherit from `beezdemand_summary` base class,
+  enabling shared fallback behavior and consistent field availability.
+
+## API Standardization
+
+This release introduces **Stability Contracts** for all model classes:
+
+* **summary() objects** now return structured S3 objects with class
+  `c("summary.<class>", "beezdemand_summary")`. Required fields include:
+  `call`, `model_class`, `backend`, `nobs`, `n_subjects`, `converged`,
+  `logLik`, `AIC`, `BIC`, `coefficients` (tibble), `notes`.
+
+* **tidy() methods** return tibbles with columns: `term`, `estimate`,
+  `std.error`, `statistic`, `p.value`. Multi-part models include a
+  `component` column (e.g., "fixed", "variance", "derived").
+
+* **glance() methods** return 1-row tibbles with columns: `model_class`,
+  `backend`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC`.
+
+See the ARCHITECTURE.md "Stability Contracts" section for complete details.
+
+---
+
+# beezdemand 0.1.3
+
+## Deprecations
+
+The following deprecations will take effect in version 0.2.0:
+
+* `beezdemand::pull()` is deprecated in favor of `dplyr::pull()`. The beezdemand
+  version was a legacy helper that predates the dplyr function.
+
+* The `inverse_fun` argument in `summary.cp_model_nls()`, `plot.cp_model_nls()`,
+  and `predict.cp_model_nls()` is deprecated in favor of `inv_fun` for consistency
+  with mixed-effects model methods.
+
+## API Improvements
+
+* Standardized argument names across cross-price model methods (`inv_fun` instead
+  of `inverse_fun`)
+
+* Cross-price plot methods now have consistent argument ordering across
+  `plot.cp_model_nls()`, `plot.cp_model_lm()`, and `plot.cp_model_lmer()`
+
+* Key user-facing functions now return tibbles for better compatibility with
+
+  tidyverse workflows: `predict.cp_model_nls()`, `predict.cp_model_lm()`,
+  `tidy.cp_model_nls()`, `glance.cp_model_nls()`
+
+* Added standardized error helpers (`validation_error()`, `fitting_error()`,
+  `missing_package_error()`) for consistent error messaging
+
+* `check_unsystematic_cp()` now returns an object of class `cp_unsystematic`
+  with proper `summary()` method dispatch (no longer overrides `summary.tbl_df()`)
+
+## New Features
+
+### Two-Part Mixed Effects Hurdle Demand Models
+
+* Added comprehensive hurdle model functionality using TMB (Template Model Builder):
+
+  * `fit_demand_hurdle()`: Fit two-part hurdle models with 2 or 3 random effects
+
+  * Part I models probability of zero consumption (logistic regression with random intercept)
+
+  * Part II models log-consumption given positive response (nonlinear mixed effects)
+
+* S3 methods for `beezdemand_hurdle` objects:
+
+  * `print()`, `summary()`, `coef()`, `logLik()`, `AIC()`, `BIC()`
+
+  * `predict()`: Extract subject parameters or predict demand/probability
+
+  * `plot()`: Visualize demand curves, zero probability, parameter distributions
+
+* Utility functions:
+
+  * `calc_omax_pmax()`: Calculate Pmax and Omax from demand parameters
+
+  * `get_subject_pars()`: Extract subject-specific parameter estimates
+
+  * `compare_hurdle_models()`: Likelihood ratio test for model comparison
+
+  * `get_hurdle_param_summary()`: Summary statistics for individual parameters
+
+* Simulation functions:
+
+  * `simulate_hurdle_data()`: Generate synthetic hurdle model data
+
+  * `run_hurdle_monte_carlo()`: Monte Carlo simulation studies
+
+* New vignette "Hurdle Demand Models" with comprehensive examples
+
+* New dataset `apt_full`: Full alcohol purchase task data with 1,100 subjects and demographic covariates
 
 ### Cross-Price Demand Models
 

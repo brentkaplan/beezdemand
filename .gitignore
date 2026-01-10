@@ -26,3 +26,34 @@ inst/doc
 *-workspace
 man/figures/P*
 Notes.md
+lib/*
+
+/.quarto/
+/src/*.so
+/src/*.o
+/src/*.dll
+/src/symbols.rds
+
+internal_docs/*
+PRD.md
+CLAUDE.md
+.agents/
+.claude/
+engineering/
+
+# Vignette outputs #
+####################
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/*.html
+
+# R CMD check outputs #
+#######################
+check.log
+*.Rcheck/
+beezdemand_*.tar.gz
+
+# Test artifacts #
+##################
+tests/testthat/Rplots.pdf
+.env

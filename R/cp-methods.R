@@ -12,13 +12,24 @@ utils::globalVariables(c(
 #' Summarize a Cross-Price Demand Model (Nonlinear)
 #'
 #' @param object A cross-price model object from fit_cp_nls with return_all=TRUE.
-#' @param inverse_fun Optional function to inverse-transform predictions (e.g., ll4_inv).
+#' @param inv_fun Optional function to inverse-transform predictions (e.g., ll4_inv).
+#'   Default is `identity`.
+#' @param inverse_fun `r lifecycle::badge("deprecated")` Use `inv_fun` instead.
 #' @param ... Additional arguments (unused).
 #' @return A list containing model summary information.
 #' @importFrom nlstools confint2
 #' @importFrom stats residuals AIC BIC
 #' @export
-summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
+summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = deprecated(), ...) {
+  # Handle deprecated inverse_fun argument
+  if (lifecycle::is_present(inverse_fun)) {
+    lifecycle::deprecate_warn(
+      "0.2.0",
+      "summary.cp_model_nls(inverse_fun)",
+      "summary.cp_model_nls(inv_fun)"
+    )
+    inv_fun <- inverse_fun
+  }
   model <- object$model
   equation <- object$equation
   method <- object$method
@@ -37,9 +48,9 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
       equation = equation,
       equation_text = switch(
         equation,
-        exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
-        exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
-        additive = "y ~ qalone + I * exp(-beta * x)",
+        exponential = "log10(y) ~ log10_qalone + I * exp(-(10^log10_beta) * x)",
+        exponentiated = "y ~ (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))",
+        additive = "y ~ (10^log10_qalone) + I * exp(-(10^log10_beta) * x)",
         "Unknown equation type"
       ),
       method = method,
@@ -65,9 +76,14 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
   }
 
   # Use provided data or attempt to extract from the model environment.
-  data <- if (!is.null(object$data)) object$data else {
-    model_env <- if (inherits(model, "nls")) model$m$getEnv() else
+  data <- if (!is.null(object$data)) {
+    object$data
+  } else {
+    model_env <- if (inherits(model, "nls")) {
+      model$m$getEnv()
+    } else {
       environment(model)
+    }
     data.frame(x = model_env$x, y = model_env$y)
   }
 
@@ -86,18 +102,27 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
     )
   }
 
-  # Calculate R2: If transformation was applied, compute on the original scale.
-  if (!is.null(inverse_fun) && equation == "exponential") {
-    y_orig <- inverse_fun(data$y)
-    y_pred <- fitted(model)
-    y_pred_orig <- inverse_fun(y_pred)
-    r_squared <- 1 -
-      (sum((y_orig - y_pred_orig)^2) / sum((y_orig - mean(y_orig))^2))
-    transform_info <- deparse(substitute(inverse_fun))
-  } else {
-    r_squared <- 1 - (sum(residuals(model)^2) / sum((data$y - mean(data$y))^2))
-    transform_info <- "none"
-  }
+  # Calculate R2 on the fitted response scale:
+  # - For exponential: the model fits log10(y) as the response.
+  # - For exponentiated/additive: the model fits y on the natural scale.
+  r_squared <- tryCatch(
+    {
+      if (equation == "exponential") {
+        if (any(data$y <= 0, na.rm = TRUE)) {
+          return(NA_real_)
+        }
+        y_lhs <- log10(data$y)
+        y_hat <- fitted(model) # predicted log10(y)
+        1 - (sum((y_lhs - y_hat)^2) / sum((y_lhs - mean(y_lhs))^2))
+      } else {
+        y_lhs <- data$y
+        y_hat <- fitted(model)
+        1 - (sum((y_lhs - y_hat)^2) / sum((y_lhs - mean(y_lhs))^2))
+      }
+    },
+    error = function(e) NA_real_
+  )
+  transform_info <- if (equation == "exponential") "log10(y)" else "none"
 
   # Fit statistics
   aic <- tryCatch(AIC(model), error = function(e) NA)
@@ -113,9 +138,9 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
 
   equation_text <- switch(
     equation,
-    exponential = "y ~ log10(qalone) + I * exp(-beta * x)",
-    exponentiated = "y ~ qalone * 10^(I * exp(-beta * x))",
-    additive = "y ~ qalone + I * exp(-beta * x)",
+    exponential = "log10(y) ~ log10_qalone + I * exp(-(10^log10_beta) * x)",
+    exponentiated = "y ~ (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))",
+    additive = "y ~ (10^log10_qalone) + I * exp(-(10^log10_beta) * x)",
     "Unknown equation type"
   )
 
@@ -133,10 +158,40 @@ summary.cp_model_nls <- function(object, inverse_fun = NULL, ...) {
 
   if (inherits(object, "cp_model_nls") && !is.null(data)) {
     coefs <- coef(model)
+    # Extract log10-parameterized coefficients and compute natural-scale values
+    log10_qalone <- coefs["log10_qalone"]
+    I_param <- coefs["I"]
+    log10_beta <- coefs["log10_beta"]
+
+    se_log10_qalone <- NA_real_
+    se_I <- NA_real_
+    se_log10_beta <- NA_real_
+    if (is.matrix(coef_summary) || is.data.frame(coef_summary)) {
+      if ("Std. Error" %in% colnames(coef_summary)) {
+        se_log10_qalone <- suppressWarnings(as.numeric(coef_summary["log10_qalone", "Std. Error"]))
+        se_I <- suppressWarnings(as.numeric(coef_summary["I", "Std. Error"]))
+        se_log10_beta <- suppressWarnings(as.numeric(coef_summary["log10_beta", "Std. Error"]))
+      }
+    }
+
+    ln10 <- log(10)
+    qalone_nat <- 10^log10_qalone
+    beta_nat <- 10^log10_beta
+    qalone_se <- if (is.finite(se_log10_qalone)) ln10 * qalone_nat * se_log10_qalone else NA_real_
+    beta_se <- if (is.finite(se_log10_beta)) ln10 * beta_nat * se_log10_beta else NA_real_
+
     derived_metrics <- list(
-      beta = coefs["beta"],
-      I = coefs["I"],
-      qalone = coefs["qalone"]
+      log10_qalone = log10_qalone,
+      I = I_param,
+      log10_beta = log10_beta,
+      log10_qalone_se = se_log10_qalone,
+      I_se = se_I,
+      log10_beta_se = se_log10_beta,
+      # Natural-scale values (back-transformed)
+      qalone = qalone_nat,
+      beta = beta_nat,
+      qalone_se = qalone_se,
+      beta_se = beta_se
     )
   } else {
     derived_metrics <- NULL
@@ -200,13 +255,17 @@ print.summary.cp_model_nls <- function(x, ...) {
   }
   cat("\nFit Statistics:\n")
   cat("R-squared:", format(x$r_squared, digits = 4), "\n")
-  if (!is.na(x$aic)) cat("AIC:", format(x$aic, digits = 4), "\n")
-  if (!is.na(x$bic)) cat("BIC:", format(x$bic, digits = 4), "\n")
+  if (!is.na(x$aic)) {
+    cat("AIC:", format(x$aic, digits = 4), "\n")
+  }
+  if (!is.na(x$bic)) {
+    cat("BIC:", format(x$bic, digits = 4), "\n")
+  }
 
   if (!is.null(x$derived_metrics)) {
-    cat("\nParameter Interpretation:\n")
+    cat("\nParameter Interpretation (natural scale):\n")
     cat(
-      "qalone:",
+      "qalone (Q_alone):",
       format(x$derived_metrics$qalone, digits = 4),
       " - consumption at zero alternative price\n"
     )
@@ -218,7 +277,18 @@ print.summary.cp_model_nls <- function(x, ...) {
     cat(
       "beta:",
       format(x$derived_metrics$beta, digits = 4),
-      " - decay parameter (speed of cross-price effect decay)\n"
+      " - sensitivity parameter (sensitivity of relation to price)\n"
+    )
+    cat("\nOptimizer parameters (log10 scale):\n")
+    cat(
+      "log10_qalone:",
+      format(x$derived_metrics$log10_qalone, digits = 4),
+      "\n"
+    )
+    cat(
+      "log10_beta:",
+      format(x$derived_metrics$log10_beta, digits = 4),
+      "\n"
     )
   }
   invisible(x)
@@ -229,7 +299,7 @@ print.summary.cp_model_nls <- function(x, ...) {
 #'
 #' @param x A cross-price model object from fit_cp_nls with return_all=TRUE.
 #' @param data Optional data frame with x and y; if NULL, uses object$data.
-#' @param inverse_fun Optional function to inverse-transform predictions.
+#' @param inv_fun Optional function to inverse-transform predictions. Default is `identity`.
 #' @param n_points Number of points used for prediction curve.
 #' @param title Optional plot title.
 #' @param xlab X-axis label.
@@ -237,6 +307,7 @@ print.summary.cp_model_nls <- function(x, ...) {
 #' @param x_trans Transformation for x-axis: "identity", "log10", or "pseudo_log".
 #' @param y_trans Transformation for y-axis: "identity", "log10", or "pseudo_log".
 #' @param point_size Size of data points.
+#' @param inverse_fun `r lifecycle::badge("deprecated")` Use `inv_fun` instead.
 #' @param ... Additional arguments (passed to predict).
 #' @return A ggplot2 object.
 #' @importFrom scales log10_trans pseudo_log_trans identity_trans
@@ -244,7 +315,7 @@ print.summary.cp_model_nls <- function(x, ...) {
 plot.cp_model_nls <- function(
   x,
   data = NULL,
-  inverse_fun = NULL,
+  inv_fun = identity,
   n_points = 100,
   title = NULL,
   xlab = "Price",
@@ -252,12 +323,24 @@ plot.cp_model_nls <- function(
   x_trans = "identity",
   y_trans = "identity",
   point_size = 3,
+  inverse_fun = deprecated(),
   ...
 ) {
-  if (!requireNamespace("ggplot2", quietly = TRUE))
+  # Handle deprecated inverse_fun argument
+  if (lifecycle::is_present(inverse_fun)) {
+    lifecycle::deprecate_warn(
+      "0.2.0",
+      "plot.cp_model_nls(inverse_fun)",
+      "plot.cp_model_nls(inv_fun)"
+    )
+    inv_fun <- inverse_fun
+  }
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.")
-  if (!requireNamespace("scales", quietly = TRUE))
+  }
+  if (!requireNamespace("scales", quietly = TRUE)) {
     stop("Package 'scales' is required.")
+  }
 
   # Use provided data or fallback
   if (is.null(data)) {
@@ -271,8 +354,9 @@ plot.cp_model_nls <- function(
   }
 
   # Defensive: ensure data has x and y
-  if (!all(c("x", "y") %in% names(data)))
+  if (!all(c("x", "y") %in% names(data))) {
     stop("Data must contain columns 'x' and 'y'")
+  }
 
   # If model is NULL, plot only the data points and warn
   if (is.null(x$model)) {
@@ -295,8 +379,9 @@ plot.cp_model_nls <- function(
   # --- existing code for valid model below ---
   if ("target" %in% names(data)) {
     data <- data[data$target == "alt", ]
-    if (nrow(data) == 0)
+    if (nrow(data) == 0) {
       stop("No data with target = 'alt' found in provided data")
+    }
   }
 
   allowed_trans <- c("identity", "log10", "pseudo_log")
@@ -317,13 +402,15 @@ plot.cp_model_nls <- function(
   if (x_trans == "log10" && any(data$x <= 0, na.rm = TRUE)) {
     data <- data[data$x > 0, ]
     warning("Filtered out non-positive x values for log10 transformation")
-    if (nrow(data) == 0)
+    if (nrow(data) == 0) {
       stop("No positive x values left after filtering for log10 transformation")
+    }
   }
 
   x_range <- range(data$x, na.rm = TRUE)
-  if (!all(is.finite(x_range)))
+  if (!all(is.finite(x_range))) {
     stop("Cannot determine a valid x range from the provided data")
+  }
 
   if (x_trans == "log10") {
     min_x <- max(0.001, x_range[1])
@@ -333,12 +420,15 @@ plot.cp_model_nls <- function(
   }
 
   new_x <- data.frame(x = pred_x)
-  preds <- predict(x, newdata = new_x, inverse_fun = inverse_fun, ...)
+  preds <- predict(x, newdata = new_x, inv_fun = inv_fun, ...)
 
   y_col <- if (
-    !is.null(inverse_fun) && "y_pred_untransformed" %in% names(preds)
-  )
-    "y_pred_untransformed" else "y_pred"
+    !identical(inv_fun, identity) && "y_pred_untransformed" %in% names(preds)
+  ) {
+    "y_pred_untransformed"
+  } else {
+    "y_pred"
+  }
 
   p <- ggplot2::ggplot() +
     ggplot2::geom_line(
@@ -357,8 +447,12 @@ plot.cp_model_nls <- function(
     ggplot2::scale_x_continuous(trans = x_trans_obj) +
     ggplot2::scale_y_continuous(trans = y_trans_obj)
 
-  if (x_trans == "log10") p <- p + ggplot2::annotation_logticks(sides = "b")
-  if (y_trans == "log10") p <- p + ggplot2::annotation_logticks(sides = "l")
+  if (x_trans == "log10") {
+    p <- p + ggplot2::annotation_logticks(sides = "b")
+  }
+  if (y_trans == "log10") {
+    p <- p + ggplot2::annotation_logticks(sides = "l")
+  }
 
   p <- p +
     ggplot2::labs(x = xlab, y = ylab, title = title) +
@@ -371,22 +465,36 @@ plot.cp_model_nls <- function(
 #'
 #' @param object A cross-price model object from fit_cp_nls with return_all=TRUE.
 #' @param newdata A data frame containing an 'x' column.
-#' @param inverse_fun Optional inverse transformation function.
+#' @param inv_fun Optional inverse transformation function. Default is `identity`.
+#' @param inverse_fun `r lifecycle::badge("deprecated")` Use `inv_fun` instead.
 #' @param ... Additional arguments.
 #' @return A data frame with x values and predicted y values.
 #' @export
 predict.cp_model_nls <- function(
   object,
   newdata = NULL,
-  inverse_fun = NULL,
+  inv_fun = identity,
+  inverse_fun = deprecated(),
   ...
 ) {
-  if (!inherits(object, "cp_model_nls"))
+  # Handle deprecated inverse_fun argument
+  if (lifecycle::is_present(inverse_fun)) {
+    lifecycle::deprecate_warn(
+      "0.2.0",
+      "predict.cp_model_nls(inverse_fun)",
+      "predict.cp_model_nls(inv_fun)"
+    )
+    inv_fun <- inverse_fun
+  }
+  if (!inherits(object, "cp_model_nls")) {
     stop("Object must be of class 'cp_model_nls'")
-  if (is.null(newdata))
+  }
+  if (is.null(newdata)) {
     stop("'newdata' must be provided as a data frame with an 'x' column")
-  if (!("x" %in% names(newdata)))
+  }
+  if (!("x" %in% names(newdata))) {
     stop("'newdata' must contain a column named 'x'")
+  }
 
   equation <- object$equation
   model <- object$model
@@ -394,27 +502,45 @@ predict.cp_model_nls <- function(
     stop("Could not extract coefficients from model: ", e$message)
   })
 
-  if (!all(c("qalone", "I", "beta") %in% names(coefs)))
-    stop("Missing required coefficients: qalone, I, or beta")
+  if (!all(c("log10_qalone", "I", "log10_beta") %in% names(coefs))) {
+    stop("Missing required coefficients: log10_qalone, I, or log10_beta")
+  }
 
-  qalone <- coefs["qalone"]
+  # Extract log10-parameterized coefficients
+  log10_qalone <- coefs["log10_qalone"]
   I_param <- coefs["I"]
-  beta <- coefs["beta"]
+  log10_beta <- coefs["log10_beta"]
+
+  # Compute natural-scale parameters
+  qalone <- 10^log10_qalone
+  beta <- 10^log10_beta
 
   x_vals <- newdata$x
-  y_pred <- switch(
+
+  # Predictions per EQUATIONS_CONTRACT.md (log10 parameterization):
+  # - Exponentiated: y = (10^log10_qalone) * 10^(I * exp(-(10^log10_beta) * x))
+  # - Exponential (on log10 scale): log10(y) = log10_qalone + I * exp(-(10^log10_beta) * x)
+  # - Additive: y = (10^log10_qalone) + I * exp(-(10^log10_beta) * x)
+  y_pred_internal <- switch(
     equation,
     exponentiated = qalone * 10^(I_param * exp(-beta * x_vals)),
-    exponential = log10(qalone) + I_param * exp(-beta * x_vals),
+    exponential = log10_qalone + I_param * exp(-beta * x_vals),  # Returns log10(y)
     additive = qalone + I_param * exp(-beta * x_vals),
     stop("Unsupported equation type: ", equation)
   )
 
-  result <- data.frame(x = x_vals, y_pred = y_pred)
-  if (!is.null(inverse_fun) && equation == "exponential") {
+  if (equation == "exponential") {
+    log10_y_pred <- y_pred_internal
+    y_pred <- 10^log10_y_pred
+    result <- tibble::tibble(x = x_vals, y_pred = y_pred, y_pred_log10 = log10_y_pred)
+  } else {
+    result <- tibble::tibble(x = x_vals, y_pred = y_pred_internal)
+  }
+
+  if (!identical(inv_fun, identity)) {
     tryCatch(
       {
-        result$y_pred_untransformed <- inverse_fun(y_pred)
+        result$y_pred_untransformed <- inv_fun(result$y_pred)
       },
       error = function(e) {
         warning("Failed to apply inverse transformation: ", e$message)
@@ -434,9 +560,11 @@ predict.cp_model_nls <- function(
 #' @return Data frame with predictions.
 #' @export
 predict.cp_model_lm <- function(object, newdata = NULL, ...) {
-  if (is.null(newdata)) stop("newdata must be provided")
+  if (is.null(newdata)) {
+    stop("newdata must be provided")
+  }
   predictions <- predict(object$model, newdata = newdata, ...)
-  data.frame(x = newdata$x, y_pred = predictions)
+  tibble::tibble(x = newdata$x, y_pred = predictions)
 }
 
 #' Predict from a Mixed-Effects Cross-Price Demand Model
@@ -620,7 +748,7 @@ summary.cp_model_lmer <- function(object, ...) {
 #' @export
 tidy.cp_model_nls <- function(x, ...) {
   if (is.null(x$model)) {
-    return(data.frame(
+    return(tibble::tibble(
       term = character(0),
       estimate = numeric(0),
       std.error = numeric(0),
@@ -635,17 +763,17 @@ tidy.cp_model_nls <- function(x, ...) {
       as.data.frame(summ$coefficients),
       c("estimate", "std.error", "statistic", "p.value")
     ) |>
-      tibble::rownames_to_column("term")
+      tibble::rownames_to_column("term") |>
+      tibble::as_tibble()
   } else {
     # Fallback if summary doesn't contain coefficient matrix
     coeffs <- coef(x)
-    data.frame(
+    tibble::tibble(
       term = names(coeffs),
       estimate = unname(coeffs),
-      std.error = NA,
-      statistic = NA,
-      p.value = NA,
-      stringsAsFactors = FALSE
+      std.error = NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_
     )
   }
 }
@@ -679,17 +807,102 @@ tidy.cp_model_nls <- function(x, ...) {
 #' @export
 glance.cp_model_nls <- function(x, ...) {
   summ <- summary(x)
-  data.frame(
+  tibble::tibble(
     r.squared = summ$r_squared,
     aic = summ$aic,
     bic = summ$bic,
     equation = summ$equation,
     method = summ$method,
-    transform = summ$transform,
-    stringsAsFactors = FALSE
+    transform = summ$transform
   )
 }
 
+#' Extract coefficients from a linear cross-price model in tidy format
+#'
+#' @param x A cp_model_lm object.
+#' @param ... Additional arguments (unused).
+#' @return A tibble with columns: term, estimate, std.error, statistic, p.value.
+#' @export
+tidy.cp_model_lm <- function(x, ...) {
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      term = character(0),
+      estimate = numeric(0),
+      std.error = numeric(0),
+      statistic = numeric(0),
+      p.value = numeric(0)
+    ))
+  }
+  broom::tidy(x$model)
+}
+
+#' Get model summaries from a linear cross-price model
+#'
+#' @param x A cp_model_lm object.
+#' @param ... Additional arguments (unused).
+#' @return A tibble with model summary statistics.
+#' @export
+glance.cp_model_lm <- function(x, ...) {
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      r.squared = NA_real_,
+      adj.r.squared = NA_real_,
+      sigma = NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_,
+      df = NA_integer_,
+      nobs = NA_integer_
+    ))
+  }
+  broom::glance(x$model)
+}
+
+#' Extract coefficients from a mixed-effects cross-price model in tidy format
+#'
+#' @param x A cp_model_lmer object.
+#' @param effects Which effects to return: "fixed" (default), "random", or "ran_pars".
+#' @param ... Additional arguments passed to broom.mixed::tidy.
+#' @return A tibble with tidy coefficient information.
+#' @export
+tidy.cp_model_lmer <- function(x, effects = c("fixed", "random", "ran_pars"), ...) {
+  effects <- match.arg(effects)
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      effect = character(0),
+      term = character(0),
+      estimate = numeric(0),
+      std.error = numeric(0)
+    ))
+  }
+  if (!requireNamespace("broom.mixed", quietly = TRUE)) {
+    missing_package_error("broom.mixed", reason = "to tidy mixed-effects models")
+  }
+  broom.mixed::tidy(x$model, effects = effects, ...)
+}
+
+#' Get model summaries from a mixed-effects cross-price model
+#'
+#' @param x A cp_model_lmer object.
+#' @param ... Additional arguments passed to broom.mixed::glance.
+#' @return A tibble with model summary statistics.
+#' @export
+glance.cp_model_lmer <- function(x, ...) {
+  if (is.null(x$model)) {
+    return(tibble::tibble(
+      nobs = NA_integer_,
+      sigma = NA_real_,
+      logLik = NA_real_,
+      AIC = NA_real_,
+      BIC = NA_real_,
+      deviance = NA_real_,
+      df.residual = NA_integer_
+    ))
+  }
+  if (!requireNamespace("broom.mixed", quietly = TRUE)) {
+    missing_package_error("broom.mixed", reason = "to glance mixed-effects models")
+  }
+  broom.mixed::glance(x$model, ...)
+}
 
 #-------------------------------------------------------------------------------
 # Print Methods
@@ -728,18 +941,20 @@ print.summary.cp_model_lmer <- function(x, ...) {
   cat("\nRandom Effects:\n")
   print(x$random_effects, row.names = FALSE)
   cat("\nModel Fit:\n")
-  if (!is.na(x$r2_marginal))
+  if (!is.na(x$r2_marginal)) {
     cat(
       "R2 (marginal):",
       format(x$r2_marginal, digits = 4),
       "  [Fixed effects only]\n"
     )
-  if (!is.na(x$r2_conditional))
+  }
+  if (!is.na(x$r2_conditional)) {
     cat(
       "R2 (conditional):",
       format(x$r2_conditional, digits = 4),
       "  [Fixed + random effects]\n"
     )
+  }
   cat("AIC:", format(x$AIC, digits = 4), "\n")
   cat("BIC:", format(x$BIC, digits = 4), "\n")
   cat("\nNote: R2 values for mixed models are approximate.\n")
@@ -759,14 +974,16 @@ print.summary.cp_model_lmer <- function(x, ...) {
 #' @param x A \code{cp_model_lm} object (as returned by \code{fit_cp_linear(type = "fixed", ...)}).
 #' @param data Optional data frame containing columns \code{x} and \code{y} to plot.
 #'   If not provided, the function uses \code{object$data} if available.
+#' @param inv_fun Optional function to inverse-transform predictions. Default is `identity`.
+#'   Not typically used for linear models but included for API consistency.
+#' @param n_points Number of points to create in the prediction grid. Default is \code{100}.
+#' @param title Optional title for the plot; default is \code{NULL}.
+#' @param xlab Label for the x-axis. Default is \code{"Price"}.
+#' @param ylab Label for the y-axis. Default is \code{"Consumption"}.
 #' @param x_trans Transformation for the x-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
 #'   Default is \code{"identity"}.
 #' @param y_trans Transformation for the y-axis; one of \code{"identity"}, \code{"log10"}, or \code{"pseudo_log"}.
 #'   Default is \code{"identity"}.
-#' @param n_points Number of points to create in the prediction grid. Default is \code{100}.
-#' @param xlab Label for the x-axis. Default is \code{"Price"}.
-#' @param ylab Label for the y-axis. Default is \code{"Consumption"}.
-#' @param title Optional title for the plot; default is \code{NULL}.
 #' @param point_size Size of the data points in the plot. Default is \code{3}.
 #' @param ... Additional arguments passed to the generic \code{predict} method.
 #'
@@ -776,12 +993,13 @@ print.summary.cp_model_lmer <- function(x, ...) {
 plot.cp_model_lm <- function(
   x,
   data = NULL,
-  x_trans = "identity",
-  y_trans = "identity",
+  inv_fun = identity,
   n_points = 100,
+  title = NULL,
   xlab = "Price",
   ylab = "Consumption",
-  title = NULL,
+  x_trans = "identity",
+  y_trans = "identity",
   point_size = 3,
   ...
 ) {
@@ -836,8 +1054,9 @@ plot.cp_model_lm <- function(
     # Create a grid with all combinations of x and group
     newdata <- expand.grid(x = pred_x, group = groups)
     # Ensure group is a factor if original was a factor
-    if (is.factor(data$group))
+    if (is.factor(data$group)) {
       newdata$group <- factor(newdata$group, levels = levels(data$group))
+    }
   } else {
     newdata <- data.frame(x = pred_x)
   }
@@ -934,14 +1153,16 @@ plot.cp_model_lm <- function(
 #'   \code{fit_cp_linear(type = "mixed", ...)}).
 #' @param data Optional data frame containing columns \code{x} and \code{y} to be plotted.
 #'   If not provided, \code{object$data} is used.
+#' @param inv_fun Optional function to inverse-transform predictions. Default is `identity`.
+#'   Not typically used for linear models but included for API consistency.
+#' @param n_points Number of points to use in creating the prediction grid. Default is \code{100}.
+#' @param title Optional title for the plot; default is \code{NULL}.
+#' @param xlab Label for the x-axis. Default is \code{"Price"}.
+#' @param ylab Label for the y-axis. Default is \code{"Consumption"}.
 #' @param x_trans Transformation for the x-axis; one of \code{"identity"}, \code{"log10"}, or
 #'   \code{"pseudo_log"}. Default is \code{"identity"}.
 #' @param y_trans Transformation for the y-axis; one of \code{"identity"}, \code{"log10"}, or
 #'   \code{"pseudo_log"}. Default is \code{"identity"}.
-#' @param n_points Number of points to use in creating the prediction grid. Default is \code{100}.
-#' @param xlab Label for the x-axis. Default is \code{"Price"}.
-#' @param ylab Label for the y-axis. Default is \code{"Consumption"}.
-#' @param title Optional title for the plot; default is \code{NULL}.
 #' @param point_size Size of the observed data points. Default is \code{3}.
 #' @param pred_type Character string specifying which prediction components to plot:
 #'   \describe{
@@ -958,12 +1179,13 @@ plot.cp_model_lm <- function(
 plot.cp_model_lmer <- function(
   x,
   data = NULL,
-  x_trans = "identity",
-  y_trans = "identity",
+  inv_fun = identity,
   n_points = 100,
+  title = NULL,
   xlab = "Price",
   ylab = "Consumption",
-  title = NULL,
+  x_trans = "identity",
+  y_trans = "identity",
   point_size = 3,
   pred_type = c("fixed", "random", "all"),
   ...
@@ -1527,7 +1749,9 @@ cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 print.cp_posthoc <- function(x, ...) {
   # Get type attribute or default
   type <- attr(x, "type")
-  if (is.null(type)) type <- "Post-hoc"
+  if (is.null(type)) {
+    type <- "Post-hoc"
+  }
 
   # Create title based on type
   title <- switch(

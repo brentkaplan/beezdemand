@@ -11,11 +11,12 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  message = FALSE,
-  collapse = TRUE,
-  comment = NA,
-  fig.width = 6,
-  fig.height = 4
+    message = FALSE,
+    include = TRUE,
+    collapse = TRUE,
+    comment = NA,
+    fig.width = 6,
+    fig.height = 4
 )
 
 library(beezdemand)
@@ -24,7 +25,38 @@ library(purrr)
 library(tidyr)
 library(ggplot2)
 
-load("../data/etm.RData")
+# Load package datasets
+data("etm", package = "beezdemand")
+data("lowNicClean", package = "beezdemand")
+data("cannabisCigarettes", package = "beezdemand")
+data("ongoingETM", package = "beezdemand")
+
+lnic <- lowNicClean |>
+    mutate(
+        target = if_else(commodity == "cigarettesAdj", "adjusting", "fixed"),
+        group = "cigarettes"
+    ) |>
+    select(
+        -commodity
+    ) |>
+    relocate(condition, .after = group)
+
+can_cig <- cannabisCigarettes |>
+    select(
+        id,
+        x,
+        y,
+        target = commodity
+    )
+
+ongoing_etm <- ongoingETM |>
+    pivot_longer(
+        -c(id, x, flavor),
+        names_to = "target",
+        values_to = "y",
+        values_drop_na = TRUE
+    ) |>
+    select(id, x, y, target)
 ```
 
 ## Data Structure
@@ -44,32 +76,303 @@ Typical columns:
 
 - `group`: product category
 
+## Complete Cross-Price Analysis Workflow
+
+This section demonstrates a complete analysis workflow using data that contains multiple
+experimental conditions: target consumption when the alternative is absent (`alone`),
+target consumption when the alternative is present (`own`), and alternative consumption
+as a function of target price (`alt`).
+
+### Loading the cp Dataset
+
+```{r load-cp}
+# Load the cross-price example dataset
+load(here::here("data", "cp.RData"))
+
+# Examine structure
+glimpse(cp)
+
+# View conditions
+table(cp$target)
+```
+
+The `cp` dataset contains:
+
+- **alone**: Target commodity (cigarettes) consumption when alternative is *not* available
+- **own**: Target commodity consumption when alternative *is* available
+- **alt**: Alternative commodity (e-cigarettes) consumption as a function of target price
+
+Note that `x` represents the **target commodity price** throughout all conditions.
+
+### Step 1: Fit Target Demand (Alone Condition)
+
+First, we fit a standard demand curve to the target commodity when the alternative is absent:
+
+```{r fit-alone}
+# Filter to alone condition
+alone_data <- cp |>
+    dplyr::filter(target == "alone")
+
+# Fit demand curve using FitCurves
+fit_alone <- FitCurves(
+    dat = alone_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+# View results
+fit_alone
+```
+
+### Step 2: Fit Target Demand (Own Condition)
+
+Next, fit the same demand model to target consumption when the alternative is present:
+
+```{r fit-own}
+# Filter to own condition
+own_data <- cp |>
+    dplyr::filter(target == "own")
+
+# Fit demand curve
+fit_own <- FitCurves(
+    dat = own_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+# View results
+fit_own
+```
+
+### Step 3: Fit Cross-Price Model (Alt Condition)
+
+Finally, fit the cross-price model to alternative consumption as a function of target price:
+
+```{r fit-alt-cp}
+# Filter to alt condition
+alt_data <- cp |>
+    dplyr::filter(target == "alt")
+
+# Fit cross-price model
+fit_alt <- fit_cp_nls(
+    dat = alt_data,
+    equation = "exponentiated",
+    return_all = TRUE
+)
+
+# View results
+summary(fit_alt)
+```
+
+### Comparing Results Across Conditions
+
+```{r compare-conditions}
+# Extract key parameters from dfres
+comparison <- data.frame(
+    Condition = c("Alone (Target)", "Own (Target)", "Alt (Cross-Price)"),
+    Q0_or_Qalone = c(
+        fit_alone$dfres$Q0d,
+        fit_own$dfres$Q0d,
+        coef(fit_alt)["qalone"]
+    ),
+    Alpha_or_I = c(
+        fit_alone$dfres$Alpha,
+        fit_own$dfres$Alpha,
+        coef(fit_alt)["I"]
+    )
+)
+
+comparison
+```
+
+**Interpretation:**
+
+- Comparing `Q0` between alone and own conditions shows how the presence of an alternative
+  affects baseline consumption of the target commodity
+- The `I` parameter from the cross-price model indicates whether the products are
+  substitutes (I < 0) or complements (I > 0)
+
+### Combined Visualization
+
+```{r combined-plot, fig.width=8, fig.height=4}
+# Create prediction data
+x_seq <- seq(0.01, max(cp$x), length.out = 100)
+
+# Extract parameters from dfres
+Q0_alone <- fit_alone$dfres$Q0d
+K_alone <- fit_alone$dfres$K
+Alpha_alone <- fit_alone$dfres$Alpha
+
+Q0_own <- fit_own$dfres$Q0d
+K_own <- fit_own$dfres$K
+Alpha_own <- fit_own$dfres$Alpha
+
+# Get predictions for each condition using the exponential demand equation
+pred_alone <- Q0_alone * 10^(K_alone * (exp(-Alpha_alone * Q0_alone * x_seq) - 1))
+pred_own <- Q0_own * 10^(K_own * (exp(-Alpha_own * Q0_own * x_seq) - 1))
+pred_alt <- predict(fit_alt, newdata = data.frame(x = x_seq))$y_pred
+
+# Combine into plot data
+plot_data <- data.frame(
+    x = rep(x_seq, 3),
+    y = c(pred_alone, pred_own, pred_alt),
+    Condition = rep(c("Target (Alone)", "Target (Own)", "Alternative (Cross-Price)"), each = length(x_seq))
+)
+
+# Plot
+ggplot() +
+    geom_point(data = cp, aes(x = x, y = y, color = target), alpha = 0.6) +
+    geom_line(data = plot_data, aes(x = x, y = y, color = Condition), linewidth = 1) +
+    scale_x_log10() +
+    scale_y_log10() +
+    labs(
+        x = "Target Price",
+        y = "Consumption",
+        title = "Cross-Price Analysis: All Conditions",
+        color = "Condition"
+    ) +
+    theme_bw()
+```
+
 ## Checking Unsystematic Data
 
 ```{r}
 etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
 
 
 unsys_one <- etm |>
-  filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  check_unsystematic_cp()
+    filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    check_unsystematic_cp()
 
 unsys_one
 
+unsys_one_lnic <- lnic |>
+    filter(
+        target == "adjusting",
+        id == "R_00Q12ahGPKuESBT"
+    ) |>
+    check_unsystematic_cp(detailed = TRUE)
 
+unsys_one_lnic
 ```
 
 ```{r}
 unsys_all <- etm |>
-  group_by(id, group) |>
-  nest() |>
-  mutate(unsys = map(data, check_unsystematic_cp)) |>
-  unnest(unsys)
+    group_by(id, group) |>
+    nest() |>
+    mutate(unsys = map(data, check_unsystematic_cp)) |>
+    unnest(unsys)
 
 unsys_all
 
 summary(unsys_all)
+```
+
+### Demonstration from Rzeszutek et al. (under review)
+
+#### Low Nicotine Study (Kaplan et al., 2018)
+
+```{r}
+unsys_all_lnic <- lnic |>
+    filter(target == "fixed") |>
+    group_by(id, condition) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys) |>
+    arrange(id)
+
+unsys_all_lnic
+
+cat("--- 100% ---\n")
+unsys_all_lnic |>
+    dplyr::filter(condition == "100%") |>
+    summary()
+cat("\n\n")
+
+cat("--- 2% ---\n")
+unsys_all_lnic |>
+    dplyr::filter(condition == "2%") |>
+    summary()
+cat("\n\n")
+cat("--- 2% NegFrame ---\n")
+unsys_all_lnic |>
+    dplyr::filter(condition == "2% NegFrame") |>
+    summary()
+
+summary(unsys_all_lnic)
+```
+
+
+#### Unpublished Cannabis and Cigarette Data
+
+```{r}
+unsys_all_can_cig <- can_cig |>
+    filter(target %in% c("cannabisFix", "cigarettesFix")) |>
+    group_by(id, target) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys) |>
+    arrange(id)
+
+cat("--- Cigarettes ---\n")
+unsys_all_can_cig |>
+    dplyr::filter(target == "cigarettesFix") |>
+    summary()
+cat("\n\n")
+
+
+cat("--- Cannabis ---\n")
+unsys_all_can_cig |>
+    dplyr::filter(target == "cannabisFix") |>
+    summary()
+cat("\n\n")
+```
+
+#### In Progress Experimental Tobacco Marketplace Data
+
+```{r}
+unsys_all_ongoing_etm <- ongoing_etm |>
+    # one person is doubled up
+    distinct() |>
+    filter(target %in% c("FixCig", "ECig")) |>
+    group_by(id, target) |>
+    nest() |>
+    mutate(
+        unsys = map(
+            data,
+            check_unsystematic_cp,
+            detailed = TRUE
+        )
+    ) |>
+    unnest(unsys)
+
+
+cat("--- Fixed Cigarettes ---\n")
+unsys_all_ongoing_etm |>
+    dplyr::filter(target == "FixCig") |>
+    summary()
+cat("\n\n")
+
+cat("--- E-Cigarettes ---\n")
+unsys_all_ongoing_etm |>
+    dplyr::filter(target == "ECig") |>
+    summary()
+cat("\n\n")
 ```
 
 ## Nonlinear Model Fitting
@@ -78,11 +381,11 @@ summary(unsys_all)
 
 ```{r}
 fit_one <- etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  fit_cp_nls(
-    equation = "exponentiated",
-    return_all = TRUE
-  )
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    fit_cp_nls(
+        equation = "exponentiated",
+        return_all = TRUE
+    )
 
 summary(fit_one)
 
@@ -91,16 +394,16 @@ plot(fit_one, x_trans = "log10")
 
 ```{r}
 fit_all <- etm |>
-  group_by(id, group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(id, group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_all
 
@@ -116,49 +419,47 @@ fit_all$plot[[rand_id]]
 
 ```{r}
 fit_pooled <- etm |>
-  group_by(group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_pooled
 
 fit_pooled |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(summary)
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(summary)
 
 fit_pooled |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(plot)
-
-
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(plot)
 ```
 
 ### Fit to Group (mean)
 
 ```{r}
 fit_mean <- etm |>
-  group_by(group, x) |>
-  summarise(
-    y = mean(y)
-  ) |>
-  ungroup() |>
-  group_by(group) |>
-  nest() |>
-  mutate(
-    unsys = map(data, check_unsystematic_cp),
-    fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
-    summary = map(fit, summary),
-    plot = map(fit, plot, x_trans = "log10"),
-    glance = map(fit, glance),
-    tidy = map(fit, tidy)
-  )
+    group_by(group, x) |>
+    summarise(
+        y = mean(y)
+    ) |>
+    ungroup() |>
+    group_by(group) |>
+    nest() |>
+    mutate(
+        unsys = map(data, check_unsystematic_cp),
+        fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
+        summary = map(fit, summary),
+        plot = map(fit, plot, x_trans = "log10"),
+        glance = map(fit, glance),
+        tidy = map(fit, tidy)
+    )
 
 fit_mean
 
@@ -169,19 +470,18 @@ fit_mean |>
         term,
         estimate
     ) |>
-        ggplot(aes(x = group, y = estimate, group = term)) +
-        geom_bar(stat = "identity") +
-        facet_wrap(~term)
+    ggplot(aes(x = group, y = estimate, group = term)) +
+    geom_bar(stat = "identity") +
+    geom_point() +
+    facet_wrap(~term, ncol = 1, scales = "free_y")
 
 fit_mean |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(summary)
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(summary)
 
 fit_mean |>
-  dplyr::filter(group %in% "E-Cigarettes") |>
-  pull(plot)
-
-
+    dplyr::filter(group %in% "E-Cigarettes") |>
+    pull(plot)
 ```
 
 
@@ -189,12 +489,12 @@ fit_mean |>
 
 ```{r}
 fit_one_linear <- etm |>
-  dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
-  fit_cp_linear(
-    type = "fixed",
-    log10x = TRUE,
-    return_all = TRUE
-  )
+    dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
+    fit_cp_linear(
+        type = "fixed",
+        log10x = TRUE,
+        return_all = TRUE
+    )
 
 summary(fit_one_linear)
 plot(fit_one_linear, x_trans = "log10")
@@ -204,12 +504,12 @@ plot(fit_one_linear, x_trans = "log10")
 
 ```{r}
 fit_mixed <- fit_cp_linear(
-  etm,
-  type = "mixed",
-  log10x = TRUE,
-  group_effects = "interaction",
-  random_slope = FALSE,
-  return_all = TRUE
+    etm,
+    type = "mixed",
+    log10x = TRUE,
+    group_effects = "interaction",
+    random_slope = FALSE,
+    return_all = TRUE
 )
 
 summary(fit_mixed)
@@ -241,3 +541,489 @@ extract_coefficients(fit_mixed)
 cp_posthoc_slopes(fit_mixed)
 cp_posthoc_intercepts(fit_mixed)
 ```
+
+## Two-Part Hurdle Cross-Price Model
+
+The hurdle cross-price model extends the standard cross-price demand framework to handle
+datasets with many zero consumption values. It uses a two-part structure:
+
+**Part I (Zero Model):** Logistic regression for probability of zero consumption
+$$\text{logit}(P(\text{zero})) = \beta_0 + \beta_1 \ln(x + \epsilon) + a_i$$
+
+**Part II (Intensity Model):** Exponential cross-price model for positive consumption
+$$\ln(Q) = \ln(Q_{alone}) + I \cdot \exp(-\beta \cdot x) + b_i + e$$
+
+Where:
+- $Q_{alone}$ is baseline consumption when alternative is unavailable
+- $I$ is the interaction parameter (negative = substitutes, positive = complements)
+- $\beta$ is the rate of decay
+- $a_i, b_i$ are subject-specific random effects
+
+### Fitting a 2-RE Hurdle Model
+
+```{r hurdle-2re, warning=FALSE}
+# Filter to E-Cigarettes alternative condition
+ecig_data <- etm |>
+    dplyr::filter(group == "E-Cigarettes", target == "alt") |>
+    as.data.frame()
+
+# Check zero proportion
+cat("Zero consumption:", round(100 * mean(ecig_data$y == 0), 1), "%\n")
+
+# Fit 2-RE hurdle model (random effects on zeros and Qalone)
+fit_hurdle_2re <- fit_cp_hurdle(
+    data = ecig_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "qalone"),
+    verbose = 0
+)
+
+summary(fit_hurdle_2re)
+```
+
+### Fitting a 3-RE Hurdle Model
+
+The 3-RE model adds a random effect on the interaction parameter $I$:
+
+```{r hurdle-3re, warning=FALSE}
+# Fit 3-RE hurdle model
+fit_hurdle_3re <- fit_cp_hurdle(
+    data = ecig_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "qalone", "I"),
+    verbose = 0
+)
+
+summary(fit_hurdle_3re)
+```
+
+### Comparing Models
+
+Use a likelihood ratio test to compare nested models:
+
+```{r hurdle-compare}
+compare_cp_hurdle_models(fit_hurdle_3re, fit_hurdle_2re)
+```
+
+### Subject-Level Parameters
+
+```{r hurdle-params}
+# Get parameter summary
+get_cp_hurdle_param_summary(fit_hurdle_2re)
+
+# View individual subject parameters
+head(predict(fit_hurdle_2re, type = "parameters"))
+```
+
+### Predictions
+
+```{r hurdle-predict}
+# Population-level predictions
+new_prices <- data.frame(x = c(2, 8, 16, 32, 64))
+cbind(
+    new_prices,
+    demand = predict(fit_hurdle_2re, new_prices, type = "response", level = "population"),
+    prob_zero = predict(fit_hurdle_2re, new_prices, type = "probability", level = "population")
+)
+```
+
+### Plotting
+
+```{r hurdle-plot, fig.width=7, fig.height=5}
+# Population demand curve
+plot(fit_hurdle_2re, type = "demand")
+
+# Probability of zero consumption
+plot(fit_hurdle_2re, type = "probability")
+
+# Individual curves
+plot(fit_hurdle_2re, type = "individual")
+```
+
+## Joint Hurdle Cross-Price Model
+
+The joint hurdle model extends the separate demand and cross-price models by estimating
+all parameters within a **single likelihood**. This approach:
+
+- Shares information across conditions via correlated random effects
+- Provides a unified framework for analyzing complete cross-price experiments
+- Enables direct comparison of target demand with and without an alternative
+
+### Model Structure
+
+The joint model estimates three "streams" simultaneously:
+
+1. **alone.target**: Target commodity demand when alternative is absent
+2. **own.target**: Target commodity demand when alternative is present
+3. **own.alt**: Alternative commodity consumption as a function of target price
+
+**Key design features:**
+
+- **Shared hurdle**: A single subject-level random effect ($a_i$) captures propensity
+  to purchase anything, with stream-specific intercepts
+- **Global k**: The scaling parameter $k$ is shared across target demand streams
+- **price_T is the predictor for all streams**: Alternative price is assumed fixed
+  and is not modeled as a predictor
+
+### Preparing Data for Joint Model
+
+The `prepare_joint_data()` function transforms data into the required format:
+
+```{r joint-prep}
+# Load the cross-price example dataset
+load(here::here("data", "cp.RData"))
+
+# Examine the data structure
+cat("Data dimensions:", nrow(cp), "rows x", ncol(cp), "cols\n")
+cat("Subjects:", length(unique(cp$id)), "\n")
+cat("Conditions:", paste(unique(cp$target), collapse = ", "), "\n")
+
+# View sample data
+head(cp)
+
+# Prepare for joint model
+prep <- prepare_joint_data(
+    data = cp,
+    y_var = "y",
+    price_var = "x",
+    id_var = "id",
+    target_var = "target",
+    alone_value = "alone",
+    own_value = "own",
+    alt_value = "alt"
+)
+
+# Check stream counts
+prep$stream_counts
+```
+
+### Comparing Separate Fits vs Joint Fit
+
+#### Step 1: Separate Fits (Traditional Workflow)
+
+First, let's fit each condition separately using existing functions:
+
+```{r joint-separate-fits}
+# Filter data by condition
+alone_data <- cp |> dplyr::filter(target == "alone")
+own_data <- cp |> dplyr::filter(target == "own")
+alt_data <- cp |> dplyr::filter(target == "alt")
+
+# Fit target demand (alone condition)
+fit_alone <- FitCurves(
+    dat = alone_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+cat("=== Alone Condition (Target Demand) ===\n")
+cat("Q0:", round(fit_alone$dfres$Q0d, 2), "\n")
+cat("Alpha:", round(fit_alone$dfres$Alpha, 6), "\n")
+
+# Fit target demand (own condition)
+fit_own <- FitCurves(
+    dat = own_data,
+    equation = "koff",
+    k = 2,
+    detailed = TRUE
+)
+
+cat("\n=== Own Condition (Target Demand) ===\n")
+cat("Q0:", round(fit_own$dfres$Q0d, 2), "\n")
+cat("Alpha:", round(fit_own$dfres$Alpha, 6), "\n")
+
+# Fit cross-price model (alt condition)
+fit_alt <- fit_cp_nls(
+    dat = alt_data,
+    equation = "exponentiated",
+    return_all = TRUE
+)
+
+cat("\n=== Alt Condition (Cross-Price) ===\n")
+cat("Qalone:", round(coef(fit_alt)["qalone"], 2), "\n")
+cat("I:", round(coef(fit_alt)["I"], 4), "\n")
+cat("beta:", round(coef(fit_alt)["beta"], 4), "\n")
+```
+
+#### Step 2: Joint Model Fit
+
+Now fit all streams simultaneously with the joint hurdle model:
+
+```{r joint-fit, warning=FALSE}
+# Fit the joint hurdle model
+fit_joint <- fit_joint_hurdle(
+    data = cp,
+    y_var = "y",
+    price_var = "x",
+    id_var = "id",
+    target_var = "target",
+    alone_value = "alone",
+    own_value = "own",
+    alt_value = "alt",
+    k = 2, # Fixed k (matches existing workflow)
+    epsilon = 0.001,
+    verbose = 1
+)
+```
+
+### Examining Joint Model Results
+
+```{r joint-summary}
+# Full summary
+summary(fit_joint)
+```
+
+### Extracting Coefficients
+
+```{r joint-coef}
+# All coefficients
+coef(fit_joint, type = "all")
+
+# Hurdle parameters only
+coef(fit_joint, type = "hurdle")
+
+# Demand parameters (target streams)
+coef(fit_joint, type = "demand")
+
+# Cross-price parameters
+coef(fit_joint, type = "crossprice")
+```
+
+### Comparing Parameter Estimates
+
+```{r joint-compare-params}
+# Create comparison table
+comparison <- data.frame(
+    Stream = c("alone.target", "own.target", "own.alt"),
+    Separate_Q0 = c(
+        fit_alone$dfres$Q0d,
+        fit_own$dfres$Q0d,
+        coef(fit_alt)["qalone"]
+    ),
+    Joint_Q0 = c(
+        exp(coef(fit_joint)["logQ0_AT"]),
+        exp(coef(fit_joint)["logQ0_OT"]),
+        exp(coef(fit_joint)["logQalone_OA"])
+    ),
+    Separate_Sens = c(
+        fit_alone$dfres$Alpha,
+        fit_own$dfres$Alpha,
+        coef(fit_alt)["I"]
+    ),
+    Joint_Sens = c(
+        coef(fit_joint)["alpha_AT"],
+        coef(fit_joint)["alpha_OT"],
+        coef(fit_joint)["I"]
+    )
+)
+
+comparison
+```
+
+### Predictions by Stream
+
+```{r joint-predict}
+# Population-level predictions for all streams
+prices <- data.frame(price_T = c(0.5, 1, 2, 4, 8, 16, 32))
+
+# Response predictions (expected consumption)
+pred_response <- predict(fit_joint, newdata = prices, type = "response", stream = "all")
+head(pred_response, 12)
+
+# Probability of zero consumption
+pred_prob <- predict(fit_joint, newdata = prices, type = "probability", stream = "all")
+head(pred_prob, 12)
+```
+
+### Subject-Level Parameters
+
+```{r joint-subject-pars}
+# Extract subject-specific parameters
+subject_pars <- predict(fit_joint, type = "parameters")
+subject_pars
+```
+
+### Visualizing Joint Model Results
+
+```{r joint-plot-demand, fig.width=8, fig.height=5}
+# Demand curves for all streams
+plot(fit_joint, type = "demand")
+```
+
+```{r joint-plot-prob, fig.width=8, fig.height=4}
+# Zero probability curves
+plot(fit_joint, type = "probability")
+```
+
+### Using Tidy Methods
+
+```{r joint-tidy}
+# Tidy coefficient table
+tidy(fit_joint)
+
+# Model summary statistics
+glance(fit_joint)
+```
+
+### Key Takeaways
+
+**When to use the joint model:**
+
+- You have data across multiple conditions (alone, own, alt)
+- You want correlated random effects across conditions
+- You want a single unified analysis rather than separate fits
+
+**When separate fits may be preferred:**
+
+- You only have one condition
+- You want maximum flexibility in model specification per condition
+- Computational resources are limited
+
+**Important notes:**
+
+- `price_T` (target price) is the predictor for **all** streams
+- Alternative price is assumed **fixed** and does not enter the model
+- The joint model produces consistent parameter orderings with the separate fits
+
+---
+
+## Variant 2: Latent-Trait Joint Model
+
+### Why a Latent-Trait Model?
+
+The saturated joint model (Variant 1) uses **stream-specific random effects** — each
+subject has separate deviations for alone-target, own-target, and own-alt streams.
+This is flexible but can be unstable with sparse data.
+
+The **latent-trait model** (Variant 2) takes a different approach:
+
+- Instead of stream-specific random effects, subjects have **4 latent behavioral traits**
+- These traits **load into** the model parameters via fixed mappings
+- Result: fewer parameters, more interpretable structure, better stability
+
+| Latent Trait | Behavioral Interpretation |
+|--------------|---------------------------|
+| `u_buy`      | Propensity to purchase (drives hurdle) |
+| `u_val`      | Baseline consumption intensity |
+| `u_sens`     | Price sensitivity (elasticity) |
+| `u_sub`      | Substitution propensity |
+
+**Key insight:** Variant 2 trades flexibility for structure, not correctness. Both
+models use the exact same mean functions — only the random effect structure differs.
+
+### Fitting the Latent-Trait Model
+
+```{r fit-latent-model}
+# Fit the latent-trait joint model
+fit_latent <- fit_joint_hurdle(
+    data = cp,
+    joint_type = "latent",
+    k = 2,
+    verbose = 0
+)
+
+print(fit_latent)
+```
+
+### Comparing Variant 1 and Variant 2
+
+Let's compare the two variants side-by-side:
+```{r compare-variants}
+# Hurdle parameters (should be similar)
+cat("=== Hurdle Parameters ===\n")
+cat("\nSaturated (Variant 1):\n")
+print(coef(fit_joint, type = "hurdle"))
+cat("\nLatent (Variant 2):\n")
+print(coef(fit_latent, type = "hurdle"))
+
+# Cross-price parameters
+cat("\n=== Cross-Price Parameters ===\n")
+cat("\nSaturated (Variant 1):\n")
+print(coef(fit_joint, type = "crossprice"))
+cat("\nLatent (Variant 2):\n")
+print(coef(fit_latent, type = "crossprice"))
+```
+
+```{r compare-fit-stats}
+# Model fit comparison
+comparison <- data.frame(
+    Variant = c("Saturated", "Latent"),
+    LogLik = c(fit_joint$logLik, fit_latent$logLik),
+    AIC = c(fit_joint$AIC, fit_latent$AIC),
+    BIC = c(fit_joint$BIC, fit_latent$BIC),
+    Converged = c(fit_joint$convergence == 0, fit_latent$convergence == 0)
+)
+comparison
+```
+
+### Latent Trait Loadings
+
+The latent model includes **loading parameters** that control how the substitution
+trait (`u_sub`) differentially affects each stream:
+
+```{r latent-loadings}
+# Extract latent loadings
+coef(fit_latent, type = "latent")
+```
+
+- `lambda_sub_q0`: How substitution affects own-target baseline demand
+- `lambda_sub_alpha`: How substitution affects own-target price sensitivity
+- `lambda_sub_alt`: How substitution affects alternative consumption
+
+### Predictions with the Latent Model
+
+Predictions work identically to the saturated model:
+
+```{r latent-predictions}
+# Predicted demand across streams
+prices <- data.frame(price_T = c(0.5, 1, 2, 4, 8, 16))
+
+pred_response <- predict(fit_latent, newdata = prices, type = "response", stream = "all")
+pred_response
+
+# Zero probability predictions
+pred_prob <- predict(fit_latent, newdata = prices, type = "probability", stream = "all")
+pred_prob
+```
+
+### Interpreting Latent Traits
+
+The latent traits provide a **behavioral decomposition** of individual differences:
+
+| Trait | High Value Means | Low Value Means |
+|-------|------------------|-----------------|
+| `u_buy` | More likely to purchase at any price | More likely to abstain |
+| `u_val` | Higher baseline consumption | Lower baseline consumption |
+| `u_sens` | More price-sensitive (steeper curves) | Less price-sensitive |
+| `u_sub` | Stronger substitution behavior | Weaker substitution |
+
+**Important:** These are latent constructs, not directly observed. Their values
+are estimated from the data pattern and should be interpreted with appropriate
+caution.
+
+### When to Use Each Variant
+
+| Criterion | Saturated (Variant 1) | Latent (Variant 2) |
+|-----------|----------------------|-------------------|
+| **Data richness** | Many obs per subject | Sparse data |
+| **Primary interest** | Stream-specific effects | Behavioral traits |
+| **Stability** | May require more data | More stable |
+| **Interpretability** | Random effects per stream | Explicit trait meanings |
+| **Flexibility** | Maximum flexibility | Constrained structure |
+
+**Recommendation:**
+
+- Start with **Variant 1 (saturated)** if you have rich data and want maximum flexibility
+- Use **Variant 2 (latent)** if:
+ - Data is sparse
+ - Model convergence is problematic
+ - You want interpretable behavioral dimensions
+ - Stability is more important than stream-specific flexibility
+
+Both variants produce valid inference — the choice depends on your research goals
+and data characteristics.

@@ -2,37 +2,139 @@
 % Please edit documentation in R/cross-price.R
 \name{fit_cp_nls}
 \alias{fit_cp_nls}
-\title{Fit Nonlinear Cross-Price Model using NLS}
+\title{Fit cross-price demand with NLS (+ robust fallbacks)}
 \usage{
 fit_cp_nls(
   data,
   equation = c("exponentiated", "exponential", "additive"),
   start_vals = NULL,
   iter = 100,
-  bounds = list(lower = c(qalone = 0.1, I = -2, beta = 1e-05), upper = c(qalone = NA, I =
-    2, beta = 5)),
+  bounds = NULL,
   fallback_to_nlsr = TRUE,
   return_all = TRUE
 )
 }
 \arguments{
-\item{data}{A data frame containing columns: x and y.}
+\item{data}{A data frame with columns `x` (alternative price) and `y` (consumption).
+Additional columns are ignored. Input is validated internally.}
 
-\item{equation}{Type of equation ("exponential" or "exponentiated").}
+\item{equation}{Character string; model family, one of
+`c("exponentiated", "exponential", "additive")`. Default is `"exponentiated"`.}
 
-\item{start_vals}{Optional named list of starting values.}
+\item{start_vals}{Optional **named list** of initial values for parameters
+`log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
+plausible ranges from the data and uses multi-start search.}
 
-\item{iter}{Number of iterations for nls.multstart.}
+\item{iter}{Integer; number of random starts for `nls.multstart` (default `100`).}
 
-\item{bounds}{List with 'lower' and 'upper' bounds for parameters.}
+\item{bounds}{Deprecated. Log10-parameterized parameters are naturally unbounded.
+This argument is ignored but retained for backwards compatibility.}
 
-\item{fallback_to_nlsr}{Logical; if TRUE, try nlsr when others fail.}
+\item{fallback_to_nlsr}{Logical; if `TRUE` (default), try `nlsr::wrapnlsr` when
+both multi-start NLS and `nlsLM` fail.}
 
-\item{return_all}{Logical; if TRUE, returns a list with model metadata.}
+\item{return_all}{Logical; if `TRUE` (default), return a list containing the
+model and useful metadata. If `FALSE`, return the bare fitted model object.}
 }
 \value{
-Fitted model object or list with model metadata.
+If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
+\itemize{
+  \item `model`: the fitted object from the successful backend.
+  \item `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
+  \item `equation`: the model family used.
+  \item `start_vals`: named list of starting values (final used).
+  \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
+  \item `data`: the 2-column data frame actually fit.
+}
+If `return_all = FALSE`: the fitted model object from the successful backend.
 }
 \description{
-Fit Nonlinear Cross-Price Model using NLS
+Fits a **cross-price demand** curve using log10-parameterization for numerical
+stability. The optimizer estimates parameters on the log10 scale where applicable,
+ensuring positive constraints are naturally satisfied.
+
+**Equation forms:**
+
+- **Exponentiated** (default):
+  \deqn{y = Q_{alone} \cdot 10^{I \cdot \exp(-\beta \cdot x)}}
+
+- **Exponential** (fits on log10 response scale):
+  \deqn{\log_{10}(y) = \log_{10}(Q_{alone}) + I \cdot \exp(-\beta \cdot x)}
+
+- **Additive** (level on \eqn{y}):
+  \deqn{y = Q_{alone} + I \cdot \exp(-\beta \cdot x)}
+
+where \eqn{x} is the alternative product price (or "cross" price) and \eqn{y}
+is consumption of the target good.
+
+**Optimizer parameters (log10 parameterization):**
+\itemize{
+  \item \code{log10_qalone}: \eqn{\log_{10}(Q_{alone})} - baseline consumption
+        when the alternative is effectively absent.
+  \item \code{I}: cross-price **interaction intensity**; sign and magnitude reflect
+        substitution/complementarity. Unconstrained (can be negative for substitutes).
+  \item \code{log10_beta}: \eqn{\log_{10}(\beta)} - rate at which cross-price
+        influence decays as \eqn{x} increases.
+}
+
+Natural-scale values are recovered as \eqn{Q_{alone} = 10^{log10\_qalone}} and
+\eqn{\beta = 10^{log10\_beta}}.
+
+The function first attempts a multi-start nonlinear least squares fit
+(`nls.multstart`). If that fails—or if explicit `start_vals` are provided—it
+falls back to `minpack.lm::nlsLM`. Optionally, it will make a final attempt
+with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
+with metadata for downstream methods.
+}
+\details{
+**Start values.** When `start_vals` is missing, the function:
+(1) estimates a reasonable range for `log10_qalone` from the observed `y`,
+(2) estimates `log10_beta` from the price range, and (3) launches a multi-start
+grid in `nls.multstart`.
+
+**Zero handling for exponential equation.** Since the exponential equation fits
+on the \eqn{\log_{10}(y)} scale, observations with \eqn{y \le 0} are automatically
+removed with a warning. Use the exponentiated or additive forms if you need to
+retain zero consumption values.
+
+**Fitting pipeline (short-circuiting):**
+\enumerate{
+  \item `nls.multstart::nls_multstart()` with random starts.
+  \item If that fails (or if `start_vals` provided): `minpack.lm::nlsLM()` using
+        `start_vals` (user or internally estimated).
+  \item If that fails and `fallback_to_nlsr = TRUE`: `nlsr::wrapnlsr()`.
+}
+
+The returned object has class `"cp_model_nls"` (when `return_all = TRUE`) with
+components: `model`, `method` (the algorithm used), `equation`, `start_vals`,
+`nlsLM_fit`, `nlsr_fit`, and the `data` used. This is convenient for custom
+print/summary/plot methods.
+}
+\section{Convergence & warnings}{
+
+- Check convergence codes and residual diagnostics from the underlying fit.
+- Poor scaling or extreme `y` dispersion can make parameters weakly identified.
+- For `"exponential"`, the model fits on the \eqn{\log_{10}(y)} scale internally.
+}
+
+\examples{
+## --- Example: Real data (E-Cigarettes, id = 1) ---
+dat <- structure(list(
+  id = c(1, 1, 1, 1, 1, 1),
+  x = c(2, 4, 8, 16, 32, 64),
+  y = c(3, 5, 5, 16, 17, 13),
+  target = c("alt", "alt", "alt", "alt", "alt", "alt"),
+  group = c("E-Cigarettes", "E-Cigarettes", "E-Cigarettes",
+            "E-Cigarettes", "E-Cigarettes", "E-Cigarettes")
+), row.names = c(NA, -6L), class = c("tbl_df", "tbl", "data.frame"))
+
+## Fit the default (exponentiated) cross-price form
+fit_ecig <- fit_cp_nls(dat, equation = "exponentiated", return_all = TRUE)
+summary(fit_ecig)         # model summary
+fit_ecig$method           # backend actually used (e.g., "nls_multstart")
+coef(fit_ecig$model)      # parameter estimates: log10_qalone, I, log10_beta
+}
+\seealso{
+\code{\link{check_unsystematic_cp}} for pre-fit data screening,
+\code{\link{validate_cp_data}} for input validation.
 }
