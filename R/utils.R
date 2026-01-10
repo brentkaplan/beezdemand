@@ -664,7 +664,9 @@ beezdemand_empty_coefficients <- function() {
     std.error = numeric(),
     statistic = numeric(),
     p.value = numeric(),
-    component = character()
+    component = character(),
+    estimate_scale = character(),
+    term_display = character()
   )
 }
 

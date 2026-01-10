@@ -100,13 +100,20 @@ summary.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
     grepl("^logsigma_|^rho_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
 
+  term <- dplyr::case_when(
+    coef_names == "log_q0" ~ "Q0",
+    coef_names == "log_alpha" ~ "alpha",
+    coef_names == "log_k" ~ "k",
+    TRUE ~ coef_names
+  )
+
   coefficients <- tibble::tibble(
-    term = coef_names,
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se_vec),
     statistic = unname(z_val),
@@ -117,63 +124,20 @@ summary.beezdemand_hurdle <- function(
       coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
       TRUE ~ "natural"
     ),
-    term_display = coef_names
+    term_display = term
   )
 
-  if (report_space != "internal") {
-    # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- coefficients$term %in% c("log_q0", "log_alpha", "log_k", "k")
-    coefficients <- coefficients |>
-      dplyr::mutate(estimate_internal = .data$estimate)
+  coefficients <- beezdemand_transform_coef_table(
+    coef_tbl = coefficients,
+    report_space = report_space,
+    internal_space = "natural"
+  )
 
-    for (i in which(demand_terms)) {
-      term_i <- coefficients$term[i]
-      from_space <- coefficients$estimate_scale[i]
-      to_space <- if (report_space == "natural") "natural" else "log10"
-
-      trans <- beezdemand_transform_est_se(
-        estimate = coefficients$estimate[i],
-        se = coefficients$std.error[i],
-        from = from_space,
-        to = to_space
-      )
-
-      coefficients$estimate[i] <- trans$estimate
-      coefficients$std.error[i] <- trans$se
-      coefficients$statistic[i] <- coefficients$estimate[i] / coefficients$std.error[i]
-      coefficients$p.value[i] <- 2 * stats::pnorm(-abs(coefficients$statistic[i]))
-
-      if (term_i == "log_q0" && report_space == "natural") {
-        coefficients$term[i] <- "Q0"
-        coefficients$term_display[i] <- "Q0"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_q0" && report_space == "log10") {
-        coefficients$term[i] <- "log10(Q0)"
-        coefficients$term_display[i] <- "log10(Q0)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_alpha" && report_space == "natural") {
-        coefficients$term[i] <- "alpha"
-        coefficients$term_display[i] <- "alpha"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_alpha" && report_space == "log10") {
-        coefficients$term[i] <- "log10(alpha)"
-        coefficients$term_display[i] <- "log10(alpha)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_k" && report_space == "natural") {
-        coefficients$term[i] <- "k"
-        coefficients$term_display[i] <- "k"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_k" && report_space == "log10") {
-        coefficients$term[i] <- "log10(k)"
-        coefficients$term_display[i] <- "log10(k)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "k" && report_space == "log10") {
-        coefficients$term[i] <- "log10(k)"
-        coefficients$term_display[i] <- "log10(k)"
-        coefficients$estimate_scale[i] <- "log10"
-      }
-    }
-  }
+  coefficients <- coefficients |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 
   # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)

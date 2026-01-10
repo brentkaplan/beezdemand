@@ -175,6 +175,11 @@ test_that("summary.beezdemand_nlme meets contract", {
   # derived_metrics exists (may be empty)
   expect_s3_class(s$derived_metrics, "tbl_df")
   expect_true(all(c("metric", "estimate") %in% names(s$derived_metrics)))
+
+  # For HS/Koff fixed fits, include derived Pmax/Omax per subject when available
+  if (s$equation %in% c("hs", "koff")) {
+    expect_true(any(s$derived_metrics$metric %in% c("pmax_model", "omax_model")))
+  }
 })
 
 

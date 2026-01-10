@@ -355,34 +355,11 @@ summary.beezdemand_fixed <- function(
       )
     })
     coefficients <- dplyr::bind_rows(coefficients_list)
-    if (report_space == "log10") {
-      # Use suppressWarnings to avoid NaN warnings from log10 of non-positive values
-      # The case_when condition handles these cases, but log10 is evaluated first
-      coefficients <- suppressWarnings(coefficients |>
-        dplyr::mutate(
-          estimate_internal = .data$estimate,
-          estimate = dplyr::case_when(
-            .data$term %in% c("Q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
-            .data$term %in% c("Q0", "alpha", "k") & .data$estimate <= 0 ~ NA_real_,
-            TRUE ~ .data$estimate
-          ),
-          std.error = dplyr::case_when(
-            .data$term %in% c("Q0", "alpha", "k") & .data$estimate_internal > 0 ~
-              .data$std.error / (.data$estimate_internal * log(10)),
-            TRUE ~ .data$std.error
-          ),
-          estimate_scale = dplyr::case_when(
-            .data$term %in% c("Q0", "alpha", "k") ~ "log10",
-            TRUE ~ .data$estimate_scale
-          ),
-          term_display = dplyr::case_when(
-            .data$term == "Q0" ~ "log10(Q0)",
-            .data$term == "alpha" ~ "log10(alpha)",
-            .data$term == "k" ~ "log10(k)",
-            TRUE ~ .data$term_display
-          )
-        ))
-    }
+    coefficients <- beezdemand_transform_coef_table(
+      coef_tbl = coefficients,
+      report_space = report_space,
+      internal_space = "natural"
+    )
 
     param_summary <- lapply(names(param_specs), function(term_name) {
       vals <- results[[param_specs[[term_name]]$estimate]]
@@ -406,15 +383,7 @@ summary.beezdemand_fixed <- function(
       NA_integer_
     }
   } else {
-    coefficients <- tibble::tibble(
-      id = character(),
-      term = character(),
-      estimate = numeric(),
-      std.error = numeric(),
-      statistic = numeric(),
-      p.value = numeric(),
-      component = character()
-    )
+    coefficients <- beezdemand_empty_coefficients()
     param_summary <- list()
     nobs <- NA_integer_
   }
@@ -426,9 +395,9 @@ summary.beezdemand_fixed <- function(
   if (!is.null(object$results) && is.data.frame(object$results) &&
       nrow(object$results) > 0 && object$equation %in% c("hs", "koff")) {
     # Get parameter columns
-    q0_col <- if ("Q0" %in% names(object$results)) "Q0" else NULL
-    alpha_col <- if ("Alpha" %in% names(object$results)) "Alpha" else NULL
-    k_col <- if ("K" %in% names(object$results)) "K" else NULL
+    q0_col <- param_specs$Q0$estimate %||% NULL
+    alpha_col <- param_specs$alpha$estimate %||% NULL
+    k_col <- param_specs$k$estimate %||% NULL
     
     if (!is.null(q0_col) && !is.null(alpha_col) && !is.null(k_col)) {
       # Determine parameter scale based on param_space
@@ -470,6 +439,32 @@ summary.beezdemand_fixed <- function(
       object$results$pmax_model <- pmax_vals
       object$results$omax_model <- omax_vals
       object$results$pmax_method <- methods
+
+      derived_metrics <- dplyr::bind_rows(
+        derived_metrics,
+        tibble::tibble(
+          metric = rep("pmax_model", length(pmax_vals)),
+          estimate = as.numeric(pmax_vals),
+          std.error = NA_real_,
+          conf.low = NA_real_,
+          conf.high = NA_real_,
+          method = as.character(methods),
+          component = "consumption",
+          level = "individual",
+          id = as.character(id_values)
+        ),
+        tibble::tibble(
+          metric = rep("omax_model", length(omax_vals)),
+          estimate = as.numeric(omax_vals),
+          std.error = NA_real_,
+          conf.low = NA_real_,
+          conf.high = NA_real_,
+          method = as.character(methods),
+          component = "consumption",
+          level = "individual",
+          id = as.character(id_values)
+        )
+      )
       
       # Summary metrics
       pmax_summary <- if (any(!is.na(pmax_vals))) summary(pmax_vals[!is.na(pmax_vals)]) else NULL

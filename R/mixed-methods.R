@@ -1687,19 +1687,13 @@ summary.beezdemand_nlme <- function(
   )
 
   if (report_space != internal_space) {
-    coefficients$estimate_internal <- coefficients$estimate
-    trans <- beezdemand_transform_est_se(
-      estimate = coefficients$estimate,
-      se = coefficients$std.error,
-      from = internal_space,
-      to = report_space
+    coefficients <- beezdemand_transform_coef_table(
+      coef_tbl = coefficients,
+      report_space = report_space,
+      internal_space = internal_space
     )
-    coefficients$estimate <- trans$estimate
-    coefficients$std.error <- trans$se
     coefficients$statistic <- coefficients$estimate / coefficients$std.error
     coefficients$p.value <- 2 * stats::pnorm(-abs(coefficients$statistic))
-    coefficients$estimate_scale <- report_space
-    coefficients$term_display <- vapply(coefficients$term, beezdemand_term_display_space, character(1), report_space = report_space)
   }
 
   # Random effects structure
