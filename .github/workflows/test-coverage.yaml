@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -51,15 +52,15 @@ jobs:
       - uses: codecov/codecov-action@v5
         # Codecov uploads from `push` events require a valid CODECOV_TOKEN secret.
         # Without it, codecov-action exits non-zero and fails the workflow.
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        if: ${{ env.CODECOV_TOKEN != '' }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: cobertura.xml
           disable_search: true
           fail_ci_if_error: ${{ github.event_name != 'pull_request' }}
 
       - name: Codecov skipped (missing CODECOV_TOKEN)
-        if: ${{ secrets.CODECOV_TOKEN == '' }}
+        if: ${{ env.CODECOV_TOKEN == '' }}
         run: |
           echo "Skipping Codecov upload because secrets.CODECOV_TOKEN is not set."
           echo "Set CODECOV_TOKEN in repo settings (Actions secrets) to enable coverage uploads."
