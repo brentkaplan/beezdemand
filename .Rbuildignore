@@ -47,5 +47,5 @@
 ^[^/]+\.txt$
 ^tests/testthat/Rplots\.pdf$
 ^engineering$
-^\\.agents$
-^\\.env$
+^\.agents$
+^\.env$
