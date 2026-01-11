@@ -1855,14 +1855,7 @@ tidy.beezdemand_nlme <- function(
 ) {
   report_space <- match.arg(report_space)
   if (is.null(x$model)) {
-    return(tibble::tibble(
-      term = character(),
-      estimate = numeric(),
-      std.error = numeric(),
-      statistic = numeric(),
-      p.value = numeric(),
-      component = character()
-    ))
+    return(beezdemand_empty_coefficients())
   }
 
   effects <- match.arg(effects, several.ok = TRUE)
@@ -2161,6 +2154,9 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #'   the original fit must also be present in `newdata` and its levels should
 #'   correspond to those in the original data for meaningful random effect application.
 #'   If `NULL`, predictions are made for the data used in fitting the model.
+#' @param type One of `"response"` (default), `"link"`, `"population"`, or `"individual"`.
+#'   `"population"` and `"individual"` are aliases that set `level` to `0` or `1`,
+#'   respectively.
 #' @param level Integer, prediction level for `nlme::predict.nlme()`:
 #'   \itemize{
 #'     \item `0`: Population predictions (based on fixed effects only).
@@ -2174,13 +2170,16 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #'   would convert predictions back to the original consumption scale.
 #'   If `equation_form` was "simplified" (which models raw Y), `inv_fun` might be `identity`
 #'   or not needed if predictions are already on the desired scale.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_nlme` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments passed to `nlme::predict.nlme()`.
 #'
-#' @return A numeric vector of predictions. If `newdata` is provided, the vector
-#'   length corresponds to `nrow(newdata)`. If `newdata` is `NULL`, it corresponds
-#'   to the number of observations in the original fitting data.
-#'   The scale of predictions depends on `object$formula_details$equation_form_selected`
-#'   and the application of `inv_fun`.
+#' @return A tibble containing the original `newdata` columns plus `.fitted`.
+#'   When requested, `.se.fit` and `.lower`/`.upper` are included (currently `NA`).
 #'
 #' @method predict beezdemand_nlme
 #' @export
@@ -2230,6 +2229,10 @@ predict.beezdemand_nlme <- function(
 ) {
   type <- match.arg(type)
   interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
   if (!inherits(object, "beezdemand_nlme")) {
     stop("Input 'object' must be of class 'beezdemand_nlme'.")
   }

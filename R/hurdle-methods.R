@@ -119,13 +119,13 @@ summary.beezdemand_hurdle <- function(
     statistic = unname(z_val),
     p.value = unname(p_val),
     component = component,
-    estimate_scale = dplyr::case_when(
-      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
-      TRUE ~ "natural"
-    ),
-    term_display = term
-  )
+	    estimate_scale = dplyr::case_when(
+	      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+	      coef_names %in% c("log_q0", "log_alpha", "log_k", "alpha") ~ "log",
+	      TRUE ~ "natural"
+	    ),
+	    term_display = term
+	  )
 
   coefficients <- beezdemand_transform_coef_table(
     coef_tbl = coefficients,
@@ -395,6 +395,16 @@ coef.beezdemand_hurdle <- function(
     out <- out[names(out) != "log_alpha"]
   }
 
+  # Backwards compatibility: older objects stored log(alpha) under the name `alpha`.
+  if (!("log_alpha" %in% names(coefs)) && "alpha" %in% names(out)) {
+    if (report_space == "natural") {
+      out[["alpha"]] <- exp(out[["alpha"]])
+    } else if (report_space == "log10") {
+      out[["log10(alpha)"]] <- out[["alpha"]] / log(10)
+      out <- out[names(out) != "alpha"]
+    }
+  }
+
   if ("log_k" %in% names(out)) {
     if (report_space == "natural") {
       out[["k"]] <- exp(out[["log_k"]])
@@ -470,30 +480,33 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #' Predict Method for Hurdle Demand Models
 #'
 #' @description
-#' Extracts subject-specific predictions from a fitted hurdle demand model,
-#' or generates predictions for new price values.
+#' Returns predictions from a fitted hurdle demand model.
 #'
 #' @param object An object of class \code{beezdemand_hurdle}.
-#' @param newdata Optional data frame with new data for prediction. Currently
-#'   not fully implemented - predictions use subjects from the fitted model.
-#' @param type Character string specifying the type of prediction:
+#' @param newdata Optional data frame containing a price column matching the fitted
+#'   object's `x_var`. If `newdata` includes the id column, subject-specific
+#'   predictions are returned; otherwise population predictions are returned.
+#'   If `newdata` is `NULL`, returns predictions for all subjects across a price grid.
+#' @param type One of:
 #'   \describe{
-#'     \item{\code{"parameters"}}{Subject-specific demand parameters (default)}
-#'     \item{\code{"demand"}}{Predicted consumption at specified prices}
-#'     \item{\code{"probability"}}{Predicted probability of zero consumption}
+#'     \item{\code{"response"}}{Predicted consumption (part II)}
+#'     \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
+#'     \item{\code{"probability"}}{Predicted probability of zero consumption (part I)}
+#'     \item{\code{"demand"}}{Predicted expected consumption = (1 - P0) * response}
+#'     \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 #'   }
-#' @param prices Numeric vector of prices for prediction when \code{type = "demand"}
-#'   or \code{type = "probability"}. If \code{NULL}, uses unique prices from
-#'   the original data.
-#' @param ... Additional arguments (currently unused).
+#' @param prices Optional numeric vector of prices used only when `newdata = NULL`.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
+#'   `sdreport` when available).
+#' @param interval One of `"none"` (default) or `"confidence"`.
+#' @param level Confidence level when `interval = "confidence"`.
+#' @param ... Unused.
 #'
-#' @return Depends on \code{type}:
-#' \describe{
-#'   \item{\code{"parameters"}}{Data frame with subject-specific parameters}
-#'   \item{\code{"demand"}}{Data frame with columns: id, x, predicted_consumption,
-#'     predicted_log_consumption, prob_zero, expected_consumption}
-#'   \item{\code{"probability"}}{Data frame with columns: id, x, prob_zero}
-#' }
+#' @return For `type = "parameters"`, a tibble of subject-level parameters.
+#'   Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
+#'   helper columns `predicted_log_consumption`, `predicted_consumption`,
+#'   `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
+#'   `.lower`/`.upper` are included.
 #'
 #' @examples
 #' \dontrun{
@@ -523,6 +536,10 @@ predict.beezdemand_hurdle <- function(
   newdata_user <- newdata
   type <- match.arg(type)
   interval <- match.arg(interval)
+  if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||
+    level <= 0 || level >= 1)) {
+    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+  }
   id_var <- object$param_info$id_var
   x_var <- object$param_info$x_var
   epsilon <- object$param_info$epsilon
@@ -1435,7 +1452,7 @@ plot_subject <- function(
 #'     \item{std.error}{Standard error}
 #'     \item{statistic}{z-value}
 #'     \item{p.value}{P-value}
-#'     \item{component}{One of "probability", "consumption", or "variance"}
+#'     \item{component}{One of "zero_probability", "consumption", "variance", or "fixed"}
 #'   }
 #'
 #' @export
@@ -1479,13 +1496,13 @@ tidy.beezdemand_hurdle <- function(
     statistic = unname(z_val),
     p.value = unname(p_val),
     component = component,
-    estimate_scale = dplyr::case_when(
-      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
-      TRUE ~ "natural"
-    ),
-    term_display = term
-  )
+	    estimate_scale = dplyr::case_when(
+	      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+	      coef_names %in% c("log_q0", "log_alpha", "log_k", "alpha") ~ "log",
+	      TRUE ~ "natural"
+	    ),
+	    term_display = term
+	  )
 
   out <- beezdemand_transform_coef_table(
     coef_tbl = out,

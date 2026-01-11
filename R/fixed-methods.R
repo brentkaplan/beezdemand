@@ -626,7 +626,9 @@ tidy.beezdemand_fixed <- function(
       std.error = numeric(),
       statistic = numeric(),
       p.value = numeric(),
-      component = character()
+      component = character(),
+      estimate_scale = character(),
+      term_display = character()
     ))
   }
   results <- x$results

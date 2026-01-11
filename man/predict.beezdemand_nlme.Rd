@@ -26,6 +26,10 @@ the original fit must also be present in `newdata` and its levels should
 correspond to those in the original data for meaningful random effect application.
 If `NULL`, predictions are made for the data used in fitting the model.}
 
+\item{type}{One of `"response"` (default), `"link"`, `"population"`, or `"individual"`.
+`"population"` and `"individual"` are aliases that set `level` to `0` or `1`,
+respectively.}
+
 \item{level}{Integer, prediction level for `nlme::predict.nlme()`:
 \itemize{
   \item `0`: Population predictions (based on fixed effects only).
@@ -41,14 +45,20 @@ would convert predictions back to the original consumption scale.
 If `equation_form` was "simplified" (which models raw Y), `inv_fun` might be `identity`
 or not needed if predictions are already on the desired scale.}
 
+\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+because standard errors are not implemented for `beezdemand_nlme` predictions).}
+
+\item{interval}{One of `"none"` (default) or `"confidence"`. When requested,
+`.lower`/`.upper` are returned as `NA`.}
+
+\item{interval_level}{Confidence level when `interval = "confidence"`. Currently
+used only for validation.}
+
 \item{...}{Additional arguments passed to `nlme::predict.nlme()`.}
 }
 \value{
-A numeric vector of predictions. If `newdata` is provided, the vector
-  length corresponds to `nrow(newdata)`. If `newdata` is `NULL`, it corresponds
-  to the number of observations in the original fitting data.
-  The scale of predictions depends on `object$formula_details$equation_form_selected`
-  and the application of `inv_fun`.
+A tibble containing the original `newdata` columns plus `.fitted`.
+  When requested, `.se.fit` and `.lower`/`.upper` are included (currently `NA`).
 }
 \description{
 Generates point predictions from a fitted `beezdemand_nlme` model.

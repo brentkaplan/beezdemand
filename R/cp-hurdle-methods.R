@@ -384,9 +384,16 @@ BIC.beezdemand_cp_hurdle <- function(object, ...) {
 #'
 #' @param object A beezdemand_cp_hurdle object
 #' @param newdata Optional data frame with columns for x (price) and id
-#' @param type Type of prediction: "demand" (log consumption), "response" (consumption),
-#'   "probability" (P(zero)), or "parameters" (subject-specific parameters)
+#' @param type One of `"response"` (consumption), `"link"` (log consumption),
+#'   `"demand"` (expected consumption), `"probability"` (P(zero)), or
+#'   `"parameters"` (subject-specific parameters).
 #' @param level Prediction level: "population" or "individual"
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_cp_hurdle` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments (ignored)
 #' @return Predictions based on type
 #' @export
@@ -403,6 +410,10 @@ predict.beezdemand_cp_hurdle <- function(
   type <- match.arg(type)
   level <- match.arg(level)
   interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
 
   if (type == "parameters") {
     return(tibble::as_tibble(object$subject_pars))
@@ -836,6 +847,8 @@ plot.beezdemand_cp_hurdle <- function(
 #' Tidy method for beezdemand_cp_hurdle
 #'
 #' @param x A beezdemand_cp_hurdle object
+#' @param report_space Character. Reporting space for core parameters. One of
+#'   `"internal"`, `"natural"`, or `"log10"`.
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model coefficients with columns:
 #'   - `term`: Parameter name
@@ -843,7 +856,7 @@ plot.beezdemand_cp_hurdle <- function(
 #'   - `std.error`: Standard error
 #'   - `statistic`: z-value
 #'   - `p.value`: P-value
-#'   - `component`: One of "part1_probability", "part2_consumption", "derived"
+#'   - `component`: One of "zero_probability", "consumption", "variance", or "fixed"
 #' @export
 tidy.beezdemand_cp_hurdle <- function(
   x,

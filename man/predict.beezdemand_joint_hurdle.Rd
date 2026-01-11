@@ -21,13 +21,23 @@
 
 \item{newdata}{Data frame with price_T values. If NULL, uses original data.}
 
-\item{type}{One of "response" (predicted consumption), "probability" (P(y=0)),
-or "parameters" (subject-level parameters).}
+\item{type}{One of `"response"` (predicted consumption), `"link"` (linear predictor),
+`"probability"` (P(y=0)), or `"parameters"` (subject-level parameters).}
 
 \item{stream}{Which stream(s) to predict for: "all", "alone.target",
 "own.target", "own.alt".}
 
-\item{level}{"population" or "subject".}
+\item{level}{"population" or "subject". Currently, only population predictions are
+implemented; this argument is reserved for future subject-level prediction support.}
+
+\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+because standard errors are not implemented for `beezdemand_joint_hurdle` predictions).}
+
+\item{interval}{One of `"none"` (default) or `"confidence"`. When requested,
+`.lower`/`.upper` are returned as `NA`.}
+
+\item{interval_level}{Confidence level when `interval = "confidence"`. Currently
+used only for validation.}
 
 \item{...}{Additional arguments (unused).}
 }

@@ -558,11 +558,18 @@ BIC.beezdemand_joint_hurdle <- function(object, ...) {
 #'
 #' @param object A \code{beezdemand_joint_hurdle} object.
 #' @param newdata Data frame with price_T values. If NULL, uses original data.
-#' @param type One of "response" (predicted consumption), "probability" (P(y=0)),
-#'   or "parameters" (subject-level parameters).
+#' @param type One of `"response"` (predicted consumption), `"link"` (linear predictor),
+#'   `"probability"` (P(y=0)), or `"parameters"` (subject-level parameters).
 #' @param stream Which stream(s) to predict for: "all", "alone.target",
 #'   "own.target", "own.alt".
-#' @param level "population" or "subject".
+#' @param level "population" or "subject". Currently, only population predictions are
+#'   implemented; this argument is reserved for future subject-level prediction support.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_joint_hurdle` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments (unused).
 #'
 #' @return Predictions as a data frame or matrix.
@@ -582,6 +589,10 @@ predict.beezdemand_joint_hurdle <- function(
   stream <- match.arg(stream)
   level <- match.arg(level)
   interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
 
   coef <- object$coefficients_natural
 
