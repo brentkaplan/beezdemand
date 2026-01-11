@@ -189,7 +189,9 @@ test_that("predict.beezdemand_cp_hurdle works", {
   # Population level
   newdata <- data.frame(x = c(2, 16, 64))
   pred_demand <- predict(fit, newdata, type = "demand", level = "population")
-  expect_length(pred_demand, 3)
+  expect_s3_class(pred_demand, "tbl_df")
+  expect_equal(nrow(pred_demand), 3)
+  expect_true(".fitted" %in% names(pred_demand))
 
   pred_response <- predict(
     fit,
@@ -197,14 +199,14 @@ test_that("predict.beezdemand_cp_hurdle works", {
     type = "response",
     level = "population"
   )
-  expect_true(all(pred_response > 0))
+  expect_true(all(pred_response$.fitted > 0))
 
   pred_prob <- predict(fit, newdata, type = "probability", level = "population")
-  expect_true(all(pred_prob >= 0 & pred_prob <= 1))
+  expect_true(all(pred_prob$.fitted >= 0 & pred_prob$.fitted <= 1))
 
   # Parameters
   params <- predict(fit, type = "parameters")
-  expect_s3_class(params, "data.frame")
+  expect_s3_class(params, "tbl_df")
   expect_true("Qalone" %in% names(params))
 })
 

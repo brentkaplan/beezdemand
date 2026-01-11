@@ -513,11 +513,16 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 predict.beezdemand_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("parameters", "demand", "probability"),
+  type = c("response", "link", "parameters", "probability", "demand"),
   prices = NULL,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  level = 0.95,
   ...
 ) {
+  newdata_user <- newdata
   type <- match.arg(type)
+  interval <- match.arg(interval)
   id_var <- object$param_info$id_var
   x_var <- object$param_info$x_var
   epsilon <- object$param_info$epsilon
@@ -525,109 +530,197 @@ predict.beezdemand_hurdle <- function(
 
   # For type = "parameters", just return subject-specific parameters
   if (type == "parameters") {
-    return(object$subject_pars)
+    return(tibble::as_tibble(object$subject_pars))
   }
 
-  # Get prices for prediction
-  if (is.null(prices)) {
-    prices <- sort(unique(object$data[[x_var]]))
+  if (!is.null(newdata)) {
+    if (!is.data.frame(newdata)) newdata <- as.data.frame(newdata)
+    if (!(x_var %in% names(newdata))) {
+      stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+    }
+  } else {
+    if (!is.null(prices)) {
+      newdata <- data.frame(prices, stringsAsFactors = FALSE)
+      names(newdata) <- x_var
+    } else {
+      newdata <- data.frame(sort(unique(object$data[[x_var]])), stringsAsFactors = FALSE)
+      names(newdata) <- x_var
+    }
   }
 
   # Extract coefficients
   coefs <- object$model$coefficients
-  beta0 <- coefs["beta0"]
-  beta1 <- coefs["beta1"]
-  log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
-  k <- if (!identical(part2, "simplified_exponential")) {
-    if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
-  } else {
-    NA_real_
-  }
-  log_alpha <- coefs["log_alpha"]
+  beta0 <- unname(coefs[["beta0"]])
+  beta1 <- unname(coefs[["beta1"]])
+  log_q0 <- unname(coefs[["log_q0"]] %||% coefs[["logQ0"]])
+  log_alpha <- unname(coefs[["log_alpha"]] %||% coefs[["alpha"]])
+  has_k <- !identical(part2, "simplified_exponential")
+  log_k <- if (has_k) unname(coefs[["log_k"]] %||% log(coefs[["k"]])) else NA_real_
 
-  # Get random effects
-  a_i <- object$random_effects[, "a_i"]
-  b_i <- object$random_effects[, "b_i"]
+  # Build row-wise prediction design:
+  # - if user provided id, compute subject-specific predictions
+  # - otherwise compute population predictions
+  subjects <- as.character(object$param_info$subject_levels)
 
-  # c_i only exists for 3 random effect models
-  n_re <- object$param_info$n_random_effects
-  if (n_re == 3) {
-    c_i <- object$random_effects[, "c_i"]
-  } else {
-    c_i <- rep(0, length(a_i)) # No random effect on alpha
-  }
-
-  subjects <- object$param_info$subject_levels
-  n_subjects <- length(subjects)
-
-  if (type == "probability") {
-    show_pred <- "population"
-    # Predict P(zero consumption) for each subject and price
-    results <- expand.grid(
+  if (is.null(newdata_user)) {
+    # Legacy behavior: return predictions for all subjects across the price grid.
+    x_vals <- newdata[[x_var]]
+    newdata <- expand.grid(
       id = subjects,
-      x = prices,
+      x = x_vals,
       stringsAsFactors = FALSE
     )
+    names(newdata)[1] <- id_var
+    names(newdata)[2] <- x_var
+  }
 
-    results$prob_zero <- NA_real_
-    for (i in seq_len(n_subjects)) {
-      idx <- results$id == subjects[i]
-      eta <- beta0 + beta1 * log(results$x[idx] + epsilon) + a_i[i]
-      results$prob_zero[idx] <- stats::plogis(eta)
+  has_id <- id_var %in% names(newdata)
+  if (has_id) {
+    newdata[[id_var]] <- as.character(newdata[[id_var]])
+  }
+
+  if (is.null(newdata) || !has_id) {
+    # Population prediction: random effects set to 0
+    a_row <- 0
+    b_row <- 0
+    c_row <- 0
+  } else {
+    id_match <- match(newdata[[id_var]], subjects)
+    if (anyNA(id_match)) {
+      missing_ids <- unique(newdata[[id_var]][is.na(id_match)])
+      stop(
+        "Unknown id values in `newdata`: ",
+        paste(missing_ids, collapse = ", "),
+        ".",
+        call. = FALSE
+      )
     }
+    re <- object$random_effects
+    a_row <- re[id_match, "a_i"]
+    b_row <- re[id_match, "b_i"]
 
-    names(results)[1] <- id_var
-    names(results)[2] <- x_var
-    return(results)
+    n_re <- object$param_info$n_random_effects
+    c_row <- if (n_re == 3) re[id_match, "c_i"] else 0
   }
 
-  if (type == "demand") {
-    show_pred <- "population"
-    # Predict consumption for each subject and price
-    results <- expand.grid(
-      id = subjects,
-      x = prices,
-      stringsAsFactors = FALSE
-    )
+  x <- newdata[[x_var]]
+  eta <- beta0 + beta1 * log(x + epsilon) + a_row
+  prob_zero <- stats::plogis(eta)
 
-    results$predicted_log_consumption <- NA_real_
-    results$predicted_consumption <- NA_real_
-    results$prob_zero <- NA_real_
+  alpha_i <- exp(log_alpha + c_row)
+  Q0_i <- exp(log_q0 + b_row)
+  k_val <- if (has_k) exp(log_k) else NA_real_
 
-    for (i in seq_len(n_subjects)) {
-      idx <- results$id == subjects[i]
-      p <- results$x[idx]
+  mu <- if (identical(part2, "simplified_exponential")) {
+    (log_q0 + b_row) - alpha_i * Q0_i * x
+  } else if (identical(part2, "exponential")) {
+    (log_q0 + b_row) + k_val * (exp(-alpha_i * Q0_i * x) - 1)
+  } else {
+    (log_q0 + b_row) + k_val * (exp(-alpha_i * x) - 1)
+  }
 
-      # Log consumption (Part II)
-      # Per EQUATIONS_CONTRACT.md:
-      # - 3-RE: alpha_i = exp(log_alpha + c_i)
-      # - 2-RE: alpha = exp(log_alpha) (c_i = 0)
-      alpha_i <- exp(log_alpha + c_i[i])
-      Q0_i <- exp(log_q0 + b_i[i])
+  predicted_log_consumption <- as.numeric(mu)
+  predicted_consumption <- exp(predicted_log_consumption)
+  expected_consumption <- predicted_consumption * (1 - prob_zero)
 
-      mu_ij <- if (identical(part2, "simplified_exponential")) {
-        (log_q0 + b_i[i]) - alpha_i * Q0_i * p
-      } else if (identical(part2, "exponential")) {
-        (log_q0 + b_i[i]) + k * (exp(-alpha_i * Q0_i * p) - 1)
-      } else {
-        (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+  out <- tibble::as_tibble(newdata)
+  out$predicted_log_consumption <- predicted_log_consumption
+  out$predicted_consumption <- predicted_consumption
+  out$prob_zero <- prob_zero
+  out$expected_consumption <- expected_consumption
+
+  out$.fitted <- switch(
+    type,
+    response = predicted_consumption,
+    link = predicted_log_consumption,
+    probability = prob_zero,
+    demand = expected_consumption
+  )
+
+  want_se <- isTRUE(se.fit) || interval != "none"
+  if (want_se) {
+    if (is.null(object$sdr) || is.null(object$sdr$cov.fixed)) {
+      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      out$.se.fit <- NA_real_
+      if (interval != "none") {
+        out$.lower <- NA_real_
+        out$.upper <- NA_real_
       }
-      results$predicted_log_consumption[idx] <- mu_ij
-      results$predicted_consumption[idx] <- exp(mu_ij)
-
-      # Probability of zero (Part I)
-      eta <- beta0 + beta1 * log(p + epsilon) + a_i[i]
-      results$prob_zero[idx] <- stats::plogis(eta)
+      return(out)
     }
 
-    # Expected consumption accounting for probability of zero
-    results$expected_consumption <- results$predicted_consumption *
-      (1 - results$prob_zero)
+    vcov_full <- tryCatch(as.matrix(object$sdr$cov.fixed), error = function(e) NULL)
+    if (is.null(vcov_full)) {
+      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      out$.se.fit <- NA_real_
+      if (interval != "none") {
+        out$.lower <- NA_real_
+        out$.upper <- NA_real_
+      }
+      return(out)
+    }
 
-    names(results)[1] <- id_var
-    names(results)[2] <- x_var
-    return(results)
+    theta0 <- object$model$coefficients
+    param_names <- intersect(names(theta0), colnames(vcov_full))
+    theta0 <- theta0[param_names]
+    vcov <- vcov_full[param_names, param_names, drop = FALSE]
+
+    eval_fitted <- function(theta) {
+      beta0_t <- unname(theta[["beta0"]])
+      beta1_t <- unname(theta[["beta1"]])
+      log_q0_t <- unname(theta[["log_q0"]] %||% theta[["logQ0"]])
+      log_alpha_t <- unname(theta[["log_alpha"]] %||% theta[["alpha"]])
+      log_k_t <- if (has_k) unname(theta[["log_k"]] %||% log(theta[["k"]])) else NA_real_
+      k_t <- if (has_k) exp(log_k_t) else NA_real_
+
+      eta_t <- beta0_t + beta1_t * log(x + epsilon) + a_row
+      prob0_t <- stats::plogis(eta_t)
+      alpha_t <- exp(log_alpha_t + c_row)
+      q0_t <- exp(log_q0_t + b_row)
+
+      mu_t <- if (identical(part2, "simplified_exponential")) {
+        (log_q0_t + b_row) - alpha_t * q0_t * x
+      } else if (identical(part2, "exponential")) {
+        (log_q0_t + b_row) + k_t * (exp(-alpha_t * q0_t * x) - 1)
+      } else {
+        (log_q0_t + b_row) + k_t * (exp(-alpha_t * x) - 1)
+      }
+
+      resp_t <- exp(mu_t)
+      dem_t <- resp_t * (1 - prob0_t)
+
+      switch(
+        type,
+        response = as.numeric(resp_t),
+        link = as.numeric(mu_t),
+        probability = as.numeric(prob0_t),
+        demand = as.numeric(dem_t)
+      )
+    }
+
+    base_fit <- eval_fitted(theta0)
+    grad <- matrix(0, nrow = length(base_fit), ncol = length(theta0))
+    colnames(grad) <- names(theta0)
+
+    for (j in seq_along(theta0)) {
+      step <- 1e-6 * max(1, abs(theta0[[j]]))
+      theta_p <- theta0
+      theta_p[[j]] <- theta_p[[j]] + step
+      grad[, j] <- (eval_fitted(theta_p) - base_fit) / step
+    }
+
+    v <- grad %*% vcov
+    se_vec <- sqrt(rowSums(v * grad))
+    out$.se.fit <- as.numeric(se_vec)
+
+    if (interval != "none") {
+      z <- stats::qnorm((1 + level) / 2)
+      out$.lower <- out$.fitted - z * out$.se.fit
+      out$.upper <- out$.fitted + z * out$.se.fit
+    }
   }
+
+  out
 }
 
 

@@ -393,15 +393,19 @@ BIC.beezdemand_cp_hurdle <- function(object, ...) {
 predict.beezdemand_cp_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("demand", "response", "probability", "parameters"),
+  type = c("response", "link", "probability", "demand", "parameters"),
   level = c("population", "individual"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
   type <- match.arg(type)
   level <- match.arg(level)
+  interval <- match.arg(interval)
 
   if (type == "parameters") {
-    return(object$subject_pars)
+    return(tibble::as_tibble(object$subject_pars))
   }
 
   coefs <- object$model$coefficients
@@ -411,62 +415,73 @@ predict.beezdemand_cp_hurdle <- function(
     newdata <- object$data
   }
 
-  x <- newdata$x
+  x_var <- object$param_info$x_var %||% "x"
+  id_var <- object$param_info$id_var %||% "id"
+  if (!(x_var %in% names(newdata))) {
+    stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+  }
+  x <- newdata[[x_var]]
   epsilon <- object$param_info$epsilon
 
   if (level == "population") {
-    # Population-level predictions
-    if (type == "probability") {
-      # P(zero consumption)
-      eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon)
-      prob <- exp(eta) / (1 + exp(eta))
-      return(prob)
-    } else {
-      # Log consumption (Part II)
-      logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x)
-      if (type == "response") {
-        return(exp(logQ))
-      }
-      return(logQ)
-    }
+    eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon)
+    prob_zero <- stats::plogis(eta)
+    logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x)
   } else {
-    # Individual-level predictions
-    if (!"id" %in% names(newdata)) {
-      stop("newdata must contain 'id' column for individual-level predictions")
+    if (!(id_var %in% names(newdata))) {
+      stop("`newdata` must contain the id column `", id_var, "` for individual-level predictions.", call. = FALSE)
     }
-
-    ids <- newdata$id
-    unique_ids <- unique(object$subject_pars$id)
-
-    # Map IDs to subject parameters
+    ids <- as.character(newdata[[id_var]])
+    unique_ids <- as.character(unique(object$subject_pars[[id_var]]))
     id_match <- match(ids, unique_ids)
-    if (any(is.na(id_match))) {
-      warning("Some IDs in newdata not found in fitted model")
+    if (anyNA(id_match)) {
+      missing_ids <- unique(ids[is.na(id_match)])
+      stop("Unknown id values in `newdata`: ", paste(missing_ids, collapse = ", "), ".", call. = FALSE)
     }
 
     re <- object$random_effects
     n_re <- object$param_info$n_random_effects
+    a_i <- re[id_match, "a_i"]
+    b_i <- re[id_match, "b_i"]
+    c_i <- if (n_re == 3) re[id_match, "c_i"] else 0
 
-    if (type == "probability") {
-      a_i <- re[id_match, "a_i"]
-      eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon) + a_i
-      prob <- exp(eta) / (1 + exp(eta))
-      return(prob)
-    } else {
-      b_i <- re[id_match, "b_i"]
-      if (n_re == 3) {
-        c_i <- re[id_match, "c_i"]
-        I_ind <- coefs["I"] + c_i
-      } else {
-        I_ind <- rep(coefs["I"], length(x))
-      }
-      logQ <- (coefs["logQalone"] + b_i) + I_ind * exp(-beta_param * x)
-      if (type == "response") {
-        return(exp(logQ))
-      }
-      return(logQ)
+    eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon) + a_i
+    prob_zero <- stats::plogis(eta)
+    I_ind <- if (n_re == 3) (coefs["I"] + c_i) else rep(coefs["I"], length(x))
+    logQ <- (coefs["logQalone"] + b_i) + I_ind * exp(-beta_param * x)
+  }
+
+  predicted_log_consumption <- as.numeric(logQ)
+  predicted_consumption <- exp(predicted_log_consumption)
+  expected_consumption <- predicted_consumption * (1 - prob_zero)
+
+  out <- tibble::as_tibble(newdata)
+  out$predicted_log_consumption <- predicted_log_consumption
+  out$predicted_consumption <- predicted_consumption
+  out$prob_zero <- prob_zero
+  out$expected_consumption <- expected_consumption
+
+  out$.fitted <- switch(
+    type,
+    response = predicted_consumption,
+    link = predicted_log_consumption,
+    probability = prob_zero,
+    demand = expected_consumption
+  )
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_cp_hurdle` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
     }
   }
+
+  out
 }
 
 #' Plot method for beezdemand_cp_hurdle
@@ -691,7 +706,7 @@ plot.beezdemand_cp_hurdle <- function(
       newdata <- data.frame(x = x_seq, id = sid)
       data.frame(
         x = x_seq,
-        y = predict(object, newdata, type = "response", level = "individual"),
+        y = predict(object, newdata, type = "response", level = "individual")$.fitted,
         id = as.character(sid)
       )
     })

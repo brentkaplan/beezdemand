@@ -570,14 +570,18 @@ BIC.beezdemand_joint_hurdle <- function(object, ...) {
 predict.beezdemand_joint_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("response", "probability", "parameters"),
+  type = c("response", "link", "probability", "parameters"),
   stream = c("all", "alone.target", "own.target", "own.alt"),
   level = c("population", "subject"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
   type <- match.arg(type)
   stream <- match.arg(stream)
   level <- match.arg(level)
+  interval <- match.arg(interval)
 
   coef <- object$coefficients_natural
 
@@ -602,7 +606,7 @@ predict.beezdemand_joint_hurdle <- function(
       stringsAsFactors = FALSE
     )
     rownames(subject_pars) <- NULL
-    return(subject_pars)
+    return(tibble::as_tibble(subject_pars))
   }
 
   # Get price values
@@ -646,10 +650,11 @@ predict.beezdemand_joint_hurdle <- function(
         stream = s,
         price_T = prices,
         prob_zero = prob_zero,
+        .fitted = prob_zero,
         stringsAsFactors = FALSE
       )
     } else {
-      # type == "response"
+      # type == "response" or "link"
       if (s %in% c("alone.target", "own.target")) {
         # Zhao demand model
         logQ0 <- if (s == "alone.target") coef["logQ0_AT"] else coef["logQ0_OT"]
@@ -663,16 +668,33 @@ predict.beezdemand_joint_hurdle <- function(
         y_pred <- exp(mu)
       }
 
+      fitted <- if (type == "link") as.numeric(mu) else as.numeric(y_pred)
       results[[s]] <- data.frame(
         stream = s,
         price_T = prices,
-        y_pred = y_pred,
+        y_pred = as.numeric(y_pred),
+        mu = as.numeric(mu),
+        .fitted = fitted,
         stringsAsFactors = FALSE
       )
     }
   }
 
-  do.call(rbind, results)
+  out <- tibble::as_tibble(do.call(rbind, results))
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_joint_hurdle` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
+    }
+  }
+
+  out
 }
 
 

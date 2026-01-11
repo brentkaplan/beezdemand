@@ -2220,16 +2220,25 @@ ranef.beezdemand_nlme <- function(object, ...) {
 predict.beezdemand_nlme <- function(
   object,
   newdata = NULL,
+  type = c("response", "link", "population", "individual"),
   level = 0,
   inv_fun = identity,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
+  type <- match.arg(type)
+  interval <- match.arg(interval)
   if (!inherits(object, "beezdemand_nlme")) {
     stop("Input 'object' must be of class 'beezdemand_nlme'.")
   }
   if (is.null(object$model)) {
     stop("No model found in the object. Fitting may have failed.")
   }
+
+  if (type == "population") level <- 0
+  if (type == "individual") level <- 1
 
   # Validate newdata if provided
   if (!is.null(newdata)) {
@@ -2316,9 +2325,6 @@ predict.beezdemand_nlme <- function(
     } # end newdata validation
   } else {
     newdata <- object$data
-    message(
-      "`newdata` is NULL. Using data from the original model fit for predictions."
-    )
   }
 
   # Use the predict method for nlme objects
@@ -2329,10 +2335,28 @@ predict.beezdemand_nlme <- function(
     ...
   )
 
-  # Apply inverse transformation function
-  final_predictions <- inv_fun(raw_predictions)
+  fitted <- if (type == "link") {
+    as.numeric(raw_predictions)
+  } else {
+    as.numeric(inv_fun(raw_predictions))
+  }
 
-  return(final_predictions)
+  out <- tibble::as_tibble(newdata)
+  out$.fitted <- fitted
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_nlme` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
+    }
+  }
+
+  out
 }
 
 #' Plot Method for beezdemand_nlme Objects
@@ -2773,8 +2797,9 @@ plot.beezdemand_nlme <- function(
     predicted_values_model_scale <- predict(
       fit_obj,
       newdata = pred_newdata,
+      type = "link",
       level = current_pred_level
-    )
+    )$.fitted
     pred_newdata$predicted_y_plotscale <- inv_fun(predicted_values_model_scale)
 
     free_pred <- beezdemand_apply_free_trans(
