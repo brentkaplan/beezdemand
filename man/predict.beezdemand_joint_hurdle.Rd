@@ -7,9 +7,12 @@
 \method{predict}{beezdemand_joint_hurdle}(
   object,
   newdata = NULL,
-  type = c("response", "probability", "parameters"),
+  type = c("response", "link", "probability", "parameters"),
   stream = c("all", "alone.target", "own.target", "own.alt"),
   level = c("population", "subject"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 )
 }

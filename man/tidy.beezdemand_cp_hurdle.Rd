@@ -4,7 +4,7 @@
 \alias{tidy.beezdemand_cp_hurdle}
 \title{Tidy method for beezdemand_cp_hurdle}
 \usage{
-\method{tidy}{beezdemand_cp_hurdle}(x, ...)
+\method{tidy}{beezdemand_cp_hurdle}(x, report_space = c("natural", "log10", "internal"), ...)
 }
 \arguments{
 \item{x}{A beezdemand_cp_hurdle object}

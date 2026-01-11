@@ -4,7 +4,17 @@
 \alias{predict.beezdemand_nlme}
 \title{Predict Method for beezdemand_nlme Objects}
 \usage{
-\method{predict}{beezdemand_nlme}(object, newdata = NULL, level = 0, inv_fun = identity, ...)
+\method{predict}{beezdemand_nlme}(
+  object,
+  newdata = NULL,
+  type = c("response", "link", "population", "individual"),
+  level = 0,
+  inv_fun = identity,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
+  ...
+)
 }
 \arguments{
 \item{object}{A `beezdemand_nlme` object.}

@@ -7,8 +7,11 @@
 \method{predict}{beezdemand_cp_hurdle}(
   object,
   newdata = NULL,
-  type = c("demand", "response", "probability", "parameters"),
+  type = c("response", "link", "probability", "demand", "parameters"),
   level = c("population", "individual"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 )
 }
