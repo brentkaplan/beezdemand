@@ -49,3 +49,5 @@
 ^engineering$
 ^\.agents$
 ^\.env$
+^R/arg-matrix\.R$
+^tests/testthat/test-arg-matrix\.R$
