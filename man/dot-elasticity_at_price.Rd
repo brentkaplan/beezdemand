@@ -17,6 +17,6 @@
 Numeric elasticity value
 }
 \description{
-Computes η(p) = d log(Q(p)) / d log(p) via central finite differences
+Computes eta(p) = d log(Q(p)) / d log(p) via central finite differences
 }
 \keyword{internal}
