@@ -384,24 +384,39 @@ BIC.beezdemand_cp_hurdle <- function(object, ...) {
 #'
 #' @param object A beezdemand_cp_hurdle object
 #' @param newdata Optional data frame with columns for x (price) and id
-#' @param type Type of prediction: "demand" (log consumption), "response" (consumption),
-#'   "probability" (P(zero)), or "parameters" (subject-specific parameters)
+#' @param type One of `"response"` (consumption), `"link"` (log consumption),
+#'   `"demand"` (expected consumption), `"probability"` (P(zero)), or
+#'   `"parameters"` (subject-specific parameters).
 #' @param level Prediction level: "population" or "individual"
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_cp_hurdle` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments (ignored)
 #' @return Predictions based on type
 #' @export
 predict.beezdemand_cp_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("demand", "response", "probability", "parameters"),
+  type = c("response", "link", "probability", "demand", "parameters"),
   level = c("population", "individual"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
   type <- match.arg(type)
   level <- match.arg(level)
+  interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
 
   if (type == "parameters") {
-    return(object$subject_pars)
+    return(tibble::as_tibble(object$subject_pars))
   }
 
   coefs <- object$model$coefficients
@@ -411,62 +426,73 @@ predict.beezdemand_cp_hurdle <- function(
     newdata <- object$data
   }
 
-  x <- newdata$x
+  x_var <- object$param_info$x_var %||% "x"
+  id_var <- object$param_info$id_var %||% "id"
+  if (!(x_var %in% names(newdata))) {
+    stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+  }
+  x <- newdata[[x_var]]
   epsilon <- object$param_info$epsilon
 
   if (level == "population") {
-    # Population-level predictions
-    if (type == "probability") {
-      # P(zero consumption)
-      eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon)
-      prob <- exp(eta) / (1 + exp(eta))
-      return(prob)
-    } else {
-      # Log consumption (Part II)
-      logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x)
-      if (type == "response") {
-        return(exp(logQ))
-      }
-      return(logQ)
-    }
+    eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon)
+    prob_zero <- stats::plogis(eta)
+    logQ <- coefs["logQalone"] + coefs["I"] * exp(-beta_param * x)
   } else {
-    # Individual-level predictions
-    if (!"id" %in% names(newdata)) {
-      stop("newdata must contain 'id' column for individual-level predictions")
+    if (!(id_var %in% names(newdata))) {
+      stop("`newdata` must contain the id column `", id_var, "` for individual-level predictions.", call. = FALSE)
     }
-
-    ids <- newdata$id
-    unique_ids <- unique(object$subject_pars$id)
-
-    # Map IDs to subject parameters
+    ids <- as.character(newdata[[id_var]])
+    unique_ids <- as.character(unique(object$subject_pars[[id_var]]))
     id_match <- match(ids, unique_ids)
-    if (any(is.na(id_match))) {
-      warning("Some IDs in newdata not found in fitted model")
+    if (anyNA(id_match)) {
+      missing_ids <- unique(ids[is.na(id_match)])
+      stop("Unknown id values in `newdata`: ", paste(missing_ids, collapse = ", "), ".", call. = FALSE)
     }
 
     re <- object$random_effects
     n_re <- object$param_info$n_random_effects
+    a_i <- re[id_match, "a_i"]
+    b_i <- re[id_match, "b_i"]
+    c_i <- if (n_re == 3) re[id_match, "c_i"] else 0
 
-    if (type == "probability") {
-      a_i <- re[id_match, "a_i"]
-      eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon) + a_i
-      prob <- exp(eta) / (1 + exp(eta))
-      return(prob)
-    } else {
-      b_i <- re[id_match, "b_i"]
-      if (n_re == 3) {
-        c_i <- re[id_match, "c_i"]
-        I_ind <- coefs["I"] + c_i
-      } else {
-        I_ind <- rep(coefs["I"], length(x))
-      }
-      logQ <- (coefs["logQalone"] + b_i) + I_ind * exp(-beta_param * x)
-      if (type == "response") {
-        return(exp(logQ))
-      }
-      return(logQ)
+    eta <- coefs["beta0"] + coefs["beta1"] * log(x + epsilon) + a_i
+    prob_zero <- stats::plogis(eta)
+    I_ind <- if (n_re == 3) (coefs["I"] + c_i) else rep(coefs["I"], length(x))
+    logQ <- (coefs["logQalone"] + b_i) + I_ind * exp(-beta_param * x)
+  }
+
+  predicted_log_consumption <- as.numeric(logQ)
+  predicted_consumption <- exp(predicted_log_consumption)
+  expected_consumption <- predicted_consumption * (1 - prob_zero)
+
+  out <- tibble::as_tibble(newdata)
+  out$predicted_log_consumption <- predicted_log_consumption
+  out$predicted_consumption <- predicted_consumption
+  out$prob_zero <- prob_zero
+  out$expected_consumption <- expected_consumption
+
+  out$.fitted <- switch(
+    type,
+    response = predicted_consumption,
+    link = predicted_log_consumption,
+    probability = prob_zero,
+    demand = expected_consumption
+  )
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_cp_hurdle` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
     }
   }
+
+  out
 }
 
 #' Plot method for beezdemand_cp_hurdle
@@ -691,7 +717,7 @@ plot.beezdemand_cp_hurdle <- function(
       newdata <- data.frame(x = x_seq, id = sid)
       data.frame(
         x = x_seq,
-        y = predict(object, newdata, type = "response", level = "individual"),
+        y = predict(object, newdata, type = "response", level = "individual")$.fitted,
         id = as.character(sid)
       )
     })
@@ -821,6 +847,8 @@ plot.beezdemand_cp_hurdle <- function(
 #' Tidy method for beezdemand_cp_hurdle
 #'
 #' @param x A beezdemand_cp_hurdle object
+#' @param report_space Character. Reporting space for core parameters. One of
+#'   `"internal"`, `"natural"`, or `"log10"`.
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model coefficients with columns:
 #'   - `term`: Parameter name
@@ -828,14 +856,16 @@ plot.beezdemand_cp_hurdle <- function(
 #'   - `std.error`: Standard error
 #'   - `statistic`: z-value
 #'   - `p.value`: P-value
-#'   - `component`: One of "part1_probability", "part2_consumption", "derived"
+#'   - `component`: One of "zero_probability", "consumption", "variance", or "fixed"
 #' @export
-tidy.beezdemand_cp_hurdle <- function(x, ...) {
+tidy.beezdemand_cp_hurdle <- function(
+  x,
+  report_space = c("natural", "log10", "internal"),
+  ...
+) {
+  report_space <- match.arg(report_space)
   coefs <- x$model$coefficients
   se <- x$model$se
-
-  z_val <- coefs / se
-  p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine components for each parameter (include variance/correlation terms)
   component <- rep("fixed", length(coefs))
@@ -844,32 +874,38 @@ tidy.beezdemand_cp_hurdle <- function(x, ...) {
   component[names(coefs) %in% c("logQalone", "I", "log_beta")] <- "consumption"
   component[grepl("^logsigma_|^rho_|^sigma_|^var_|^cov_", names(coefs))] <- "variance"
 
-  # Build tibble for fixed effects
-  fixed_tidy <- tibble::tibble(
-    term = names(coefs),
+  term <- dplyr::case_when(
+    names(coefs) == "logQalone" ~ "Qalone",
+    names(coefs) == "log_beta" ~ "beta",
+    TRUE ~ names(coefs)
+  )
+
+  out <- tibble::tibble(
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se),
-    statistic = unname(z_val),
-    p.value = unname(p_val),
-    component = unname(component)
-  )
-
-  # Add derived parameters (beta and Qalone on natural scale)
-  derived_tidy <- tibble::tibble(
-    term = c("beta", "Qalone"),
-    estimate = c(x$model$beta, exp(coefs["logQalone"])),
-    std.error = c(
-      # Delta method approximation for beta
-      se["log_beta"] * x$model$beta,
-      # Delta method approximation for Qalone
-      se["logQalone"] * exp(coefs["logQalone"])
+    statistic = unname(coefs / se),
+    p.value = unname(2 * stats::pnorm(-abs(coefs / se))),
+    component = unname(component),
+    estimate_scale = dplyr::case_when(
+      names(coefs) %in% c("beta0", "beta1") ~ "logit",
+      names(coefs) %in% c("logQalone", "log_beta") ~ "log",
+      TRUE ~ "natural"
     ),
-    statistic = NA_real_,
-    p.value = NA_real_,
-    component = "derived_metrics"
+    term_display = term
   )
 
-  dplyr::bind_rows(fixed_tidy, derived_tidy)
+  out <- beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = report_space,
+    internal_space = "natural"
+  )
+
+  out |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 }
 
 #' Glance method for beezdemand_cp_hurdle

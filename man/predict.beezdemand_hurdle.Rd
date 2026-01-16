@@ -7,42 +7,51 @@
 \method{predict}{beezdemand_hurdle}(
   object,
   newdata = NULL,
-  type = c("parameters", "demand", "probability"),
+  type = c("response", "link", "parameters", "probability", "demand"),
   prices = NULL,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  level = 0.95,
   ...
 )
 }
 \arguments{
 \item{object}{An object of class \code{beezdemand_hurdle}.}
 
-\item{newdata}{Optional data frame with new data for prediction. Currently
-not fully implemented - predictions use subjects from the fitted model.}
+\item{newdata}{Optional data frame containing a price column matching the fitted
+object's `x_var`. If `newdata` includes the id column, subject-specific
+predictions are returned; otherwise population predictions are returned.
+If `newdata` is `NULL`, returns predictions for all subjects across a price grid.}
 
-\item{type}{Character string specifying the type of prediction:
+\item{type}{One of:
 \describe{
-  \item{\code{"parameters"}}{Subject-specific demand parameters (default)}
-  \item{\code{"demand"}}{Predicted consumption at specified prices}
-  \item{\code{"probability"}}{Predicted probability of zero consumption}
+  \item{\code{"response"}}{Predicted consumption (part II)}
+  \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
+  \item{\code{"probability"}}{Predicted probability of zero consumption (part I)}
+  \item{\code{"demand"}}{Predicted expected consumption = (1 - P0) * response}
+  \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 }}
 
-\item{prices}{Numeric vector of prices for prediction when \code{type = "demand"}
-or \code{type = "probability"}. If \code{NULL}, uses unique prices from
-the original data.}
+\item{prices}{Optional numeric vector of prices used only when `newdata = NULL`.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
+`sdreport` when available).}
+
+\item{interval}{One of `"none"` (default) or `"confidence"`.}
+
+\item{level}{Confidence level when `interval = "confidence"`.}
+
+\item{...}{Unused.}
 }
 \value{
-Depends on \code{type}:
-\describe{
-  \item{\code{"parameters"}}{Data frame with subject-specific parameters}
-  \item{\code{"demand"}}{Data frame with columns: id, x, predicted_consumption,
-    predicted_log_consumption, prob_zero, expected_consumption}
-  \item{\code{"probability"}}{Data frame with columns: id, x, prob_zero}
-}
+For `type = "parameters"`, a tibble of subject-level parameters.
+  Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
+  helper columns `predicted_log_consumption`, `predicted_consumption`,
+  `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
+  `.lower`/`.upper` are included.
 }
 \description{
-Extracts subject-specific predictions from a fitted hurdle demand model,
-or generates predictions for new price values.
+Returns predictions from a fitted hurdle demand model.
 }
 \examples{
 \dontrun{

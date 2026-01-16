@@ -513,7 +513,7 @@ calculate_amplitude_persistence.beezdemand_nlme <- function(fit,
     new_dat[[x_var]] <- pred_x
 
     preds <- tryCatch(
-      predict(fit, newdata = new_dat, level = 1, inv_fun = inv_fun),
+      predict(fit, newdata = new_dat, level = 1, inv_fun = inv_fun)$.fitted,
       error = function(e) NA_real_
     )
 

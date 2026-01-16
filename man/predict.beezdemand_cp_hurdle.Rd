@@ -7,8 +7,11 @@
 \method{predict}{beezdemand_cp_hurdle}(
   object,
   newdata = NULL,
-  type = c("demand", "response", "probability", "parameters"),
+  type = c("response", "link", "probability", "demand", "parameters"),
   level = c("population", "individual"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 )
 }
@@ -17,10 +20,20 @@
 
 \item{newdata}{Optional data frame with columns for x (price) and id}
 
-\item{type}{Type of prediction: "demand" (log consumption), "response" (consumption),
-"probability" (P(zero)), or "parameters" (subject-specific parameters)}
+\item{type}{One of `"response"` (consumption), `"link"` (log consumption),
+`"demand"` (expected consumption), `"probability"` (P(zero)), or
+`"parameters"` (subject-specific parameters).}
 
 \item{level}{Prediction level: "population" or "individual"}
+
+\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+because standard errors are not implemented for `beezdemand_cp_hurdle` predictions).}
+
+\item{interval}{One of `"none"` (default) or `"confidence"`. When requested,
+`.lower`/`.upper` are returned as `NA`.}
+
+\item{interval_level}{Confidence level when `interval = "confidence"`. Currently
+used only for validation.}
 
 \item{...}{Additional arguments (ignored)}
 }

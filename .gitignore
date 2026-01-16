@@ -57,3 +57,8 @@ beezdemand_*.tar.gz
 ##################
 tests/testthat/Rplots.pdf
 .env
+
+# Arg-matrix (development only, not ready for merge) #
+#######################################################
+R/arg-matrix.R
+tests/testthat/test-arg-matrix.R

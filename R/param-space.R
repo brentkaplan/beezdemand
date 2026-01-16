@@ -19,7 +19,7 @@ beezdemand_validate_param_space <- function(
 
 beezdemand_validate_report_space <- function(
   report_space,
-  choices = c("natural", "log10", "internal")
+  choices = c("natural", "log", "log10", "internal")
 ) {
   if (is.null(report_space) || length(report_space) != 1) {
     stop("'report_space' must be a single character value.", call. = FALSE)
@@ -43,17 +43,47 @@ beezdemand_term_display_space <- function(term, report_space) {
 
   if (grepl("^Q0", term)) {
     suffix <- sub("^Q0", "", term)
-    prefix <- if (report_space == "log10") "log10(Q0)" else "Q0"
+    prefix <- dplyr::case_when(
+      report_space == "log10" ~ "log10(Q0)",
+      report_space == "log" ~ "log(Q0)",
+      TRUE ~ "Q0"
+    )
     return(paste0(prefix, suffix))
   }
   if (grepl("^alpha", term)) {
     suffix <- sub("^alpha", "", term)
-    prefix <- if (report_space == "log10") "log10(alpha)" else "alpha"
+    prefix <- dplyr::case_when(
+      report_space == "log10" ~ "log10(alpha)",
+      report_space == "log" ~ "log(alpha)",
+      TRUE ~ "alpha"
+    )
     return(paste0(prefix, suffix))
   }
   if (grepl("^k", term)) {
     suffix <- sub("^k", "", term)
-    prefix <- if (report_space == "log10") "log10(k)" else "k"
+    prefix <- dplyr::case_when(
+      report_space == "log10" ~ "log10(k)",
+      report_space == "log" ~ "log(k)",
+      TRUE ~ "k"
+    )
+    return(paste0(prefix, suffix))
+  }
+  if (grepl("^Qalone", term)) {
+    suffix <- sub("^Qalone", "", term)
+    prefix <- dplyr::case_when(
+      report_space == "log10" ~ "log10(Qalone)",
+      report_space == "log" ~ "log(Qalone)",
+      TRUE ~ "Qalone"
+    )
+    return(paste0(prefix, suffix))
+  }
+  if (grepl("^beta($|_)", term)) {
+    suffix <- sub("^beta", "", term)
+    prefix <- dplyr::case_when(
+      report_space == "log10" ~ "log10(beta)",
+      report_space == "log" ~ "log(beta)",
+      TRUE ~ "beta"
+    )
     return(paste0(prefix, suffix))
   }
   term
@@ -90,7 +120,7 @@ beezdemand_transform_est_se <- function(estimate, se, from, to) {
   ln10 <- log(10)
 
   if (from == "natural" && to == "log10") {
-    new_est <- log10(estimate)
+    new_est <- ifelse(is.finite(estimate) & estimate > 0, log10(estimate), NA_real_)
     new_se <- ifelse(is.finite(se) & is.finite(estimate) & estimate > 0,
       se / (estimate * ln10),
       NA_real_
@@ -117,7 +147,7 @@ beezdemand_transform_est_se <- function(estimate, se, from, to) {
   }
 
   if (from == "natural" && to == "log") {
-    new_est <- log(estimate)
+    new_est <- ifelse(is.finite(estimate) & estimate > 0, log(estimate), NA_real_)
     new_se <- ifelse(is.finite(se) & is.finite(estimate) & estimate > 0,
       se / estimate,
       NA_real_
@@ -153,7 +183,9 @@ beezdemand_transform_coef_table <- function(
   internal_space,
   term_col = "term",
   estimate_col = "estimate",
-  se_col = "std.error"
+  se_col = "std.error",
+  scale_col = "estimate_scale",
+  display_col = "term_display"
 ) {
   report_space <- beezdemand_validate_report_space(report_space)
 
@@ -164,22 +196,27 @@ beezdemand_transform_coef_table <- function(
 
   is_core <- coef_tbl[[term_col]] %in% c("Q0", "alpha", "k") |
     grepl("^Q0", coef_tbl[[term_col]]) |
-    grepl("^alpha", coef_tbl[[term_col]])
-
-  to_space <- report_space
-  if (to_space == "internal") to_space <- internal_space
+    grepl("^alpha", coef_tbl[[term_col]]) |
+    grepl("^k", coef_tbl[[term_col]]) |
+    coef_tbl[[term_col]] %in% c("Qalone", "beta") |
+    grepl("^Qalone", coef_tbl[[term_col]]) |
+    grepl("^beta($|_)", coef_tbl[[term_col]])
 
   out <- coef_tbl
   if (!("estimate_internal" %in% names(out))) out$estimate_internal <- NA_real_
-  if (!("term_display" %in% names(out))) out$term_display <- as.character(out[[term_col]])
-  if (!("estimate_scale" %in% names(out))) out$estimate_scale <- NA_character_
+  if (!(display_col %in% names(out))) out[[display_col]] <- as.character(out[[term_col]])
+  if (!(scale_col %in% names(out))) out[[scale_col]] <- NA_character_
 
   for (i in which(is_core)) {
     term <- as.character(out[[term_col]][i])
 
     # Infer which base-space applies: Q0 can be log/log10/natural depending on backend,
     # but this helper is called per-backend with explicit internal_space.
-    from_space <- internal_space
+    from_space <- out[[scale_col]][i] %||% internal_space
+    if (is.na(from_space) || !nzchar(from_space)) from_space <- internal_space
+
+    to_space <- report_space
+    if (to_space == "internal") to_space <- from_space
 
     trans <- beezdemand_transform_est_se(
       estimate = out[[estimate_col]][i],
@@ -192,8 +229,8 @@ beezdemand_transform_coef_table <- function(
     out[[estimate_col]][i] <- trans$estimate
     out[[se_col]][i] <- trans$se
 
-    out$estimate_scale[i] <- to_space
-    out$term_display[i] <- beezdemand_term_display_space(term, to_space)
+    out[[scale_col]][i] <- to_space
+    out[[display_col]][i] <- beezdemand_term_display_space(term, to_space)
   }
 
   out

@@ -22,7 +22,7 @@ A tibble with columns:
     \item{std.error}{Standard error}
     \item{statistic}{z-value}
     \item{p.value}{P-value}
-    \item{component}{One of "probability", "consumption", or "variance"}
+    \item{component}{One of "zero_probability", "consumption", "variance", or "fixed"}
   }
 }
 \description{

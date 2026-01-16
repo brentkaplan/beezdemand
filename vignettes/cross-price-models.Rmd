@@ -626,8 +626,8 @@ head(predict(fit_hurdle_2re, type = "parameters"))
 new_prices <- data.frame(x = c(2, 8, 16, 32, 64))
 cbind(
     new_prices,
-    demand = predict(fit_hurdle_2re, new_prices, type = "response", level = "population"),
-    prob_zero = predict(fit_hurdle_2re, new_prices, type = "probability", level = "population")
+    demand = predict(fit_hurdle_2re, new_prices, type = "response", level = "population")$.fitted,
+    prob_zero = predict(fit_hurdle_2re, new_prices, type = "probability", level = "population")$.fitted
 )
 ```
 

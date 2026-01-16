@@ -480,7 +480,7 @@ NULL
  
 #' Calculate Elasticity at a Given Price
 #'
-#' Computes η(p) = d log(Q(p)) / d log(p) via central finite differences
+#' Computes eta(p) = d log(Q(p)) / d log(p) via central finite differences
 #'
 #' @param demand_fn Function Q(p) returning demand at price p
 #' @param price Price point at which to evaluate elasticity
@@ -514,7 +514,7 @@ NULL
     return(NA_real_)
   }
   
-  # η = d log(Q) / d log(p) = (p/Q) * (dQ/dp)
+  # eta = d log(Q) / d log(p) = (p/Q) * (dQ/dp)
   # Using central difference: dQ/dp ≈ (Q(p+h) - Q(p-h)) / (2h)
   dq_dp <- (q_hi - q_lo) / (2 * h)
   q_at_p <- tryCatch(demand_fn(price), error = function(e) NA_real_)

@@ -4,10 +4,13 @@
 \alias{tidy.beezdemand_cp_hurdle}
 \title{Tidy method for beezdemand_cp_hurdle}
 \usage{
-\method{tidy}{beezdemand_cp_hurdle}(x, ...)
+\method{tidy}{beezdemand_cp_hurdle}(x, report_space = c("natural", "log10", "internal"), ...)
 }
 \arguments{
 \item{x}{A beezdemand_cp_hurdle object}
+
+\item{report_space}{Character. Reporting space for core parameters. One of
+`"internal"`, `"natural"`, or `"log10"`.}
 
 \item{...}{Additional arguments (ignored)}
 }
@@ -18,7 +21,7 @@ A tibble of model coefficients with columns:
   - `std.error`: Standard error
   - `statistic`: z-value
   - `p.value`: P-value
-  - `component`: One of "part1_probability", "part2_consumption", "derived"
+  - `component`: One of "zero_probability", "consumption", "variance", or "fixed"
 }
 \description{
 Tidy method for beezdemand_cp_hurdle

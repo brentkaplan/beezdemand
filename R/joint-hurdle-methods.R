@@ -558,11 +558,18 @@ BIC.beezdemand_joint_hurdle <- function(object, ...) {
 #'
 #' @param object A \code{beezdemand_joint_hurdle} object.
 #' @param newdata Data frame with price_T values. If NULL, uses original data.
-#' @param type One of "response" (predicted consumption), "probability" (P(y=0)),
-#'   or "parameters" (subject-level parameters).
+#' @param type One of `"response"` (predicted consumption), `"link"` (linear predictor),
+#'   `"probability"` (P(y=0)), or `"parameters"` (subject-level parameters).
 #' @param stream Which stream(s) to predict for: "all", "alone.target",
 #'   "own.target", "own.alt".
-#' @param level "population" or "subject".
+#' @param level "population" or "subject". Currently, only population predictions are
+#'   implemented; this argument is reserved for future subject-level prediction support.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_joint_hurdle` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments (unused).
 #'
 #' @return Predictions as a data frame or matrix.
@@ -570,14 +577,22 @@ BIC.beezdemand_joint_hurdle <- function(object, ...) {
 predict.beezdemand_joint_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("response", "probability", "parameters"),
+  type = c("response", "link", "probability", "parameters"),
   stream = c("all", "alone.target", "own.target", "own.alt"),
   level = c("population", "subject"),
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
   type <- match.arg(type)
   stream <- match.arg(stream)
   level <- match.arg(level)
+  interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
 
   coef <- object$coefficients_natural
 
@@ -602,7 +617,7 @@ predict.beezdemand_joint_hurdle <- function(
       stringsAsFactors = FALSE
     )
     rownames(subject_pars) <- NULL
-    return(subject_pars)
+    return(tibble::as_tibble(subject_pars))
   }
 
   # Get price values
@@ -646,10 +661,11 @@ predict.beezdemand_joint_hurdle <- function(
         stream = s,
         price_T = prices,
         prob_zero = prob_zero,
+        .fitted = prob_zero,
         stringsAsFactors = FALSE
       )
     } else {
-      # type == "response"
+      # type == "response" or "link"
       if (s %in% c("alone.target", "own.target")) {
         # Zhao demand model
         logQ0 <- if (s == "alone.target") coef["logQ0_AT"] else coef["logQ0_OT"]
@@ -663,16 +679,33 @@ predict.beezdemand_joint_hurdle <- function(
         y_pred <- exp(mu)
       }
 
+      fitted <- if (type == "link") as.numeric(mu) else as.numeric(y_pred)
       results[[s]] <- data.frame(
         stream = s,
         price_T = prices,
-        y_pred = y_pred,
+        y_pred = as.numeric(y_pred),
+        mu = as.numeric(mu),
+        .fitted = fitted,
         stringsAsFactors = FALSE
       )
     }
   }
 
-  do.call(rbind, results)
+  out <- tibble::as_tibble(do.call(rbind, results))
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_joint_hurdle` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
+    }
+  }
+
+  out
 }
 
 
@@ -1008,13 +1041,24 @@ tidy.beezdemand_joint_hurdle <- function(x, ...) {
   z_val <- coef / se
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
-  tibble::tibble(
+  out <- tibble::tibble(
     term = names(coef),
     estimate = unname(coef),
     std.error = unname(se),
     statistic = unname(z_val),
     p.value = unname(p_val),
-    component = component
+    component = component,
+    estimate_scale = dplyr::case_when(
+      grepl("^log|^logsigma_", names(coef)) ~ "log",
+      TRUE ~ "natural"
+    ),
+    term_display = names(coef)
+  )
+
+  beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = "natural",
+    internal_space = "natural"
   )
 }
 

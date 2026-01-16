@@ -19,6 +19,8 @@ test_that("tidy.beezdemand_hurdle meets contract", {
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
                     names(t)))
   expect_true("component" %in% names(t))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(t)))
+  expect_true(all(t$estimate_scale %in% c("natural", "log", "log10", "logit")))
 
   # Component vocabulary (canonical)
   expect_false(any(t$component %in% c("probability")))
@@ -84,6 +86,8 @@ test_that("tidy.beezdemand_cp_hurdle meets contract", {
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
                     names(t)))
   expect_true("component" %in% names(t))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(t)))
+  expect_true(all(t$estimate_scale %in% c("natural", "log", "log10", "logit")))
 
   # Component vocabulary (canonical)
   expect_false(any(t$component %in% c("part1_probability", "part2_consumption")))
@@ -150,6 +154,8 @@ test_that("tidy.beezdemand_nlme meets contract", {
   expect_true(all(c("term", "estimate", "std.error", "statistic", "p.value") %in%
                     names(t)))
   expect_true("component" %in% names(t))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(t)))
+  expect_true(all(t$estimate_scale %in% c("natural", "log", "log10", "logit")))
 })
 
 
@@ -190,6 +196,8 @@ test_that("tidy.beezdemand_fixed meets contract", {
                     names(t)))
   expect_true("component" %in% names(t))
   expect_true("id" %in% names(t))
+  expect_true(all(c("estimate_scale", "term_display") %in% names(t)))
+  expect_true(all(t$estimate_scale %in% c("natural", "log", "log10", "logit")))
 })
 
 

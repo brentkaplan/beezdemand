@@ -100,80 +100,44 @@ summary.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
     grepl("^logsigma_|^rho_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
 
+  term <- dplyr::case_when(
+    coef_names == "log_q0" ~ "Q0",
+    coef_names == "log_alpha" ~ "alpha",
+    coef_names == "log_k" ~ "k",
+    TRUE ~ coef_names
+  )
+
   coefficients <- tibble::tibble(
-    term = coef_names,
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se_vec),
     statistic = unname(z_val),
     p.value = unname(p_val),
     component = component,
-    estimate_scale = dplyr::case_when(
-      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
-      TRUE ~ "natural"
-    ),
-    term_display = coef_names
+	    estimate_scale = dplyr::case_when(
+	      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+	      coef_names %in% c("log_q0", "log_alpha", "log_k", "alpha") ~ "log",
+	      TRUE ~ "natural"
+	    ),
+	    term_display = term
+	  )
+
+  coefficients <- beezdemand_transform_coef_table(
+    coef_tbl = coefficients,
+    report_space = report_space,
+    internal_space = "natural"
   )
 
-  if (report_space != "internal") {
-    # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- coefficients$term %in% c("log_q0", "log_alpha", "log_k", "k")
-    coefficients <- coefficients |>
-      dplyr::mutate(estimate_internal = .data$estimate)
-
-    for (i in which(demand_terms)) {
-      term_i <- coefficients$term[i]
-      from_space <- coefficients$estimate_scale[i]
-      to_space <- if (report_space == "natural") "natural" else "log10"
-
-      trans <- beezdemand_transform_est_se(
-        estimate = coefficients$estimate[i],
-        se = coefficients$std.error[i],
-        from = from_space,
-        to = to_space
-      )
-
-      coefficients$estimate[i] <- trans$estimate
-      coefficients$std.error[i] <- trans$se
-      coefficients$statistic[i] <- coefficients$estimate[i] / coefficients$std.error[i]
-      coefficients$p.value[i] <- 2 * stats::pnorm(-abs(coefficients$statistic[i]))
-
-      if (term_i == "log_q0" && report_space == "natural") {
-        coefficients$term[i] <- "Q0"
-        coefficients$term_display[i] <- "Q0"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_q0" && report_space == "log10") {
-        coefficients$term[i] <- "log10(Q0)"
-        coefficients$term_display[i] <- "log10(Q0)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_alpha" && report_space == "natural") {
-        coefficients$term[i] <- "alpha"
-        coefficients$term_display[i] <- "alpha"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_alpha" && report_space == "log10") {
-        coefficients$term[i] <- "log10(alpha)"
-        coefficients$term_display[i] <- "log10(alpha)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_k" && report_space == "natural") {
-        coefficients$term[i] <- "k"
-        coefficients$term_display[i] <- "k"
-        coefficients$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_k" && report_space == "log10") {
-        coefficients$term[i] <- "log10(k)"
-        coefficients$term_display[i] <- "log10(k)"
-        coefficients$estimate_scale[i] <- "log10"
-      } else if (term_i == "k" && report_space == "log10") {
-        coefficients$term[i] <- "log10(k)"
-        coefficients$term_display[i] <- "log10(k)"
-        coefficients$estimate_scale[i] <- "log10"
-      }
-    }
-  }
+  coefficients <- coefficients |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 
   # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)
@@ -431,6 +395,16 @@ coef.beezdemand_hurdle <- function(
     out <- out[names(out) != "log_alpha"]
   }
 
+  # Backwards compatibility: older objects stored log(alpha) under the name `alpha`.
+  if (!("log_alpha" %in% names(coefs)) && "alpha" %in% names(out)) {
+    if (report_space == "natural") {
+      out[["alpha"]] <- exp(out[["alpha"]])
+    } else if (report_space == "log10") {
+      out[["log10(alpha)"]] <- out[["alpha"]] / log(10)
+      out <- out[names(out) != "alpha"]
+    }
+  }
+
   if ("log_k" %in% names(out)) {
     if (report_space == "natural") {
       out[["k"]] <- exp(out[["log_k"]])
@@ -506,30 +480,33 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #' Predict Method for Hurdle Demand Models
 #'
 #' @description
-#' Extracts subject-specific predictions from a fitted hurdle demand model,
-#' or generates predictions for new price values.
+#' Returns predictions from a fitted hurdle demand model.
 #'
 #' @param object An object of class \code{beezdemand_hurdle}.
-#' @param newdata Optional data frame with new data for prediction. Currently
-#'   not fully implemented - predictions use subjects from the fitted model.
-#' @param type Character string specifying the type of prediction:
+#' @param newdata Optional data frame containing a price column matching the fitted
+#'   object's `x_var`. If `newdata` includes the id column, subject-specific
+#'   predictions are returned; otherwise population predictions are returned.
+#'   If `newdata` is `NULL`, returns predictions for all subjects across a price grid.
+#' @param type One of:
 #'   \describe{
-#'     \item{\code{"parameters"}}{Subject-specific demand parameters (default)}
-#'     \item{\code{"demand"}}{Predicted consumption at specified prices}
-#'     \item{\code{"probability"}}{Predicted probability of zero consumption}
+#'     \item{\code{"response"}}{Predicted consumption (part II)}
+#'     \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
+#'     \item{\code{"probability"}}{Predicted probability of zero consumption (part I)}
+#'     \item{\code{"demand"}}{Predicted expected consumption = (1 - P0) * response}
+#'     \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 #'   }
-#' @param prices Numeric vector of prices for prediction when \code{type = "demand"}
-#'   or \code{type = "probability"}. If \code{NULL}, uses unique prices from
-#'   the original data.
-#' @param ... Additional arguments (currently unused).
+#' @param prices Optional numeric vector of prices used only when `newdata = NULL`.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
+#'   `sdreport` when available).
+#' @param interval One of `"none"` (default) or `"confidence"`.
+#' @param level Confidence level when `interval = "confidence"`.
+#' @param ... Unused.
 #'
-#' @return Depends on \code{type}:
-#' \describe{
-#'   \item{\code{"parameters"}}{Data frame with subject-specific parameters}
-#'   \item{\code{"demand"}}{Data frame with columns: id, x, predicted_consumption,
-#'     predicted_log_consumption, prob_zero, expected_consumption}
-#'   \item{\code{"probability"}}{Data frame with columns: id, x, prob_zero}
-#' }
+#' @return For `type = "parameters"`, a tibble of subject-level parameters.
+#'   Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
+#'   helper columns `predicted_log_consumption`, `predicted_consumption`,
+#'   `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
+#'   `.lower`/`.upper` are included.
 #'
 #' @examples
 #' \dontrun{
@@ -549,11 +526,20 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 predict.beezdemand_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("parameters", "demand", "probability"),
+  type = c("response", "link", "parameters", "probability", "demand"),
   prices = NULL,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  level = 0.95,
   ...
 ) {
+  newdata_user <- newdata
   type <- match.arg(type)
+  interval <- match.arg(interval)
+  if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||
+    level <= 0 || level >= 1)) {
+    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+  }
   id_var <- object$param_info$id_var
   x_var <- object$param_info$x_var
   epsilon <- object$param_info$epsilon
@@ -561,109 +547,197 @@ predict.beezdemand_hurdle <- function(
 
   # For type = "parameters", just return subject-specific parameters
   if (type == "parameters") {
-    return(object$subject_pars)
+    return(tibble::as_tibble(object$subject_pars))
   }
 
-  # Get prices for prediction
-  if (is.null(prices)) {
-    prices <- sort(unique(object$data[[x_var]]))
+  if (!is.null(newdata)) {
+    if (!is.data.frame(newdata)) newdata <- as.data.frame(newdata)
+    if (!(x_var %in% names(newdata))) {
+      stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+    }
+  } else {
+    if (!is.null(prices)) {
+      newdata <- data.frame(prices, stringsAsFactors = FALSE)
+      names(newdata) <- x_var
+    } else {
+      newdata <- data.frame(sort(unique(object$data[[x_var]])), stringsAsFactors = FALSE)
+      names(newdata) <- x_var
+    }
   }
 
   # Extract coefficients
   coefs <- object$model$coefficients
-  beta0 <- coefs["beta0"]
-  beta1 <- coefs["beta1"]
-  log_q0 <- if ("log_q0" %in% names(coefs)) coefs["log_q0"] else coefs["logQ0"]
-  k <- if (!identical(part2, "simplified_exponential")) {
-    if ("log_k" %in% names(coefs)) exp(coefs["log_k"]) else coefs["k"]
-  } else {
-    NA_real_
-  }
-  log_alpha <- coefs["log_alpha"]
+  beta0 <- unname(coefs[["beta0"]])
+  beta1 <- unname(coefs[["beta1"]])
+  log_q0 <- unname(coefs[["log_q0"]] %||% coefs[["logQ0"]])
+  log_alpha <- unname(coefs[["log_alpha"]] %||% coefs[["alpha"]])
+  has_k <- !identical(part2, "simplified_exponential")
+  log_k <- if (has_k) unname(coefs[["log_k"]] %||% log(coefs[["k"]])) else NA_real_
 
-  # Get random effects
-  a_i <- object$random_effects[, "a_i"]
-  b_i <- object$random_effects[, "b_i"]
+  # Build row-wise prediction design:
+  # - if user provided id, compute subject-specific predictions
+  # - otherwise compute population predictions
+  subjects <- as.character(object$param_info$subject_levels)
 
-  # c_i only exists for 3 random effect models
-  n_re <- object$param_info$n_random_effects
-  if (n_re == 3) {
-    c_i <- object$random_effects[, "c_i"]
-  } else {
-    c_i <- rep(0, length(a_i)) # No random effect on alpha
-  }
-
-  subjects <- object$param_info$subject_levels
-  n_subjects <- length(subjects)
-
-  if (type == "probability") {
-    show_pred <- "population"
-    # Predict P(zero consumption) for each subject and price
-    results <- expand.grid(
+  if (is.null(newdata_user)) {
+    # Legacy behavior: return predictions for all subjects across the price grid.
+    x_vals <- newdata[[x_var]]
+    newdata <- expand.grid(
       id = subjects,
-      x = prices,
+      x = x_vals,
       stringsAsFactors = FALSE
     )
+    names(newdata)[1] <- id_var
+    names(newdata)[2] <- x_var
+  }
 
-    results$prob_zero <- NA_real_
-    for (i in seq_len(n_subjects)) {
-      idx <- results$id == subjects[i]
-      eta <- beta0 + beta1 * log(results$x[idx] + epsilon) + a_i[i]
-      results$prob_zero[idx] <- stats::plogis(eta)
+  has_id <- id_var %in% names(newdata)
+  if (has_id) {
+    newdata[[id_var]] <- as.character(newdata[[id_var]])
+  }
+
+  if (is.null(newdata) || !has_id) {
+    # Population prediction: random effects set to 0
+    a_row <- 0
+    b_row <- 0
+    c_row <- 0
+  } else {
+    id_match <- match(newdata[[id_var]], subjects)
+    if (anyNA(id_match)) {
+      missing_ids <- unique(newdata[[id_var]][is.na(id_match)])
+      stop(
+        "Unknown id values in `newdata`: ",
+        paste(missing_ids, collapse = ", "),
+        ".",
+        call. = FALSE
+      )
     }
+    re <- object$random_effects
+    a_row <- re[id_match, "a_i"]
+    b_row <- re[id_match, "b_i"]
 
-    names(results)[1] <- id_var
-    names(results)[2] <- x_var
-    return(results)
+    n_re <- object$param_info$n_random_effects
+    c_row <- if (n_re == 3) re[id_match, "c_i"] else 0
   }
 
-  if (type == "demand") {
-    show_pred <- "population"
-    # Predict consumption for each subject and price
-    results <- expand.grid(
-      id = subjects,
-      x = prices,
-      stringsAsFactors = FALSE
-    )
+  x <- newdata[[x_var]]
+  eta <- beta0 + beta1 * log(x + epsilon) + a_row
+  prob_zero <- stats::plogis(eta)
 
-    results$predicted_log_consumption <- NA_real_
-    results$predicted_consumption <- NA_real_
-    results$prob_zero <- NA_real_
+  alpha_i <- exp(log_alpha + c_row)
+  Q0_i <- exp(log_q0 + b_row)
+  k_val <- if (has_k) exp(log_k) else NA_real_
 
-    for (i in seq_len(n_subjects)) {
-      idx <- results$id == subjects[i]
-      p <- results$x[idx]
+  mu <- if (identical(part2, "simplified_exponential")) {
+    (log_q0 + b_row) - alpha_i * Q0_i * x
+  } else if (identical(part2, "exponential")) {
+    (log_q0 + b_row) + k_val * (exp(-alpha_i * Q0_i * x) - 1)
+  } else {
+    (log_q0 + b_row) + k_val * (exp(-alpha_i * x) - 1)
+  }
 
-      # Log consumption (Part II)
-      # Per EQUATIONS_CONTRACT.md:
-      # - 3-RE: alpha_i = exp(log_alpha + c_i)
-      # - 2-RE: alpha = exp(log_alpha) (c_i = 0)
-      alpha_i <- exp(log_alpha + c_i[i])
-      Q0_i <- exp(log_q0 + b_i[i])
+  predicted_log_consumption <- as.numeric(mu)
+  predicted_consumption <- exp(predicted_log_consumption)
+  expected_consumption <- predicted_consumption * (1 - prob_zero)
 
-      mu_ij <- if (identical(part2, "simplified_exponential")) {
-        (log_q0 + b_i[i]) - alpha_i * Q0_i * p
-      } else if (identical(part2, "exponential")) {
-        (log_q0 + b_i[i]) + k * (exp(-alpha_i * Q0_i * p) - 1)
-      } else {
-        (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
+  out <- tibble::as_tibble(newdata)
+  out$predicted_log_consumption <- predicted_log_consumption
+  out$predicted_consumption <- predicted_consumption
+  out$prob_zero <- prob_zero
+  out$expected_consumption <- expected_consumption
+
+  out$.fitted <- switch(
+    type,
+    response = predicted_consumption,
+    link = predicted_log_consumption,
+    probability = prob_zero,
+    demand = expected_consumption
+  )
+
+  want_se <- isTRUE(se.fit) || interval != "none"
+  if (want_se) {
+    if (is.null(object$sdr) || is.null(object$sdr$cov.fixed)) {
+      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      out$.se.fit <- NA_real_
+      if (interval != "none") {
+        out$.lower <- NA_real_
+        out$.upper <- NA_real_
       }
-      results$predicted_log_consumption[idx] <- mu_ij
-      results$predicted_consumption[idx] <- exp(mu_ij)
-
-      # Probability of zero (Part I)
-      eta <- beta0 + beta1 * log(p + epsilon) + a_i[i]
-      results$prob_zero[idx] <- stats::plogis(eta)
+      return(out)
     }
 
-    # Expected consumption accounting for probability of zero
-    results$expected_consumption <- results$predicted_consumption *
-      (1 - results$prob_zero)
+    vcov_full <- tryCatch(as.matrix(object$sdr$cov.fixed), error = function(e) NULL)
+    if (is.null(vcov_full)) {
+      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      out$.se.fit <- NA_real_
+      if (interval != "none") {
+        out$.lower <- NA_real_
+        out$.upper <- NA_real_
+      }
+      return(out)
+    }
 
-    names(results)[1] <- id_var
-    names(results)[2] <- x_var
-    return(results)
+    theta0 <- object$model$coefficients
+    param_names <- intersect(names(theta0), colnames(vcov_full))
+    theta0 <- theta0[param_names]
+    vcov <- vcov_full[param_names, param_names, drop = FALSE]
+
+    eval_fitted <- function(theta) {
+      beta0_t <- unname(theta[["beta0"]])
+      beta1_t <- unname(theta[["beta1"]])
+      log_q0_t <- unname(theta[["log_q0"]] %||% theta[["logQ0"]])
+      log_alpha_t <- unname(theta[["log_alpha"]] %||% theta[["alpha"]])
+      log_k_t <- if (has_k) unname(theta[["log_k"]] %||% log(theta[["k"]])) else NA_real_
+      k_t <- if (has_k) exp(log_k_t) else NA_real_
+
+      eta_t <- beta0_t + beta1_t * log(x + epsilon) + a_row
+      prob0_t <- stats::plogis(eta_t)
+      alpha_t <- exp(log_alpha_t + c_row)
+      q0_t <- exp(log_q0_t + b_row)
+
+      mu_t <- if (identical(part2, "simplified_exponential")) {
+        (log_q0_t + b_row) - alpha_t * q0_t * x
+      } else if (identical(part2, "exponential")) {
+        (log_q0_t + b_row) + k_t * (exp(-alpha_t * q0_t * x) - 1)
+      } else {
+        (log_q0_t + b_row) + k_t * (exp(-alpha_t * x) - 1)
+      }
+
+      resp_t <- exp(mu_t)
+      dem_t <- resp_t * (1 - prob0_t)
+
+      switch(
+        type,
+        response = as.numeric(resp_t),
+        link = as.numeric(mu_t),
+        probability = as.numeric(prob0_t),
+        demand = as.numeric(dem_t)
+      )
+    }
+
+    base_fit <- eval_fitted(theta0)
+    grad <- matrix(0, nrow = length(base_fit), ncol = length(theta0))
+    colnames(grad) <- names(theta0)
+
+    for (j in seq_along(theta0)) {
+      step <- 1e-6 * max(1, abs(theta0[[j]]))
+      theta_p <- theta0
+      theta_p[[j]] <- theta_p[[j]] + step
+      grad[, j] <- (eval_fitted(theta_p) - base_fit) / step
+    }
+
+    v <- grad %*% vcov
+    se_vec <- sqrt(rowSums(v * grad))
+    out$.se.fit <- as.numeric(se_vec)
+
+    if (interval != "none") {
+      z <- stats::qnorm((1 + level) / 2)
+      out$.lower <- out$.fitted - z * out$.se.fit
+      out$.upper <- out$.fitted + z * out$.se.fit
+    }
   }
+
+  out
 }
 
 
@@ -1378,7 +1452,7 @@ plot_subject <- function(
 #'     \item{std.error}{Standard error}
 #'     \item{statistic}{z-value}
 #'     \item{p.value}{P-value}
-#'     \item{component}{One of "probability", "consumption", or "variance"}
+#'     \item{component}{One of "zero_probability", "consumption", "variance", or "fixed"}
 #'   }
 #'
 #' @export
@@ -1403,80 +1477,44 @@ tidy.beezdemand_hurdle <- function(
   # Determine component for each coefficient
   component <- dplyr::case_when(
     coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
-    coef_names %in% c("log_q0", "log_alpha", "log_k", "k") ~ "consumption",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
     grepl("^logsigma_|^rho_|^sigma_", coef_names) ~ "variance",
     TRUE ~ "fixed"
   )
 
+  term <- dplyr::case_when(
+    coef_names == "log_q0" ~ "Q0",
+    coef_names == "log_alpha" ~ "alpha",
+    coef_names == "log_k" ~ "k",
+    TRUE ~ coef_names
+  )
+
   out <- tibble::tibble(
-    term = coef_names,
+    term = term,
     estimate = unname(coefs),
     std.error = unname(se),
     statistic = unname(z_val),
     p.value = unname(p_val),
     component = component,
-    estimate_scale = dplyr::case_when(
-      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
-      coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
-      TRUE ~ "natural"
-    ),
-    term_display = coef_names
+	    estimate_scale = dplyr::case_when(
+	      coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+	      coef_names %in% c("log_q0", "log_alpha", "log_k", "alpha") ~ "log",
+	      TRUE ~ "natural"
+	    ),
+	    term_display = term
+	  )
+
+  out <- beezdemand_transform_coef_table(
+    coef_tbl = out,
+    report_space = report_space,
+    internal_space = "natural"
   )
 
-  if (report_space != "internal") {
-    # Backwards compatibility: older objects stored `k` on the natural scale.
-    demand_terms <- out$term %in% c("log_q0", "log_alpha", "log_k", "k")
-    out$estimate_internal <- out$estimate
-
-    for (i in which(demand_terms)) {
-      term_i <- out$term[i]
-      from_space <- out$estimate_scale[i]
-      to_space <- if (report_space == "natural") "natural" else "log10"
-
-      trans <- beezdemand_transform_est_se(
-        estimate = out$estimate[i],
-        se = out$std.error[i],
-        from = from_space,
-        to = to_space
-      )
-      out$estimate[i] <- trans$estimate
-      out$std.error[i] <- trans$se
-      out$statistic[i] <- out$estimate[i] / out$std.error[i]
-      out$p.value[i] <- 2 * stats::pnorm(-abs(out$statistic[i]))
-
-      if (term_i == "log_q0" && report_space == "natural") {
-        out$term[i] <- "Q0"
-        out$term_display[i] <- "Q0"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_q0" && report_space == "log10") {
-        out$term[i] <- "log10(Q0)"
-        out$term_display[i] <- "log10(Q0)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_alpha" && report_space == "natural") {
-        out$term[i] <- "alpha"
-        out$term_display[i] <- "alpha"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_alpha" && report_space == "log10") {
-        out$term[i] <- "log10(alpha)"
-        out$term_display[i] <- "log10(alpha)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "log_k" && report_space == "natural") {
-        out$term[i] <- "k"
-        out$term_display[i] <- "k"
-        out$estimate_scale[i] <- "natural"
-      } else if (term_i == "log_k" && report_space == "log10") {
-        out$term[i] <- "log10(k)"
-        out$term_display[i] <- "log10(k)"
-        out$estimate_scale[i] <- "log10"
-      } else if (term_i == "k" && report_space == "log10") {
-        out$term[i] <- "log10(k)"
-        out$term_display[i] <- "log10(k)"
-        out$estimate_scale[i] <- "log10"
-      }
-    }
-  }
-
-  out
+  out |>
+    dplyr::mutate(
+      statistic = .data$estimate / .data$std.error,
+      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    )
 }
 
 

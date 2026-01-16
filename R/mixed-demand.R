@@ -359,6 +359,7 @@ fit_demand_mixed <- function(
     )
     q0_start_intercept <- NA
     alpha_start_intercept <- NA
+    pooled_starts <- NULL
 
     if (start_value_method == "pooled_nls") {
       pooled_starts <- get_pooled_nls_starts(data, y_var, x_var, equation_form)

@@ -1687,19 +1687,13 @@ summary.beezdemand_nlme <- function(
   )
 
   if (report_space != internal_space) {
-    coefficients$estimate_internal <- coefficients$estimate
-    trans <- beezdemand_transform_est_se(
-      estimate = coefficients$estimate,
-      se = coefficients$std.error,
-      from = internal_space,
-      to = report_space
+    coefficients <- beezdemand_transform_coef_table(
+      coef_tbl = coefficients,
+      report_space = report_space,
+      internal_space = internal_space
     )
-    coefficients$estimate <- trans$estimate
-    coefficients$std.error <- trans$se
     coefficients$statistic <- coefficients$estimate / coefficients$std.error
     coefficients$p.value <- 2 * stats::pnorm(-abs(coefficients$statistic))
-    coefficients$estimate_scale <- report_space
-    coefficients$term_display <- vapply(coefficients$term, beezdemand_term_display_space, character(1), report_space = report_space)
   }
 
   # Random effects structure
@@ -1861,14 +1855,7 @@ tidy.beezdemand_nlme <- function(
 ) {
   report_space <- match.arg(report_space)
   if (is.null(x$model)) {
-    return(tibble::tibble(
-      term = character(),
-      estimate = numeric(),
-      std.error = numeric(),
-      statistic = numeric(),
-      p.value = numeric(),
-      component = character()
-    ))
+    return(beezdemand_empty_coefficients())
   }
 
   effects <- match.arg(effects, several.ok = TRUE)
@@ -1888,20 +1875,19 @@ tidy.beezdemand_nlme <- function(
       estimate_scale = internal_space,
       term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
     )
+
+    fixed <- beezdemand_transform_coef_table(
+      coef_tbl = fixed,
+      report_space = report_space,
+      internal_space = internal_space
+    )
+
     if (report_space != internal_space) {
-      fixed$estimate_internal <- fixed$estimate
-      trans <- beezdemand_transform_est_se(
-        estimate = fixed$estimate,
-        se = fixed$std.error,
-        from = internal_space,
-        to = report_space
-      )
-      fixed$estimate <- trans$estimate
-      fixed$std.error <- trans$se
-      fixed$statistic <- fixed$estimate / fixed$std.error
-      fixed$p.value <- 2 * stats::pnorm(-abs(fixed$statistic))
-      fixed$estimate_scale <- report_space
-      fixed$term_display <- vapply(fixed$term, beezdemand_term_display_space, character(1), report_space = report_space)
+      fixed <- fixed |>
+        dplyr::mutate(
+          statistic = .data$estimate / .data$std.error,
+          p.value = 2 * stats::pnorm(-abs(.data$statistic))
+        )
     }
     result <- dplyr::bind_rows(result, fixed)
   }
@@ -2168,6 +2154,9 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #'   the original fit must also be present in `newdata` and its levels should
 #'   correspond to those in the original data for meaningful random effect application.
 #'   If `NULL`, predictions are made for the data used in fitting the model.
+#' @param type One of `"response"` (default), `"link"`, `"population"`, or `"individual"`.
+#'   `"population"` and `"individual"` are aliases that set `level` to `0` or `1`,
+#'   respectively.
 #' @param level Integer, prediction level for `nlme::predict.nlme()`:
 #'   \itemize{
 #'     \item `0`: Population predictions (based on fixed effects only).
@@ -2181,13 +2170,16 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #'   would convert predictions back to the original consumption scale.
 #'   If `equation_form` was "simplified" (which models raw Y), `inv_fun` might be `identity`
 #'   or not needed if predictions are already on the desired scale.
+#' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+#'   because standard errors are not implemented for `beezdemand_nlme` predictions).
+#' @param interval One of `"none"` (default) or `"confidence"`. When requested,
+#'   `.lower`/`.upper` are returned as `NA`.
+#' @param interval_level Confidence level when `interval = "confidence"`. Currently
+#'   used only for validation.
 #' @param ... Additional arguments passed to `nlme::predict.nlme()`.
 #'
-#' @return A numeric vector of predictions. If `newdata` is provided, the vector
-#'   length corresponds to `nrow(newdata)`. If `newdata` is `NULL`, it corresponds
-#'   to the number of observations in the original fitting data.
-#'   The scale of predictions depends on `object$formula_details$equation_form_selected`
-#'   and the application of `inv_fun`.
+#' @return A tibble containing the original `newdata` columns plus `.fitted`.
+#'   When requested, `.se.fit` and `.lower`/`.upper` are included (currently `NA`).
 #'
 #' @method predict beezdemand_nlme
 #' @export
@@ -2227,16 +2219,29 @@ ranef.beezdemand_nlme <- function(object, ...) {
 predict.beezdemand_nlme <- function(
   object,
   newdata = NULL,
+  type = c("response", "link", "population", "individual"),
   level = 0,
   inv_fun = identity,
+  se.fit = FALSE,
+  interval = c("none", "confidence"),
+  interval_level = 0.95,
   ...
 ) {
+  type <- match.arg(type)
+  interval <- match.arg(interval)
+  if (!is.null(interval_level) && (!is.numeric(interval_level) || length(interval_level) != 1 ||
+    is.na(interval_level) || interval_level <= 0 || interval_level >= 1)) {
+    stop("'interval_level' must be a single number between 0 and 1.", call. = FALSE)
+  }
   if (!inherits(object, "beezdemand_nlme")) {
     stop("Input 'object' must be of class 'beezdemand_nlme'.")
   }
   if (is.null(object$model)) {
     stop("No model found in the object. Fitting may have failed.")
   }
+
+  if (type == "population") level <- 0
+  if (type == "individual") level <- 1
 
   # Validate newdata if provided
   if (!is.null(newdata)) {
@@ -2323,9 +2328,6 @@ predict.beezdemand_nlme <- function(
     } # end newdata validation
   } else {
     newdata <- object$data
-    message(
-      "`newdata` is NULL. Using data from the original model fit for predictions."
-    )
   }
 
   # Use the predict method for nlme objects
@@ -2336,10 +2338,28 @@ predict.beezdemand_nlme <- function(
     ...
   )
 
-  # Apply inverse transformation function
-  final_predictions <- inv_fun(raw_predictions)
+  fitted <- if (type == "link") {
+    as.numeric(raw_predictions)
+  } else {
+    as.numeric(inv_fun(raw_predictions))
+  }
 
-  return(final_predictions)
+  out <- tibble::as_tibble(newdata)
+  out$.fitted <- fitted
+
+  if (isTRUE(se.fit) || interval != "none") {
+    warning(
+      "Standard errors/intervals are not implemented for `beezdemand_nlme` predictions; returning NA.",
+      call. = FALSE
+    )
+    out$.se.fit <- NA_real_
+    if (interval != "none") {
+      out$.lower <- NA_real_
+      out$.upper <- NA_real_
+    }
+  }
+
+  out
 }
 
 #' Plot Method for beezdemand_nlme Objects
@@ -2780,8 +2800,9 @@ plot.beezdemand_nlme <- function(
     predicted_values_model_scale <- predict(
       fit_obj,
       newdata = pred_newdata,
+      type = "link",
       level = current_pred_level
-    )
+    )$.fitted
     pred_newdata$predicted_y_plotscale <- inv_fun(predicted_values_model_scale)
 
     free_pred <- beezdemand_apply_free_trans(

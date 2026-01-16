@@ -25,9 +25,11 @@
 ^src/symbols\.rds$
 ^\.git$
 ^\.claude$
-^\.\.Rcheck$
+\.Rcheck$
 \.DS_Store$
 \.Rhistory$
+^PRD\.md$
+^internal_docs$
 ^vignettes/.*_cache$
 ^vignettes/.*_files$
 ^vignettes/.*\.html$
@@ -49,3 +51,5 @@
 ^engineering$
 ^\.agents$
 ^\.env$
+^R/arg-matrix\.R$
+^tests/testthat/test-arg-matrix\.R$
