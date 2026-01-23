@@ -12,19 +12,63 @@ test_that("fit_demand_hurdle fits 2-RE model on simulated data", {
   )
 
   # Fit model
-  fit <- fit_demand_hurdle(
+  fit <- suppressMessages(fit_demand_hurdle(
     sim_data,
     y_var = "y",
     x_var = "x",
     id_var = "id",
     random_effects = c("zeros", "q0"),
     verbose = 0
-  )
+  ))
 
   expect_s3_class(fit, "beezdemand_hurdle")
   expect_true(fit$converged)
   expect_equal(fit$param_info$n_random_effects, 2)
   expect_equal(fit$param_info$n_subjects, 30)
+})
+
+test_that("fit_demand_hurdle recovers known simulation parameters (2-RE)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(
+    n_subjects = 60,
+    n_random_effects = 2,
+    stop_at_zero = FALSE,
+    seed = 123,
+    beta0 = -2,
+    beta1 = 1,
+    log_q0 = log(10),
+    k = 2,
+    alpha = 0.5,
+    sigma_a = 0.2,
+    sigma_b = 0.2,
+    sigma_e = 0.1,
+    rho_ab = 0
+  )
+  true_params <- attr(sim_data, "true_params")
+
+  fit <- suppressMessages(suppressWarnings(fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0,
+    tmb_control = list(max_iter = 150, eval_max = 500, trace = 0)
+  )))
+  expect_s3_class(fit, "beezdemand_hurdle")
+  expect_true(fit$converged)
+
+  s <- suppressMessages(suppressWarnings(summary(fit, report_space = "natural")))
+  coefs <- s$coefficients
+  coefs <- coefs[coefs$term %in% c("beta0", "beta1", "Q0", "k", "alpha"), ]
+
+  expect_equal(coefs$estimate[coefs$term == "beta0"], true_params$beta0, tolerance = 0.4)
+  expect_equal(coefs$estimate[coefs$term == "beta1"], true_params$beta1, tolerance = 0.4)
+  expect_equal(coefs$estimate[coefs$term == "Q0"], exp(true_params$log_q0), tolerance = 1.0)
+  expect_equal(coefs$estimate[coefs$term == "k"], true_params$k, tolerance = 0.2)
+  expect_equal(coefs$estimate[coefs$term == "alpha"], true_params$alpha, tolerance = 0.1)
 })
 
 test_that("fit_demand_hurdle fits 3-RE model on simulated data", {
@@ -39,14 +83,14 @@ test_that("fit_demand_hurdle fits 3-RE model on simulated data", {
   )
 
   # Fit model - suppress optimization warnings that can occur during search
-  fit <- suppressWarnings(fit_demand_hurdle(
+  fit <- suppressMessages(suppressWarnings(fit_demand_hurdle(
     sim_data,
     y_var = "y",
     x_var = "x",
     id_var = "id",
     random_effects = c("zeros", "q0", "alpha"),
     verbose = 0
-  ))
+  )))
 
   expect_s3_class(fit, "beezdemand_hurdle")
   expect_equal(fit$param_info$n_random_effects, 3)

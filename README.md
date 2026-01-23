@@ -1,11 +1,15 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Behavioral Economic (be) Easy (ez) Demand <a><img src="hex-beezdemand.png" align="right" height="200" /></a>
+# Behavioral Economic (be) Easy (ez) Demand <a><img src="man/figures/hex-beezdemand.png" alt="beezdemand hexagonal logo" align="right" height="200" /></a>
 
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/beezdemand)](https://cran.r-project.org/package=beezdemand)
 [![downloads](https://cranlogs.r-pkg.org/badges/beezdemand)](https://cranlogs.r-pkg.org/)
 [![total](https://cranlogs.r-pkg.org/badges/grand-total/beezdemand)](https://cranlogs.r-pkg.org/)
+[![R-CMD-check](https://github.com/brentkaplan/beezdemand/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/brentkaplan/beezdemand/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/brentkaplan/beezdemand/branch/master/graph/badge.svg)](https://app.codecov.io/gh/brentkaplan/beezdemand?branch=master)
+[![pkgdown](https://img.shields.io/badge/pkgdown-documentation-blue)](https://brentkaplan.github.io/beezdemand/)
 
 Behavioral economic demand is gaining in popularity. The motivation
 behind `beezdemand` was to create an alternative tool to conduct these
@@ -14,13 +18,26 @@ analyses. It is meant for researchers to conduct behavioral economic
 
 ## Note About Use
 
-Currently, this version (0.1.3) is stable. I encourage you to use it but
-be aware that, as with any software release, there might be (unknown)
-bugs present. I’ve tried hard to make this version usable while
-including the core functionality (described more below). However, if you
-find issues or would like to contribute, please open an issue on my
-[GitHub page](https://github.com/brentkaplan/beezdemand) or [email
+Currently, this version is stable. I encourage you to use it but be
+aware that, as with any software release, there might be (unknown) bugs
+present. I’ve tried hard to make this version usable while including the
+core functionality (described more below). However, if you find issues
+or would like to contribute, please open an issue on my [GitHub
+page](https://github.com/brentkaplan/beezdemand) or [email
 me](mailto:bkaplan.ku@gmail.com).
+
+## Which Model Should I Use?
+
+| Your Situation | Recommended Approach | Learn More |
+|----|----|----|
+| Single purchase task, individual fits | `fit_demand_fixed()` | [Getting Started](https://brentkaplan.github.io/beezdemand/articles/beezdemand.html) |
+| Need group comparisons, random effects | `fit_demand_mixed()` | [Mixed-Effects Guide](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
+| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle Models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
+| Cross-commodity substitution | `fit_cp_*()` functions | [Cross-Price Guide](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
+
+For detailed guidance on choosing the right modeling approach, see the
+[Model Selection
+Guide](https://brentkaplan.github.io/beezdemand/articles/model-selection.html).
 
 ## Installing beezdemand
 
@@ -256,7 +273,12 @@ GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
                 filename = "bwplot")
 ```
 
-![](man/figures/bwplot.png)
+<figure>
+<img src="man/figures/bwplot.png"
+alt="Box-and-whisker plot showing consumption at each price point with mean values marked by red crosses" />
+<figcaption aria-hidden="true">Box-and-whisker plot showing consumption
+at each price point with mean values marked by red crosses</figcaption>
+</figure>
 
 And here is the table that is returned from the function:
 
@@ -623,7 +645,7 @@ Fitted Measures
 | 0.2429150 | 0.0000308 | 16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 | 0.0010955 | 0.0012277 |
 | 0.2192797 | 0.0003739 | 16 | 0.1110490 | 0.0890622 | 2.296005 | 3.236621 | 0.0025312 | 0.0041350 |
 | 0.2074990 | 0.0001963 | 14 | 0.0231862 | 0.0439566 | 4.033709 | 4.937912 | 0.0020302 | 0.0028858 |
-| 0.4371061 | 0.0000778 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
+| 0.4371060 | 0.0000778 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
 | 0.3179671 | 0.0000523 | 14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 | 0.0014740 | 0.0017018 |
 
 Uncertainty and Model Information
@@ -777,7 +799,7 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
   theme_apa()
 ```
 
-![](man/figures/plot-ftest-1.png)<!-- -->
+<img src="man/figures/plot-ftest-1.png" alt="Demand curves for two groups showing consumption versus price on log scale, with error bars and fitted exponential curves"  />
 
 ## Plots
 
@@ -815,7 +837,12 @@ PlotCurves(dat = out, outdir = plotdir, device = "png", ask = F)
 
     10 plots saved in man/figures/
 
-![](man/figures/Participant-19.png)
+<figure>
+<img src="man/figures/Participant-19.png"
+alt="Demand curve for Participant 19 showing consumption decreasing with price" />
+<figcaption aria-hidden="true">Demand curve for Participant 19 showing
+consumption decreasing with price</figcaption>
+</figure>
 
 We can also make a plot of the mean data. Here, we again use
 `FitCurves`, this time calculating a k from the observed range of the
@@ -842,7 +869,12 @@ list.files("../plots/")
      [7] "Participant-30.png"   "Participant-38.png"   "Participant-60.png"  
     [10] "Participant-68.png"   "Participant-mean.png"
 
-![](man/figures/Participant-mean.png)
+<figure>
+<img src="man/figures/Participant-mean.png"
+alt="Mean demand curve across all participants showing average consumption at each price" />
+<figcaption aria-hidden="true">Mean demand curve across all participants
+showing average consumption at each price</figcaption>
+</figure>
 
 ## Cross-Price Demand Models
 
@@ -1075,3 +1107,39 @@ this document:
   (1988). A cost‐benefit analysis of demand for food. *Journal of the
   Experimental Analysis of Behavior, 50* (3), 419-440.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1338908/>
+
+- Kaplan, B. A., Franck, C. T., McKee, K., Gilroy, S. P., &
+  Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
+  economic demand: An introduction. *Perspectives on Behavior Science,
+  44* (2), 333–358. <https://doi.org/10.1007/s40614-021-00299-7>
+
+- Koffarnus, M. N., Kaplan, B. A., Franck, C. T., Rzeszutek, M. J., &
+  Traxler, H. K. (2022). Behavioral economic demand modeling chronology,
+  complexities, and considerations: Much ado about zeros. *Behavioural
+  Processes, 199*, 104646.
+  <https://doi.org/10.1016/j.beproc.2022.104646>
+
+- Reed, D. D., Kaplan, B. A., & Gilroy, S. P. (2025). *Handbook of
+  Operant Behavioral Economics: Demand, Discounting, Methods, and
+  Applications* (1st ed.). Academic Press.
+  <https://shop.elsevier.com/books/handbook-of-operant-behavioral-economics/reed/978-0-323-95745-8>
+
+- Kaplan, B. A. (2025). Quantitative models of operant demand. In D. D.
+  Reed, B. A. Kaplan, & S. P. Gilroy (Eds.), *Handbook of Operant
+  Behavioral Economics: Demand, Discounting, Methods, and Applications*
+  (1st ed.). Academic Press. <https://doi.org/10.1016/C2023-0-04538-3>
+
+- Kaplan, B. A., & Reed, D. D. (2025). shinybeez: A Shiny app for
+  behavioral economic easy demand and discounting. *Journal of the
+  Experimental Analysis of Behavior*.
+  <https://doi.org/10.1002/jeab.70000>
+
+- Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N.
+  (2025). Overviewing the exponential model of demand and introducing a
+  simplification that solves issues of span, scale, and zeros.
+  *Experimental and Clinical Psychopharmacology*.
+
+- Rzeszutek, M. J., Regnier, S. D., Kaplan, B. A., Traxler, H. K.,
+  Stein, J. S., Tomlinson, D., & Koffarnus, M. N. (2025). Identification
+  and management of nonsystematic cross-commodity data: Toward best
+  practice. *Experimental and Clinical Psychopharmacology*. In press.

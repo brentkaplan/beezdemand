@@ -1553,3 +1553,151 @@ glance.beezdemand_hurdle <- function(x, ...) {
     BIC = x$BIC
   )
 }
+
+#' Confidence Intervals for Hurdle Demand Model Parameters
+#'
+#' Computes confidence intervals for fixed effect parameters from a TMB-based
+#' hurdle demand model using the asymptotic normal approximation.
+#'
+#' @param object A `beezdemand_hurdle` object from [fit_demand_hurdle()].
+#' @param parm Character vector of parameter names to compute CIs for.
+#'   Default includes all fixed effect parameters.
+#' @param level Confidence level (default 0.95).
+#' @param report_space Character. Reporting space for parameters:
+#'   - `"internal"`: parameters on internal/fitting scale (log for Q0, alpha)
+#'   - `"natural"`: back-transformed to natural scale
+#' @param ... Additional arguments (ignored).
+#'
+#' @return A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `component`, `estimate_scale`.
+#'
+#' @details
+#' Confidence intervals are computed using the asymptotic normal approximation
+#' based on standard errors from `TMB::sdreport()`. For parameters estimated
+#' on the log scale (Q0, alpha, k), intervals can be back-transformed to the
+#' natural scale using `report_space = "natural"`.
+#'
+#' The transformation uses:
+#' - For log-scale parameters: exp(estimate +/- z * SE)
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' confint(fit)
+#' confint(fit, level = 0.90)
+#' confint(fit, report_space = "natural")
+#' }
+#'
+#' @importFrom stats qnorm
+#' @export
+confint.beezdemand_hurdle <- function(
+  object,
+  parm = NULL,
+  level = 0.95,
+  report_space = c("internal", "natural"),
+  ...
+) {
+  report_space <- match.arg(report_space)
+
+  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  coefs <- object$model$coefficients
+  se_vec <- object$model$se
+
+  if (is.null(coefs) || length(coefs) == 0) {
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      component = character(),
+      estimate_scale = character()
+    ))
+  }
+
+  # Normalize coefficient names
+  if ("logQ0" %in% names(coefs) && !("log_q0" %in% names(coefs))) {
+    names(coefs)[names(coefs) == "logQ0"] <- "log_q0"
+  }
+  if ("logQ0" %in% names(se_vec) && !("log_q0" %in% names(se_vec))) {
+    names(se_vec)[names(se_vec) == "logQ0"] <- "log_q0"
+  }
+
+  # Filter parameters if parm is specified
+  if (!is.null(parm)) {
+    keep <- names(coefs) %in% parm
+    coefs <- coefs[keep]
+    se_vec <- se_vec[keep]
+  }
+
+  if (length(coefs) == 0) {
+    warning("No requested parameters found in model.", call. = FALSE)
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      component = character(),
+      estimate_scale = character()
+    ))
+  }
+
+  z <- stats::qnorm((1 + level) / 2)
+
+  # Determine component and scale for each parameter
+  coef_names <- names(coefs)
+  component <- dplyr::case_when(
+    coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
+    grepl("^logsigma_|^rho_", coef_names) ~ "variance",
+    TRUE ~ "fixed"
+  )
+
+  # Internal scale for each parameter
+  estimate_scale <- dplyr::case_when(
+    coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "logit",
+    coef_names %in% c("log_q0", "log_alpha", "log_k") ~ "log",
+    TRUE ~ "natural"
+  )
+
+  # Compute CIs on internal scale
+  conf_low <- coefs - z * se_vec
+  conf_high <- coefs + z * se_vec
+  estimates <- coefs
+
+  # Transform to natural scale if requested
+  if (report_space == "natural") {
+    log_params <- coef_names %in% c("log_q0", "log_alpha", "log_k")
+    if (any(log_params)) {
+      estimates[log_params] <- exp(coefs[log_params])
+      conf_low[log_params] <- exp(conf_low[log_params])
+      conf_high[log_params] <- exp(conf_high[log_params])
+      estimate_scale[log_params] <- "natural"
+    }
+  }
+
+  # Build display names
+  term_display <- dplyr::case_when(
+    coef_names == "log_q0" & report_space == "natural" ~ "Q0",
+    coef_names == "log_alpha" & report_space == "natural" ~ "alpha",
+    coef_names == "log_k" & report_space == "natural" ~ "k",
+    coef_names == "log_q0" ~ "log(Q0)",
+    coef_names == "log_alpha" ~ "log(alpha)",
+    coef_names == "log_k" ~ "log(k)",
+    TRUE ~ coef_names
+  )
+
+  tibble::tibble(
+    term = term_display,
+    estimate = unname(estimates),
+    conf.low = unname(conf_low),
+    conf.high = unname(conf_high),
+    level = level,
+    component = component,
+    estimate_scale = estimate_scale
+  )
+}

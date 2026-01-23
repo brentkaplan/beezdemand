@@ -1,4 +1,4 @@
-#' @importFrom lifecycle deprecated is_present
+#' @importFrom lifecycle deprecated is_present deprecate_soft deprecate_warn
 NULL
 
 ## Lifecycle badges for exported functions

@@ -21,6 +21,14 @@
 
 ##' Analyzes purchase task data
 ##'
+##' `r lifecycle::badge("superseded")`
+##'
+##' `FitCurves()` has been superseded by [fit_demand_fixed()], which provides a
+##' modern S3 interface with standardized methods (`summary()`, `tidy()`,
+##' `glance()`, `predict()`). `FitCurves()` will continue to work but is no
+##' longer recommended for new code. See `vignette("migration-guide")` for
+##' migration instructions.
+##'
 ##' @title FitCurves
 ##' @param dat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
@@ -39,14 +47,26 @@
 ##' @param param_space Character. One of "natural" (default) or "log10". Specifies whether parameters (Q0, alpha) are estimated in natural space or log10-transformed space.
 ##' @return If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3 element list consisting of (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com> Shawn Gilroy <shawn.gilroy@@temple.edu>
+##' @seealso [fit_demand_fixed()] for the modern interface
 ##' @examples
 ##' ## Analyze using Hursh & Silberberg, 2008 equation with a k fixed to 2
 ##' FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
 ##' @export
-FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x", 
+FitCurves <- function(dat, equation, k, agg = NULL, detailed = FALSE, xcol = "x",
                       ycol = "y", idcol = "id", groupcol = NULL, lobound, hibound,
                       constrainq0 = NULL, startq0 = NULL, startalpha = NULL,
                       param_space = c("natural", "log10")) {
+    # Soft deprecation warning - only shows once per session
+    lifecycle::deprecate_soft(
+      "0.2.0",
+      "FitCurves()",
+      "fit_demand_fixed()",
+      details = c(
+        "i" = "FitCurves() returns raw data frames; fit_demand_fixed() returns a",
+        " " = "structured S3 object with summary(), tidy(), glance(), and predict().",
+        "i" = "See vignette('migration-guide') for migration instructions."
+      )
+    )
 
     if (missing(dat)) stop("Need to provide a dataframe!", call. = FALSE)
     origcols <- colnames(dat)

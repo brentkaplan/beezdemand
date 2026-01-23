@@ -72,6 +72,23 @@
 #' @param method Fitting method for `nlme::nlme()` ("ML" or "REML"). Default "ML".
 #' @param ... Additional arguments passed to `nlme::nlme()`.
 #'
+#' @examples
+#' \donttest{
+#' # Basic mixed-effects demand fit with apt data
+#' # Transform consumption using LL4 for the zben equation
+#' apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
+#'
+#' fit <- fit_demand_mixed(
+#'   data = apt_ll4,
+#'   y_var = "y_ll4",
+#'   x_var = "x",
+#'   id_var = "id",
+#'   equation_form = "zben"
+#' )
+#' print(fit)
+#' summary(fit)
+#' }
+#'
 #' @return An object of class `beezdemand_nlme`.
 #'
 #' @importFrom nlme nlme pdDiag nlmeControl fixef

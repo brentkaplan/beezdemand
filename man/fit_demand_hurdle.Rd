@@ -114,7 +114,7 @@ use:
 }
 
 \examples{
-\dontrun{
+\donttest{
 # Load example data
 data(apt)
 

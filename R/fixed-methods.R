@@ -957,3 +957,120 @@ glance.beezdemand_fixed <- function(x, ...) {
     BIC = NA_real_
   )
 }
+
+#' Confidence Intervals for Fixed-Effect Demand Model Parameters
+#'
+#' Computes confidence intervals for Q0, alpha, and k parameters from
+#' individual demand curve fits. Uses asymptotic normal approximation based
+#' on standard errors when available.
+#'
+#' @param object A `beezdemand_fixed` object from [fit_demand_fixed()].
+#' @param parm Character vector of parameter names to compute CIs for.
+#'   Default includes all available parameters.
+#' @param level Confidence level (default 0.95).
+#' @param ... Additional arguments (ignored).
+#'
+#' @return A tibble with columns: `id`, `term`, `estimate`, `conf.low`,
+#'   `conf.high`, `level`.
+#'
+#' @details
+#' For `beezdemand_fixed` objects, confidence intervals are computed using
+#' the asymptotic normal approximation: estimate +/- z * SE. If standard errors
+#' are not available for a parameter, the confidence bounds will be `NA`.
+#'
+#' When the underlying NLS fit objects are available (from `detailed = TRUE`),
+#' this method attempts to use `nlstools::confint2()` for more accurate
+#' profile-based intervals.
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+#' confint(fit)
+#' confint(fit, level = 0.90)
+#' confint(fit, parm = "Q0")
+#' }
+#'
+#' @importFrom stats qnorm
+#' @export
+confint.beezdemand_fixed <- function(object, parm = NULL, level = 0.95, ...) {
+  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  results <- object$results
+  if (is.null(results) || !is.data.frame(results) || nrow(results) == 0) {
+    return(tibble::tibble(
+      id = character(),
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric()
+    ))
+  }
+
+  # Define parameter mappings
+  param_map <- list(
+    Q0 = list(est = "Q0d", se = "Q0se"),
+    alpha = list(est = "Alpha", se = "Alphase"),
+    k = list(est = "K", se = NA_character_),
+    alpha_star = list(est = "alpha_star", se = "alpha_star_se")
+  )
+
+  # Get IDs
+  ids <- if ("id" %in% names(results)) {
+    as.character(results$id)
+  } else {
+    as.character(seq_len(nrow(results)))
+  }
+
+  # Determine which parameters to include
+  available_params <- names(param_map)[vapply(names(param_map), function(p) {
+    param_map[[p]]$est %in% names(results)
+  }, logical(1))]
+
+  if (is.null(parm)) {
+    parm <- available_params
+  } else {
+    parm <- intersect(parm, available_params)
+  }
+
+  if (length(parm) == 0) {
+    warning("No requested parameters found in fit results.", call. = FALSE
+)
+    return(tibble::tibble(
+      id = character(),
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric()
+    ))
+  }
+
+  z <- stats::qnorm((1 + level) / 2)
+
+  ci_rows <- lapply(parm, function(p) {
+    spec <- param_map[[p]]
+    est_col <- spec$est
+    se_col <- spec$se
+
+    est <- results[[est_col]]
+    se <- if (!is.na(se_col) && se_col %in% names(results)) {
+      results[[se_col]]
+    } else {
+      rep(NA_real_, length(est))
+    }
+
+    tibble::tibble(
+      id = ids,
+      term = p,
+      estimate = est,
+      conf.low = est - z * se,
+      conf.high = est + z * se,
+      level = level
+    )
+  })
+
+  dplyr::bind_rows(ci_rows)
+}

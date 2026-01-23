@@ -1981,6 +1981,153 @@ glance.beezdemand_nlme <- function(x, ...) {
   )
 }
 
+#' Confidence Intervals for Mixed-Effects Demand Model Parameters
+#'
+#' Computes confidence intervals for fixed effect parameters from an NLME-based
+#' mixed-effects demand model.
+#'
+#' @param object A `beezdemand_nlme` object from [fit_demand_mixed()].
+#' @param parm Character vector of parameter names to compute CIs for.
+#'   Default includes all fixed effect parameters.
+#' @param level Confidence level (default 0.95).
+#' @param method Character. Method for computing intervals:
+#'   - `"wald"`: Wald-type intervals using asymptotic normality (default, fast)
+#'   - `"profile"`: Profile likelihood intervals via `nlme::intervals()` (slower
+#'     but more accurate for small samples)
+#' @param ... Additional arguments passed to `nlme::intervals()` when
+#'   `method = "profile"`.
+#'
+#' @return A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `component`.
+#'
+#' @details
+#' For Wald intervals, confidence bounds are computed as estimate ± z * SE
+#' using standard errors from the model summary.
+#'
+#' For profile intervals, `nlme::intervals()` is called on the underlying
+#' nlme model object. This method provides more accurate intervals but can be
+#' computationally intensive for complex models.
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_demand_mixed(data, y_var = "y", x_var = "x", id_var = "id")
+#' confint(fit)
+#' confint(fit, level = 0.90)
+#' confint(fit, method = "profile")  # More accurate but slower
+#' }
+#'
+#' @importFrom stats qnorm
+#' @export
+confint.beezdemand_nlme <- function(
+  object,
+  parm = NULL,
+  level = 0.95,
+  method = c("wald", "profile"),
+  ...
+) {
+  method <- match.arg(method)
+
+  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  if (is.null(object$model)) {
+    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      component = character()
+    ))
+  }
+
+  if (method == "profile") {
+    # Use nlme::intervals() for profile-based intervals
+    int_result <- tryCatch(
+      nlme::intervals(object$model, level = level, which = "fixed", ...),
+      error = function(e) {
+        warning(
+          "Profile intervals failed: ", conditionMessage(e),
+          "\nFalling back to Wald intervals.", call. = FALSE
+        )
+        return(NULL)
+      }
+    )
+
+    if (!is.null(int_result) && "fixed" %in% names(int_result)) {
+      fixed_int <- int_result$fixed
+      terms <- rownames(fixed_int)
+
+      if (!is.null(parm)) {
+        keep <- terms %in% parm
+        fixed_int <- fixed_int[keep, , drop = FALSE]
+        terms <- terms[keep]
+      }
+
+      return(tibble::tibble(
+        term = terms,
+        estimate = fixed_int[, "est."],
+        conf.low = fixed_int[, "lower"],
+        conf.high = fixed_int[, "upper"],
+        level = level,
+        component = "fixed"
+      ))
+    }
+    # Fall through to Wald if profile failed
+  }
+
+  # Wald-type intervals
+  summ <- summary(object$model)
+  fixed_table <- summ$tTable
+
+  if (is.null(fixed_table) || nrow(fixed_table) == 0) {
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      component = character()
+    ))
+  }
+
+  terms <- rownames(fixed_table)
+  estimates <- fixed_table[, "Value"]
+  se <- fixed_table[, "Std.Error"]
+
+  if (!is.null(parm)) {
+    keep <- terms %in% parm
+    terms <- terms[keep]
+    estimates <- estimates[keep]
+    se <- se[keep]
+  }
+
+  if (length(terms) == 0) {
+    warning("No requested parameters found in model.", call. = FALSE)
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      component = character()
+    ))
+  }
+
+  z <- stats::qnorm((1 + level) / 2)
+
+  tibble::tibble(
+    term = terms,
+    estimate = unname(estimates),
+    conf.low = unname(estimates - z * se),
+    conf.high = unname(estimates + z * se),
+    level = level,
+    component = "fixed"
+  )
+}
+
 #' Extract Coefficients from a beezdemand_nlme Model
 #'
 #' Provides methods to extract fixed effects, random effects, or subject-specific

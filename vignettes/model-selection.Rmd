@@ -1,0 +1,350 @@
+---
+title: "Choosing the Right Demand Model"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Choosing the Right Demand Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  comment = NA
+)
+```
+
+# Introduction
+
+The `beezdemand` package provides multiple approaches for fitting behavioral
+economic demand curves. This guide helps you choose the right modeling approach
+for your data and research questions.
+
+## When to Use Demand Analysis
+
+Demand analysis is appropriate when you want to:
+- Quantify the value of a reinforcer (e.g., drugs, food, activities)
+- Compare demand elasticity across conditions or groups
+- Estimate key parameters like intensity (Q0), elasticity (alpha), and breakpoint
+- Compute derived metrics like Pmax (price at maximum expenditure) and Omax (maximum expenditure)
+
+## Quick Decision Guide
+
+| Your Situation | Recommended Approach | Function |
+|----------------|---------------------|----------|
+| Individual curves, quick exploration | Fixed-effects NLS | `fit_demand_fixed()` |
+| Group comparisons, repeated measures | Mixed-effects | `fit_demand_mixed()` |
+| Many zeros, two-part modeling | Hurdle model | `fit_demand_hurdle()` |
+| Cross-commodity substitution | Cross-price models | `fit_cp_*()` |
+
+---
+
+# Data Quality First
+
+Before fitting any model, always check your data for systematic responding.
+
+```{r check-systematic, eval=FALSE}
+library(beezdemand)
+library(dplyr)
+
+# Use the apt dataset
+data(apt)
+
+# Check for systematic demand
+systematic_check <- CheckUnsystematic(apt)
+head(systematic_check)
+
+# Filter to systematic data only (those that pass all criteria)
+systematic_ids <- systematic_check |>
+  filter(TotalPass == 3) |>
+  pull(id)
+
+apt_clean <- apt |>
+  filter(as.character(id) %in% systematic_ids)
+
+cat("Systematic participants:", n_distinct(apt_clean$id),
+    "of", n_distinct(apt$id), "\n")
+```
+
+The `CheckUnsystematic()` function applies criteria from Stein et al. (2015)
+to identify nonsystematic responding patterns including:
+
+- **Trend (DeltaQ)**: Consumption should decrease as price increases
+- **Bounce**: Limited price-to-price increases in consumption
+- **Reversals**: No consumption after sustained zeros
+
+---
+
+# Tier 1: Fixed-Effects NLS
+
+## When to Use
+
+Use `fit_demand_fixed()` when you want:
+
+- Individual demand curves for each participant
+- Quick exploration of your data
+- Compatibility with traditional analysis approaches
+- Per-subject parameter estimates without pooling information
+
+## Complete Example
+
+```{r fixed-example, eval=FALSE}
+library(beezdemand)
+data(apt)
+
+# Fit individual demand curves using the Hursh & Silberberg equation
+fit_fixed <- fit_demand_fixed(
+  data = apt,
+  equation = "hs",
+  k = 2
+)
+
+# Print summary
+print(fit_fixed)
+
+# Get tidy coefficient table
+tidy(fit_fixed) |> head()
+
+# Get model-level statistics
+glance(fit_fixed)
+
+# Plot individual curves
+plot(fit_fixed, type = "individual", ids = c("19", "51"))
+```
+
+---
+
+# Tier 2: Mixed-Effects Models
+
+## When to Use
+
+Use `fit_demand_mixed()` when you want:
+
+- Group comparisons with statistical inference
+- Random effects to account for individual variability
+- Post-hoc comparisons between conditions
+- Estimated marginal means for factor levels
+
+## The LL4 Transformation
+
+For the mixed-effects approach with the `zben` equation form, transform your
+consumption data using the LL4 (log-log with 4-parameter adjustment):
+
+```{r ll4-transform, eval=FALSE}
+# Transform consumption using LL4
+apt_ll4 <- apt |>
+  dplyr::mutate(y_ll4 = ll4(y))
+
+# View the transformation
+apt_ll4 |>
+  dplyr::filter(id == 19) |>
+  dplyr::select(id, x, y, y_ll4)
+```
+
+## Complete Example
+
+```{r mixed-example, eval=FALSE}
+# Fit mixed-effects model
+fit_mixed <- fit_demand_mixed(
+  data = apt_ll4,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "id",
+  equation_form = "zben"
+)
+
+# Print summary
+print(fit_mixed)
+summary(fit_mixed)
+```
+
+## Post-Hoc Analysis with emmeans
+
+For experimental designs with factors, you can use `emmeans` for post-hoc comparisons:
+
+```{r emmeans-example, eval=FALSE}
+# For a model with factors (example with ko dataset):
+data(ko)
+
+# Prepare data with LL4 transformation
+ko_ll4 <- ko |>
+  dplyr::mutate(y_ll4 = ll4(y))
+
+fit <- fit_demand_mixed(
+  data = ko_ll4,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey",
+  factors = c("drug", "dose"),
+  equation_form = "zben"
+)
+
+# Get estimated marginal means for Q0 across drug levels
+emms <- get_demand_param_emms(fit, param = "Q0", by = "drug")
+
+# Compare drug conditions
+comps <- get_demand_comparisons(fit, param = "Q0", by = "drug")
+```
+
+---
+
+# Tier 3: Hurdle Models
+
+## When to Use
+
+Use `fit_demand_hurdle()` when you have:
+
+- Substantial zero consumption values (>10-15% zeros)
+- Need for two-part modeling (zeros vs. positive consumption)
+- Interest in both participation and consumption intensity
+- TMB backend for fast, stable estimation
+
+## Understanding the Two-Part Structure
+
+The hurdle model separates:
+
+1. **Part I**: Probability of zero consumption (logistic regression)
+2. **Part II**: Log-consumption given positive response (nonlinear mixed effects)
+
+## Complete Example
+
+```{r hurdle-example, eval=FALSE}
+# Fit hurdle model with 3 random effects
+fit_hurdle <- fit_demand_hurdle(
+  data = apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  random_effects = c("zeros", "q0", "alpha")
+)
+
+# Summary
+summary(fit_hurdle)
+
+# Population demand curve
+plot(fit_hurdle, type = "demand")
+
+# Probability of zero consumption
+plot(fit_hurdle, type = "probability")
+```
+
+## Comparing Hurdle Models
+
+Compare nested models using likelihood ratio tests:
+
+```{r hurdle-compare, eval=FALSE}
+# Fit full model (3 random effects)
+fit_hurdle3 <- fit_demand_hurdle(
+  data = apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  random_effects = c("zeros", "q0", "alpha")
+)
+
+# Fit simplified model (2 random effects)
+fit_hurdle2 <- fit_demand_hurdle(
+  data = apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  random_effects = c("zeros", "q0")  # No alpha random effect
+)
+
+# Compare models
+compare_hurdle_models(fit_hurdle3, fit_hurdle2)
+```
+
+---
+
+# Choosing Parameters
+
+## The k Parameter
+
+The scaling constant `k` controls the asymptotic range of the demand curve:
+
+- **`k = 2`**: Good default for most purchase task data
+- **`k = "ind"`**: Calculate k individually for each participant
+- **`k = "fit"`**: Estimate k as a free parameter
+- **`k = "share"`**: Fit a single k shared across all participants
+
+```{r k-example, eval=FALSE}
+# Different k specifications
+fit_k2 <- fit_demand_fixed(apt, k = 2)          # Fixed at 2
+fit_kind <- fit_demand_fixed(apt, k = "ind")    # Individual
+fit_kfit <- fit_demand_fixed(apt, k = "fit")    # Free parameter
+fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
+```
+
+## Interpreting Key Parameters
+
+| Parameter | Interpretation | Typical Range |
+|-----------|---------------|---------------|
+| Q0 (Intensity) | Consumption at zero price | Dataset-dependent |
+| alpha (Elasticity) | Rate of consumption decline | 0.0001 - 0.1 |
+| Pmax | Price at maximum expenditure | Dataset-dependent |
+| Omax | Maximum expenditure | Dataset-dependent |
+| Breakpoint | First price with zero consumption | Dataset-dependent |
+
+---
+
+# Troubleshooting FAQ
+
+## Model Convergence Issues
+
+**Problem**: Model fails to converge or produces unreasonable estimates.
+
+**Solutions**:
+
+1. Check data quality with `CheckUnsystematic()`
+2. Try different starting values
+3. Use a simpler model (fewer random effects)
+4. Ensure sufficient data per participant
+
+## Zero Handling
+
+**Problem**: Many zeros in consumption data.
+
+**Solutions**:
+
+1. Use `fit_demand_hurdle()` which explicitly models zeros
+2. For fixed-effects: zeros are automatically excluded for log-transformed equations
+3. Consider data quality: excessive zeros may indicate nonsystematic responding
+
+## Parameter Comparison Across Models
+
+**Problem**: Comparing alpha values between different model types.
+
+**Solution**: Be aware of parameterization differences:
+
+- Hurdle models estimate on natural-log scale internally
+- Use `tidy(fit, report_space = "log10")` for comparable output
+- The transformation is: `log10(alpha) = log(alpha) / log(10)`
+
+---
+
+# Summary
+
+| Approach | Best For | Key Features | Handles Zeros |
+|----------|----------|--------------|---------------|
+| `fit_demand_fixed()` | Individual curves, quick analysis | Simple, per-subject estimates | Excludes |
+| `fit_demand_mixed()` | Group comparisons, repeated measures | Random effects, emmeans integration | LL4 transform |
+| `fit_demand_hurdle()` | Data with many zeros | Two-part model, TMB backend | Explicitly models |
+
+## Next Steps
+
+- **Getting Started**: See `vignette("beezdemand")` for basic usage
+- **Mixed Models**: See `vignette("mixed-demand")` for detailed mixed-effects examples
+- **Hurdle Models**: See `vignette("hurdle-demand-models")` for hurdle model details
+- **Cross-Price**: See `vignette("cross-price-models")` for substitution analyses
+
+---
+
+# References
+
+- Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psychological Review, 115*(1), 186-198.
+- Koffarnus, M. N., Franck, C. T., Stein, J. S., & Bickel, W. K. (2015). A modified exponential behavioral economic demand model to better describe consumption data. *Experimental and Clinical Psychopharmacology, 23*(6), 504-512.
+- Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology, 23*(5), 377-386.
+- Kaplan, B. A., Franck, C. T., McKee, K., Gilroy, S. P., & Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral economic demand: An introduction. *Perspectives on Behavior Science, 44*(2), 333-358.

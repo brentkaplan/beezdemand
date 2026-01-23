@@ -15,6 +15,32 @@ test_that("fit_demand_fixed works on apt data", {
   expect_true("n_fail" %in% names(fit))
 })
 
+test_that("fit_demand_fixed reproduces FitCurves golden values (HS, k=2)", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  test_ids <- c(19, 30, 38)
+  test_data <- apt[apt$id %in% test_ids, ]
+
+  fit <- suppressWarnings(fit_demand_fixed(test_data, equation = "hs", k = 2))
+  res <- fit$results
+
+  expect_s3_class(res, "data.frame")
+  expect_true(all(test_ids %in% res$id))
+  expect_true(all(c("Q0d", "Alpha", "K", "alpha_star", "alpha_star_se") %in% names(res)))
+
+  row_19 <- res[res$id == 19, ]
+  expect_equal(row_19$K, 2)
+  expect_equal(row_19$Q0d, 10.158664, tolerance = 0.01)
+  expect_equal(row_19$Alpha, 0.002047574, tolerance = 1e-5)
+  expect_equal(
+    row_19$alpha_star,
+    -row_19$Alpha / log(1 - 1 / (row_19$K * log(10))),
+    tolerance = 1e-8
+  )
+  expect_true(is.finite(row_19$alpha_star_se) && row_19$alpha_star_se >= 0)
+})
+
 
 test_that("fit_demand_fixed print method works", {
   data(apt, package = "beezdemand")

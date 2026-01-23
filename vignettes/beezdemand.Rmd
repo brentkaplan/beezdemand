@@ -10,7 +10,12 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo=TRUE, comment=NA)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  comment = NA,
+  dev = "ragg_png",
+  dpi = 144
+)
 ```
 
 # Rationale Behind `beezdemand`
@@ -535,3 +540,17 @@ If you are interested in using open source software for analyzing demand curve d
 - Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., & Bickel, W. K. (2015). Identification and management of nonsystematic purchase task data: Toward best practice. *Experimental and Clinical Psychopharmacology 23* (5), 377-386. https://dx.doi.org/10.1037/pha0000020
 
 - Hursh, S. R., Raslear, T. G., Shurtleff, D., Bauman, R., & Simmons, L. (1988). A cost‐benefit analysis of demand for food. *Journal of the Experimental Analysis of Behavior, 50* (3), 419-440. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1338908/
+
+- Kaplan, B. A., Franck, C. T., McKee, K., Gilroy, S. P., & Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral economic demand: An introduction. *Perspectives on Behavior Science, 44* (2), 333–358. https://doi.org/10.1007/s40614-021-00299-7
+
+- Koffarnus, M. N., Kaplan, B. A., Franck, C. T., Rzeszutek, M. J., & Traxler, H. K. (2022). Behavioral economic demand modeling chronology, complexities, and considerations: Much ado about zeros. *Behavioural Processes, 199*, 104646. https://doi.org/10.1016/j.beproc.2022.104646
+
+- Reed, D. D., Kaplan, B. A., & Gilroy, S. P. (2025). *Handbook of Operant Behavioral Economics: Demand, Discounting, Methods, and Applications* (1st ed.). Academic Press. https://shop.elsevier.com/books/handbook-of-operant-behavioral-economics/reed/978-0-323-95745-8
+
+- Kaplan, B. A. (2025). Quantitative models of operant demand. In D. D. Reed, B. A. Kaplan, & S. P. Gilroy (Eds.), *Handbook of Operant Behavioral Economics: Demand, Discounting, Methods, and Applications* (1st ed.). Academic Press. https://doi.org/10.1016/C2023-0-04538-3
+
+- Kaplan, B. A., & Reed, D. D. (2025). shinybeez: A Shiny app for behavioral economic easy demand and discounting. *Journal of the Experimental Analysis of Behavior*. https://doi.org/10.1002/jeab.70000
+
+- Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N. (2025). Overviewing the exponential model of demand and introducing a simplification that solves issues of span, scale, and zeros. *Experimental and Clinical Psychopharmacology*.
+
+- Rzeszutek, M. J., Regnier, S. D., Kaplan, B. A., Traxler, H. K., Stein, J. S., Tomlinson, D., & Koffarnus, M. N. (2025). Identification and management of nonsystematic cross-commodity data: Toward best practice. *Experimental and Clinical Psychopharmacology*. In press.

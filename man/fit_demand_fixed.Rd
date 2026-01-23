@@ -67,7 +67,7 @@ It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt)
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 print(fit)

@@ -104,9 +104,10 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>, Shawn Gilroy <shawn.gilroy@@temple.edu>
 ##' @examples 
 ##' ## Interactively view plots from output from FitCurves
-##' \donttest{
-##' fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
-##' PlotCurves(fc, ask = TRUE)}
+##' if (interactive()) {
+##'   fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
+##'   PlotCurves(fc, ask = TRUE)
+##' }
 ##' @export
 PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = T, ...) {
   
@@ -164,9 +165,9 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
 ##' @import ggplot2
 ##' @examples 
 ##' ## Creates a single plot from elements of an object created by FitCurves
-##' \donttest{
-##' fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
-##' PlotCurve(fc$adfs[[1]], fc$dfres[1, ], fc$newdats[[1]])
+##' if (interactive()) {
+##'   fc <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
+##'   PlotCurve(fc$adfs[[1]], fc$dfres[1, ], fc$newdats[[1]])
 ##' }
 ##' @export
 PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "apa")) {

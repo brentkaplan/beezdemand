@@ -90,7 +90,7 @@ NULL
 #'   \code{\link{simulate_hurdle_data}}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Load example data
 #' data(apt)
 #'

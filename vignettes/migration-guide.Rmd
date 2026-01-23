@@ -1,0 +1,251 @@
+---
+title: "Migration Guide: FitCurves to fit_demand_fixed"
+author: "beezdemand Developers"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Migration Guide: FitCurves to fit_demand_fixed}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  comment = NA,
+  dev = "ragg_png",
+  dpi = 144
+)
+library(beezdemand)
+library(dplyr)
+```
+
+# Overview
+
+Starting with beezdemand version 0.2.0, `FitCurves()` has been superseded by
+`fit_demand_fixed()`. This guide helps you migrate existing code to use the
+modern API.
+## Why Migrate?
+
+The new `fit_demand_fixed()` function provides:
+
+- **Structured S3 objects** with consistent methods (`summary()`, `tidy()`,
+  `glance()`, `predict()`, `plot()`)
+- **Tidyverse integration** via tibble outputs from `tidy()` and `glance()`
+- **Standardized API** consistent with other beezdemand model classes
+- **Better reproducibility** with stored call and parameter information
+
+`FitCurves()` will continue to work but is no longer actively developed.
+New features will only be added to `fit_demand_fixed()`.
+
+# Quick Migration Reference
+
+| FitCurves() | fit_demand_fixed() | Notes |
+|-------------|---------------------|-------|
+| `dat` | `data` | Renamed for consistency |
+| `xcol` | `x_var` | Renamed for consistency |
+| `ycol` | `y_var` | Renamed for consistency |
+| `idcol` | `id_var` | Renamed for consistency |
+| `detailed = TRUE` | Always detailed | fit_demand_fixed always returns full results |
+| `groupcol` | Not supported | Use factor models instead |
+| Returns data.frame | Returns S3 object | Use `tidy()` for data frame output |
+
+# Basic Migration
+
+## Before (FitCurves)
+
+```{r fitcurves-example, eval = TRUE}
+# Old approach
+results <- FitCurves(
+  dat = apt,
+  equation = "hs",
+  k = 2,
+  xcol = "x",
+  ycol = "y",
+  idcol = "id"
+)
+
+# results is a data.frame with all parameters
+head(results)
+```
+
+## After (fit_demand_fixed)
+
+```{r fit-demand-fixed-example}
+# New approach
+fit <- fit_demand_fixed(
+  data = apt,
+  equation = "hs",
+  k = 2,
+  x_var = "x",
+  y_var = "y",
+  id_var = "id"
+)
+
+# fit is a structured S3 object
+print(fit)
+```
+
+# Extracting Results
+
+## Getting Parameter Estimates
+
+### Before (FitCurves)
+
+```{r extract-old, eval = TRUE}
+# FitCurves returns a data frame directly
+results <- FitCurves(apt, "hs", k = 2)
+q0_values <- results$Q0d
+alpha_values <- results$Alpha
+```
+
+### After (fit_demand_fixed)
+
+```{r extract-new}
+# Use tidy() for a tibble of coefficients
+fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+coefs <- tidy(fit)
+head(coefs)
+
+# Or access the results data frame directly
+head(fit$results)
+```
+
+## Getting Model-Level Statistics
+
+### Before (FitCurves)
+
+```{r stats-old, eval = TRUE}
+# Manual calculation required
+results <- FitCurves(apt, "hs", k = 2)
+n_converged <- sum(!is.na(results$Alpha))
+mean_r2 <- mean(results$R2, na.rm = TRUE)
+```
+
+### After (fit_demand_fixed)
+
+```{r stats-new}
+# Use glance() for model-level statistics
+fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+glance(fit)
+
+# Or use summary() for comprehensive output
+summary(fit)
+```
+
+# Working with Predictions
+
+## Before (FitCurves)
+
+```{r pred-old, eval = TRUE}
+# Required detailed = TRUE and manual extraction
+results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
+# Predictions stored in list element
+predictions <- results$newdats  # List of data frames
+```
+
+## After (fit_demand_fixed)
+
+```{r pred-new}
+# Use predict() method
+fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+
+# Predict at new prices
+new_prices <- data.frame(x = c(0, 0.5, 1, 2, 5, 10))
+preds <- predict(fit, newdata = new_prices)
+head(preds)
+```
+
+# Plotting
+
+## Before (FitCurves)
+
+```{r plot-old, eval = TRUE}
+# Used separate PlotCurves() function
+results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
+PlotCurves(results)
+```
+
+## After (fit_demand_fixed)
+
+```{r plot-new, fig.width = 6, fig.height = 4}
+# Use plot() method directly on the fit object
+fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+
+# Plot first 5 subjects
+plot(fit, ids = unique(apt$id)[1:5], facet = TRUE)
+```
+
+# Advanced Features
+
+## Aggregated Data (Mean/Pooled)
+
+Both functions support aggregation, with identical syntax:
+
+```{r agg-example}
+# Fit to mean data
+fit_mean <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Mean")
+tidy(fit_mean)
+```
+
+## Parameter Space
+
+Both functions support log10 parameterization:
+
+```{r param-space}
+# Fit in log10 space
+fit_log <- fit_demand_fixed(
+  apt,
+  equation = "hs",
+  k = 2,
+  param_space = "log10"
+)
+
+# tidy() can report in either scale
+tidy(fit_log, report_space = "log10") |> head()
+tidy(fit_log, report_space = "natural") |> head()
+```
+
+# Feature Comparison
+
+| Feature | FitCurves() | fit_demand_fixed() |
+|---------|-------------|---------------------|
+| Equations | hs, koff, linear | hs, koff, linear |
+| k options | numeric, "ind", "fit", "range", "share" | numeric, "ind", "fit", "range" |
+| Aggregation | "Mean", "Pooled" | "Mean", "Pooled" |
+| Parameter space | natural, log10 | natural, log10 |
+| `summary()` method | No | Yes |
+| `tidy()` method | No | Yes |
+| `glance()` method | No | Yes |
+| `predict()` method | No | Yes |
+| `plot()` method | No | Yes |
+| `coef()` method | No | Yes |
+
+# Suppressing Deprecation Warnings
+
+If you need to continue using `FitCurves()` without warnings (e.g., in legacy
+code or during a gradual migration), you can suppress the deprecation message:
+
+```{r suppress-warning, eval = TRUE}
+# Suppress deprecation warning temporarily
+rlang::with_options(
+  lifecycle_verbosity = "quiet",
+  FitCurves(apt, "hs", k = 2)
+)
+```
+
+However, we strongly recommend migrating to `fit_demand_fixed()` for new code.
+
+# Need Help?
+
+If you encounter issues during migration:
+
+1. Check the function documentation: `?fit_demand_fixed`
+2. Review the [beezdemand GitHub repository](https://github.com/brentkaplan/beezdemand)
+3. Open an issue if you find bugs or have feature requests
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```

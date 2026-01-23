@@ -122,3 +122,21 @@ Fits a nonlinear mixed-effects model for behavioral economic demand data.
 The function allows Q0 and alpha parameters to vary by specified factors
 and supports different demand equation forms.
 }
+\examples{
+\donttest{
+# Basic mixed-effects demand fit with apt data
+# Transform consumption using LL4 for the zben equation
+apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
+
+fit <- fit_demand_mixed(
+  data = apt_ll4,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "id",
+  equation_form = "zben"
+)
+print(fit)
+summary(fit)
+}
+
+}

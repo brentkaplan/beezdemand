@@ -59,9 +59,21 @@ If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3
 \description{
 Analyzes purchase task data
 }
+\details{
+`r lifecycle::badge("superseded")`
+
+`FitCurves()` has been superseded by [fit_demand_fixed()], which provides a
+modern S3 interface with standardized methods (`summary()`, `tidy()`,
+`glance()`, `predict()`). `FitCurves()` will continue to work but is no
+longer recommended for new code. See `vignette("migration-guide")` for
+migration instructions.
+}
 \examples{
 ## Analyze using Hursh & Silberberg, 2008 equation with a k fixed to 2
 FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
+}
+\seealso{
+[fit_demand_fixed()] for the modern interface
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>

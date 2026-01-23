@@ -11,6 +11,8 @@ vignette: >
 knitr::opts_chunk$set(
     collapse = TRUE,
     comment = "#>",
+    dev = "ragg_png",
+    dpi = 144,
     fig.width = 7,
     fig.height = 5
 )

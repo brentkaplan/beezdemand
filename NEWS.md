@@ -1,5 +1,23 @@
 # beezdemand (development version)
 
+## Deprecations
+
+* `FitCurves()` is now superseded by `fit_demand_fixed()`. `FitCurves()` will
+  continue to work but emits a soft deprecation warning. The new function
+  provides a modern S3 interface with `summary()`, `tidy()`, `glance()`,
+  `predict()`, and `plot()` methods. See `vignette("migration-guide")` for
+  migration instructions.
+
+## New Features
+
+* New `confint()` methods for extracting confidence intervals from all model
+  classes: `beezdemand_fixed`, `beezdemand_hurdle`, `beezdemand_nlme`, and
+  `cp_model_nls`.
+
+* New migration guide vignette (`vignette("migration-guide")`) documenting the
+
+  transition from `FitCurves()` to `fit_demand_fixed()`.
+
 ## Breaking Changes
 
 * `summary()` methods for `beezdemand_cp_hurdle`, `beezdemand_joint_hurdle`,

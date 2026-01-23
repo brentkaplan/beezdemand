@@ -817,6 +817,130 @@ glance.cp_model_nls <- function(x, ...) {
   )
 }
 
+#' Confidence Intervals for Cross-Price NLS Model Parameters
+#'
+#' Computes confidence intervals for parameters from a nonlinear cross-price
+#' demand model using `nlstools::confint2()`.
+#'
+#' @param object A `cp_model_nls` object from [fit_cp_nls()].
+#' @param parm Character vector of parameter names to compute CIs for.
+#'   Default includes all parameters.
+#' @param level Confidence level (default 0.95).
+#' @param method Character. Method for computing intervals passed to
+#'   `nlstools::confint2()`:
+#'   - `"asymptotic"` (default): Wald-type asymptotic intervals
+#'   - `"profile"`: Profile-t confidence intervals
+#' @param ... Additional arguments passed to `nlstools::confint2()`.
+#'
+#' @return A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `method`.
+#'
+#' @details
+#' This method wraps `nlstools::confint2()` to provide confidence intervals
+#' for the log10-parameterized coefficients (`log10_qalone`, `I`, `log10_beta`).
+#'
+#' For back-transformed natural-scale confidence intervals, apply the
+#' transformation: `10^conf.low` and `10^conf.high` for log10-scale parameters.
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
+#' confint(fit)
+#' confint(fit, level = 0.90)
+#' confint(fit, method = "profile")  # Profile-t intervals
+#' }
+#'
+#' @importFrom nlstools confint2
+#' @export
+confint.cp_model_nls <- function(
+  object,
+  parm = NULL,
+  level = 0.95,
+  method = c("asymptotic", "profile"),
+  ...
+) {
+  method <- match.arg(method)
+
+  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  if (is.null(object$model)) {
+    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    return(tibble::tibble(
+      term = character(),
+      estimate = numeric(),
+      conf.low = numeric(),
+      conf.high = numeric(),
+      level = numeric(),
+      method = character()
+    ))
+  }
+
+  # Get estimates
+  coefs <- stats::coef(object$model)
+  terms <- names(coefs)
+
+  # Filter parameters if parm is specified
+  if (!is.null(parm)) {
+    keep <- terms %in% parm
+    if (!any(keep)) {
+      warning("No requested parameters found in model.", call. = FALSE)
+      return(tibble::tibble(
+        term = character(),
+        estimate = numeric(),
+        conf.low = numeric(),
+        conf.high = numeric(),
+        level = numeric(),
+        method = character()
+      ))
+    }
+  }
+
+  # Compute confidence intervals using nlstools
+  ci_result <- tryCatch(
+    nlstools::confint2(object$model, level = level, method = method, ...),
+    error = function(e) {
+      warning(
+        "Confidence interval computation failed: ", conditionMessage(e),
+        call. = FALSE
+      )
+      return(NULL)
+    }
+  )
+
+  if (is.null(ci_result)) {
+    return(tibble::tibble(
+      term = terms,
+      estimate = unname(coefs),
+      conf.low = NA_real_,
+      conf.high = NA_real_,
+      level = level,
+      method = method
+    ))
+  }
+
+  ci_df <- as.data.frame(ci_result)
+  ci_terms <- rownames(ci_df)
+
+  # Filter parameters if parm is specified
+  if (!is.null(parm)) {
+    keep <- ci_terms %in% parm
+    ci_df <- ci_df[keep, , drop = FALSE]
+    ci_terms <- ci_terms[keep]
+    coefs <- coefs[keep]
+  }
+
+  tibble::tibble(
+    term = ci_terms,
+    estimate = unname(coefs[ci_terms]),
+    conf.low = ci_df[, 1],
+    conf.high = ci_df[, 2],
+    level = level,
+    method = method
+  )
+}
+
 #' Extract coefficients from a linear cross-price model in tidy format
 #'
 #' @param x A cp_model_lm object.

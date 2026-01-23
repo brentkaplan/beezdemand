@@ -251,6 +251,43 @@ test_that("fit_demand_mixed runs without factors (intercept only)", {
   expect_equal(result$param_info$num_params_alpha, 1)
 })
 
+test_that("fit_demand_mixed recovers known parameters (simplified, natural)", {
+  skip_on_cran()
+  skip_if_not_installed("nlme")
+
+  set.seed(1)
+  n_subjects <- 12
+  prices <- 10^seq(-2, 2, length.out = 8)
+
+  Q0_true <- 100
+  alpha_true <- 0.001
+
+  dat <- expand.grid(id = factor(seq_len(n_subjects)), x = prices)
+  dat$y <- Q0_true * exp(-(alpha_true) * (Q0_true) * dat$x)
+  dat$y <- dat$y + rnorm(nrow(dat), 0, 1)
+  dat$y[dat$y < 0] <- 0
+
+  fit <- suppressMessages(fit_demand_mixed(
+    data = dat,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    equation_form = "simplified",
+    param_space = "natural",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ 1),
+    verbose = FALSE
+  ))
+
+  s <- suppressMessages(suppressWarnings(summary(fit, report_space = "natural")))
+  coefs <- s$coefficients
+
+  q0_hat <- as.numeric(coefs$estimate[coefs$term == "Q0"][1])
+  alpha_hat <- as.numeric(coefs$estimate[coefs$term == "alpha"][1])
+
+  expect_lt(abs(q0_hat - Q0_true), 5)
+  expect_lt(abs(alpha_hat - alpha_true), 1e-4)
+})
+
 
 test_that("fit_demand_mixed runs with single factor", {
   skip_on_cran()
