@@ -651,9 +651,16 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0, param_space
     dfrow
 }
 
-##' Fits curve to pooled data
+##' Fits curve to pooled or mean data
 ##'
-##' @title Fit Pooled Curves
+##' `r lifecycle::badge("superseded")`
+##'
+##' `FitMeanCurves()` has been superseded by [fit_demand_fixed()] with the
+##' `agg` parameter. `FitMeanCurves()` will continue to work but is no longer
+##' recommended for new code. See `vignette("migration-guide")` for migration
+##' instructions.
+##'
+##' @title Fit Pooled/Mean Curves
 ##' @param dat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
 ##' @param k A numeric vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample. If k = "fit", k will be a free parameter
@@ -668,6 +675,7 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0, param_space
 ##' @param vartext Character vector specifying indices to report on plots. Valid indices include "Q0d", "Alpha", "Q0e", "EV", "Pmaxe", "Omaxe", "Pmaxd", "Omaxd", "K", "Q0se", "Alphase", "R2", "AbsSS"
 ##' @return Data frame
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @seealso [fit_demand_fixed()] for the modern interface with `agg` parameter
 ##' @import graphics
 ##' @import grDevices
 ##' @examples
@@ -675,6 +683,17 @@ ExtractCoefs <- function(pid, adf, fit, eq, cols, kest, constrainq0, param_space
 ##' FitMeanCurves(apt[sample(apt$id, 5), ], "hs", k = 2, method = "Mean")
 ##' @export
 FitMeanCurves <- function(dat, equation, k, remq0e = FALSE, replfree = NULL, rem0 = FALSE, nrepl = NULL, replnum = NULL, plotcurves = FALSE, method = NULL, indpoints = TRUE, vartext = NULL) {
+    # Soft deprecation warning - only shows once per session
+    lifecycle::deprecate_soft(
+      "0.2.0",
+      "FitMeanCurves()",
+      "fit_demand_fixed(agg = )",
+      details = c(
+        "i" = "Use fit_demand_fixed(data, agg = 'Mean') or fit_demand_fixed(data, agg = 'Pooled')",
+        " " = "for the modern interface with summary(), tidy(), glance(), and predict().",
+        "i" = "See vignette('migration-guide') for migration instructions."
+      )
+    )
 
     if (is.null(method) || !any(c("Mean", "Pooled") %in% method)) stop("No method specified. Choose either 'Mean' or 'Pooled'")
 

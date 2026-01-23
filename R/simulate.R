@@ -94,18 +94,18 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
     colnames(seeds) <- runs
     seeds <- t(seeds)
 
-    ## Reshape long
+    ## Reshape long (using tidyr instead of reshape2)
     simvalues <- data.frame(simvalues)
-    simvalues <- reshape2::melt(simvalues, id.vars = "x")
-    colnames(simvalues) <- c("x", "id", "y")
-    simvalues <- simvalues[, c("id", "x", "y")]
+    simvalues <- tidyr::pivot_longer(simvalues, cols = -x,
+                                     names_to = "id", values_to = "y")
+    simvalues <- as.data.frame(simvalues[, c("id", "x", "y")])
     simvalues$id <- gsub("X", "", simvalues$id)
     simvalues$id <- as.numeric(simvalues$id)
 
     simvaluesraw <- data.frame(simvaluesraw)
-    simvaluesraw <- reshape2::melt(simvaluesraw, id.vars = "x")
-    colnames(simvaluesraw) <- c("x", "id", "y")
-    simvaluesraw <- simvaluesraw[, c("id", "x", "y")]
+    simvaluesraw <- tidyr::pivot_longer(simvaluesraw, cols = -x,
+                                        names_to = "id", values_to = "y")
+    simvaluesraw <- as.data.frame(simvaluesraw[, c("id", "x", "y")])
     simvaluesraw$id <- gsub("X", "", simvaluesraw$id)
     simvaluesraw$id <- as.numeric(simvaluesraw$id)
 

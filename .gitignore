@@ -51,6 +51,8 @@ docs/
 vignettes/*_cache/
 vignettes/*_files/
 vignettes/*.html
+vignettes/*.R
+vignettes/.build.timestamp
 
 # R CMD check outputs #
 #######################
