@@ -1,0 +1,255 @@
+url: https://brentkaplan.github.io/beezdemand/
+
+llm-docs: true
+
+template:
+  bootstrap: 5
+  light-switch: true
+  bslib:
+    bg: "#FFFFFF"
+    fg: "#1E3242"
+    primary: "#2B4560"
+    secondary: "#A25F5F"
+    success: "#7D9C7F"
+    info: "#5D8AA8"
+    base_font:
+      google: "Open Sans"
+    heading_font:
+      google: "Open Sans"
+    code_font:
+      google: "Fira Mono"
+
+home:
+  title: beezdemand - Behavioral Economic Demand Analysis
+  description: >
+    R package for behavioral economic demand analysis. Fits exponential and
+    modified exponential demand curves, mixed-effects models, and hurdle models
+    for purchase task data.
+  strip_header: false
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github, lightswitch]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: Getting Started
+          href: articles/beezdemand.html
+        - text: Choosing the Right Model
+          href: articles/model-selection.html
+        - text: "---"
+        - text: Model Types
+        - text: Hurdle Demand Models
+          href: articles/hurdle-demand-models.html
+        - text: Mixed-Effects Models
+          href: articles/mixed-demand.html
+        - text: Cross-Price Models
+          href: articles/cross-price-models.html
+        - text: "---"
+        - text: Migration
+        - text: "Migration Guide: FitCurves to fit_demand_fixed"
+          href: articles/migration-guide.html
+
+reference:
+  - title: Modern Model Fitting
+    desc: >
+      Recommended functions for fitting demand models. These return structured
+      S3 objects with consistent methods for inspection and inference.
+    contents:
+      - fit_demand_fixed
+      - fit_demand_mixed
+      - fit_demand_hurdle
+      - fit_joint_hurdle
+      - fit_cp_nls
+      - fit_cp_linear
+      - fit_cp_hurdle
+
+  - title: Legacy Model Fitting
+    desc: >
+      Original functions for demand curve fitting. These are superseded by
+      modern alternatives but remain available for backward compatibility.
+    contents:
+      - FitCurves
+      - FitMeanCurves
+
+  - title: Data Quality & Screening
+    desc: Functions for checking systematic responding patterns in demand data.
+    contents:
+      - check_systematic_demand
+      - check_systematic_cp
+      - CheckUnsystematic
+      - check_unsystematic_cp
+
+  - title: Data Preparation
+    desc: Functions for preparing and transforming demand data.
+    contents:
+      - ChangeData
+      - ReplaceZeros
+      - CheckCols
+      - RecodeOutliers
+
+  - title: Model Inspection
+    desc: S3 methods for extracting information from fitted models.
+    contents:
+      - starts_with("tidy")
+      - starts_with("glance")
+      - starts_with("confint.")
+      - starts_with("coef")
+      - starts_with("fixef.")
+      - starts_with("ranef.")
+      - starts_with("AIC.")
+      - starts_with("BIC.")
+      - starts_with("logLik.")
+      - get_subject_pars
+      - extract_coefficients
+
+  - title: Prediction
+    desc: Methods for generating predictions from fitted models.
+    contents:
+      - starts_with("predict.")
+
+  - title: Post-Hoc Analysis
+    desc: Functions for post-hoc comparisons and inference.
+    contents:
+      - get_demand_param_emms
+      - get_demand_comparisons
+      - get_demand_param_trends
+      - get_observed_demand_param_emms
+      - get_individual_coefficients
+      - cp_posthoc_slopes
+      - cp_posthoc_intercepts
+      - interpret_cp_interaction
+
+  - title: Derived Metrics
+    desc: Functions for computing demand-derived metrics like Pmax and Omax.
+    contents:
+      - calc_omax_pmax
+      - calc_observed_pmax_omax
+      - calc_group_metrics
+      - beezdemand_calc_pmax_omax
+      - beezdemand_calc_pmax_omax_vec
+      - GetAnalyticPmax
+      - GetAnalyticPmaxFallback
+      - GetEmpirical
+      - GetDescriptives
+      - GetK
+      - GetSharedK
+      - calculate_amplitude_persistence
+
+  - title: Model Comparison
+    desc: Functions for comparing models.
+    contents:
+      - compare_hurdle_models
+      - compare_cp_hurdle_models
+      - ExtraF
+
+  - title: Visualization
+    desc: Plotting functions and themes.
+    contents:
+      - starts_with("plot.")
+      - PlotCurve
+      - PlotCurves
+      - plot_subject
+      - theme_beezdemand
+      - theme_apa
+      - palette_beezdemand
+      - scale_color_beezdemand
+      - scale_fill_beezdemand
+
+  - title: Transformations
+    desc: Data transformation utilities.
+    contents:
+      - ll4
+      - ll4_inv
+      - scale_ll4
+      - pseudo_ll4_trans
+      - lambertW
+
+  - title: Simulation
+    desc: Functions for simulating demand data.
+    contents:
+      - simulate_hurdle_data
+      - SimulateDemand
+      - run_hurdle_monte_carlo
+      - print_mc_summary
+      - GetValsForSim
+
+  - title: Summary Methods
+    desc: Summary functions for parameter exploration.
+    contents:
+      - get_hurdle_param_summary
+      - get_cp_hurdle_param_summary
+      - get_cp_hurdle_predictions
+      - starts_with("summary.")
+      - starts_with("print.")
+
+  - title: Data Preparation (Joint Models)
+    desc: Functions for preparing data for joint models.
+    contents:
+      - prepare_joint_data
+      - fit_joint_latent
+      - fit_joint_saturated
+      - compute_joint_start_values_latent
+      - compute_joint_start_values_saturated
+
+  - title: Validation & Data Checking
+    desc: Functions for validating data inputs.
+    contents:
+      - validate_demand_data
+      - validate_hurdle_data
+      - validate_cp_data
+      - validate_collapse_levels
+      - validate_param_scale
+      - new_beezdemand_systematicity
+
+  - title: Utilities & Helpers
+    desc: Internal utility functions and helpers.
+    contents:
+      - annotation_logticks2
+      - build_fixed_rhs
+      - collapse_factor_levels
+      - format_param_name
+      - get_canonical_metric
+      - get_canonical_param
+      - get_equation_spec
+      - get_legacy_mapping
+      - get_pooled_nls_starts
+      - calc_omax_pmax_vec
+
+  - title: Documentation Topics
+    desc: Documentation-only pages that group related methods.
+    contents:
+      - cp
+      - cp-hurdle-utils
+      - fixed-demand
+      - beezdemand_cp_hurdle-methods
+      - joint-hurdle
+      - joint-hurdle-methods
+      - param-registry
+      - plot-theme
+      - pmax-omax-engine
+      - systematic-wrappers
+      - coef-methods
+      - reexports
+
+  - title: Example Datasets
+    desc: Built-in datasets for examples and testing.
+    contents:
+      - apt
+      - apt_full
+      - ko
+      - etm
+      - cannabisCigarettes
+      - lowNicClean
+      - ongoingETM
+
+  - title: Deprecated
+    desc: Functions that have been deprecated and will be removed in future versions.
+    contents:
+      - pull
+
+authors:
+  Brent Kaplan:
+    href: https://github.com/brentkaplan

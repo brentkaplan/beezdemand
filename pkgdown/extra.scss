@@ -1,0 +1,92 @@
+/* codedbx brand polish for pkgdown (preferred over template overrides) */
+
+:root,
+[data-bs-theme="light"] {
+  --codedbx-primary: #2b4560;
+  --codedbx-primary-bg: #2b4560;
+  --codedbx-secondary: #a25f5f;
+  --codedbx-accent: #5d8aa8;
+  --codedbx-dark: #1e3242;
+  --codedbx-light: #f2f2f2;
+  --codedbx-code-bg: #faf8f4;
+  --codedbx-output-bg: #f5f5f5;
+}
+
+[data-bs-theme="dark"] {
+  --codedbx-primary: #9db7cf;
+  --codedbx-primary-bg: #2b4560;
+  --codedbx-secondary: #d7a7a7;
+  --codedbx-accent: #86b7d3;
+  --codedbx-dark: #e6e6e6;
+  --codedbx-light: #2a2a2a;
+  --codedbx-code-bg: #151515;
+  --codedbx-output-bg: #1c1c1c;
+}
+
+/* Typography + readable defaults */
+body {
+  line-height: 1.65;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  color: var(--codedbx-primary);
+}
+
+/* Links */
+a {
+  color: var(--codedbx-accent);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus {
+  color: var(--codedbx-primary);
+  text-decoration: underline;
+}
+
+/* Code */
+pre {
+  background-color: var(--codedbx-code-bg);
+  border-left: 3px solid var(--codedbx-primary);
+  border-radius: 6px;
+}
+
+code {
+  background-color: var(--codedbx-code-bg);
+  color: var(--codedbx-dark);
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Console/output blocks */
+.r-output,
+.r-out,
+div.sourceCode + pre {
+  background-color: var(--codedbx-output-bg);
+  border-left: 3px solid var(--codedbx-secondary);
+  border-radius: 6px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+}
+
+thead th {
+  background-color: var(--codedbx-primary-bg);
+  color: #ffffff;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+tbody tr:hover {
+  background-color: var(--codedbx-light);
+}

@@ -37,9 +37,14 @@ lib/*
 internal_docs/*
 PRD.md
 CLAUDE.md
+AGENTS.md
 .agents/
 .claude/
 engineering/
+
+# pkgdown site (built by GitHub Actions) #
+###########################################
+docs/
 
 # Vignette outputs #
 ####################
