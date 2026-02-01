@@ -14,3 +14,12 @@ if (interactive() &&
   }, silent = TRUE)
 
 }
+
+# ---- Graphics device for callr subprocesses ----
+# pkgdown builds run examples/vignettes in callr subprocesses. On macOS, the
+# default PNG/quartz device can segfault when measuring text (grid/ggplot2).
+# Prefer ragg for stable, headless rendering during builds.
+if (identical(Sys.getenv("CALLR_IS_RUNNING"), "true") &&
+    requireNamespace("ragg", quietly = TRUE)) {
+  options(device = ragg::agg_png)
+}
