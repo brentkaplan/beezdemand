@@ -2,6 +2,542 @@
 #' @importFrom utils head modifyList
 NULL
 
+# ==============================================================================
+# Internal Helper Functions for Hurdle Models
+# ==============================================================================
+
+#' Prepare Hurdle Model Data
+#'
+#' @description
+#' Internal function to prepare data structures for TMB hurdle model fitting.
+#' Converts subject IDs to 0-indexed integers and creates derived variables.
+#'
+#' @param data A validated data frame.
+#' @param y_var Character string, name of consumption variable.
+#' @param x_var Character string, name of price variable.
+#' @param id_var Character string, name of subject ID variable.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{price}{Numeric vector of prices}
+#'   \item{consumption}{Numeric vector of consumption values}
+#'   \item{delta}{Integer vector (1 if consumption == 0, else 0)}
+#'   \item{logQ}{Log consumption (0 for zeros)}
+#'   \item{subject_id}{0-indexed subject IDs for C++}
+#'   \item{subject_levels}{Unique subject IDs (original)}
+#'   \item{n_subjects}{Number of unique subjects}
+#' }
+#' @keywords internal
+.hurdle_prepare_data <- function(data, y_var, x_var, id_var) {
+  ids <- data[[id_var]]
+  price <- as.numeric(data[[x_var]])
+  consumption <- as.numeric(data[[y_var]])
+
+  # Create derived variables
+  delta <- as.integer(consumption == 0)
+  logQ <- ifelse(consumption > 0, log(consumption), 0)
+
+  # Create subject mapping (0-indexed for C++)
+  subject_levels <- unique(ids)
+  n_subjects <- length(subject_levels)
+  subject_map <- setNames(
+    seq_along(subject_levels) - 1L,
+    as.character(subject_levels)
+  )
+  subject_id <- as.integer(subject_map[as.character(ids)])
+
+  list(
+    price = price,
+    consumption = consumption,
+    delta = delta,
+    logQ = logQ,
+    subject_id = subject_id,
+    subject_levels = subject_levels,
+    n_subjects = n_subjects
+  )
+}
+
+
+#' Build TMB Data List for Hurdle Model
+#'
+#' @description
+#' Internal function to construct the TMB data list for hurdle demand models.
+#'
+#' @param prepared_data List from \code{.hurdle_prepare_data()}.
+#' @param model_name Character string specifying the TMB model.
+#' @param epsilon Small constant for log(price + epsilon) in Part I.
+#'
+#' @return A list suitable for \code{TMB::MakeADFun(data = ...)}.
+#' @keywords internal
+.hurdle_build_tmb_data <- function(prepared_data, model_name, epsilon) {
+  list(
+    model = model_name,
+    price = prepared_data$price,
+    logQ = prepared_data$logQ,
+    delta = prepared_data$delta,
+    subject_id = prepared_data$subject_id,
+    n_subjects = prepared_data$n_subjects,
+    epsilon = epsilon
+  )
+}
+
+
+#' Generate Default Starting Values for Hurdle Model
+#'
+#' @description
+#' Internal function to generate sensible default starting values for TMB
+#' hurdle model optimization.
+#'
+#' @param consumption Numeric vector of consumption values.
+#' @param n_re Number of random effects (2 or 3).
+#' @param n_subjects Number of subjects.
+#' @param has_k Logical, whether the model has a k parameter.
+#'
+#' @return A named list of starting values for TMB parameters.
+#' @keywords internal
+.hurdle_default_starts <- function(consumption, n_re, n_subjects, has_k) {
+  mean_positive_consumption <- mean(
+    consumption[consumption > 0],
+    na.rm = TRUE
+  )
+  if (is.na(mean_positive_consumption) || mean_positive_consumption <= 0) {
+    mean_positive_consumption <- 10
+  }
+
+  if (n_re == 3) {
+    start_values <- list(
+      beta0 = -2.5,
+      beta1 = 1.0,
+      log_q0 = log(mean_positive_consumption),
+      log_alpha = log(0.5),
+      logsigma_a = 0.5,
+      logsigma_b = -0.5,
+      logsigma_c = -1.5,
+      logsigma_e = -0.5,
+      rho_ab_raw = 0,
+      rho_ac_raw = 0,
+      rho_bc_raw = 0
+    )
+    if (has_k) {
+      start_values$log_k <- log(2.0)
+    }
+  } else {
+    # 2 random effects model
+    start_values <- list(
+      beta0 = -2.5,
+      beta1 = 1.0,
+      log_q0 = log(mean_positive_consumption),
+      log_alpha = log(0.5),
+      logsigma_a = 0.5,
+      logsigma_b = -0.5,
+      logsigma_e = -0.5,
+      rho_ab_raw = 0
+    )
+    if (has_k) {
+      start_values$log_k <- log(2.0)
+    }
+  }
+
+  start_values$u <- matrix(0, nrow = n_subjects, ncol = n_re)
+  start_values
+}
+
+
+#' Normalize User-Provided Starting Values
+#'
+#' @description
+#' Internal function to handle backwards-compatibility and normalization of
+#' user-provided starting values.
+#'
+#' @param start_values User-provided named list of starting values.
+#' @param n_re Number of random effects (2 or 3).
+#' @param has_k Logical, whether the model has a k parameter.
+#'
+#' @return Normalized starting values list.
+#' @keywords internal
+.hurdle_normalize_starts <- function(start_values, n_re, has_k) {
+  # Backwards-compatibility for older parameter names
+
+  if (!is.null(start_values$logQ0) && is.null(start_values$log_q0)) {
+    start_values$log_q0 <- start_values$logQ0
+    start_values$logQ0 <- NULL
+  }
+  if (!is.null(start_values$k) && is.null(start_values$log_k)) {
+    if (!is.numeric(start_values$k) || length(start_values$k) != 1 ||
+        !is.finite(start_values$k) || start_values$k <= 0) {
+      stop("'start_values$k' must be a single positive numeric value.",
+           call. = FALSE)
+    }
+    start_values$log_k <- log(start_values$k)
+    start_values$k <- NULL
+  }
+  if (!is.null(start_values$alpha) && is.null(start_values$log_alpha)) {
+    if (!is.numeric(start_values$alpha) || length(start_values$alpha) != 1 ||
+        !is.finite(start_values$alpha) || start_values$alpha <= 0) {
+      stop("'start_values$alpha' must be a single positive numeric value.",
+           call. = FALSE)
+    }
+    start_values$log_alpha <- log(start_values$alpha)
+    start_values$alpha <- NULL
+  }
+
+  if (!has_k && !is.null(start_values$log_k)) {
+    warning(
+      "Ignoring 'start_values$log_k' for simplified_exponential (SND) model.",
+      call. = FALSE
+    )
+    start_values$log_k <- NULL
+  }
+
+  # Handle rho_bc parameterization for 3-RE models
+  if (n_re == 3) {
+    r_ab <- if (!is.null(start_values$rho_ab_raw)) {
+      tanh(start_values$rho_ab_raw)
+    } else {
+      0
+    }
+    r_ac <- if (!is.null(start_values$rho_ac_raw)) {
+      tanh(start_values$rho_ac_raw)
+    } else {
+      0
+    }
+    denom <- sqrt((1 - r_ab^2) * (1 - r_ac^2))
+
+    rho_bc_target <- NULL
+    if (!is.null(start_values$rho_bc)) {
+      rho_bc_target <- start_values$rho_bc
+      start_values$rho_bc <- NULL
+    } else if (!is.null(start_values$rho_bc_raw)) {
+      rho_bc_target <- tanh(start_values$rho_bc_raw)
+    }
+
+    if (!is.null(rho_bc_target)) {
+      if (!is.numeric(rho_bc_target) || length(rho_bc_target) != 1 ||
+          !is.finite(rho_bc_target)) {
+        stop("'start_values$rho_bc' must be a single finite numeric value.",
+             call. = FALSE)
+      }
+      if (rho_bc_target <= -1 || rho_bc_target >= 1) {
+        stop("'start_values$rho_bc' must be in (-1, 1).", call. = FALSE)
+      }
+
+      rho_bc_partial <- if (is.finite(denom) && denom > 1e-8) {
+        (rho_bc_target - r_ab * r_ac) / denom
+      } else {
+        0
+      }
+      rho_bc_partial <- max(min(rho_bc_partial, 0.999999), -0.999999)
+      start_values$rho_bc_raw <- atanh(rho_bc_partial)
+    }
+  }
+
+  start_values
+}
+
+
+#' Get Parameter Names for Hurdle Model
+#'
+#' @description
+#' Internal function to get the names of fixed effect parameters and
+#' variance component names based on model configuration.
+#'
+#' @param n_re Number of random effects (2 or 3).
+#' @param has_k Logical, whether the model has a k parameter.
+#'
+#' @return A list with fixed_names, var_names, and rho_names.
+#' @keywords internal
+.hurdle_get_param_names <- function(n_re, has_k) {
+  if (n_re == 3) {
+    fixed_names <- c(
+      "beta0", "beta1", "log_q0", "log_alpha",
+      "logsigma_a", "logsigma_b", "logsigma_c", "logsigma_e",
+      "rho_ab_raw", "rho_ac_raw", "rho_bc_raw"
+    )
+    if (has_k) {
+      fixed_names <- append(fixed_names, "log_k", after = 3)
+    }
+
+    var_names <- c(
+      "alpha", "var_a", "var_b", "var_c",
+      "cov_ab", "cov_ac", "cov_bc", "var_e"
+    )
+    if (has_k) {
+      var_names <- append(var_names, "k", after = 1)
+    }
+
+    rho_names <- c("rho_ab", "rho_ac", "rho_bc")
+  } else {
+    fixed_names <- c(
+      "beta0", "beta1", "log_q0", "log_alpha",
+      "logsigma_a", "logsigma_b", "logsigma_e", "rho_ab_raw"
+    )
+    if (has_k) {
+      fixed_names <- append(fixed_names, "log_k", after = 3)
+    }
+
+    var_names <- c("alpha", "var_a", "var_b", "cov_ab", "var_e")
+    if (has_k) {
+      var_names <- append(var_names, "k", after = 1)
+    }
+
+    rho_names <- c("rho_ab")
+  }
+
+  list(fixed_names = fixed_names, var_names = var_names, rho_names = rho_names)
+}
+
+
+#' Extract Results from TMB Hurdle Fit
+#'
+#' @description
+#' Internal function to extract coefficients, standard errors, and derived
+#' quantities from a fitted TMB hurdle model.
+#'
+#' @param opt Optimization result from \code{nlminb()}.
+#' @param obj TMB objective function object.
+#' @param sdr TMB sdreport object (can be NULL).
+#' @param param_names List from \code{.hurdle_get_param_names()}.
+#' @param n_subjects Number of subjects.
+#' @param n_re Number of random effects.
+#'
+#' @return A list with coefficients, se, variance_components, correlations,
+#'   and random effects matrix.
+#' @keywords internal
+.hurdle_extract_estimates <- function(opt, obj, sdr, param_names, n_subjects,
+                                      n_re) {
+  fixed_names <- param_names$fixed_names
+  var_names <- param_names$var_names
+  rho_names <- param_names$rho_names
+
+  coefficients <- opt$par_internal[fixed_names]
+
+  if (!is.null(sdr)) {
+    se <- summary(sdr, "fixed")[fixed_names, "Std. Error"]
+    adr <- summary(sdr, "report")
+    variance_components <- adr[var_names, , drop = FALSE]
+    correlations <- adr[rho_names, , drop = FALSE]
+    re_summary <- summary(sdr, "random")
+    u_hat <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
+  } else {
+    se <- rep(NA_real_, length(fixed_names))
+    names(se) <- fixed_names
+    variance_components <- matrix(
+      NA_real_,
+      nrow = length(var_names),
+      ncol = 2,
+      dimnames = list(var_names, c("Estimate", "Std. Error"))
+    )
+    correlations <- matrix(
+      NA_real_,
+      nrow = length(rho_names),
+      ncol = 2,
+      dimnames = list(rho_names, c("Estimate", "Std. Error"))
+    )
+    u_hat <- matrix(0, nrow = n_subjects, ncol = n_re)
+  }
+
+  list(
+    coefficients = coefficients,
+    se = se,
+    variance_components = variance_components,
+    correlations = correlations,
+    u_hat = u_hat
+  )
+}
+
+
+#' Transform Random Effects to Original Scale
+#'
+#' @description
+#' Internal function to transform standardized random effects (u) to the
+#' original scale using the Cholesky decomposition of the covariance matrix.
+#'
+#' @param u_hat Matrix of standardized random effects.
+#' @param coefficients Named vector of fixed effect coefficients.
+#' @param n_re Number of random effects.
+#'
+#' @return Matrix of random effects on original scale with named columns.
+#' @keywords internal
+.hurdle_transform_random_effects <- function(u_hat, coefficients, n_re) {
+  sigma_a <- exp(coefficients["logsigma_a"])
+  sigma_b <- exp(coefficients["logsigma_b"])
+  rho_ab <- tanh(coefficients["rho_ab_raw"])
+
+  if (n_re == 3) {
+    sigma_c <- exp(coefficients["logsigma_c"])
+    rho_ac <- tanh(coefficients["rho_ac_raw"])
+    rho_bc_partial <- tanh(coefficients["rho_bc_raw"])
+    rho_bc <- rho_ab * rho_ac +
+      rho_bc_partial * sqrt((1 - rho_ab^2) * (1 - rho_ac^2))
+
+    Sigma <- matrix(
+      c(
+        sigma_a^2,
+        sigma_a * sigma_b * rho_ab,
+        sigma_a * sigma_c * rho_ac,
+        sigma_a * sigma_b * rho_ab,
+        sigma_b^2,
+        sigma_b * sigma_c * rho_bc,
+        sigma_a * sigma_c * rho_ac,
+        sigma_b * sigma_c * rho_bc,
+        sigma_c^2
+      ),
+      nrow = 3
+    )
+
+    L <- tryCatch(
+      t(chol(Sigma)),
+      error = function(e) {
+        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2, sigma_c^2), nrow = 3)
+        t(chol(Sigma_fallback))
+      }
+    )
+    random_effects_mat <- t(L %*% t(u_hat))
+    colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
+  } else {
+    Sigma <- matrix(
+      c(
+        sigma_a^2,
+        sigma_a * sigma_b * rho_ab,
+        sigma_a * sigma_b * rho_ab,
+        sigma_b^2
+      ),
+      nrow = 2
+    )
+
+    L <- tryCatch(
+      t(chol(Sigma)),
+      error = function(e) {
+        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2), nrow = 2)
+        t(chol(Sigma_fallback))
+      }
+    )
+    random_effects_mat <- t(L %*% t(u_hat))
+    colnames(random_effects_mat) <- c("a_i", "b_i")
+  }
+
+  random_effects_mat
+}
+
+
+#' Compute Subject-Specific Parameters
+#'
+#' @description
+#' Internal function to compute subject-specific demand parameters from
+#' fixed effects and random effects.
+#'
+#' @param coefficients Named vector of fixed effect coefficients.
+#' @param random_effects_mat Matrix of transformed random effects.
+#' @param subject_levels Unique subject IDs.
+#' @param n_re Number of random effects.
+#' @param part2 Part II equation form.
+#' @param price Numeric vector of prices.
+#' @param subject_id 0-indexed subject IDs.
+#' @param epsilon Epsilon for breakpoint calculation.
+#' @param id_var Name of ID variable for output.
+#'
+#' @return Data frame of subject-specific parameters.
+#' @keywords internal
+.hurdle_compute_subject_pars <- function(coefficients, random_effects_mat,
+                                         subject_levels, n_re, part2,
+                                         price, subject_id, epsilon, id_var) {
+  n_subjects <- length(subject_levels)
+
+  if (n_re == 3) {
+    subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
+    subj_alpha <- exp(coefficients["log_alpha"] + random_effects_mat[, "c_i"])
+  } else {
+    subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
+    subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
+  }
+
+  # Calculate Omax and Pmax for each subject
+  if (identical(part2, "zhao_exponential")) {
+    omax_pmax <- calc_omax_pmax_vec(
+      Q0 = subj_Q0,
+      k = exp(coefficients["log_k"]),
+      alpha = subj_alpha
+    )
+  } else if (identical(part2, "exponential")) {
+    price_split <- split(price, subject_id)
+    price_list <- lapply(seq_len(n_subjects), function(i) {
+      price_split[[as.character(i - 1L)]]
+    })
+
+    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      params_df = data.frame(
+        alpha = subj_alpha,
+        q0 = subj_Q0,
+        k = rep(exp(coefficients["log_k"]), n_subjects)
+      ),
+      model_type = "hurdle_hs_stdq0",
+      param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+      price_list = price_list,
+      compute_observed = FALSE
+    )
+    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+  } else if (identical(part2, "simplified_exponential")) {
+    price_split <- split(price, subject_id)
+    price_list <- lapply(seq_len(n_subjects), function(i) {
+      price_split[[as.character(i - 1L)]]
+    })
+
+    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      params_df = data.frame(
+        alpha = subj_alpha,
+        q0 = subj_Q0
+      ),
+      model_type = "snd",
+      param_scales = list(alpha = "natural", q0 = "natural"),
+      price_list = price_list,
+      compute_observed = FALSE
+    )
+    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
+  } else {
+    stop("Internal error: unsupported part2: ", part2)
+  }
+
+  # Build subject parameters data frame
+  if (n_re == 3) {
+    subject_pars <- data.frame(
+      id = subject_levels,
+      a_i = random_effects_mat[, "a_i"],
+      b_i = random_effects_mat[, "b_i"],
+      c_i = random_effects_mat[, "c_i"],
+      Q0 = subj_Q0,
+      alpha = subj_alpha,
+      breakpoint = exp(
+        -(coefficients["beta0"] + random_effects_mat[, "a_i"]) /
+          coefficients["beta1"]
+      ) - epsilon,
+      Pmax = omax_pmax$Pmax,
+      Omax = omax_pmax$Omax,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    subject_pars <- data.frame(
+      id = subject_levels,
+      a_i = random_effects_mat[, "a_i"],
+      b_i = random_effects_mat[, "b_i"],
+      Q0 = subj_Q0,
+      alpha = subj_alpha,
+      breakpoint = exp(
+        -(coefficients["beta0"] + random_effects_mat[, "a_i"]) /
+          coefficients["beta1"]
+      ) - epsilon,
+      Pmax = omax_pmax$Pmax,
+      Omax = omax_pmax$Omax,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  names(subject_pars)[1] <- id_var
+  subject_pars
+}
+
+
+# =============================================================================
+
 #' Fit Two-Part Mixed Effects Hurdle Demand Model
 #'
 #' @description
