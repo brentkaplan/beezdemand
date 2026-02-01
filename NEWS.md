@@ -1,4 +1,4 @@
-# beezdemand (development version)
+# beezdemand 0.2.0
 
 ## Deprecations
 
@@ -8,7 +8,54 @@
   `predict()`, and `plot()` methods. See `vignette("migration-guide")` for
   migration instructions.
 
+* `FitMeanCurves()` is now superseded by `fit_demand_fixed(agg = "Mean")` or
+  `fit_demand_fixed(agg = "Pooled")`.
+
 ## New Features
+
+### Koffarnus Equation for Mixed-Effects Models
+
+* `fit_demand_mixed()` now supports the Koffarnus et al. (2015) exponentiated
+  equation via `equation_form = "koff"`. This enables fitting demand curves
+  using the same equation form available in `FitCurves()` within the modern
+  hierarchical mixed-effects framework. The `k` parameter can be user-specified
+  or auto-calculated from data range.
+
+### broom Integration
+
+* New `augment()` methods for all model classes provide fitted values and
+  residuals in a tidy tibble:
+  - `augment.beezdemand_fixed()`: Returns `.fitted`, `.resid`
+  - `augment.beezdemand_hurdle()`: Returns `.fitted`, `.fitted_link`,
+    `.fitted_prob`, `.resid`, `.resid_response`
+  - `augment.beezdemand_nlme()`: Returns `.fitted`, `.resid`, `.fixed`
+
+### Model Comparison Framework
+
+* New `compare_models()` function for unified model comparison across all
+  beezdemand model classes. Reports AIC, BIC, delta_AIC, delta_BIC, and
+  performs likelihood ratio tests when models are from the same backend
+  and nested.
+
+* New `anova()` S3 methods for comparing nested models:
+  - `anova.beezdemand_hurdle()`: LRT for nested hurdle models
+  - `anova.beezdemand_nlme()`: Delegates to nlme::anova.lme()
+
+### Model Diagnostics Suite
+
+* New `check_model()` generic with methods for all model classes. Performs
+  comprehensive diagnostics including convergence checks, boundary condition
+  detection, random effect variance assessment, and residual outlier detection.
+  Returns structured diagnostics object with issues and recommendations.
+
+* New `plot_residuals()` function creates diagnostic plots: residuals vs fitted,
+  histogram of residuals, and Q-Q plots. Works with all model classes via
+  the `augment()` infrastructure.
+
+* New `plot_qq()` function creates Q-Q plots for random effects to assess
+  normality assumptions in hurdle and NLME models.
+
+### Other New Features
 
 * New `confint()` methods for extracting confidence intervals from all model
   classes: `beezdemand_fixed`, `beezdemand_hurdle`, `beezdemand_nlme`, and
