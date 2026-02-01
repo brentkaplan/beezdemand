@@ -1701,3 +1701,90 @@ confint.beezdemand_hurdle <- function(
     estimate_scale = estimate_scale
   )
 }
+
+
+#' Augment a beezdemand_hurdle Model with Fitted Values and Residuals
+#'
+#' @description
+#' Returns the original data with fitted values, residuals, and predictions
+#' from a hurdle demand model. This enables easy model diagnostics and
+#' visualization with the tidyverse.
+#'
+#' @param x An object of class \code{beezdemand_hurdle}.
+#' @param newdata Optional data frame of new data for prediction. If NULL,
+#'   uses the original data from the model.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A tibble containing the original data plus:
+#'   \describe{
+#'     \item{.fitted}{Fitted demand values (natural scale)}
+#'     \item{.fitted_link}{Fitted values on log scale (Part II mean)}
+#'     \item{.fitted_prob}{Predicted probability of consumption (1 - P(zero))}
+#'     \item{.resid}{Residuals on log scale for positive observations, NA for zeros}
+#'     \item{.resid_response}{Residuals on response scale (y - .fitted)}
+#'   }
+#'
+#' @details
+#' For two-part hurdle models:
+#' - `.fitted` gives predicted demand on the natural consumption scale
+#' - `.fitted_prob` gives the predicted probability of positive consumption
+#' - `.resid` is defined only for positive observations as log(y) - .fitted_link
+#' - Observations with zero consumption have `.resid = NA` since they are
+#'   explained by Part I (the zero-probability component), not Part II
+#'
+#' @examples
+#' \dontrun{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#' augmented <- augment(fit)
+#'
+#' # Plot residuals
+#' library(ggplot2)
+#' ggplot(augmented, aes(x = .fitted, y = .resid)) +
+#'   geom_point(alpha = 0.5) +
+#'   geom_hline(yintercept = 0, linetype = "dashed")
+#' }
+#'
+#' @importFrom tibble as_tibble
+#' @export
+augment.beezdemand_hurdle <- function(x, newdata = NULL, ...) {
+  if (is.null(newdata)) {
+    data <- x$data
+  } else {
+    data <- newdata
+  }
+
+  if (is.null(data)) {
+    stop("No data available. Provide 'newdata' or ensure model contains data.",
+         call. = FALSE)
+  }
+
+  # Get variable names
+  y_var <- x$param_info$y_var
+  x_var <- x$param_info$x_var
+  id_var <- x$param_info$id_var
+
+  # Get predictions - demand type returns all columns we need
+  fitted_demand <- predict(x, newdata = data, type = "demand")
+
+  # Build output tibble
+  out <- tibble::as_tibble(data)
+
+  # Extract fitted values and probability from demand prediction
+  out$.fitted <- fitted_demand$.fitted
+  out$.fitted_prob <- 1 - fitted_demand$prob_zero  # P(consumption > 0)
+
+  # Log-scale fitted values (for Part II residuals)
+  out$.fitted_link <- fitted_demand$predicted_log_consumption
+
+  # Residuals: log(y) - fitted_link for positive y, NA for zeros
+  y_obs <- data[[y_var]]
+  out$.resid <- ifelse(
+    y_obs > 0,
+    log(y_obs) - out$.fitted_link,
+    NA_real_
+  )
+  out$.resid_response <- y_obs - out$.fitted
+
+  out
+}

@@ -1074,3 +1074,80 @@ confint.beezdemand_fixed <- function(object, parm = NULL, level = 0.95, ...) {
 
   dplyr::bind_rows(ci_rows)
 }
+
+
+#' Augment a beezdemand_fixed Model with Fitted Values and Residuals
+#'
+#' @description
+#' Returns the original data with fitted values and residuals from individual
+#' demand curve fits. This enables easy model diagnostics and visualization
+#' with the tidyverse.
+#'
+#' @param x An object of class \code{beezdemand_fixed}.
+#' @param newdata Optional data frame of new data for prediction. If NULL,
+#'   uses the original data from the model.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A tibble containing the original data plus:
+#'   \describe{
+#'     \item{.fitted}{Fitted demand values on the response scale}
+#'     \item{.resid}{Residuals (observed - fitted)}
+#'   }
+#'
+#' @details
+#' For "hs" equation models where fitting is done on the log10 scale,
+#' fitted values are back-transformed to the natural scale.
+#'
+#' @examples
+#' \dontrun{
+#' data(apt)
+#' fit <- fit_demand_fixed(apt, y_var = "y", x_var = "x", id_var = "id")
+#' augmented <- augment(fit)
+#'
+#' # Plot residuals by subject
+#' library(ggplot2)
+#' ggplot(augmented, aes(x = .fitted, y = .resid)) +
+#'   geom_point(alpha = 0.5) +
+#'   facet_wrap(~id) +
+#'   geom_hline(yintercept = 0, linetype = "dashed")
+#' }
+#'
+#' @importFrom tibble as_tibble
+#' @export
+augment.beezdemand_fixed <- function(x, newdata = NULL, ...) {
+  # Get variable names
+  y_var <- x$y_var %||% "y"
+  x_var <- x$x_var %||% "x"
+  id_var <- x$id_var %||% "id"
+
+  if (!is.null(newdata)) {
+    # Use predict for new data
+    preds <- predict(x, newdata = newdata)
+    out <- tibble::as_tibble(newdata)
+    out$.fitted <- preds$.fitted
+    y_obs <- newdata[[y_var]]
+    out$.resid <- if (!is.null(y_obs)) y_obs - out$.fitted else NA_real_
+    return(out)
+  }
+
+  # Use original data from data_used if available
+  if (is.null(x$data_used) || length(x$data_used) == 0) {
+    stop("No data available. Provide 'newdata' or ensure model retains data_used.",
+         call. = FALSE)
+  }
+
+  # Combine all subject data
+  all_data <- dplyr::bind_rows(x$data_used)
+
+  # Get predictions for each subject
+  results <- lapply(names(x$data_used), function(subj_id) {
+    subj_data <- x$data_used[[subj_id]]
+    subj_data[[id_var]] <- subj_id
+    preds <- predict(x, newdata = subj_data)
+    subj_data$.fitted <- preds$.fitted
+    subj_data$.resid <- subj_data[[y_var]] - subj_data$.fitted
+    subj_data
+  })
+
+  tibble::as_tibble(dplyr::bind_rows(results))
+}

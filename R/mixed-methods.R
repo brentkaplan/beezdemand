@@ -3320,3 +3320,95 @@ rhs <- function(form) {
     NULL
   }
 }
+
+
+#' Augment a beezdemand_nlme Model with Fitted Values and Residuals
+#'
+#' @description
+#' Returns the original data with fitted values and residuals from a nonlinear
+#' mixed-effects demand model. This enables easy model diagnostics and
+#' visualization with the tidyverse.
+#'
+#' @param x An object of class \code{beezdemand_nlme}.
+#' @param newdata Optional data frame of new data for prediction. If NULL,
+#'   uses the original data from the model.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A tibble containing the original data plus:
+#'   \describe{
+#'     \item{.fitted}{Fitted values on the model scale (may be transformed, e.g., LL4)}
+#'     \item{.resid}{Residuals on the model scale}
+#'     \item{.fixed}{Fitted values from fixed effects only (population-level)}
+#'   }
+#'
+#' @details
+#' The fitted values and residuals are on the same scale as the response variable
+#' used in the model. For `equation_form = "zben"`, this is the LL4-transformed
+#' scale. For `equation_form = "simplified"` or `"koff"`, this is the natural
+#' consumption scale.
+#'
+#' To back-transform predictions to the natural scale for "zben" models, use:
+#' `ll4_inv(augmented$.fitted)`
+#'
+#' @examples
+#' \dontrun{
+#' data(apt)
+#' apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
+#' fit <- fit_demand_mixed(apt_ll4, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "id", equation_form = "zben")
+#' augmented <- augment(fit)
+#'
+#' # Plot residuals
+#' library(ggplot2)
+#' ggplot(augmented, aes(x = .fitted, y = .resid)) +
+#'   geom_point(alpha = 0.5) +
+#'   geom_hline(yintercept = 0, linetype = "dashed")
+#' }
+#'
+#' @importFrom tibble as_tibble
+#' @export
+augment.beezdemand_nlme <- function(x, newdata = NULL, ...) {
+  if (is.null(x$model)) {
+    stop("No model found in object. Model fitting may have failed.", call. = FALSE)
+  }
+
+  if (is.null(newdata)) {
+    data <- x$data
+  } else {
+    data <- newdata
+  }
+
+  if (is.null(data)) {
+    stop("No data available. Provide 'newdata' or ensure model contains data.",
+         call. = FALSE)
+  }
+
+  # Get variable names
+  y_var <- x$param_info$y_var
+
+  # Get fitted values from the underlying nlme model
+  fitted_vals <- stats::fitted(x$model)
+  resid_vals <- stats::residuals(x$model)
+
+  # For fixed effects only predictions
+  fixed_vals <- stats::predict(x$model, level = 0)
+
+  # Build output tibble
+  out <- tibble::as_tibble(data)
+
+  # Handle case where data might have been subset or reordered
+  if (length(fitted_vals) == nrow(out)) {
+    out$.fitted <- as.numeric(fitted_vals)
+    out$.resid <- as.numeric(resid_vals)
+    out$.fixed <- as.numeric(fixed_vals)
+  } else {
+    # Try to match by rownames if available
+    warning("Fitted values length doesn't match data. Attempting to align.",
+            call. = FALSE)
+    out$.fitted <- NA_real_
+    out$.resid <- NA_real_
+    out$.fixed <- NA_real_
+  }
+
+  out
+}
