@@ -48,6 +48,7 @@
 ^\.github$
 ^[^/]+\.txt$
 ^tests/testthat/Rplots\.pdf$
+^vignettes/\.build\.timestamp$
 ^engineering$
 ^\.agents$
 ^\.env$
