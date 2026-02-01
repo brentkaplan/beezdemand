@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
     include = TRUE,
     collapse = TRUE,
     comment = NA,
-    dev = "ragg_png",
+    dev = "png",
     dpi = 144,
     fig.width = 6,
     fig.height = 4

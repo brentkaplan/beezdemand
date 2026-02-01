@@ -186,12 +186,25 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
     }
   }
 
-  # Determine best model by BIC
-  best_idx <- which.min(comparison$BIC)
+  # Determine best model by IC (prefer BIC, fallback to AIC)
+  best_idx <- NA_integer_
+  if (any(is.finite(comparison$BIC))) {
+    best_idx <- which.min(comparison$BIC)
+  } else if (any(is.finite(comparison$AIC))) {
+    best_idx <- which.min(comparison$AIC)
+  }
 
   # Add delta columns
-  comparison$delta_AIC <- comparison$AIC - min(comparison$AIC, na.rm = TRUE)
-  comparison$delta_BIC <- comparison$BIC - min(comparison$BIC, na.rm = TRUE)
+  if (any(is.finite(comparison$AIC))) {
+    comparison$delta_AIC <- comparison$AIC - min(comparison$AIC, na.rm = TRUE)
+  } else {
+    comparison$delta_AIC <- rep(NA_real_, nrow(comparison))
+  }
+  if (any(is.finite(comparison$BIC))) {
+    comparison$delta_BIC <- comparison$BIC - min(comparison$BIC, na.rm = TRUE)
+  } else {
+    comparison$delta_BIC <- rep(NA_real_, nrow(comparison))
+  }
 
   result <- structure(
     list(
@@ -228,7 +241,11 @@ print.beezdemand_model_comparison <- function(x, digits = 4, ...) {
 
   print(comp, row.names = FALSE)
 
-  cat("\nBest model by BIC:", x$comparison$Model[x$best_model], "\n")
+  if (is.na(x$best_model)) {
+    cat("\nBest model: NA (no comparable information criteria available)\n")
+  } else {
+    cat("\nBest model by BIC:", x$comparison$Model[x$best_model], "\n")
+  }
 
   if (!is.null(x$lrt_results) && nrow(x$lrt_results) > 0) {
     cat("\nLikelihood Ratio Tests:\n")

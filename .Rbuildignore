@@ -4,6 +4,7 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^cran-comments\.md$
+^RELEASE\.md$
 ^pobs$
 ^bwplot\.png$
 ^Participant-19\.png$
@@ -30,8 +31,8 @@
 \.Rhistory$
 ^PRD\.md$
 ^internal_docs$
-^vignettes/.*_cache$
-^vignettes/.*_files$
+^vignettes/.*_cache(/.*)?$
+^vignettes/.*_files(/.*)?$
 ^vignettes/.*\.html$
 ^DEVELOPMENT\.md$
 ^TODO\.md$

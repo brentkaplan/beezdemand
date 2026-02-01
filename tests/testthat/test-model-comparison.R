@@ -236,3 +236,26 @@ test_that("compare_models computes delta IC columns", {
   expect_equal(min(result$comparison$delta_AIC), 0)
   expect_equal(min(result$comparison$delta_BIC), 0)
 })
+
+test_that("compare_models works with legacy fixed models (IC unavailable)", {
+  data(apt, package = "beezdemand")
+
+  fit_hs <- fit_demand_fixed(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "hs"
+  )
+  fit_linear <- fit_demand_fixed(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "linear"
+  )
+
+  result <- compare_models(fit_hs, fit_linear)
+
+  expect_s3_class(result, "beezdemand_model_comparison")
+  expect_equal(result$test_type, "none")
+  expect_true(is.na(result$best_model))
+  expect_true(all(is.na(result$comparison$AIC)))
+  expect_true(all(is.na(result$comparison$BIC)))
+  expect_true(all(is.na(result$comparison$delta_AIC)))
+  expect_true(all(is.na(result$comparison$delta_BIC)))
+})

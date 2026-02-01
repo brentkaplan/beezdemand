@@ -86,6 +86,32 @@ test_that("augment.beezdemand_nlme fitted + resid equals observed", {
   expect_equal(reconstructed, aug$y_ll4, tolerance = 1e-10)
 })
 
+test_that("augment.beezdemand_nlme respects newdata", {
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+
+  fit <- fit_demand_mixed(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation_form = "zben"
+  )
+
+  skip_if(is.null(fit$model), "Model fitting failed")
+
+  newdata <- apt[seq_len(min(50, nrow(apt))), , drop = FALSE]
+
+  aug <- augment(fit, newdata = newdata)
+
+  expect_equal(nrow(aug), nrow(newdata))
+  expect_true(all(c(".fitted", ".resid", ".fixed") %in% names(aug)))
+
+  pred_ind <- predict(fit, newdata = newdata, type = "individual")
+  pred_pop <- predict(fit, newdata = newdata, type = "population")
+
+  expect_equal(aug$.fitted, pred_ind$.fitted, tolerance = 1e-10)
+  expect_equal(aug$.fixed, pred_pop$.fitted, tolerance = 1e-10)
+  expect_equal(aug$.resid, aug$y_ll4 - aug$.fitted, tolerance = 1e-10)
+})
+
 test_that("augment.beezdemand_fixed returns expected columns", {
   data(apt, package = "beezdemand")
 

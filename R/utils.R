@@ -402,6 +402,14 @@ validate_demand_data <- function(
     )
   }
 
+  # Basic type validation for core variables (fail fast with clear errors)
+  if (!is.numeric(data[[x_var]])) {
+    stop("`x_var` column `", x_var, "` must be numeric.", call. = FALSE)
+  }
+  if (!is.numeric(data[[y_var]])) {
+    stop("`y_var` column `", y_var, "` must be numeric.", call. = FALSE)
+  }
+
   # Ensure id_var is a factor and drop unused levels
   data[[id_var]] <- droplevels(as.factor(data[[id_var]]))
 

@@ -3374,40 +3374,54 @@ augment.beezdemand_nlme <- function(x, newdata = NULL, ...) {
 
   if (is.null(newdata)) {
     data <- x$data
-  } else {
-    data <- newdata
-  }
+    if (is.null(data)) {
+      stop("No data available. Provide 'newdata' or ensure model contains data.",
+           call. = FALSE)
+    }
 
-  if (is.null(data)) {
-    stop("No data available. Provide 'newdata' or ensure model contains data.",
-         call. = FALSE)
-  }
+    fitted_vals <- stats::fitted(x$model)
+    resid_vals <- stats::residuals(x$model)
+    fixed_vals <- stats::predict(x$model, level = 0)
 
-  # Get variable names
-  y_var <- x$param_info$y_var
+    out <- tibble::as_tibble(data)
 
-  # Get fitted values from the underlying nlme model
-  fitted_vals <- stats::fitted(x$model)
-  resid_vals <- stats::residuals(x$model)
+    if (length(fitted_vals) == nrow(out)) {
+      out$.fitted <- as.numeric(fitted_vals)
+      out$.resid <- as.numeric(resid_vals)
+      out$.fixed <- as.numeric(fixed_vals)
+      return(out)
+    }
 
-  # For fixed effects only predictions
-  fixed_vals <- stats::predict(x$model, level = 0)
-
-  # Build output tibble
-  out <- tibble::as_tibble(data)
-
-  # Handle case where data might have been subset or reordered
-  if (length(fitted_vals) == nrow(out)) {
-    out$.fitted <- as.numeric(fitted_vals)
-    out$.resid <- as.numeric(resid_vals)
-    out$.fixed <- as.numeric(fixed_vals)
-  } else {
-    # Try to match by rownames if available
-    warning("Fitted values length doesn't match data. Attempting to align.",
-            call. = FALSE)
+    warning(
+      "Fitted values length doesn't match data; returning NA diagnostics columns.",
+      call. = FALSE
+    )
     out$.fitted <- NA_real_
     out$.resid <- NA_real_
     out$.fixed <- NA_real_
+    return(out)
+  }
+
+  data <- if (is.data.frame(newdata)) newdata else as.data.frame(newdata)
+  out <- tibble::as_tibble(data)
+
+  id_var <- x$param_info$id_var
+  y_var <- x$param_info$y_var
+  has_id <- !is.null(id_var) && id_var %in% names(data)
+
+  fitted_tbl <- predict(x,
+    newdata = data,
+    type = if (has_id) "individual" else "population"
+  )
+  fixed_tbl <- predict(x, newdata = data, type = "population")
+
+  out$.fitted <- fitted_tbl$.fitted
+  out$.fixed <- fixed_tbl$.fitted
+
+  if (!is.null(y_var) && y_var %in% names(data)) {
+    out$.resid <- as.numeric(data[[y_var]]) - out$.fitted
+  } else {
+    out$.resid <- NA_real_
   }
 
   out

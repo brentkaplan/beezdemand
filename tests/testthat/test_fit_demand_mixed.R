@@ -708,6 +708,24 @@ test_that("fit_demand_mixed converts id and factors to factor type", {
   expect_true(is.factor(result$data$factor1))
 })
 
+test_that("fit_demand_mixed validates x_var/y_var are numeric", {
+  test_data <- create_test_demand_data(n_subjects = 5, n_prices = 6, n_levels_factor1 = 2)
+
+  test_data$x <- factor(test_data$x)
+
+  expect_error(
+    fit_demand_mixed(
+      data = test_data,
+      y_var = "y",
+      x_var = "x",
+      id_var = "id",
+      factors = "factor1",
+      equation_form = "simplified"
+    ),
+    "must be numeric"
+  )
+})
+
 
 # =============================================================================
 # Tests for print and plot methods
