@@ -1,7 +1,7 @@
 # Model Diagnostics Suite
 # Provides diagnostic functions for beezdemand model objects
 
-#' Check Model Diagnostics
+#' Check Demand Model Diagnostics
 #'
 #' @description
 #' Performs diagnostic checks on fitted demand models, returning information
@@ -31,23 +31,27 @@
 #'   \item Correlation matrices near singularity
 #' }
 #'
+#' @note
+#' This function is named `check_demand_model()` to avoid potential conflicts
+#' with `performance::check_model()` from the performance package.
+#'
 #' @examples
 #' \dontrun{
 #' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
-#' diagnostics <- check_model(fit)
+#' diagnostics <- check_demand_model(fit)
 #' print(diagnostics)
 #' }
 #'
 #' @seealso [plot_residuals()], [plot_qq()]
 #' @export
-check_model <- function(object, ...) {
-  UseMethod("check_model")
+check_demand_model <- function(object, ...) {
+  UseMethod("check_demand_model")
 }
 
 
-#' @rdname check_model
+#' @rdname check_demand_model
 #' @export
-check_model.beezdemand_hurdle <- function(object, ...) {
+check_demand_model.beezdemand_hurdle <- function(object, ...) {
   issues <- character(0)
   recommendations <- character(0)
 
@@ -96,9 +100,9 @@ check_model.beezdemand_hurdle <- function(object, ...) {
 }
 
 
-#' @rdname check_model
+#' @rdname check_demand_model
 #' @export
-check_model.beezdemand_nlme <- function(object, ...) {
+check_demand_model.beezdemand_nlme <- function(object, ...) {
   issues <- character(0)
   recommendations <- character(0)
 
@@ -148,9 +152,9 @@ check_model.beezdemand_nlme <- function(object, ...) {
 }
 
 
-#' @rdname check_model
+#' @rdname check_demand_model
 #' @export
-check_model.beezdemand_fixed <- function(object, ...) {
+check_demand_model.beezdemand_fixed <- function(object, ...) {
   issues <- character(0)
   recommendations <- character(0)
 

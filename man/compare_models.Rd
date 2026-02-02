@@ -23,6 +23,9 @@ An object of class `beezdemand_model_comparison` containing:
     \item{lrt_results}{LRT results if performed (NULL otherwise)}
     \item{best_model}{Index of best model by BIC}
     \item{notes}{Character vector of notes/warnings}
+    \item{nesting_verified}{Logical; always FALSE since nesting is not
+      automatically verified. Users must ensure models are properly nested
+      for valid LRT interpretation.}
   }
 }
 \description{
@@ -49,6 +52,30 @@ directly comparable for LRT purposes.
 | hurdle    | fixed     | No |
 | nlme      | fixed     | No |
 }
+\section{Statistical Notes}{
+
+The likelihood ratio test (LRT) assumes that:
+\enumerate{
+  \item The models are **nested** (the reduced model is a special case of
+    the full model obtained by constraining parameters).
+  \item Both models are fit to **identical data**.
+  \item Under the null hypothesis, the LR statistic follows a chi-square
+    distribution with degrees of freedom equal to the difference in
+    the number of parameters.
+}
+
+**Important caveat for mixed-effects models:** When variance components
+are tested at the boundary (e.g., testing whether a random effect variance
+is zero), the standard chi-square distribution is not appropriate. The
+correct null distribution is a mixture of chi-squares (Stram & Lee, 1994).
+The p-values reported here use the standard chi-square approximation,
+which is conservative (p-values are too large) for boundary tests.
+
+This function does **not** automatically verify that models are nested.
+Users should ensure models are properly nested before interpreting LRT
+p-values.
+}
+
 \examples{
 \dontrun{
 # Compare two hurdle models with different random effects
@@ -62,6 +89,10 @@ fit_n <- fit_demand_mixed(data, equation_form = "zben")
 compare_models(fit_h, fit_n, test = "none")
 }
 
+}
+\references{
+Stram, D. O., & Lee, J. W. (1994). Variance components testing in the
+longitudinal mixed effects model. *Biometrics*, 50(4), 1171-1177.
 }
 \seealso{
 [compare_hurdle_models()] for the legacy hurdle-specific comparison

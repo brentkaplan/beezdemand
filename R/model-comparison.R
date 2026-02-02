@@ -21,11 +21,13 @@
 #'     \item{lrt_results}{LRT results if performed (NULL otherwise)}
 #'     \item{best_model}{Index of best model by BIC}
 #'     \item{notes}{Character vector of notes/warnings}
+#'     \item{nesting_verified}{Logical; always FALSE since nesting is not
+#'       automatically verified. Users must ensure models are properly nested
+#'       for valid LRT interpretation.}
 #'   }
 #'
 #' @details
 #' Models are compared using AIC and BIC. For models from the same statistical
-
 #' backend (e.g., two hurdle models or two NLME models), likelihood ratio tests
 #' can be performed if the models are nested.
 #'
@@ -43,6 +45,33 @@
 #' | hurdle    | nlme      | No |
 #' | hurdle    | fixed     | No |
 #' | nlme      | fixed     | No |
+#'
+#' @section Statistical Notes:
+#' The likelihood ratio test (LRT) assumes that:
+#' \enumerate{
+#'   \item The models are **nested** (the reduced model is a special case of
+#'     the full model obtained by constraining parameters).
+#'   \item Both models are fit to **identical data**.
+#'   \item Under the null hypothesis, the LR statistic follows a chi-square
+
+#'     distribution with degrees of freedom equal to the difference in
+#'     the number of parameters.
+#' }
+#'
+#' **Important caveat for mixed-effects models:** When variance components
+#' are tested at the boundary (e.g., testing whether a random effect variance
+#' is zero), the standard chi-square distribution is not appropriate. The
+#' correct null distribution is a mixture of chi-squares (Stram & Lee, 1994).
+#' The p-values reported here use the standard chi-square approximation,
+#' which is conservative (p-values are too large) for boundary tests.
+#'
+#' This function does **not** automatically verify that models are nested.
+#' Users should ensure models are properly nested before interpreting LRT
+#' p-values.
+#'
+#' @references
+#' Stram, D. O., & Lee, J. W. (1994). Variance components testing in the
+#' longitudinal mixed effects model. *Biometrics*, 50(4), 1171-1177.
 #'
 #' @examples
 #' \dontrun{
@@ -103,6 +132,18 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   notes <- character(0)
   lrt_results <- NULL
 
+  # Check sample size consistency across models
+
+  nobs_values <- sapply(model_info, `[[`, "nobs")
+  if (length(unique(stats::na.omit(nobs_values))) > 1) {
+    warning(
+      "Models appear to use different sample sizes. ",
+      "LRT requires identical data for valid comparison.",
+      call. = FALSE
+    )
+    notes <- c(notes, "Sample sizes differ across models.")
+  }
+
   # Check backend compatibility for LRT
   backends <- sapply(model_info, `[[`, "backend")
   same_backend <- length(unique(backends)) == 1
@@ -142,6 +183,14 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
       }
       test <- "none"
     } else {
+      # Note about nesting assumption
+      message(
+        "Note: LRT assumes models are nested (reduced model is a special case ",
+        "of the full model). Nesting is not automatically verified. ",
+        "See ?compare_models for guidance on valid model comparisons."
+      )
+      notes <- c(notes, "LRT nesting assumption not verified.")
+
       # Perform pairwise LRT between adjacent models (sorted by df)
       ord <- order(comparison$df)
       comparison <- comparison[ord, ]
@@ -161,7 +210,15 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
         lr_stat <- 2 * (ll_full - ll_reduced)
         df_diff <- df_full - df_reduced
 
-        if (df_diff <= 0) {
+        # Check for negative LR statistic
+        if (lr_stat < 0) {
+          warning(sprintf(
+            "Negative LR statistic (%.3f) for %s vs %s. ",
+            lr_stat, comparison$Model[reduced_idx], comparison$Model[full_idx],
+            "This may indicate optimization issues or non-nested models."
+          ), call. = FALSE)
+          p_value <- NA_real_
+        } else if (df_diff <= 0) {
           warning(sprintf(
             "Model %d does not have more parameters than Model %d. ",
             full_idx, reduced_idx
@@ -212,7 +269,8 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
       test_type = test,
       lrt_results = lrt_results,
       best_model = best_idx,
-      notes = notes
+      notes = notes,
+      nesting_verified = FALSE  # Nesting is never automatically verified
     ),
     class = "beezdemand_model_comparison"
   )

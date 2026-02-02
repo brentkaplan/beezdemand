@@ -713,23 +713,15 @@ fit_demand_hurdle <- function(
     id_var = id_var
   )
 
-  # Extract variables
-  ids <- data[[id_var]]
-  price <- as.numeric(data[[x_var]])
-  consumption <- as.numeric(data[[y_var]])
-
-  # Create derived variables
-  delta <- as.integer(consumption == 0)
-  logQ <- ifelse(consumption > 0, log(consumption), 0)
-
-  # Create subject mapping (0-indexed for C++)
-  subject_levels <- unique(ids)
-  n_subjects <- length(subject_levels)
-  subject_map <- setNames(
-    seq_along(subject_levels) - 1L,
-    as.character(subject_levels)
-  )
-  subject_id <- as.integer(subject_map[as.character(ids)])
+  # Prepare data using helper function
+  prepared <- .hurdle_prepare_data(data, y_var, x_var, id_var)
+  price <- prepared$price
+  consumption <- prepared$consumption
+  delta <- prepared$delta
+  logQ <- prepared$logQ
+  subject_id <- prepared$subject_id
+  subject_levels <- prepared$subject_levels
+  n_subjects <- prepared$n_subjects
 
   # Calculate number of parameters and check sample size
   n_fixed_params <- if (identical(part2, "simplified_exponential")) {
@@ -776,125 +768,21 @@ fit_demand_hurdle <- function(
   default_control <- list(max_iter = 200, eval_max = 1000, trace = 0)
   tmb_control <- modifyList(default_control, tmb_control)
 
-  # Prepare TMB data with model selector
-  tmb_data <- list(
-    model = model_name,
-    price = price,
-    logQ = logQ,
-    delta = delta,
-    subject_id = subject_id,
-    n_subjects = n_subjects,
-    epsilon = epsilon
-  )
+  # Build TMB data using helper function
+  tmb_data <- .hurdle_build_tmb_data(prepared, model_name, epsilon)
 
-  # Default starting values - specific to each model
+  # Determine if model has k parameter
+  has_k <- !identical(part2, "simplified_exponential")
+
+  # Default starting values - use helper function
   if (is.null(start_values)) {
-    mean_positive_consumption <- mean(
-      consumption[consumption > 0],
-      na.rm = TRUE
-    )
-    if (is.na(mean_positive_consumption) || mean_positive_consumption <= 0) {
-      mean_positive_consumption <- 10
-    }
-
-    if (n_re == 3) {
-      start_values <- list(
-        beta0 = -2.5,
-        beta1 = 1.0,
-        log_q0 = log(mean_positive_consumption),
-        log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
-        logsigma_a = 0.5,
-        logsigma_b = -0.5,
-        logsigma_c = -1.5,
-        logsigma_e = -0.5,
-        rho_ab_raw = 0,
-        rho_ac_raw = 0,
-        rho_bc_raw = 0
-      )
-      if (!identical(part2, "simplified_exponential")) {
-        start_values$log_k <- log(2.0)
-      }
-    } else {
-      # 2 random effects model
-      start_values <- list(
-        beta0 = -2.5,
-        beta1 = 1.0,
-        log_q0 = log(mean_positive_consumption),
-        log_alpha = log(0.5),  # Log-space alpha per EQUATIONS_CONTRACT.md
-        logsigma_a = 0.5,
-        logsigma_b = -0.5,
-        logsigma_e = -0.5,
-        rho_ab_raw = 0
-      )
-      if (!identical(part2, "simplified_exponential")) {
-        start_values$log_k <- log(2.0)
-      }
-    }
+    start_values <- .hurdle_default_starts(consumption, n_re, n_subjects, has_k)
   }
 
-  # Backwards-compatibility for user-provided start values (older versions used `k`)
-  if (!is.null(start_values$logQ0) && is.null(start_values$log_q0)) {
-    start_values$log_q0 <- start_values$logQ0
-    start_values$logQ0 <- NULL
-  }
-  if (!is.null(start_values$k) && is.null(start_values$log_k)) {
-    if (!is.numeric(start_values$k) || length(start_values$k) != 1 || !is.finite(start_values$k) || start_values$k <= 0) {
-      stop("'start_values$k' must be a single positive numeric value.", call. = FALSE)
-    }
-    start_values$log_k <- log(start_values$k)
-    start_values$k <- NULL
-  }
-  if (!is.null(start_values$alpha) && is.null(start_values$log_alpha)) {
-    if (!is.numeric(start_values$alpha) || length(start_values$alpha) != 1 || !is.finite(start_values$alpha) || start_values$alpha <= 0) {
-      stop("'start_values$alpha' must be a single positive numeric value.", call. = FALSE)
-    }
-    start_values$log_alpha <- log(start_values$alpha)
-    start_values$alpha <- NULL
-  }
+  # Normalize user-provided start values using helper function
+  start_values <- .hurdle_normalize_starts(start_values, n_re, has_k)
 
-  if (identical(part2, "simplified_exponential") && !is.null(start_values$log_k)) {
-    warning(
-      "Ignoring 'start_values$log_k' for part2 = 'simplified_exponential' (SND).",
-      call. = FALSE
-    )
-    start_values$log_k <- NULL
-  }
-
-  # Backwards-compatibility + stability: the TMB template parameterizes the
-  # 3x3 correlation matrix with a partial correlation for rho_bc. Older versions
-  # treated `rho_bc_raw` like the other correlations (tanh -> rho_bc), so we
-  # convert any provided value to the new parameterization.
-  if (n_re == 3) {
-    r_ab <- if (!is.null(start_values$rho_ab_raw)) tanh(start_values$rho_ab_raw) else 0
-    r_ac <- if (!is.null(start_values$rho_ac_raw)) tanh(start_values$rho_ac_raw) else 0
-    denom <- sqrt((1 - r_ab^2) * (1 - r_ac^2))
-
-    rho_bc_target <- NULL
-    if (!is.null(start_values$rho_bc)) {
-      rho_bc_target <- start_values$rho_bc
-      start_values$rho_bc <- NULL
-    } else if (!is.null(start_values$rho_bc_raw)) {
-      # Interpret as old-style "raw correlation parameter"
-      rho_bc_target <- tanh(start_values$rho_bc_raw)
-    }
-
-    if (!is.null(rho_bc_target)) {
-      if (!is.numeric(rho_bc_target) || length(rho_bc_target) != 1 || !is.finite(rho_bc_target)) {
-        stop("'start_values$rho_bc' must be a single finite numeric value.", call. = FALSE)
-      }
-      if (rho_bc_target <= -1 || rho_bc_target >= 1) {
-        stop("'start_values$rho_bc' must be in (-1, 1).", call. = FALSE)
-      }
-
-      rho_bc_partial <- if (is.finite(denom) && denom > 1e-8) {
-        (rho_bc_target - r_ab * r_ac) / denom
-      } else {
-        0
-      }
-      rho_bc_partial <- max(min(rho_bc_partial, 0.999999), -0.999999)
-      start_values$rho_bc_raw <- atanh(rho_bc_partial)
-    }
-  }
+  # Add random effects matrix
   start_values$u <- matrix(0, nrow = n_subjects, ncol = n_re)
 
   # Create TMB objective function
@@ -978,8 +866,6 @@ fit_demand_hurdle <- function(
   )
 
   # Extract fixed effects (different for 2 vs 3 RE; some Part II forms omit k)
-  has_k <- !identical(part2, "simplified_exponential")
-
   if (n_re == 3) {
     fixed_names <- c(
       "beta0",

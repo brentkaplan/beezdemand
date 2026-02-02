@@ -1,6 +1,6 @@
 # Test model diagnostics suite
 
-test_that("check_model.beezdemand_hurdle returns expected structure", {
+test_that("check_demand_model.beezdemand_hurdle returns expected structure", {
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_hurdle(
@@ -9,7 +9,7 @@ test_that("check_model.beezdemand_hurdle returns expected structure", {
     verbose = 0
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_s3_class(diag, "beezdemand_diagnostics")
   expect_true("convergence" %in% names(diag))
@@ -21,7 +21,7 @@ test_that("check_model.beezdemand_hurdle returns expected structure", {
   expect_equal(diag$model_class, "beezdemand_hurdle")
 })
 
-test_that("check_model.beezdemand_hurdle detects convergence", {
+test_that("check_demand_model.beezdemand_hurdle detects convergence", {
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_hurdle(
@@ -30,13 +30,13 @@ test_that("check_model.beezdemand_hurdle detects convergence", {
     verbose = 0
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   # Model should converge on this data
   expect_true(diag$convergence$converged)
 })
 
-test_that("check_model.beezdemand_hurdle provides residual stats", {
+test_that("check_demand_model.beezdemand_hurdle provides residual stats", {
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_hurdle(
@@ -45,14 +45,14 @@ test_that("check_model.beezdemand_hurdle provides residual stats", {
     verbose = 0
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_true(!is.na(diag$residuals$mean))
   expect_true(!is.na(diag$residuals$sd))
   expect_true(is.numeric(diag$residuals$n_outliers))
 })
 
-test_that("check_model.beezdemand_nlme returns expected structure", {
+test_that("check_demand_model.beezdemand_nlme returns expected structure", {
   data(apt, package = "beezdemand")
   apt$y_ll4 <- ll4(apt$y)
 
@@ -63,7 +63,7 @@ test_that("check_model.beezdemand_nlme returns expected structure", {
 
   skip_if(is.null(fit$model), "Model fitting failed")
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_s3_class(diag, "beezdemand_diagnostics")
   expect_equal(diag$model_class, "beezdemand_nlme")
@@ -71,14 +71,14 @@ test_that("check_model.beezdemand_nlme returns expected structure", {
   expect_true("random_effects" %in% names(diag))
 })
 
-test_that("check_model.beezdemand_fixed returns expected structure", {
+test_that("check_demand_model.beezdemand_fixed returns expected structure", {
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_fixed(
     apt, y_var = "y", x_var = "x", id_var = "id"
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_s3_class(diag, "beezdemand_diagnostics")
   expect_equal(diag$model_class, "beezdemand_fixed")
@@ -96,7 +96,7 @@ test_that("print.beezdemand_diagnostics works without error", {
     verbose = 0
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_output(print(diag), "Model Diagnostics")
   expect_output(print(diag), "Convergence")
@@ -182,7 +182,7 @@ test_that("plot_qq.beezdemand_nlme works", {
   expect_s3_class(p, "ggplot")
 })
 
-test_that("check_model reports n_issues correctly", {
+test_that("check_demand_model reports n_issues correctly", {
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_hurdle(
@@ -191,7 +191,7 @@ test_that("check_model reports n_issues correctly", {
     verbose = 0
   )
 
-  diag <- check_model(fit)
+  diag <- check_demand_model(fit)
 
   expect_equal(diag$n_issues, length(diag$issues))
 })

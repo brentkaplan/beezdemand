@@ -43,10 +43,11 @@
 
 ### Model Diagnostics Suite
 
-* New `check_model()` generic with methods for all model classes. Performs
+* New `check_demand_model()` generic with methods for all model classes. Performs
   comprehensive diagnostics including convergence checks, boundary condition
   detection, random effect variance assessment, and residual outlier detection.
-  Returns structured diagnostics object with issues and recommendations.
+  Returns structured diagnostics object with issues and recommendations. (Named
+  `check_demand_model()` to avoid conflict with `performance::check_model()`.)
 
 * New `plot_residuals()` function creates diagnostic plots: residuals vs fitted,
   histogram of residuals, and Q-Q plots. Works with all model classes via
