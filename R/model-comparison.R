@@ -132,18 +132,6 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   notes <- character(0)
   lrt_results <- NULL
 
-  # Check sample size consistency across models
-
-  nobs_values <- sapply(model_info, `[[`, "nobs")
-  if (length(unique(stats::na.omit(nobs_values))) > 1) {
-    warning(
-      "Models appear to use different sample sizes. ",
-      "LRT requires identical data for valid comparison.",
-      call. = FALSE
-    )
-    notes <- c(notes, "Sample sizes differ across models.")
-  }
-
   # Check backend compatibility for LRT
   backends <- sapply(model_info, `[[`, "backend")
   same_backend <- length(unique(backends)) == 1
@@ -183,6 +171,17 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
       }
       test <- "none"
     } else {
+      # Check sample size consistency across models (only relevant when doing LRT)
+      nobs_values <- sapply(model_info, `[[`, "nobs")
+      if (length(unique(stats::na.omit(nobs_values))) > 1) {
+        warning(
+          "Models appear to use different sample sizes. ",
+          "LRT requires identical data for valid comparison.",
+          call. = FALSE
+        )
+        notes <- c(notes, "Sample sizes differ across models.")
+      }
+
       # Note about nesting assumption
       message(
         "Note: LRT assumes models are nested (reduced model is a special case ",
@@ -213,15 +212,18 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
         # Check for negative LR statistic
         if (lr_stat < 0) {
           warning(sprintf(
-            "Negative LR statistic (%.3f) for %s vs %s. ",
-            lr_stat, comparison$Model[reduced_idx], comparison$Model[full_idx],
-            "This may indicate optimization issues or non-nested models."
+            "Negative LR statistic (%.3f) for %s vs %s. This may indicate optimization issues or non-nested models.",
+            lr_stat,
+            comparison$Model[reduced_idx],
+            comparison$Model[full_idx]
           ), call. = FALSE)
           p_value <- NA_real_
         } else if (df_diff <= 0) {
           warning(sprintf(
-            "Model %d does not have more parameters than Model %d. ",
-            full_idx, reduced_idx
+            "%s does not have more parameters than %s (df diff = %d).",
+            comparison$Model[full_idx],
+            comparison$Model[reduced_idx],
+            df_diff
           ), call. = FALSE)
           p_value <- NA_real_
         } else {

@@ -20,6 +20,8 @@ test_that("compare_models works with two hurdle models", {
   expect_s3_class(result, "beezdemand_model_comparison")
   expect_true("comparison" %in% names(result))
   expect_true("lrt_results" %in% names(result))
+  expect_true("nesting_verified" %in% names(result))
+  expect_false(result$nesting_verified)
   expect_equal(nrow(result$comparison), 2)
   expect_true(all(c("Model", "logLik", "AIC", "BIC") %in% names(result$comparison)))
 })
@@ -44,6 +46,70 @@ test_that("compare_models performs LRT by default for same backend", {
   expect_equal(result$test_type, "lrt")
   expect_true(!is.null(result$lrt_results))
   expect_true("p_value" %in% names(result$lrt_results))
+})
+
+test_that("compare_models warns when models use different sample sizes", {
+  data(apt, package = "beezdemand")
+
+  fit2 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  fit3 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0", "alpha"),
+    verbose = 0
+  )
+
+  fit3$data <- fit3$data[-1, , drop = FALSE]
+
+  expect_warning(
+    suppressMessages(compare_models(fit2, fit3, test = "lrt")),
+    regexp = "different sample sizes|identical data"
+  )
+})
+
+test_that("compare_models warns and returns NA p-value for negative LR statistics", {
+  data(apt, package = "beezdemand")
+
+  fit2 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  fit3 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0", "alpha"),
+    verbose = 0
+  )
+
+  df2 <- length(fit2$model$coefficients)
+  df3 <- length(fit3$model$coefficients)
+
+  # Ensure a strict df ordering so LRT is attempted between reduced and full.
+  if (df2 == df3) {
+    fit3$model$coefficients <- c(fit3$model$coefficients, extra = 0)
+    df3 <- df3 + 1
+  }
+
+  # Force the higher-df ("full") model to have a smaller logLik -> negative LR.
+  if (df2 < df3) {
+    fit3$loglik <- fit2$loglik - 1
+  } else {
+    fit2$loglik <- fit3$loglik - 1
+  }
+
+  result <- NULL
+  expect_warning(
+    result <- suppressMessages(compare_models(fit2, fit3, test = "lrt")),
+    regexp = "Negative LR statistic"
+  )
+
+  expect_true(result$lrt_results$LR_stat[1] < 0)
+  expect_true(is.na(result$lrt_results$p_value[1]))
 })
 
 test_that("compare_models with test = 'none' skips LRT", {
