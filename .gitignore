@@ -57,6 +57,7 @@ vignettes/.build.timestamp
 # R CMD check outputs #
 #######################
 check.log
+check-as-cran.log
 *.Rcheck/
 beezdemand_*.tar.gz
 
