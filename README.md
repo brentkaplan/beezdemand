@@ -1106,7 +1106,7 @@ this document:
 - Hursh, S. R., Raslear, T. G., Shurtleff, D., Bauman, R., & Simmons, L.
   (1988). A cost‐benefit analysis of demand for food. *Journal of the
   Experimental Analysis of Behavior, 50* (3), 419-440.
-  <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1338908/>
+  <https://doi.org/10.1901/jeab.1988.50-419>
 
 - Kaplan, B. A., Franck, C. T., McKee, K., Gilroy, S. P., &
   Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
