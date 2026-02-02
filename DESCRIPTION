@@ -5,9 +5,6 @@ Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre", "cph"),
              comment = c(ORCID = "0000-0002-3758-6776")),
 	     person("Shawn", "Gilroy", email = "shawn.gilroy@temple.edu", role = "ctb"))
-Author: Brent Kaplan [aut, cre, cph],
-	Shawn Gilroy [ctb]
-Maintainer: Brent Kaplan <bkaplan.ku@gmail.com>
 Description: Facilitates many of the analyses performed in studies of
     behavioral economic demand. The package supports commonly-used options for
 		modeling operant demand including (1) data screening proposed by Stein,
