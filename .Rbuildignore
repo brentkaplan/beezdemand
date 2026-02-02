@@ -45,6 +45,7 @@
 ^CHANGELOG\.md$
 ^CLAUDE\.md$
 ^check\.log$
+^check-as-cran\.log$
 ^beezdemand_.*\.tar\.gz$
 ^\.github$
 ^[^/]+\.txt$
