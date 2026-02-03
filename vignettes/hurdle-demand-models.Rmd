@@ -30,7 +30,7 @@ The `beezdemand` package includes functionality for fitting **two-part mixed eff
 
 | Scenario | Recommended Approach |
 |----------|---------------------|
-| Few zeros, zeros are measurement artifacts | Standard `FitCurves()` or `fit_demand_mixed()` |
+| Few zeros, zeros are measurement artifacts | `fit_demand_fixed()` or `fit_demand_mixed()` |
 | Many zeros, zeros represent true non-consumption | `fit_demand_hurdle()` |
 | Need to understand factors affecting whether someone consumes | `fit_demand_hurdle()` |
 | Need individual-level estimates of "quitting price" | `fit_demand_hurdle()` |
@@ -129,8 +129,25 @@ summary(fit2)
 # Extract coefficients
 coef(fit2)
 
+# Standardized tidy summaries
+tidy(fit2) |> head()
+glance(fit2)
+
+# Fitted values + residuals
+augment(fit2) |> head()
+
 # Get subject-specific parameters
 head(get_subject_pars(fit2))
+```
+
+## Diagnostics
+
+Use `check_demand_model()` and the plotting helpers for quick post-fit checks.
+
+```{r diagnostics, eval=FALSE}
+check_demand_model(fit2)
+plot_residuals(fit2)$fitted
+plot_qq(fit2)
 ```
 
 ## Understanding Results
@@ -172,6 +189,9 @@ The `subject_pars` data frame contains:
 ```{r model-comparison, eval=FALSE}
 # Compare nested models
 compare_hurdle_models(fit3, fit2)
+
+# Unified model comparison (AIC/BIC + LRT when appropriate)
+compare_models(fit3, fit2)
 
 # Output:
 # Likelihood Ratio Test
