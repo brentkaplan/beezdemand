@@ -29,7 +29,7 @@ library(dplyr)
 library(ggplot2)
 
 # Set to FALSE when you explicitly want to run the slower / less stable examples.
-render_fast <- FALSE
+render_fast <- TRUE
 
 cache_key_object <- function(x) {
   tmp <- tempfile(fileext = ".rds")
@@ -169,6 +169,47 @@ plot(
   facet_wrap(
     ~id
   )
+```
+
+#### Koffarnus (Exponentiated) Equation Form
+
+`fit_demand_mixed()` also supports the Koffarnus et al. (2015) equation via
+`equation_form = "koff"`. By default, the scaling constant `k` will be computed
+from the data range (you can also specify it directly).
+
+```{r apt_koff_fit}
+fit_apt_koff <- fit_demand_mixed(
+  data = apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  equation_form = "koff",
+  k = NULL,
+  nlme_control = quick_nlme_control,
+  start_value_method = "heuristic"
+)
+print(fit_apt_koff)
+```
+
+## Inspecting Fits (tidy / glance / augment)
+
+All modern model classes support `tidy()`, `glance()`, and `augment()` to
+standardize programmatic access to estimates, model summaries, and residuals.
+
+```{r inspect_fit}
+glance(fit_apt_zben)
+tidy(fit_apt_zben) |> head()
+augment(fit_apt_zben) |> head()
+```
+
+## Diagnostics
+
+Use `check_demand_model()` and the residual plotting helpers as standard
+post-fit checks.
+
+```{r diagnostics}
+check_demand_model(fit_apt_zben)
+plot_residuals(fit_apt_zben)$fitted
 ```
 
 ### Basic Model (No Factors)
