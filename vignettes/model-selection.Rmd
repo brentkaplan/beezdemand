@@ -53,12 +53,12 @@ library(dplyr)
 data(apt)
 
 # Check for systematic demand
-systematic_check <- CheckUnsystematic(apt)
-head(systematic_check)
+systematic_check <- check_systematic_demand(apt)
+head(systematic_check$results)
 
 # Filter to systematic data only (those that pass all criteria)
-systematic_ids <- systematic_check |>
-  filter(TotalPass == 3) |>
+systematic_ids <- systematic_check$results |>
+  filter(systematic) |>
   pull(id)
 
 apt_clean <- apt |>
@@ -68,7 +68,7 @@ cat("Systematic participants:", n_distinct(apt_clean$id),
     "of", n_distinct(apt$id), "\n")
 ```
 
-The `CheckUnsystematic()` function applies criteria from Stein et al. (2015)
+The `check_systematic_demand()` function applies criteria from Stein et al. (2015)
 to identify nonsystematic responding patterns including:
 
 - **Trend (DeltaQ)**: Consumption should decrease as price increases
@@ -112,6 +112,10 @@ glance(fit_fixed)
 
 # Plot individual curves
 plot(fit_fixed, type = "individual", ids = c("19", "51"))
+
+# Basic diagnostics
+check_demand_model(fit_fixed)
+plot_residuals(fit_fixed)$fitted
 ```
 
 ---
@@ -158,6 +162,10 @@ fit_mixed <- fit_demand_mixed(
 # Print summary
 print(fit_mixed)
 summary(fit_mixed)
+
+# Basic diagnostics
+check_demand_model(fit_mixed)
+plot_residuals(fit_mixed)$fitted
 ```
 
 ## Post-Hoc Analysis with emmeans
@@ -228,6 +236,11 @@ plot(fit_hurdle, type = "demand")
 
 # Probability of zero consumption
 plot(fit_hurdle, type = "probability")
+
+# Basic diagnostics
+check_demand_model(fit_hurdle)
+plot_residuals(fit_hurdle)$fitted
+plot_qq(fit_hurdle)
 ```
 
 ## Comparing Hurdle Models
@@ -255,6 +268,9 @@ fit_hurdle2 <- fit_demand_hurdle(
 
 # Compare models
 compare_hurdle_models(fit_hurdle3, fit_hurdle2)
+
+# Unified model comparison (AIC/BIC + LRT when appropriate)
+compare_models(fit_hurdle3, fit_hurdle2)
 ```
 
 ---
@@ -298,7 +314,7 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 
 **Solutions**:
 
-1. Check data quality with `CheckUnsystematic()`
+1. Check data quality with `check_systematic_demand()`
 2. Try different starting values
 3. Use a simpler model (fewer random effects)
 4. Ensure sufficient data per participant
