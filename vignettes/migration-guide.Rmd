@@ -25,12 +25,19 @@ library(dplyr)
 Starting with beezdemand version 0.2.0, `FitCurves()` has been superseded by
 `fit_demand_fixed()`. This guide helps you migrate existing code to use the
 modern API.
+
+For related workflows, see:
+
+- `vignette("beezdemand")` for getting started
+- `vignette("model-selection")` for choosing a model class
+- `vignette("mixed-demand")` and `vignette("hurdle-demand-models")` for advanced model classes
+
 ## Why Migrate?
 
 The new `fit_demand_fixed()` function provides:
 
 - **Structured S3 objects** with consistent methods (`summary()`, `tidy()`,
-  `glance()`, `predict()`, `plot()`)
+  `glance()`, `predict()`, `plot()`, `confint()`, `augment()`)
 - **Tidyverse integration** via tibble outputs from `tidy()` and `glance()`
 - **Standardized API** consistent with other beezdemand model classes
 - **Better reproducibility** with stored call and parameter information
@@ -54,7 +61,7 @@ New features will only be added to `fit_demand_fixed()`.
 
 ## Before (FitCurves)
 
-```{r fitcurves-example, eval = TRUE}
+```{r fitcurves-example, eval = FALSE}
 # Old approach
 results <- FitCurves(
   dat = apt,
@@ -92,7 +99,7 @@ print(fit)
 
 ### Before (FitCurves)
 
-```{r extract-old, eval = TRUE}
+```{r extract-old, eval = FALSE}
 # FitCurves returns a data frame directly
 results <- FitCurves(apt, "hs", k = 2)
 q0_values <- results$Q0d
@@ -115,7 +122,7 @@ head(fit$results)
 
 ### Before (FitCurves)
 
-```{r stats-old, eval = TRUE}
+```{r stats-old, eval = FALSE}
 # Manual calculation required
 results <- FitCurves(apt, "hs", k = 2)
 n_converged <- sum(!is.na(results$Alpha))
@@ -137,7 +144,7 @@ summary(fit)
 
 ## Before (FitCurves)
 
-```{r pred-old, eval = TRUE}
+```{r pred-old, eval = FALSE}
 # Required detailed = TRUE and manual extraction
 results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 # Predictions stored in list element
@@ -160,7 +167,7 @@ head(preds)
 
 ## Before (FitCurves)
 
-```{r plot-old, eval = TRUE}
+```{r plot-old, eval = FALSE}
 # Used separate PlotCurves() function
 results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 PlotCurves(results)
@@ -174,6 +181,37 @@ fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 
 # Plot first 5 subjects
 plot(fit, ids = unique(apt$id)[1:5], facet = TRUE)
+```
+
+## New in 0.2.0: Diagnostics + Residual Workflows
+
+Once you migrate to the modern API, you can use standardized post-fit helpers:
+
+- `augment()` to get fitted values + residuals in a tidy format
+- `check_demand_model()` for a structured diagnostic summary
+- `plot_residuals()` for common residual diagnostics (via `augment()`)
+
+```{r post-fit-workflow}
+fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
+
+augment(fit) |> head()
+check_demand_model(fit)
+plot_residuals(fit)$fitted
+```
+
+## New in 0.2.0: Unified Systematicity Wrappers
+
+For user-facing workflows, prefer:
+
+- `check_systematic_demand()` (purchase task)
+- `check_systematic_cp()` (cross-price)
+
+These wrap legacy helpers (e.g., `CheckUnsystematic()`) but return a standardized
+`beezdemand_systematicity` object.
+
+```{r systematicity-wrapper, eval = FALSE}
+sys <- check_systematic_demand(apt)
+head(sys$results)
 ```
 
 # Advanced Features
@@ -211,7 +249,7 @@ tidy(fit_log, report_space = "natural") |> head()
 | Feature | FitCurves() | fit_demand_fixed() |
 |---------|-------------|---------------------|
 | Equations | hs, koff, linear | hs, koff, linear |
-| k options | numeric, "ind", "fit", "range", "share" | numeric, "ind", "fit", "range" |
+| k options | numeric, "ind", "fit", "share" | numeric, "ind", "fit", "share" |
 | Aggregation | "Mean", "Pooled" | "Mean", "Pooled" |
 | Parameter space | natural, log10 | natural, log10 |
 | `summary()` method | No | Yes |
@@ -220,13 +258,15 @@ tidy(fit_log, report_space = "natural") |> head()
 | `predict()` method | No | Yes |
 | `plot()` method | No | Yes |
 | `coef()` method | No | Yes |
+| `augment()` method | No | Yes |
+| `confint()` method | No | Yes |
 
 # Suppressing Deprecation Warnings
 
 If you need to continue using `FitCurves()` without warnings (e.g., in legacy
 code or during a gradual migration), you can suppress the deprecation message:
 
-```{r suppress-warning, eval = TRUE}
+```{r suppress-warning, eval = FALSE}
 # Suppress deprecation warning temporarily
 rlang::with_options(
   lifecycle_verbosity = "quiet",
