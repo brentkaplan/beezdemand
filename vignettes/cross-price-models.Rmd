@@ -115,12 +115,11 @@ First, we fit a standard demand curve to the target commodity when the alternati
 alone_data <- cp |>
     dplyr::filter(target == "alone")
 
-# Fit demand curve using FitCurves
-fit_alone <- FitCurves(
-    dat = alone_data,
+# Fit demand curve (modern interface)
+fit_alone <- fit_demand_fixed(
+    data = alone_data,
     equation = "koff",
-    k = 2,
-    detailed = TRUE
+    k = 2
 )
 
 # View results
@@ -137,11 +136,10 @@ own_data <- cp |>
     dplyr::filter(target == "own")
 
 # Fit demand curve
-fit_own <- FitCurves(
-    dat = own_data,
+fit_own <- fit_demand_fixed(
+    data = own_data,
     equation = "koff",
-    k = 2,
-    detailed = TRUE
+    k = 2
 )
 
 # View results
@@ -168,20 +166,32 @@ fit_alt <- fit_cp_nls(
 summary(fit_alt)
 ```
 
+`fit_cp_nls()` uses a log10-parameterized optimizer internally (for numerical
+stability), but `predict()` returns `y_pred` on the natural `y` scale.
+For the `"exponential"` form, predictions may also include `y_pred_log10`.
+
 ### Comparing Results Across Conditions
 
 ```{r compare-conditions}
-# Extract key parameters from dfres
+# Extract key parameters for each condition
+coef_alone <- coef(fit_alone)
+Q0_alone <- coef_alone$estimate[coef_alone$term == "q0"]
+Alpha_alone <- coef_alone$estimate[coef_alone$term == "alpha"]
+
+coef_own <- coef(fit_own)
+Q0_own <- coef_own$estimate[coef_own$term == "q0"]
+Alpha_own <- coef_own$estimate[coef_own$term == "alpha"]
+
 comparison <- data.frame(
     Condition = c("Alone (Target)", "Own (Target)", "Alt (Cross-Price)"),
     Q0_or_Qalone = c(
-        fit_alone$dfres$Q0d,
-        fit_own$dfres$Q0d,
+        Q0_alone,
+        Q0_own,
         coef(fit_alt)["qalone"]
     ),
     Alpha_or_I = c(
-        fit_alone$dfres$Alpha,
-        fit_own$dfres$Alpha,
+        Alpha_alone,
+        Alpha_own,
         coef(fit_alt)["I"]
     )
 )
@@ -202,18 +212,11 @@ comparison
 # Create prediction data
 x_seq <- seq(0.01, max(cp$x), length.out = 100)
 
-# Extract parameters from dfres
-Q0_alone <- fit_alone$dfres$Q0d
-K_alone <- fit_alone$dfres$K
-Alpha_alone <- fit_alone$dfres$Alpha
+# Get demand predictions for each condition
+pred_alone <- predict(fit_alone, newdata = data.frame(x = x_seq))$.fitted
+pred_own <- predict(fit_own, newdata = data.frame(x = x_seq))$.fitted
 
-Q0_own <- fit_own$dfres$Q0d
-K_own <- fit_own$dfres$K
-Alpha_own <- fit_own$dfres$Alpha
-
-# Get predictions for each condition using the exponential demand equation
-pred_alone <- Q0_alone * 10^(K_alone * (exp(-Alpha_alone * Q0_alone * x_seq) - 1))
-pred_own <- Q0_own * 10^(K_own * (exp(-Alpha_own * Q0_own * x_seq) - 1))
+# Cross-price model predictions (always on the natural y scale)
 pred_alt <- predict(fit_alt, newdata = data.frame(x = x_seq))$y_pred
 
 # Combine into plot data
@@ -247,26 +250,30 @@ etm |>
 
 unsys_one <- etm |>
     filter(group %in% "E-Cigarettes" & id %in% 1) |>
-    check_unsystematic_cp()
+    check_systematic_cp()
 
-unsys_one
+unsys_one$results
 
 unsys_one_lnic <- lnic |>
     filter(
         target == "adjusting",
         id == "R_00Q12ahGPKuESBT"
     ) |>
-    check_unsystematic_cp(detailed = TRUE)
+    check_systematic_cp()
 
-unsys_one_lnic
+unsys_one_lnic$results
 ```
 
 ```{r}
 unsys_all <- etm |>
     group_by(id, group) |>
     nest() |>
-    mutate(unsys = map(data, check_unsystematic_cp)) |>
-    unnest(unsys)
+    mutate(
+        sys = map(data, check_systematic_cp),
+        results = map(sys, ~ dplyr::select(.x$results, -id))
+    ) |>
+    select(-data, -sys) |>
+    unnest(results)
 
 unsys_all
 
@@ -283,13 +290,14 @@ unsys_all_lnic <- lnic |>
     group_by(id, condition) |>
     nest() |>
     mutate(
-        unsys = map(
+        sys = map(
             data,
-            check_unsystematic_cp,
-            detailed = TRUE
+            check_systematic_cp
         )
     ) |>
-    unnest(unsys) |>
+    mutate(results = map(sys, ~ dplyr::select(.x$results, -id))) |>
+    select(-data, -sys) |>
+    unnest(results) |>
     arrange(id)
 
 unsys_all_lnic
@@ -716,28 +724,34 @@ own_data <- cp |> dplyr::filter(target == "own")
 alt_data <- cp |> dplyr::filter(target == "alt")
 
 # Fit target demand (alone condition)
-fit_alone <- FitCurves(
-    dat = alone_data,
+fit_alone <- fit_demand_fixed(
+    data = alone_data,
     equation = "koff",
-    k = 2,
-    detailed = TRUE
+    k = 2
 )
+
+coef_alone <- coef(fit_alone)
+Q0_alone <- coef_alone$estimate[coef_alone$term == "q0"]
+Alpha_alone <- coef_alone$estimate[coef_alone$term == "alpha"]
 
 cat("=== Alone Condition (Target Demand) ===\n")
-cat("Q0:", round(fit_alone$dfres$Q0d, 2), "\n")
-cat("Alpha:", round(fit_alone$dfres$Alpha, 6), "\n")
+cat("Q0:", round(Q0_alone, 2), "\n")
+cat("Alpha:", round(Alpha_alone, 6), "\n")
 
 # Fit target demand (own condition)
-fit_own <- FitCurves(
-    dat = own_data,
+fit_own <- fit_demand_fixed(
+    data = own_data,
     equation = "koff",
-    k = 2,
-    detailed = TRUE
+    k = 2
 )
 
+coef_own <- coef(fit_own)
+Q0_own <- coef_own$estimate[coef_own$term == "q0"]
+Alpha_own <- coef_own$estimate[coef_own$term == "alpha"]
+
 cat("\n=== Own Condition (Target Demand) ===\n")
-cat("Q0:", round(fit_own$dfres$Q0d, 2), "\n")
-cat("Alpha:", round(fit_own$dfres$Alpha, 6), "\n")
+cat("Q0:", round(Q0_own, 2), "\n")
+cat("Alpha:", round(Alpha_own, 6), "\n")
 
 # Fit cross-price model (alt condition)
 fit_alt <- fit_cp_nls(
