@@ -34,10 +34,10 @@ but be aware that, as with any software release, there might be (unknown) bugs p
 
 | Your Situation | Recommended Approach | Learn More |
 |----------------|---------------------|------------|
-| Single purchase task, individual fits | `fit_demand_fixed()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
-| Need group comparisons, random effects | `fit_demand_mixed()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
-| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
-| Cross-commodity substitution | `fit_cp_*()` functions | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
+| Single purchase task, individual fits | `fit_demand_fixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
+| Need group comparisons, random effects | `fit_demand_mixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
+| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
+| Cross-commodity substitution | `fit_cp_*()` functions | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
 
 For detailed guidance on choosing the right modeling approach, see the package vignette (`vignette("beezdemand")`).
 
