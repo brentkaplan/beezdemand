@@ -30,14 +30,13 @@ me](mailto:bkaplan.ku@gmail.com).
 
 | Your Situation | Recommended Approach | Learn More |
 |----|----|----|
-| Single purchase task, individual fits | `fit_demand_fixed()` | [Getting Started](https://brentkaplan.github.io/beezdemand/articles/beezdemand.html) |
-| Need group comparisons, random effects | `fit_demand_mixed()` | [Mixed-Effects Guide](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
-| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle Models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
-| Cross-commodity substitution | `fit_cp_*()` functions | [Cross-Price Guide](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
+| Single purchase task, individual fits | `fit_demand_fixed()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
+| Need group comparisons, random effects | `fit_demand_mixed()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
+| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
+| Cross-commodity substitution | `fit_cp_*()` functions | [Vignette](https://cran.r-project.org/web/packages/beezdemand/vignettes/beezdemand.html) |
 
 For detailed guidance on choosing the right modeling approach, see the
-[Model Selection
-Guide](https://brentkaplan.github.io/beezdemand/articles/model-selection.html).
+package vignette (`vignette("beezdemand")`).
 
 ## Installing beezdemand
 
@@ -78,14 +77,14 @@ library(beezdemand)
 
 An example dataset of responses on an Alcohol Purchase Task is provided.
 This object is called `apt` and is located within the `beezdemand`
-package. These data are a subset of from the paper by [Kaplan & Reed
-(2018)](https://psycnet.apa.org/record/2018-02774-001). Participants
-(id) reported the number of alcoholic drinks (y) they would be willing
-to purchase and consume at various prices (x; USD). Note the format of
-the data, which is called “long format”. Long format data are data
-structured such that repeated observations are stacked in multiple rows,
-rather than across columns. First, take a look at an extract of the
-dataset `apt`, where I’ve subsetted rows 1 through 10 and 17 through 26:
+package. These data are a subset of from the paper by Kaplan & Reed
+(2018). Participants (id) reported the number of alcoholic drinks (y)
+they would be willing to purchase and consume at various prices (x;
+USD). Note the format of the data, which is called “long format”. Long
+format data are data structured such that repeated observations are
+stacked in multiple rows, rather than across columns. First, take a look
+at an extract of the dataset `apt`, where I’ve subsetted rows 1 through
+10 and 17 through 26:
 
 |     |  id |   x |   y |
 |:----|----:|----:|----:|
@@ -329,10 +328,8 @@ ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE,
 ## Identify Unsystematic Responses
 
 Using the following function, we can examine the consistency of demand
-data using [Stein et al.’s
-(2015)](https://psycnet.apa.org/record/2015-30199-001) alogrithm for
-identifying unsystematic responses. Default values shown, but they can
-be customized.
+data using Stein et al.’s (2015) alogrithm for identifying unsystematic
+responses. Default values shown, but they can be customized.
 
 ``` r
 CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
@@ -378,10 +375,8 @@ demand equations.
 
 - `equation = "hs"` is the default but can accept the character strings
   `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the
-  contemporary equations proposed by [Hursh & Silberberg
-  (2008)](https://psycnet.apa.org/record/2008-00265-008) and [Koffarnus
-  et al. (2015)](https://psycnet.apa.org/record/2015-37520-001),
-  respectively.
+  contemporary equations proposed by Hursh & Silberberg (2008) and
+  Koffarnus et al. (2015), respectively.
 
 - `k` can take accept a specific number but by default will be
   calculated based on the maximum and minimum y values of the entire
@@ -454,8 +449,7 @@ aforementioned warning
 (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`).
 With `detailed = FALSE`, the only output is the dataframe of results
 (broken up to show the different types of results). This example fits
-the exponential equation proposed by [Hursh & Silberberg
-(2008)](https://psycnet.apa.org/record/2008-00265-008):
+the exponential equation proposed by Hursh & Silberberg (2008):
 
 | id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
 |:----|----------:|:----|----:|------:|------:|
@@ -498,8 +492,8 @@ Uncertainty and Model Information
 Derived Measures
 
 Here, the simplest form is shown specifying another equation, `"koff"`.
-This fits the modified exponential equation proposed by [Koffarnus et
-al. (2015)](https://psycnet.apa.org/record/2015-37520-001):
+This fits the modified exponential equation proposed by Koffarnus et
+al. (2015):
 
 ``` r
 FitCurves(dat = apt, equation = "koff")
@@ -773,9 +767,8 @@ graphing. The following code generates a plot of our two groups. We can
 use the predicted values already generated from the `ExtraF` function by
 accessing the `newdat` object. In the example above, we can access these
 predicted values using `ef$newdat`. Note that we keep the linear scaling
-of y given we used [Koffarnus et
-al. (2015)’s](https://psycnet.apa.org/record/2015-37520-001) equation
-fitted to the data.
+of y given we used Koffarnus et al. (2015)’s equation fitted to the
+data.
 
 ``` r
 ## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
@@ -1127,7 +1120,8 @@ this document:
 - Kaplan, B. A. (2025). Quantitative models of operant demand. In D. D.
   Reed, B. A. Kaplan, & S. P. Gilroy (Eds.), *Handbook of Operant
   Behavioral Economics: Demand, Discounting, Methods, and Applications*
-  (1st ed.). Academic Press. <https://doi.org/10.1016/C2023-0-04538-3>
+  (1st ed.). Academic Press.
+  <https://shop.elsevier.com/books/handbook-of-operant-behavioral-economics/reed/978-0-323-95745-8>
 
 - Kaplan, B. A., & Reed, D. D. (2025). shinybeez: A Shiny app for
   behavioral economic easy demand and discounting. *Journal of the

@@ -81,7 +81,7 @@ library(beezdemand)
 
 ### Example Dataset
 
-An example dataset of responses on an Alcohol Purchase Task is provided. This object is called `apt` and is located within the `beezdemand` package. These data are a subset of from the paper by [Kaplan & Reed (2018)](https://psycnet.apa.org/record/2018-02774-001). Participants (id) reported the number of alcoholic drinks (y) they would be willing to purchase and consume at various prices (x; USD). Note the format of the data, which is called "long format". Long format data are data structured such that repeated observations are stacked in multiple rows, rather than across columns. First, take a look at an extract of the dataset `apt`, where I've subsetted rows 1 through 10 and 17 through 26:
+An example dataset of responses on an Alcohol Purchase Task is provided. This object is called `apt` and is located within the `beezdemand` package. These data are a subset of from the paper by Kaplan & Reed (2018). Participants (id) reported the number of alcoholic drinks (y) they would be willing to purchase and consume at various prices (x; USD). Note the format of the data, which is called "long format". Long format data are data structured such that repeated observations are stacked in multiple rows, rather than across columns. First, take a look at an extract of the dataset `apt`, where I've subsetted rows 1 through 10 and 17 through 26:
 
 ```{r example-data-set, echo=FALSE, results='asis'}
 knitr::kable(apt[c(1:10, 17:26), ])
@@ -184,7 +184,7 @@ ChangeData(apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE, replfre
 
 ### Identify Unsystematic Responses
 
-Using the following function, we can examine the consistency of demand data using [Stein et al.'s (2015)](https://psycnet.apa.org/record/2015-30199-001)
+Using the following function, we can examine the consistency of demand data using Stein et al.'s (2015)
 alogrithm for identifying unsystematic responses. Default values
 shown, but they can be customized.
 
@@ -221,7 +221,7 @@ knitr::kable(head(GetEmpirical(apt), 5))
 
 `FitCurves()` has several important arguments that can be passed. For the purposes of this document, focus will be on the two contemporary demand equations.
 
-* `equation = "hs"` is the default but can accept the character strings `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the contemporary equations proposed by [Hursh & Silberberg (2008)](https://psycnet.apa.org/record/2008-00265-008) and [Koffarnus et al. (2015)](https://psycnet.apa.org/record/2015-37520-001), respectively. 
+* `equation = "hs"` is the default but can accept the character strings `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the contemporary equations proposed by Hursh & Silberberg (2008) and Koffarnus et al. (2015), respectively. 
 
 * `k` can take accept a specific number but by default will be calculated based on the maximum and minimum y values of the entire sample and adding .5. Adding this amount was originally proposed by Steven R. Hursh in an early iteration of a Microsoft Excel spreadsheet used to calculate demand metrics. This adjustment was adopted for two reasons. First, when fitting $Q_0$ as a derived parameter, the value may exceed the empirically observed intensity value. Thus, a k value calculated based only on the observed range of data may underestimate the full fitted range of the curve. Second, we have found that values of $\alpha$ (as well as values that rely on $\alpha$, i.e. approximate $P_{max}$) display greater discrepancies when smaller values of k are used compared to larger values of k. Other options include `"ind"`, which will calculate k based on individual basis, `"fit"`, which will fit k as a free parameter on an individual basis, `"share"`, which will fit k as a single shared parameter across all data sets (while fitting individual $Q_0$ and $\alpha$).
 
@@ -250,7 +250,7 @@ Which is equivalent to:
 FitCurves(dat = apt, equation = "hs")
 ```
 
-Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results). This example fits the exponential equation proposed by [Hursh & Silberberg (2008)](https://psycnet.apa.org/record/2008-00265-008):
+Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results). This example fits the exponential equation proposed by Hursh & Silberberg (2008):
 
 ```{r hs-setup, include=FALSE}
 fc <- FitCurves(dat = apt, equation = "hs")
@@ -268,7 +268,7 @@ knitr::kable(hs4, caption = "Derived Measures")
 ```
 
 
-Here, the simplest form is shown specifying another equation, `"koff"`. This fits the modified exponential equation proposed by [Koffarnus et al. (2015)](https://psycnet.apa.org/record/2015-37520-001):
+Here, the simplest form is shown specifying another equation, `"koff"`. This fits the modified exponential equation proposed by Koffarnus et al. (2015):
 
 ```{r koff, eval=FALSE}
 FitCurves(dat = apt, equation = "koff")
@@ -383,7 +383,7 @@ knitr::kable(ef$dfres[, c(1, 9:11)], caption = "Derived Measures")
 knitr::kable(ef$dfres[, c(1, 12, 14)], caption = "Convergence and Summary Information")
 ```
 
-When `verbose = TRUE`, objects from the result can be used in subsequent graphing. The following code generates a plot of our two groups. We can use the predicted values already generated from the `ExtraF` function by accessing the `newdat` object. In the example above, we can access these predicted values using `ef$newdat`. Note that we keep the linear scaling of y given we used [Koffarnus et al. (2015)'s](https://psycnet.apa.org/record/2015-37520-001) equation fitted to the data.
+When `verbose = TRUE`, objects from the result can be used in subsequent graphing. The following code generates a plot of our two groups. We can use the predicted values already generated from the `ExtraF` function by accessing the `newdat` object. In the example above, we can access these predicted values using `ef$newdat`. Note that we keep the linear scaling of y given we used Koffarnus et al. (2015)'s equation fitted to the data.
 
 ```{r plot-ftest, warning = FALSE}
 ## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
@@ -506,7 +506,7 @@ Examples:
 
 ## Free `beezdemand` Alternative with Graphical User Interface
 
-If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out the [Demand Curve Analyzer](https://smallnstats.com/dca). The Demand Curve Analyzer contains many of the functions `beezdemand` provides but with the benefits of easy Excel-like functionality. See the companion article [here](https://psycnet.apa.org/record/2018-52390-001).
+If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out the [Demand Curve Analyzer](https://www.smallnstats.com/resources/publications/gilroyDemandCurveAnalyzer2018). The Demand Curve Analyzer contains many of the functions `beezdemand` provides but with the benefits of easy Excel-like functionality.
 
 ## Acknowledgments
 
@@ -547,7 +547,7 @@ If you are interested in using open source software for analyzing demand curve d
 
 - Reed, D. D., Kaplan, B. A., & Gilroy, S. P. (2025). *Handbook of Operant Behavioral Economics: Demand, Discounting, Methods, and Applications* (1st ed.). Academic Press. https://shop.elsevier.com/books/handbook-of-operant-behavioral-economics/reed/978-0-323-95745-8
 
-- Kaplan, B. A. (2025). Quantitative models of operant demand. In D. D. Reed, B. A. Kaplan, & S. P. Gilroy (Eds.), *Handbook of Operant Behavioral Economics: Demand, Discounting, Methods, and Applications* (1st ed.). Academic Press. https://doi.org/10.1016/C2023-0-04538-3
+- Kaplan, B. A. (2025). Quantitative models of operant demand. In D. D. Reed, B. A. Kaplan, & S. P. Gilroy (Eds.), *Handbook of Operant Behavioral Economics: Demand, Discounting, Methods, and Applications* (1st ed.). Academic Press. https://shop.elsevier.com/books/handbook-of-operant-behavioral-economics/reed/978-0-323-95745-8
 
 - Kaplan, B. A., & Reed, D. D. (2025). shinybeez: A Shiny app for behavioral economic easy demand and discounting. *Journal of the Experimental Analysis of Behavior*. https://doi.org/10.1002/jeab.70000
 
