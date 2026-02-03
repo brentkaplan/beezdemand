@@ -42,6 +42,10 @@ AGENTS.md
 .claude/
 engineering/
 
+# Git worktrees #
+#################
+.worktrees/
+
 # pkgdown site (built by GitHub Actions) #
 ###########################################
 docs/
