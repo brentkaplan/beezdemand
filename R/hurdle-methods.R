@@ -871,8 +871,8 @@ plot.beezdemand_hurdle <- function(
   if (!is.null(subjects)) {
     lifecycle::deprecate_warn(
       "0.2.0",
-      "plot(x, subjects = )",
-      "plot(x, ids = )"
+      "plot(subjects = )",
+      "plot(ids = )"
     )
     if (is.null(ids)) {
       ids <- subjects
