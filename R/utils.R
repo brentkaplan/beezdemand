@@ -80,6 +80,23 @@ missing_package_error <- function(pkg, reason = NULL, call = rlang::caller_env()
   rlang::abort(message, class = c("beezdemand_missing_package", "beezdemand_error"), call = call)
 }
 
+#' Normalize Equation Name to Legacy Convention
+#'
+#' Maps modern equation names to their legacy equivalents used internally
+#' by the fitting engine. Pass-through for names that are already in legacy
+#' form or unrecognised.
+#'
+#' @param equation Character scalar.
+#' @return Character scalar (legacy name).
+#' @noRd
+normalize_equation <- function(equation) {
+  switch(equation,
+    exponential   = "hs",
+    exponentiated = "koff",
+    equation
+  )
+}
+
 ##' Pull vector from data frame
 ##'
 ##' @description

@@ -12,7 +12,9 @@ NULL
 #'
 #' @param data Data frame in long format with columns: `id`, `x` (price), `y` (consumption).
 #' @param equation Character. Equation type: `"hs"` (Hursh & Silberberg, 2008),
-#'   `"koff"` (Koffarnus et al., 2015), or `"linear"`. Default `"hs"`.
+#'   `"koff"` (Koffarnus et al., 2015), or `"linear"`. The modern aliases
+#'   `"exponential"` (equivalent to `"hs"`) and `"exponentiated"` (equivalent
+#'   to `"koff"`) are also accepted. Default `"hs"`.
 #' @param k Scaling constant. Numeric value (fixed), `"ind"` (individual),
 #'   `"fit"` (free parameter), or `"range"` (data-driven). Default `2`.
 #' @param agg Character. Aggregation method: `"Mean"`, `"Pooled"`, or `NULL`
@@ -57,7 +59,8 @@ NULL
 #'
 #' @export
 fit_demand_fixed <- function(data,
-                             equation = c("hs", "koff", "linear"),
+                             equation = c("hs", "koff", "linear",
+                                          "exponential", "exponentiated"),
                              k = 2,
                              agg = NULL,
                              x_var = "x",
@@ -66,6 +69,7 @@ fit_demand_fixed <- function(data,
                              param_space = c("natural", "log10"),
                              ...) {
   equation <- match.arg(equation)
+  equation <- normalize_equation(equation)
   param_space <- match.arg(param_space)
   call <- match.call()
 

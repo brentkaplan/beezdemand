@@ -196,6 +196,7 @@ beezdemand_default_y_trans <- function(type = "demand",
   }
 
   if (!is.null(equation)) {
+    equation <- normalize_equation(equation)
     if (equation == "hs") {
       return("log10")
     }

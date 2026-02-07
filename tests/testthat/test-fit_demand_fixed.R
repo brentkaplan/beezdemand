@@ -132,6 +132,39 @@ test_that("fit_demand_fixed handles different equations", {
 })
 
 
+test_that("fit_demand_fixed accepts modern equation aliases", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  # Modern aliases should map to legacy names internally
+  fit_exp <- fit_demand_fixed(apt_small, equation = "exponential")
+  fit_expd <- fit_demand_fixed(apt_small, equation = "exponentiated")
+
+  expect_equal(fit_exp$equation, "hs")
+  expect_equal(fit_expd$equation, "koff")
+})
+
+
+test_that("modern equation aliases produce identical results to legacy names", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit_hs <- suppressWarnings(fit_demand_fixed(apt_small, equation = "hs", k = 2))
+  fit_exp <- suppressWarnings(fit_demand_fixed(apt_small, equation = "exponential", k = 2))
+
+  expect_equal(fit_hs$results$Q0d, fit_exp$results$Q0d)
+  expect_equal(fit_hs$results$Alpha, fit_exp$results$Alpha)
+
+  fit_koff <- suppressWarnings(fit_demand_fixed(apt_small, equation = "koff", k = 2))
+  fit_expd <- suppressWarnings(fit_demand_fixed(apt_small, equation = "exponentiated", k = 2))
+
+  expect_equal(fit_koff$results$Q0d, fit_expd$results$Q0d)
+  expect_equal(fit_koff$results$Alpha, fit_expd$results$Alpha)
+})
+
+
 test_that("fit_demand_fixed k specification is recorded", {
   data(apt, package = "beezdemand")
   apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
