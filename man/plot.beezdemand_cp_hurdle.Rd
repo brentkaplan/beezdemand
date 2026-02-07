@@ -88,3 +88,4 @@ A ggplot2 object
 \description{
 Plot method for beezdemand_cp_hurdle
 }
+\keyword{internal}

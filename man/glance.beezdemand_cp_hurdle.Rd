@@ -25,3 +25,4 @@ A one-row tibble of model statistics with columns:
 \description{
 Glance method for beezdemand_cp_hurdle
 }
+\keyword{internal}

@@ -14,3 +14,4 @@
 \description{
 Print method for cp_hurdle_comparison
 }
+\keyword{internal}

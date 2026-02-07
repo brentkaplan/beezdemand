@@ -17,3 +17,4 @@ A data frame with parameter summary statistics
 \description{
 Computes summary statistics for subject-specific parameters.
 }
+\keyword{internal}

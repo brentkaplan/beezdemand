@@ -14,3 +14,4 @@
 \description{
 Log-likelihood method for beezdemand_cp_hurdle
 }
+\keyword{internal}

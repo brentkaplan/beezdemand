@@ -47,3 +47,4 @@ Predictions as a data frame or matrix.
 \description{
 Predict from Joint Hurdle Model
 }
+\keyword{internal}

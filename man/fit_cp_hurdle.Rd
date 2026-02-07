@@ -47,3 +47,4 @@ Fits a two-part mixed effects hurdle model for cross-price demand data
 using Template Model Builder (TMB). This model is appropriate when cross-price
 data contains many zeros representing true non-consumption.
 }
+\keyword{internal}

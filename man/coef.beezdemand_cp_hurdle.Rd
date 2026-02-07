@@ -16,3 +16,4 @@
 \description{
 Coefficients method for beezdemand_cp_hurdle
 }
+\keyword{internal}

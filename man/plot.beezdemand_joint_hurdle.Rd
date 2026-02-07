@@ -72,3 +72,4 @@ A ggplot2 object.
 \description{
 Plot Joint Hurdle Model
 }
+\keyword{internal}

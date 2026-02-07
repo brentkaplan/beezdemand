@@ -18,3 +18,4 @@
 \description{
 Print method for summary.beezdemand_cp_hurdle
 }
+\keyword{internal}

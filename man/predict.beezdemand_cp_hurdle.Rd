@@ -43,3 +43,4 @@ Predictions based on type
 \description{
 Predict method for beezdemand_cp_hurdle
 }
+\keyword{internal}

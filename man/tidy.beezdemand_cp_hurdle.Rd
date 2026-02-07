@@ -26,3 +26,4 @@ A tibble of model coefficients with columns:
 \description{
 Tidy method for beezdemand_cp_hurdle
 }
+\keyword{internal}

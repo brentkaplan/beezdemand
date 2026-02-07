@@ -25,3 +25,4 @@ A one-row tibble with model-level statistics including:
 \description{
 Glance Method for Joint Hurdle Model
 }
+\keyword{internal}

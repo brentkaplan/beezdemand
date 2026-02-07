@@ -24,3 +24,4 @@ A tibble with coefficient information including:
 \description{
 Tidy Method for Joint Hurdle Model
 }
+\keyword{internal}

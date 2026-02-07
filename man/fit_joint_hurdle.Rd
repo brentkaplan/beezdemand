@@ -79,3 +79,4 @@ Fits a joint three-part hurdle model that estimates:
 \strong{all} streams. Alternative price is assumed fixed and does not
 enter the model as a predictor.
 }
+\keyword{internal}

@@ -25,3 +25,4 @@ fit3 <- fit_cp_hurdle(data, "y", "x", "id", random_effects = c("zeros", "qalone"
 compare_cp_hurdle_models(fit3, fit2)
 }
 }
+\keyword{internal}

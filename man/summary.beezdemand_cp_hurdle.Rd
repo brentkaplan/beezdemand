@@ -31,3 +31,4 @@ A `summary.beezdemand_cp_hurdle` object (also inherits from
 Returns a structured summary object containing model coefficients,
 fit statistics, variance components, and interpretation.
 }
+\keyword{internal}

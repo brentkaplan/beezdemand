@@ -19,3 +19,4 @@ A data frame with columns: id, x, logQ, Q, prob_zero
 \description{
 Creates a data frame with subject-specific predictions across a price range.
 }
+\keyword{internal}

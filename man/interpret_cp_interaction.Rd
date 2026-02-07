@@ -15,3 +15,4 @@ Character vector with interpretation
 \description{
 Provides interpretation of the I parameter value.
 }
+\keyword{internal}

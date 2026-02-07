@@ -48,3 +48,4 @@ A list with:
 Transforms data from standard cross-price format to the
   long format required by the joint hurdle model.
 }
+\keyword{internal}
