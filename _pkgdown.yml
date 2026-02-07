@@ -61,10 +61,8 @@ reference:
       - fit_demand_fixed
       - fit_demand_mixed
       - fit_demand_hurdle
-      - fit_joint_hurdle
       - fit_cp_nls
       - fit_cp_linear
-      - fit_cp_hurdle
 
   - title: Legacy Model Fitting
     desc: >
@@ -120,7 +118,6 @@ reference:
       - get_individual_coefficients
       - cp_posthoc_slopes
       - cp_posthoc_intercepts
-      - interpret_cp_interaction
 
   - title: Derived Metrics
     desc: Functions for computing demand-derived metrics like Pmax and Omax.
@@ -142,7 +139,6 @@ reference:
     desc: Functions for comparing models.
     contents:
       - compare_hurdle_models
-      - compare_cp_hurdle_models
       - ExtraF
 
   - title: Visualization
@@ -180,19 +176,8 @@ reference:
     desc: Summary functions for parameter exploration.
     contents:
       - get_hurdle_param_summary
-      - get_cp_hurdle_param_summary
-      - get_cp_hurdle_predictions
       - starts_with("summary.")
       - starts_with("print.")
-
-  - title: Data Preparation (Joint Models)
-    desc: Functions for preparing data for joint models.
-    contents:
-      - prepare_joint_data
-      - fit_joint_latent
-      - fit_joint_saturated
-      - compute_joint_start_values_latent
-      - compute_joint_start_values_saturated
 
   - title: Validation & Data Checking
     desc: Functions for validating data inputs.
@@ -222,11 +207,7 @@ reference:
     desc: Documentation-only pages that group related methods.
     contents:
       - cp
-      - cp-hurdle-utils
       - fixed-demand
-      - beezdemand_cp_hurdle-methods
-      - joint-hurdle
-      - joint-hurdle-methods
       - param-registry
       - plot-theme
       - pmax-omax-engine
