@@ -72,7 +72,7 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
     stat = StatIdentity,
     geom = GeomLogticks,
     position = PositionIdentity,
-    show.legend = FALSEALSE,
+    show.legend = FALSE,
     inherit.aes = FALSE,
     params = list(
       base = base,
