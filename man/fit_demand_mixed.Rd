@@ -11,7 +11,7 @@ fit_demand_mixed(
   id_var,
   factors = NULL,
   factor_interaction = FALSE,
-  equation_form = c("zben", "simplified", "koff"),
+  equation_form = c("zben", "simplified", "exponentiated"),
   param_space = c("log10", "natural"),
   k = NULL,
   custom_model_formula = NULL,
@@ -33,7 +33,7 @@ fit_demand_mixed(
 
 \item{y_var}{Character string, the name of the dependent variable column.
 For `equation_form = "zben"`, this should be log-transformed consumption (e.g., "y_ll4").
-For `equation_form = "simplified"` or `"koff"`, this should be raw, untransformed consumption (e.g., "y").}
+For `equation_form = "simplified"` or `"exponentiated"`, this should be raw, untransformed consumption (e.g., "y").}
 
 \item{x_var}{Character string, the name of the independent variable column (e.g., "x", price).}
 
@@ -57,7 +57,7 @@ Options are:
         Equation: `y_var ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x_var)`.
         Model parameter `Q0` represents `log10(True Max Consumption)`.
         Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
-  \item `"koff"`: Koffarnus et al. (2015) exponentiated equation. Assumes `y_var`
+  \item `"exponentiated"`: Koffarnus et al. (2015) exponentiated equation. Assumes `y_var`
         is raw (untransformed) consumption. Requires the `k` parameter.
         Equation (log10 param_space): `y_var ~ (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x_var) - 1))`.
         Equation (natural param_space): `y_var ~ Q0 * 10^(k * (exp(-alpha * Q0 * x_var) - 1))`.
@@ -70,9 +70,9 @@ Options are:
 
   Notes:
   - For `equation_form = "zben"`, only `"log10"` is currently supported.
-  - For `equation_form = "simplified"` or `"koff"`, both `"log10"` and `"natural"` are supported.}
+  - For `equation_form = "simplified"` or `"exponentiated"`, both `"log10"` and `"natural"` are supported.}
 
-\item{k}{Numeric. Range parameter (in log10 units) used with `equation_form = "koff"`.
+\item{k}{Numeric. Range parameter (in log10 units) used with `equation_form = "exponentiated"`.
 If `NULL` (default), k is calculated from the data range: `log10(max(y)) - log10(min(y)) + 0.5`.
 Ignored for other equation forms.}
 

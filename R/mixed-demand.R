@@ -7,7 +7,7 @@
 #' @param data A data frame.
 #' @param y_var Character string, the name of the dependent variable column.
 #'   For `equation_form = "zben"`, this should be log-transformed consumption (e.g., "y_ll4").
-#'   For `equation_form = "simplified"` or `"koff"`, this should be raw, untransformed consumption (e.g., "y").
+#'   For `equation_form = "simplified"` or `"exponentiated"`, this should be raw, untransformed consumption (e.g., "y").
 #' @param x_var Character string, the name of the independent variable column (e.g., "x", price).
 #' @param id_var Character string, the name of the subject/group identifier column for random effects.
 #' @param factors A character vector of factor names (up to two) by which Q0 and alpha
@@ -26,7 +26,7 @@
 #'           Equation: `y_var ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x_var)`.
 #'           Model parameter `Q0` represents `log10(True Max Consumption)`.
 #'           Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
-#'     \item `"koff"`: Koffarnus et al. (2015) exponentiated equation. Assumes `y_var`
+#'     \item `"exponentiated"`: Koffarnus et al. (2015) exponentiated equation. Assumes `y_var`
 #'           is raw (untransformed) consumption. Requires the `k` parameter.
 #'           Equation (log10 param_space): `y_var ~ (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x_var) - 1))`.
 #'           Equation (natural param_space): `y_var ~ Q0 * 10^(k * (exp(-alpha * Q0 * x_var) - 1))`.
@@ -38,8 +38,8 @@
 #'
 #'   Notes:
 #'   - For `equation_form = "zben"`, only `"log10"` is currently supported.
-#'   - For `equation_form = "simplified"` or `"koff"`, both `"log10"` and `"natural"` are supported.
-#' @param k Numeric. Range parameter (in log10 units) used with `equation_form = "koff"`.
+#'   - For `equation_form = "simplified"` or `"exponentiated"`, both `"log10"` and `"natural"` are supported.
+#' @param k Numeric. Range parameter (in log10 units) used with `equation_form = "exponentiated"`.
 #'   If `NULL` (default), k is calculated from the data range: `log10(max(y)) - log10(min(y)) + 0.5`.
 #'   Ignored for other equation forms.
 #' @param custom_model_formula An optional custom nonlinear model formula (nlme format).
@@ -110,7 +110,7 @@ fit_demand_mixed <- function(
   id_var,
   factors = NULL,
   factor_interaction = FALSE,
-  equation_form = c("zben", "simplified", "koff"),
+  equation_form = c("zben", "simplified", "exponentiated"),
   param_space = c("log10", "natural"),
   k = NULL,
   custom_model_formula = NULL,
@@ -298,7 +298,7 @@ fit_demand_mixed <- function(
           ")"
         )
       }
-    } else if (equation_form == "koff") {
+    } else if (equation_form == "exponentiated") {
       # Koffarnus et al. (2015) exponentiated equation
       # Uses 10^() wrapping the exponential decay term, requires k parameter
       if (is.null(k)) {
@@ -310,7 +310,7 @@ fit_demand_mixed <- function(
         } else {
           k <- 2  # Sensible default
         }
-        message(sprintf("Using calculated k = %.3f for 'koff' equation.", k))
+        message(sprintf("Using calculated k = %.3f for 'exponentiated' equation.", k))
       }
       nlme_model_formula_str <- if (param_space == "log10") {
         paste0(
@@ -466,8 +466,8 @@ fit_demand_mixed <- function(
             max(0.1, abs(q0_start_intercept))
           if (q0_start_intercept == 0) q0_start_intercept <- 0.1
         }
-      } else if (equation_form == "simplified" || equation_form == "koff") {
-        # Both simplified and koff use raw consumption values
+      } else if (equation_form == "simplified" || equation_form == "exponentiated") {
+        # Both simplified and exponentiated use raw consumption values
         if (
           is.na(median_y_val_at_low_x) ||
             !is.finite(median_y_val_at_low_x) ||
@@ -484,7 +484,7 @@ fit_demand_mixed <- function(
       alpha_start_intercept <- if (param_space == "log10") log10(0.001) else 0.001
     }
 
-    if ((equation_form == "simplified" || equation_form == "koff") &&
+    if ((equation_form == "simplified" || equation_form == "exponentiated") &&
         param_space == "natural" &&
         !is.null(pooled_starts) &&
         !any(is.na(unlist(pooled_starts)))) {
@@ -654,7 +654,7 @@ fit_demand_mixed <- function(
       num_params_Q0 = num_params_Q0,
       num_params_alpha = num_params_alpha,
       param_space = param_space,
-      k = if (equation_form == "koff") k else NULL
+      k = if (equation_form == "exponentiated") k else NULL
     ),
     param_space = param_space,
     param_space_details = beezdemand_param_space_details_core(

@@ -28,8 +28,11 @@ library(beezdemand)
 library(dplyr)
 library(ggplot2)
 
-# Set to FALSE when you explicitly want to run the slower / less stable examples.
-render_fast <- TRUE
+data("apt", package = "beezdemand", envir = environment())
+data("ko", package = "beezdemand", envir = environment())
+
+# Set `BEEZDEMAND_VIGNETTE_MODE=full` to run the slower / less stable examples.
+render_fast <- tolower(Sys.getenv("BEEZDEMAND_VIGNETTE_MODE", "fast")) != "full"
 
 cache_key_object <- function(x) {
   tmp <- tempfile(fileext = ".rds")
@@ -174,21 +177,21 @@ plot(
 #### Koffarnus (Exponentiated) Equation Form
 
 `fit_demand_mixed()` also supports the Koffarnus et al. (2015) equation via
-`equation_form = "koff"`. By default, the scaling constant `k` will be computed
+`equation_form = "exponentiated"`. By default, the scaling constant `k` will be computed
 from the data range (you can also specify it directly).
 
-```{r apt_koff_fit}
-fit_apt_koff <- fit_demand_mixed(
+```{r apt_exponentiated_fit}
+fit_apt_exponentiated <- fit_demand_mixed(
   data = apt,
   y_var = "y",
   x_var = "x",
   id_var = "id",
-  equation_form = "koff",
+  equation_form = "exponentiated",
   k = NULL,
   nlme_control = quick_nlme_control,
   start_value_method = "heuristic"
 )
-print(fit_apt_koff)
+print(fit_apt_exponentiated)
 ```
 
 ## Inspecting Fits (tidy / glance / augment)

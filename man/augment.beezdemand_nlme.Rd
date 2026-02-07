@@ -30,7 +30,7 @@ visualization with the tidyverse.
 \details{
 The fitted values and residuals are on the same scale as the response variable
 used in the model. For `equation_form = "zben"`, this is the LL4-transformed
-scale. For `equation_form = "simplified"` or `"koff"`, this is the natural
+scale. For `equation_form = "simplified"` or `"exponentiated"`, this is the natural
 consumption scale.
 
 To back-transform predictions to the natural scale for "zben" models, use:
