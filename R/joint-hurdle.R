@@ -28,7 +28,7 @@ NULL
 #'   \item{subject_map}{Mapping from original IDs to 0-based indices}
 #'   \item{warnings}{Character vector of any warnings generated}
 #'
-#' @export
+#' @keywords internal
 prepare_joint_data <- function(
   data,
   y_var = "y",
@@ -265,7 +265,7 @@ prepare_joint_data <- function(
 #'   \item{data}{Prepared data used for fitting}
 #'   \item{call}{The matched call}
 #'
-#' @export
+#' @keywords internal
 fit_joint_hurdle <- function(
   data,
   y_var = "y",

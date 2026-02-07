@@ -19,7 +19,7 @@
 #'
 #' @return An object of class \code{beezdemand_cp_hurdle} containing model results.
 #'
-#' @export
+#' @keywords internal
 fit_cp_hurdle <- function(
   data,
   y_var = "y",

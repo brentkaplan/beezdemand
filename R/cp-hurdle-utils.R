@@ -11,7 +11,7 @@ NULL
 #' @param model_full The full model (more parameters, e.g., 3-RE)
 #' @param model_reduced The reduced model (fewer parameters, e.g., 2-RE)
 #' @return A list with class "cp_hurdle_comparison" containing test results
-#' @export
+#' @keywords internal
 #' @examples
 #' \dontrun{
 #' fit2 <- fit_cp_hurdle(data, "y", "x", "id", random_effects = c("zeros", "qalone"))
@@ -71,6 +71,7 @@ compare_cp_hurdle_models <- function(model_full, model_reduced) {
 #' Print method for cp_hurdle_comparison
 #' @param x A cp_hurdle_comparison object
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 print.cp_hurdle_comparison <- function(x, ...) {
   cat("Likelihood Ratio Test for Cross-Price Hurdle Models\n")
@@ -129,7 +130,7 @@ print.cp_hurdle_comparison <- function(x, ...) {
 #' @param fit_obj A beezdemand_cp_hurdle object
 #' @param ci_level Confidence interval level (default 0.95)
 #' @return A data frame with parameter summary statistics
-#' @export
+#' @keywords internal
 get_cp_hurdle_param_summary <- function(fit_obj, ci_level = 0.95) {
   if (!inherits(fit_obj, "beezdemand_cp_hurdle")) {
     stop("fit_obj must be a beezdemand_cp_hurdle object")
@@ -172,7 +173,7 @@ get_cp_hurdle_param_summary <- function(fit_obj, ci_level = 0.95) {
 #'
 #' @param I_value The I parameter value (scalar or vector)
 #' @return Character vector with interpretation
-#' @export
+#' @keywords internal
 interpret_cp_interaction <- function(I_value) {
   sapply(I_value, function(I) {
     if (is.na(I)) {
@@ -197,7 +198,7 @@ interpret_cp_interaction <- function(I_value) {
 #' @param x_range Price range (default uses observed range)
 #' @param n_points Number of prediction points
 #' @return A data frame with columns: id, x, logQ, Q, prob_zero
-#' @export
+#' @keywords internal
 get_cp_hurdle_predictions <- function(fit_obj, x_range = NULL, n_points = 50) {
   if (!inherits(fit_obj, "beezdemand_cp_hurdle")) {
     stop("fit_obj must be a beezdemand_cp_hurdle object")

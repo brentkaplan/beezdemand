@@ -9,6 +9,7 @@ utils::globalVariables(c("Qalone", "I_individual", "prob"))
 #' Print method for beezdemand_cp_hurdle
 #' @param x A beezdemand_cp_hurdle object
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 print.beezdemand_cp_hurdle <- function(x, ...) {
   cat("Two-Part Mixed Effects Hurdle Cross-Price Demand Model\n")
@@ -62,6 +63,7 @@ print.beezdemand_cp_hurdle <- function(x, ...) {
 #'   - `correlations`: Random effect correlations (if 3RE)
 #'   - `interpretation`: Character describing substitute/complement relationship
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#' @keywords internal
 #' @export
 summary.beezdemand_cp_hurdle <- function(object, ...) {
   n_re <- object$param_info$n_random_effects
@@ -232,6 +234,7 @@ summary.beezdemand_cp_hurdle <- function(object, ...) {
 #' @param digits Number of significant digits to print
 #' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 print.summary.beezdemand_cp_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("Two-Part Mixed Effects Hurdle Cross-Price Demand Model\n")
@@ -327,6 +330,7 @@ print.summary.beezdemand_cp_hurdle <- function(x, digits = 4, n = Inf, ...) {
 #' @param object A beezdemand_cp_hurdle object
 #' @param type Which coefficients: "all" (default), "fixed", "random", or "derived"
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 coef.beezdemand_cp_hurdle <- function(
   object,
@@ -354,6 +358,7 @@ coef.beezdemand_cp_hurdle <- function(
 #' Log-likelihood method for beezdemand_cp_hurdle
 #' @param object A beezdemand_cp_hurdle object
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 logLik.beezdemand_cp_hurdle <- function(object, ...) {
   ll <- object$loglik
@@ -367,6 +372,7 @@ logLik.beezdemand_cp_hurdle <- function(object, ...) {
 #' @param object A beezdemand_cp_hurdle object
 #' @param ... Additional arguments (ignored)
 #' @param k Penalty per parameter (default 2 for AIC)
+#' @keywords internal
 #' @export
 AIC.beezdemand_cp_hurdle <- function(object, ..., k = 2) {
   k * length(object$opt$par) - 2 * object$loglik
@@ -375,6 +381,7 @@ AIC.beezdemand_cp_hurdle <- function(object, ..., k = 2) {
 #' BIC method for beezdemand_cp_hurdle
 #' @param object A beezdemand_cp_hurdle object
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 BIC.beezdemand_cp_hurdle <- function(object, ...) {
   log(object$param_info$n_obs) * length(object$opt$par) - 2 * object$loglik
@@ -396,6 +403,7 @@ BIC.beezdemand_cp_hurdle <- function(object, ...) {
 #'   used only for validation.
 #' @param ... Additional arguments (ignored)
 #' @return Predictions based on type
+#' @keywords internal
 #' @export
 predict.beezdemand_cp_hurdle <- function(
   object,
@@ -524,6 +532,7 @@ predict.beezdemand_cp_hurdle <- function(
 #' @param ind_line_size Line size for individual curves.
 #' @param ... Additional arguments passed to ggplot
 #' @return A ggplot2 object
+#' @keywords internal
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_bw scale_color_viridis_d
 plot.beezdemand_cp_hurdle <- function(
@@ -857,6 +866,7 @@ plot.beezdemand_cp_hurdle <- function(
 #'   - `statistic`: z-value
 #'   - `p.value`: P-value
 #'   - `component`: One of "zero_probability", "consumption", "variance", or "fixed"
+#' @keywords internal
 #' @export
 tidy.beezdemand_cp_hurdle <- function(
   x,
@@ -921,6 +931,7 @@ tidy.beezdemand_cp_hurdle <- function(
 #'   - `converged`: Convergence status
 #'   - `logLik`: Log-likelihood
 #'   - `AIC`, `BIC`: Information criteria
+#' @keywords internal
 #' @export
 glance.beezdemand_cp_hurdle <- function(x, ...) {
   tibble::tibble(

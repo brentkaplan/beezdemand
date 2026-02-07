@@ -14,6 +14,7 @@ utils::globalVariables(c(
   "y"
 ))
 
+#' @keywords internal
 #' @export
 print.beezdemand_joint_hurdle <- function(x, ...) {
   joint_type <- if (!is.null(x$joint_type)) x$joint_type else "saturated"
@@ -66,6 +67,7 @@ print.beezdemand_joint_hurdle <- function(x, ...) {
 #'   - `coefficients_by_stream`: List of tibbles by stream
 #'   - `variance_components`: Random effect variances
 #'   - `correlations`: Random effect correlations
+#' @keywords internal
 #' @export
 summary.beezdemand_joint_hurdle <- function(object, ...) {
   joint_type <- if (!is.null(object$joint_type)) {
@@ -333,6 +335,7 @@ summary.beezdemand_joint_hurdle <- function(object, ...) {
 #' @param digits Number of significant digits to print
 #' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
+#' @keywords internal
 #' @export
 print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("\nJoint Hurdle Cross-Price Model Summary\n")
@@ -472,6 +475,7 @@ print.summary.beezdemand_joint_hurdle <- function(x, digits = 4, n = Inf, ...) {
 }
 
 
+#' @keywords internal
 #' @export
 coef.beezdemand_joint_hurdle <- function(
   object,
@@ -532,6 +536,7 @@ coef.beezdemand_joint_hurdle <- function(
 }
 
 
+#' @keywords internal
 #' @export
 logLik.beezdemand_joint_hurdle <- function(object, ...) {
   ll <- object$logLik
@@ -542,12 +547,14 @@ logLik.beezdemand_joint_hurdle <- function(object, ...) {
 }
 
 
+#' @keywords internal
 #' @export
 AIC.beezdemand_joint_hurdle <- function(object, ..., k = 2) {
   -2 * object$logLik + k * length(object$coefficients)
 }
 
 
+#' @keywords internal
 #' @export
 BIC.beezdemand_joint_hurdle <- function(object, ...) {
   -2 * object$logLik + log(object$n_obs) * length(object$coefficients)
@@ -573,6 +580,7 @@ BIC.beezdemand_joint_hurdle <- function(object, ...) {
 #' @param ... Additional arguments (unused).
 #'
 #' @return Predictions as a data frame or matrix.
+#' @keywords internal
 #' @export
 predict.beezdemand_joint_hurdle <- function(
   object,
@@ -733,6 +741,7 @@ predict.beezdemand_joint_hurdle <- function(
 #' @param ... Additional arguments passed to ggplot.
 #'
 #' @return A ggplot2 object.
+#' @keywords internal
 #' @export
 plot.beezdemand_joint_hurdle <- function(
   x,
@@ -1004,6 +1013,7 @@ plot.beezdemand_joint_hurdle <- function(
 #'   - `p.value`: P-value
 #'   - `component`: One of "hurdle", "alone.target", "own.target",
 #'     "own.alt", "variance", "latent_loadings", "shared"
+#' @keywords internal
 #' @export
 tidy.beezdemand_joint_hurdle <- function(x, ...) {
   coef <- x$coefficients_natural
@@ -1077,6 +1087,7 @@ tidy.beezdemand_joint_hurdle <- function(x, ...) {
 #'   - `converged`: Convergence status
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
 #'   - `k_fixed`, `k_value`: Whether k was fixed and its value
+#' @keywords internal
 #' @export
 glance.beezdemand_joint_hurdle <- function(x, ...) {
   joint_type <- if (!is.null(x$joint_type)) x$joint_type else "saturated"
