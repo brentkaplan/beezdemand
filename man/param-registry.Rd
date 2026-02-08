@@ -19,6 +19,24 @@ Parameters follow snake_case with scale prefixes:
 }
 }
 
+\section{Equation Registry}{
+
+Equations are grouped by model family:
+\itemize{
+  \item \strong{NLS (FitCurves)}: \code{hs}, \code{koff}, \code{linear}. The \code{k}
+    parameter defaults to fixed but supports multiple modes: \code{"fit"}, \code{"ind"},
+    \code{"share"}, \code{"range"}.
+  \item \strong{NLME (fit_demand_mixed)}: \code{zben}, \code{nlme_simplified},
+    \code{nlme_exponentiated}. Only \code{nlme_exponentiated} uses \code{k} (always fixed).
+  \item \strong{Hurdle Part II (fit_demand_hurdle)}: \code{hurdle_zhao},
+    \code{hurdle_hs}, \code{hurdle_snd}. Parameters are in log space. \code{hurdle_snd}
+    has no \code{k} parameter. Each variant has 2RE and 3RE sub-models with different
+    variance/correlation parameters.
+  \item \strong{Cross-price (fit_cp_nls)}: \code{cp_exponential}, \code{cp_exponentiated},
+    \code{cp_additive}. All use \code{log10_qalone}, \code{I}, \code{log10_beta}.
+}
+}
+
 \section{Derived Metrics Naming}{
 
 \itemize{

@@ -13,6 +13,22 @@
 #'   \item \code{<param>}: canonical name without prefix (context determines scale)
 #' }
 #'
+#' @section Equation Registry:
+#' Equations are grouped by model family:
+#' \itemize{
+#'   \item \strong{NLS (FitCurves)}: \code{hs}, \code{koff}, \code{linear}. The \code{k}
+#'     parameter defaults to fixed but supports multiple modes: \code{"fit"}, \code{"ind"},
+#'     \code{"share"}, \code{"range"}.
+#'   \item \strong{NLME (fit_demand_mixed)}: \code{zben}, \code{nlme_simplified},
+#'     \code{nlme_exponentiated}. Only \code{nlme_exponentiated} uses \code{k} (always fixed).
+#'   \item \strong{Hurdle Part II (fit_demand_hurdle)}: \code{hurdle_zhao},
+#'     \code{hurdle_hs}, \code{hurdle_snd}. Parameters are in log space. \code{hurdle_snd}
+#'     has no \code{k} parameter. Each variant has 2RE and 3RE sub-models with different
+#'     variance/correlation parameters.
+#'   \item \strong{Cross-price (fit_cp_nls)}: \code{cp_exponential}, \code{cp_exponentiated},
+#'     \code{cp_additive}. All use \code{log10_qalone}, \code{I}, \code{log10_beta}.
+#' }
+#'
 #' @section Derived Metrics Naming:
 #' \itemize{
 #'   \item \code{pmax_model}: Pmax derived from fitted model parameters
@@ -59,7 +75,7 @@ NULL
     default_scale = "natural",
     synonyms = c("Q0", "Q0d", "Intensity", "intensity")
   ),
-  
+
   alpha = list(
     canonical = "alpha",
     description = "Elasticity/decay parameter",
@@ -68,7 +84,7 @@ NULL
     default_scale = "natural",
     synonyms = c("Alpha", "Elasticity", "elasticity")
   ),
-  
+
   k = list(
     canonical = "k",
     description = "Range parameter (log units)",
@@ -77,7 +93,7 @@ NULL
     default_scale = "natural",
     synonyms = c("K")
   ),
-  
+
   # Cross-price parameters
   qalone = list(
     canonical = "qalone",
@@ -87,7 +103,8 @@ NULL
     default_scale = "log10",
     synonyms = c("Qalone", "Q_alone")
   ),
-  
+
+  # Note: Cross-price formulas use uppercase "I" as the parameter name
   i = list(
     canonical = "i",
     description = "Cross-price interaction parameter",
@@ -96,7 +113,7 @@ NULL
     default_scale = "natural",
     synonyms = c("I", "Interaction")
   ),
-  
+
   beta = list(
     canonical = "beta",
     description = "Cross-price decay parameter",
@@ -105,7 +122,7 @@ NULL
     default_scale = "log10",
     synonyms = c("Beta")
   ),
-  
+
   # Hurdle model probability parameters
   beta0 = list(
     canonical = "beta0",
@@ -115,7 +132,7 @@ NULL
     default_scale = "natural",
     synonyms = c("Beta0")
   ),
-  
+
   beta1 = list(
     canonical = "beta1",
     description = "Slope for zero probability (logit scale)",
@@ -124,23 +141,73 @@ NULL
     default_scale = "natural",
     synonyms = c("Beta1")
   ),
-  
-  gamma0 = list(
-    canonical = "gamma0",
-    description = "Intercept for zero probability (alternative)",
+
+  # Note: gamma0/gamma1 exist in joint hurdle models only (fit_joint_hurdle),
+  # which are not yet part of the public API. They will be added here if/when
+  # joint-hurdle models become public.
+
+  # Hurdle model variance/correlation parameters (TMB-estimated)
+  logsigma_a = list(
+    canonical = "logsigma_a",
+    description = "Log SD of random effect a_i (Part I zero probability)",
     constraint = "real",
     valid_scales = c("natural"),
     default_scale = "natural",
-    synonyms = c("Gamma0")
+    synonyms = character(0)
   ),
-  
-  gamma1 = list(
-    canonical = "gamma1",
-    description = "Slope for zero probability (alternative)",
+
+  logsigma_b = list(
+    canonical = "logsigma_b",
+    description = "Log SD of random effect b_i (Part II Q0)",
     constraint = "real",
     valid_scales = c("natural"),
     default_scale = "natural",
-    synonyms = c("Gamma1")
+    synonyms = character(0)
+  ),
+
+  logsigma_c = list(
+    canonical = "logsigma_c",
+    description = "Log SD of random effect c_i (Part II alpha; 3RE only)",
+    constraint = "real",
+    valid_scales = c("natural"),
+    default_scale = "natural",
+    synonyms = character(0)
+  ),
+
+  logsigma_e = list(
+    canonical = "logsigma_e",
+    description = "Log SD of residual error (Part II)",
+    constraint = "real",
+    valid_scales = c("natural"),
+    default_scale = "natural",
+    synonyms = character(0)
+  ),
+
+  rho_ab_raw = list(
+    canonical = "rho_ab_raw",
+    description = "Unbounded correlation between a_i and b_i random effects",
+    constraint = "real",
+    valid_scales = c("natural"),
+    default_scale = "natural",
+    synonyms = character(0)
+  ),
+
+  rho_ac_raw = list(
+    canonical = "rho_ac_raw",
+    description = "Unbounded correlation between a_i and c_i random effects (3RE only)",
+    constraint = "real",
+    valid_scales = c("natural"),
+    default_scale = "natural",
+    synonyms = character(0)
+  ),
+
+  rho_bc_raw = list(
+    canonical = "rho_bc_raw",
+    description = "Unbounded partial correlation between b_i and c_i random effects (3RE only)",
+    constraint = "real",
+    valid_scales = c("natural"),
+    default_scale = "natural",
+    synonyms = character(0)
   )
 )
 
@@ -156,37 +223,37 @@ NULL
     description = "Price at maximum expenditure (model-derived)",
     legacy_synonyms = c("Pmaxd", "Pmaxa", "Pmax")
   ),
-  
- pmax_obs = list(
+
+  pmax_obs = list(
     canonical = "pmax_obs",
     description = "Price at maximum expenditure (observed/empirical)",
     legacy_synonyms = c("Pmaxe")
   ),
-  
+
   omax_model = list(
     canonical = "omax_model",
     description = "Maximum expenditure (model-derived)",
     legacy_synonyms = c("Omaxd", "Omaxa", "Omax")
   ),
-  
+
   omax_obs = list(
     canonical = "omax_obs",
     description = "Maximum expenditure (observed/empirical)",
     legacy_synonyms = c("Omaxe")
   ),
-  
+
   q_at_pmax_model = list(
     canonical = "q_at_pmax_model",
     description = "Consumption at Pmax (model-derived)",
     legacy_synonyms = c("Qmax")
   ),
-  
+
   elasticity_at_pmax = list(
     canonical = "elasticity_at_pmax_model",
     description = "Elasticity at Pmax (should be ~-1)",
     legacy_synonyms = character(0)
   ),
-  
+
   ev = list(
     canonical = "ev",
     description = "Essential value",
@@ -204,7 +271,7 @@ NULL
     description = "Standard error of alpha_star (delta method)",
     legacy_synonyms = character(0)
   ),
-  
+
   breakpoint = list(
     canonical = "breakpoint",
     description = "Price at which consumption reaches zero",
@@ -219,61 +286,38 @@ NULL
 #'
 #' @keywords internal
 .beezdemand_equation_registry <- list(
+  # ---------------------------------------------------------------------------
+  # NLS equations (FitCurves)
+  # ---------------------------------------------------------------------------
+  # Note: In FitCurves(), k defaults to fixed but supports multiple modes:
+  # numeric (fixed value), "fit" (free parameter), "ind" (per-individual),
+  # "share" (group-shared), "range" (empirical sample range).
+
   hs = list(
     id = "hs",
     name = "Hursh & Silberberg (2008) Exponential",
     future_id = "exponential_demand",
     params_estimated = c("q0", "alpha"),
-    params_fixed = c("k"),
+    params_default_fixed = c("k"),
+    k_modes = c("fixed", "fit", "ind", "share", "range"),
     default_param_space = "natural",
     response_scale = "log10",
     zero_handling = "drop"
   ),
-  
+
   koff = list(
     id = "koff",
     name = "Koffarnus et al. (2015) Exponentiated",
     future_id = "exponentiated_demand",
     params_estimated = c("q0", "alpha"),
-    params_fixed = c("k"),
+    params_default_fixed = c("k"),
+    k_modes = c("fixed", "fit", "ind", "share", "range"),
     default_param_space = "natural",
     response_scale = "natural",
     zero_handling = "keep"
   ),
-  
-  hurdle = list(
-    id = "hurdle",
-    name = "Two-Part Hurdle Demand",
-    future_id = "hurdle_demand",
-    params_estimated = c("beta0", "beta1", "gamma0", "gamma1", "log_q0", "log_alpha"),
-    params_fixed = c("k"),
-    default_param_space = "log",
-    response_scale = "log10",
-    zero_handling = "model"
-  ),
-  
-  zben = list(
-    id = "zben",
-    name = "Zero-Bounded Exponential (LL4)",
-    future_id = "zben_ll4_demand",
-    params_estimated = c("q0", "alpha"),
-    params_fixed = c("k"),
-    default_param_space = "log10",
-    response_scale = "ll4",
-    zero_handling = "transform"
-  ),
-  
-  snd = list(
-    id = "snd",
-    name = "Simple Non-Linear Demand",
-    future_id = "simple_demand",
-    params_estimated = c("q0", "alpha"),
-    params_fixed = character(0),
-    default_param_space = "natural",
-    response_scale = "natural",
-    zero_handling = "keep"
-  ),
-  
+
+  # Note: internal formula uses lowercase "l" but output columns use uppercase "L"
   linear = list(
     id = "linear",
     name = "Linear Demand",
@@ -284,23 +328,133 @@ NULL
     response_scale = "natural",
     zero_handling = "keep"
   ),
-  
+
+  # ---------------------------------------------------------------------------
+  # NLME equations (fit_demand_mixed)
+  # ---------------------------------------------------------------------------
+
+  zben = list(
+    id = "zben",
+    name = "Zero-Bounded Exponential (LL4)",
+    future_id = "zben_ll4_demand",
+    params_estimated = c("q0", "alpha"),
+    # k is not used in this equation form
+    params_fixed = character(0),
+    default_param_space = "log10",
+    response_scale = "ll4",
+    zero_handling = "transform"
+  ),
+
+  nlme_simplified = list(
+    id = "nlme_simplified",
+    name = "Simplified Normalized Demand (NLME)",
+    future_id = "simple_demand",
+    params_estimated = c("q0", "alpha"),
+    params_fixed = character(0),
+    default_param_space = "natural",
+    response_scale = "natural",
+    zero_handling = "keep"
+  ),
+
+  nlme_exponentiated = list(
+    id = "nlme_exponentiated",
+    name = "Koffarnus Exponentiated (NLME)",
+    future_id = "nlme_exponentiated_demand",
+    params_estimated = c("q0", "alpha"),
+    # k is always fixed in NLME context (calculated from data if NULL)
+    params_fixed = c("k"),
+    default_param_space = "log10",
+    response_scale = "natural",
+    zero_handling = "keep"
+  ),
+
+  # ---------------------------------------------------------------------------
+  # Hurdle Part II equations (fit_demand_hurdle)
+  # ---------------------------------------------------------------------------
+  # All hurdle equations include Part I (logistic: beta0, beta1) and Part II
+  # (nonlinear demand on log consumption). TMB parameters are in log space.
+  # Variance/correlation parameters differ between 2RE and 3RE sub-models.
+
+  hurdle_zhao = list(
+    id = "hurdle_zhao",
+    name = "Hurdle Zhao Exponential (Part II)",
+    future_id = "hurdle_zhao_demand",
+    params_estimated = c("beta0", "beta1", "log_q0", "log_k", "log_alpha"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "log",
+    zero_handling = "model",
+    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
+                            "rho_ab_raw"),
+    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
+                            "logsigma_e",
+                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+  ),
+
+  hurdle_hs = list(
+    id = "hurdle_hs",
+    name = "Hurdle HS/StdQ0 Exponential (Part II)",
+    future_id = "hurdle_hs_demand",
+    params_estimated = c("beta0", "beta1", "log_q0", "log_k", "log_alpha"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "log",
+    zero_handling = "model",
+    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
+                            "rho_ab_raw"),
+    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
+                            "logsigma_e",
+                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+  ),
+
+  hurdle_snd = list(
+    id = "hurdle_snd",
+    name = "Hurdle Simplified/SND (Part II)",
+    future_id = "hurdle_snd_demand",
+    # No log_k parameter in SND variant
+    params_estimated = c("beta0", "beta1", "log_q0", "log_alpha"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "log",
+    zero_handling = "model",
+    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
+                            "rho_ab_raw"),
+    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
+                            "logsigma_e",
+                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+  ),
+
+  # ---------------------------------------------------------------------------
+  # Cross-price equations (fit_cp_nls)
+  # ---------------------------------------------------------------------------
+
   cp_exponential = list(
     id = "exponential",
     name = "Cross-Price Exponential",
     future_id = "cp_exponential",
-    params_estimated = c("log10_qalone", "i", "log10_beta"),
+    params_estimated = c("log10_qalone", "I", "log10_beta"),
     params_fixed = character(0),
     default_param_space = "log10",
     response_scale = "log10",
     zero_handling = "drop"
   ),
-  
+
   cp_exponentiated = list(
     id = "exponentiated",
     name = "Cross-Price Exponentiated",
     future_id = "cp_exponentiated",
-    params_estimated = c("log10_qalone", "i", "log10_beta"),
+    params_estimated = c("log10_qalone", "I", "log10_beta"),
+    params_fixed = character(0),
+    default_param_space = "log10",
+    response_scale = "natural",
+    zero_handling = "keep"
+  ),
+
+  cp_additive = list(
+    id = "additive",
+    name = "Cross-Price Additive",
+    future_id = "cp_additive",
+    params_estimated = c("log10_qalone", "I", "log10_beta"),
     params_fixed = character(0),
     default_param_space = "log10",
     response_scale = "natural",
@@ -417,7 +571,9 @@ get_equation_spec <- function(equation_id) {
 #' @keywords internal
 validate_param_scale <- function(param, scale) {
   reg <- .beezdemand_param_registry[[param]]
-  if (is.null(reg)) return(TRUE)  # Unknown param, assume valid
+  if (is.null(reg)) {
+    return(TRUE)
+  } # Unknown param, assume valid
   scale %in% reg$valid_scales
 }
 
@@ -448,7 +604,7 @@ get_legacy_mapping <- function() {
       NULL
     }
   })
-  
+
   metric_rows <- lapply(names(.beezdemand_derived_registry), function(metric) {
     reg <- .beezdemand_derived_registry[[metric]]
     if (length(reg$legacy_synonyms) > 0) {
@@ -462,6 +618,6 @@ get_legacy_mapping <- function() {
       NULL
     }
   })
-  
+
   do.call(rbind, c(param_rows, metric_rows))
 }

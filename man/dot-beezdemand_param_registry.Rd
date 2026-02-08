@@ -5,7 +5,7 @@
 \alias{.beezdemand_param_registry}
 \title{Canonical Parameter Definitions}
 \format{
-An object of class \code{list} of length 10.
+An object of class \code{list} of length 15.
 }
 \usage{
 .beezdemand_param_registry
