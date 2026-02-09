@@ -44,6 +44,7 @@ Imports:
     TMB
 Suggests:
     broom.mixed,
+    GGally,
     knitr,
     tidyverse,
     rmarkdown,

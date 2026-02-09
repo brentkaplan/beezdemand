@@ -194,7 +194,7 @@ plot.beezdemand_descriptive <- function(x,
     # Add text labels at top of plot
     p <- p + ggplot2::geom_text(
       data = label_data,
-      ggplot2::aes(x = x, y = Inf, label = label),
+      ggplot2::aes(x = .data$x, y = Inf, label = .data$label),
       vjust = 1.5,
       size = 3,
       inherit.aes = FALSE

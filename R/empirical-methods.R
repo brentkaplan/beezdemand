@@ -170,7 +170,7 @@ plot.beezdemand_empirical <- function(x, type = "histogram", ...) {
     )
 
     # Create faceted histogram
-    p <- ggplot2::ggplot(measures_long, ggplot2::aes(x = value)) +
+    p <- ggplot2::ggplot(measures_long, ggplot2::aes(x = .data$value)) +
       ggplot2::geom_histogram(bins = 30, fill = "steelblue", color = "white") +
       ggplot2::facet_wrap(~ measure, scales = "free", ncol = 2) +
       ggplot2::labs(x = "Value", y = "Frequency",
