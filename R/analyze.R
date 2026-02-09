@@ -1624,6 +1624,12 @@ GetAnalyticPmaxFallback <- function(K_, A_, Q0_) {
 
 ##' Calculates empirical measures for purchase task data
 ##'
+##' `r lifecycle::badge("superseded")`
+##'
+##' `GetEmpirical()` has been superseded by [get_empirical_measures()], which
+##' provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
+##' `GetEmpirical()` will continue to work but is no longer recommended for new code.
+##'
 ##' Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 ##' @title GetEmpirical
 ##' @param dat data frame (long form) of purchase task data.
@@ -1632,11 +1638,19 @@ GetAnalyticPmaxFallback <- function(K_, A_, Q0_) {
 ##' @param ycol The column name that should be treated as "y" data
 ##' @return Data frame of empirical measures
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @seealso [get_empirical_measures()] for the modern interface
 ##' @examples
 ##' ## Obtain empirical measures
 ##' GetEmpirical(apt)
 ##' @export
 GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
+    # Soft deprecation warning
+    lifecycle::deprecate_soft(
+        when = "0.3.0",
+        what = "GetEmpirical()",
+        with = "get_empirical_measures()"
+    )
+
     dat <- CheckCols(dat, xcol = xcol, ycol = ycol, idcol = idcol)
 
     ps <- unique(dat$id)

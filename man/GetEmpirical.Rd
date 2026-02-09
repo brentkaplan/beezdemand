@@ -22,11 +22,20 @@ Data frame of empirical measures
 Calculates empirical measures for purchase task data
 }
 \details{
+`r lifecycle::badge("superseded")`
+
+`GetEmpirical()` has been superseded by [get_empirical_measures()], which
+provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
+`GetEmpirical()` will continue to work but is no longer recommended for new code.
+
 Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 }
 \examples{
 ## Obtain empirical measures
 GetEmpirical(apt)
+}
+\seealso{
+[get_empirical_measures()] for the modern interface
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>
