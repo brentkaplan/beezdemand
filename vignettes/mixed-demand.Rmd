@@ -11,15 +11,15 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = FALSE, # Keep code chunks separate
-  comment = "#>",
+  collapse = FALSE, # Keep code chunks separate for clarity
+  comment = "#>",   # R console style comments
   dev = "png",
   dpi = 144,
   fig.width = 7,
   fig.height = 5,
-  warning = FALSE, # Suppress warnings for cleaner output in vignette
-  message = FALSE, # Suppress messages for cleaner output in vignette
-  cache = TRUE,
+  warning = FALSE,  # Suppress warnings for cleaner output
+  message = FALSE,  # Suppress messages for cleaner output
+  cache = TRUE,     # Cache for faster rebuilds
   cache.path = "mixed-demand_cache/",
   autodep = TRUE
 )
@@ -72,6 +72,16 @@ various factors (fixed effects) influence demand parameters like $Q_{0}$ (maximu
 consumption at zero price) and $\alpha$ (sensitivity of demand to price). The
 parameters $Q_{0}$ and $\alpha$ are estimated on a log10 scale for numerical stability,
 but reporting functions will provide them on their natural, interpretable scale.
+
+## How to Use This Vignette
+
+This vignette is organized for different experience levels:
+
+- **Quick Start (Beginners)**: Sections "Data Preparation" through "Inspecting Fits" cover essential workflow (~15-20 minutes). Start here if you're new to mixed-effects demand modeling.
+
+- **Intermediate Usage**: Sections "Diagnostics" through "Performing Pairwise Comparisons" cover factor models, post-hoc inference, and practical model selection (~30-40 minutes). Use these sections when you need to model group differences or covariates.
+
+- **Advanced Topics**: The final "Advanced Topics" section covers complex random effects structures, continuous covariates, and custom model specifications (~60+ minutes). These techniques are for experienced users with specific modeling needs.
 
 ## Data Preparation
 
@@ -949,10 +959,12 @@ if (
 
 ## Advanced Topics
 
+**Note**: This section covers advanced modeling techniques for experienced users. If you're new to mixed-effects demand modeling, the sections above provide everything needed for most analyses. These advanced topics require deeper understanding of mixed-effects models and may be computationally intensive.
+
 ```{r advanced_topics_note, echo=FALSE, results='asis'}
 if (render_fast) {
   cat(
-    "The sections below are omitted from the rendered vignette by default ",
+    "**Performance Note**: The sections below are omitted from the rendered vignette by default ",
     "(they can be slow and may fail to converge). ",
     "Set `render_fast <- FALSE` in the setup chunk to run them.\n"
   )

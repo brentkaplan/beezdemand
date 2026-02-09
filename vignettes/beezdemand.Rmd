@@ -12,9 +12,14 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
-  comment = NA,
+  collapse = TRUE,
+  comment = "#>",
   dev = "png",
-  dpi = 144
+  dpi = 144,
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
 )
 ```
 
@@ -81,7 +86,10 @@ library(beezdemand)
 An example dataset of responses on an Alcohol Purchase Task is provided. This object is called `apt` and is located within the `beezdemand` package. These data are a subset of from the paper by Kaplan & Reed (2018). Participants (id) reported the number of alcoholic drinks (y) they would be willing to purchase and consume at various prices (x; USD). Note the format of the data, which is called "long format". Long format data are data structured such that repeated observations are stacked in multiple rows, rather than across columns. First, take a look at an extract of the dataset `apt`, where I've subsetted rows 1 through 10 and 17 through 26:
 
 ```{r example-data-set, echo=FALSE, results='asis'}
-knitr::kable(apt[c(1:10, 17:26), ])
+knitr::kable(
+    apt[c(1:10, 17:26), ],
+    caption = "Example APT (Alcohol Purchase Task) data in long format"
+)
 ```
 
 The first column contains the row number. The second column contains the id number of the series within the dataset. The third column contains the x values (in this specific dataset, price per drink) and the fourth column contains the associated responses (number of alcoholic drinks purchased at each respective price). There are replicates of id because for each series (or participant), several x values were presented.
@@ -95,7 +103,10 @@ Take for example the format of most datasets that would be exported from a data 
 ## to a wide format that might be seen from data collection software
 wide <- spread(apt, x, y)
 colnames(wide) <- c("id", paste0("price_", seq(1, 16, by = 1)))
-knitr::kable(wide[1:5, 1:10])
+knitr::kable(
+    wide[1:5, 1:10],
+    caption = "Example data in wide format (first 5 participants, first 10 prices)"
+)
 ```
 
 A dataset such as this is referred to as "wide format" because each participant series contains a single row and multiple measurements within the participant are indicated by the columns. This data format is fine for some purposes; however, for `beezdemand`, data are required to be in "long format" (in the same format as the example data described earlier. In order to convert to the long format, some steps will be required.
@@ -113,7 +124,10 @@ colnames(wide)
 colnames(wide) <- newcolnames
 
 ## how new data look (first 5 rows only)
-knitr::kable(wide[1:5, ])
+knitr::kable(
+    wide[1:5, ],
+    caption = "Wide format data with price column names"
+)
 ```
 
 Now we can convert into a long format using some of the helpful functions in the `tidyverse` package (make sure the package is loaded before trying the commands below).
@@ -127,7 +141,10 @@ long <- tidyr::gather(wide, price, consumption, -id)
 long <- arrange(long, id)
 
 ## view the first 20 rows
-knitr::kable(long[1:20, ])
+knitr::kable(
+    long[1:20, ],
+    caption = "Converted to long format (first 20 rows)"
+)
 ```
 
 Two final modifications we will make will be to (1) rename our columns to what the functions in `beezdemand` will expect to see: `id`, `x`, and `y`, and (2) ensure both x and y are in numeric format.
@@ -136,7 +153,10 @@ colnames(long) <- c("id", "x", "y")
 
 long$x <- as.numeric(long$x)
 long$y <- as.numeric(long$y)
-knitr::kable(head(long))
+knitr::kable(
+    head(long),
+    caption = "Final long format data with renamed columns (first 6 rows)"
+)
 ```
 
 The dataset is now "tidy" because: (1) each variable forms a column, (2) each observation forms a row, and (3) each type of observational unit forms a table (in this case, our observational unit is the Alcohol Purchase Task data). To learn more about the benefits of tidy data, readers are encouraged to consult Hadley Wikham's essay on [Tidy Data](https://vita.had.co.nz/papers/tidy-data.html).
@@ -158,7 +178,11 @@ And here is the table that is returned from the function:
 
 ```{r descriptive-output, echo=FALSE, results='asis'}
 descr <- GetDescriptives(apt)
-knitr::kable(descr)
+knitr::kable(
+    descr,
+    caption = "Descriptive statistics by price point",
+    digits = 2
+)
 ```
 
 ### Change Data
@@ -202,7 +226,10 @@ unsys <- check_systematic_demand(
   max_reversals = 0,
   consecutive_zeros = 2
 )
-knitr::kable(head(unsys$results, 5))
+knitr::kable(
+    head(unsys$results, 5),
+    caption = "Systematicity check results (first 5 participants)"
+)
 ```
 
 ### Analyze Demand Data
@@ -222,7 +249,11 @@ GetEmpirical(apt)
 ```
 
 ```{r empirical-output, echo=FALSE, results='asis'}
-knitr::kable(head(GetEmpirical(apt), 5))
+knitr::kable(
+    head(GetEmpirical(apt), 5),
+    caption = "Empirical demand measures (first 5 participants)",
+    digits = 3
+)
 ```
 
 #### Obtaining Derived Measures
