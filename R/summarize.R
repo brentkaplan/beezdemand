@@ -127,19 +127,32 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 
 ##' Calculates descriptive statistics from purchase task data.
 ##'
+##' `r lifecycle::badge("superseded")`
+##'
+##' `GetDescriptives()` has been superseded by [get_descriptive_summary()], which
+##' provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
+##' `GetDescriptives()` will continue to work but is no longer recommended for new code.
+##'
 ##' Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 ##' @title Get Purchase Task Descriptive Summary
 ##' @param dat Dataframe (long form)
 ##' @param bwplot Boolean. If TRUE, a ggplot2 box and whisker plot is saved. Default is FALSE.
 ##' @param outdir Character. Directory where plot will be saved. Be sure to include trailing '/'. Default location is one level up in "../plots/".
 ##' @param device Character. Type of file. Default is "png". Can be "pdf".
-##' @param filename Character. Specify filename. Defualt is "bwplot". 
+##' @param filename Character. Specify filename. Defualt is "bwplot".
 ##' @return Dataframe with descriptive statistics
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @seealso [get_descriptive_summary()] for the modern interface
 ##' @examples
 ##' GetDescriptives(apt)
 ##' @export
 GetDescriptives <- function(dat, bwplot = FALSE, outdir = "../plots/", device = "png", filename = "bwplot") {
+    # Soft deprecation warning
+    lifecycle::deprecate_soft(
+        when = "0.3.0",
+        what = "GetDescriptives()",
+        with = "get_descriptive_summary()"
+    )
 
     ## Get N unique prices
     prices <- unique(dat$x)

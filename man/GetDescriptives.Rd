@@ -30,10 +30,19 @@ Dataframe with descriptive statistics
 Calculates descriptive statistics from purchase task data.
 }
 \details{
+`r lifecycle::badge("superseded")`
+
+`GetDescriptives()` has been superseded by [get_descriptive_summary()], which
+provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
+`GetDescriptives()` will continue to work but is no longer recommended for new code.
+
 Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 }
 \examples{
 GetDescriptives(apt)
+}
+\seealso{
+[get_descriptive_summary()] for the modern interface
 }
 \author{
 Brent Kaplan <bkaplan.ku@gmail.com>
