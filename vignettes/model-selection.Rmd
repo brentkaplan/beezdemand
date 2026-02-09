@@ -12,7 +12,14 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
-  comment = NA
+  collapse = TRUE,
+  comment = "#>",
+  dev = "png",
+  dpi = 144,
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
 )
 ```
 

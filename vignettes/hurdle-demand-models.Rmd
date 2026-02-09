@@ -14,7 +14,9 @@ knitr::opts_chunk$set(
     dev = "png",
     dpi = 144,
     fig.width = 7,
-    fig.height = 5
+    fig.height = 5,
+    warning = FALSE,
+    message = FALSE
 )
 ```
 
@@ -84,16 +86,14 @@ Your data should be in **long format** with columns for:
 - Price
 - Consumption (including zeros)
 
-```{r data-example, eval=FALSE}
+```{r data-example, echo=TRUE}
 library(beezdemand)
 
 # Example data structure
-head(apt)
-#   id   x  y
-# 1  1 0.0 10
-# 2  1 0.5 10
-# 3  1 1.0  8
-# ...
+knitr::kable(
+    head(apt, 10),
+    caption = "Example APT data structure (first 10 rows)"
+)
 ```
 
 ### Basic Model Fitting
@@ -259,7 +259,9 @@ sim_custom <- simulate_hurdle_data(
 
 ### Monte Carlo Simulation Studies
 
-The `run_hurdle_monte_carlo()` function assesses model performance through simulation:
+The `run_hurdle_monte_carlo()` function assesses model performance through simulation.
+
+**Note**: Monte Carlo simulations are computationally intensive and not run during vignette building. The example below shows typical usage and expected output format.
 
 ```{r monte-carlo, eval=FALSE}
 # Run Monte Carlo study
