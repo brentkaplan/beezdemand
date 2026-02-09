@@ -12,13 +12,14 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
     message = FALSE,
+    warning = FALSE,
     include = TRUE,
     collapse = TRUE,
-    comment = NA,
+    comment = "#>",
     dev = "png",
     dpi = 144,
-    fig.width = 6,
-    fig.height = 4
+    fig.width = 7,
+    fig.height = 5
 )
 
 library(beezdemand)
@@ -264,7 +265,7 @@ unsys_one_lnic <- lnic |>
 unsys_one_lnic$results
 ```
 
-```{r}
+```{r compute-unsys-etm, results='hide'}
 unsys_all <- etm |>
     group_by(id, group) |>
     nest() |>
@@ -274,17 +275,26 @@ unsys_all <- etm |>
     ) |>
     select(-data, -sys) |>
     unnest(results)
+```
 
-unsys_all
-
-summary(unsys_all)
+```{r show-unsys-etm}
+knitr::kable(
+    unsys_all |>
+        group_by(group) |>
+        summarise(
+            n_subjects = n(),
+            pct_systematic = round(mean(systematic, na.rm = TRUE) * 100, 1),
+            .groups = "drop"
+        ),
+    caption = "Systematicity check by product group (ETM dataset)"
+)
 ```
 
 ### Demonstration from Rzeszutek et al. (under review)
 
 #### Low Nicotine Study (Kaplan et al., 2018)
 
-```{r}
+```{r compute-unsys-lnic, results='hide'}
 unsys_all_lnic <- lnic |>
     filter(target == "fixed") |>
     group_by(id, condition) |>
@@ -299,63 +309,54 @@ unsys_all_lnic <- lnic |>
     select(-data, -sys) |>
     unnest(results) |>
     arrange(id)
+```
 
-unsys_all_lnic
-
-cat("--- 100% ---\n")
-unsys_all_lnic |>
-    dplyr::filter(condition == "100%") |>
-    summary()
-cat("\n\n")
-
-cat("--- 2% ---\n")
-unsys_all_lnic |>
-    dplyr::filter(condition == "2%") |>
-    summary()
-cat("\n\n")
-cat("--- 2% NegFrame ---\n")
-unsys_all_lnic |>
-    dplyr::filter(condition == "2% NegFrame") |>
-    summary()
-
-summary(unsys_all_lnic)
+```{r show-unsys-lnic}
+knitr::kable(
+    unsys_all_lnic |>
+        group_by(condition) |>
+        summarise(
+            n_subjects = n(),
+            pct_systematic = round(mean(systematic, na.rm = TRUE) * 100, 1),
+            .groups = "drop"
+        ),
+    caption = "Systematicity check by condition (Low Nicotine study, Kaplan et al., 2018)"
+)
 ```
 
 
 #### Unpublished Cannabis and Cigarette Data
 
-```{r}
+```{r compute-unsys-can-cig, results='hide'}
 unsys_all_can_cig <- can_cig |>
     filter(target %in% c("cannabisFix", "cigarettesFix")) |>
     group_by(id, target) |>
     nest() |>
     mutate(
-        unsys = map(
-            data,
-            check_unsystematic_cp,
-            detailed = TRUE
-        )
+        sys = map(data, check_systematic_cp),
+        results = map(sys, ~ dplyr::select(.x$results, -id))
     ) |>
-    unnest(unsys) |>
+    select(-data, -sys) |>
+    unnest(results) |>
     arrange(id)
+```
 
-cat("--- Cigarettes ---\n")
-unsys_all_can_cig |>
-    dplyr::filter(target == "cigarettesFix") |>
-    summary()
-cat("\n\n")
-
-
-cat("--- Cannabis ---\n")
-unsys_all_can_cig |>
-    dplyr::filter(target == "cannabisFix") |>
-    summary()
-cat("\n\n")
+```{r show-unsys-can-cig}
+knitr::kable(
+    unsys_all_can_cig |>
+        group_by(target) |>
+        summarise(
+            n_subjects = n(),
+            pct_systematic = round(mean(systematic, na.rm = TRUE) * 100, 1),
+            .groups = "drop"
+        ),
+    caption = "Systematicity check by target (Cannabis/Cigarettes, unpublished data)"
+)
 ```
 
 #### In Progress Experimental Tobacco Marketplace Data
 
-```{r}
+```{r compute-unsys-ongoing-etm, results='hide'}
 unsys_all_ongoing_etm <- ongoing_etm |>
     # one person is doubled up
     distinct() |>
@@ -363,26 +364,24 @@ unsys_all_ongoing_etm <- ongoing_etm |>
     group_by(id, target) |>
     nest() |>
     mutate(
-        unsys = map(
-            data,
-            check_unsystematic_cp,
-            detailed = TRUE
-        )
+        sys = map(data, check_systematic_cp),
+        results = map(sys, ~ dplyr::select(.x$results, -id))
     ) |>
-    unnest(unsys)
+    select(-data, -sys) |>
+    unnest(results)
+```
 
-
-cat("--- Fixed Cigarettes ---\n")
-unsys_all_ongoing_etm |>
-    dplyr::filter(target == "FixCig") |>
-    summary()
-cat("\n\n")
-
-cat("--- E-Cigarettes ---\n")
-unsys_all_ongoing_etm |>
-    dplyr::filter(target == "ECig") |>
-    summary()
-cat("\n\n")
+```{r show-unsys-ongoing-etm}
+knitr::kable(
+    unsys_all_ongoing_etm |>
+        group_by(target) |>
+        summarise(
+            n_subjects = n(),
+            pct_systematic = round(mean(systematic, na.rm = TRUE) * 100, 1),
+            .groups = "drop"
+        ),
+    caption = "Systematicity check by target (Ongoing ETM data)"
+)
 ```
 
 ## Nonlinear Model Fitting
@@ -402,7 +401,7 @@ summary(fit_one)
 plot(fit_one, x_trans = "log10")
 ```
 
-```{r}
+```{r fit-individual, results='hide'}
 fit_all <- etm |>
     group_by(id, group) |>
     nest() |>
@@ -414,20 +413,26 @@ fit_all <- etm |>
         glance = map(fit, glance),
         tidy = map(fit, tidy)
     )
+```
 
-fit_all
+```{r show-individual-fits}
+# Show parameter estimates for first 3 subjects only
+knitr::kable(
+    fit_all |>
+        slice(1:3) |>
+        unnest(tidy) |>
+        select(id, group, term, estimate, std.error),
+    digits = 3,
+    caption = "Example parameter estimates (first 3 subjects)"
+)
 
-fit_all$summary[[2]]
-
-rand_id <- sample(unique(etm$id), 1)
-print(rand_id)
-fit_all$summary[[rand_id]]
-fit_all$plot[[rand_id]]
+# Show one example plot
+fit_all$plot[[2]]
 ```
 
 ### Fit to Group (pooled by group)
 
-```{r}
+```{r fit-pooled, results='hide'}
 fit_pooled <- etm |>
     group_by(group) |>
     nest() |>
@@ -439,27 +444,34 @@ fit_pooled <- etm |>
         glance = map(fit, glance),
         tidy = map(fit, tidy)
     )
+```
 
-fit_pooled
+```{r show-pooled-results}
+# Show tidy results instead of summary
+knitr::kable(
+    fit_pooled |>
+        unnest(tidy) |>
+        select(group, term, estimate, std.error),
+    digits = 3,
+    caption = "Pooled model parameter estimates by product group"
+)
 
+# Show one plot example
 fit_pooled |>
-    dplyr::filter(group %in% "E-Cigarettes") |>
-    pull(summary)
-
-fit_pooled |>
-    dplyr::filter(group %in% "E-Cigarettes") |>
-    pull(plot)
+    dplyr::filter(group == "E-Cigarettes") |>
+    pull(plot) |>
+    pluck(1)
 ```
 
 ### Fit to Group (mean)
 
-```{r}
+```{r fit-mean, results='hide'}
 fit_mean <- etm |>
     group_by(group, x) |>
     summarise(
-        y = mean(y)
+        y = mean(y),
+        .groups = "drop"
     ) |>
-    ungroup() |>
     group_by(group) |>
     nest() |>
     mutate(
@@ -470,9 +482,19 @@ fit_mean <- etm |>
         glance = map(fit, glance),
         tidy = map(fit, tidy)
     )
+```
 
-fit_mean
+```{r show-mean-results}
+# Show tidy results
+knitr::kable(
+    fit_mean |>
+        unnest(tidy) |>
+        select(group, term, estimate, std.error),
+    digits = 3,
+    caption = "Mean model parameter estimates by product group"
+)
 
+# Show parameter estimates plot
 fit_mean |>
     unnest(cols = c(glance, tidy)) |>
     select(
@@ -485,13 +507,11 @@ fit_mean |>
     geom_point() +
     facet_wrap(~term, ncol = 1, scales = "free_y")
 
+# Show one example plot
 fit_mean |>
     dplyr::filter(group %in% "E-Cigarettes") |>
-    pull(summary)
-
-fit_mean |>
-    dplyr::filter(group %in% "E-Cigarettes") |>
-    pull(plot)
+    pull(plot) |>
+    pluck(1)
 ```
 
 
