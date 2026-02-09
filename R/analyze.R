@@ -1562,16 +1562,29 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range
 ##'
+##' `r lifecycle::badge("superseded")`
+##'
+##' `GetK()` has been superseded by [get_k()], which provides explicit parameters
+##' for the adjustment value and optional verbose output for better transparency.
+##' `GetK()` will continue to work but is no longer recommended for new code.
+##'
 ##' Will look for maximum/minimum greater zero
 ##' @title Get K
 ##' @param dat Dataframe (long form)
 ##' @param mnrange Boolean for whether k should be calculated based on the mean range + .5
 ##' @return Numeric
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
+##' @seealso [get_k()] for the modern interface
 ##' @examples
 ##' GetK(apt)
 ##' @export
 GetK <- function(dat, mnrange = TRUE) {
+    # Soft deprecation warning
+    lifecycle::deprecate_soft(
+        when = "0.3.0",
+        what = "GetK()",
+        with = "get_k()"
+    )
     if (mnrange) {
         dat1 <- aggregate(y ~ x, dat, mean)
         (log10(max(dat1$y[dat1$y > 0], na.rm = TRUE)) - log10(min(dat1$y[dat1$y > 0], na.rm = TRUE))) + .5
