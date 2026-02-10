@@ -133,9 +133,9 @@ knitr::kable(
 Now we can convert into a long format using some of the helpful functions in the `tidyverse` package (make sure the package is loaded before trying the commands below).
 
 ```{r example-w2l}
-## using the dataframe 'wide', we specify the key will be 'price', the values 
-## will be 'consumption', and we will select all columns besides the first ('id')
-long <- tidyr::gather(wide, price, consumption, -id)
+## using the dataframe 'wide', we pivot all columns except 'id' into long format,
+## creating 'price' and 'consumption' columns
+long <- tidyr::pivot_longer(wide, -id, names_to = "price", values_to = "consumption")
 
 ## we'll sort the rows by id
 long <- arrange(long, id)
@@ -399,7 +399,7 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
             data = ef$newdat[ef$newdat$x >= .1, ]) +
   stat_summary(fun.data = mean_se, aes(width = .05, color = group), 
                geom = "errorbar") +
-  stat_summary(fun.y = mean, aes(fill = group), geom = "point", shape = 21, 
+  stat_summary(fun = mean, aes(fill = group), geom = "point", shape = 21,
                color = "black", stroke = .75, size = 4) +
   scale_x_log10(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
   scale_color_discrete(name = "Group") +
@@ -413,13 +413,18 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
 
 ### Plots
 
-Plots can be created using the `PlotCurves` function. This function takes the output from `FitCurves` when the argument from `FitCurves`, `detailed = TRUE`. The default will be to save figures into a plots folder created one directory above the current working directory. Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`, then plots will be shown interactively and not saved (`ask = FALSE` is the default). Graphs can automatically be created at both an aggregate and individual level.
+**Modern approach (recommended):** Use the `plot()` method directly on the fit object
+returned by `fit_demand_fixed()`. See the plot examples in the
+[Obtaining Derived Measures](#obtaining-derived-measures) section above, or
+`vignette("migration-guide")` for a full comparison.
 
-As a demonstration, let's first use `FitCurves` on the `apt` dataset, specifying `k = "share"` and `detailed = T`. This will return a list of objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new object, `out`, and tell the function to save the plots in the directory `"../plots/"` and `ask = FALSE` because we don't want `R` to interactively show us each plot. Because we have 10 datasets in our `apt` example, 10 plots will be created and saved in the `"../plots/"` directory.
+**Legacy approach:** Plots can also be created using the `PlotCurves` function. This function takes the output from `FitCurves` when the argument from `FitCurves`, `detailed = TRUE`. The default will be to save figures into a plots folder created one directory above the current working directory. Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`, then plots will be shown interactively and not saved (`ask = FALSE` is the default). Graphs can automatically be created at both an aggregate and individual level.
+
+As a demonstration, let's first use `FitCurves` on the `apt` dataset, specifying `k = "share"` and `detailed = TRUE`. This will return a list of objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new object, `out`, and tell the function to save the plots in the directory `"../plots/"` and `ask = FALSE` because we don't want `R` to interactively show us each plot. Because we have 10 datasets in our `apt` example, 10 plots will be created and saved in the `"../plots/"` directory.
 ```{r plots1, eval = FALSE}
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
+out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
 
-PlotCurves(dat = out, outdir = "../plots/", device = "png", ask = F)
+PlotCurves(dat = out, outdir = "../plots/", device = "png", ask = FALSE)
 ```
 
 <center><img src="Participant-19.png" alt="Individual Curve"  width="432"
@@ -428,9 +433,9 @@ height="432"/></center>
 We can also make a plot of the mean data. Here, we again use `FitCurves`, this time calculating a k from the observed range of the data (thus not specifying any k) and specifying `agg = "Mean"`.
 
 ```{r plots2, eval = FALSE}
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = T)
+mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
 
-PlotCurves(dat = mn, outdir = "../plots/", device = "png", ask = F)
+PlotCurves(dat = mn, outdir = "../plots/", device = "png", ask = FALSE)
 ```
 <center><img src="Participant-mean.png" alt="Mean Curve"  width="432"
 height="432"/></center>
@@ -441,77 +446,27 @@ height="432"/></center>
 To learn more about a function and what arguments it takes, type "?" in front of the function name.
 
 ```{r learn, eval=FALSE}
+## Modern interface (recommended)
+?check_systematic_demand
+
+## Legacy interface (still available)
 ?CheckUnsystematic
 ```
 
-```{r learn-output, eval=FALSE}
-CheckUnsystematic          package:beezdemand          R Documentation
+## Next Steps
 
-Systematic Purchase Task Data Checker
+Now that you are familiar with the basics, explore the other vignettes for more
+advanced workflows:
 
-Description:
-
-     Applies Stein, Koffarnus, Snider, Quisenberry, & Bickels (2015)
-     criteria for identification of nonsystematic purchase task data.
-
-Usage:
-
-     CheckUnsystematic(dat, deltaq = 0.025, bounce = 0.1, reversals = 0,
-       ncons0 = 2)
-
-Arguments:
-
-     dat: Dataframe in long form. Colums are id, x, y.
-
-  deltaq: Numeric vector of length equal to one. The criterion by which
-          the relative change in quantity purchased will be compared.
-          Relative changes in quantity purchased below this criterion
-          will be flagged. Default value is 0.025.
-
-  bounce: Numeric vector of length equal to one. The criterion by which
-          the number of price-to-price increases in consumption that
-          exceed 25% of initial consumption at the lowest price,
-          expressed relative to the total number of price increments,
-          will be compared. The relative number of price-to-price
-          increases above this criterion will be flagged. Default value
-          is 0.10.
-
-reversals: Numeric vector of length equal to one. The criterion by
-          which the number of reversals from number of consecutive (see
-          ncons0) 0s will be compared. Number of reversals above this
-          criterion will be flagged. Default value is 0.
-
-  ncons0: Numer of consecutive 0s prior to a positive value is used to
-          flag for a reversal. Value can be either 1 (relatively more
-          conservative) or 2 (default; as recommended by Stein et al.,
-          (2015).
-
-Details:
-
-     This function applies the 3 criteria proposed by Stein et al.,
-     (2015) for identification of nonsystematic purchase task data. The
-     three criteria include trend (deltaq), bounce, and reversals from
-     0. Also reports number of positive consumption values.
-
-Value:
-
-     Dataframe
-
-Author(s):
-
-     Brent Kaplan <bkaplan.ku@gmail.com>
-
-Examples:
-
-     ## Using all default values
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
-     ## Specifying just 1 zero to flag as reversal
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
-```
+- `vignette("model-selection")` -- Choosing the right model class for your data
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)
+- `vignette("hurdle-demand-models")` -- Two-part hurdle models via TMB
+- `vignette("cross-price-models")` -- Cross-price demand analysis
+- `vignette("migration-guide")` -- Migrating from `FitCurves()` to `fit_demand_fixed()`
 
 ## Free `beezdemand` Alternative with Graphical User Interface
 
-If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out the [Demand Curve Analyzer](https://www.smallnstats.com/resources/publications/gilroyDemandCurveAnalyzer2018). The Demand Curve Analyzer contains many of the functions `beezdemand` provides but with the benefits of easy Excel-like functionality.
+If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out [shinybeez](https://github.com/brentkaplan/shinybeez), a free open source Shiny app for demand curve analysis (see the companion article [here](https://pubmed.ncbi.nlm.nih.gov/40103003/)).
 
 ## Acknowledgments
 

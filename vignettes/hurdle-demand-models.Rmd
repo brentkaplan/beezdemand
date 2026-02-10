@@ -1,5 +1,6 @@
 ---
 title: "Hurdle Demand Models"
+author: "Brent Kaplan"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Hurdle Demand Models}

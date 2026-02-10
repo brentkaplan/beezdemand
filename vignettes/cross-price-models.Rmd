@@ -571,3 +571,10 @@ extract_coefficients(fit_mixed)
 cp_posthoc_slopes(fit_mixed)
 cp_posthoc_intercepts(fit_mixed)
 ```
+
+## See Also
+
+- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("model-selection")` -- Choosing the right model class for your data
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
+- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
