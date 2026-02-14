@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 # Rationale Behind `beezdemand`
 
-Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to 
+Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to
 create an alternative tool to conduct these
 analyses. This package is not necessarily meant to be a replacement
 for other softwares; rather, it is meant to serve as an
@@ -111,11 +111,11 @@ knitr::kable(
 
 A dataset such as this is referred to as "wide format" because each participant series contains a single row and multiple measurements within the participant are indicated by the columns. This data format is fine for some purposes; however, for `beezdemand`, data are required to be in "long format" (in the same format as the example data described earlier. In order to convert to the long format, some steps will be required.
 
-First, it is helpful to rename the columns to what the prices actually were. For example, for the purposes of our example dataset, price_1 was \$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on. 
+First, it is helpful to rename the columns to what the prices actually were. For example, for the purposes of our example dataset, price_1 was \$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on.
 
 ```{r example-wide1}
 ## make an object to hold what will be the new column names
-newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3", 
+newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
                  "4", "5", "6", "7", "8", "9", "10", "15", "20")
 ## current column names
 colnames(wide)
@@ -163,11 +163,18 @@ The dataset is now "tidy" because: (1) each variable forms a column, (2) each ob
 
 ### Obtain Descriptive Data
 
-Descriptive values of responses at each price can be obtained easily. The resulting table includes mean, standard
-deviation, proportion of zeros, number of NAs, and minimum and maximum values. If `bwplot = TRUE`, a box-and-whisker plot is also created and saved. By default, this location is a folder named "plots" one level up from the current working directory.  The user may additionally specify the directory that the plot should save into, the type of file (either `"png"` or `"pdf"`), and the filename. Notice the red crosses indicate the mean. Defaults are shown here:
+Descriptive values of responses at each price can be obtained easily. The modern
+`get_descriptive_summary()` returns a tibble; the legacy `GetDescriptives()` is
+also available. The resulting table includes mean, standard deviation, proportion
+of zeros, number of NAs, and minimum and maximum values. If `bwplot = TRUE`, a
+box-and-whisker plot is also created and saved. By default, this location is a
+folder named "plots" one level up from the current working directory. The user
+may additionally specify the directory that the plot should save into, the type
+of file (either `"png"` or `"pdf"`), and the filename. Notice the red crosses
+indicate the mean. Defaults are shown here:
 
 ```{r descriptive, eval = FALSE}
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png", 
+GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
                 filename = "bwplot")
 ```
 
@@ -242,10 +249,12 @@ vignettes for those workflows).
 
 #### Obtaining Empirical Measures
 
-Empirical measures can be obtained separately on their own:
+Empirical measures can be obtained separately on their own. The modern
+`get_empirical_measures()` returns a tibble with consistent column naming;
+the legacy `GetEmpirical()` is also available:
 
 ```{r empirical, eval=FALSE}
-GetEmpirical(apt)
+get_empirical_measures(apt)
 ```
 
 ```{r empirical-output, echo=FALSE, results='asis'}
@@ -318,6 +327,24 @@ plot(fit_hs)
 plot_residuals(fit_hs)$fitted
 ```
 
+#### Normalized Alpha ($\alpha^*$)
+
+When `k` varies across participants or studies, raw $\alpha$ values are not
+directly comparable. The `alpha_star` column in `tidy()` output provides a
+normalized version (Strategy B; Rzeszutek et al., 2025) that adjusts for the
+scaling constant:
+
+$$\alpha^* = \frac{-\alpha}{\ln\!\left(1 - \frac{1}{k \cdot \ln(b)}\right)}$$
+
+where $b$ is the logarithmic base (10 for HS/Koff equations). Standard errors
+are computed via the delta method. `alpha_star` requires $k \cdot \ln(b) > 1$;
+otherwise `NA` is returned.
+
+```{r alpha-star, echo=TRUE}
+## alpha_star is included in tidy() output for HS and Koff equations
+hs_tidy[hs_tidy$term == "alpha_star", c("id", "term", "estimate", "std.error")]
+```
+
 Here is the same idea specifying the `"koff"` equation (Koffarnus et al., 2015):
 
 ```{r koff, eval=FALSE}
@@ -355,92 +382,6 @@ knitr::kable(head(share_tidy, 10), caption = "Parameter estimates (`tidy()`, fir
 knitr::kable(share_glance, caption = "Model summary (`glance()`)")
 ```
 
-### Compare Values of $\alpha$ and $Q_0$ via Extra Sum-of-Squares F-Test
-
-When one has multiple groups, it may be beneficial to compare whether separate curves are preferred over a single curve. This is accomplished by the Extra Sum-of-Squares _F_-test. This function (using the argument `compare`) will determine whether a single $\alpha$ or a single $Q_0$ is better than multiple $\alpha$s or $Q_0$s. A single curve will be fit, the residual deviations calculated and those residuals are compared to residuals obtained from multiple curves. A resulting _F_ statistic will be reporting along with a _p_ value. 
-
-```{r ftest}
-## setting the seed initializes the random number generator so results will be 
-## reproducible
-set.seed(1234)
-
-## manufacture random grouping
-apt$group <- NA
-apt[apt$id %in% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
-apt$group[is.na(apt$group)] <- "b"
-
-## take a look at what the new groupings look like in long form
-knitr::kable(apt[1:20, ])
-```
-
-```{r ftest2}
-## in order for this to run, you will have had to run the code immediately
-## preceeding (i.e., the code to generate the groups)
-ef <- ExtraF(dat = apt, equation = "koff", k = 2, groupcol = "group", verbose = TRUE)
-```
-
-A summary table (broken up here for ease of display) will be created when the option `verbose = TRUE`. This table can be accessed as the `dfres` object resulting from `ExtraF`. In the example above, we can access this summary table using `ef$dfres`:
-
-```{r ftest-ouput, results = 'asis', echo=FALSE}
-knitr::kable(ef$dfres[, 1:5], caption  = "Fitted Measures")
-knitr::kable(ef$dfres[, c(1, 6:8)], caption = "Uncertainty and Model Information")
-knitr::kable(ef$dfres[, c(1, 9:11)], caption = "Derived Measures")
-knitr::kable(ef$dfres[, c(1, 12, 14)], caption = "Convergence and Summary Information")
-```
-
-When `verbose = TRUE`, objects from the result can be used in subsequent graphing. The following code generates a plot of our two groups. We can use the predicted values already generated from the `ExtraF` function by accessing the `newdat` object. In the example above, we can access these predicted values using `ef$newdat`. Note that we keep the linear scaling of y given we used Koffarnus et al. (2015)'s equation fitted to the data.
-
-```{r plot-ftest, warning = FALSE}
-## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
-ggplot(apt, aes(x = x, y = y, group = group)) +
-  ## the predicted lines from the sum of squares f-test can be used in subsequent
-  ## plots by calling data = ef$newdat
-  geom_line(aes(x = x, y = y, group = group, color = group), 
-            data = ef$newdat[ef$newdat$x >= .1, ]) +
-  stat_summary(fun.data = mean_se, aes(width = .05, color = group), 
-               geom = "errorbar") +
-  stat_summary(fun = mean, aes(fill = group), geom = "point", shape = 21,
-               color = "black", stroke = .75, size = 4) +
-  scale_x_log10(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
-  scale_color_discrete(name = "Group") +
-  scale_fill_discrete(name = "Group") +
-  labs(x = "Price per Drink", y = "Drinks Purchased") +
-  theme(legend.position = c(.85, .75)) +
-  ## theme_apa is a beezdemand function used to change the theme in accordance
-  ## with American Psychological Association style
-  theme_apa()
-```
-
-### Plots
-
-**Modern approach (recommended):** Use the `plot()` method directly on the fit object
-returned by `fit_demand_fixed()`. See the plot examples in the
-[Obtaining Derived Measures](#obtaining-derived-measures) section above, or
-`vignette("migration-guide")` for a full comparison.
-
-**Legacy approach:** Plots can also be created using the `PlotCurves` function. This function takes the output from `FitCurves` when the argument from `FitCurves`, `detailed = TRUE`. The default will be to save figures into a plots folder created one directory above the current working directory. Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`, then plots will be shown interactively and not saved (`ask = FALSE` is the default). Graphs can automatically be created at both an aggregate and individual level.
-
-As a demonstration, let's first use `FitCurves` on the `apt` dataset, specifying `k = "share"` and `detailed = TRUE`. This will return a list of objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new object, `out`, and tell the function to save the plots in the directory `"../plots/"` and `ask = FALSE` because we don't want `R` to interactively show us each plot. Because we have 10 datasets in our `apt` example, 10 plots will be created and saved in the `"../plots/"` directory.
-```{r plots1, eval = FALSE}
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
-
-PlotCurves(dat = out, outdir = "../plots/", device = "png", ask = FALSE)
-```
-
-<center><img src="Participant-19.png" alt="Individual Curve"  width="432"
-height="432"/></center>
-
-We can also make a plot of the mean data. Here, we again use `FitCurves`, this time calculating a k from the observed range of the data (thus not specifying any k) and specifying `agg = "Mean"`.
-
-```{r plots2, eval = FALSE}
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
-
-PlotCurves(dat = mn, outdir = "../plots/", device = "png", ask = FALSE)
-```
-<center><img src="Participant-mean.png" alt="Mean Curve"  width="432"
-height="432"/></center>
-
-
 ### Learn More About Functions
 
 To learn more about a function and what arguments it takes, type "?" in front of the function name.
@@ -459,7 +400,9 @@ Now that you are familiar with the basics, explore the other vignettes for more
 advanced workflows:
 
 - `vignette("model-selection")` -- Choosing the right model class for your data
+- `vignette("group-comparisons")` -- Extra sum-of-squares F-test for group comparisons
 - `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)
+- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics (factors, EMMs, covariates)
 - `vignette("hurdle-demand-models")` -- Two-part hurdle models via TMB
 - `vignette("cross-price-models")` -- Cross-price demand analysis
 - `vignette("migration-guide")` -- Migrating from `FitCurves()` to `fit_demand_fixed()`
@@ -474,7 +417,7 @@ If you are interested in using open source software for analyzing demand curve d
 
 - Derek D. Reed, Applied Behavioral Economics Laboratory
 
-- Mikhail N. Koffarnus, Addiction Recovery Research Center 
+- Mikhail N. Koffarnus, Addiction Recovery Research Center
 
 - Steven R. Hursh, Institutes for Behavior Resources, Inc.
 

@@ -1,0 +1,114 @@
+---
+title: "Group Comparisons with Extra Sum-of-Squares F-Test"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Group Comparisons with Extra Sum-of-Squares F-Test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  dev = "png",
+  dpi = 144,
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction
+
+When you have multiple groups (e.g., treatment vs. control, different
+populations), it is often useful to compare whether separate demand curves are
+preferred over a single curve. The **Extra Sum-of-Squares _F_-test** addresses
+this by fitting a single curve to all data, computing the residual deviations,
+and comparing those residuals to those obtained from separate group-level
+curves.
+
+For background on fitting individual demand curves, see
+`vignette("beezdemand")`. For mixed-effects approaches to group comparisons,
+see `vignette("mixed-demand")`.
+
+```{r packages, include = FALSE, echo = FALSE}
+library(dplyr)
+library(ggplot2)
+library(beezdemand)
+```
+
+## Setting Up Groups
+
+We will use the built-in `apt` dataset and manufacture random groupings for
+demonstration purposes.
+
+```{r ftest}
+## setting the seed initializes the random number generator so results will be
+## reproducible
+set.seed(1234)
+
+## manufacture random grouping
+apt$group <- NA
+apt[apt$id %in% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
+apt$group[is.na(apt$group)] <- "b"
+
+## take a look at what the new groupings look like in long form
+knitr::kable(apt[1:20, ])
+```
+
+## Running the Extra Sum-of-Squares F-Test
+
+The `ExtraF()` function will determine whether a single $\alpha$ or a single
+$Q_0$ is better than multiple $\alpha$s or $Q_0$s. A resulting _F_ statistic
+will be reported along with a _p_ value.
+
+```{r ftest2}
+## in order for this to run, you will have had to run the code immediately
+## preceeding (i.e., the code to generate the groups)
+ef <- ExtraF(dat = apt, equation = "koff", k = 2, groupcol = "group", verbose = TRUE)
+```
+
+A summary table (broken up here for ease of display) will be created when the option `verbose = TRUE`. This table can be accessed as the `dfres` object resulting from `ExtraF`. In the example above, we can access this summary table using `ef$dfres`:
+
+```{r ftest-ouput, results = 'asis', echo=FALSE}
+knitr::kable(ef$dfres[, 1:5], caption  = "Fitted Measures")
+knitr::kable(ef$dfres[, c(1, 6:8)], caption = "Uncertainty and Model Information")
+knitr::kable(ef$dfres[, c(1, 9:11)], caption = "Derived Measures")
+knitr::kable(ef$dfres[, c(1, 12, 14)], caption = "Convergence and Summary Information")
+```
+
+## Visualizing Group Comparisons
+
+When `verbose = TRUE`, objects from the result can be used in subsequent graphing. The following code generates a plot of our two groups. We can use the predicted values already generated from the `ExtraF` function by accessing the `newdat` object. In the example above, we can access these predicted values using `ef$newdat`. Note that we keep the linear scaling of y given we used Koffarnus et al. (2015)'s equation fitted to the data.
+
+```{r plot-ftest, warning = FALSE}
+## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
+ggplot(apt, aes(x = x, y = y, group = group)) +
+  ## the predicted lines from the sum of squares f-test can be used in subsequent
+  ## plots by calling data = ef$newdat
+  geom_line(aes(x = x, y = y, group = group, color = group),
+            data = ef$newdat[ef$newdat$x >= .1, ]) +
+  stat_summary(fun.data = mean_se, aes(width = .05, color = group),
+               geom = "errorbar") +
+  stat_summary(fun = mean, aes(fill = group), geom = "point", shape = 21,
+               color = "black", stroke = .75, size = 4) +
+  scale_x_log10(limits = c(.4, 50), breaks = c(.1, 1, 10, 100)) +
+  scale_color_discrete(name = "Group") +
+  scale_fill_discrete(name = "Group") +
+  labs(x = "Price per Drink", y = "Drinks Purchased") +
+  theme(legend.position = c(.85, .75)) +
+  ## theme_apa is a beezdemand function used to change the theme in accordance
+  ## with American Psychological Association style
+  theme_apa()
+```
+
+## See Also
+
+- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("model-selection")` -- Choosing the right model class for your data
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)

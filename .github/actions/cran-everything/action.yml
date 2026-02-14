@@ -1,0 +1,116 @@
+name: CRAN Everything
+description: Build and check the package like a CRAN release candidate (optionally with PDF manual), and optionally build pkgdown.
+
+inputs:
+  mode:
+    description: '"check" runs R CMD build + R CMD check; "pkgdown" runs pkgdown build.'
+    required: true
+  r-version:
+    description: R version to use (passed to r-lib/actions/setup-r).
+    required: false
+    default: release
+  run-lint:
+    description: If "true" (Linux only), run lintr::lint_package().
+    required: false
+    default: "false"
+  run-urlcheck:
+    description: If "true" (Linux only), run urlchecker::url_check().
+    required: false
+    default: "false"
+  check-args:
+    description: Arguments passed to R CMD check (e.g., --as-cran).
+    required: false
+    default: --as-cran
+  build-manual:
+    description: If "true", install TinyTeX and build the PDF manual (R CMD build --manual).
+    required: false
+    default: "false"
+  pkgdown-dest:
+    description: Destination directory for pkgdown output.
+    required: false
+    default: docs
+
+runs:
+  using: composite
+  steps:
+    - uses: r-lib/actions/setup-pandoc@v2
+
+    - uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: ${{ inputs.r-version }}
+        use-public-rspm: true
+
+    - name: Setup TinyTeX (PDF manual)
+      if: ${{ inputs.mode == 'check' && inputs.build-manual == 'true' }}
+      uses: r-lib/actions/setup-tinytex@v2
+
+    - name: Install dependencies (check)
+      if: ${{ inputs.mode == 'check' }}
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        needs: check
+        extra-packages: any::lintr any::urlchecker
+
+    - name: Install dependencies (pkgdown)
+      if: ${{ inputs.mode == 'pkgdown' }}
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        needs: website
+        extra-packages: any::pkgdown local::.
+
+    - name: Session info
+      if: ${{ inputs.mode == 'check' || inputs.mode == 'pkgdown' }}
+      run: |
+        Rscript -e 'writeLines(capture.output(sessionInfo()), "session-info.txt")'
+      shell: bash
+
+    - name: Lint package (Linux only)
+      if: ${{ runner.os == 'Linux' && inputs.mode == 'check' && inputs.run-lint == 'true' }}
+      run: |
+        Rscript -e 'lintr::lint_package()'
+      shell: bash
+
+    - name: URL check (Linux only)
+      if: ${{ runner.os == 'Linux' && inputs.mode == 'check' && inputs.run-urlcheck == 'true' }}
+      run: |
+        Rscript -e 'urlchecker::url_check()'
+      shell: bash
+
+    - name: Build source tarball (no manual)
+      if: ${{ inputs.mode == 'check' && inputs.build-manual != 'true' }}
+      run: |
+        set -euo pipefail
+        rm -rf ./*.Rcheck ./*.tar.gz || true
+        R CMD build --no-manual .
+      shell: bash
+
+    - name: Build source tarball (with PDF manual)
+      if: ${{ inputs.mode == 'check' && inputs.build-manual == 'true' }}
+      run: |
+        set -euo pipefail
+        rm -rf ./*.Rcheck ./*.tar.gz || true
+        R CMD build --manual .
+      shell: bash
+
+    - name: CRAN-style check
+      if: ${{ inputs.mode == 'check' }}
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        TARBALLS=(./*.tar.gz)
+        if (( ${#TARBALLS[@]} != 1 )); then
+          echo "Expected exactly 1 tarball, found ${#TARBALLS[@]}."
+          ls -la ./*.tar.gz || true
+          exit 1
+        fi
+        TARBALL="${TARBALLS[0]}"
+        R CMD check ${{ inputs.check-args }} "${TARBALL}"
+      shell: bash
+
+    - name: Build pkgdown site
+      if: ${{ inputs.mode == 'pkgdown' }}
+      env:
+        PKGDOWN_DEST: ${{ inputs.pkgdown-dest }}
+      run: |
+        Rscript -e 'pkgdown::build_site(preview = FALSE, dest_dir = Sys.getenv("PKGDOWN_DEST"))'
+      shell: bash

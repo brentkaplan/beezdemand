@@ -359,7 +359,9 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 ## Next Steps
 
 - **Getting Started**: See `vignette("beezdemand")` for basic usage
-- **Mixed Models**: See `vignette("mixed-demand")` for detailed mixed-effects examples
+- **Group Comparisons**: See `vignette("group-comparisons")` for extra sum-of-squares F-test
+- **Mixed Models**: See `vignette("mixed-demand")` for mixed-effects examples
+- **Advanced Mixed Models**: See `vignette("mixed-demand-advanced")` for factors, EMMs, covariates
 - **Hurdle Models**: See `vignette("hurdle-demand-models")` for hurdle model details
 - **Cross-Price**: See `vignette("cross-price-models")` for substitution analyses
 

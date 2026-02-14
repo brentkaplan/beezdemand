@@ -56,6 +56,26 @@
 * New `plot_qq()` function creates Q-Q plots for random effects to assess
   normality assumptions in hurdle and NLME models.
 
+### Normalized Alpha (Alpha Star)
+
+* All model classes now compute `alpha_star` (normalized alpha, Strategy B;
+  Rzeszutek et al., 2025), which makes the elasticity parameter comparable
+  across different values of `k`. Available in `FitCurves()` output (columns
+  `alpha_star` and `alpha_star_se`), `tidy()` on `beezdemand_fixed` objects,
+  and `tidy()` on `beezdemand_hurdle` objects. Standard errors are obtained
+  via the delta method. See `?param-registry` for details.
+
+### Modern Wrappers for Legacy Functions
+
+* New `get_empirical_measures()` as a modern replacement for `GetEmpirical()`.
+  Returns a tibble with consistent column naming.
+
+* New `get_descriptive_summary()` as a modern replacement for
+  `GetDescriptives()`. Returns a tibble with consistent column naming.
+
+* New `get_k()` as a modern replacement for `GetK()`. Returns a tibble with
+  consistent column naming.
+
 ### Other New Features
 
 * New `confint()` methods for extracting confidence intervals from all model
@@ -84,7 +104,7 @@
   for `"exponential"` it additionally returns `y_pred_log10` (and no longer returns
   `y_pred_natural`).
 
-## New Features
+### Additional New Features
 
 * `fit_joint_hurdle()` now accepts `k = "estimate"` to estimate the scaling
   constant as a free parameter. Default remains `k = 2` (fixed). Estimating

@@ -11,7 +11,9 @@ beezdemand_is_log_scale <- function(trans) {
 }
 
 beezdemand_normalize_show_pred <- function(show_pred) {
-  if (is.character(show_pred) && length(show_pred) == 1 && show_pred == "both") {
+  if (
+    is.character(show_pred) && length(show_pred) == 1 && show_pred == "both"
+  ) {
     return(c("population", "individual"))
   }
   show_pred
@@ -175,7 +177,13 @@ beezdemand_style_scales <- function(p, style, color = TRUE, fill = FALSE) {
   p
 }
 
-beezdemand_apply_color_scale <- function(p, style, data, color_col, max_colors = 6) {
+beezdemand_apply_color_scale <- function(
+  p,
+  style,
+  data,
+  color_col,
+  max_colors = 6
+) {
   if (is.null(color_col) || is.null(data) || !color_col %in% names(data)) {
     return(p)
   }
@@ -188,9 +196,11 @@ beezdemand_apply_color_scale <- function(p, style, data, color_col, max_colors =
   p + scale_color_beezdemand()
 }
 
-beezdemand_default_y_trans <- function(type = "demand",
-                                       equation = NULL,
-                                       y_is_log = FALSE) {
+beezdemand_default_y_trans <- function(
+  type = "demand",
+  equation = NULL,
+  y_is_log = FALSE
+) {
   if (type %in% c("probability", "parameters")) {
     return("linear")
   }
@@ -201,6 +211,9 @@ beezdemand_default_y_trans <- function(type = "demand",
       return("log10")
     }
     if (equation == "koff") {
+      return("linear")
+    }
+    if (equation == "simplified") {
       return("linear")
     }
     if (equation == "linear") {

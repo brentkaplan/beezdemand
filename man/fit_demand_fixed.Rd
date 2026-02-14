@@ -6,7 +6,7 @@
 \usage{
 fit_demand_fixed(
   data,
-  equation = c("hs", "koff", "linear", "exponential", "exponentiated"),
+  equation = c("hs", "koff", "simplified", "linear", "exponential", "exponentiated"),
   k = 2,
   agg = NULL,
   x_var = "x",
@@ -20,9 +20,10 @@ fit_demand_fixed(
 \item{data}{Data frame in long format with columns: `id`, `x` (price), `y` (consumption).}
 
 \item{equation}{Character. Equation type: `"hs"` (Hursh & Silberberg, 2008),
-`"koff"` (Koffarnus et al., 2015), or `"linear"`. The modern aliases
-`"exponential"` (equivalent to `"hs"`) and `"exponentiated"` (equivalent
-to `"koff"`) are also accepted. Default `"hs"`.}
+`"koff"` (Koffarnus et al., 2015), `"simplified"` (Rzeszutek et al., 2025;
+simplified exponential with normalized decay, no `k` parameter), or
+`"linear"`. The modern aliases `"exponential"` (equivalent to `"hs"`) and
+`"exponentiated"` (equivalent to `"koff"`) are also accepted. Default `"hs"`.}
 
 \item{k}{Scaling constant. Numeric value (fixed), `"ind"` (individual),
 `"fit"` (free parameter), or `"range"` (data-driven). Default `2`.}

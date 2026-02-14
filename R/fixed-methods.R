@@ -16,7 +16,15 @@ print.beezdemand_fixed <- function(x, ...) {
   if (!is.null(x$agg)) {
     cat("Aggregation:", x$agg, "\n")
   }
-  cat("Subjects:", x$n_total, "(", x$n_success, "converged,", x$n_fail, "failed)\n")
+  cat(
+    "Subjects:",
+    x$n_total,
+    "(",
+    x$n_success,
+    "converged,",
+    x$n_fail,
+    "failed)\n"
+  )
   cat("\nUse summary() for parameter summaries, tidy() for tidy output.\n")
 
   invisible(x)
@@ -164,7 +172,11 @@ plot.beezdemand_fixed <- function(
       y = pop_pred$y
     )
     if (nrow(pop_df) > n_points) {
-      pop_df <- pop_df[round(seq(1, nrow(pop_df), length.out = n_points)), , drop = FALSE]
+      pop_df <- pop_df[
+        round(seq(1, nrow(pop_df), length.out = n_points)),
+        ,
+        drop = FALSE
+      ]
     }
 
     free_pop <- beezdemand_apply_free_trans(pop_df, "x", x_trans, free_trans)
@@ -193,14 +205,21 @@ plot.beezdemand_fixed <- function(
   }
 
   if (any(show_pred %in% "individual")) {
-    pred_df <- do.call(rbind, lapply(idx, function(i) {
-      pred <- x$predictions[[i]]
-      pred$id <- ids_all[i]
-      if (nrow(pred) > n_points) {
-        pred <- pred[round(seq(1, nrow(pred), length.out = n_points)), , drop = FALSE]
-      }
-      pred
-    }))
+    pred_df <- do.call(
+      rbind,
+      lapply(idx, function(i) {
+        pred <- x$predictions[[i]]
+        pred$id <- ids_all[i]
+        if (nrow(pred) > n_points) {
+          pred <- pred[
+            round(seq(1, nrow(pred), length.out = n_points)),
+            ,
+            drop = FALSE
+          ]
+        }
+        pred
+      })
+    )
     pred_df$id <- as.character(pred_df$id)
 
     free_pred <- beezdemand_apply_free_trans(pred_df, "x", x_trans, free_trans)
@@ -212,7 +231,9 @@ plot.beezdemand_fixed <- function(
     subtitle_note <- subtitle_note || pred_y$dropped
   }
 
-  color_by <- if (any(show_pred %in% "individual") && length(unique(pred_df$id)) > 1) {
+  color_by <- if (
+    any(show_pred %in% "individual") && length(unique(pred_df$id)) > 1
+  ) {
     "id"
   } else {
     NULL
@@ -333,8 +354,11 @@ summary.beezdemand_fixed <- function(
 ) {
   report_space <- match.arg(report_space)
   # Build coefficients tibble from results if available
-  if (!is.null(object$results) && is.data.frame(object$results) &&
-      nrow(object$results) > 0) {
+  if (
+    !is.null(object$results) &&
+      is.data.frame(object$results) &&
+      nrow(object$results) > 0
+  ) {
     results <- object$results
     id_values <- beezdemand_fixed_id_values(results)
 
@@ -346,7 +370,11 @@ summary.beezdemand_fixed <- function(
         id = id_values,
         term = term_name,
         estimate = results[[spec$estimate]],
-        std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
+        std.error = if (!is.na(spec$se) && spec$se %in% names(results)) {
+          results[[spec$se]]
+        } else {
+          NA_real_
+        },
         statistic = NA_real_,
         p.value = NA_real_,
         component = "fixed",
@@ -391,50 +419,66 @@ summary.beezdemand_fixed <- function(
   # Compute derived metrics (pmax/omax) per subject using unified engine
   derived_metrics <- beezdemand_empty_derived_metrics()
   pmax_method_info <- list()
-  
-  if (!is.null(object$results) && is.data.frame(object$results) &&
-      nrow(object$results) > 0 && object$equation %in% c("hs", "koff")) {
+
+  if (
+    !is.null(object$results) &&
+      is.data.frame(object$results) &&
+      nrow(object$results) > 0 &&
+      object$equation %in% c("hs", "koff", "simplified")
+  ) {
     # Get parameter columns
     q0_col <- param_specs$Q0$estimate %||% NULL
     alpha_col <- param_specs$alpha$estimate %||% NULL
     k_col <- param_specs$k$estimate %||% NULL
-    
-    if (!is.null(q0_col) && !is.null(alpha_col) && !is.null(k_col)) {
+
+    has_required <- !is.null(q0_col) && !is.null(alpha_col)
+    # hs/koff need k; simplified does not
+    if (object$equation %in% c("hs", "koff")) {
+      has_required <- has_required && !is.null(k_col)
+    }
+
+    if (has_required) {
       # Determine parameter scale based on param_space
       param_scale <- object$param_space %||% "natural"
-      
+
       # For each subject, compute pmax/omax
       pmax_results <- lapply(seq_len(nrow(object$results)), function(i) {
         row <- object$results[i, ]
-        
+
         # Get price observations for this subject if available
         price_obs <- NULL
         if (!is.null(object$data_used) && length(object$data_used) >= i) {
           price_obs <- object$data_used[[i]]$x
         }
-        
+
+        # Build params list (simplified has no k)
+        params_i <- list(
+          alpha = row[[alpha_col]],
+          q0 = row[[q0_col]]
+        )
+        param_scales_i <- list(
+          alpha = param_scale,
+          q0 = param_scale
+        )
+        if (!is.null(k_col) && object$equation != "simplified") {
+          params_i$k <- row[[k_col]]
+          param_scales_i$k <- "natural"
+        }
+
         beezdemand_calc_pmax_omax(
           model_type = object$equation,
-          params = list(
-            alpha = row[[alpha_col]],
-            q0 = row[[q0_col]],
-            k = row[[k_col]]
-          ),
-          param_scales = list(
-            alpha = param_scale,
-            q0 = param_scale,
-            k = "natural"  # k is typically natural even when others are log10
-          ),
+          params = params_i,
+          param_scales = param_scales_i,
           price_obs = price_obs,
           compute_observed = FALSE
         )
       })
-      
+
       # Aggregate results
       pmax_vals <- sapply(pmax_results, function(x) x$pmax_model)
       omax_vals <- sapply(pmax_results, function(x) x$omax_model)
       methods <- sapply(pmax_results, function(x) x$method_model)
-      
+
       # Store per-subject in results
       object$results$pmax_model <- pmax_vals
       object$results$omax_model <- omax_vals
@@ -465,14 +509,22 @@ summary.beezdemand_fixed <- function(
           id = as.character(id_values)
         )
       )
-      
+
       # Summary metrics
-      pmax_summary <- if (any(!is.na(pmax_vals))) summary(pmax_vals[!is.na(pmax_vals)]) else NULL
-      omax_summary <- if (any(!is.na(omax_vals))) summary(omax_vals[!is.na(omax_vals)]) else NULL
-      
+      pmax_summary <- if (any(!is.na(pmax_vals))) {
+        summary(pmax_vals[!is.na(pmax_vals)])
+      } else {
+        NULL
+      }
+      omax_summary <- if (any(!is.na(omax_vals))) {
+        summary(omax_vals[!is.na(omax_vals)])
+      } else {
+        NULL
+      }
+
       param_summary$pmax_model <- pmax_summary
       param_summary$omax_model <- omax_summary
-      
+
       # Method info (use most common method)
       if (length(methods) > 0) {
         method_table <- table(methods[!is.na(methods)])
@@ -551,16 +603,26 @@ print.summary.beezdemand_fixed <- function(x, digits = 4, n = 20, ...) {
       q0_sum <- x$param_summary$Q0
       cat("  Q0:\n")
       cat("    Median:", round(q0_sum["Median"], digits), "\n")
-      cat("    Range: [", round(q0_sum["Min."], digits), ",",
-          round(q0_sum["Max."], digits), "]\n")
+      cat(
+        "    Range: [",
+        round(q0_sum["Min."], digits),
+        ",",
+        round(q0_sum["Max."], digits),
+        "]\n"
+      )
     }
 
     if (!is.null(x$param_summary$alpha)) {
       alpha_sum <- x$param_summary$alpha
       cat("  alpha:\n")
       cat("    Median:", round(alpha_sum["Median"], 6), "\n")
-      cat("    Range: [", round(alpha_sum["Min."], 6), ",",
-          round(alpha_sum["Max."], 6), "]\n")
+      cat(
+        "    Range: [",
+        round(alpha_sum["Min."], 6),
+        ",",
+        round(alpha_sum["Max."], 6),
+        "]\n"
+      )
     }
   }
 
@@ -571,7 +633,10 @@ print.summary.beezdemand_fixed <- function(x, digits = 4, n = 20, ...) {
     }
 
     coef_all <- x$coefficients |>
-      dplyr::mutate(id = as.character(.data$id), term = as.character(.data$term)) |>
+      dplyr::mutate(
+        id = as.character(.data$id),
+        term = as.character(.data$term)
+      ) |>
       dplyr::arrange(.data$id, .data$term)
 
     ids <- unique(coef_all$id)
@@ -641,7 +706,11 @@ tidy.beezdemand_fixed <- function(
       id = id_values,
       term = term_name,
       estimate = results[[spec$estimate]],
-      std.error = if (!is.na(spec$se) && spec$se %in% names(results)) results[[spec$se]] else NA_real_,
+      std.error = if (!is.na(spec$se) && spec$se %in% names(results)) {
+        results[[spec$se]]
+      } else {
+        NA_real_
+      },
       statistic = NA_real_,
       p.value = NA_real_,
       component = "fixed",
@@ -675,7 +744,9 @@ coef.beezdemand_fixed <- function(
   if (is.null(object$fits) || !length(object$fits)) {
     # Fallback: no per-id model objects available; use results table (natural scale).
     out <- tidy.beezdemand_fixed(object, report_space = "natural")
-    if (report_space == "internal") return(out)
+    if (report_space == "internal") {
+      return(out)
+    }
     return(tidy.beezdemand_fixed(object, report_space = report_space))
   }
 
@@ -683,9 +754,13 @@ coef.beezdemand_fixed <- function(
   rows <- lapply(seq_along(object$fits), function(i) {
     fit <- object$fits[[i]]
     id <- if (!is.null(ids) && length(ids) >= i) ids[[i]] else NA_character_
-    if (inherits(fit, "try-error") || is.null(fit)) return(NULL)
+    if (inherits(fit, "try-error") || is.null(fit)) {
+      return(NULL)
+    }
     cf <- tryCatch(stats::coef(fit), error = function(e) NULL)
-    if (is.null(cf)) return(NULL)
+    if (is.null(cf)) {
+      return(NULL)
+    }
     tibble::tibble(
       id = as.character(id),
       term = names(cf),
@@ -724,7 +799,9 @@ coef.beezdemand_fixed <- function(
       out <- out |>
         dplyr::mutate(
           estimate = dplyr::case_when(
-            .data$term %in% c("q0", "alpha", "k") & .data$estimate > 0 ~ log10(.data$estimate),
+            .data$term %in% c("q0", "alpha", "k") & .data$estimate > 0 ~ log10(
+              .data$estimate
+            ),
             TRUE ~ .data$estimate
           ),
           estimate_scale = dplyr::case_when(
@@ -793,8 +870,14 @@ predict.beezdemand_fixed <- function(
   type <- match.arg(type)
   interval <- match.arg(interval)
 
-  if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||
-    level <= 0 || level >= 1)) {
+  if (
+    !is.null(level) &&
+      (!is.numeric(level) ||
+        length(level) != 1 ||
+        is.na(level) ||
+        level <= 0 ||
+        level >= 1)
+  ) {
     stop("'level' must be a single number between 0 and 1.", call. = FALSE)
   }
 
@@ -813,15 +896,24 @@ predict.beezdemand_fixed <- function(
 
   if (is.null(newdata)) {
     prices <- NULL
-    if (!is.null(object$data_used) && length(object$data_used) > 0 &&
-      x_var %in% names(object$data_used[[1]])) {
+    if (
+      !is.null(object$data_used) &&
+        length(object$data_used) > 0 &&
+        x_var %in% names(object$data_used[[1]])
+    ) {
       prices <- sort(unique(unlist(lapply(object$data_used, `[[`, x_var))))
-    } else if (!is.null(object$predictions) && length(object$predictions) > 0 &&
-      x_var %in% names(object$predictions[[1]])) {
+    } else if (
+      !is.null(object$predictions) &&
+        length(object$predictions) > 0 &&
+        x_var %in% names(object$predictions[[1]])
+    ) {
       prices <- sort(unique(unlist(lapply(object$predictions, `[[`, x_var))))
     }
     if (is.null(prices) || !length(prices)) {
-      stop("`newdata` is required when the fit object does not retain observed prices.", call. = FALSE)
+      stop(
+        "`newdata` is required when the fit object does not retain observed prices.",
+        call. = FALSE
+      )
     }
     newdata <- data.frame(prices, stringsAsFactors = FALSE)
     names(newdata) <- x_var
@@ -831,7 +923,12 @@ predict.beezdemand_fixed <- function(
     newdata <- as.data.frame(newdata)
   }
   if (!(x_var %in% names(newdata))) {
-    stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+    stop(
+      "`newdata` must include the price column `",
+      x_var,
+      "`.",
+      call. = FALSE
+    )
   }
 
   prices <- newdata[[x_var]]
@@ -840,7 +937,12 @@ predict.beezdemand_fixed <- function(
   }
 
   if (isTRUE(object$k_spec == "ind") && !(id_var %in% names(newdata))) {
-    stop("Subject-specific k requires `newdata` to include the id column `", id_var, "`.", call. = FALSE)
+    stop(
+      "Subject-specific k requires `newdata` to include the id column `",
+      id_var,
+      "`.",
+      call. = FALSE
+    )
   }
 
   eq <- object$equation %||% "hs"
@@ -895,20 +997,50 @@ predict.beezdemand_fixed <- function(
 
   fitted_link <- rep(NA_real_, length(price_vec))
   if (eq %in% c("hs", "koff")) {
-    log10_q0 <- ifelse(is.finite(pars_row$Q0) & pars_row$Q0 > 0, log10(pars_row$Q0), NA_real_)
+    log10_q0 <- ifelse(
+      is.finite(pars_row$Q0) & pars_row$Q0 > 0,
+      log10(pars_row$Q0),
+      NA_real_
+    )
     fitted_link <- log10_q0 +
       pars_row$k * (exp(-pars_row$alpha * pars_row$Q0 * price_vec) - 1)
+  } else if (eq == "simplified") {
+    # Simplified: Q = Q0 * exp(-alpha * Q0 * P)
+    # link scale = log(Q) = log(Q0) - alpha * Q0 * P
+    log_q0 <- ifelse(
+      is.finite(pars_row$Q0) & pars_row$Q0 > 0,
+      log(pars_row$Q0),
+      NA_real_
+    )
+    fitted_link <- log_q0 - pars_row$alpha * pars_row$Q0 * price_vec
   } else if (eq == "linear") {
-    log_l <- ifelse(is.finite(pars_row$L) & pars_row$L > 0, log(pars_row$L), NA_real_)
-    log_x <- ifelse(is.finite(price_vec) & price_vec > 0, log(price_vec), NA_real_)
+    log_l <- ifelse(
+      is.finite(pars_row$L) & pars_row$L > 0,
+      log(pars_row$L),
+      NA_real_
+    )
+    log_x <- ifelse(
+      is.finite(price_vec) & price_vec > 0,
+      log(price_vec),
+      NA_real_
+    )
     fitted_link <- log_l +
       pars_row$b * log_x -
       pars_row$a * price_vec
   } else {
-    stop("Unsupported equation `", eq, "` for `predict.beezdemand_fixed()`.", call. = FALSE)
+    stop(
+      "Unsupported equation `",
+      eq,
+      "` for `predict.beezdemand_fixed()`.",
+      call. = FALSE
+    )
   }
 
-  fitted_response <- if (eq == "linear") exp(fitted_link) else 10^fitted_link
+  fitted_response <- if (eq %in% c("linear", "simplified")) {
+    exp(fitted_link)
+  } else {
+    10^fitted_link
+  }
 
   out$.fitted <- if (type == "response") fitted_response else fitted_link
 
@@ -1025,9 +1157,13 @@ confint.beezdemand_fixed <- function(object, parm = NULL, level = 0.95, ...) {
   }
 
   # Determine which parameters to include
-  available_params <- names(param_map)[vapply(names(param_map), function(p) {
-    param_map[[p]]$est %in% names(results)
-  }, logical(1))]
+  available_params <- names(param_map)[vapply(
+    names(param_map),
+    function(p) {
+      param_map[[p]]$est %in% names(results)
+    },
+    logical(1)
+  )]
 
   if (is.null(parm)) {
     parm <- available_params
@@ -1036,8 +1172,7 @@ confint.beezdemand_fixed <- function(object, parm = NULL, level = 0.95, ...) {
   }
 
   if (length(parm) == 0) {
-    warning("No requested parameters found in fit results.", call. = FALSE
-)
+    warning("No requested parameters found in fit results.", call. = FALSE)
     return(tibble::tibble(
       id = character(),
       term = character(),
@@ -1132,8 +1267,10 @@ augment.beezdemand_fixed <- function(x, newdata = NULL, ...) {
 
   # Use original data from data_used if available
   if (is.null(x$data_used) || length(x$data_used) == 0) {
-    stop("No data available. Provide 'newdata' or ensure model retains data_used.",
-         call. = FALSE)
+    stop(
+      "No data available. Provide 'newdata' or ensure model retains data_used.",
+      call. = FALSE
+    )
   }
 
   # Combine all subject data

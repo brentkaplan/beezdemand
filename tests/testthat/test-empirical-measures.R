@@ -18,8 +18,10 @@ test_that("get_empirical_measures measures have correct columns", {
 
   result <- get_empirical_measures(apt)
 
-  expect_true(all(c("id", "Intensity", "BP0", "BP1", "Omaxe", "Pmaxe") %in%
-                    names(result$measures)))
+  expect_true(all(
+    c("id", "Intensity", "BP0", "BP1", "Omaxe", "Pmaxe") %in%
+      names(result$measures)
+  ))
 })
 
 test_that("get_empirical_measures returns one row per subject", {
@@ -111,8 +113,8 @@ test_that("get_empirical_measures calculates Omaxe correctly", {
   result <- get_empirical_measures(test_data)
 
   # Calculate expected max expenditure manually
-  expend <- test_data$x * test_data$y  # 0, 8, 12, 9, 0
-  expected_omax <- max(expend)  # 12
+  expend <- test_data$x * test_data$y # 0, 8, 12, 9, 0
+  expected_omax <- max(expend) # 12
 
   expect_equal(result$measures$Omaxe[1], expected_omax)
 })
@@ -150,9 +152,7 @@ test_that("get_empirical_measures handles multiple subjects", {
   test_data <- data.frame(
     id = rep(c("S1", "S2", "S3"), each = 5),
     x = rep(c(0, 1, 2, 3, 4), 3),
-    y = c(10, 8, 6, 3, 0,
-          12, 10, 7, 4, 1,
-          8, 6, 4, 2, 0)
+    y = c(10, 8, 6, 3, 0, 12, 10, 7, 4, 1, 8, 6, 4, 2, 0)
   )
 
   result <- get_empirical_measures(test_data)
@@ -165,11 +165,14 @@ test_that("get_empirical_measures errors with duplicate prices", {
   # Create test data with duplicate prices
   test_data <- data.frame(
     id = rep("S1", 6),
-    x = c(0, 1, 2, 2, 3, 4),  # duplicate price 2
+    x = c(0, 1, 2, 2, 3, 4), # duplicate price 2
     y = c(10, 8, 6, 5, 3, 0)
   )
 
-  expect_error(get_empirical_measures(test_data), "Duplicates found where id = S1")
+  expect_error(
+    get_empirical_measures(test_data),
+    "Duplicates found where id = S1"
+  )
 })
 
 test_that("get_empirical_measures data_summary is correct", {
@@ -189,10 +192,12 @@ test_that("get_empirical_measures accepts custom column names", {
   test_data <- apt
   names(test_data) <- c("subject", "price", "consumption")
 
-  result <- get_empirical_measures(test_data,
-                                   x_var = "price",
-                                   y_var = "consumption",
-                                   id_var = "subject")
+  result <- get_empirical_measures(
+    test_data,
+    x_var = "price",
+    y_var = "consumption",
+    id_var = "subject"
+  )
 
   expect_s3_class(result, "beezdemand_empirical")
   expect_equal(nrow(result$measures), length(unique(test_data$subject)))
@@ -201,13 +206,16 @@ test_that("get_empirical_measures accepts custom column names", {
 test_that("get_empirical_measures errors with missing columns", {
   data(apt, package = "beezdemand")
 
-  test_data <- apt[, c("id", "x")]  # Missing y column
+  test_data <- apt[, c("id", "x")] # Missing y column
 
-  expect_error(get_empirical_measures(test_data))  # CheckCols will throw error
+  expect_error(get_empirical_measures(test_data)) # CheckCols will throw error
 })
 
 test_that("get_empirical_measures errors with non-data.frame input", {
-  expect_error(get_empirical_measures(c(1, 2, 3)), "'data' must be a data frame")
+  expect_error(
+    get_empirical_measures(c(1, 2, 3)),
+    "'data' must be a data frame"
+  )
 })
 
 test_that("get_empirical_measures matches GetEmpirical results", {
@@ -226,7 +234,7 @@ test_that("get_empirical_measures handles Pmaxe with tied maximum expenditures",
   test_data <- data.frame(
     id = rep("S1", 5),
     x = c(1, 2, 3, 4, 5),
-    y = c(10, 5, 10/3, 2.5, 2)  # All give expenditure of 10
+    y = c(10, 5, 10 / 3, 2.5, 2) # All give expenditure of 10
   )
 
   result <- get_empirical_measures(test_data)
@@ -267,9 +275,7 @@ test_that("summary.beezdemand_empirical calculates statistics correctly", {
   test_data <- data.frame(
     id = rep(c("S1", "S2", "S3"), each = 5),
     x = rep(c(0, 1, 2, 3, 4), 3),
-    y = c(10, 8, 6, 3, 0,
-          12, 10, 7, 4, 1,
-          8, 6, 4, 2, 0)
+    y = c(10, 8, 6, 3, 0, 12, 10, 7, 4, 1, 8, 6, 4, 2, 0)
   )
 
   result <- get_empirical_measures(test_data)
@@ -304,7 +310,7 @@ test_that("plot.beezdemand_empirical matrix returns ggplot with GGally", {
   result <- get_empirical_measures(apt)
   p <- suppressMessages(plot(result, type = "matrix"))
 
-  expect_s3_class(p, "ggplot")
+  expect_true(inherits(p, "ggplot") || inherits(p, "ggmatrix"))
 })
 
 test_that("plot.beezdemand_empirical default type is histogram", {
@@ -313,7 +319,7 @@ test_that("plot.beezdemand_empirical default type is histogram", {
   data(apt, package = "beezdemand")
 
   result <- get_empirical_measures(apt)
-  p <- plot(result)  # No type specified
+  p <- plot(result) # No type specified
 
   expect_s3_class(p, "ggplot")
 })

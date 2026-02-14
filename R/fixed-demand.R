@@ -12,9 +12,10 @@ NULL
 #'
 #' @param data Data frame in long format with columns: `id`, `x` (price), `y` (consumption).
 #' @param equation Character. Equation type: `"hs"` (Hursh & Silberberg, 2008),
-#'   `"koff"` (Koffarnus et al., 2015), or `"linear"`. The modern aliases
-#'   `"exponential"` (equivalent to `"hs"`) and `"exponentiated"` (equivalent
-#'   to `"koff"`) are also accepted. Default `"hs"`.
+#'   `"koff"` (Koffarnus et al., 2015), `"simplified"` (Rzeszutek et al., 2025;
+#'   simplified exponential with normalized decay, no `k` parameter), or
+#'   `"linear"`. The modern aliases `"exponential"` (equivalent to `"hs"`) and
+#'   `"exponentiated"` (equivalent to `"koff"`) are also accepted. Default `"hs"`.
 #' @param k Scaling constant. Numeric value (fixed), `"ind"` (individual),
 #'   `"fit"` (free parameter), or `"range"` (data-driven). Default `2`.
 #' @param agg Character. Aggregation method: `"Mean"`, `"Pooled"`, or `NULL`
@@ -58,20 +59,36 @@ NULL
 #' }
 #'
 #' @export
-fit_demand_fixed <- function(data,
-                             equation = c("hs", "koff", "linear",
-                                          "exponential", "exponentiated"),
-                             k = 2,
-                             agg = NULL,
-                             x_var = "x",
-                             y_var = "y",
-                             id_var = "id",
-                             param_space = c("natural", "log10"),
-                             ...) {
+fit_demand_fixed <- function(
+  data,
+  equation = c(
+    "hs",
+    "koff",
+    "simplified",
+    "linear",
+    "exponential",
+    "exponentiated"
+  ),
+  k = 2,
+  agg = NULL,
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  param_space = c("natural", "log10"),
+  ...
+) {
   equation <- match.arg(equation)
   equation <- normalize_equation(equation)
   param_space <- match.arg(param_space)
   call <- match.call()
+
+  # Warn if user explicitly passes k with simplified equation
+  if (equation == "simplified" && !missing(k)) {
+    warning(
+      "k parameter is not used with equation = 'simplified'; ignoring k.",
+      call. = FALSE
+    )
+  }
 
   # Call legacy engine with detailed = TRUE to get all outputs
   legacy_warnings <- character(0)
@@ -93,14 +110,19 @@ fit_demand_fixed <- function(data,
       legacy_warnings <<- c(legacy_warnings, msg)
       # Legacy FitCurves can emit high-frequency data warnings; capture them
       # but avoid spamming downstream consumers/tests.
-      if (grepl("Zeros found in data not compatible with equation", msg)) {
+      if (
+        grepl("Zeros found in data not compatible with equation", msg) ||
+          grepl("k parameter is not used", msg)
+      ) {
         invokeRestart("muffleWarning")
       }
     }
   )
 
   # Determine k specification mode for display
-  k_spec <- if (is.numeric(k)) {
+  k_spec <- if (equation == "simplified") {
+    "none (simplified equation)"
+  } else if (is.numeric(k)) {
     paste0("fixed (", k, ")")
   } else {
     k
@@ -152,7 +174,10 @@ fit_demand_fixed <- function(data,
 
     # Handle linear equation parameters
     if (all(c("L", "b", "a") %in% names(results))) {
-      success_flag <- success_flag & !is.na(results$L) & !is.na(results$b) & !is.na(results$a)
+      success_flag <- success_flag &
+        !is.na(results$L) &
+        !is.na(results$b) &
+        !is.na(results$a)
     }
 
     n_success <- sum(success_flag)
@@ -174,7 +199,13 @@ fit_demand_fixed <- function(data,
       call = call,
       equation = equation,
       k_spec = k_spec,
-      k_value = if (is.numeric(k)) k else NA_real_,
+      k_value = if (equation == "simplified") {
+        NA_real_
+      } else if (is.numeric(k)) {
+        k
+      } else {
+        NA_real_
+      },
       agg = agg,
       x_var = x_var,
       y_var = y_var,
@@ -185,7 +216,13 @@ fit_demand_fixed <- function(data,
         internal_spaces = list(
           Q0 = if (param_space == "log10") "log10" else "natural",
           alpha = if (param_space == "log10") "log10" else "natural",
-          k = if (is.character(k) && identical(k, "fit") && param_space == "log10") "log10" else "natural"
+          k = if (
+            is.character(k) && identical(k, "fit") && param_space == "log10"
+          ) {
+            "log10"
+          } else {
+            "natural"
+          }
         )
       ),
       n_total = n_total,

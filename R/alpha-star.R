@@ -1,4 +1,46 @@
-.calc_alpha_star <- function(params, param_scales, vcov = NULL, base = c("e", "10")) {
+#' Compute Normalized Alpha (Alpha Star) via the Delta Method
+#'
+#' Implements Strategy B normalization of the demand elasticity parameter
+#' \eqn{\alpha} so that values are comparable across different \eqn{k} values
+#' (Rzeszutek et al., 2025). The formula is
+#' \eqn{\alpha^* = -\alpha / \ln(1 - 1/(k \cdot \ln(b)))}{alpha* = -alpha /
+#' ln(1 - 1/(k*ln(b)))} where \eqn{b} is the logarithmic base used by the
+#' demand equation (10 for HS/Koff, \eqn{e} for hurdle models).
+#'
+#' Standard errors are obtained via the delta method when a variance--covariance
+#' matrix (or SE vector) is supplied.
+#'
+#' @param params Named list of parameter values. Must contain entries matchable
+#'   to alpha and k (e.g., \code{alpha}, \code{log_alpha}, \code{log10_alpha}).
+#' @param param_scales Named list indicating the scale of each parameter in
+#'   \code{params}: \code{"natural"}, \code{"log"}, or \code{"log10"}.
+#' @param vcov Optional. Either a variance--covariance matrix with named
+#'   rows/columns, or a named numeric vector of standard errors for the
+#'   alpha and k parameters.
+#' @param base Character; the logarithmic base: \code{"e"} (natural log, used
+#'   by hurdle models) or \code{"10"} (log10, used by HS/Koff equations).
+#'
+#' @return A list with elements:
+#'   \describe{
+#'     \item{estimate}{Numeric scalar; the alpha_star value, or \code{NA}.}
+#'     \item{se}{Numeric scalar; delta-method SE, or \code{NA}.}
+#'     \item{note}{Character or \code{NULL}; diagnostic message if alpha_star
+#'       could not be computed.}
+#'   }
+#'
+#' @references
+#' Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N. (2025).
+#' Overviewing the exponential model of demand and introducing a simplification
+#' that solves issues of span, scale, and zeros. *Experimental and Clinical
+#' Psychopharmacology*.
+#'
+#' @keywords internal
+.calc_alpha_star <- function(
+  params,
+  param_scales,
+  vcov = NULL,
+  base = c("e", "10")
+) {
   base <- match.arg(base)
   b <- if (identical(base, "e")) exp(1) else 10
   c_const <- log(b)
@@ -9,11 +51,20 @@
   pick_name <- function(candidates) {
     candidates <- as.character(candidates)
     hit <- candidates[candidates %in% names(params)]
-    if (length(hit)) return(hit[[1]])
+    if (length(hit)) {
+      return(hit[[1]])
+    }
     NA_character_
   }
 
-  alpha_name <- pick_name(c("alpha", "Alpha", "log_alpha", "logAlpha", "log10_alpha", "log10Alpha"))
+  alpha_name <- pick_name(c(
+    "alpha",
+    "Alpha",
+    "log_alpha",
+    "logAlpha",
+    "log10_alpha",
+    "log10Alpha"
+  ))
   k_name <- pick_name(c("k", "K", "log_k", "logK", "log10_k", "log10K"))
 
   if (is.na(alpha_name) || is.na(k_name)) {
@@ -29,9 +80,19 @@
 
   infer_scale <- function(param_name) {
     scale_in <- param_scales[[param_name]]
-    if (!is.null(scale_in)) return(as.character(scale_in))
-    if (grepl("^log10", param_name)) return("log10")
-    if (grepl("^log_", param_name) || grepl("^log[A-Z]", param_name) || identical(param_name, "log")) return("log")
+    if (!is.null(scale_in)) {
+      return(as.character(scale_in))
+    }
+    if (grepl("^log10", param_name)) {
+      return("log10")
+    }
+    if (
+      grepl("^log_", param_name) ||
+        grepl("^log[A-Z]", param_name) ||
+        identical(param_name, "log")
+    ) {
+      return("log")
+    }
     "natural"
   }
 
@@ -62,7 +123,9 @@
   alpha_nat <- alpha_nat_res$value
   k_nat <- k_nat_res$value
 
-  if (!is.finite(alpha_nat) || !is.finite(k_nat) || alpha_nat <= 0 || k_nat <= 0) {
+  if (
+    !is.finite(alpha_nat) || !is.finite(k_nat) || alpha_nat <= 0 || k_nat <= 0
+  ) {
     return(list(
       estimate = NA_real_,
       se = NA_real_,
@@ -76,7 +139,8 @@
       se = NA_real_,
       note = sprintf(
         "alpha_star undefined: k * ln(base) must be > 1 (k=%.6g, ln(base)=%.6g)",
-        k_nat, c_const
+        k_nat,
+        c_const
       )
     ))
   }
@@ -132,11 +196,17 @@
         if (nrow(Sigma) == length(grad) && ncol(Sigma) == length(grad)) {
           dimnames(Sigma) <- list(names(grad), names(grad))
         } else {
-          stop("vcov matrix must have dimnames for alpha/k parameters.", call. = FALSE)
+          stop(
+            "vcov matrix must have dimnames for alpha/k parameters.",
+            call. = FALSE
+          )
         }
       }
     } else {
-      stop("'vcov' must be a matrix or a named numeric vector of SEs.", call. = FALSE)
+      stop(
+        "'vcov' must be a matrix or a named numeric vector of SEs.",
+        call. = FALSE
+      )
     }
 
     common <- intersect(names(grad), colnames(Sigma))
@@ -149,7 +219,10 @@
       if (is.finite(var_as) && var_as >= 0) {
         alpha_star_se <- sqrt(var_as)
       } else {
-        note <- c(note, "Delta-method variance was not finite/positive; SE unavailable")
+        note <- c(
+          note,
+          "Delta-method variance was not finite/positive; SE unavailable"
+        )
       }
     }
   }

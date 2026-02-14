@@ -44,6 +44,16 @@ Equations are grouped by model family:
   \item \code{pmax_obs}: Pmax from observed/empirical data (max expenditure price)
   \item \code{omax_model}: Omax derived from fitted model parameters
   \item \code{omax_obs}: Omax from observed/empirical data
+  \item \code{alpha_star}: Normalized alpha (Strategy B; Rzeszutek et al., 2025).
+    Makes alpha comparable across different k values by adjusting for the
+    scaling constant. Computed as \eqn{\alpha^* = -\alpha / \ln(1 - 1/(k \cdot
+    \ln(b)))}{alpha* = -alpha / ln(1 - 1/(k*ln(b)))} where \eqn{b} is the
+    logarithmic base (10 for HS/Koff, \eqn{e} for hurdle models). Returned by
+    \code{\link{FitCurves}}, \code{\link[=tidy.beezdemand_fixed]{tidy()}} on
+    fixed fits, and \code{\link[=tidy.beezdemand_hurdle]{tidy()}} on hurdle
+    fits. Standard error (\code{alpha_star_se}) is obtained via the delta
+    method. Requires \eqn{k \cdot \ln(b) > 1}{k*ln(b) > 1}; otherwise
+    \code{NA} is returned.
 }
 }
 

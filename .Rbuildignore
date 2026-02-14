@@ -51,6 +51,9 @@
 ^[^/]+\.txt$
 ^tests/testthat/Rplots\.pdf$
 ^vignettes/\.build\.timestamp$
+^vignettes/demand-typical-workflow\.html$
+^vignettes/demand-typical-workflow_cache$
+^vignettes/demand-typical-workflow_files$
 ^engineering$
 ^\.agents$
 ^\.env$

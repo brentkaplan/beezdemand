@@ -1,59 +1,25 @@
 ## Test environments
-* macOS Ventura 13.4.1, R 4.2.2
-* win-builder (devel and release)
+* macOS Tahoe 26.2, R 4.5.1 (local)
+* TODO: win-builder (devel and release)
+* TODO: R-hub (linux, windows)
 
 ## R CMD check results
-0 errors ✔ | 0 warnings ✔ | 0 notes ✔
+TODO: Update after running fresh R CMD check --as-cran
 
 ## Submission comments
-Was asked to change dependency from nlmrt to nlsr. This submission makes that change and fixes any issues associated with it.
-Currently, no other package depends on beezdemand. 
 
-### Reviewer comments 20180730
-Thanks, please add a DOI, arXiv or ISBN to your reference Hursh,
-Raslear, Bauman, & Black, 1989 in your Description text in the form
-authors (year) <doi:...>
-authors (year) <arXiv:...>
-authors (year, ISBN:...)
-with no space after 'doi:', 'arXiv:' and angle brackets for auto-linking.
+This is a major update (0.1.2 -> 0.2.0) with significant new functionality:
 
-* Description has been updated with the DOI for that reference in brackets,
-as requested.
+* New two-part hurdle demand models via TMB (Template Model Builder)
+* New cross-price demand model functions
+* New `fit_demand_fixed()` as modern replacement for `FitCurves()`
+* New mixed-effects demand modeling with `fit_demand_mixed()`
+* Comprehensive broom integration (tidy, glance, augment methods)
+* Model comparison, diagnostics, and confidence interval methods
+* Six vignettes covering all major workflows
 
-We see code lines such as
-
-Copyright 2015 - Baty and Delignette-Muller
-Copyright 2016 - John C. Nash
-Copyright 2016 - Hadley Wickham
-Copyright 2013 - G. Grothendieck
-Copyright - 2016 - Ben Bolker
-Copyright - 2016 - Paul Johnson <pauljohn@@ku.edu>
-
-Please add all authors and copyright holders in the Authors@R field with
-the appropriate roles.
-
-* Those lines indicated package dependencies prior to the submission to
-CRAN. The lines are no longer needed as the package now states necessary
-dependencies.
-
-### Reviewer comments 20180720
-
-Please write DOIs in brackets as suggested.
-
-* DOIs are now in brackets
-
-Please add examples to all exported functions.
-
-* Examples have been added to all exported functions
-
-### Reviewer comments 20180714
-
-Version contains leading zeroes (0.1.00). Please change.
-
-* Version has been updated to 0.1.0
-
-Can you elaborate which methods are implemented for this task? Is there
-some reference about the method you can add in the Description field in
-the form Authors (year) <doi:.....>?
-
-* Description has been updated with package capabilities and references.
+### Package size note
+The installed package size is approximately 22 MB, with the `libs`
+subdirectory accounting for ~20 MB. This is due to TMB template
+compilation for the hurdle and joint hurdle models, which is typical
+for packages using TMB.

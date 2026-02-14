@@ -35,6 +35,16 @@
 #'   \item \code{pmax_obs}: Pmax from observed/empirical data (max expenditure price)
 #'   \item \code{omax_model}: Omax derived from fitted model parameters
 #'   \item \code{omax_obs}: Omax from observed/empirical data
+#'   \item \code{alpha_star}: Normalized alpha (Strategy B; Rzeszutek et al., 2025).
+#'     Makes alpha comparable across different k values by adjusting for the
+#'     scaling constant. Computed as \eqn{\alpha^* = -\alpha / \ln(1 - 1/(k \cdot
+#'     \ln(b)))}{alpha* = -alpha / ln(1 - 1/(k*ln(b)))} where \eqn{b} is the
+#'     logarithmic base (10 for HS/Koff, \eqn{e} for hurdle models). Returned by
+#'     \code{\link{FitCurves}}, \code{\link[=tidy.beezdemand_fixed]{tidy()}} on
+#'     fixed fits, and \code{\link[=tidy.beezdemand_hurdle]{tidy()}} on hurdle
+#'     fits. Standard error (\code{alpha_star_se}) is obtained via the delta
+#'     method. Requires \eqn{k \cdot \ln(b) > 1}{k*ln(b) > 1}; otherwise
+#'     \code{NA} is returned.
 #' }
 #'
 #' @section Legacy Column Mappings:
@@ -317,6 +327,17 @@ NULL
     zero_handling = "keep"
   ),
 
+  simplified = list(
+    id = "simplified",
+    name = "Simplified Exponential (Rzeszutek et al., 2025)",
+    future_id = "simplified_exponential_demand",
+    params_estimated = c("q0", "alpha"),
+    params_fixed = character(0),
+    default_param_space = "natural",
+    response_scale = "natural",
+    zero_handling = "keep"
+  ),
+
   # Note: internal formula uses lowercase "l" but output columns use uppercase "L"
   linear = list(
     id = "linear",
@@ -384,11 +405,21 @@ NULL
     default_param_space = "log",
     response_scale = "log",
     zero_handling = "model",
-    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
-                            "rho_ab_raw"),
-    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
-                            "logsigma_e",
-                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+    variance_params_2re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_e",
+      "rho_ab_raw"
+    ),
+    variance_params_3re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_c",
+      "logsigma_e",
+      "rho_ab_raw",
+      "rho_ac_raw",
+      "rho_bc_raw"
+    )
   ),
 
   hurdle_hs = list(
@@ -400,11 +431,21 @@ NULL
     default_param_space = "log",
     response_scale = "log",
     zero_handling = "model",
-    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
-                            "rho_ab_raw"),
-    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
-                            "logsigma_e",
-                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+    variance_params_2re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_e",
+      "rho_ab_raw"
+    ),
+    variance_params_3re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_c",
+      "logsigma_e",
+      "rho_ab_raw",
+      "rho_ac_raw",
+      "rho_bc_raw"
+    )
   ),
 
   hurdle_snd = list(
@@ -417,11 +458,21 @@ NULL
     default_param_space = "log",
     response_scale = "log",
     zero_handling = "model",
-    variance_params_2re = c("logsigma_a", "logsigma_b", "logsigma_e",
-                            "rho_ab_raw"),
-    variance_params_3re = c("logsigma_a", "logsigma_b", "logsigma_c",
-                            "logsigma_e",
-                            "rho_ab_raw", "rho_ac_raw", "rho_bc_raw")
+    variance_params_2re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_e",
+      "rho_ab_raw"
+    ),
+    variance_params_3re = c(
+      "logsigma_a",
+      "logsigma_b",
+      "logsigma_c",
+      "logsigma_e",
+      "rho_ab_raw",
+      "rho_ac_raw",
+      "rho_bc_raw"
+    )
   ),
 
   # ---------------------------------------------------------------------------

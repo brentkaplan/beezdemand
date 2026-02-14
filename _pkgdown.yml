@@ -41,10 +41,14 @@ navbar:
           href: articles/model-selection.html
         - text: "---"
         - text: Model Types
-        - text: Hurdle Demand Models
-          href: articles/hurdle-demand-models.html
+        - text: Group Comparisons (Extra F-Test)
+          href: articles/group-comparisons.html
         - text: Mixed-Effects Models
           href: articles/mixed-demand.html
+        - text: "Advanced Mixed-Effects Models"
+          href: articles/mixed-demand-advanced.html
+        - text: Hurdle Demand Models
+          href: articles/hurdle-demand-models.html
         - text: Cross-Price Models
           href: articles/cross-price-models.html
         - text: "---"
@@ -127,6 +131,9 @@ reference:
       - calc_group_metrics
       - beezdemand_calc_pmax_omax
       - beezdemand_calc_pmax_omax_vec
+      - get_empirical_measures
+      - get_descriptive_summary
+      - get_k
       - GetAnalyticPmax
       - GetAnalyticPmaxFallback
       - GetEmpirical

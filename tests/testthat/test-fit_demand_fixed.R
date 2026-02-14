@@ -27,7 +27,9 @@ test_that("fit_demand_fixed reproduces FitCurves golden values (HS, k=2)", {
 
   expect_s3_class(res, "data.frame")
   expect_true(all(test_ids %in% res$id))
-  expect_true(all(c("Q0d", "Alpha", "K", "alpha_star", "alpha_star_se") %in% names(res)))
+  expect_true(all(
+    c("Q0d", "Alpha", "K", "alpha_star", "alpha_star_se") %in% names(res)
+  ))
 
   row_19 <- res[res$id == 19, ]
   expect_equal(row_19$K, 2)
@@ -151,14 +153,30 @@ test_that("modern equation aliases produce identical results to legacy names", {
   data(apt, package = "beezdemand")
   apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
 
-  fit_hs <- suppressWarnings(fit_demand_fixed(apt_small, equation = "hs", k = 2))
-  fit_exp <- suppressWarnings(fit_demand_fixed(apt_small, equation = "exponential", k = 2))
+  fit_hs <- suppressWarnings(fit_demand_fixed(
+    apt_small,
+    equation = "hs",
+    k = 2
+  ))
+  fit_exp <- suppressWarnings(fit_demand_fixed(
+    apt_small,
+    equation = "exponential",
+    k = 2
+  ))
 
   expect_equal(fit_hs$results$Q0d, fit_exp$results$Q0d)
   expect_equal(fit_hs$results$Alpha, fit_exp$results$Alpha)
 
-  fit_koff <- suppressWarnings(fit_demand_fixed(apt_small, equation = "koff", k = 2))
-  fit_expd <- suppressWarnings(fit_demand_fixed(apt_small, equation = "exponentiated", k = 2))
+  fit_koff <- suppressWarnings(fit_demand_fixed(
+    apt_small,
+    equation = "koff",
+    k = 2
+  ))
+  fit_expd <- suppressWarnings(fit_demand_fixed(
+    apt_small,
+    equation = "exponentiated",
+    k = 2
+  ))
 
   expect_equal(fit_koff$results$Q0d, fit_expd$results$Q0d)
   expect_equal(fit_koff$results$Alpha, fit_expd$results$Alpha)
@@ -199,8 +217,7 @@ test_that("fit_demand_fixed handles column name remapping", {
 })
 
 
-test_that("fit_demand_fixed tidy returns empty tibble for empty results",
-{
+test_that("fit_demand_fixed tidy returns empty tibble for empty results", {
   # Create a beezdemand_fixed object with NULL results
   fake_fit <- structure(
     list(
@@ -221,8 +238,10 @@ test_that("fit_demand_fixed tidy returns empty tibble for empty results",
 
   expect_s3_class(t, "tbl_df")
   expect_equal(nrow(t), 0)
-  expect_true(all(c("id", "term", "estimate", "std.error", "component") %in%
-                    names(t)))
+  expect_true(all(
+    c("id", "term", "estimate", "std.error", "component") %in%
+      names(t)
+  ))
 })
 
 
@@ -284,9 +303,9 @@ test_that("fit_demand_fixed convergence counts failed fits from Notes", {
 
   # Subject 1: converged, positive params -> success
 
-# Subject 2: failed Notes -> fail
-# Subject 3: negative Alpha -> fail
-# Subject 4: negative Q0d -> fail
+  # Subject 2: failed Notes -> fail
+  # Subject 3: negative Alpha -> fail
+  # Subject 4: negative Q0d -> fail
   expect_equal(n_success, 1)
   expect_equal(n_fail, 3)
 })
@@ -372,8 +391,190 @@ test_that("tidy.beezdemand_fixed does not warn on negative values with log10", {
 
   # Negative values should become NA
   q0_estimates <- t$estimate[t$term == "Q0"]
-  expect_true(is.na(q0_estimates[2]))  # -5 becomes NA
+  expect_true(is.na(q0_estimates[2])) # -5 becomes NA
 
   alpha_estimates <- t$estimate[t$term == "alpha"]
-  expect_true(is.na(alpha_estimates[3]))  # -0.01 becomes NA
+  expect_true(is.na(alpha_estimates[3])) # -0.01 becomes NA
+})
+
+
+# ===========================================================================
+# Tests for equation = "simplified"
+# ===========================================================================
+
+test_that("fit_demand_fixed works with equation = 'simplified'", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  # No explicit k => no warning expected
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+
+  expect_s3_class(fit, "beezdemand_fixed")
+  expect_equal(fit$equation, "simplified")
+  expect_equal(fit$k_spec, "none (simplified equation)")
+  expect_true(is.na(fit$k_value))
+  expect_true(fit$n_total > 0)
+})
+
+test_that("simplified equation warns and ignores k parameter", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified", k = 2),
+    "k parameter is not used"
+  )
+
+  expect_s3_class(fit, "beezdemand_fixed")
+  expect_equal(fit$equation, "simplified")
+  expect_true(is.na(fit$k_value))
+})
+
+test_that("simplified equation K column is NA in results", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+  res <- fit$results
+
+  expect_true("K" %in% names(res))
+  expect_true(all(is.na(res$K)))
+})
+
+test_that("simplified equation alpha_star is NA", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+  res <- fit$results
+
+  expect_true("alpha_star" %in% names(res))
+  expect_true(all(is.na(res$alpha_star)))
+})
+
+test_that("simplified equation derived metrics use correct formulas", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  res <- fit$results
+
+  for (i in seq_len(nrow(res))) {
+    if (
+      !is.na(res$Q0d[i]) &&
+        !is.na(res$Alpha[i]) &&
+        res$Q0d[i] > 0 &&
+        res$Alpha[i] > 0
+    ) {
+      # EV = 1/alpha
+      expect_equal(res$EV[i], 1 / res$Alpha[i], tolerance = 1e-8)
+      # Pmax = 1/(alpha * Q0)
+      expect_equal(
+        res$Pmaxa[i],
+        1 / (res$Alpha[i] * res$Q0d[i]),
+        tolerance = 1e-8
+      )
+      # Omax = 1/(alpha * e)
+      expect_equal(res$Omaxa[i], 1 / (res$Alpha[i] * exp(1)), tolerance = 1e-8)
+    }
+  }
+})
+
+test_that("simplified equation summary method works", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+  s <- summary(fit)
+
+  expect_s3_class(s, "summary.beezdemand_fixed")
+  expect_equal(s$equation, "simplified")
+  expect_true("coefficients" %in% names(s))
+  expect_true("derived_metrics" %in% names(s))
+})
+
+test_that("simplified equation tidy method works", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+  t <- tidy(fit)
+
+  expect_s3_class(t, "tbl_df")
+  expect_true("Q0" %in% t$term)
+  expect_true("alpha" %in% t$term)
+  # k should not appear (or be all NA)
+  if ("k" %in% t$term) {
+    expect_true(all(is.na(t$estimate[t$term == "k"])))
+  }
+})
+
+test_that("simplified equation glance method works", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  expect_no_warning(
+    fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  )
+  g <- glance(fit)
+
+  expect_s3_class(g, "tbl_df")
+  expect_equal(nrow(g), 1)
+  expect_equal(g$equation, "simplified")
+})
+
+test_that("simplified equation predict method works", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small, equation = "simplified")
+  preds <- predict(fit)
+
+  expect_s3_class(preds, "tbl_df")
+  expect_true(".fitted" %in% names(preds))
+  expect_true(all(is.finite(preds$.fitted) | is.na(preds$.fitted)))
+
+  # Predictions should be non-negative (exponential decay)
+  valid_preds <- preds$.fitted[!is.na(preds$.fitted)]
+  expect_true(all(valid_preds >= 0))
+})
+
+test_that("simplified equation works with log10 param_space", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(
+    apt_small,
+    equation = "simplified",
+    param_space = "log10"
+  )
+
+  expect_s3_class(fit, "beezdemand_fixed")
+  expect_equal(fit$equation, "simplified")
+  expect_equal(fit$param_space, "log10")
+
+  res <- fit$results
+  # Q0d and Alpha should be back-transformed to natural scale
+
+  converged <- res$converged
+  if (any(converged, na.rm = TRUE)) {
+    expect_true(any(res$Q0d[converged] > 0, na.rm = TRUE))
+    expect_true(any(res$Alpha[converged] > 0, na.rm = TRUE))
+  }
 })

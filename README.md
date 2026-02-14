@@ -42,7 +42,7 @@ package vignette (`vignette("beezdemand")`).
 
 ### CRAN Release (recommended method)
 
-The latest stable version of `beezdemand` (currently v.0.1.3) can be
+The latest stable version of `beezdemand` (currently v.0.2.0) can be
 found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and
 installed using the following command. The first time you install the
 package, you may be asked to select a CRAN mirror. Simply select the
@@ -125,7 +125,7 @@ Forms:
 ``` r
 ## the following code takes the apt data, which are in long format, and converts
 ## to a wide format that might be seen from data collection software
-wide <- spread(apt, x, y)
+wide <- tidyr::pivot_wider(apt, names_from = x, values_from = y)
 colnames(wide) <- c("id", paste0("price_", seq(1, 16, by = 1)))
 knitr::kable(wide[1:5, 1:10])
 ```
@@ -185,7 +185,7 @@ before trying the commands below).
 ``` r
 ## using the dataframe 'wide', we specify the key will be 'price', the values
 ## will be 'consumption', and we will select all columns besides the first ('id')
-long <- tidyr::gather(wide, price, consumption, -id)
+long <- tidyr::pivot_longer(wide, -id, names_to = "price", values_to = "consumption")
 
 ## we'll sort the rows by id
 long <- arrange(long, id)
@@ -271,6 +271,11 @@ the current folder (i.e., the `../` portion) and save the file,
 GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
                 filename = "bwplot")
 ```
+
+    Warning: `GetDescriptives()` was deprecated in beezdemand 0.3.0.
+    ℹ Please use `get_descriptive_summary()` instead.
+    This warning is displayed once every 8 hours.
+    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 
 <figure>
 <img src="man/figures/bwplot.png"
@@ -358,6 +363,11 @@ Empirical measures can be obtained separately on their own:
 ``` r
 GetEmpirical(dat = apt)
 ```
+
+    Warning: `GetEmpirical()` was deprecated in beezdemand 0.3.0.
+    ℹ Please use `get_empirical_measures()` instead.
+    This warning is displayed once every 8 hours.
+    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 
 | id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
 |:----|----------:|----:|----:|------:|------:|
@@ -471,23 +481,23 @@ Empirical Measures
 
 Fitted Measures
 
-| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.4159581 | 0.0002358 | 16 | 0.0193354 | 0.0371632 | 9.583593 | 11.367876 | 0.0041515 | 0.0051628 |
-| 0.2506946 | 0.0017321 | 16 | 0.0978350 | 0.0835955 | 2.394720 | 3.470093 | 0.0097408 | 0.0171706 |
-| 0.2357693 | 0.0008878 | 14 | 0.0259083 | 0.0464653 | 4.009458 | 5.036853 | 0.0068592 | 0.0107277 |
-| 0.6219724 | 0.0005118 | 14 | 0.0236652 | 0.0444083 | 9.136972 | 11.847295 | 0.0091080 | 0.0113382 |
-| 0.3841063 | 0.0002713 | 14 | 0.0109439 | 0.0301992 | 9.814865 | 11.488656 | 0.0055350 | 0.0067173 |
+| 0.4159581 | 0.0002358 | 0.0085214 | 0.0004314 | 16 | 0.0193354 | 0.0371632 | 9.583593 | 11.367876 |
+| 0.2506946 | 0.0017321 | 0.0246206 | 0.0031692 | 16 | 0.0978350 | 0.0835955 | 2.394720 | 3.470093 |
+| 0.2357693 | 0.0008878 | 0.0160899 | 0.0016244 | 14 | 0.0259083 | 0.0464653 | 4.009458 | 5.036853 |
+| 0.6219724 | 0.0005118 | 0.0187057 | 0.0009364 | 14 | 0.0236652 | 0.0444083 | 9.136972 | 11.847295 |
+| 0.3841063 | 0.0002713 | 0.0112094 | 0.0004964 | 14 | 0.0109439 | 0.0301992 | 9.814865 | 11.488656 |
 
 Uncertainty and Model Information
 
-|        EV |    Omaxd |     Pmaxd |    Omaxa |
-|----------:|---------:|----------:|---------:|
-| 2.0496977 | 45.49394 | 14.393108 | 47.84770 |
-| 0.7094191 | 15.74587 | 17.796228 | 16.56052 |
-| 1.0855465 | 24.09418 | 17.654531 | 25.34076 |
-| 0.9337419 | 20.72481 |  6.546547 | 21.79707 |
-| 1.5581899 | 34.58471 | 10.760891 | 36.37405 |
+|  AlphaLow | AlphaHigh |        EV |    Omaxd |
+|----------:|----------:|----------:|---------:|
+| 0.0041515 | 0.0051628 | 2.0496977 | 45.49394 |
+| 0.0097408 | 0.0171706 | 0.7094191 | 15.74587 |
+| 0.0068592 | 0.0107277 | 1.0855465 | 24.09418 |
+| 0.0091080 | 0.0113382 | 0.9337419 | 20.72481 |
+| 0.0055350 | 0.0067173 | 1.5581899 | 34.58471 |
 
 Derived Measures
 
@@ -519,23 +529,23 @@ Empirical Measures
 
 Fitted Measures
 
-| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.2438729 | 0.0001663 | 16 | 2.908243 | 0.4557758 | 9.608712 | 10.654822 | 0.0025752 | 0.0032886 |
-| 0.1721284 | 0.0013100 | 16 | 1.490454 | 0.3262837 | 2.620434 | 3.358792 | 0.0065620 | 0.0121812 |
-| 0.3078231 | 0.0010631 | 16 | 4.429941 | 0.5625161 | 3.947336 | 5.267766 | 0.0047761 | 0.0093362 |
-| 0.4069382 | 0.0004577 | 16 | 5.010982 | 0.5982703 | 9.498292 | 11.243884 | 0.0058310 | 0.0077945 |
-| 0.4677467 | 0.0003736 | 16 | 8.350830 | 0.7723263 | 9.700410 | 11.706844 | 0.0036349 | 0.0052373 |
+| 0.2438729 | 0.0001663 | 0.0080957 | 0.0004592 | 16 | 2.908243 | 0.4557758 | 9.608712 | 10.654822 |
+| 0.1721284 | 0.0013100 | 0.0258774 | 0.0036171 | 16 | 1.490454 | 0.3262837 | 2.620434 | 3.358792 |
+| 0.3078231 | 0.0010631 | 0.0194838 | 0.0029354 | 16 | 4.429941 | 0.5625161 | 3.947336 | 5.267766 |
+| 0.4069382 | 0.0004577 | 0.0188117 | 0.0012639 | 16 | 5.010982 | 0.5982703 | 9.498292 | 11.243884 |
+| 0.4677467 | 0.0003736 | 0.0122493 | 0.0010315 | 16 | 8.350830 | 0.7723263 | 9.700410 | 11.706844 |
 
 Uncertainty and Model Information
 
-|        EV |    Omaxd |     Pmaxd |    Omaxa |
-|----------:|---------:|----------:|---------:|
-| 1.9957818 | 46.56622 | 15.140905 | 46.70800 |
-| 0.6243741 | 14.56810 | 16.052915 | 14.61245 |
-| 0.8292621 | 19.34861 | 13.833934 | 19.40752 |
-| 0.8588915 | 20.03993 |  6.365580 | 20.10095 |
-| 1.3190323 | 30.77608 |  9.472147 | 30.86979 |
+|  AlphaLow | AlphaHigh |        EV |    Omaxd |
+|----------:|----------:|----------:|---------:|
+| 0.0025752 | 0.0032886 | 1.9957818 | 46.56622 |
+| 0.0065620 | 0.0121812 | 0.6243741 | 14.56810 |
+| 0.0047761 | 0.0093362 | 0.8292621 | 19.34861 |
+| 0.0058310 | 0.0077945 | 0.8588915 | 20.03993 |
+| 0.0036349 | 0.0052373 | 1.3190323 | 30.77608 |
 
 Derived Measures
 
@@ -559,15 +569,15 @@ Empirical Measures
 
 Fitted Measures
 
-|      Q0se |   Alphase |   N |   AbsSS |    SdRes |   Q0Low |   Q0High |  AlphaLow | AlphaHigh |
-|----------:|----------:|----:|--------:|---------:|--------:|---------:|----------:|----------:|
-| 0.3258955 | 0.0002218 |  16 | 0.02187 | 0.039524 | 6.93846 | 8.336413 | 0.0062059 | 0.0071574 |
+| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.3258955 | 0.0002218 | 0.0184497 | 0.0006125 | 16 | 0.02187 | 0.039524 | 6.93846 | 8.336413 |
 
 Uncertainty and Model Information
 
-|       EV |    Omaxd |    Pmaxd |    Omaxa |
-|---------:|---------:|---------:|---------:|
-| 0.875742 | 20.43309 | 8.813584 | 20.49531 |
+|  AlphaLow | AlphaHigh |       EV |    Omaxd |
+|----------:|----------:|---------:|---------:|
+| 0.0062059 | 0.0071574 | 0.875742 | 20.43309 |
 
 Derived Measures
 
@@ -591,15 +601,15 @@ Empirical Measures
 
 Fitted Measures
 
-|      Q0se |   Alphase |   N |    AbsSS |     SdRes |    Q0Low |   Q0High |  AlphaLow | AlphaHigh |
-|----------:|----------:|----:|---------:|----------:|---------:|---------:|----------:|----------:|
-| 0.4260507 | 0.0007125 | 146 | 4.677846 | 0.1802361 | 5.750367 | 7.434609 | 0.0070949 | 0.0099115 |
+| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.4260507 | 0.0007125 | 0.0155587 | 0.0013037 | 146 | 4.677846 | 0.1802361 | 5.750367 | 7.434609 |
 
 Uncertainty and Model Information
 
-|       EV |    Omaxd |    Pmaxd |    Omaxa |
-|---------:|---------:|---------:|---------:|
-| 1.122607 | 24.91675 | 12.52644 | 26.20589 |
+|  AlphaLow | AlphaHigh |       EV |    Omaxd |
+|----------:|----------:|---------:|---------:|
+| 0.0070949 | 0.0099115 | 1.122607 | 24.91675 |
 
 Derived Measures
 
@@ -634,23 +644,23 @@ Empirical Measures
 
 Fitted Measures
 
-| Q0se | Alphase | N | AbsSS | SdRes | Q0Low | Q0High | AlphaLow | AlphaHigh |
+| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.2429150 | 0.0000308 | 16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 | 0.0010955 | 0.0012277 |
-| 0.2192797 | 0.0003739 | 16 | 0.1110490 | 0.0890622 | 2.296005 | 3.236621 | 0.0025312 | 0.0041350 |
-| 0.2074990 | 0.0001963 | 14 | 0.0231862 | 0.0439566 | 4.033709 | 4.937912 | 0.0020302 | 0.0028858 |
-| 0.4371060 | 0.0000778 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 | 0.0022523 | 0.0025914 |
-| 0.3179671 | 0.0000523 | 14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 | 0.0014740 | 0.0017018 |
+| 0.2429150 | 0.0000308 | 0.0082811 | 0.0002197 | 16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 |
+| 0.2192797 | 0.0003739 | 0.0237620 | 0.0026655 | 16 | 0.1110490 | 0.0890622 | 2.296005 | 3.236621 |
+| 0.2074990 | 0.0001963 | 0.0175231 | 0.0013997 | 14 | 0.0231862 | 0.0439566 | 4.033709 | 4.937912 |
+| 0.4371060 | 0.0000778 | 0.0172657 | 0.0005547 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 |
+| 0.3179671 | 0.0000523 | 0.0113200 | 0.0003727 | 14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 |
 
 Uncertainty and Model Information
 
-|        EV |    Omaxd |     Pmaxd |    Omaxa |
-|----------:|---------:|----------:|---------:|
-| 1.4241862 | 44.55169 | 13.160540 | 44.55206 |
-| 0.4963281 | 15.52624 | 16.603785 | 15.52637 |
-| 0.6730395 | 21.05416 | 13.884786 | 21.05433 |
-| 0.6830746 | 21.36808 |  6.502492 | 21.36826 |
-| 1.0418474 | 32.59129 |  9.366898 | 32.59155 |
+|  AlphaLow | AlphaHigh |        EV |    Omaxd |
+|----------:|----------:|----------:|---------:|
+| 0.0010955 | 0.0012277 | 1.4241862 | 44.55169 |
+| 0.0025312 | 0.0041350 | 0.4963281 | 15.52624 |
+| 0.0020302 | 0.0028858 | 0.6730395 | 21.05416 |
+| 0.0022523 | 0.0025914 | 0.6830746 | 21.36808 |
+| 0.0014740 | 0.0017018 | 1.0418474 | 32.59129 |
 
 Derived Measures
 
@@ -972,72 +982,12 @@ To learn more about a function and what arguments it takes, type “?” in
 front of the function name.
 
 ``` r
+## Modern interface (recommended)
+?check_systematic_demand
+?fit_demand_fixed
+
+## Legacy interface (still available)
 ?CheckUnsystematic
-```
-
-``` r
-CheckUnsystematic          package:beezdemand          R Documentation
-
-Systematic Purchase Task Data Checker
-
-Description:
-
-     Applies Stein, Koffarnus, Snider, Quisenberry, & Bickels (2015)
-     criteria for identification of nonsystematic purchase task data.
-
-Usage:
-
-     CheckUnsystematic(dat, deltaq = 0.025, bounce = 0.1, reversals = 0,
-       ncons0 = 2)
-
-Arguments:
-
-     dat: Dataframe in long form. Colums are id, x, y.
-
-  deltaq: Numeric vector of length equal to one. The criterion by which
-          the relative change in quantity purchased will be compared.
-          Relative changes in quantity purchased below this criterion
-          will be flagged. Default value is 0.025.
-
-  bounce: Numeric vector of length equal to one. The criterion by which
-          the number of price-to-price increases in consumption that
-          exceed 25% of initial consumption at the lowest price,
-          expressed relative to the total number of price increments,
-          will be compared. The relative number of price-to-price
-          increases above this criterion will be flagged. Default value
-          is 0.10.
-
-reversals:Numeric vector of length equal to one. The criterion by
-          which the number of reversals from number of consecutive (see
-          ncons0) 0s will be compared. Number of reversals above this
-          criterion will be flagged. Default value is 0.
-
-  ncons0: Number of consecutive 0s prior to a positive value is used to
-          flag for a reversal. Value can be either 1 (relatively more
-          conservative) or 2 (default; as recommended by Stein et al.,
-          (2015).
-
-Details:
-
-     This function applies the 3 criteria proposed by Stein et al.,
-     (2015) for identification of nonsystematic purchase task data. The
-     three criteria include trend (deltaq), bounce, and reversals from
-     0. Also reports number of positive consumption values.
-
-Value:
-
-     Dataframe
-
-Author(s):
-
-     Brent Kaplan <bkaplan.ku@gmail.com>
-
-Examples:
-
-     ## Using all default values
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
-     ## Specifying just 1 zero to flag as reversal
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
 ```
 
 # Acknowledgments

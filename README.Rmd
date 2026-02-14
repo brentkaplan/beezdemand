@@ -45,7 +45,7 @@ For detailed guidance on choosing the right modeling approach, see the package v
 
 ### CRAN Release (recommended method)
 
-The latest stable version of `beezdemand` (currently v.0.1.3) can be found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and installed using the following command. The first time you install the package, you may be asked to select a CRAN mirror. Simply select the mirror geographically closest to you.
+The latest stable version of `beezdemand` (currently v.0.2.0) can be found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and installed using the following command. The first time you install the package, you may be asked to select a CRAN mirror. Simply select the mirror geographically closest to you.
 
 ```{r cran-install, eval = FALSE}
 install.packages("beezdemand")
@@ -103,7 +103,7 @@ Take for example the format of most datasets that would be exported from a data 
 ```{r example-wide}
 ## the following code takes the apt data, which are in long format, and converts
 ## to a wide format that might be seen from data collection software
-wide <- spread(apt, x, y)
+wide <- tidyr::pivot_wider(apt, names_from = x, values_from = y)
 colnames(wide) <- c("id", paste0("price_", seq(1, 16, by = 1)))
 knitr::kable(wide[1:5, 1:10])
 ```
@@ -131,7 +131,7 @@ Now we can convert into a long format using some of the helpful functions in the
 ```{r example-w2l}
 ## using the dataframe 'wide', we specify the key will be 'price', the values
 ## will be 'consumption', and we will select all columns besides the first ('id')
-long <- tidyr::gather(wide, price, consumption, -id)
+long <- tidyr::pivot_longer(wide, -id, names_to = "price", values_to = "consumption")
 
 ## we'll sort the rows by id
 long <- arrange(long, id)
@@ -542,72 +542,12 @@ analyses of parameter estimates.
 To learn more about a function and what arguments it takes, type "?" in front of the function name.
 
 ```{r learn, eval=FALSE}
+## Modern interface (recommended)
+?check_systematic_demand
+?fit_demand_fixed
+
+## Legacy interface (still available)
 ?CheckUnsystematic
-```
-
-```{r learn-output, eval=FALSE}
-CheckUnsystematic          package:beezdemand          R Documentation
-
-Systematic Purchase Task Data Checker
-
-Description:
-
-     Applies Stein, Koffarnus, Snider, Quisenberry, & Bickels (2015)
-     criteria for identification of nonsystematic purchase task data.
-
-Usage:
-
-     CheckUnsystematic(dat, deltaq = 0.025, bounce = 0.1, reversals = 0,
-       ncons0 = 2)
-
-Arguments:
-
-     dat: Dataframe in long form. Colums are id, x, y.
-
-  deltaq: Numeric vector of length equal to one. The criterion by which
-          the relative change in quantity purchased will be compared.
-          Relative changes in quantity purchased below this criterion
-          will be flagged. Default value is 0.025.
-
-  bounce: Numeric vector of length equal to one. The criterion by which
-          the number of price-to-price increases in consumption that
-          exceed 25% of initial consumption at the lowest price,
-          expressed relative to the total number of price increments,
-          will be compared. The relative number of price-to-price
-          increases above this criterion will be flagged. Default value
-          is 0.10.
-
-reversals:Numeric vector of length equal to one. The criterion by
-          which the number of reversals from number of consecutive (see
-          ncons0) 0s will be compared. Number of reversals above this
-          criterion will be flagged. Default value is 0.
-
-  ncons0: Number of consecutive 0s prior to a positive value is used to
-          flag for a reversal. Value can be either 1 (relatively more
-          conservative) or 2 (default; as recommended by Stein et al.,
-          (2015).
-
-Details:
-
-     This function applies the 3 criteria proposed by Stein et al.,
-     (2015) for identification of nonsystematic purchase task data. The
-     three criteria include trend (deltaq), bounce, and reversals from
-     0. Also reports number of positive consumption values.
-
-Value:
-
-     Dataframe
-
-Author(s):
-
-     Brent Kaplan <bkaplan.ku@gmail.com>
-
-Examples:
-
-     ## Using all default values
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
-     ## Specifying just 1 zero to flag as reversal
-     CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
 ```
 
 # Acknowledgments

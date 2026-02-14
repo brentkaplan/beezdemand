@@ -35,7 +35,8 @@ For related workflows, see:
 
 - `vignette("beezdemand")` for getting started
 - `vignette("model-selection")` for choosing a model class
-- `vignette("mixed-demand")` and `vignette("hurdle-demand-models")` for advanced model classes
+- `vignette("mixed-demand")` and `vignette("mixed-demand-advanced")` for mixed-effects models
+- `vignette("hurdle-demand-models")` for hurdle models
 
 ## Why Migrate?
 
