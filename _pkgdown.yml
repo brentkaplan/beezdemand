@@ -97,6 +97,7 @@ reference:
     contents:
       - starts_with("tidy")
       - starts_with("glance")
+      - starts_with("augment.")
       - starts_with("confint.")
       - starts_with("coef")
       - starts_with("fixef.")
@@ -146,6 +147,9 @@ reference:
     desc: Functions for comparing models.
     contents:
       - compare_hurdle_models
+      - compare_models
+      - check_demand_model
+      - starts_with("anova.")
       - ExtraF
 
   - title: Visualization
