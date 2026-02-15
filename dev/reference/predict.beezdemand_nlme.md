@@ -121,13 +121,8 @@ if (!is.null(fit_one_factor$model)) {
 
   preds_group_log_scale <- predict(fit_one_factor, newdata = new_data_subset, level = 1)
 
-  # If your model was, for example:
-  # fit_simplified_raw_y <- fit_demand_mixed(data=ko, y_var="y", x_var="x",
-  #                                          id_var="id", factors="dose",
-  #                                          equation_form="simplified")
-  # if (!is.null(fit_simplified_raw_y$model)) {
-  #   preds_simplified_raw <- predict(fit_simplified_raw_y) # Already on raw y scale
-  # }
+  # For models fitted with equation_form="simplified" and raw y values,
+  # predictions are already on the raw y scale and no inv_fun is needed.
 }
 } # }
 ```

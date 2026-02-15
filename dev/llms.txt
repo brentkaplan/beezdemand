@@ -405,6 +405,8 @@ Summary functions for parameter exploration.
   : Print method for summary.cp_model_lmer objects.
 - [`print(`*`<summary.cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.cp_model_nls.md)
   : Print method for summary.cp_model_nls objects
+- [`print(`*`<summary.cp_unsystematic>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.cp_unsystematic.md)
+  : Print Method for Cross-Price Unsystematic Summary
 - [`print_mc_summary()`](https://brentkaplan.github.io/beezdemand/reference/print_mc_summary.md)
   : Print Monte Carlo Simulation Results
 

@@ -22,3 +22,7 @@ AIC(object, ..., k = 2)
 - k:
 
   Penalty per parameter. Default is 2 (standard AIC).
+
+## Value
+
+A numeric AIC value.

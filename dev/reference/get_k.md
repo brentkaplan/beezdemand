@@ -101,7 +101,7 @@ The k parameter appears in several demand curve equations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 data(apt, package = "beezdemand")
 
 # Calculate k using default settings (mean range + 0.5)
@@ -115,5 +115,9 @@ k_custom <- get_k(apt, adjustment = 1.0)
 
 # Show calculation details
 k_verbose <- get_k(apt, verbose = TRUE)
-} # }
+#> Calculating k from mean consumption values:
+#>   Max mean: 6.80
+#>   Min mean: 0.80
+#>   log10(6.80) - log10(0.80) + 0.50 = 1.429
+# }
 ```

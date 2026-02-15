@@ -46,7 +46,7 @@ fitted values are back-transformed to the natural scale.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 data(apt)
 fit <- fit_demand_fixed(apt, y_var = "y", x_var = "x", id_var = "id")
 augmented <- augment(fit)
@@ -57,5 +57,6 @@ ggplot(augmented, aes(x = .fitted, y = .resid)) +
   geom_point(alpha = 0.5) +
   facet_wrap(~id) +
   geom_hline(yintercept = 0, linetype = "dashed")
-} # }
+
+# }
 ```

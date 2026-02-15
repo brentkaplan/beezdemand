@@ -33,7 +33,7 @@ A \`trans\` object (from the \`scales\` package).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 if (require(ggplot2) && require(scales)) {
   set.seed(123)
   df <- data.frame(
@@ -55,5 +55,9 @@ if (require(ggplot2) && require(scales)) {
                        name = "X-Values (Pseudo-LL4 Scale)") +
     ggtitle("X-Axis with Pseudo-LL4 Transformation")
 }
-} # }
+#> Loading required package: scales
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
+
+# }
 ```

@@ -104,3 +104,42 @@ A list named by parameter. Each element contains:
   ratios (natural scale), with CIs for ratios.
 
 S3 class \`beezdemand_comparison\` is assigned.
+
+## Examples
+
+``` r
+# \donttest{
+data(ko, package = "beezdemand")
+ko$y_ll4 <- ll4(ko$y, lambda = 4)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+  id_var = "monkey", factors = "dose", equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
+get_demand_comparisons(fit)
+#> Using default 'compare_specs': ~ dose for EMMs.
+#> 
+#> --- Processing comparisons for parameter: Q0 ---
+#> Note: adjust = "tukey" was changed to "sidak"
+#> because "tukey" is only appropriate for one set of pairwise comparisons
+#> Note: adjust = "tukey" was changed to "sidak"
+#> because "tukey" is only appropriate for one set of pairwise comparisons
+#> 
+#> --- Processing comparisons for parameter: alpha ---
+#> Note: adjust = "tukey" was changed to "sidak"
+#> because "tukey" is only appropriate for one set of pairwise comparisons
+#> Note: adjust = "tukey" was changed to "sidak"
+#> because "tukey" is only appropriate for one set of pairwise comparisons
+#> Demand Parameter Comparisons (from beezdemand_nlme fit)
+#> EMMs computed over: ~dose 
+#> Contrast type: pairwise
+#> P-value adjustment method: tukey 
+#> ================================================== 
+#> 
+# }
+```

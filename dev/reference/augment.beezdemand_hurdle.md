@@ -62,9 +62,20 @@ zero-probability component), not Part II
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 data(apt)
 fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
 augmented <- augment(fit)
 
 # Plot residuals
@@ -72,5 +83,8 @@ library(ggplot2)
 ggplot(augmented, aes(x = .fitted, y = .resid)) +
   geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed")
-} # }
+#> Warning: Removed 14 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+
+# }
 ```

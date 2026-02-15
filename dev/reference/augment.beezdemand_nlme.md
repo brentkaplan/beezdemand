@@ -55,11 +55,18 @@ use: \`ll4_inv(augmented\$.fitted)\`
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-data(apt)
-apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
-fit <- fit_demand_mixed(apt_ll4, y_var = "y_ll4", x_var = "x",
-                        id_var = "id", equation_form = "zben")
+# \donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", factors = "dose", equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 augmented <- augment(fit)
 
 # Plot residuals
@@ -67,5 +74,6 @@ library(ggplot2)
 ggplot(augmented, aes(x = .fitted, y = .resid)) +
   geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed")
-} # }
+
+# }
 ```

@@ -113,3 +113,39 @@ fixed and random effects. Parameters \`Q0\` and \`Alpha\` are assumed to
 be on \`log10\` scale for \`zben\` and \`simplified\` equations and are
 converted to linear scale. Omax and Pmax are calculated empirically from
 predictions. Breakpoint is calculated empirically from the raw data.
+
+## Examples
+
+``` r
+# \donttest{
+data(apt, package = "beezdemand")
+fit <- FitCurves(apt, "hs", k = "share")
+#> Warning: Zeros found in data not compatible with equation! Dropping zeros!
+#> Beginning search for best-starting k
+#> Best k fround at 0.93813356574003 = err: 0.744881846162718
+#> Searching for shared K, this can take a while...
+calculate_amplitude_persistence(fit)
+#>     id z_Intensity z_BP0    z_Pmaxe    z_Omaxe z_inv_alpha   Amplitude
+#> 1   19  1.22315326    NA  0.6635528  0.9612281   1.4326498  1.22315326
+#> 2   30 -1.45249450    NA  1.5142616 -0.6624680  -0.8616538 -1.45249450
+#> 3   38 -1.07025910    NA -0.6975812 -0.5975202  -0.4247018 -1.07025910
+#> 4   60  1.22315326    NA -0.5274394 -0.4026766  -0.3998881  1.22315326
+#> 5   68  1.22315326    NA -0.3572977  0.3766975   0.4872452  1.22315326
+#> 6  106 -0.68802371    NA -1.0378647 -0.9872073  -0.9645431 -0.68802371
+#> 7  113 -0.30578831    NA  0.6635528  0.9612281   1.4535929 -0.30578831
+#> 8  142  0.45868247    NA  1.5142616  1.9354458   0.9744894  0.45868247
+#> 9  156  0.07644708    NA -0.6975812 -0.5975202  -0.5369514  0.07644708
+#> 10 188 -0.68802371    NA -1.0378647 -0.9872073  -1.1602392 -0.68802371
+#>     Persistence
+#> 1   1.019143585
+#> 2  -0.003286756
+#> 3  -0.573267704
+#> 4  -0.443334708
+#> 5   0.168881670
+#> 6  -0.996538352
+#> 7   1.026124625
+#> 8   1.474732278
+#> 9  -0.610684268
+#> 10 -1.061770372
+# }
+```

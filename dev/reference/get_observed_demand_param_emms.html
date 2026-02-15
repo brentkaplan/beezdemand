@@ -142,6 +142,37 @@ to `emmeans::emmeans()`.</p></dd>
     <div class="dont-index"><p><code><a href="get_demand_param_emms.html">get_demand_param_emms</a></code></p></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span>, package <span class="op">=</span> <span class="st">"beezdemand"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ko</span><span class="op">$</span><span class="va">y_ll4</span> <span class="op">&lt;-</span> <span class="fu"><a href="ll4.html">ll4</a></span><span class="op">(</span><span class="va">ko</span><span class="op">$</span><span class="va">y</span>, lambda <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">ko</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>,</span></span>
+<span class="r-in"><span>  id_var <span class="op">=</span> <span class="st">"monkey"</span>, factors <span class="op">=</span> <span class="st">"dose"</span>, equation_form <span class="op">=</span> <span class="st">"zben"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Generating starting values using method: 'heuristic'</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using heuristic method for starting values.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --- Fitting NLME Model ---</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Equation Form: zben</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Param Space: log10</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 10 (Q0: 5, alpha: 5)</span>
+<span class="r-in"><span><span class="fu">get_observed_demand_param_emms</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 13</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 3e-05           2.58               2.35               2.80      377. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 1e-04           2.38               2.23               2.52      238. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 3e-04           2.21               2.10               2.32      163. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 0.001           1.91               1.78               2.03       80.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 0.003           1.90               1.73               2.07       79.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 8 more variables: LCL_Q0_natural &lt;dbl&gt;, UCL_Q0_natural &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   alpha_param_log10 &lt;dbl&gt;, LCL_alpha_param_log10 &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   UCL_alpha_param_log10 &lt;dbl&gt;, alpha_natural &lt;dbl&gt;, LCL_alpha_natural &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   UCL_alpha_natural &lt;dbl&gt;</span></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

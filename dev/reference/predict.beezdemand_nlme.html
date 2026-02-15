@@ -174,13 +174,8 @@ used only for validation.</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="va">preds_group_log_scale</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_one_factor</span>, newdata <span class="op">=</span> <span class="va">new_data_subset</span>, level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span>  <span class="co"># If your model was, for example:</span></span></span>
-<span class="r-in"><span>  <span class="co"># fit_simplified_raw_y &lt;- fit_demand_mixed(data=ko, y_var="y", x_var="x",</span></span></span>
-<span class="r-in"><span>  <span class="co">#                                          id_var="id", factors="dose",</span></span></span>
-<span class="r-in"><span>  <span class="co">#                                          equation_form="simplified")</span></span></span>
-<span class="r-in"><span>  <span class="co"># if (!is.null(fit_simplified_raw_y$model)) {</span></span></span>
-<span class="r-in"><span>  <span class="co">#   preds_simplified_raw &lt;- predict(fit_simplified_raw_y) # Already on raw y scale</span></span></span>
-<span class="r-in"><span>  <span class="co"># }</span></span></span>
+<span class="r-in"><span>  <span class="co"># For models fitted with equation_form="simplified" and raw y values,</span></span></span>
+<span class="r-in"><span>  <span class="co"># predictions are already on the raw y scale and no inv_fun is needed.</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

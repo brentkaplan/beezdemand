@@ -166,6 +166,41 @@ specified in `persistence` (typically Breakpoint, Pmax, Omax, and 1/Alpha).</p>
   from predictions. Breakpoint is calculated empirically from the raw data.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span>, package <span class="op">=</span> <span class="st">"beezdemand"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="FitCurves.html">FitCurves</a></span><span class="op">(</span><span class="va">apt</span>, <span class="st">"hs"</span>, k <span class="op">=</span> <span class="st">"share"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Zeros found in data not compatible with equation! Dropping zeros!</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Beginning search for best-starting k</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Best k fround at 0.93813356574003 = err: 0.744881846162718</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Searching for shared K, this can take a while...</span>
+<span class="r-in"><span><span class="fu">calculate_amplitude_persistence</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     id z_Intensity z_BP0    z_Pmaxe    z_Omaxe z_inv_alpha   Amplitude</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   19  1.22315326    NA  0.6635528  0.9612281   1.4326498  1.22315326</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   30 -1.45249450    NA  1.5142616 -0.6624680  -0.8616538 -1.45249450</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   38 -1.07025910    NA -0.6975812 -0.5975202  -0.4247018 -1.07025910</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   60  1.22315326    NA -0.5274394 -0.4026766  -0.3998881  1.22315326</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   68  1.22315326    NA -0.3572977  0.3766975   0.4872452  1.22315326</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  106 -0.68802371    NA -1.0378647 -0.9872073  -0.9645431 -0.68802371</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  113 -0.30578831    NA  0.6635528  0.9612281   1.4535929 -0.30578831</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  142  0.45868247    NA  1.5142616  1.9354458   0.9744894  0.45868247</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  156  0.07644708    NA -0.6975812 -0.5975202  -0.5369514  0.07644708</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 188 -0.68802371    NA -1.0378647 -0.9872073  -1.1602392 -0.68802371</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Persistence</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   1.019143585</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -0.003286756</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  -0.573267704</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  -0.443334708</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0.168881670</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  -0.996538352</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   1.026124625</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   1.474732278</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  -0.610684268</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 -1.061770372</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

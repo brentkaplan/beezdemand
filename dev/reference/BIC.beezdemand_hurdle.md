@@ -18,3 +18,7 @@ BIC(object, ...)
 - ...:
 
   Additional arguments (unused).
+
+## Value
+
+A numeric BIC value.

@@ -29,3 +29,15 @@ theme_beezdemand(
 ## Value
 
 A ggplot2 theme object.
+
+## Examples
+
+``` r
+# \donttest{
+library(ggplot2)
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point() +
+  theme_beezdemand()
+
+# }
+```

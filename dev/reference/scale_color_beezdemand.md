@@ -18,3 +18,15 @@ scale_color_beezdemand(...)
 ## Value
 
 A ggplot2 discrete color scale.
+
+## Examples
+
+``` r
+# \donttest{
+library(ggplot2)
+ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+  geom_point() +
+  scale_color_beezdemand()
+
+# }
+```

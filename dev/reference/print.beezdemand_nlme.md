@@ -36,8 +36,7 @@ if (FALSE) { # \dontrun{
 # Assuming 'fit_two_factor_no_interaction' is a beezdemand_nlme object
 print(fit_two_factor_no_interaction)
 
-# If fitting failed:
-# fit_failed <- fit_demand_mixed(..., nlme_control=list(maxIter=1)) # To force a failure
-# print(fit_failed)
+# If fitting failed, print() will display diagnostic information
+# about the failure instead of model results.
 } # }
 ```

@@ -93,6 +93,36 @@
     <p>Data frame with observed pmax/omax for each subject</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span>, package <span class="op">=</span> <span class="st">"beezdemand"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">calc_observed_pmax_omax</span><span class="op">(</span><span class="va">apt</span>, id_var <span class="op">=</span> <span class="st">"id"</span>, price_var <span class="op">=</span> <span class="st">"x"</span>, consumption_var <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     id pmax_obs omax_obs   method_obs tie_break_obs n_obs_rows n_unique_prices</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   19        9       45 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   30       20       20 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   38        7       21 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   60        6       24 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   68        9       36 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  106        5       15 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  113       15       45 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  142       20       60 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  156        7       21 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 188        5       15 row_wise_max     min_price         16              16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    has_duplicate_prices n_max_ties note_obs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                 FALSE          2     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                 FALSE          2     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                 FALSE          1     &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                FALSE          1     &lt;NA&gt;</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

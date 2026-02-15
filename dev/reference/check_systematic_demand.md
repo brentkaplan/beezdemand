@@ -152,11 +152,52 @@ cross-price systematicity checks:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 data(apt)
 check <- check_systematic_demand(apt)
 print(check)
+#> 
+#> Systematicity Check (demand)
+#> ------------------------------ 
+#> Total patterns: 10 
+#> Systematic: 10 ( 100 %)
+#> Unsystematic: 0 ( 0 %)
+#> 
+#> Use summary() for details, tidy() for per-subject results.
 summary(check)
+#> 
+#> Systematicity Check Summary (demand)
+#> ================================================== 
+#> 
+#> Total patterns: 10 
+#> Systematic: 10 ( 100 %)
+#> Unsystematic: 0 ( 0 %)
+#> 
+#> Failures by Criterion:
+#> # A tibble: 4 × 3
+#>   criterion n_fail pct_fail
+#>   <chr>      <int>    <dbl>
+#> 1 trend          0        0
+#> 2 bounce         0        0
+#> 3 reversals      0        0
+#> 4 overall        0        0
+#> 
 tidy(check)
-} # }
+#> # A tibble: 10 × 15
+#>    id    type  trend_stat trend_threshold trend_direction trend_pass bounce_stat
+#>    <chr> <chr>      <dbl>           <dbl> <chr>           <lgl>            <dbl>
+#>  1 19    dema…      0.211           0.025 down            TRUE                 0
+#>  2 30    dema…      0.144           0.025 down            TRUE                 0
+#>  3 38    dema…      0.788           0.025 down            TRUE                 0
+#>  4 60    dema…      0.909           0.025 down            TRUE                 0
+#>  5 68    dema…      0.909           0.025 down            TRUE                 0
+#>  6 106   dema…      0.818           0.025 down            TRUE                 0
+#>  7 113   dema…      0.144           0.025 down            TRUE                 0
+#>  8 142   dema…      0.129           0.025 down            TRUE                 0
+#>  9 156   dema…      0.862           0.025 down            TRUE                 0
+#> 10 188   dema…      0.818           0.025 down            TRUE                 0
+#> # ℹ 8 more variables: bounce_threshold <dbl>, bounce_direction <chr>,
+#> #   bounce_pass <lgl>, reversals <int>, reversals_pass <lgl>, returns <int>,
+#> #   n_positive <int>, systematic <lgl>
+# }
 ```

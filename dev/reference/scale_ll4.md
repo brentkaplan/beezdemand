@@ -37,7 +37,7 @@ A \`ggplot2\` scale object.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 if (require(ggplot2) && require(scales)) {
   set.seed(123)
   df <- data.frame(
@@ -54,5 +54,6 @@ if (require(ggplot2) && require(scales)) {
   # Can also be used for x-axis by replacing scale_y_continuous in its definition
   # Or by creating a scale_x_ll4 variant.
 }
-} # }
+
+# }
 ```

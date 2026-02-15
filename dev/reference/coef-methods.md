@@ -39,6 +39,8 @@ coef(object, fixed_only = FALSE, combine = TRUE, ...)
 
 Named vector of coefficients
 
+A named numeric vector of model coefficients.
+
 ## Functions
 
 - `coef(cp_model_nls)`: Extract coefficients from a nonlinear
