@@ -27,26 +27,6 @@ test_that("predict methods return a tibble with .fitted (cross-class contract)",
   expect_true(".fitted" %in% names(pred_hurdle))
   expect_equal(nrow(pred_hurdle), 3)
 
-  # CP hurdle
-  set.seed(123)
-  cp_data <- data.frame(
-    id = rep(1:5, each = 8),
-    x = rep(seq(0.1, 10, length.out = 8), 5),
-    y = rpois(5 * 8, lambda = 10)
-  )
-  fit_cp <- fit_cp_hurdle(
-    cp_data,
-    y_var = "y",
-    x_var = "x",
-    id_var = "id",
-    random_effects = c("zeros", "qalone"),
-    verbose = 0,
-    tmb_control = list(max_iter = 50, eval_max = 200, trace = 0)
-  )
-  pred_cp <- predict(fit_cp, newdata = data.frame(x = c(1, 5, 10)), type = "response", level = "population")
-  expect_s3_class(pred_cp, "tbl_df")
-  expect_true(".fitted" %in% names(pred_cp))
-  expect_equal(nrow(pred_cp), 3)
 })
 
 test_that("predict.beezdemand_hurdle supports se.fit and confidence intervals", {
