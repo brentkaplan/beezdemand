@@ -1,0 +1,16 @@
+pandoc: 3.1.11
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  beezdemand: beezdemand.html
+  cross-price-models: cross-price-models.html
+  group-comparisons: group-comparisons.html
+  hurdle-demand-models: hurdle-demand-models.html
+  migration-guide: migration-guide.html
+  mixed-demand-advanced: mixed-demand-advanced.html
+  mixed-demand: mixed-demand.html
+  model-selection: model-selection.html
+last_built: 2026-02-15T00:52Z
+urls:
+  reference: https://brentkaplan.github.io/beezdemand/reference
+  article: https://brentkaplan.github.io/beezdemand/articles

@@ -1,0 +1,99 @@
+# Calculate Individual-Level Predicted Coefficients from beezdemand_nlme Model
+
+This function extracts and combines fixed and random effects to
+calculate individual-level predicted coefficients for all
+parameter-factor combinations from a beezdemand_nlme model object. It
+automatically detects the factor structure and calculates coefficients
+for each individual and factor level.
+
+## Usage
+
+``` r
+get_individual_coefficients(
+  fit_obj,
+  params = c("Q0", "alpha"),
+  format = c("wide", "long")
+)
+```
+
+## Arguments
+
+- fit_obj:
+
+  A \`beezdemand_nlme\` object returned by \`fit_demand_mixed()\`.
+
+- params:
+
+  Character vector specifying which parameters to calculate. Options are
+  "Q0", "alpha", or c("Q0", "alpha"). Default is c("Q0", "alpha").
+
+- format:
+
+  Character, output format. "wide" returns one row per individual with
+  separate columns for each parameter-factor combination. "long" returns
+  one row per individual-parameter-factor combination. Default is
+  "wide".
+
+## Value
+
+A data frame with individual-level predicted coefficients. - In "wide"
+format: rows are individuals, columns are parameter-factor
+combinations - In "long" format: columns are id, parameter, condition,
+coefficient_value
+
+Column naming convention for wide format: -
+\`estimated\_{param}\_intercept\`: Baseline/reference level
+coefficient - \`estimated\_{param}\_{factor}{level}\`: Factor
+level-specific coefficient
+
+All coefficients are on the log10 scale (same as model estimation
+scale). To convert to natural scale, use \`10^coefficient\`.
+
+## Details
+
+Individual-level coefficients represent the predicted parameter values
+for each subject in the study. For models with factors, these
+coefficients combine: 1. The baseline intercept effect (fixed + random)
+2. The factor-specific effect (fixed + random) for each factor level
+
+This is equivalent to manually calculating: \`coefficient =
+intercept_fixed + intercept_random + factor_fixed + factor_random\`
+
+The function automatically handles: - Models with or without factors -
+Any number of factor levels - Missing random effects (defaults to 0) -
+Complex factor structures with multiple factors
+
+For models without factors, only intercept coefficients are calculated.
+For models with factors, both intercept and factor-level coefficients
+are provided.
+
+## See also
+
+[`fit_demand_mixed`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+for fitting the original model
+[`coef.beezdemand_nlme`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_nlme.md)
+for extracting model coefficients
+[`get_demand_param_emms`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+for estimated marginal means
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Fit a mixed-effects demand model
+fit <- fit_demand_mixed(data = mydata,
+                       y_var = "consumption",
+                       x_var = "price",
+                       id_var = "subject",
+                       factors = "treatment")
+
+# Get individual coefficients (wide format, both parameters)
+individual_coefs <- get_individual_coefficients(fit)
+
+# Get only Q0 coefficients in long format
+q0_coefs <- get_individual_coefficients(fit, params = "Q0", format = "long")
+
+# Convert to natural scale
+individual_coefs$Q0_natural <- 10^individual_coefs$estimated_Q0_intercept
+} # }
+```
