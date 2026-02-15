@@ -97,8 +97,7 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   }
 
   # Validate model classes
-  valid_classes <- c("beezdemand_hurdle", "beezdemand_nlme", "beezdemand_fixed",
-                     "beezdemand_joint_hurdle", "beezdemand_cp_hurdle")
+  valid_classes <- c("beezdemand_hurdle", "beezdemand_nlme", "beezdemand_fixed")
 
   for (i in seq_along(models)) {
     if (!inherits(models[[i]], valid_classes)) {
@@ -569,21 +568,6 @@ print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
     info$AIC <- NA_real_
     info$BIC <- NA_real_
 
-  } else if (inherits(model, "beezdemand_joint_hurdle")) {
-    info$backend <- "TMB"
-    info$nobs <- NA_integer_  # Joint models may not store this directly
-    info$df <- tryCatch(length(model$model$coefficients), error = function(e) NA_integer_)
-    info$logLik <- model$loglik
-    info$AIC <- model$AIC
-    info$BIC <- model$BIC
-
-  } else if (inherits(model, "beezdemand_cp_hurdle")) {
-    info$backend <- "TMB"
-    info$nobs <- nrow(model$data)
-    info$df <- tryCatch(length(model$model$coefficients), error = function(e) NA_integer_)
-    info$logLik <- model$loglik
-    info$AIC <- model$AIC
-    info$BIC <- model$BIC
   }
 
   info

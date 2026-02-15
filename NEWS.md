@@ -88,10 +88,10 @@
 
 ## Breaking Changes
 
-* `summary()` methods for `beezdemand_cp_hurdle`, `beezdemand_joint_hurdle`,
-  and `beezdemand_nlme` now return structured summary objects instead of
-  printing directly. Use `print(summary(fit))` for console output.
-  Programmatic access is now possible: `s <- summary(fit); s$coefficients`.
+* `summary()` methods for `beezdemand_hurdle` and `beezdemand_nlme` now return
+  structured summary objects instead of printing directly. Use
+  `print(summary(fit))` for console output. Programmatic access is now
+  possible: `s <- summary(fit); s$coefficients`.
 
 * `fit_demand_hurdle()` now fits demand parameters in natural-log space
   (`log_q0`, `log_alpha`, `log_k`) and reports back-transformed values; the
@@ -105,10 +105,6 @@
   `y_pred_natural`).
 
 ### Additional New Features
-
-* `fit_joint_hurdle()` now accepts `k = "estimate"` to estimate the scaling
-  constant as a free parameter. Default remains `k = 2` (fixed). Estimating
-  k will emit a warning about potential identifiability issues.
 
 * New `fit_demand_fixed()` function provides a modern interface for individual
   demand curve fitting. Returns a structured S3 object with `summary()`,
