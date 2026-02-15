@@ -68,7 +68,7 @@ Creates visualizations of empirical measures across subjects.
 }
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt, package = "beezdemand")
 emp <- get_empirical_measures(apt)
 

@@ -13,7 +13,7 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with beezdemand.  If not, see <http://www.gnu.org/licenses/gpl-2.0.html>.
+## along with beezdemand.  If not, see <https://www.gnu.org/licenses/gpl-2.0.html>.
 ##
 ## summary
 ## R script for utility functions
@@ -103,7 +103,7 @@ normalize_equation <- function(equation) {
 ##' `r lifecycle::badge("deprecated")`
 ##'
 ##' Pulls a single vector from a data frame. Good to use with dplyr.
-##' From http://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
+##' From https://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
 ##' @title Pull
 ##' @param x A data frame
 ##' @param y Name of column

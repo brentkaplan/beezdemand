@@ -15,6 +15,9 @@
 
 \item{...}{Additional arguments (ignored)}
 }
+\value{
+Invisibly returns the input object \code{x}.
+}
 \description{
 Print Method for summary.beezdemand_fixed
 }

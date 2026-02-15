@@ -54,7 +54,7 @@
 #' @seealso [get_empirical_measures()]
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt, package = "beezdemand")
 #' emp <- get_empirical_measures(apt)
 #'

@@ -45,7 +45,7 @@ For each unique price in the dataset, the function calculates:
 }
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt, package = "beezdemand")
 
 # Calculate descriptive statistics

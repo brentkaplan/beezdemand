@@ -20,3 +20,10 @@ A convenience function to extract coefficients from any type of cross-price
 demand model in a unified format. For mixed effects models, returns a list
 with different coefficient types.
 }
+\examples{
+\donttest{
+data(etm, package = "beezdemand")
+fit <- fit_cp_nls(etm, equation = "exponentiated")
+extract_coefficients(fit)
+}
+}

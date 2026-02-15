@@ -64,7 +64,7 @@ Features:
 }
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt, package = "beezdemand")
 desc <- get_descriptive_summary(apt)
 
@@ -80,8 +80,8 @@ plot(desc)
 # With log-transformed y-axis
 plot(desc, y_trans = "log10")
 
-# With both axes transformed
-plot(desc, x_trans = "log10", y_trans = "pseudo_log")
+# With pseudo-log y-axis (handles zeros gracefully)
+plot(desc, y_trans = "pseudo_log")
 }
 
 }

@@ -72,7 +72,7 @@ cross-price systematicity checks:
 }
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt)
 check <- check_systematic_demand(apt)
 print(check)

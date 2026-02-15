@@ -73,7 +73,7 @@ new_beezdemand_systematicity <- function(results, type, call) {
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt)
 #' check <- check_systematic_demand(apt)
 #' print(check)
@@ -339,6 +339,7 @@ check_systematic_cp <- function(data,
 #'
 #' @param x A beezdemand_systematicity object
 #' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_systematicity <- function(x, ...) {
   cat("\n")
@@ -423,6 +424,7 @@ summary.beezdemand_systematicity <- function(object, ...) {
 #' @param x A summary.beezdemand_systematicity object
 #' @param n Number of IDs to display (default 20)
 #' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.beezdemand_systematicity <- function(x, n = 20, ...) {
   cat("\n")

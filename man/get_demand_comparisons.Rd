@@ -65,3 +65,12 @@ Comparisons are performed on the log10 scale of the parameters.
 Results include estimates of differences (on log10 scale) and
 optionally, ratios (on the natural scale by applying 10^difference).
 }
+\examples{
+\donttest{
+data(ko, package = "beezdemand")
+ko$y_ll4 <- ll4(ko$y, lambda = 4)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+  id_var = "monkey", factors = "dose", equation_form = "zben")
+get_demand_comparisons(fit)
+}
+}

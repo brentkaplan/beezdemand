@@ -15,3 +15,11 @@ A ggplot2 discrete fill scale.
 \description{
 beezdemand Fill Scale (Discrete)
 }
+\examples{
+\donttest{
+library(ggplot2)
+ggplot(iris, aes(Species, Sepal.Length, fill = Species)) +
+  geom_boxplot() +
+  scale_fill_beezdemand()
+}
+}

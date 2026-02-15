@@ -1017,6 +1017,11 @@ beezdemand_calc_pmax_omax_vec <- function(
 #' @param consumption_var Name of consumption column
 #'
 #' @return Data frame with observed pmax/omax for each subject
+#' @examples
+#' \donttest{
+#' data(apt, package = "beezdemand")
+#' calc_observed_pmax_omax(apt, id_var = "id", price_var = "x", consumption_var = "y")
+#' }
 #' @export
 calc_observed_pmax_omax <- function(
   data,

@@ -26,3 +26,9 @@ Data frame with observed pmax/omax for each subject
 \description{
 Calculate Observed Pmax/Omax Grouped by ID
 }
+\examples{
+\donttest{
+data(apt, package = "beezdemand")
+calc_observed_pmax_omax(apt, id_var = "id", price_var = "x", consumption_var = "y")
+}
+}

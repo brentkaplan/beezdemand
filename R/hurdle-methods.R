@@ -3,6 +3,7 @@
 #' @param x An object of class \code{beezdemand_hurdle}.
 #' @param ... Additional arguments (currently unused).
 #'
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_hurdle <- function(x, ...) {
   cat("\nTwo-Part Mixed Effects Hurdle Demand Model\n\n")
@@ -263,6 +264,7 @@ summary.beezdemand_hurdle <- function(
 #' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments passed to \code{print}.
 #'
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("\nTwo-Part Mixed Effects Hurdle Demand Model\n")
@@ -458,6 +460,7 @@ logLik.beezdemand_hurdle <- function(object, ...) {
 #' @param ... Additional arguments (unused).
 #' @param k Penalty per parameter. Default is 2 (standard AIC).
 #'
+#' @return A numeric AIC value.
 #' @export
 AIC.beezdemand_hurdle <- function(object, ..., k = 2) {
   ll <- logLik(object)
@@ -470,6 +473,7 @@ AIC.beezdemand_hurdle <- function(object, ..., k = 2) {
 #' @param object A \code{beezdemand_hurdle} object.
 #' @param ... Additional arguments (unused).
 #'
+#' @return A numeric BIC value.
 #' @export
 BIC.beezdemand_hurdle <- function(object, ...) {
   ll <- logLik(object)
@@ -1733,7 +1737,7 @@ confint.beezdemand_hurdle <- function(
 #'   explained by Part I (the zero-probability component), not Part II
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt)
 #' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' augmented <- augment(fit)

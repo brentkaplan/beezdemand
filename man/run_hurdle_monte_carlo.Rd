@@ -49,7 +49,7 @@ Runs a Monte Carlo simulation study to assess model performance,
 including bias, standard error estimates, and confidence interval coverage.
 }
 \examples{
-\dontrun{
+\donttest{
 # Run small simulation study (for demonstration)
 mc_results <- run_hurdle_monte_carlo(n_sim = 10, n_subjects = 50, seed = 123)
 

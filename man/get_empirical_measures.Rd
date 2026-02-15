@@ -69,7 +69,7 @@ S3 object with dedicated methods for printing, summarizing, and visualizing.
 }
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt, package = "beezdemand")
 
 # Calculate empirical measures

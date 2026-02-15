@@ -22,6 +22,8 @@ beezdemand_colors <- c(
 #' beezdemand Color Palette
 #'
 #' @return Named vector of brand colors.
+#' @examples
+#' palette_beezdemand()
 #' @export
 palette_beezdemand <- function() {
   beezdemand_colors
@@ -31,6 +33,13 @@ palette_beezdemand <- function() {
 #'
 #' @param ... Additional arguments passed to \code{ggplot2::scale_color_manual}.
 #' @return A ggplot2 discrete color scale.
+#' @examples
+#' \donttest{
+#' library(ggplot2)
+#' ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+#'   geom_point() +
+#'   scale_color_beezdemand()
+#' }
 #' @export
 scale_color_beezdemand <- function(...) {
   ggplot2::scale_color_manual(
@@ -43,6 +52,13 @@ scale_color_beezdemand <- function(...) {
 #'
 #' @param ... Additional arguments passed to \code{ggplot2::scale_fill_manual}.
 #' @return A ggplot2 discrete fill scale.
+#' @examples
+#' \donttest{
+#' library(ggplot2)
+#' ggplot(iris, aes(Species, Sepal.Length, fill = Species)) +
+#'   geom_boxplot() +
+#'   scale_fill_beezdemand()
+#' }
 #' @export
 scale_fill_beezdemand <- function(...) {
   ggplot2::scale_fill_manual(
@@ -57,6 +73,13 @@ scale_fill_beezdemand <- function(...) {
 #' @param base_size Base font size (default: 11).
 #' @param base_family Base font family (default: "sans").
 #' @return A ggplot2 theme object.
+#' @examples
+#' \donttest{
+#' library(ggplot2)
+#' ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+#'   geom_point() +
+#'   theme_beezdemand()
+#' }
 #' @export
 theme_beezdemand <- function(style = c("modern", "apa"),
                              base_size = 11,

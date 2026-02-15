@@ -62,7 +62,7 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt, package = "beezdemand")
 #'
 #' # Calculate k using default settings (mean range + 0.5)

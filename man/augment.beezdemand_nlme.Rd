@@ -37,11 +37,10 @@ To back-transform predictions to the natural scale for "zben" models, use:
 `ll4_inv(augmented$.fitted)`
 }
 \examples{
-\dontrun{
-data(apt)
-apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
-fit <- fit_demand_mixed(apt_ll4, y_var = "y_ll4", x_var = "x",
-                        id_var = "id", equation_form = "zben")
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", factors = "dose", equation_form = "zben")
 augmented <- augment(fit)
 
 # Plot residuals

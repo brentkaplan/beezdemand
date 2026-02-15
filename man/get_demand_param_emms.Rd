@@ -44,3 +44,12 @@ from a `beezdemand_nlme` model for all combinations of specified factor levels.
 Reports parameters on both their estimation scale (log10) and their
 natural, back-transformed scale. Optionally includes Essential Value (EV).
 }
+\examples{
+\donttest{
+data(ko, package = "beezdemand")
+ko$y_ll4 <- ll4(ko$y, lambda = 4)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+  id_var = "monkey", factors = "dose", equation_form = "zben")
+get_demand_param_emms(fit)
+}
+}

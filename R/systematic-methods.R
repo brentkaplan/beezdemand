@@ -115,6 +115,13 @@ summary.cp_unsystematic <- function(object, ...) {
   )
 }
 
+#' Print Method for Cross-Price Unsystematic Summary
+#'
+#' Print Method for summary.cp_unsystematic
+#'
+#' @param x A \code{summary.cp_unsystematic} object.
+#' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.cp_unsystematic <- function(x, ...) {
   cat("Cross-Price Demand Unsystematic Data Summary\n")

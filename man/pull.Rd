@@ -18,7 +18,7 @@ Vector
 `r lifecycle::badge("deprecated")`
 
 Pulls a single vector from a data frame. Good to use with dplyr.
-From http://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
+From https://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
 }
 \details{
 Pull vector from data frame

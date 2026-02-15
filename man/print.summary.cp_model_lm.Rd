@@ -11,6 +11,9 @@
 
 \item{...}{Unused}
 }
+\value{
+Invisibly returns the input object \code{x}.
+}
 \description{
 Print method for summary.cp_model_lm objects.
 }

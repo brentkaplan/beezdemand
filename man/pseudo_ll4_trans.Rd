@@ -22,7 +22,7 @@ The "pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that it
 handles a range including zero, but the transformation is `ll4`.
 }
 \examples{
-\dontrun{
+\donttest{
 if (require(ggplot2) && require(scales)) {
   set.seed(123)
   df <- data.frame(

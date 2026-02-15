@@ -281,7 +281,7 @@ simulate_hurdle_data <- function(
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Run small simulation study (for demonstration)
 #' mc_results <- run_hurdle_monte_carlo(n_sim = 10, n_subjects = 50, seed = 123)
 #'
@@ -558,8 +558,9 @@ run_hurdle_monte_carlo <- function(
 #' @param mc_results Output from \code{\link{run_hurdle_monte_carlo}}.
 #' @param digits Number of digits to display. Default is 3.
 #'
+#' @return Invisibly returns the input \code{mc_results} object.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' mc_results <- run_hurdle_monte_carlo(n_sim = 50, n_subjects = 100, seed = 123)
 #' print_mc_summary(mc_results)
 #' }

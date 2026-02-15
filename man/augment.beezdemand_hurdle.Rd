@@ -38,7 +38,7 @@ For two-part hurdle models:
   explained by Part I (the zero-probability component), not Part II
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt)
 fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 augmented <- augment(fit)

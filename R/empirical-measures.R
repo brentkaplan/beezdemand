@@ -65,7 +65,7 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt, package = "beezdemand")
 #'
 #' # Calculate empirical measures

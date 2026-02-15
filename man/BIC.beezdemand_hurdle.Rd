@@ -11,6 +11,9 @@
 
 \item{...}{Additional arguments (unused).}
 }
+\value{
+A numeric BIC value.
+}
 \description{
 BIC for Hurdle Demand Model
 }

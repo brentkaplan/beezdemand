@@ -12,3 +12,6 @@ Named vector of brand colors.
 \description{
 beezdemand Color Palette
 }
+\examples{
+palette_beezdemand()
+}

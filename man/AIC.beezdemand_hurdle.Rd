@@ -13,6 +13,9 @@
 
 \item{k}{Penalty per parameter. Default is 2 (standard AIC).}
 }
+\value{
+A numeric AIC value.
+}
 \description{
 AIC for Hurdle Demand Model
 }

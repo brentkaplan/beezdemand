@@ -23,3 +23,11 @@ A ggplot2 theme object.
 \description{
 beezdemand Plot Theme
 }
+\examples{
+\donttest{
+library(ggplot2)
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point() +
+  theme_beezdemand()
+}
+}

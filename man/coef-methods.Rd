@@ -24,6 +24,8 @@
 }
 \value{
 Named vector of coefficients
+
+A named numeric vector of model coefficients.
 }
 \description{
 Methods to extract coefficients from various cross-price demand model objects.

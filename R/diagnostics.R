@@ -204,6 +204,7 @@ check_demand_model.beezdemand_fixed <- function(object, ...) {
 #'
 #' @param x A `beezdemand_diagnostics` object.
 #' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_diagnostics <- function(x, ...) {
   cat("\nModel Diagnostics\n")

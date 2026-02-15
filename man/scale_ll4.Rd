@@ -22,7 +22,7 @@ transformation (and its inverse `ll4_inv`) to an axis. This is useful for
 visualizing data spanning multiple orders of magnitude while handling zeros.
 }
 \examples{
-\dontrun{
+\donttest{
 if (require(ggplot2) && require(scales)) {
   set.seed(123)
   df <- data.frame(

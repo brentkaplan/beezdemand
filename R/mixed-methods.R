@@ -142,6 +142,14 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #'     with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.).}
 #'   \item{EV, LCL_EV, UCL_EV}{(If `include_ev=TRUE`) Essential Value and its CI.}
 #'
+#' @examples
+#' \donttest{
+#' data(ko, package = "beezdemand")
+#' ko$y_ll4 <- ll4(ko$y, lambda = 4)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'   id_var = "monkey", factors = "dose", equation_form = "zben")
+#' get_demand_param_emms(fit)
+#' }
 #' @importFrom emmeans ref_grid emmeans
 #' @importFrom dplyr full_join select rename mutate across all_of left_join
 #' @importFrom tibble as_tibble
@@ -627,6 +635,14 @@ get_demand_param_emms <- function(
 #'
 #' @seealso \code{\link{get_demand_param_emms}}
 #'
+#' @examples
+#' \donttest{
+#' data(ko, package = "beezdemand")
+#' ko$y_ll4 <- ll4(ko$y, lambda = 4)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'   id_var = "monkey", factors = "dose", equation_form = "zben")
+#' get_observed_demand_param_emms(fit)
+#' }
 #' @importFrom dplyr distinct all_of semi_join select
 #' @importFrom tibble as_tibble
 #' @importFrom rlang !!! syms
@@ -825,6 +841,14 @@ get_observed_demand_param_emms <- function(
 #'     as ratios (natural scale), with CIs for ratios.}
 #'   S3 class `beezdemand_comparison` is assigned.
 #'
+#' @examples
+#' \donttest{
+#' data(ko, package = "beezdemand")
+#' ko$y_ll4 <- ll4(ko$y, lambda = 4)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'   id_var = "monkey", factors = "dose", equation_form = "zben")
+#' get_demand_comparisons(fit)
+#' }
 #' @importFrom emmeans ref_grid emmeans contrast
 #' @importFrom tibble as_tibble
 #' @importFrom rlang `:=` .data
@@ -1261,6 +1285,7 @@ get_demand_comparisons <- function(
 #' @param x A `beezdemand_comparison` object.
 #' @param digits Number of significant digits to display for estimates.
 #' @param ... Additional arguments (unused).
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_comparison <- function(x, digits = 3, ...) {
   cat("Demand Parameter Comparisons (from beezdemand_nlme fit)\n")
@@ -1284,6 +1309,8 @@ print.beezdemand_comparison <- function(x, digits = 3, ...) {
     cat("P-value adjustment method:", adj_method, "\n")
   }
   cat(paste(rep("=", 50), collapse = ""), "\n\n")
+
+  invisible(x)
 }
 
 #' Get Trends (Slopes) of Demand Parameters with respect to Continuous Covariates
@@ -1487,9 +1514,8 @@ get_demand_param_trends <- function(
 #' # Assuming 'fit_two_factor_no_interaction' is a beezdemand_nlme object
 #' print(fit_two_factor_no_interaction)
 #'
-#' # If fitting failed:
-#' # fit_failed <- fit_demand_mixed(..., nlme_control=list(maxIter=1)) # To force a failure
-#' # print(fit_failed)
+#' # If fitting failed, print() will display diagnostic information
+#' # about the failure instead of model results.
 #' }
 print.beezdemand_nlme <- function(
   x,
@@ -1754,6 +1780,7 @@ summary.beezdemand_nlme <- function(
 #' @param digits Number of significant digits to print
 #' @param n Number of rows to print for any tables (unused for this class).
 #' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
   cat("\n")
@@ -2354,13 +2381,8 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #'
 #'   preds_group_log_scale <- predict(fit_one_factor, newdata = new_data_subset, level = 1)
 #'
-#'   # If your model was, for example:
-#'   # fit_simplified_raw_y <- fit_demand_mixed(data=ko, y_var="y", x_var="x",
-#'   #                                          id_var="id", factors="dose",
-#'   #                                          equation_form="simplified")
-#'   # if (!is.null(fit_simplified_raw_y$model)) {
-#'   #   preds_simplified_raw <- predict(fit_simplified_raw_y) # Already on raw y scale
-#'   # }
+#'   # For models fitted with equation_form="simplified" and raw y values,
+#'   # predictions are already on the raw y scale and no inv_fun is needed.
 #' }
 #' }
 predict.beezdemand_nlme <- function(
@@ -3351,11 +3373,10 @@ rhs <- function(form) {
 #' `ll4_inv(augmented$.fitted)`
 #'
 #' @examples
-#' \dontrun{
-#' data(apt)
-#' apt_ll4 <- apt |> dplyr::mutate(y_ll4 = ll4(y))
-#' fit <- fit_demand_mixed(apt_ll4, y_var = "y_ll4", x_var = "x",
-#'                         id_var = "id", equation_form = "zben")
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", factors = "dose", equation_form = "zben")
 #' augmented <- augment(fit)
 #'
 #' # Plot residuals

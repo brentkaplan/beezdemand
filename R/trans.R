@@ -92,7 +92,7 @@ ll4_inv <- function(y, lambda = 4, base = 10) {
 #' @seealso \code{\link{ll4}}, \code{\link{ll4_inv}}, \code{\link[scales]{trans_new}}
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' if (require(ggplot2) && require(scales)) {
 #'   set.seed(123)
 #'   df <- data.frame(
@@ -155,7 +155,7 @@ scale_ll4 <- function(..., lambda = 4) {
 #' @seealso \code{\link{ll4}}, \code{\link{ll4_inv}}, \code{\link[scales]{trans_new}}
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' if (require(ggplot2) && require(scales)) {
 #'   set.seed(123)
 #'   df <- data.frame(

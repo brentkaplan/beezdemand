@@ -275,7 +275,8 @@ GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
     Warning: `GetDescriptives()` was deprecated in beezdemand 0.3.0.
     ℹ Please use `get_descriptive_summary()` instead.
     This warning is displayed once every 8 hours.
-    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
+    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    generated.
 
 <figure>
 <img src="man/figures/bwplot.png"
@@ -367,7 +368,8 @@ GetEmpirical(dat = apt)
     Warning: `GetEmpirical()` was deprecated in beezdemand 0.3.0.
     ℹ Please use `get_empirical_measures()` instead.
     This warning is displayed once every 8 hours.
-    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
+    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    generated.
 
 | id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
 |:----|----------:|----:|----:|------:|------:|
@@ -1032,19 +1034,19 @@ this document:
 
 - Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential
   value. *Psychological Review, 115* (1), 186-198.
-  <https://dx.doi.org/10.1037/0033-295X.115.1.186>
+  <https://doi.org/10.1037/0033-295X.115.1.186>
 
 - Koffarnus, M. N., Franck, C. T., Stein, J. S., & Bickel, W. K. (2015).
   A modified exponential behavioral economic demand model to better
   describe consumption data. *Experimental and Clinical
   Psychopharmacology, 23* (6), 504-512.
-  <https://dx.doi.org/10.1037/pha0000045>
+  <https://doi.org/10.1037/pha0000045>
 
 - Stein, J. S., Koffarnus, M. N., Snider, S. E., Quisenberry, A. J., &
   Bickel, W. K. (2015). Identification and management of nonsystematic
   purchase task data: Toward best practice. *Experimental and Clinical
   Psychopharmacology 23* (5), 377-386.
-  <https://dx.doi.org/10.1037/pha0000020>
+  <https://doi.org/10.1037/pha0000020>
 
 - Hursh, S. R., Raslear, T. G., Shurtleff, D., Bauman, R., & Simmons, L.
   (1988). A cost‐benefit analysis of demand for food. *Journal of the

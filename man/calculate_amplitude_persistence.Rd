@@ -84,3 +84,10 @@ specified in `persistence` (typically Breakpoint, Pmax, Omax, and 1/Alpha).
   from predictions. Breakpoint is calculated empirically from the raw data.
 }
 
+\examples{
+\donttest{
+data(apt, package = "beezdemand")
+fit <- FitCurves(apt, "hs", k = "share")
+calculate_amplitude_persistence(fit)
+}
+}

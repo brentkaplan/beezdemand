@@ -11,6 +11,9 @@
 
 \item{...}{Additional arguments (currently unused).}
 }
+\value{
+Invisibly returns the input object \code{x}.
+}
 \description{
 Print Method for Hurdle Demand Model
 }

@@ -285,6 +285,7 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
 #' @param x A `beezdemand_model_comparison` object.
 #' @param digits Number of significant digits to print.
 #' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_model_comparison <- function(x, digits = 4, ...) {
   cat("\nModel Comparison\n")
@@ -498,6 +499,7 @@ anova.beezdemand_nlme <- function(object, ...) {
 #' @param x An `anova.beezdemand` object.
 #' @param digits Number of significant digits to print.
 #' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
   cat("\nAnalysis of Variance Table\n")

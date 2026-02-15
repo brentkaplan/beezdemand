@@ -35,7 +35,7 @@ this method attempts to use `nlstools::confint2()` for more accurate
 profile-based intervals.
 }
 \examples{
-\dontrun{
+\donttest{
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 confint(fit)
 confint(fit, level = 0.90)

@@ -52,6 +52,12 @@
 #'   equations and are converted to linear scale. Omax and Pmax are calculated empirically
 #'   from predictions. Breakpoint is calculated empirically from the raw data.
 #'
+#' @examples
+#' \donttest{
+#' data(apt, package = "beezdemand")
+#' fit <- FitCurves(apt, "hs", k = "share")
+#' calculate_amplitude_persistence(fit)
+#' }
 #' @export
 calculate_amplitude_persistence <- function(fit,
                                             amplitude = c("Intensity", "Q0d", "Q0"),

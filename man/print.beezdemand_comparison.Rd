@@ -13,6 +13,9 @@
 
 \item{...}{Additional arguments (unused).}
 }
+\value{
+Invisibly returns the input object \code{x}.
+}
 \description{
 Print method for beezdemand_comparison objects
 }

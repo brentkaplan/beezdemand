@@ -2,6 +2,7 @@
 #'
 #' @param x A beezdemand_fixed object
 #' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_fixed <- function(x, ...) {
   cat("\nFixed-Effect Demand Model\n")
@@ -574,6 +575,7 @@ summary.beezdemand_fixed <- function(
 #' @param digits Number of significant digits to print
 #' @param n Number of subjects (ids) to print (default 20)
 #' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.beezdemand_fixed <- function(x, digits = 4, n = 20, ...) {
   cat("\n")
@@ -1115,7 +1117,7 @@ glance.beezdemand_fixed <- function(x, ...) {
 #' profile-based intervals.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 #' confint(fit)
 #' confint(fit, level = 0.90)
@@ -1234,7 +1236,7 @@ confint.beezdemand_fixed <- function(object, parm = NULL, level = 0.95, ...) {
 #' fitted values are back-transformed to the natural scale.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt)
 #' fit <- fit_demand_fixed(apt, y_var = "y", x_var = "x", id_var = "id")
 #' augmented <- augment(fit)

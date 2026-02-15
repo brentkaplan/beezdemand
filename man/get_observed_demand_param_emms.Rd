@@ -49,6 +49,15 @@ It then filters these results to return EMMs only for the combinations of
 factor levels that were actually present in the original dataset used to
 fit the `beezdemand_nlme` model.
 }
+\examples{
+\donttest{
+data(ko, package = "beezdemand")
+ko$y_ll4 <- ll4(ko$y, lambda = 4)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+  id_var = "monkey", factors = "dose", equation_form = "zben")
+get_observed_demand_param_emms(fit)
+}
+}
 \seealso{
 \code{\link{get_demand_param_emms}}
 }

@@ -31,7 +31,7 @@ For "hs" equation models where fitting is done on the log10 scale,
 fitted values are back-transformed to the natural scale.
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt)
 fit <- fit_demand_fixed(apt, y_var = "y", x_var = "x", id_var = "id")
 augmented <- augment(fit)

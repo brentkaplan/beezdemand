@@ -11,11 +11,14 @@ print_mc_summary(mc_results, digits = 3)
 
 \item{digits}{Number of digits to display. Default is 3.}
 }
+\value{
+Invisibly returns the input \code{mc_results} object.
+}
 \description{
 Prints a formatted summary of Monte Carlo simulation results.
 }
 \examples{
-\dontrun{
+\donttest{
 mc_results <- run_hurdle_monte_carlo(n_sim = 50, n_subjects = 100, seed = 123)
 print_mc_summary(mc_results)
 }

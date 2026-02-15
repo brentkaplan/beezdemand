@@ -41,7 +41,7 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(apt, package = "beezdemand")
 #'
 #' # Calculate descriptive statistics

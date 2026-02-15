@@ -221,6 +221,7 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
 #' Print method for summary.cp_model_nls objects
 #' @param x A `summary.*` object
 #' @param ... Unused
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.cp_model_nls <- function(x, ...) {
   cat("Cross-Price Demand Model Summary\n")
@@ -1033,6 +1034,7 @@ glance.cp_model_lmer <- function(x, ...) {
 #' Print method for summary.cp_model_lm objects.
 #' @param x A `summary.*` object
 #' @param ... Unused
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.cp_model_lm <- function(x, ...) {
   cat("Linear Cross-Price Demand Model Summary\n")
@@ -1054,6 +1056,7 @@ print.summary.cp_model_lm <- function(x, ...) {
 #' Print method for summary.cp_model_lmer objects.
 #' @param x A `summary.*` object
 #' @param ... Unused
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.summary.cp_model_lmer <- function(x, ...) {
   cat("Mixed-Effects Linear Cross-Price Demand Model Summary\n")
@@ -1540,6 +1543,7 @@ coef.cp_model_nls <- function(object, ...) {
 #' @describeIn coef-methods Extract coefficients from a linear cross-price model
 #' @param object A cp_model_lm object
 #' @param ... Additional arguments (not used).
+#' @return A named numeric vector of model coefficients.
 #' @export
 coef.cp_model_lm <- function(object, ...) {
   if (!inherits(object, "cp_model_lm")) {
@@ -1639,6 +1643,12 @@ fixef.cp_model_lmer <- function(object, ...) {
 #' @param ... Additional arguments passed to the appropriate coef method
 #' @return For cp_model_nls and cp_model_lm, returns the model coefficients.
 #'   For cp_model_lmer, returns a list with fixed, random, and combined coefficients.
+#' @examples
+#' \donttest{
+#' data(etm, package = "beezdemand")
+#' fit <- fit_cp_nls(etm, equation = "exponentiated")
+#' extract_coefficients(fit)
+#' }
 #' @importFrom lme4 fixef ranef
 #' @export
 extract_coefficients <- function(object, ...) {
@@ -1869,6 +1879,7 @@ cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 #'
 #' @param x A cp_posthoc object
 #' @param ... Additional arguments passed to print
+#' @return Invisibly returns the input object \code{x}.
 #' @export
 print.cp_posthoc <- function(x, ...) {
   # Get type attribute or default
