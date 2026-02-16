@@ -41,6 +41,15 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
+      - name: Verify llms.txt was generated
+        run: |
+          if [ ! -f "docs/llms.txt" ]; then
+            echo "ERROR: docs/llms.txt missing — LLM docs not generated."
+            echo "Ensure _pkgdown.yml has 'llm-docs: true' and pkgdown >= 2.1.0."
+            exit 1
+          fi
+          echo "docs/llms.txt found ($(wc -l < docs/llms.txt) lines)."
+
       - name: Deploy to GitHub pages
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.5.0

@@ -1020,6 +1020,21 @@ this document:
 
 - Gideon Naudé
 
+## LLM Docs
+
+The package publishes machine-readable documentation for use with AI
+coding assistants and RAG systems:
+
+- **`llms.txt`** — canonical entry point for LLMs, published at:
+  <https://brentkaplan.github.io/beezdemand/llms.txt>
+- **Context7** — a `context7.json` at the repo root configures Context7
+  indexing. Use `/brentkaplan/beezdemand` as the library ID in
+  Context7-enabled tools.
+- **Docs map** — a chunkable reference at
+  [`inst/llm/docs-map.md`](https://github.com/brentkaplan/beezdemand/blob/master/inst/llm/docs-map.md)
+  summarises workflows, data format, and key functions for RAG
+  ingestion.
+
 # Recommended Readings
 
 - Reed, D. D., Niileksela, C. R., & Kaplan, B. A. (2013). Behavioral
