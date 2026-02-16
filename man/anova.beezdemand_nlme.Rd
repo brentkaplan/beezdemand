@@ -7,18 +7,18 @@
 \method{anova}{beezdemand_nlme}(object, ...)
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` model.}
+\item{object}{A \code{beezdemand_nlme} model.}
 
-\item{...}{Additional `beezdemand_nlme` models to compare.}
+\item{...}{Additional \code{beezdemand_nlme} models to compare.}
 }
 \value{
-An object of class `anova.beezdemand` containing model comparison statistics.
+An object of class \code{anova.beezdemand} containing model comparison statistics.
 }
 \description{
 Compare nested NLME demand models using likelihood ratio tests.
 }
 \details{
-For NLME models, this method delegates to `nlme::anova.lme()` on the
+For NLME models, this method delegates to \code{nlme::anova.lme()} on the
 underlying model objects when possible.
 }
 \examples{

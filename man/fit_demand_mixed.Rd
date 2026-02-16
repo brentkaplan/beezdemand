@@ -32,99 +32,104 @@ fit_demand_mixed(
 \item{data}{A data frame.}
 
 \item{y_var}{Character string, the name of the dependent variable column.
-For `equation_form = "zben"`, this should be log-transformed consumption (e.g., "y_ll4").
-For `equation_form = "simplified"` or `"exponentiated"`, this should be raw, untransformed consumption (e.g., "y").}
+For \code{equation_form = "zben"}, this should be log-transformed consumption (e.g., "y_ll4").
+For \code{equation_form = "simplified"} or \code{"exponentiated"}, this should be raw, untransformed consumption (e.g., "y").}
 
 \item{x_var}{Character string, the name of the independent variable column (e.g., "x", price).}
 
 \item{id_var}{Character string, the name of the subject/group identifier column for random effects.}
 
 \item{factors}{A character vector of factor names (up to two) by which Q0 and alpha
-are expected to vary (e.g., `c("dose", "treatment")`).}
+are expected to vary (e.g., \code{c("dose", "treatment")}).}
 
-\item{factor_interaction}{Logical. If `TRUE` and two factors are provided,
+\item{factor_interaction}{Logical. If \code{TRUE} and two factors are provided,
 their interaction term is included in the fixed effects for Q0 and alpha.
-Defaults to `FALSE` (additive effects).}
+Defaults to \code{FALSE} (additive effects).}
 
 \item{equation_form}{Character string specifying the demand equation form.
 Options are:
 \itemize{
-  \item `"zben"` (default): Assumes `y_var` is log-transformed.
-        Equation: `y_var ~ Q0 * exp(-(10^alpha / Q0) * (10^Q0) * x_var)`.
-        Model parameter `Q0` represents `log10(True Max Consumption)`.
-        Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
-  \item `"simplified"`: Assumes `y_var` is raw (untransformed) consumption.
-        Equation: `y_var ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x_var)`.
-        Model parameter `Q0` represents `log10(True Max Consumption)`.
-        Model parameter `alpha` represents `log10(True Alpha Sensitivity)`.
-  \item `"exponentiated"`: Koffarnus et al. (2015) exponentiated equation. Assumes `y_var`
-        is raw (untransformed) consumption. Requires the `k` parameter.
-        Equation (log10 param_space): `y_var ~ (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x_var) - 1))`.
-        Equation (natural param_space): `y_var ~ Q0 * 10^(k * (exp(-alpha * Q0 * x_var) - 1))`.
+\item \code{"zben"} (default): Assumes \code{y_var} is log-transformed.
+Equation: \code{y_var ~ Q0 * exp(-(10^alpha / Q0) * (10^Q0) * x_var)}.
+Model parameter \code{Q0} represents \verb{log10(True Max Consumption)}.
+Model parameter \code{alpha} represents \verb{log10(True Alpha Sensitivity)}.
+\item \code{"simplified"}: Assumes \code{y_var} is raw (untransformed) consumption.
+Equation: \code{y_var ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x_var)}.
+Model parameter \code{Q0} represents \verb{log10(True Max Consumption)}.
+Model parameter \code{alpha} represents \verb{log10(True Alpha Sensitivity)}.
+\item \code{"exponentiated"}: Koffarnus et al. (2015) exponentiated equation. Assumes \code{y_var}
+is raw (untransformed) consumption. Requires the \code{k} parameter.
+Equation (log10 param_space): \code{y_var ~ (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x_var) - 1))}.
+Equation (natural param_space): \code{y_var ~ Q0 * 10^(k * (exp(-alpha * Q0 * x_var) - 1))}.
 }}
 
 \item{param_space}{Character. Parameterization used for fitting core demand
-  parameters. One of:
-  - `"log10"`: treat `Q0` and `alpha` as `log10(Q0)` and `log10(alpha)` (default)
-  - `"natural"`: treat `Q0` and `alpha` as natural-scale parameters
+parameters. One of:
+\itemize{
+\item \code{"log10"}: treat \code{Q0} and \code{alpha} as \code{log10(Q0)} and \code{log10(alpha)} (default)
+\item \code{"natural"}: treat \code{Q0} and \code{alpha} as natural-scale parameters
+}
 
-  Notes:
-  - For `equation_form = "zben"`, only `"log10"` is currently supported.
-  - For `equation_form = "simplified"` or `"exponentiated"`, both `"log10"` and `"natural"` are supported.}
+Notes:
+\itemize{
+\item For \code{equation_form = "zben"}, only \code{"log10"} is currently supported.
+\item For \code{equation_form = "simplified"} or \code{"exponentiated"}, both \code{"log10"} and \code{"natural"} are supported.
+}}
 
-\item{k}{Numeric. Range parameter (in log10 units) used with `equation_form = "exponentiated"`.
-If `NULL` (default), k is calculated from the data range: `log10(max(y)) - log10(min(y)) + 0.5`.
+\item{k}{Numeric. Range parameter (in log10 units) used with \code{equation_form = "exponentiated"}.
+If \code{NULL} (default), k is calculated from the data range: \code{log10(max(y)) - log10(min(y)) + 0.5}.
 Ignored for other equation forms.}
 
 \item{custom_model_formula}{An optional custom nonlinear model formula (nlme format).
-If provided, this overrides `equation_form`. The user is responsible for ensuring
-the `y_var` scale matches the formula and that starting values are appropriate.
-The formula should use parameters named `Q0` and `alpha`.}
+If provided, this overrides \code{equation_form}. The user is responsible for ensuring
+the \code{y_var} scale matches the formula and that starting values are appropriate.
+The formula should use parameters named \code{Q0} and \code{alpha}.}
 
 \item{fixed_rhs}{Optional one-sided formula or character string specifying the
-right-hand side (RHS) for the fixed-effects linear models of `Q0` and `alpha`.
+right-hand side (RHS) for the fixed-effects linear models of \code{Q0} and \code{alpha}.
 When provided, this RHS is used for both parameters and overrides
-`factors`, `factor_interaction`, and `continuous_covariates` for building the
-fixed-effects design matrix. Example: `"~ 1 + drug * dose + session"`.}
+\code{factors}, \code{factor_interaction}, and \code{continuous_covariates} for building the
+fixed-effects design matrix. Example: \code{"~ 1 + drug * dose + session"}.}
 
 \item{continuous_covariates}{Optional character vector of continuous (numeric)
 predictor names to be included additively in the fixed-effects RHS when
-`fixed_rhs` is `NULL`. These variables are not coerced to factors and are
+\code{fixed_rhs} is \code{NULL}. These variables are not coerced to factors and are
 stored for downstream functions (e.g., plotting) to condition on.}
 
-\item{start_value_method}{Character, method to generate starting values if `start_values` is NULL.
+\item{start_value_method}{Character, method to generate starting values if \code{start_values} is NULL.
 Options: "heuristic" (default, uses data-driven heuristics) or
 "pooled_nls" (fits a simpler pooled NLS model first; falls back to heuristic if NLS fails).}
 
 \item{random_effects}{A formula or a list of formulas for the random effects structure.
-Default `nlme::pdDiag(Q0 + alpha ~ 1)`.}
+Default \code{nlme::pdDiag(Q0 + alpha ~ 1)}.}
 
 \item{covariance_structure}{Character, covariance structure for random effects.
-Options: `"pdDiag"` (default) or `"pdSymm"`}
+Options: \code{"pdDiag"} (default) or \code{"pdSymm"}}
 
 \item{start_values}{Optional named list of starting values for fixed effects.
-If `NULL`, defaults are estimated based on `equation_form` and `y_var` scale.}
+If \code{NULL}, defaults are estimated based on \code{equation_form} and \code{y_var} scale.}
 
 \item{collapse_levels}{Optional named list specifying factor level collapsing
 separately for Q0 and alpha parameters. Structure:
-```
-list(
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{list(
   Q0 = list(factor_name = list(new_level = c(old_levels), ...)),
   alpha = list(factor_name = list(new_level = c(old_levels), ...))
 )
-```
-Either `Q0` or `alpha` (or both) can be omitted to use original factor levels
+}\if{html}{\out{</div>}}
+
+Either \code{Q0} or \code{alpha} (or both) can be omitted to use original factor levels
 for that parameter. This allows different collapsing schemes for each parameter.
-Ignored if `fixed_rhs` is provided.}
+Ignored if \code{fixed_rhs} is provided.}
 
-\item{nlme_control}{Control parameters for `nlme::nlme()`.}
+\item{nlme_control}{Control parameters for \code{nlme::nlme()}.}
 
-\item{method}{Fitting method for `nlme::nlme()` ("ML" or "REML"). Default "ML".}
+\item{method}{Fitting method for \code{nlme::nlme()} ("ML" or "REML"). Default "ML".}
 
-\item{...}{Additional arguments passed to `nlme::nlme()`.}
+\item{...}{Additional arguments passed to \code{nlme::nlme()}.}
 }
 \value{
-An object of class `beezdemand_nlme`.
+An object of class \code{beezdemand_nlme}.
 }
 \description{
 Fits a nonlinear mixed-effects model for behavioral economic demand data.

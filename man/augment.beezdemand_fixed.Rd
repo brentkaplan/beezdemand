@@ -16,10 +16,10 @@ uses the original data from the model.}
 }
 \value{
 A tibble containing the original data plus:
-  \describe{
-    \item{.fitted}{Fitted demand values on the response scale}
-    \item{.resid}{Residuals (observed - fitted)}
-  }
+\describe{
+\item{.fitted}{Fitted demand values on the response scale}
+\item{.resid}{Residuals (observed - fitted)}
+}
 }
 \description{
 Returns the original data with fitted values and residuals from individual

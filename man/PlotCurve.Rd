@@ -34,5 +34,5 @@ if (interactive()) {
 }
 }
 \author{
-Shawn Gilroy <shawn.gilroy@temple.edu>
+Shawn Gilroy \href{mailto:shawn.gilroy@temple.edu}{shawn.gilroy@temple.edu}
 }

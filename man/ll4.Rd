@@ -10,19 +10,19 @@ ll4(x, lambda = 4, base = 10)
 \item{x}{A numeric vector or scalar of non-negative values to be transformed.}
 
 \item{lambda}{A positive numeric scalar, the lambda parameter of the transformation.
-Controls the curvature. Default is `4`.}
+Controls the curvature. Default is \code{4}.}
 
-\item{base}{A positive numeric scalar, the base of the logarithm. Default is `10`.}
+\item{base}{A positive numeric scalar, the base of the logarithm. Default is \code{10}.}
 }
 \value{
 A numeric vector or scalar of the transformed values.
-  Returns `NaN` for `x < 0` if `lambda` results in non-real numbers (e.g., even root of negative).
-  However, the intended domain is `x >= 0`.
+Returns \code{NaN} for \code{x < 0} if \code{lambda} results in non-real numbers (e.g., even root of negative).
+However, the intended domain is \code{x >= 0}.
 }
 \description{
-Applies a log-logistic like transformation, specifically `log_base(x^lambda + 1) / lambda`.
+Applies a log-logistic like transformation, specifically \code{log_base(x^lambda + 1) / lambda}.
 This transformation is useful for compressing data that spans several orders of
-magnitude while handling zero values gracefully (as `x=0` yields `0`).
+magnitude while handling zero values gracefully (as \code{x=0} yields \code{0}).
 It's a variation related to the Box-Cox transformation or a generalized logarithm.
 }
 \examples{

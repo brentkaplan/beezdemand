@@ -13,7 +13,7 @@
 )
 }
 \arguments{
-\item{object}{A `beezdemand_hurdle` object from [fit_demand_hurdle()].}
+\item{object}{A \code{beezdemand_hurdle} object from \code{\link[=fit_demand_hurdle]{fit_demand_hurdle()}}.}
 
 \item{parm}{Character vector of parameter names to compute CIs for.
 Default includes all fixed effect parameters.}
@@ -21,14 +21,16 @@ Default includes all fixed effect parameters.}
 \item{level}{Confidence level (default 0.95).}
 
 \item{report_space}{Character. Reporting space for parameters:
-- `"internal"`: parameters on internal/fitting scale (log for Q0, alpha)
-- `"natural"`: back-transformed to natural scale}
+\itemize{
+\item \code{"internal"}: parameters on internal/fitting scale (log for Q0, alpha)
+\item \code{"natural"}: back-transformed to natural scale
+}}
 
 \item{...}{Additional arguments (ignored).}
 }
 \value{
-A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
-  `level`, `component`, `estimate_scale`.
+A tibble with columns: \code{term}, \code{estimate}, \code{conf.low}, \code{conf.high},
+\code{level}, \code{component}, \code{estimate_scale}.
 }
 \description{
 Computes confidence intervals for fixed effect parameters from a TMB-based
@@ -36,12 +38,14 @@ hurdle demand model using the asymptotic normal approximation.
 }
 \details{
 Confidence intervals are computed using the asymptotic normal approximation
-based on standard errors from `TMB::sdreport()`. For parameters estimated
+based on standard errors from \code{TMB::sdreport()}. For parameters estimated
 on the log scale (Q0, alpha, k), intervals can be back-transformed to the
-natural scale using `report_space = "natural"`.
+natural scale using \code{report_space = "natural"}.
 
 The transformation uses:
-- For log-scale parameters: exp(estimate +/- z * SE)
+\itemize{
+\item For log-scale parameters: exp(estimate +/- z * SE)
+}
 }
 \examples{
 \dontrun{

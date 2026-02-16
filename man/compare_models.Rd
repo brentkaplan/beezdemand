@@ -7,26 +7,28 @@
 compare_models(..., test = c("auto", "lrt", "none"))
 }
 \arguments{
-\item{...}{Two or more model objects of class `beezdemand_hurdle`,
-`beezdemand_nlme`, or `beezdemand_fixed`.}
+\item{...}{Two or more model objects of class \code{beezdemand_hurdle},
+\code{beezdemand_nlme}, or \code{beezdemand_fixed}.}
 
 \item{test}{Character; type of statistical test. One of:
-- `"auto"` (default): Use LRT if models are nested and comparable, otherwise IC-only.
-- `"lrt"`: Force likelihood ratio test (requires nested models from same backend).
-- `"none"`: Only report information criteria, no p-value.}
+\itemize{
+\item \code{"auto"} (default): Use LRT if models are nested and comparable, otherwise IC-only.
+\item \code{"lrt"}: Force likelihood ratio test (requires nested models from same backend).
+\item \code{"none"}: Only report information criteria, no p-value.
+}}
 }
 \value{
-An object of class `beezdemand_model_comparison` containing:
-  \describe{
-    \item{comparison}{Data frame with model fit statistics}
-    \item{test_type}{Type of test performed}
-    \item{lrt_results}{LRT results if performed (NULL otherwise)}
-    \item{best_model}{Index of best model by BIC}
-    \item{notes}{Character vector of notes/warnings}
-    \item{nesting_verified}{Logical; always FALSE since nesting is not
-      automatically verified. Users must ensure models are properly nested
-      for valid LRT interpretation.}
-  }
+An object of class \code{beezdemand_model_comparison} containing:
+\describe{
+\item{comparison}{Data frame with model fit statistics}
+\item{test_type}{Type of test performed}
+\item{lrt_results}{LRT results if performed (NULL otherwise)}
+\item{best_model}{Index of best model by BIC}
+\item{notes}{Character vector of notes/warnings}
+\item{nesting_verified}{Logical; always FALSE since nesting is not
+automatically verified. Users must ensure models are properly nested
+for valid LRT interpretation.}
+}
 }
 \description{
 Compare multiple demand models using information criteria and likelihood
@@ -40,38 +42,38 @@ can be performed if the models are nested.
 When comparing models from different backends (e.g., hurdle vs NLME), only
 information criteria comparisons are possible since the likelihoods are not
 directly comparable for LRT purposes.
+\subsection{Backend Compatibility}{\tabular{lll}{
+   Backend 1 \tab Backend 2 \tab LRT Possible? \cr
+   hurdle \tab hurdle \tab Yes (if nested) \cr
+   nlme \tab nlme \tab Yes (if nested) \cr
+   fixed \tab fixed \tab No (no likelihood) \cr
+   hurdle \tab nlme \tab No \cr
+   hurdle \tab fixed \tab No \cr
+   nlme \tab fixed \tab No \cr
+}
 
-## Backend Compatibility
-
-| Backend 1 | Backend 2 | LRT Possible? |
-|-----------|-----------|---------------|
-| hurdle    | hurdle    | Yes (if nested) |
-| nlme      | nlme      | Yes (if nested) |
-| fixed     | fixed     | No (no likelihood) |
-| hurdle    | nlme      | No |
-| hurdle    | fixed     | No |
-| nlme      | fixed     | No |
+}
 }
 \section{Statistical Notes}{
 
 The likelihood ratio test (LRT) assumes that:
 \enumerate{
-  \item The models are **nested** (the reduced model is a special case of
-    the full model obtained by constraining parameters).
-  \item Both models are fit to **identical data**.
-  \item Under the null hypothesis, the LR statistic follows a chi-square
-    distribution with degrees of freedom equal to the difference in
-    the number of parameters.
+\item The models are \strong{nested} (the reduced model is a special case of
+the full model obtained by constraining parameters).
+\item Both models are fit to \strong{identical data}.
+\item Under the null hypothesis, the LR statistic follows a chi-square
+distribution with degrees of freedom equal to the difference in
+the number of parameters.
 }
 
-**Important caveat for mixed-effects models:** When variance components
+\strong{Important caveat for mixed-effects models:} When variance components
 are tested at the boundary (e.g., testing whether a random effect variance
 is zero), the standard chi-square distribution is not appropriate. The
 correct null distribution is a mixture of chi-squares (Stram & Lee, 1994).
 The p-values reported here use the standard chi-square approximation,
 which is conservative (p-values are too large) for boundary tests.
 
-This function does **not** automatically verify that models are nested.
+This function does \strong{not} automatically verify that models are nested.
 Users should ensure models are properly nested before interpreting LRT
 p-values.
 }
@@ -92,8 +94,8 @@ compare_models(fit_h, fit_n, test = "none")
 }
 \references{
 Stram, D. O., & Lee, J. W. (1994). Variance components testing in the
-longitudinal mixed effects model. *Biometrics*, 50(4), 1171-1177.
+longitudinal mixed effects model. \emph{Biometrics}, 50(4), 1171-1177.
 }
 \seealso{
-[compare_hurdle_models()] for the legacy hurdle-specific comparison
+\code{\link[=compare_hurdle_models]{compare_hurdle_models()}} for the legacy hurdle-specific comparison
 }

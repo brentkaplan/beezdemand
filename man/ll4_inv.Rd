@@ -7,22 +7,22 @@
 ll4_inv(y, lambda = 4, base = 10)
 }
 \arguments{
-\item{y}{A numeric vector or scalar of transformed values (output from `ll4`).}
+\item{y}{A numeric vector or scalar of transformed values (output from \code{ll4}).}
 
 \item{lambda}{A positive numeric scalar, the lambda parameter used in the original
-`ll4` transformation. Must match the one used for the forward transform. Default is `4`.}
+\code{ll4} transformation. Must match the one used for the forward transform. Default is \code{4}.}
 
 \item{base}{A positive numeric scalar, the base of the logarithm used in the
-original `ll4` transformation. Must match. Default is `10`.}
+original \code{ll4} transformation. Must match. Default is \code{10}.}
 }
 \value{
 A numeric vector or scalar of the original, untransformed values.
-  May return `NaN` if `(base^(y * lambda) - 1)` is negative and `1/lambda` implies
-  an even root (e.g., if `lambda` is 2 or 4).
+May return \code{NaN} if \code{(base^(y * lambda) - 1)} is negative and \code{1/lambda} implies
+an even root (e.g., if \code{lambda} is 2 or 4).
 }
 \description{
-Applies the inverse of the `ll4` transformation.
-Given `y = ll4(x)`, this function calculates `x = (base^(y * lambda) - 1)^(1/lambda)`.
+Applies the inverse of the \code{ll4} transformation.
+Given \code{y = ll4(x)}, this function calculates \code{x = (base^(y * lambda) - 1)^(1/lambda)}.
 }
 \examples{
 original_values <- c(0, 1, 10, 100, 1000)

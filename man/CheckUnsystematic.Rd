@@ -33,5 +33,5 @@ CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 2)
 CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.10, reversals = 0, ncons0 = 1)
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

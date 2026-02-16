@@ -15,32 +15,32 @@ get_demand_param_trends(
 )
 }
 \arguments{
-\item{fit_obj}{A `beezdemand_nlme` object from `fit_demand_mixed()`.}
+\item{fit_obj}{A \code{beezdemand_nlme} object from \code{fit_demand_mixed()}.}
 
 \item{params}{Character vector of parameters to analyze: any of "Q0", "alpha".
-Default `c("Q0", "alpha")`.}
+Default \code{c("Q0", "alpha")}.}
 
 \item{covariates}{Character vector of continuous covariate names for which
 to compute trends.}
 
 \item{specs}{A formula specifying the factors over which to produce trends
-(e.g., `~ drug` for trends by drug; `~ 1` for overall). Default `~ 1`.}
+(e.g., \code{~ drug} for trends by drug; \code{~ 1} for overall). Default \code{~ 1}.}
 
 \item{at}{Optional named list to condition variables (factors or continuous)
-when computing trends (passed through to `emmeans::ref_grid`).}
+when computing trends (passed through to \code{emmeans::ref_grid}).}
 
 \item{ci_level}{Confidence level for intervals. Default 0.95.}
 
-\item{...}{Additional args passed to `emmeans::emtrends()`.}
+\item{...}{Additional args passed to \code{emmeans::emtrends()}.}
 }
 \value{
 A tibble combining trends for each requested parameter and covariate,
-  including columns for grouping factors (from `specs`), `parameter`,
-  `covariate`, `trend` (slope on log10 scale), and its CI (`lower.CL`, `upper.CL`).
+including columns for grouping factors (from \code{specs}), \code{parameter},
+\code{covariate}, \code{trend} (slope on log10 scale), and its CI (\code{lower.CL}, \code{upper.CL}).
 }
 \description{
-Computes the trend (slope) of `Q0` and/or `alpha` with respect to one or more
-continuous covariates using `emmeans::emtrends()` on a fitted `beezdemand_nlme`
+Computes the trend (slope) of \code{Q0} and/or \code{alpha} with respect to one or more
+continuous covariates using \code{emmeans::emtrends()} on a fitted \code{beezdemand_nlme}
 model. Trends are computed on the parameter estimation scale (log10), consistent
 with how parameters are modeled.
 }

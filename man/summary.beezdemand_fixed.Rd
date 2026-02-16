@@ -10,8 +10,10 @@
 \item{object}{A beezdemand_fixed object}
 
 \item{report_space}{Character. Reporting space for core parameters. One of:
-- `"natural"`: report natural-scale parameters (default)
-- `"log10"`: report `log10()`-scale parameters when defined}
+\itemize{
+\item \code{"natural"}: report natural-scale parameters (default)
+\item \code{"log10"}: report \code{log10()}-scale parameters when defined
+}}
 
 \item{...}{Additional arguments (ignored)}
 }

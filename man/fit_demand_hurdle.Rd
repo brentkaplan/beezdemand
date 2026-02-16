@@ -41,9 +41,9 @@ If \code{NULL} (default), sensible defaults are used.}
 
 \item{tmb_control}{List of control parameters for TMB optimization:
 \describe{
-  \item{max_iter}{Maximum number of optimization iterations (default 200)}
-  \item{eval_max}{Maximum number of function evaluations (default 1000)}
-  \item{trace}{Print optimization trace: 0 = none, 1 = some (default 0)}
+\item{max_iter}{Maximum number of optimization iterations (default 200)}
+\item{eval_max}{Maximum number of function evaluations (default 1000)}
+\item{trace}{Print optimization trace: 0 = none, 1 = some (default 0)}
 }}
 
 \item{verbose}{Integer controlling output verbosity: 0 = silent, 1 = progress
@@ -59,20 +59,20 @@ messages, 2 = detailed optimization trace. Default is 1.}
 \value{
 An object of class \code{beezdemand_hurdle} containing:
 \describe{
-  \item{model}{List with coefficients, se, variance_components, correlations}
-  \item{random_effects}{Matrix of empirical Bayes random effect estimates}
-  \item{subject_pars}{Data frame of subject-specific parameters including
-    Q0, alpha, breakpoint, Pmax, Omax}
-  \item{tmb_obj}{TMB objective function object}
-  \item{opt}{Optimization result from \code{nlminb}}
-  \item{sdr}{TMB sdreport object}
-  \item{call}{The matched call}
-  \item{data}{Original data used for fitting}
-  \item{param_info}{List with y_var, x_var, id_var, n_subjects, n_obs, etc.}
-  \item{converged}{Logical indicating convergence}
-  \item{loglik}{Log-likelihood at convergence}
-  \item{AIC, BIC}{Information criteria}
-  \item{error_message}{Error message if fitting failed, NULL otherwise}
+\item{model}{List with coefficients, se, variance_components, correlations}
+\item{random_effects}{Matrix of empirical Bayes random effect estimates}
+\item{subject_pars}{Data frame of subject-specific parameters including
+Q0, alpha, breakpoint, Pmax, Omax}
+\item{tmb_obj}{TMB objective function object}
+\item{opt}{Optimization result from \code{nlminb}}
+\item{sdr}{TMB sdreport object}
+\item{call}{The matched call}
+\item{data}{Original data used for fitting}
+\item{param_info}{List with y_var, x_var, id_var, n_subjects, n_obs, etc.}
+\item{converged}{Logical indicating convergence}
+\item{loglik}{Log-likelihood at convergence}
+\item{AIC, BIC}{Information criteria}
+\item{error_message}{Error message if fitting failed, NULL otherwise}
 }
 }
 \description{
@@ -105,7 +105,7 @@ ratio tests comparing nested models.
 
 The TMB backend estimates positive-constrained parameters on the natural-log
 scale: \eqn{\log(Q_0)}, \eqn{\log(\alpha)}, and \eqn{\log(k)}. Reporting methods
-(`summary()`, `tidy()`, `coef()`) can back-transform to the natural scale or
+(\code{summary()}, \code{tidy()}, \code{coef()}) can back-transform to the natural scale or
 present parameters on the \eqn{\log_{10}} scale.
 
 To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
@@ -136,6 +136,6 @@ compare_hurdle_models(fit3, fit2)
 }
 \seealso{
 \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}},
-  \code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
-  \code{\link{simulate_hurdle_data}}
+\code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
+\code{\link{simulate_hurdle_data}}
 }

@@ -10,13 +10,13 @@
 \item{x}{A beezdemand_fixed object}
 
 \item{report_space}{Character. Reporting space for core parameters. One of
-`"natural"` (default) or `"log10"`.}
+\code{"natural"} (default) or \code{"log10"}.}
 
 \item{...}{Additional arguments (ignored)}
 }
 \value{
 A tibble of model coefficients with columns: id, term, estimate,
-  std.error, statistic, p.value, component
+std.error, statistic, p.value, component
 }
 \description{
 Tidy Method for beezdemand_fixed

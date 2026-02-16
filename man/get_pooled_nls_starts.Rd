@@ -16,7 +16,7 @@ get_pooled_nls_starts(data, y_var, x_var, equation_form)
 \item{equation_form}{The equation form ("zben" or "simplified").}
 }
 \value{
-A named list with `Q0` and `alpha` starting values if successful, else `NULL`.
+A named list with \code{Q0} and \code{alpha} starting values if successful, else \code{NULL}.
 }
 \description{
 Fits a simpler, pooled NLS model (ignoring random effects and fixed effect factors)

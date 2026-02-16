@@ -30,5 +30,5 @@ RecodeOutliers(emp[, c(2:6)], unitshigher = 1)
 }
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

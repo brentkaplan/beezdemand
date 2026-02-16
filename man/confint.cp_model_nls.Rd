@@ -13,7 +13,7 @@
 )
 }
 \arguments{
-\item{object}{A `cp_model_nls` object from [fit_cp_nls()].}
+\item{object}{A \code{cp_model_nls} object from \code{\link[=fit_cp_nls]{fit_cp_nls()}}.}
 
 \item{parm}{Character vector of parameter names to compute CIs for.
 Default includes all parameters.}
@@ -21,26 +21,28 @@ Default includes all parameters.}
 \item{level}{Confidence level (default 0.95).}
 
 \item{method}{Character. Method for computing intervals passed to
-`nlstools::confint2()`:
-- `"asymptotic"` (default): Wald-type asymptotic intervals
-- `"profile"`: Profile-t confidence intervals}
+\code{nlstools::confint2()}:
+\itemize{
+\item \code{"asymptotic"} (default): Wald-type asymptotic intervals
+\item \code{"profile"}: Profile-t confidence intervals
+}}
 
-\item{...}{Additional arguments passed to `nlstools::confint2()`.}
+\item{...}{Additional arguments passed to \code{nlstools::confint2()}.}
 }
 \value{
-A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
-  `level`, `method`.
+A tibble with columns: \code{term}, \code{estimate}, \code{conf.low}, \code{conf.high},
+\code{level}, \code{method}.
 }
 \description{
 Computes confidence intervals for parameters from a nonlinear cross-price
-demand model using `nlstools::confint2()`.
+demand model using \code{nlstools::confint2()}.
 }
 \details{
-This method wraps `nlstools::confint2()` to provide confidence intervals
-for the log10-parameterized coefficients (`log10_qalone`, `I`, `log10_beta`).
+This method wraps \code{nlstools::confint2()} to provide confidence intervals
+for the log10-parameterized coefficients (\code{log10_qalone}, \code{I}, \code{log10_beta}).
 
 For back-transformed natural-scale confidence intervals, apply the
-transformation: `10^conf.low` and `10^conf.high` for log10-scale parameters.
+transformation: \code{10^conf.low} and \code{10^conf.high} for log10-scale parameters.
 }
 \examples{
 \dontrun{

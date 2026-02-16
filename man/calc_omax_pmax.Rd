@@ -20,9 +20,9 @@ based on alpha (approximately 0 to 10/alpha).}
 \value{
 A named list with:
 \describe{
-  \item{Pmax}{Price at maximum expenditure}
-  \item{Omax}{Maximum expenditure (price * quantity)}
-  \item{Qmax}{Quantity at Pmax}
+\item{Pmax}{Price at maximum expenditure}
+\item{Omax}{Maximum expenditure (price * quantity)}
+\item{Qmax}{Quantity at Pmax}
 }
 }
 \description{

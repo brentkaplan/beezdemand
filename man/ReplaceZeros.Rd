@@ -27,5 +27,5 @@ Replaces specified number of 0s with replacement value.
 ReplaceZeros(apt, nrepl = "all", replnum = .01)
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

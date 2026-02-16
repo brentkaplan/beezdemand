@@ -60,5 +60,5 @@ ExtraF(apt, "koff", k = 2, groupcol = "group")
 }
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

@@ -7,19 +7,19 @@
 \method{print}{beezdemand_nlme}(x, digits = max(3L, getOption("digits") - 3L), ...)
 }
 \arguments{
-\item{x}{An object of class `beezdemand_nlme`.}
+\item{x}{An object of class \code{beezdemand_nlme}.}
 
-\item{digits}{Minimal number of significant digits, see `print.default`.}
+\item{digits}{Minimal number of significant digits, see \code{print.default}.}
 
-\item{...}{Additional arguments passed to `print.nlme` if the model exists.}
+\item{...}{Additional arguments passed to \code{print.nlme} if the model exists.}
 }
 \value{
-Invisibly returns the original object `x`.
+Invisibly returns the original object \code{x}.
 }
 \description{
-Provides a concise summary of a `beezdemand_nlme` object, typically
+Provides a concise summary of a \code{beezdemand_nlme} object, typically
 displaying the call, model specifications, and key results from the
-`nlme` fit if successful.
+\code{nlme} fit if successful.
 }
 \examples{
 \dontrun{

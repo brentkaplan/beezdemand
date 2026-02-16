@@ -14,10 +14,10 @@ compare_hurdle_models(model_full, model_reduced)
 \value{
 Invisibly returns a list with:
 \describe{
-  \item{lr_stat}{Likelihood ratio test statistic}
-  \item{df}{Degrees of freedom}
-  \item{p_value}{P-value from chi-squared distribution}
-  \item{model_comparison}{Data frame with model comparison statistics}
+\item{lr_stat}{Likelihood ratio test statistic}
+\item{df}{Degrees of freedom}
+\item{p_value}{P-value from chi-squared distribution}
+\item{model_comparison}{Data frame with model comparison statistics}
 }
 }
 \description{

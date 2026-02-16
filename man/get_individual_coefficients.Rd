@@ -11,7 +11,7 @@ get_individual_coefficients(
 )
 }
 \arguments{
-\item{fit_obj}{A `beezdemand_nlme` object returned by `fit_demand_mixed()`.}
+\item{fit_obj}{A \code{beezdemand_nlme} object returned by \code{fit_demand_mixed()}.}
 
 \item{params}{Character vector specifying which parameters to calculate.
 Options are "Q0", "alpha", or c("Q0", "alpha"). Default is c("Q0", "alpha").}
@@ -22,15 +22,19 @@ one row per individual-parameter-factor combination. Default is "wide".}
 }
 \value{
 A data frame with individual-level predicted coefficients.
-  - In "wide" format: rows are individuals, columns are parameter-factor combinations
-  - In "long" format: columns are id, parameter, condition, coefficient_value
+\itemize{
+\item In "wide" format: rows are individuals, columns are parameter-factor combinations
+\item In "long" format: columns are id, parameter, condition, coefficient_value
+}
 
-  Column naming convention for wide format:
-  - `estimated_\{param\}_intercept`: Baseline/reference level coefficient
-  - `estimated_\{param\}_\{factor\}\{level\}`: Factor level-specific coefficient
+Column naming convention for wide format:
+\itemize{
+\item \verb{estimated_\\\{param\\\}_intercept}: Baseline/reference level coefficient
+\item \verb{estimated_\\\{param\\\}_\\\{factor\\\}\\\{level\\\}}: Factor level-specific coefficient
+}
 
-  All coefficients are on the log10 scale (same as model estimation scale).
-  To convert to natural scale, use `10^coefficient`.
+All coefficients are on the log10 scale (same as model estimation scale).
+To convert to natural scale, use \code{10^coefficient}.
 }
 \description{
 This function extracts and combines fixed and random effects to calculate
@@ -41,18 +45,21 @@ structure and calculates coefficients for each individual and factor level.
 \details{
 Individual-level coefficients represent the predicted parameter values for each
 subject in the study. For models with factors, these coefficients combine:
-1. The baseline intercept effect (fixed + random)
-2. The factor-specific effect (fixed + random) for each factor level
+\enumerate{
+\item The baseline intercept effect (fixed + random)
+\item The factor-specific effect (fixed + random) for each factor level
+}
 
 This is equivalent to manually calculating:
-`coefficient = intercept_fixed + intercept_random + factor_fixed + factor_random`
-
+\code{coefficient = intercept_fixed + intercept_random + factor_fixed + factor_random}
 
 The function automatically handles:
-- Models with or without factors
-- Any number of factor levels
-- Missing random effects (defaults to 0)
-- Complex factor structures with multiple factors
+\itemize{
+\item Models with or without factors
+\item Any number of factor levels
+\item Missing random effects (defaults to 0)
+\item Complex factor structures with multiple factors
+}
 
 For models without factors, only intercept coefficients are calculated.
 For models with factors, both intercept and factor-level coefficients are provided.

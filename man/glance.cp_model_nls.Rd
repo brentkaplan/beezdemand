@@ -13,12 +13,12 @@
 }
 \value{
 A one-row data frame with model summary statistics:
-  \item{r.squared}{R-squared value indicating model fit}
-  \item{aic}{Akaike Information Criterion}
-  \item{bic}{Bayesian Information Criterion}
-  \item{equation}{The equation type used in the model}
-  \item{method}{The method used to fit the model}
-  \item{transform}{The transformation applied to the data, if any}
+\item{r.squared}{R-squared value indicating model fit}
+\item{aic}{Akaike Information Criterion}
+\item{bic}{Bayesian Information Criterion}
+\item{equation}{The equation type used in the model}
+\item{method}{The method used to fit the model}
+\item{transform}{The transformation applied to the data, if any}
 }
 \description{
 This function extracts model summary statistics from a cross-price demand model

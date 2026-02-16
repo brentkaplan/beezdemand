@@ -19,52 +19,54 @@ check_systematic_cp(
 )
 }
 \arguments{
-\item{data}{Data frame with columns: `id` (optional), `x` (price), `y` (consumption).}
+\item{data}{Data frame with columns: \code{id} (optional), \code{x} (price), \code{y} (consumption).}
 
-\item{trend_threshold}{Numeric. Threshold for trend detection. Default `0.025`.}
+\item{trend_threshold}{Numeric. Threshold for trend detection. Default \code{0.025}.}
 
-\item{bounce_threshold_down}{Numeric. Bounce threshold for upward trends. Default `0.1`.}
+\item{bounce_threshold_down}{Numeric. Bounce threshold for upward trends. Default \code{0.1}.}
 
-\item{bounce_threshold_up}{Numeric. Bounce threshold for downward trends. Default `0.1`.}
+\item{bounce_threshold_up}{Numeric. Bounce threshold for downward trends. Default \code{0.1}.}
 
-\item{bounce_threshold_none}{Numeric. Bounce threshold when no trend. Default `0.1`.}
+\item{bounce_threshold_none}{Numeric. Bounce threshold when no trend. Default \code{0.1}.}
 
-\item{consecutive_zeros}{Integer. Zeros for reversal detection. Default `2`.}
+\item{consecutive_zeros}{Integer. Zeros for reversal detection. Default \code{2}.}
 
-\item{consecutive_nonzeros}{Integer. Non-zeros for return detection. Default `2`.}
+\item{consecutive_nonzeros}{Integer. Non-zeros for return detection. Default \code{2}.}
 
-\item{expected_down}{Logical. Suppress reversal detection if TRUE. Default `FALSE`.}
+\item{expected_down}{Logical. Suppress reversal detection if TRUE. Default \code{FALSE}.}
 
-\item{x_var}{Character. Name of the price column. Default `"x"`.}
+\item{x_var}{Character. Name of the price column. Default \code{"x"}.}
 
-\item{y_var}{Character. Name of the consumption column. Default `"y"`.}
+\item{y_var}{Character. Name of the consumption column. Default \code{"y"}.}
 
-\item{id_var}{Character. Name of the subject identifier column. Default `"id"`.}
+\item{id_var}{Character. Name of the subject identifier column. Default \code{"id"}.}
 }
 \value{
-An object of class `beezdemand_systematicity` with the same structure
-  as `check_systematic_demand()`, with `type = "cp"`.
+An object of class \code{beezdemand_systematicity} with the same structure
+as \code{check_systematic_demand()}, with \code{type = "cp"}.
 }
 \description{
 Modern interface for screening cross-price data with standardized output
-vocabulary aligned with `check_systematic_demand()`.
+vocabulary aligned with \code{check_systematic_demand()}.
 }
 \details{
-If the data contains an `id` column (or column specified by `id_var`), each
+If the data contains an \code{id} column (or column specified by \code{id_var}), each
 unique ID is checked separately. Otherwise, the entire dataset is treated
 as a single pattern.
 
 For cross-price data, the wrapper preserves the legacy meaning of
-`check_unsystematic_cp()`:
-- `trend_direction` and `bounce_direction` are taken directly from the legacy
-  function outputs.
-- `trend_pass` is set to `NA` because cross-price systematicity does not use a
-  separate trend “pass/fail” criterion in the same way as purchase-task
-  screening; instead, trend classification determines which bounce rule
-  applies.
-- `bounce_stat` is reported as the proportion relevant to the legacy bounce
-  rule for the detected `trend_direction` (or `expected_down` case), computed
-  from the legacy bounce counts and the number of price steps.
+\code{check_unsystematic_cp()}:
+\itemize{
+\item \code{trend_direction} and \code{bounce_direction} are taken directly from the legacy
+function outputs.
+\item \code{trend_pass} is set to \code{NA} because cross-price systematicity does not use a
+separate trend “pass/fail” criterion in the same way as purchase-task
+screening; instead, trend classification determines which bounce rule
+applies.
+\item \code{bounce_stat} is reported as the proportion relevant to the legacy bounce
+rule for the detected \code{trend_direction} (or \code{expected_down} case), computed
+from the legacy bounce counts and the number of price steps.
+}
 }
 \examples{
 \dontrun{

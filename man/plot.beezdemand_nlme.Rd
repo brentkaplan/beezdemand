@@ -39,24 +39,24 @@
 )
 }
 \arguments{
-\item{x}{A `beezdemand_nlme` object.}
+\item{x}{A \code{beezdemand_nlme} object.}
 
 \item{type}{Plot type: "demand", "population", "individual", or "both".}
 
 \item{ids}{Optional vector of subject IDs to plot.}
 
-\item{show_observed}{Logical. If TRUE, plots the original data points. Default `TRUE`.}
+\item{show_observed}{Logical. If TRUE, plots the original data points. Default \code{TRUE}.}
 
-\item{observed_point_alpha}{Alpha for observed points. Default `0.6`.}
+\item{observed_point_alpha}{Alpha for observed points. Default \code{0.6}.}
 
 \item{show_pred}{Which prediction layers to plot: "population", "individual",
 or "both".}
 
-\item{n_points}{Integer. Number of points for prediction lines. Default `100`.}
+\item{n_points}{Integer. Number of points for prediction lines. Default \code{100}.}
 
-\item{inv_fun}{Optional function to inverse-transform y-axis and predictions. Default `identity`.}
+\item{inv_fun}{Optional function to inverse-transform y-axis and predictions. Default \code{identity}.}
 
-\item{facet}{Optional faceting formula (e.g., `~ dose`).}
+\item{facet}{Optional faceting formula (e.g., \code{~ dose}).}
 
 \item{at}{Optional named list giving values for continuous covariates used in the
 fixed-effects RHS. When building prediction grids for population- or individual-
@@ -66,14 +66,14 @@ model data. Factor variables are always handled as grids (population) or
 observed combinations (individual) as before.}
 
 \item{color_by}{Optional character string: name of a factor to color lines and/or points by.
-Must be a column in `x$data`.}
+Must be a column in \code{x$data}.}
 
 \item{linetype_by}{Optional character string: name of a factor for linetypes of population prediction lines
 if individual lines are also shown (otherwise applies to the shown lines).
-Must be a model factor in `x$param_info$factors`.}
+Must be a model factor in \code{x$param_info$factors}.}
 
 \item{shape_by}{Optional character string: name of a factor for shapes of observed points.
-Must be a column in `x$data`.}
+Must be a column in \code{x$data}.}
 
 \item{x_trans}{Character. Transformation for x-axis. Default "log".}
 
@@ -100,15 +100,15 @@ to drop x <= 0 values instead.}
 
 \item{ylab}{Deprecated alias for \code{y_lab}.}
 
-\item{observed_point_size}{Size for observed points. Default `2`.}
+\item{observed_point_size}{Size for observed points. Default \code{2}.}
 
-\item{pop_line_size}{Size for population prediction lines. Default `1`.}
+\item{pop_line_size}{Size for population prediction lines. Default \code{1}.}
 
-\item{ind_line_size}{Size for individual prediction lines. Default `0.6`.}
+\item{ind_line_size}{Size for individual prediction lines. Default \code{0.6}.}
 
-\item{pop_line_alpha}{Alpha for population prediction lines. Default `0.9`.}
+\item{pop_line_alpha}{Alpha for population prediction lines. Default \code{0.9}.}
 
-\item{ind_line_alpha}{Alpha for individual prediction lines. Default `0.3`.}
+\item{ind_line_alpha}{Alpha for individual prediction lines. Default \code{0.3}.}
 
 \item{...}{Additional arguments (currently unused).}
 }
@@ -116,6 +116,6 @@ to drop x <= 0 values instead.}
 A ggplot2 object.
 }
 \description{
-Creates a ggplot2 visualization of a fitted `beezdemand_nlme` model,
+Creates a ggplot2 visualization of a fitted \code{beezdemand_nlme} model,
 showing observed data points and/or model prediction lines.
 }

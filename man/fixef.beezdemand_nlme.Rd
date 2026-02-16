@@ -7,16 +7,16 @@
 \method{fixef}{beezdemand_nlme}(object, ...)
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` object.}
+\item{object}{A \code{beezdemand_nlme} object.}
 
-\item{...}{Additional arguments passed to `nlme::fixef()`.}
+\item{...}{Additional arguments passed to \code{nlme::fixef()}.}
 }
 \value{
 A named numeric vector of fixed-effect coefficients.
 }
 \description{
-S3 method for `fixef` for objects of class `beezdemand_nlme`.
-Extracts the fixed-effect coefficients from the fitted `nlme` model.
+S3 method for \code{fixef} for objects of class \code{beezdemand_nlme}.
+Extracts the fixed-effect coefficients from the fitted \code{nlme} model.
 }
 \seealso{
 \code{\link{coef.beezdemand_nlme}}, \code{\link{ranef.beezdemand_nlme}}

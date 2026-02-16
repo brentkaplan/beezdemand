@@ -13,8 +13,8 @@ plot_qq(object, which = NULL, ...)
 \method{plot_qq}{beezdemand_nlme}(object, which = NULL, ...)
 }
 \arguments{
-\item{object}{A fitted model object with random effects (`beezdemand_hurdle`
-or `beezdemand_nlme`).}
+\item{object}{A fitted model object with random effects (\code{beezdemand_hurdle}
+or \code{beezdemand_nlme}).}
 
 \item{which}{Character vector; which random effects to plot. Default is all.}
 

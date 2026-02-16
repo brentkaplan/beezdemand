@@ -23,5 +23,5 @@ Fallback method for Analytic Pmax
 Derivative-based optimization strategy
 }
 \author{
-Shawn Gilroy <sgilroy1@lsu.edu>
+Shawn Gilroy \href{mailto:sgilroy1@lsu.edu}{sgilroy1@lsu.edu}
 }

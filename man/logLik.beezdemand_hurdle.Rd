@@ -13,7 +13,7 @@
 }
 \value{
 An object of class \code{logLik} with the log-likelihood value
-  and attributes for degrees of freedom and number of observations.
+and attributes for degrees of freedom and number of observations.
 }
 \description{
 Extracts the log-likelihood from a fitted hurdle demand model.

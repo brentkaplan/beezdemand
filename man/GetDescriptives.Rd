@@ -30,11 +30,11 @@ Dataframe with descriptive statistics
 Calculates descriptive statistics from purchase task data.
 }
 \details{
-`r lifecycle::badge("superseded")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
-`GetDescriptives()` has been superseded by [get_descriptive_summary()], which
-provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
-`GetDescriptives()` will continue to work but is no longer recommended for new code.
+\code{GetDescriptives()} has been superseded by \code{\link[=get_descriptive_summary]{get_descriptive_summary()}}, which
+provides a modern S3 interface with standardized methods (\code{print()}, \code{summary()}, \code{plot()}).
+\code{GetDescriptives()} will continue to work but is no longer recommended for new code.
 
 Provides the following descriptive statistics from purchase task data at each price: mean consumption, median consumption, standard deviation of consumption, proportion of 0 values, number of NAs, minimum consumption, and maximum consumption.
 }
@@ -42,8 +42,8 @@ Provides the following descriptive statistics from purchase task data at each pr
 GetDescriptives(apt)
 }
 \seealso{
-[get_descriptive_summary()] for the modern interface
+\code{\link[=get_descriptive_summary]{get_descriptive_summary()}} for the modern interface
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

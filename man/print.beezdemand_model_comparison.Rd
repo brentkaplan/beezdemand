@@ -7,7 +7,7 @@
 \method{print}{beezdemand_model_comparison}(x, digits = 4, ...)
 }
 \arguments{
-\item{x}{A `beezdemand_model_comparison` object.}
+\item{x}{A \code{beezdemand_model_comparison} object.}
 
 \item{digits}{Number of significant digits to print.}
 

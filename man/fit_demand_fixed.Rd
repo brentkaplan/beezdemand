@@ -17,55 +17,57 @@ fit_demand_fixed(
 )
 }
 \arguments{
-\item{data}{Data frame in long format with columns: `id`, `x` (price), `y` (consumption).}
+\item{data}{Data frame in long format with columns: \code{id}, \code{x} (price), \code{y} (consumption).}
 
-\item{equation}{Character. Equation type: `"hs"` (Hursh & Silberberg, 2008),
-`"koff"` (Koffarnus et al., 2015), `"simplified"` (Rzeszutek et al., 2025;
-simplified exponential with normalized decay, no `k` parameter), or
-`"linear"`. The modern aliases `"exponential"` (equivalent to `"hs"`) and
-`"exponentiated"` (equivalent to `"koff"`) are also accepted. Default `"hs"`.}
+\item{equation}{Character. Equation type: \code{"hs"} (Hursh & Silberberg, 2008),
+\code{"koff"} (Koffarnus et al., 2015), \code{"simplified"} (Rzeszutek et al., 2025;
+simplified exponential with normalized decay, no \code{k} parameter), or
+\code{"linear"}. The modern aliases \code{"exponential"} (equivalent to \code{"hs"}) and
+\code{"exponentiated"} (equivalent to \code{"koff"}) are also accepted. Default \code{"hs"}.}
 
-\item{k}{Scaling constant. Numeric value (fixed), `"ind"` (individual),
-`"fit"` (free parameter), or `"range"` (data-driven). Default `2`.}
+\item{k}{Scaling constant. Numeric value (fixed), \code{"ind"} (individual),
+\code{"fit"} (free parameter), or \code{"range"} (data-driven). Default \code{2}.}
 
-\item{agg}{Character. Aggregation method: `"Mean"`, `"Pooled"`, or `NULL`
-for individual fits. Default `NULL`.}
+\item{agg}{Character. Aggregation method: \code{"Mean"}, \code{"Pooled"}, or \code{NULL}
+for individual fits. Default \code{NULL}.}
 
-\item{x_var}{Character. Name of the price column. Default `"x"`.}
+\item{x_var}{Character. Name of the price column. Default \code{"x"}.}
 
-\item{y_var}{Character. Name of the consumption column. Default `"y"`.}
+\item{y_var}{Character. Name of the consumption column. Default \code{"y"}.}
 
-\item{id_var}{Character. Name of the subject identifier column. Default `"id"`.}
+\item{id_var}{Character. Name of the subject identifier column. Default \code{"id"}.}
 
 \item{param_space}{Character. Parameterization used for fitting. One of:
-- `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
-- `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)}
+\itemize{
+\item \code{"natural"}: fit \code{Q0}, \code{alpha} (and \code{k} if \code{k = "fit"}) on their natural scale
+\item \code{"log10"}: fit \code{log10(Q0)}, \code{log10(alpha)} (and \code{log10(k)} if \code{k = "fit"})
+}}
 
-\item{...}{Additional arguments passed to the underlying `FitCurves()` engine.}
+\item{...}{Additional arguments passed to the underlying \code{FitCurves()} engine.}
 }
 \value{
-An object of class `beezdemand_fixed` with components:
-  \describe{
-    \item{results}{Data frame of fitted parameters for each subject}
-    \item{fits}{List of model fit objects (if `detailed = TRUE` internally)}
-    \item{predictions}{List of prediction data frames}
-    \item{data_used}{List of data frames used for each fit}
-    \item{call}{The original function call}
-    \item{equation}{The equation form used}
-    \item{k_spec}{Description of k specification}
-    \item{agg}{Aggregation method used}
-    \item{n_total}{Total number of subjects/fits attempted}
-    \item{n_success}{Number of successful fits}
-    \item{n_fail}{Number of failed fits}
-  }
+An object of class \code{beezdemand_fixed} with components:
+\describe{
+\item{results}{Data frame of fitted parameters for each subject}
+\item{fits}{List of model fit objects (if \code{detailed = TRUE} internally)}
+\item{predictions}{List of prediction data frames}
+\item{data_used}{List of data frames used for each fit}
+\item{call}{The original function call}
+\item{equation}{The equation form used}
+\item{k_spec}{Description of k specification}
+\item{agg}{Aggregation method used}
+\item{n_total}{Total number of subjects/fits attempted}
+\item{n_success}{Number of successful fits}
+\item{n_fail}{Number of failed fits}
+}
 }
 \description{
 Modern interface for fitting individual demand curves via nonlinear
 least squares. Returns a structured S3 object with standard methods
-including `summary()`, `tidy()`, and `glance()`.
+including \code{summary()}, \code{tidy()}, and \code{glance()}.
 }
 \details{
-This function is a modern wrapper around the legacy `FitCurves()` function.
+This function is a modern wrapper around the legacy \code{FitCurves()} function.
 It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.
 }

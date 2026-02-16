@@ -17,54 +17,54 @@
 )
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` object.}
+\item{object}{A \code{beezdemand_nlme} object.}
 
 \item{newdata}{Optional data frame for which to make predictions.
-Must contain `x_var` and all `factors` specified in the original model.
-If group-level predictions are desired (`level=1`), the `id_var` column from
-the original fit must also be present in `newdata` and its levels should
+Must contain \code{x_var} and all \code{factors} specified in the original model.
+If group-level predictions are desired (\code{level=1}), the \code{id_var} column from
+the original fit must also be present in \code{newdata} and its levels should
 correspond to those in the original data for meaningful random effect application.
-If `NULL`, predictions are made for the data used in fitting the model.}
+If \code{NULL}, predictions are made for the data used in fitting the model.}
 
-\item{type}{One of `"response"` (default), `"link"`, `"population"`, or `"individual"`.
-`"population"` and `"individual"` are aliases that set `level` to `0` or `1`,
+\item{type}{One of \code{"response"} (default), \code{"link"}, \code{"population"}, or \code{"individual"}.
+\code{"population"} and \code{"individual"} are aliases that set \code{level} to \code{0} or \code{1},
 respectively.}
 
-\item{level}{Integer, prediction level for `nlme::predict.nlme()`:
+\item{level}{Integer, prediction level for \code{nlme::predict.nlme()}:
 \itemize{
-  \item `0`: Population predictions (based on fixed effects only).
-  \item `1` (or higher, up to number of grouping levels in model): Group-specific
-        predictions (fixed effects + random effects for the specified `id_var` level).
+\item \code{0}: Population predictions (based on fixed effects only).
+\item \code{1} (or higher, up to number of grouping levels in model): Group-specific
+predictions (fixed effects + random effects for the specified \code{id_var} level).
 }
-Default is `0`.}
+Default is \code{0}.}
 
 \item{inv_fun}{Optional function to inverse-transform the predictions.
-Example: If `y_var` was log10-transformed during fitting and `equation_form`
-like "zben" produces predictions on that log10 scale, `inv_fun = function(x) 10^x`
+Example: If \code{y_var} was log10-transformed during fitting and \code{equation_form}
+like "zben" produces predictions on that log10 scale, \code{inv_fun = function(x) 10^x}
 would convert predictions back to the original consumption scale.
-If `equation_form` was "simplified" (which models raw Y), `inv_fun` might be `identity`
+If \code{equation_form} was "simplified" (which models raw Y), \code{inv_fun} might be \code{identity}
 or not needed if predictions are already on the desired scale.}
 
-\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
-because standard errors are not implemented for `beezdemand_nlme` predictions).}
+\item{se.fit}{Logical; if \code{TRUE}, includes a \code{.se.fit} column (currently \code{NA}
+because standard errors are not implemented for \code{beezdemand_nlme} predictions).}
 
-\item{interval}{One of `"none"` (default) or `"confidence"`. When requested,
-`.lower`/`.upper` are returned as `NA`.}
+\item{interval}{One of \code{"none"} (default) or \code{"confidence"}. When requested,
+\code{.lower}/\code{.upper} are returned as \code{NA}.}
 
-\item{interval_level}{Confidence level when `interval = "confidence"`. Currently
+\item{interval_level}{Confidence level when \code{interval = "confidence"}. Currently
 used only for validation.}
 
-\item{...}{Additional arguments passed to `nlme::predict.nlme()`.}
+\item{...}{Additional arguments passed to \code{nlme::predict.nlme()}.}
 }
 \value{
-A tibble containing the original `newdata` columns plus `.fitted`.
-  When requested, `.se.fit` and `.lower`/`.upper` are included (currently `NA`).
+A tibble containing the original \code{newdata} columns plus \code{.fitted}.
+When requested, \code{.se.fit} and \code{.lower}/\code{.upper} are included (currently \code{NA}).
 }
 \description{
-Generates point predictions from a fitted `beezdemand_nlme` model.
+Generates point predictions from a fitted \code{beezdemand_nlme} model.
 Predictions can be made at the population level (fixed effects only) or
 group/subject level (fixed + random effects). The output scale depends
-on the `equation_form` used during model fitting and whether `inv_fun` is applied.
+on the \code{equation_form} used during model fitting and whether \code{inv_fun} is applied.
 }
 \examples{
 \dontrun{

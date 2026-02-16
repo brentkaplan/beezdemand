@@ -14,57 +14,63 @@
 \method{plot}{beezdemand_empirical}(x, type = "histogram", ...)
 }
 \arguments{
-\item{x, object}{A `beezdemand_empirical` object}
+\item{x, object}{A \code{beezdemand_empirical} object}
 
 \item{...}{Additional arguments passed to plotting functions}
 
 \item{type}{Character string specifying plot type. Options:
 \itemize{
-  \item "histogram" (default) - Faceted histograms showing distribution of each measure
-  \item "matrix" - Scatterplot matrix showing pairwise relationships between measures
+\item "histogram" (default) - Faceted histograms showing distribution of each measure
+\item "matrix" - Scatterplot matrix showing pairwise relationships between measures
 }}
 }
 \value{
 \itemize{
-  \item `print()` - Returns the object invisibly (called for side effects)
-  \item `summary()` - Returns a list with extended summary information
-  \item `plot()` - Returns a ggplot2 object
+\item \code{print()} - Returns the object invisibly (called for side effects)
+\item \code{summary()} - Returns a list with extended summary information
+\item \code{plot()} - Returns a ggplot2 object
 }
 }
 \description{
 Methods for printing, summarizing, and visualizing objects of class
-`beezdemand_empirical` created by [get_empirical_measures()].
+\code{beezdemand_empirical} created by \code{\link[=get_empirical_measures]{get_empirical_measures()}}.
 }
 \details{
-## Print Method
+\subsection{Print Method}{
+
 Displays a compact summary showing the number of subjects analyzed and a
 preview of the empirical measures table.
+}
 
-## Summary Method
+\subsection{Summary Method}{
+
 Provides extended information including:
 \itemize{
-  \item Data summary (subjects, zero consumption patterns, completeness)
-  \item Descriptive statistics for each empirical measure (min, median, mean, max, SD)
-  \item Missing data patterns
+\item Data summary (subjects, zero consumption patterns, completeness)
+\item Descriptive statistics for each empirical measure (min, median, mean, max, SD)
+\item Missing data patterns
+}
 }
 
-## Plot Method
+\subsection{Plot Method}{
+
 Creates visualizations of empirical measures across subjects.
 
-**Histogram type** (default):
+\strong{Histogram type} (default):
 \itemize{
-  \item Six-panel faceted plot showing distribution of each measure
-  \item Helps identify central tendencies and outliers
-  \item Uses modern beezdemand styling
+\item Six-panel faceted plot showing distribution of each measure
+\item Helps identify central tendencies and outliers
+\item Uses modern beezdemand styling
 }
 
-**Matrix type**:
+\strong{Matrix type}:
 \itemize{
-  \item Scatterplot matrix (pairs plot) showing relationships between measures
-  \item Useful for identifying correlated demand metrics
-  \item Lower triangle: scatterplots with smoothed trend lines
-  \item Diagonal: density plots
-  \item Upper triangle: correlation coefficients
+\item Scatterplot matrix (pairs plot) showing relationships between measures
+\item Useful for identifying correlated demand metrics
+\item Lower triangle: scatterplots with smoothed trend lines
+\item Diagonal: density plots
+\item Upper triangle: correlation coefficients
+}
 }
 }
 \examples{
@@ -87,5 +93,5 @@ plot(emp, type = "matrix")
 
 }
 \seealso{
-[get_empirical_measures()]
+\code{\link[=get_empirical_measures]{get_empirical_measures()}}
 }

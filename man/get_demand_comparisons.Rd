@@ -18,49 +18,49 @@ get_demand_comparisons(
 )
 }
 \arguments{
-\item{fit_obj}{A `beezdemand_nlme` object.}
+\item{fit_obj}{A \code{beezdemand_nlme} object.}
 
-\item{params_to_compare}{Character vector: "Q0", "alpha", or `c("Q0", "alpha")`. Default `c("Q0", "alpha")`.}
+\item{params_to_compare}{Character vector: "Q0", "alpha", or \code{c("Q0", "alpha")}. Default \code{c("Q0", "alpha")}.}
 
 \item{compare_specs}{A formula specifying the factors whose levels are to be included in the EMM calculation
 prior to contrasting. This defines the "cells" of your design for EMMs.
-E.g., `~ factor1` (EMMs for levels of factor1, averaging over others),
-`~ factor1 * factor2` (EMMs for all cells of factor1 x factor2).
-If `NULL`, it defaults to an interaction of all factors in `fit_obj$param_info$factors`.}
+E.g., \code{~ factor1} (EMMs for levels of factor1, averaging over others),
+\code{~ factor1 * factor2} (EMMs for all cells of factor1 x factor2).
+If \code{NULL}, it defaults to an interaction of all factors in \code{fit_obj$param_info$factors}.}
 
-\item{contrast_type}{Character string specifying the type of contrast (passed to `method` in `emmeans::contrast`).
-Commonly `"pairwise"`, `"revpairwise"`, `"eff"`, `"consec"`, `"poly"`. Default `"pairwise"`.}
+\item{contrast_type}{Character string specifying the type of contrast (passed to \code{method} in \code{emmeans::contrast}).
+Commonly \code{"pairwise"}, \code{"revpairwise"}, \code{"eff"}, \code{"consec"}, \code{"poly"}. Default \code{"pairwise"}.}
 
-\item{contrast_by}{Optional character vector of factor names to condition the contrasts by (passed to `by` in `emmeans::contrast`).
-If `NULL` (default), contrasts are performed over the primary terms implied by `compare_specs` and `contrast_type`.
-Example: If `compare_specs = ~ dose * drug`, `contrast_type = "pairwise"`, and `contrast_by = "dose"`,
-this will perform pairwise comparisons of `drug` levels within each level of `dose`.
-**Note:** If the original `fit_obj` model is additive for the factors involved (i.e., no interaction term
-was fitted), specifying `contrast_by` will result in identical contrast estimates across the levels
-of the `contrast_by` variable(s). In such cases, consider analyzing main effects directly
-(e.g., `compare_specs = ~drug`, `contrast_by = NULL`).}
+\item{contrast_by}{Optional character vector of factor names to condition the contrasts by (passed to \code{by} in \code{emmeans::contrast}).
+If \code{NULL} (default), contrasts are performed over the primary terms implied by \code{compare_specs} and \code{contrast_type}.
+Example: If \code{compare_specs = ~ dose * drug}, \code{contrast_type = "pairwise"}, and \code{contrast_by = "dose"},
+this will perform pairwise comparisons of \code{drug} levels within each level of \code{dose}.
+\strong{Note:} If the original \code{fit_obj} model is additive for the factors involved (i.e., no interaction term
+was fitted), specifying \code{contrast_by} will result in identical contrast estimates across the levels
+of the \code{contrast_by} variable(s). In such cases, consider analyzing main effects directly
+(e.g., \code{compare_specs = ~drug}, \code{contrast_by = NULL}).}
 
 \item{adjust}{P-value adjustment method. Default "tukey".}
 
-\item{at}{Optional named list for `emmeans::ref_grid()`.}
+\item{at}{Optional named list for \code{emmeans::ref_grid()}.}
 
 \item{ci_level}{Confidence level. Default 0.95.}
 
-\item{report_ratios}{Logical. If TRUE, reports contrasts as ratios. Default `TRUE`.}
+\item{report_ratios}{Logical. If TRUE, reports contrasts as ratios. Default \code{TRUE}.}
 
-\item{...}{Additional arguments passed to `emmeans::emmeans()` or `emmeans::contrast()`.}
+\item{...}{Additional arguments passed to \code{emmeans::emmeans()} or \code{emmeans::contrast()}.}
 }
 \value{
 A list named by parameter. Each element contains:
-  \item{emmeans}{Tibble of EMMs (log10 scale) with CIs.}
-  \item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
-  \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of comparisons
-    as ratios (natural scale), with CIs for ratios.}
-  S3 class `beezdemand_comparison` is assigned.
+\item{emmeans}{Tibble of EMMs (log10 scale) with CIs.}
+\item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
+\item{contrasts_ratio}{(If \code{report_ratios=TRUE} and successful) Tibble of comparisons
+as ratios (natural scale), with CIs for ratios.}
+S3 class \code{beezdemand_comparison} is assigned.
 }
 \description{
 Conducts pairwise comparisons for Q0 and/or alpha parameters from a
-`beezdemand_nlme` model across levels of specified factors.
+\code{beezdemand_nlme} model across levels of specified factors.
 Comparisons are performed on the log10 scale of the parameters.
 Results include estimates of differences (on log10 scale) and
 optionally, ratios (on the natural scale by applying 10^difference).

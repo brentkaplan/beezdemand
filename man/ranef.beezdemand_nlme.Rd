@@ -7,17 +7,17 @@
 \method{ranef}{beezdemand_nlme}(object, ...)
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` object.}
+\item{object}{A \code{beezdemand_nlme} object.}
 
-\item{...}{Additional arguments passed to `nlme::ranef()`.}
+\item{...}{Additional arguments passed to \code{nlme::ranef()}.}
 }
 \value{
 A data frame (or list of data frames if multiple levels of grouping)
-  of random effects, as returned by `ranef.nlme()`.
+of random effects, as returned by \code{ranef.nlme()}.
 }
 \description{
-S3 method for `ranef` for objects of class `beezdemand_nlme`.
-Extracts the random effects from the fitted `nlme` model.
+S3 method for \code{ranef} for objects of class \code{beezdemand_nlme}.
+Extracts the random effects from the fitted \code{nlme} model.
 }
 \seealso{
 \code{\link{coef.beezdemand_nlme}}, \code{\link{fixef.beezdemand_nlme}}

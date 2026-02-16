@@ -24,7 +24,7 @@
 
 \item{data}{Optional data frame with x and y; if NULL, uses object$data.}
 
-\item{inv_fun}{Optional function to inverse-transform predictions. Default is `identity`.}
+\item{inv_fun}{Optional function to inverse-transform predictions. Default is \code{identity}.}
 
 \item{n_points}{Number of points used for prediction curve.}
 
@@ -40,7 +40,7 @@
 
 \item{point_size}{Size of data points.}
 
-\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
+\item{inverse_fun}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{inv_fun} instead.}
 
 \item{...}{Additional arguments (passed to predict).}
 }

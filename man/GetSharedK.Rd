@@ -29,5 +29,5 @@ GetSharedK(apt, "hs", sharecol = "id")
 }
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com> Shawn P Gilroy <shawn.gilroy@temple.edu>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com} Shawn P Gilroy \href{mailto:shawn.gilroy@temple.edu}{shawn.gilroy@temple.edu}
 }

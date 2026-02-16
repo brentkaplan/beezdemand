@@ -7,7 +7,7 @@
 \method{confint}{beezdemand_fixed}(object, parm = NULL, level = 0.95, ...)
 }
 \arguments{
-\item{object}{A `beezdemand_fixed` object from [fit_demand_fixed()].}
+\item{object}{A \code{beezdemand_fixed} object from \code{\link[=fit_demand_fixed]{fit_demand_fixed()}}.}
 
 \item{parm}{Character vector of parameter names to compute CIs for.
 Default includes all available parameters.}
@@ -17,8 +17,8 @@ Default includes all available parameters.}
 \item{...}{Additional arguments (ignored).}
 }
 \value{
-A tibble with columns: `id`, `term`, `estimate`, `conf.low`,
-  `conf.high`, `level`.
+A tibble with columns: \code{id}, \code{term}, \code{estimate}, \code{conf.low},
+\code{conf.high}, \code{level}.
 }
 \description{
 Computes confidence intervals for Q0, alpha, and k parameters from
@@ -26,12 +26,12 @@ individual demand curve fits. Uses asymptotic normal approximation based
 on standard errors when available.
 }
 \details{
-For `beezdemand_fixed` objects, confidence intervals are computed using
+For \code{beezdemand_fixed} objects, confidence intervals are computed using
 the asymptotic normal approximation: estimate +/- z * SE. If standard errors
-are not available for a parameter, the confidence bounds will be `NA`.
+are not available for a parameter, the confidence bounds will be \code{NA}.
 
-When the underlying NLS fit objects are available (from `detailed = TRUE`),
-this method attempts to use `nlstools::confint2()` for more accurate
+When the underlying NLS fit objects are available (from \code{detailed = TRUE}),
+this method attempts to use \code{nlstools::confint2()} for more accurate
 profile-based intervals.
 }
 \examples{

@@ -6,14 +6,14 @@
 \title{Example nonhuman demand data with drug and dose}
 \format{
 A tibble with 135 rows and 6 columns:
-  \describe{
-    \item{monkey}{unique identifier}
-    \item{x}{fixed-ratio requirement}
-    \item{y}{consumption}
-    \item{y_ll4}{consumption transformed via ll4}
-    \item{drug}{drug}
-    \item{dose}{dose}
-  }
+\describe{
+\item{monkey}{unique identifier}
+\item{x}{fixed-ratio requirement}
+\item{y}{consumption}
+\item{y_ll4}{consumption transformed via ll4}
+\item{drug}{drug}
+\item{dose}{dose}
+}
 }
 \usage{
 ko

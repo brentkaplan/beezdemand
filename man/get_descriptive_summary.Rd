@@ -16,12 +16,12 @@ get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
 \item{id_var}{Character string specifying the column name for subject ID (default: "id")}
 }
 \value{
-An S3 object of class `beezdemand_descriptive` containing:
+An S3 object of class \code{beezdemand_descriptive} containing:
 \itemize{
-  \item \strong{statistics} - Data frame with 8 columns (Price, Mean, Median, SD,
-    PropZeros, NAs, Min, Max) and one row per unique price
-  \item \strong{call} - The matched call
-  \item \strong{data_summary} - List with n_subjects, n_prices, and prices vector
+\item \strong{statistics} - Data frame with 8 columns (Price, Mean, Median, SD,
+PropZeros, NAs, Min, Max) and one row per unique price
+\item \strong{call} - The matched call
+\item \strong{data_summary} - List with n_subjects, n_prices, and prices vector
 }
 }
 \description{
@@ -29,19 +29,19 @@ Calculates summary statistics for consumption data at each price point,
 including measures of central tendency (mean, median), variability (SD),
 range (min, max), and data quality (proportion of zeros, missing values).
 
-This is the modern replacement for [GetDescriptives()], returning a structured
+This is the modern replacement for \code{\link[=GetDescriptives]{GetDescriptives()}}, returning a structured
 S3 object with dedicated methods for printing, summarizing, and visualizing.
 }
 \details{
 For each unique price in the dataset, the function calculates:
 \itemize{
-  \item \strong{Mean} - Average consumption across subjects (rounded to 2 decimals)
-  \item \strong{Median} - Median consumption (rounded to 2 decimals)
-  \item \strong{SD} - Standard deviation (rounded to 2 decimals)
-  \item \strong{PropZeros} - Proportion of subjects with zero consumption (0-1)
-  \item \strong{NAs} - Count of missing values
-  \item \strong{Min} - Minimum consumption value (rounded to 2 decimals)
-  \item \strong{Max} - Maximum consumption value (rounded to 2 decimals)
+\item \strong{Mean} - Average consumption across subjects (rounded to 2 decimals)
+\item \strong{Median} - Median consumption (rounded to 2 decimals)
+\item \strong{SD} - Standard deviation (rounded to 2 decimals)
+\item \strong{PropZeros} - Proportion of subjects with zero consumption (0-1)
+\item \strong{NAs} - Count of missing values
+\item \strong{Min} - Minimum consumption value (rounded to 2 decimals)
+\item \strong{Max} - Maximum consumption value (rounded to 2 decimals)
 }
 }
 \examples{
@@ -65,8 +65,8 @@ summary(desc)
 }
 \seealso{
 \itemize{
-  \item [GetDescriptives()] - Legacy function (superseded)
-  \item [plot.beezdemand_descriptive()] - Visualization method
-  \item [summary.beezdemand_descriptive()] - Extended summary
+\item \code{\link[=GetDescriptives]{GetDescriptives()}} - Legacy function (superseded)
+\item \code{\link[=plot.beezdemand_descriptive]{plot.beezdemand_descriptive()}} - Visualization method
+\item \code{\link[=summary.beezdemand_descriptive]{summary.beezdemand_descriptive()}} - Extended summary
 }
 }

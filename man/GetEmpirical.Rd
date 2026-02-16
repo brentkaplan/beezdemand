@@ -22,11 +22,11 @@ Data frame of empirical measures
 Calculates empirical measures for purchase task data
 }
 \details{
-`r lifecycle::badge("superseded")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
-`GetEmpirical()` has been superseded by [get_empirical_measures()], which
-provides a modern S3 interface with standardized methods (`print()`, `summary()`, `plot()`).
-`GetEmpirical()` will continue to work but is no longer recommended for new code.
+\code{GetEmpirical()} has been superseded by \code{\link[=get_empirical_measures]{get_empirical_measures()}}, which
+provides a modern S3 interface with standardized methods (\code{print()}, \code{summary()}, \code{plot()}).
+\code{GetEmpirical()} will continue to work but is no longer recommended for new code.
 
 Will calculate and return the following empirical measures: Intensity, BP0, BP1, Omax, and Pmax
 }
@@ -35,8 +35,8 @@ Will calculate and return the following empirical measures: Intensity, BP0, BP1,
 GetEmpirical(apt)
 }
 \seealso{
-[get_empirical_measures()] for the modern interface
+\code{\link[=get_empirical_measures]{get_empirical_measures()}} for the modern interface
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

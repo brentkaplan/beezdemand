@@ -24,7 +24,7 @@
 \item{data}{Optional data frame containing columns \code{x} and \code{y} to plot.
 If not provided, the function uses \code{object$data} if available.}
 
-\item{inv_fun}{Optional function to inverse-transform predictions. Default is `identity`.
+\item{inv_fun}{Optional function to inverse-transform predictions. Default is \code{identity}.
 Not typically used for linear models but included for API consistency.}
 
 \item{n_points}{Number of points to create in the prediction grid. Default is \code{100}.}

@@ -16,56 +16,57 @@ get_empirical_measures(data, x_var = "x", y_var = "y", id_var = "id")
 \item{id_var}{Character string specifying the column name for subject ID (default: "id")}
 }
 \value{
-An S3 object of class `beezdemand_empirical` containing:
+An S3 object of class \code{beezdemand_empirical} containing:
 \itemize{
-  \item \strong{measures} - Data frame with one row per subject and columns:
-    \itemize{
-      \item \emph{id} - Subject identifier
-      \item \emph{Intensity} - Consumption at lowest price (demand intensity)
-      \item \emph{BP0} - Breakpoint 0: first price where consumption = 0
-      \item \emph{BP1} - Breakpoint 1: last price with non-zero consumption
-      \item \emph{Omaxe} - Empirical Omax: maximum total expenditure (price × consumption)
-      \item \emph{Pmaxe} - Empirical Pmax: price at which maximum expenditure occurs
-    }
-  \item \strong{call} - The matched call
-  \item \strong{data_summary} - List with n_subjects, has_zeros, and complete_cases
+\item \strong{measures} - Data frame with one row per subject and columns:
+\itemize{
+\item \emph{id} - Subject identifier
+\item \emph{Intensity} - Consumption at lowest price (demand intensity)
+\item \emph{BP0} - Breakpoint 0: first price where consumption = 0
+\item \emph{BP1} - Breakpoint 1: last price with non-zero consumption
+\item \emph{Omaxe} - Empirical Omax: maximum total expenditure (price × consumption)
+\item \emph{Pmaxe} - Empirical Pmax: price at which maximum expenditure occurs
+}
+\item \strong{call} - The matched call
+\item \strong{data_summary} - List with n_subjects, has_zeros, and complete_cases
 }
 }
 \description{
 Calculates empirical (model-free) measures of demand from purchase task data.
 These metrics characterize consumption patterns without fitting a demand curve model.
 
-This is the modern replacement for [GetEmpirical()], returning a structured
+This is the modern replacement for \code{\link[=GetEmpirical]{GetEmpirical()}}, returning a structured
 S3 object with dedicated methods for printing, summarizing, and visualizing.
 }
 \details{
-## Empirical Measures
+\subsection{Empirical Measures}{
 
 \itemize{
-  \item \strong{Intensity} - The consumption value at the lowest price point.
-    Reflects unrestricted demand or preferred level of consumption.
+\item \strong{Intensity} - The consumption value at the lowest price point.
+Reflects unrestricted demand or preferred level of consumption.
 
-  \item \strong{BP0} (Breakpoint 0) - The first price at which consumption drops to zero.
-    If consumption never reaches zero, BP0 = NA. Indicates the price threshold
-    where the commodity becomes unaffordable or undesirable.
+\item \strong{BP0} (Breakpoint 0) - The first price at which consumption drops to zero.
+If consumption never reaches zero, BP0 = NA. Indicates the price threshold
+where the commodity becomes unaffordable or undesirable.
 
-  \item \strong{BP1} (Breakpoint 1) - The highest price at which consumption is still
-    non-zero. If all consumption is zero, BP1 = NA. Represents the upper limit
-    of the commodity's value to the consumer.
+\item \strong{BP1} (Breakpoint 1) - The highest price at which consumption is still
+non-zero. If all consumption is zero, BP1 = NA. Represents the upper limit
+of the commodity's value to the consumer.
 
-  \item \strong{Omaxe} (Empirical Omax) - The maximum observed expenditure across all
-    prices (max of price × consumption). Represents peak spending on the commodity.
+\item \strong{Omaxe} (Empirical Omax) - The maximum observed expenditure across all
+prices (max of price × consumption). Represents peak spending on the commodity.
 
-  \item \strong{Pmaxe} (Empirical Pmax) - The price at which maximum expenditure occurs.
-    If maximum expenditure is zero, Pmaxe = 0. If multiple prices have the same
-    maximum expenditure, the highest price is returned.
+\item \strong{Pmaxe} (Empirical Pmax) - The price at which maximum expenditure occurs.
+If maximum expenditure is zero, Pmaxe = 0. If multiple prices have the same
+maximum expenditure, the highest price is returned.
+}
 }
 }
 \note{
 \itemize{
-  \item Data must not contain duplicate prices within a subject (will error)
-  \item Missing values (NA) in consumption are preserved in calculations where applicable
-  \item Breakpoints require at least one zero consumption value to be meaningful
+\item Data must not contain duplicate prices within a subject (will error)
+\item Missing values (NA) in consumption are preserved in calculations where applicable
+\item Breakpoints require at least one zero consumption value to be meaningful
 }
 }
 \examples{
@@ -90,8 +91,8 @@ plot(emp, type = "matrix")  # scatterplot matrix
 }
 \seealso{
 \itemize{
-  \item [GetEmpirical()] - Legacy function (superseded)
-  \item [plot.beezdemand_empirical()] - Visualization method
-  \item [summary.beezdemand_empirical()] - Extended summary
+\item \code{\link[=GetEmpirical]{GetEmpirical()}} - Legacy function (superseded)
+\item \code{\link[=plot.beezdemand_empirical]{plot.beezdemand_empirical()}} - Visualization method
+\item \code{\link[=summary.beezdemand_empirical]{summary.beezdemand_empirical()}} - Extended summary
 }
 }

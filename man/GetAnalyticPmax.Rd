@@ -23,5 +23,5 @@ Numeric
 ...
 }
 \author{
-Shawn Gilroy <sgilroy1@lsu.edu>
+Shawn Gilroy \href{mailto:sgilroy1@lsu.edu}{sgilroy1@lsu.edu}
 }

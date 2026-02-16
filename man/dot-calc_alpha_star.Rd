@@ -22,12 +22,12 @@ by hurdle models) or \code{"10"} (log10, used by HS/Koff equations).}
 }
 \value{
 A list with elements:
-  \describe{
-    \item{estimate}{Numeric scalar; the alpha_star value, or \code{NA}.}
-    \item{se}{Numeric scalar; delta-method SE, or \code{NA}.}
-    \item{note}{Character or \code{NULL}; diagnostic message if alpha_star
-      could not be computed.}
-  }
+\describe{
+\item{estimate}{Numeric scalar; the alpha_star value, or \code{NA}.}
+\item{se}{Numeric scalar; delta-method SE, or \code{NA}.}
+\item{note}{Character or \code{NULL}; diagnostic message if alpha_star
+could not be computed.}
+}
 }
 \description{
 Implements Strategy B normalization of the demand elasticity parameter
@@ -44,7 +44,7 @@ matrix (or SE vector) is supplied.
 \references{
 Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N. (2025).
 Overviewing the exponential model of demand and introducing a simplification
-that solves issues of span, scale, and zeros. *Experimental and Clinical
-Psychopharmacology*.
+that solves issues of span, scale, and zeros. \emph{Experimental and Clinical
+Psychopharmacology}.
 }
 \keyword{internal}

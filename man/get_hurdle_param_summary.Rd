@@ -14,14 +14,14 @@ get_hurdle_param_summary(fit_obj, ci_level = 0.95)
 \value{
 A data frame with summary statistics for each parameter:
 \describe{
-  \item{parameter}{Parameter name}
-  \item{mean}{Mean across subjects}
-  \item{sd}{Standard deviation across subjects}
-  \item{median}{Median across subjects}
-  \item{lcl}{Lower confidence limit (based on percentiles)}
-  \item{ucl}{Upper confidence limit (based on percentiles)}
-  \item{min}{Minimum value}
-  \item{max}{Maximum value}
+\item{parameter}{Parameter name}
+\item{mean}{Mean across subjects}
+\item{sd}{Standard deviation across subjects}
+\item{median}{Median across subjects}
+\item{lcl}{Lower confidence limit (based on percentiles)}
+\item{ucl}{Upper confidence limit (based on percentiles)}
+\item{min}{Minimum value}
+\item{max}{Maximum value}
 }
 }
 \description{

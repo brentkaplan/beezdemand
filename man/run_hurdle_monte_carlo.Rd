@@ -37,11 +37,11 @@ zero. Default is TRUE.}
 \value{
 A list with:
 \describe{
-  \item{estimates}{Data frame of parameter estimates from each simulation}
-  \item{true_params}{True parameter values used}
-  \item{summary}{Summary statistics including bias, SE ratio, and coverage}
-  \item{n_converged}{Number of simulations that converged}
-  \item{n_sim}{Total number of simulations attempted}
+\item{estimates}{Data frame of parameter estimates from each simulation}
+\item{true_params}{True parameter values used}
+\item{summary}{Summary statistics including bias, SE ratio, and coverage}
+\item{n_converged}{Number of simulations that converged}
+\item{n_sim}{Total number of simulations attempted}
 }
 }
 \description{

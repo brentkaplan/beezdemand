@@ -20,10 +20,12 @@ beezdemand_calc_pmax_omax(
 \item{model_type}{Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd", "simplified", or NULL}
 
 \item{params}{Named list of parameters. Names depend on model_type:
-- hs/koff: alpha, q0, k
-- hurdle: alpha, q0, k (note: hurdle uses different formula)
-- hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
-- snd/simplified: alpha, q0}
+\itemize{
+\item hs/koff: alpha, q0, k
+\item hurdle: alpha, q0, k (note: hurdle uses different formula)
+\item hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
+\item snd/simplified: alpha, q0
+}}
 
 \item{param_scales}{Named list mapping parameter names to their input scales:
 "natural", "log", or "log10". Default assumes all natural.}
@@ -46,28 +48,28 @@ price_obs and consumption_obs are provided.}
 \value{
 A list with snake_case fields:
 \describe{
-  \item{pmax_model}{Model-based pmax}
-  \item{omax_model}{Model-based omax}
-  \item{q_at_pmax_model}{Quantity at pmax}
-  \item{method_model}{Method used: "analytic_lambert_w", "analytic_snd", "numerical_optimize_observed_domain"}
-  \item{domain_model}{Price domain used for computation}
-  \item{is_boundary_model}{Logical; is pmax at domain boundary?}
-  \item{elasticity_at_pmax_model}{Elasticity evaluated at pmax}
-  \item{unit_elasticity_pass_model}{Logical; is elasticity near -1?}
-  \item{note_model}{Any notes about model computation}
-  \item{pmax_obs}{Observed pmax}
-  \item{omax_obs}{Observed omax}
-  \item{method_obs}{Method for observed: "row_wise_max"}
-  \item{tie_break_obs}{Tie-break rule: "min_price"}
-  \item{n_obs_rows}{Number of observation rows}
-  \item{n_unique_prices}{Number of unique prices}
-  \item{has_duplicate_prices}{Logical; duplicate prices detected?}
-  \item{n_max_ties}{Number of rows achieving omax}
-  \item{note_obs}{Notes about observed computation}
-  \item{alpha_scale_in}{Input scale for alpha}
-  \item{q0_scale_in}{Input scale for Q0}
-  \item{k_scale_in}{Input scale for k (if applicable)}
-  \item{note_param_space}{Notes about parameter conversions}
+\item{pmax_model}{Model-based pmax}
+\item{omax_model}{Model-based omax}
+\item{q_at_pmax_model}{Quantity at pmax}
+\item{method_model}{Method used: "analytic_lambert_w", "analytic_snd", "numerical_optimize_observed_domain"}
+\item{domain_model}{Price domain used for computation}
+\item{is_boundary_model}{Logical; is pmax at domain boundary?}
+\item{elasticity_at_pmax_model}{Elasticity evaluated at pmax}
+\item{unit_elasticity_pass_model}{Logical; is elasticity near -1?}
+\item{note_model}{Any notes about model computation}
+\item{pmax_obs}{Observed pmax}
+\item{omax_obs}{Observed omax}
+\item{method_obs}{Method for observed: "row_wise_max"}
+\item{tie_break_obs}{Tie-break rule: "min_price"}
+\item{n_obs_rows}{Number of observation rows}
+\item{n_unique_prices}{Number of unique prices}
+\item{has_duplicate_prices}{Logical; duplicate prices detected?}
+\item{n_max_ties}{Number of rows achieving omax}
+\item{note_obs}{Notes about observed computation}
+\item{alpha_scale_in}{Input scale for alpha}
+\item{q0_scale_in}{Input scale for Q0}
+\item{k_scale_in}{Input scale for k (if applicable)}
+\item{note_param_space}{Notes about parameter conversions}
 }
 }
 \description{

@@ -17,18 +17,20 @@
 \item{effects}{Which effects to include: "fixed" (default), "ran_pars", or both}
 
 \item{report_space}{Character. Reporting space for core parameters. One of
-`"natural"` or `"log10"` (default depends on `param_space` used for fitting).}
+\code{"natural"} or \code{"log10"} (default depends on \code{param_space} used for fitting).}
 
 \item{...}{Additional arguments (ignored)}
 }
 \value{
 A tibble of model coefficients with columns:
-  - `term`: Parameter name
-  - `estimate`: Point estimate
-  - `std.error`: Standard error
-  - `statistic`: t-value
-  - `p.value`: P-value
-  - `component`: "fixed" or "variance"
+\itemize{
+\item \code{term}: Parameter name
+\item \code{estimate}: Point estimate
+\item \code{std.error}: Standard error
+\item \code{statistic}: t-value
+\item \code{p.value}: P-value
+\item \code{component}: "fixed" or "variance"
+}
 }
 \description{
 Tidy method for beezdemand_nlme

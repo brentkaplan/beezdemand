@@ -39,7 +39,7 @@ Default is \code{seq(0, 11, by = 0.5)}.}
 \item{log_q0}{Log of intensity parameter (Q0). Default is log(10), meaning
 Q0 = 10. To specify Q0 directly, use \code{log_q0 = log(your_Q0)}.}
 
-\item{logQ0}{`r lifecycle::badge("deprecated")` Use `log_q0` instead.}
+\item{logQ0}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{log_q0} instead.}
 
 \item{k}{Scaling parameter for demand decay. Default is 2.}
 
@@ -74,13 +74,13 @@ all subjects. Default is TRUE.}
 \value{
 A data frame with columns:
 \describe{
-  \item{id}{Subject identifier}
-  \item{x}{Price value}
-  \item{y}{Simulated consumption (may include zeros)}
-  \item{delta}{Indicator for zero consumption (1 = zero, 0 = positive)}
-  \item{a_i}{Subject-specific random effect for Part I}
-  \item{b_i}{Subject-specific random effect for Part II}
-  \item{c_i}{Subject-specific random effect for alpha (if n_random_effects = 3)}
+\item{id}{Subject identifier}
+\item{x}{Price value}
+\item{y}{Simulated consumption (may include zeros)}
+\item{delta}{Indicator for zero consumption (1 = zero, 0 = positive)}
+\item{a_i}{Subject-specific random effect for Part I}
+\item{b_i}{Subject-specific random effect for Part II}
+\item{c_i}{Subject-specific random effect for alpha (if n_random_effects = 3)}
 }
 }
 \description{

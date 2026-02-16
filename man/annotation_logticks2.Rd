@@ -57,5 +57,5 @@ Creates annotation layer
 Inherit and extend layer for use in ggplot draw
 }
 \author{
-Shawn Gilroy <shawn.gilroy@temple.edu>
+Shawn Gilroy \href{mailto:shawn.gilroy@temple.edu}{shawn.gilroy@temple.edu}
 }

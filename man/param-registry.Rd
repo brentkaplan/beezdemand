@@ -12,10 +12,10 @@ scales, and mappings.
 
 Parameters follow snake_case with scale prefixes:
 \itemize{
-  \item \code{log10_<param>}: parameter in log10 space (e.g., log10_alpha)
-  \item \code{log_<param>}: parameter in natural log space (e.g., log_alpha)
-  \item \code{natural_<param>}: parameter in natural/linear space (e.g., natural_alpha)
-  \item \code{<param>}: canonical name without prefix (context determines scale)
+\item \code{log10_<param>}: parameter in log10 space (e.g., log10_alpha)
+\item \code{log_<param>}: parameter in natural log space (e.g., log_alpha)
+\item \code{natural_<param>}: parameter in natural/linear space (e.g., natural_alpha)
+\item \code{<param>}: canonical name without prefix (context determines scale)
 }
 }
 
@@ -23,37 +23,37 @@ Parameters follow snake_case with scale prefixes:
 
 Equations are grouped by model family:
 \itemize{
-  \item \strong{NLS (FitCurves)}: \code{hs}, \code{koff}, \code{linear}. The \code{k}
-    parameter defaults to fixed but supports multiple modes: \code{"fit"}, \code{"ind"},
-    \code{"share"}, \code{"range"}.
-  \item \strong{NLME (fit_demand_mixed)}: \code{zben}, \code{nlme_simplified},
-    \code{nlme_exponentiated}. Only \code{nlme_exponentiated} uses \code{k} (always fixed).
-  \item \strong{Hurdle Part II (fit_demand_hurdle)}: \code{hurdle_zhao},
-    \code{hurdle_hs}, \code{hurdle_snd}. Parameters are in log space. \code{hurdle_snd}
-    has no \code{k} parameter. Each variant has 2RE and 3RE sub-models with different
-    variance/correlation parameters.
-  \item \strong{Cross-price (fit_cp_nls)}: \code{cp_exponential}, \code{cp_exponentiated},
-    \code{cp_additive}. All use \code{log10_qalone}, \code{I}, \code{log10_beta}.
+\item \strong{NLS (FitCurves)}: \code{hs}, \code{koff}, \code{linear}. The \code{k}
+parameter defaults to fixed but supports multiple modes: \code{"fit"}, \code{"ind"},
+\code{"share"}, \code{"range"}.
+\item \strong{NLME (fit_demand_mixed)}: \code{zben}, \code{nlme_simplified},
+\code{nlme_exponentiated}. Only \code{nlme_exponentiated} uses \code{k} (always fixed).
+\item \strong{Hurdle Part II (fit_demand_hurdle)}: \code{hurdle_zhao},
+\code{hurdle_hs}, \code{hurdle_snd}. Parameters are in log space. \code{hurdle_snd}
+has no \code{k} parameter. Each variant has 2RE and 3RE sub-models with different
+variance/correlation parameters.
+\item \strong{Cross-price (fit_cp_nls)}: \code{cp_exponential}, \code{cp_exponentiated},
+\code{cp_additive}. All use \code{log10_qalone}, \code{I}, \code{log10_beta}.
 }
 }
 
 \section{Derived Metrics Naming}{
 
 \itemize{
-  \item \code{pmax_model}: Pmax derived from fitted model parameters
-  \item \code{pmax_obs}: Pmax from observed/empirical data (max expenditure price)
-  \item \code{omax_model}: Omax derived from fitted model parameters
-  \item \code{omax_obs}: Omax from observed/empirical data
-  \item \code{alpha_star}: Normalized alpha (Strategy B; Rzeszutek et al., 2025).
-    Makes alpha comparable across different k values by adjusting for the
-    scaling constant. Computed as \eqn{\alpha^* = -\alpha / \ln(1 - 1/(k \cdot
+\item \code{pmax_model}: Pmax derived from fitted model parameters
+\item \code{pmax_obs}: Pmax from observed/empirical data (max expenditure price)
+\item \code{omax_model}: Omax derived from fitted model parameters
+\item \code{omax_obs}: Omax from observed/empirical data
+\item \code{alpha_star}: Normalized alpha (Strategy B; Rzeszutek et al., 2025).
+Makes alpha comparable across different k values by adjusting for the
+scaling constant. Computed as \eqn{\alpha^* = -\alpha / \ln(1 - 1/(k \cdot
     \ln(b)))}{alpha* = -alpha / ln(1 - 1/(k*ln(b)))} where \eqn{b} is the
-    logarithmic base (10 for HS/Koff, \eqn{e} for hurdle models). Returned by
-    \code{\link{FitCurves}}, \code{\link[=tidy.beezdemand_fixed]{tidy()}} on
-    fixed fits, and \code{\link[=tidy.beezdemand_hurdle]{tidy()}} on hurdle
-    fits. Standard error (\code{alpha_star_se}) is obtained via the delta
-    method. Requires \eqn{k \cdot \ln(b) > 1}{k*ln(b) > 1}; otherwise
-    \code{NA} is returned.
+logarithmic base (10 for HS/Koff, \eqn{e} for hurdle models). Returned by
+\code{\link{FitCurves}}, \code{\link[=tidy.beezdemand_fixed]{tidy()}} on
+fixed fits, and \code{\link[=tidy.beezdemand_hurdle]{tidy()}} on hurdle
+fits. Standard error (\code{alpha_star_se}) is obtained via the delta
+method. Requires \eqn{k \cdot \ln(b) > 1}{k*ln(b) > 1}; otherwise
+\code{NA} is returned.
 }
 }
 
@@ -61,15 +61,15 @@ Equations are grouped by model family:
 
 Legacy FitCurves output uses different naming. The mappings are:
 \itemize{
-  \item \code{Pmaxd}: derived Pmax from model (approximate formula)
-  \item \code{Pmaxa}: analytic Pmax from Lambert W
-  \item \code{Pmaxe}: empirical/observed Pmax from data
-  \item \code{Omaxd}: derived Omax from model
-  \item \code{Omaxa}: analytic Omax from Lambert W
-  \item \code{Omaxe}: empirical/observed Omax from data
-  \item \code{Q0d}: fitted Q0 (intensity)
-  \item \code{Alpha}: fitted alpha (elasticity parameter)
-  \item \code{K}: k parameter (range in log units)
+\item \code{Pmaxd}: derived Pmax from model (approximate formula)
+\item \code{Pmaxa}: analytic Pmax from Lambert W
+\item \code{Pmaxe}: empirical/observed Pmax from data
+\item \code{Omaxd}: derived Omax from model
+\item \code{Omaxa}: analytic Omax from Lambert W
+\item \code{Omaxe}: empirical/observed Omax from data
+\item \code{Q0d}: fitted Q0 (intensity)
+\item \code{Alpha}: fitted alpha (elasticity parameter)
+\item \code{K}: k parameter (range in log units)
 }
 }
 

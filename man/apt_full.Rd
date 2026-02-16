@@ -6,16 +6,16 @@
 \title{Full alcohol purchase task dataset}
 \format{
 A data frame with 18,700 rows and 8 columns:
-  \describe{
-    \item{id}{Unique participant identifier (1-1100)}
-    \item{gender}{Participant gender (Male/Female)}
-    \item{age}{Participant age in years}
-    \item{binges}{Number of binge drinking episodes}
-    \item{totdrinks}{Total number of drinks consumed}
-    \item{tothours}{Total hours spent drinking}
-    \item{x}{Price point for the purchase task}
-    \item{y}{Number of drinks participant would purchase at price x}
-  }
+\describe{
+\item{id}{Unique participant identifier (1-1100)}
+\item{gender}{Participant gender (Male/Female)}
+\item{age}{Participant age in years}
+\item{binges}{Number of binge drinking episodes}
+\item{totdrinks}{Total number of drinks consumed}
+\item{tothours}{Total hours spent drinking}
+\item{x}{Price point for the purchase task}
+\item{y}{Number of drinks participant would purchase at price x}
+}
 }
 \usage{
 apt_full

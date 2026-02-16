@@ -7,14 +7,14 @@
 \method{coef}{beezdemand_fixed}(object, report_space = c("internal", "natural", "log10"), ...)
 }
 \arguments{
-\item{object}{A `beezdemand_fixed` object.}
+\item{object}{A \code{beezdemand_fixed} object.}
 
-\item{report_space}{One of `"internal"`, `"natural"`, or `"log10"`. Default `"internal"`.}
+\item{report_space}{One of \code{"internal"}, \code{"natural"}, or \code{"log10"}. Default \code{"internal"}.}
 
 \item{...}{Unused.}
 }
 \value{
-A tibble with columns `id`, `term`, `estimate`, `estimate_scale`, `term_display`.
+A tibble with columns \code{id}, \code{term}, \code{estimate}, \code{estimate_scale}, \code{term_display}.
 }
 \description{
 Extract Coefficients from Fixed-Effect Demand Fit

@@ -7,15 +7,15 @@
 \method{print}{beezdemand_summary}(x, ...)
 }
 \arguments{
-\item{x}{A summary object with class including `beezdemand_summary`.}
+\item{x}{A summary object with class including \code{beezdemand_summary}.}
 
 \item{...}{Additional arguments (unused).}
 }
 \value{
-Invisibly returns `x`.
+Invisibly returns \code{x}.
 }
 \description{
-Fallback print method for summary objects inheriting from `beezdemand_summary`.
-Specific summary classes should implement their own `print.summary.*` methods
+Fallback print method for summary objects inheriting from \code{beezdemand_summary}.
+Specific summary classes should implement their own \verb{print.summary.*} methods
 for detailed output; this provides a minimal fallback.
 }

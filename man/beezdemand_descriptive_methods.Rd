@@ -14,12 +14,12 @@
 \method{plot}{beezdemand_descriptive}(x, x_trans = "identity", y_trans = "identity", show_zeros = FALSE, ...)
 }
 \arguments{
-\item{x, object}{A `beezdemand_descriptive` object}
+\item{x, object}{A \code{beezdemand_descriptive} object}
 
 \item{...}{Additional arguments (currently unused)}
 
 \item{x_trans}{Character string specifying x-axis transformation. Options:
-"identity" (default), "log10", "log", "sqrt". See [scales::transform_log10()] etc.}
+"identity" (default), "log10", "log", "sqrt". See \code{\link[scales:transform_log]{scales::transform_log10()}} etc.}
 
 \item{y_trans}{Character string specifying y-axis transformation. Options:
 "identity" (default), "log10", "log", "sqrt", "pseudo_log" (signed log).}
@@ -29,38 +29,44 @@ on the boxplot (default: FALSE)}
 }
 \value{
 \itemize{
-  \item `print()` - Returns the object invisibly (called for side effects)
-  \item `summary()` - Returns a list with extended summary information
-  \item `plot()` - Returns a ggplot2 object
+\item \code{print()} - Returns the object invisibly (called for side effects)
+\item \code{summary()} - Returns a list with extended summary information
+\item \code{plot()} - Returns a ggplot2 object
 }
 }
 \description{
 Methods for printing, summarizing, and visualizing objects of class
-`beezdemand_descriptive` created by [get_descriptive_summary()].
+\code{beezdemand_descriptive} created by \code{\link[=get_descriptive_summary]{get_descriptive_summary()}}.
 }
 \details{
-## Print Method
+\subsection{Print Method}{
+
 Displays a compact summary showing the number of subjects and prices analyzed,
 plus a preview of the statistics table.
-
-## Summary Method
-Provides extended information including:
-\itemize{
-  \item Data summary (subjects, prices analyzed)
-  \item Distribution of means across prices (min, median, max)
-  \item Proportion of zeros by price (range)
-  \item Missing data summary
 }
 
-## Plot Method
+\subsection{Summary Method}{
+
+Provides extended information including:
+\itemize{
+\item Data summary (subjects, prices analyzed)
+\item Distribution of means across prices (min, median, max)
+\item Proportion of zeros by price (range)
+\item Missing data summary
+}
+}
+
+\subsection{Plot Method}{
+
 Creates a boxplot showing the distribution of consumption at each price point.
 Features:
 \itemize{
-  \item Red cross markers indicate means
-  \item Boxes show median and quartiles
-  \item Whiskers extend to 1.5 * IQR
-  \item Supports axis transformations (log, sqrt, etc.)
-  \item Uses modern beezdemand styling via [theme_apa()]
+\item Red cross markers indicate means
+\item Boxes show median and quartiles
+\item Whiskers extend to 1.5 * IQR
+\item Supports axis transformations (log, sqrt, etc.)
+\item Uses modern beezdemand styling via \code{\link[=theme_apa]{theme_apa()}}
+}
 }
 }
 \examples{
@@ -86,5 +92,5 @@ plot(desc, y_trans = "pseudo_log")
 
 }
 \seealso{
-[get_descriptive_summary()]
+\code{\link[=get_descriptive_summary]{get_descriptive_summary()}}
 }

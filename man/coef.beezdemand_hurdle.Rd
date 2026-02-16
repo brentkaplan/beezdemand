@@ -9,8 +9,8 @@
 \arguments{
 \item{object}{An object of class \code{beezdemand_hurdle}.}
 
-\item{report_space}{Character. One of `"natural"` (default), `"log10"`, or `"internal"`.
-Default is `"natural"` for consistency with `tidy()`.}
+\item{report_space}{Character. One of \code{"natural"} (default), \code{"log10"}, or \code{"internal"}.
+Default is \code{"natural"} for consistency with \code{tidy()}.}
 
 \item{...}{Additional arguments (currently unused).}
 }

@@ -7,7 +7,7 @@
 \method{print}{summary.cp_model_lm}(x, ...)
 }
 \arguments{
-\item{x}{A `summary.*` object}
+\item{x}{A \verb{summary.*} object}
 
 \item{...}{Unused}
 }

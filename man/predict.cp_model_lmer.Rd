@@ -20,7 +20,7 @@ or \code{"random"} (subject-specific). The default is \code{"fixed"}.}
 }
 \value{
 A data frame containing all columns of \code{newdata} plus a column \code{y_pred}
-  with the corresponding predictions.
+with the corresponding predictions.
 }
 \description{
 Generates predictions from a mixed-effects cross-price demand model (of class
@@ -28,10 +28,10 @@ Generates predictions from a mixed-effects cross-price demand model (of class
 }
 \details{
 \describe{
-  \item{\code{"fixed"}}{Returns predictions based solely on the fixed-effects component
-      (using \code{re.form = NA}).}
-  \item{\code{"random"}}{Returns subject-specific predictions (fixed plus random effects)
-      (using \code{re.form = NULL}).}
+\item{\code{"fixed"}}{Returns predictions based solely on the fixed-effects component
+(using \code{re.form = NA}).}
+\item{\code{"random"}}{Returns subject-specific predictions (fixed plus random effects)
+(using \code{re.form = NULL}).}
 }
 }
 \examples{

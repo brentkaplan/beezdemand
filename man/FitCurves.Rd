@@ -60,12 +60,12 @@ If detailed == FALSE (default), a dataframe of results. If detailed == TRUE, a 3
 Analyzes purchase task data
 }
 \details{
-`r lifecycle::badge("superseded")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
-`FitCurves()` has been superseded by [fit_demand_fixed()], which provides a
-modern S3 interface with standardized methods (`summary()`, `tidy()`,
-`glance()`, `predict()`). `FitCurves()` will continue to work but is no
-longer recommended for new code. See `vignette("migration-guide")` for
+\code{FitCurves()} has been superseded by \code{\link[=fit_demand_fixed]{fit_demand_fixed()}}, which provides a
+modern S3 interface with standardized methods (\code{summary()}, \code{tidy()},
+\code{glance()}, \code{predict()}). \code{FitCurves()} will continue to work but is no
+longer recommended for new code. See \code{vignette("migration-guide")} for
 migration instructions.
 }
 \examples{
@@ -73,8 +73,8 @@ migration instructions.
 FitCurves(apt[sample(apt$id, 5), ], "hs", k = 2)
 }
 \seealso{
-[fit_demand_fixed()] for the modern interface
+\code{\link[=fit_demand_fixed]{fit_demand_fixed()}} for the modern interface
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com> Shawn Gilroy <shawn.gilroy@temple.edu>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com} Shawn Gilroy \href{mailto:shawn.gilroy@temple.edu}{shawn.gilroy@temple.edu}
 }

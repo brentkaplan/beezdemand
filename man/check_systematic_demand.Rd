@@ -16,59 +16,59 @@ check_systematic_demand(
 )
 }
 \arguments{
-\item{data}{Data frame in long format with columns: `id`, `x` (price), `y` (consumption).}
+\item{data}{Data frame in long format with columns: \code{id}, \code{x} (price), \code{y} (consumption).}
 
 \item{trend_threshold}{Numeric. Threshold for trend detection (log-log slope).
-Default `0.025`.}
+Default \code{0.025}.}
 
-\item{bounce_threshold}{Numeric. Threshold for bounce proportion. Default `0.10`.}
+\item{bounce_threshold}{Numeric. Threshold for bounce proportion. Default \code{0.10}.}
 
-\item{max_reversals}{Integer. Maximum allowed reversals from zero. Default `0`.}
+\item{max_reversals}{Integer. Maximum allowed reversals from zero. Default \code{0}.}
 
 \item{consecutive_zeros}{Integer. Consecutive zeros required for reversal detection.
-Default `2` (per Stein et al. 2015).}
+Default \code{2} (per Stein et al. 2015).}
 
-\item{x_var}{Character. Name of the price column. Default `"x"`.}
+\item{x_var}{Character. Name of the price column. Default \code{"x"}.}
 
-\item{y_var}{Character. Name of the consumption column. Default `"y"`.}
+\item{y_var}{Character. Name of the consumption column. Default \code{"y"}.}
 
-\item{id_var}{Character. Name of the subject identifier column. Default `"id"`.}
+\item{id_var}{Character. Name of the subject identifier column. Default \code{"id"}.}
 }
 \value{
-An object of class `beezdemand_systematicity` with components:
-  \describe{
-    \item{results}{Tibble with one row per subject containing systematicity metrics}
-    \item{type}{"demand"}
-    \item{call}{The original function call}
-    \item{n_total}{Total number of subjects}
-    \item{n_systematic}{Number of subjects passing all criteria}
-    \item{n_unsystematic}{Number of subjects failing at least one criterion}
-  }
+An object of class \code{beezdemand_systematicity} with components:
+\describe{
+\item{results}{Tibble with one row per subject containing systematicity metrics}
+\item{type}{"demand"}
+\item{call}{The original function call}
+\item{n_total}{Total number of subjects}
+\item{n_systematic}{Number of subjects passing all criteria}
+\item{n_unsystematic}{Number of subjects failing at least one criterion}
+}
 }
 \description{
 Modern interface for screening purchase task data using Stein et al. (2015)
 criteria. Returns a structured object with standardized output vocabulary
-that is consistent with `check_systematic_cp()`.
+that is consistent with \code{check_systematic_cp()}.
 }
 \details{
-The `results` tibble contains standardized columns for both demand and
+The \code{results} tibble contains standardized columns for both demand and
 cross-price systematicity checks:
 \describe{
-  \item{id}{Subject identifier}
-  \item{type}{"demand" for this function}
-  \item{trend_stat}{DeltaQ statistic (log-log slope)}
-  \item{trend_threshold}{Threshold used}
-  \item{trend_direction}{"down", "up", or "none"}
-  \item{trend_pass}{Logical: passed trend criterion}
-  \item{bounce_stat}{Bounce proportion}
-  \item{bounce_threshold}{Threshold used}
-  \item{bounce_direction}{"significant" or "none"}
-  \item{bounce_pass}{Logical: passed bounce criterion}
-  \item{reversals}{Count of reversals from zero}
-  \item{reversals_pass}{Logical: passed reversals criterion}
-  \item{returns}{NA for demand (CP-specific)}
-  \item{n_positive}{Count of positive values}
-  \item{systematic}{Logical: passed all criteria}
+\item{id}{Subject identifier}
+\item{type}{"demand" for this function}
+\item{trend_stat}{DeltaQ statistic (log-log slope)}
+\item{trend_threshold}{Threshold used}
+\item{trend_direction}{"down", "up", or "none"}
+\item{trend_pass}{Logical: passed trend criterion}
+\item{bounce_stat}{Bounce proportion}
+\item{bounce_threshold}{Threshold used}
+\item{bounce_direction}{"significant" or "none"}
+\item{bounce_pass}{Logical: passed bounce criterion}
+\item{reversals}{Count of reversals from zero}
+\item{reversals_pass}{Logical: passed reversals criterion}
+\item{returns}{NA for demand (CP-specific)}
+\item{n_positive}{Count of positive values}
+\item{systematic}{Logical: passed all criteria}
 }
 }
 \examples{

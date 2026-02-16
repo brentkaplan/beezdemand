@@ -13,7 +13,7 @@ extract_coefficients(object, ...)
 }
 \value{
 For cp_model_nls and cp_model_lm, returns the model coefficients.
-  For cp_model_lmer, returns a list with fixed, random, and combined coefficients.
+For cp_model_lmer, returns a list with fixed, random, and combined coefficients.
 }
 \description{
 A convenience function to extract coefficients from any type of cross-price

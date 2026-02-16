@@ -13,17 +13,17 @@
 }
 \value{
 A one-row tibble with columns:
-  \describe{
-    \item{model_class}{"beezdemand_hurdle"}
-    \item{backend}{"TMB"}
-    \item{nobs}{Number of observations}
-    \item{n_subjects}{Number of subjects}
-    \item{n_random_effects}{Number of random effects}
-    \item{converged}{Convergence status}
-    \item{logLik}{Log-likelihood}
-    \item{AIC}{Akaike Information Criterion}
-    \item{BIC}{Bayesian Information Criterion}
-  }
+\describe{
+\item{model_class}{"beezdemand_hurdle"}
+\item{backend}{"TMB"}
+\item{nobs}{Number of observations}
+\item{n_subjects}{Number of subjects}
+\item{n_random_effects}{Number of random effects}
+\item{converged}{Convergence status}
+\item{logLik}{Log-likelihood}
+\item{AIC}{Akaike Information Criterion}
+\item{BIC}{Bayesian Information Criterion}
+}
 }
 \description{
 Returns a one-row tibble of model-level statistics.

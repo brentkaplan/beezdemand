@@ -40,5 +40,5 @@ sim <- SimulateDemand(nruns = 1, setparams = setparams, sdindex = sdindex, x = x
 sim
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

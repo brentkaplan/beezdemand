@@ -7,16 +7,16 @@
 \method{anova}{beezdemand_hurdle}(object, ...)
 }
 \arguments{
-\item{object}{A `beezdemand_hurdle` model.}
+\item{object}{A \code{beezdemand_hurdle} model.}
 
-\item{...}{Additional `beezdemand_hurdle` models to compare.}
+\item{...}{Additional \code{beezdemand_hurdle} models to compare.}
 }
 \value{
-An object of class `anova.beezdemand` containing:
-  \describe{
-    \item{table}{Data frame with model comparison statistics}
-    \item{lrt}{Likelihood ratio test results}
-  }
+An object of class \code{anova.beezdemand} containing:
+\describe{
+\item{table}{Data frame with model comparison statistics}
+\item{lrt}{Likelihood ratio test results}
+}
 }
 \description{
 Compare nested hurdle demand models using likelihood ratio tests.

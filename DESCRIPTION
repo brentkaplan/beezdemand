@@ -63,6 +63,7 @@ URL: https://brentkaplan.github.io/beezdemand/, https://github.com/brentkaplan/b
 BugReports: https://github.com/brentkaplan/beezdemand/issues
 Encoding: UTF-8
 LazyData: true
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 SystemRequirements: GNU make

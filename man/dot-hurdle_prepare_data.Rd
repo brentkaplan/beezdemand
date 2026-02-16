@@ -18,13 +18,13 @@
 \value{
 A list containing:
 \describe{
-  \item{price}{Numeric vector of prices}
-  \item{consumption}{Numeric vector of consumption values}
-  \item{delta}{Integer vector (1 if consumption == 0, else 0)}
-  \item{logQ}{Log consumption (0 for zeros)}
-  \item{subject_id}{0-indexed subject IDs for C++}
-  \item{subject_levels}{Unique subject IDs (original)}
-  \item{n_subjects}{Number of unique subjects}
+\item{price}{Numeric vector of prices}
+\item{consumption}{Numeric vector of consumption values}
+\item{delta}{Integer vector (1 if consumption == 0, else 0)}
+\item{logQ}{Log consumption (0 for zeros)}
+\item{subject_id}{0-indexed subject IDs for C++}
+\item{subject_levels}{Unique subject IDs (original)}
+\item{n_subjects}{Number of unique subjects}
 }
 }
 \description{

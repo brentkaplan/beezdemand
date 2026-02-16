@@ -7,18 +7,18 @@
 scale_ll4(..., lambda = 4)
 }
 \arguments{
-\item{...}{Arguments passed on to `ggplot2::scale_y_continuous` or
-`ggplot2::scale_x_continuous` (e.g., `name`, `breaks`, `labels`).}
+\item{...}{Arguments passed on to \code{ggplot2::scale_y_continuous} or
+\code{ggplot2::scale_x_continuous} (e.g., \code{name}, \code{breaks}, \code{labels}).}
 
-\item{lambda}{A positive numeric scalar, the lambda parameter for the `ll4`
-transformation. Default is `4`.}
+\item{lambda}{A positive numeric scalar, the lambda parameter for the \code{ll4}
+transformation. Default is \code{4}.}
 }
 \value{
-A `ggplot2` scale object.
+A \code{ggplot2} scale object.
 }
 \description{
-This function generates a `ggplot2` continuous scale that applies the `ll4`
-transformation (and its inverse `ll4_inv`) to an axis. This is useful for
+This function generates a \code{ggplot2} continuous scale that applies the \code{ll4}
+transformation (and its inverse \code{ll4_inv}) to an axis. This is useful for
 visualizing data spanning multiple orders of magnitude while handling zeros.
 }
 \examples{

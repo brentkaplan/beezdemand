@@ -6,13 +6,13 @@
 \title{Example cross‐price dataset}
 \format{
 A data frame with N rows and columns:
-  \describe{
-    \item{id}{unique identifier}
-    \item{x}{price of the alternative}
-    \item{y}{consumption/demand}
-    \item{target}{target (e.g., alone, own, alt)}
-    \item{group}{e.g., drug or product}
-  }
+\describe{
+\item{id}{unique identifier}
+\item{x}{price of the alternative}
+\item{y}{consumption/demand}
+\item{target}{target (e.g., alone, own, alt)}
+\item{group}{e.g., drug or product}
+}
 }
 \usage{
 cp

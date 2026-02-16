@@ -49,5 +49,5 @@ Change demand data in various ways. Ways include replacing any number of 0 value
 ChangeData(apt, nrepl = 1, replnum = .1)
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

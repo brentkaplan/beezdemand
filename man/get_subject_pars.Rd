@@ -12,15 +12,15 @@ get_subject_pars(object)
 \value{
 Data frame with subject-specific parameters including:
 \describe{
-  \item{id}{Subject identifier}
-  \item{a_i}{Random effect for Part I (zeros)}
-  \item{b_i}{Random effect for Part II (Q0)}
-  \item{c_i}{Random effect for alpha (3-RE model only)}
-  \item{Q0}{Subject-specific intensity (consumption at price 0)}
-  \item{alpha}{Subject-specific elasticity}
-  \item{breakpoint}{Price where P(quit) = 0.5}
-  \item{Pmax}{Price at maximum expenditure}
-  \item{Omax}{Maximum expenditure}
+\item{id}{Subject identifier}
+\item{a_i}{Random effect for Part I (zeros)}
+\item{b_i}{Random effect for Part II (Q0)}
+\item{c_i}{Random effect for alpha (3-RE model only)}
+\item{Q0}{Subject-specific intensity (consumption at price 0)}
+\item{alpha}{Subject-specific elasticity}
+\item{breakpoint}{Price where P(quit) = 0.5}
+\item{Pmax}{Price at maximum expenditure}
+\item{Omax}{Maximum expenditure}
 }
 }
 \description{

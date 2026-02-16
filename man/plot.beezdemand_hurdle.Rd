@@ -39,11 +39,11 @@
 
 \item{type}{Character string specifying the plot type:
 \describe{
-  \item{\code{"demand"}}{Predicted demand curves (default)}
-  \item{\code{"population"}}{Alias for \code{"demand"}}
-  \item{\code{"probability"}}{Probability of zero consumption}
-  \item{\code{"parameters"}}{Distribution of subject-specific parameters}
-  \item{\code{"individual"}}{Individual demand curves for selected subjects}
+\item{\code{"demand"}}{Predicted demand curves (default)}
+\item{\code{"population"}}{Alias for \code{"demand"}}
+\item{\code{"probability"}}{Probability of zero consumption}
+\item{\code{"parameters"}}{Distribution of subject-specific parameters}
+\item{\code{"individual"}}{Individual demand curves for selected subjects}
 }}
 
 \item{ids}{Optional vector of subject IDs to plot (alias of \code{subjects}).}

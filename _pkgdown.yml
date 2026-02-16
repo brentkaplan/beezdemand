@@ -5,6 +5,7 @@ llm-docs: true
 template:
   bootstrap: 5
   light-switch: true
+  math-rendering: katex
   bslib:
     bg: "#FFFFFF"
     fg: "#1E3242"

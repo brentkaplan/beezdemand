@@ -26,7 +26,7 @@
 \item{data}{Optional data frame containing columns \code{x} and \code{y} to be plotted.
 If not provided, \code{object$data} is used.}
 
-\item{inv_fun}{Optional function to inverse-transform predictions. Default is `identity`.
+\item{inv_fun}{Optional function to inverse-transform predictions. Default is \code{identity}.
 Not typically used for linear models but included for API consistency.}
 
 \item{n_points}{Number of points to use in creating the prediction grid. Default is \code{100}.}
@@ -47,9 +47,9 @@ Not typically used for linear models but included for API consistency.}
 
 \item{pred_type}{Character string specifying which prediction components to plot:
 \describe{
-  \item{\code{"fixed"}}{Plot only the fixed-effects (population) prediction.}
-  \item{\code{"random"}}{Plot only the subject-specific predictions.}
-  \item{\code{"all"}}{Plot both the fixed-effects and the subject-specific predictions.}
+\item{\code{"fixed"}}{Plot only the fixed-effects (population) prediction.}
+\item{\code{"random"}}{Plot only the subject-specific predictions.}
+\item{\code{"all"}}{Plot both the fixed-effects and the subject-specific predictions.}
 }
 The default is \code{"fixed"}.}
 
@@ -64,9 +64,9 @@ Creates a ggplot2 visualization of a fitted mixed-effects cross-price demand mod
 }
 \details{
 \describe{
-  \item{\code{"fixed"}}{Only the population-level (fixed-effects) prediction.}
-  \item{\code{"random"}}{Only the subject-specific predictions.}
-  \item{\code{"all"}}{Both: the fixed-effects and the subject-specific predictions.}
+\item{\code{"fixed"}}{Only the population-level (fixed-effects) prediction.}
+\item{\code{"random"}}{Only the subject-specific predictions.}
+\item{\code{"all"}}{Both: the fixed-effects and the subject-specific predictions.}
 }
 
 If the model includes group effects, separate lines will be drawn for each group.

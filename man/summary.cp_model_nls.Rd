@@ -10,9 +10,9 @@
 \item{object}{A cross-price model object from fit_cp_nls with return_all=TRUE.}
 
 \item{inv_fun}{Optional function to inverse-transform predictions (e.g., ll4_inv).
-Default is `identity`.}
+Default is \code{identity}.}
 
-\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
+\item{inverse_fun}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{inv_fun} instead.}
 
 \item{...}{Additional arguments (unused).}
 }

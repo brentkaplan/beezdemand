@@ -10,10 +10,12 @@ plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
 \item{object}{A fitted model object.}
 
 \item{type}{Character; type of residual plot. One of:
-- `"fitted"`: Residuals vs fitted values
-- `"histogram"`: Histogram of residuals
-- `"qq"`: Q-Q plot of residuals
-- `"all"`: All plots combined (default)}
+\itemize{
+\item \code{"fitted"}: Residuals vs fitted values
+\item \code{"histogram"}: Histogram of residuals
+\item \code{"qq"}: Q-Q plot of residuals
+\item \code{"all"}: All plots combined (default)
+}}
 
 \item{...}{Additional arguments passed to plotting functions.}
 }

@@ -16,21 +16,21 @@ check_demand_model(object, ...)
 \method{check_demand_model}{beezdemand_fixed}(object, ...)
 }
 \arguments{
-\item{object}{A fitted model object of class `beezdemand_hurdle`,
-`beezdemand_nlme`, or `beezdemand_fixed`.}
+\item{object}{A fitted model object of class \code{beezdemand_hurdle},
+\code{beezdemand_nlme}, or \code{beezdemand_fixed}.}
 
 \item{...}{Additional arguments passed to methods.}
 }
 \value{
-An object of class `beezdemand_diagnostics` containing:
-  \describe{
-    \item{convergence}{List with convergence status and messages}
-    \item{boundary}{List with boundary condition warnings}
-    \item{residuals}{Summary statistics for residuals}
-    \item{random_effects}{Summary of random effects (if applicable)}
-    \item{issues}{Character vector of identified issues}
-    \item{recommendations}{Character vector of recommendations}
-  }
+An object of class \code{beezdemand_diagnostics} containing:
+\describe{
+\item{convergence}{List with convergence status and messages}
+\item{boundary}{List with boundary condition warnings}
+\item{residuals}{Summary statistics for residuals}
+\item{random_effects}{Summary of random effects (if applicable)}
+\item{issues}{Character vector of identified issues}
+\item{recommendations}{Character vector of recommendations}
+}
 }
 \description{
 Performs diagnostic checks on fitted demand models, returning information
@@ -39,16 +39,16 @@ about convergence, boundary conditions, and residual patterns.
 \details{
 The function checks for:
 \itemize{
-  \item Convergence status and optimization messages
-  \item Parameters at or near boundaries
-  \item Residual patterns (heteroscedasticity, outliers)
-  \item Random effect variance estimates near zero
-  \item Correlation matrices near singularity
+\item Convergence status and optimization messages
+\item Parameters at or near boundaries
+\item Residual patterns (heteroscedasticity, outliers)
+\item Random effect variance estimates near zero
+\item Correlation matrices near singularity
 }
 }
 \note{
-This function is named `check_demand_model()` to avoid potential conflicts
-with `performance::check_model()` from the performance package.
+This function is named \code{check_demand_model()} to avoid potential conflicts
+with \code{performance::check_model()} from the performance package.
 }
 \examples{
 \dontrun{
@@ -59,5 +59,5 @@ print(diagnostics)
 
 }
 \seealso{
-[plot_residuals()], [plot_qq()]
+\code{\link[=plot_residuals]{plot_residuals()}}, \code{\link[=plot_qq]{plot_qq()}}
 }

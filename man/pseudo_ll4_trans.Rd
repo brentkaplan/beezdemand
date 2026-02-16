@@ -7,19 +7,19 @@
 pseudo_ll4_trans(lambda = 4)
 }
 \arguments{
-\item{lambda}{A positive numeric scalar, the lambda parameter for the `ll4`
-transformation. Default is `4`.}
+\item{lambda}{A positive numeric scalar, the lambda parameter for the \code{ll4}
+transformation. Default is \code{4}.}
 }
 \value{
-A `trans` object (from the `scales` package).
+A \code{trans} object (from the \code{scales} package).
 }
 \description{
-Generates a `scales::trans` object using the `ll4` transformation.
-This transformation object can be passed to the `trans` argument of
-`ggplot2::scale_x_continuous` or `ggplot2::scale_y_continuous`.
+Generates a \code{scales::trans} object using the \code{ll4} transformation.
+This transformation object can be passed to the \code{trans} argument of
+\code{ggplot2::scale_x_continuous} or \code{ggplot2::scale_y_continuous}.
 It's designed for non-negative data and handles zero values gracefully.
-The "pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that it
-handles a range including zero, but the transformation is `ll4`.
+The "pseudo" aspect is conceptual, similar to \code{pseudo_log_trans} in that it
+handles a range including zero, but the transformation is \code{ll4}.
 }
 \examples{
 \donttest{

@@ -16,13 +16,13 @@ uses the original data from the model.}
 }
 \value{
 A tibble containing the original data plus:
-  \describe{
-    \item{.fitted}{Fitted demand values (natural scale)}
-    \item{.fitted_link}{Fitted values on log scale (Part II mean)}
-    \item{.fitted_prob}{Predicted probability of consumption (1 - P(zero))}
-    \item{.resid}{Residuals on log scale for positive observations, NA for zeros}
-    \item{.resid_response}{Residuals on response scale (y - .fitted)}
-  }
+\describe{
+\item{.fitted}{Fitted demand values (natural scale)}
+\item{.fitted_link}{Fitted values on log scale (Part II mean)}
+\item{.fitted_prob}{Predicted probability of consumption (1 - P(zero))}
+\item{.resid}{Residuals on log scale for positive observations, NA for zeros}
+\item{.resid_response}{Residuals on response scale (y - .fitted)}
+}
 }
 \description{
 Returns the original data with fitted values, residuals, and predictions
@@ -31,11 +31,13 @@ visualization with the tidyverse.
 }
 \details{
 For two-part hurdle models:
-- `.fitted` gives predicted demand on the natural consumption scale
-- `.fitted_prob` gives the predicted probability of positive consumption
-- `.resid` is defined only for positive observations as log(y) - .fitted_link
-- Observations with zero consumption have `.resid = NA` since they are
-  explained by Part I (the zero-probability component), not Part II
+\itemize{
+\item \code{.fitted} gives predicted demand on the natural consumption scale
+\item \code{.fitted_prob} gives the predicted probability of positive consumption
+\item \code{.resid} is defined only for positive observations as log(y) - .fitted_link
+\item Observations with zero consumption have \code{.resid = NA} since they are
+explained by Part I (the zero-probability component), not Part II
+}
 }
 \examples{
 \donttest{

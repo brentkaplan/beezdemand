@@ -15,7 +15,7 @@ pull(x, y)
 Vector
 }
 \description{
-`r lifecycle::badge("deprecated")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 
 Pulls a single vector from a data frame. Good to use with dplyr.
 From https://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-a-vector
@@ -24,5 +24,5 @@ From https://stackoverflow.com/questions/21618423/extract-a-dplyr-tbl-column-as-
 Pull vector from data frame
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

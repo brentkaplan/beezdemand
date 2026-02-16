@@ -22,5 +22,5 @@ Gets values used in SimulateDemand
 GetValsForSim(apt)
 }
 \author{
-Brent Kaplan <bkaplan.ku@gmail.com>
+Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

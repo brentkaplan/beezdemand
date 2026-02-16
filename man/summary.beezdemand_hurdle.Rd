@@ -12,32 +12,34 @@
 
 \item{report_space}{Character. Reporting space for core demand parameters.
 One of:
-- `"internal"`: report internal/fitting parameters (default internal naming)
-- `"natural"`: report natural-scale parameters when a natural mapping exists
-- `"log10"`: report `log10()`-scale parameters when a mapping exists}
+\itemize{
+\item \code{"internal"}: report internal/fitting parameters (default internal naming)
+\item \code{"natural"}: report natural-scale parameters when a natural mapping exists
+\item \code{"log10"}: report \code{log10()}-scale parameters when a mapping exists
+}}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
 An object of class \code{summary.beezdemand_hurdle} (also inherits
-  from \code{beezdemand_summary}) containing:
+from \code{beezdemand_summary}) containing:
 \describe{
-  \item{call}{The original function call}
-  \item{model_class}{"beezdemand_hurdle"}
-  \item{backend}{"TMB"}
-  \item{coefficients}{Tibble of fixed effects with estimates, SEs, z-values, p-values}
-  \item{coefficients_matrix}{Matrix form for printing (legacy compatibility)}
-  \item{variance_components}{Matrix of variance/covariance estimates}
-  \item{correlations}{Matrix of correlation estimates}
-  \item{n_subjects}{Number of subjects}
-  \item{nobs}{Number of observations}
-  \item{converged}{Logical indicating convergence}
-  \item{logLik}{Log-likelihood at convergence}
-  \item{AIC}{Akaike Information Criterion}
-  \item{BIC}{Bayesian Information Criterion}
-  \item{group_metrics}{Group-level Pmax and Omax}
-  \item{individual_metrics}{Summary of individual-level parameters}
-  \item{notes}{Character vector of warnings/notes}
+\item{call}{The original function call}
+\item{model_class}{"beezdemand_hurdle"}
+\item{backend}{"TMB"}
+\item{coefficients}{Tibble of fixed effects with estimates, SEs, z-values, p-values}
+\item{coefficients_matrix}{Matrix form for printing (legacy compatibility)}
+\item{variance_components}{Matrix of variance/covariance estimates}
+\item{correlations}{Matrix of correlation estimates}
+\item{n_subjects}{Number of subjects}
+\item{nobs}{Number of observations}
+\item{converged}{Logical indicating convergence}
+\item{logLik}{Log-likelihood at convergence}
+\item{AIC}{Akaike Information Criterion}
+\item{BIC}{Bayesian Information Criterion}
+\item{group_metrics}{Group-level Pmax and Omax}
+\item{individual_metrics}{Summary of individual-level parameters}
+\item{notes}{Character vector of warnings/notes}
 }
 }
 \description{

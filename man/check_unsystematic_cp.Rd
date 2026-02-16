@@ -39,25 +39,25 @@ check_unsystematic_cp(
 \item{detailed}{Logical. If TRUE, return additional columns including all trend/bounce flags.}
 }
 \value{
-A data frame of class `cp_unsystematic` with core results:
-  \describe{
-    \item{delta_direction}{Character: 'down', 'up', or 'none'.}
-    \item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
-    \item{bounce_any}{Logical. TRUE if any bounce pattern detected.}
-    \item{bounce_above}{Integer. Number of upward changes meeting threshold.}
-    \item{bounce_below}{Integer. Number of downward changes meeting threshold.}
-    \item{reversals}{Integer. Detected reversals from 0 to non-0.}
-    \item{returns}{Integer. Detected returns from non-0 to 0.}
-  }
-If `detailed = TRUE`, returns additional columns:
-  \describe{
-    \item{delta_down}{Logical. Significant downward trend.}
-    \item{delta_up}{Logical. Significant upward trend.}
-    \item{delta_none}{Logical. No significant trend.}
-    \item{bounce_up}{Logical. Significant bounce up in a downward trend.}
-    \item{bounce_down}{Logical. Significant bounce down in an upward trend.}
-    \item{bounce_none}{Logical. Significant bounces in no-trend data.}
-  }
+A data frame of class \code{cp_unsystematic} with core results:
+\describe{
+\item{delta_direction}{Character: 'down', 'up', or 'none'.}
+\item{bounce_direction}{Character: 'up', 'down', 'significant', or 'none'.}
+\item{bounce_any}{Logical. TRUE if any bounce pattern detected.}
+\item{bounce_above}{Integer. Number of upward changes meeting threshold.}
+\item{bounce_below}{Integer. Number of downward changes meeting threshold.}
+\item{reversals}{Integer. Detected reversals from 0 to non-0.}
+\item{returns}{Integer. Detected returns from non-0 to 0.}
+}
+If \code{detailed = TRUE}, returns additional columns:
+\describe{
+\item{delta_down}{Logical. Significant downward trend.}
+\item{delta_up}{Logical. Significant upward trend.}
+\item{delta_none}{Logical. No significant trend.}
+\item{bounce_up}{Logical. Significant bounce up in a downward trend.}
+\item{bounce_down}{Logical. Significant bounce down in an upward trend.}
+\item{bounce_none}{Logical. Significant bounces in no-trend data.}
+}
 }
 \description{
 Analyzes whether consumption data shows systematic trends or unsystematic patterns ("bounces")

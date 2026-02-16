@@ -17,9 +17,9 @@
 
 \item{newdata}{A data frame containing an 'x' column.}
 
-\item{inv_fun}{Optional inverse transformation function. Default is `identity`.}
+\item{inv_fun}{Optional inverse transformation function. Default is \code{identity}.}
 
-\item{inverse_fun}{`r lifecycle::badge("deprecated")` Use `inv_fun` instead.}
+\item{inverse_fun}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{inv_fun} instead.}
 
 \item{...}{Additional arguments.}
 }

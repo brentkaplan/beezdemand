@@ -36,7 +36,7 @@ Calculates the k scaling parameter used in demand curve equations to normalize
 consumption across different units or ranges. The k value is derived from the
 logarithmic range of consumption values.
 
-This is the modern replacement for [GetK()], with explicit parameters for
+This is the modern replacement for \code{\link[=GetK]{GetK()}}, with explicit parameters for
 the adjustment value and optional verbose output.
 }
 \details{
@@ -46,33 +46,34 @@ The k parameter is calculated as:
       k = log10(max) - log10(min) + adjustment}
 
 where max and min are the maximum and minimum non-zero consumption values.
-
-## Use in Demand Equations
+\subsection{Use in Demand Equations}{
 
 The k parameter appears in several demand curve equations:
 \itemize{
-  \item \strong{Hursh & Silberberg (2008)}: Scales the exponential term
-  \item \strong{Koffarnus et al. (2015)}: Normalizes the exponentiated model
-  \item Ensures numerical stability during model fitting
+\item \strong{Hursh & Silberberg (2008)}: Scales the exponential term
+\item \strong{Koffarnus et al. (2015)}: Normalizes the exponentiated model
+\item Ensures numerical stability during model fitting
+}
 }
 
-## Calculation Modes
+\subsection{Calculation Modes}{
 
 \itemize{
-  \item \strong{use_means = TRUE} (default): Calculates k from mean consumption
-    at each price point. Recommended when data has multiple subjects, as it
-    reduces influence of individual outliers.
+\item \strong{use_means = TRUE} (default): Calculates k from mean consumption
+at each price point. Recommended when data has multiple subjects, as it
+reduces influence of individual outliers.
 
-  \item \strong{use_means = FALSE}: Calculates k from the full range of individual
-    consumption values. May be preferable for single-subject data or when
-    individual variability is theoretically important.
+\item \strong{use_means = FALSE}: Calculates k from the full range of individual
+consumption values. May be preferable for single-subject data or when
+individual variability is theoretically important.
+}
 }
 }
 \note{
 \itemize{
-  \item Only non-zero consumption values are used (zero values are excluded)
-  \item Missing values (NA) are automatically removed via `na.rm = TRUE`
-  \item The default adjustment of 0.5 is conventional but can be modified
+\item Only non-zero consumption values are used (zero values are excluded)
+\item Missing values (NA) are automatically removed via \code{na.rm = TRUE}
+\item The default adjustment of 0.5 is conventional but can be modified
 }
 }
 \examples{
@@ -95,7 +96,7 @@ k_verbose <- get_k(apt, verbose = TRUE)
 }
 \seealso{
 \itemize{
-  \item [GetK()] - Legacy function (superseded)
-  \item [FitCurves()] - Uses k parameter in demand curve fitting
+\item \code{\link[=GetK]{GetK()}} - Legacy function (superseded)
+\item \code{\link[=FitCurves]{FitCurves()}} - Uses k parameter in demand curve fitting
 }
 }

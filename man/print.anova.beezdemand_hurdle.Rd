@@ -7,7 +7,7 @@
 \method{print}{anova.beezdemand_hurdle}(x, digits = 4, ...)
 }
 \arguments{
-\item{x}{An `anova.beezdemand` object.}
+\item{x}{An \code{anova.beezdemand} object.}
 
 \item{digits}{Number of significant digits to print.}
 

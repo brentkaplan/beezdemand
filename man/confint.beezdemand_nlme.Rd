@@ -7,7 +7,7 @@
 \method{confint}{beezdemand_nlme}(object, parm = NULL, level = 0.95, method = c("wald", "profile"), ...)
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` object from [fit_demand_mixed()].}
+\item{object}{A \code{beezdemand_nlme} object from \code{\link[=fit_demand_mixed]{fit_demand_mixed()}}.}
 
 \item{parm}{Character vector of parameter names to compute CIs for.
 Default includes all fixed effect parameters.}
@@ -15,16 +15,18 @@ Default includes all fixed effect parameters.}
 \item{level}{Confidence level (default 0.95).}
 
 \item{method}{Character. Method for computing intervals:
-- `"wald"`: Wald-type intervals using asymptotic normality (default, fast)
-- `"profile"`: Profile likelihood intervals via `nlme::intervals()` (slower
-  but more accurate for small samples)}
+\itemize{
+\item \code{"wald"}: Wald-type intervals using asymptotic normality (default, fast)
+\item \code{"profile"}: Profile likelihood intervals via \code{nlme::intervals()} (slower
+but more accurate for small samples)
+}}
 
-\item{...}{Additional arguments passed to `nlme::intervals()` when
-`method = "profile"`.}
+\item{...}{Additional arguments passed to \code{nlme::intervals()} when
+\code{method = "profile"}.}
 }
 \value{
-A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
-  `level`, `component`.
+A tibble with columns: \code{term}, \code{estimate}, \code{conf.low}, \code{conf.high},
+\code{level}, \code{component}.
 }
 \description{
 Computes confidence intervals for fixed effect parameters from an NLME-based
@@ -34,7 +36,7 @@ mixed-effects demand model.
 For Wald intervals, confidence bounds are computed as estimate ± z * SE
 using standard errors from the model summary.
 
-For profile intervals, `nlme::intervals()` is called on the underlying
+For profile intervals, \code{nlme::intervals()} is called on the underlying
 nlme model object. This method provides more accurate intervals but can be
 computationally intensive for complex models.
 }

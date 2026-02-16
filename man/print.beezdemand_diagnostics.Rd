@@ -7,7 +7,7 @@
 \method{print}{beezdemand_diagnostics}(x, ...)
 }
 \arguments{
-\item{x}{A `beezdemand_diagnostics` object.}
+\item{x}{A \code{beezdemand_diagnostics} object.}
 
 \item{...}{Additional arguments (ignored).}
 }

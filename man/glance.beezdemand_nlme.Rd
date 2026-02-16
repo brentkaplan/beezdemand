@@ -13,14 +13,16 @@
 }
 \value{
 A one-row tibble of model statistics with columns:
-  - `model_class`: "beezdemand_nlme"
-  - `backend`: "nlme"
-  - `equation_form`: The equation form used
-  - `nobs`: Number of observations
-  - `n_subjects`: Number of subjects
-  - `converged`: Convergence status
-  - `logLik`, `AIC`, `BIC`: Model fit statistics
-  - `sigma`: Residual standard error
+\itemize{
+\item \code{model_class}: "beezdemand_nlme"
+\item \code{backend}: "nlme"
+\item \code{equation_form}: The equation form used
+\item \code{nobs}: Number of observations
+\item \code{n_subjects}: Number of subjects
+\item \code{converged}: Convergence status
+\item \code{logLik}, \code{AIC}, \code{BIC}: Model fit statistics
+\item \code{sigma}: Residual standard error
+}
 }
 \description{
 Glance method for beezdemand_nlme

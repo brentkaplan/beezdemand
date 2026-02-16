@@ -16,11 +16,11 @@ uses the original data from the model.}
 }
 \value{
 A tibble containing the original data plus:
-  \describe{
-    \item{.fitted}{Fitted values on the model scale (may be transformed, e.g., LL4)}
-    \item{.resid}{Residuals on the model scale}
-    \item{.fixed}{Fitted values from fixed effects only (population-level)}
-  }
+\describe{
+\item{.fitted}{Fitted values on the model scale (may be transformed, e.g., LL4)}
+\item{.resid}{Residuals on the model scale}
+\item{.fixed}{Fitted values from fixed effects only (population-level)}
+}
 }
 \description{
 Returns the original data with fitted values and residuals from a nonlinear
@@ -29,12 +29,12 @@ visualization with the tidyverse.
 }
 \details{
 The fitted values and residuals are on the same scale as the response variable
-used in the model. For `equation_form = "zben"`, this is the LL4-transformed
-scale. For `equation_form = "simplified"` or `"exponentiated"`, this is the natural
+used in the model. For \code{equation_form = "zben"}, this is the LL4-transformed
+scale. For \code{equation_form = "simplified"} or \code{"exponentiated"}, this is the natural
 consumption scale.
 
 To back-transform predictions to the natural scale for "zben" models, use:
-`ll4_inv(augmented$.fitted)`
+\code{ll4_inv(augmented$.fitted)}
 }
 \examples{
 \donttest{

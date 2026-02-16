@@ -15,29 +15,29 @@
 )
 }
 \arguments{
-\item{object}{A `beezdemand_fixed` object.}
+\item{object}{A \code{beezdemand_fixed} object.}
 
 \item{newdata}{A data frame containing a price column matching the fitted
-object's `x_var`. If `NULL`, uses the unique observed prices when available.}
+object's \code{x_var}. If \code{NULL}, uses the unique observed prices when available.}
 
-\item{type}{One of `"response"` (default) or `"link"`.}
+\item{type}{One of \code{"response"} (default) or \code{"link"}.}
 
-\item{se.fit}{Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+\item{se.fit}{Logical; if \code{TRUE}, includes a \code{.se.fit} column (currently \code{NA}
 because vcov is not available from legacy fixed fits).}
 
-\item{interval}{One of `"none"` (default) or `"confidence"`. When requested,
-`.lower`/`.upper` are returned as `NA` because vcov is unavailable.}
+\item{interval}{One of \code{"none"} (default) or \code{"confidence"}. When requested,
+\code{.lower}/\code{.upper} are returned as \code{NA} because vcov is unavailable.}
 
-\item{level}{Confidence level when `interval = "confidence"`. Currently used
+\item{level}{Confidence level when \code{interval = "confidence"}. Currently used
 only for validation.}
 
 \item{...}{Unused.}
 }
 \value{
-A tibble containing the original `newdata` columns, plus `.fitted`
-  and, when requested, `.se.fit` and `.lower`/`.upper`. If `newdata` does not
-  include an id column, predictions are returned for all subjects (cross
-  product of `newdata` × subjects) unless `k` is subject-specific (`k = "ind"`).
+A tibble containing the original \code{newdata} columns, plus \code{.fitted}
+and, when requested, \code{.se.fit} and \code{.lower}/\code{.upper}. If \code{newdata} does not
+include an id column, predictions are returned for all subjects (cross
+product of \code{newdata} × subjects) unless \code{k} is subject-specific (\code{k = "ind"}).
 }
 \description{
 Predict Method for beezdemand_fixed

@@ -10,20 +10,22 @@
 \item{object}{A beezdemand_nlme object}
 
 \item{report_space}{Character. Reporting space for core parameters. One of
-`"natural"` or `"log10"` (default depends on `param_space` used for fitting).}
+\code{"natural"} or \code{"log10"} (default depends on \code{param_space} used for fitting).}
 
 \item{...}{Additional arguments (passed to summary.nlme)}
 }
 \value{
-A `summary.beezdemand_nlme` object (inherits from
-  `beezdemand_summary`) with fields including:
-  - `call`: The original function call
-  - `model_class`: "beezdemand_nlme"
-  - `backend`: "nlme"
-  - `equation_form`: The equation form used ("zben" or "simplified")
-  - `coefficients`: Tibble of fixed effects with std.error, statistic, p.value
-  - `random_effects`: VarCorr output for random effects
-  - `logLik`, `AIC`, `BIC`: Model fit statistics
+A \code{summary.beezdemand_nlme} object (inherits from
+\code{beezdemand_summary}) with fields including:
+\itemize{
+\item \code{call}: The original function call
+\item \code{model_class}: "beezdemand_nlme"
+\item \code{backend}: "nlme"
+\item \code{equation_form}: The equation form used ("zben" or "simplified")
+\item \code{coefficients}: Tibble of fixed effects with std.error, statistic, p.value
+\item \code{random_effects}: VarCorr output for random effects
+\item \code{logLik}, \code{AIC}, \code{BIC}: Model fit statistics
+}
 }
 \description{
 Returns a structured summary object containing model coefficients,

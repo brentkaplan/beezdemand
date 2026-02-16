@@ -15,106 +15,107 @@ fit_cp_nls(
 )
 }
 \arguments{
-\item{data}{A data frame with columns `x` (alternative price) and `y` (consumption).
+\item{data}{A data frame with columns \code{x} (alternative price) and \code{y} (consumption).
 Additional columns are ignored. Input is validated internally.}
 
 \item{equation}{Character string; model family, one of
-`c("exponentiated", "exponential", "additive")`. Default is `"exponentiated"`.}
+\code{c("exponentiated", "exponential", "additive")}. Default is \code{"exponentiated"}.}
 
-\item{start_vals}{Optional **named list** of initial values for parameters
-`log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
+\item{start_vals}{Optional \strong{named list} of initial values for parameters
+\code{log10_qalone}, \code{I}, and \code{log10_beta}. If \code{NULL}, the function derives
 plausible ranges from the data and uses multi-start search.}
 
-\item{iter}{Integer; number of random starts for `nls.multstart` (default `100`).}
+\item{iter}{Integer; number of random starts for \code{nls.multstart} (default \code{100}).}
 
 \item{bounds}{Deprecated. Log10-parameterized parameters are naturally unbounded.
 This argument is ignored but retained for backwards compatibility.}
 
-\item{fallback_to_nlsr}{Logical; if `TRUE` (default), try `nlsr::wrapnlsr` when
-both multi-start NLS and `nlsLM` fail.}
+\item{fallback_to_nlsr}{Logical; if \code{TRUE} (default), try \code{nlsr::wrapnlsr} when
+both multi-start NLS and \code{nlsLM} fail.}
 
-\item{return_all}{Logical; if `TRUE` (default), return a list containing the
-model and useful metadata. If `FALSE`, return the bare fitted model object.}
+\item{return_all}{Logical; if \code{TRUE} (default), return a list containing the
+model and useful metadata. If \code{FALSE}, return the bare fitted model object.}
 }
 \value{
-If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
+If \code{return_all = TRUE} (default): a list of class \code{"cp_model_nls"}:
 \itemize{
-  \item `model`: the fitted object from the successful backend.
-  \item `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
-  \item `equation`: the model family used.
-  \item `start_vals`: named list of starting values (final used).
-  \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
-  \item `data`: the 2-column data frame actually fit.
+\item \code{model}: the fitted object from the successful backend.
+\item \code{method}: one of \code{"nls_multstart"}, \code{"nlsLM"}, or \code{"wrapnlsr"}.
+\item \code{equation}: the model family used.
+\item \code{start_vals}: named list of starting values (final used).
+\item \code{nlsLM_fit}, \code{nlsr_fit}: fits from later stages (if attempted).
+\item \code{data}: the 2-column data frame actually fit.
 }
-If `return_all = FALSE`: the fitted model object from the successful backend.
+If \code{return_all = FALSE}: the fitted model object from the successful backend.
 }
 \description{
-Fits a **cross-price demand** curve using log10-parameterization for numerical
+Fits a \strong{cross-price demand} curve using log10-parameterization for numerical
 stability. The optimizer estimates parameters on the log10 scale where applicable,
 ensuring positive constraints are naturally satisfied.
 
-**Equation forms:**
-
-- **Exponentiated** (default):
-  \deqn{y = Q_{alone} \cdot 10^{I \cdot \exp(-\beta \cdot x)}}
-
-- **Exponential** (fits on log10 response scale):
-  \deqn{\log_{10}(y) = \log_{10}(Q_{alone}) + I \cdot \exp(-\beta \cdot x)}
-
-- **Additive** (level on \eqn{y}):
-  \deqn{y = Q_{alone} + I \cdot \exp(-\beta \cdot x)}
+\strong{Equation forms:}
+\itemize{
+\item \strong{Exponentiated} (default):
+\deqn{y = Q_{alone} \cdot 10^{I \cdot \exp(-\beta \cdot x)}}
+\item \strong{Exponential} (fits on log10 response scale):
+\deqn{\log_{10}(y) = \log_{10}(Q_{alone}) + I \cdot \exp(-\beta \cdot x)}
+\item \strong{Additive} (level on \eqn{y}):
+\deqn{y = Q_{alone} + I \cdot \exp(-\beta \cdot x)}
+}
 
 where \eqn{x} is the alternative product price (or "cross" price) and \eqn{y}
 is consumption of the target good.
 
-**Optimizer parameters (log10 parameterization):**
+\strong{Optimizer parameters (log10 parameterization):}
 \itemize{
-  \item \code{log10_qalone}: \eqn{\log_{10}(Q_{alone})} - baseline consumption
-        when the alternative is effectively absent.
-  \item \code{I}: cross-price **interaction intensity**; sign and magnitude reflect
-        substitution/complementarity. Unconstrained (can be negative for substitutes).
-  \item \code{log10_beta}: \eqn{\log_{10}(\beta)} - rate at which cross-price
-        influence decays as \eqn{x} increases.
+\item \code{log10_qalone}: \eqn{\log_{10}(Q_{alone})} - baseline consumption
+when the alternative is effectively absent.
+\item \code{I}: cross-price \strong{interaction intensity}; sign and magnitude reflect
+substitution/complementarity. Unconstrained (can be negative for substitutes).
+\item \code{log10_beta}: \eqn{\log_{10}(\beta)} - rate at which cross-price
+influence decays as \eqn{x} increases.
 }
 
 Natural-scale values are recovered as \eqn{Q_{alone} = 10^{log10\_qalone}} and
 \eqn{\beta = 10^{log10\_beta}}.
 
 The function first attempts a multi-start nonlinear least squares fit
-(`nls.multstart`). If that fails—or if explicit `start_vals` are provided—it
-falls back to `minpack.lm::nlsLM`. Optionally, it will make a final attempt
-with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
+(\code{nls.multstart}). If that fails—or if explicit \code{start_vals} are provided—it
+falls back to \code{minpack.lm::nlsLM}. Optionally, it will make a final attempt
+with \code{nlsr::wrapnlsr}. Returns either the fitted model or a structured object
 with metadata for downstream methods.
 }
 \details{
-**Start values.** When `start_vals` is missing, the function:
-(1) estimates a reasonable range for `log10_qalone` from the observed `y`,
-(2) estimates `log10_beta` from the price range, and (3) launches a multi-start
-grid in `nls.multstart`.
+\strong{Start values.} When \code{start_vals} is missing, the function:
+(1) estimates a reasonable range for \code{log10_qalone} from the observed \code{y},
+(2) estimates \code{log10_beta} from the price range, and (3) launches a multi-start
+grid in \code{nls.multstart}.
 
-**Zero handling for exponential equation.** Since the exponential equation fits
+\strong{Zero handling for exponential equation.} Since the exponential equation fits
 on the \eqn{\log_{10}(y)} scale, observations with \eqn{y \le 0} are automatically
 removed with a warning. Use the exponentiated or additive forms if you need to
 retain zero consumption values.
 
-**Fitting pipeline (short-circuiting):**
+\strong{Fitting pipeline (short-circuiting):}
 \enumerate{
-  \item `nls.multstart::nls_multstart()` with random starts.
-  \item If that fails (or if `start_vals` provided): `minpack.lm::nlsLM()` using
-        `start_vals` (user or internally estimated).
-  \item If that fails and `fallback_to_nlsr = TRUE`: `nlsr::wrapnlsr()`.
+\item \code{nls.multstart::nls_multstart()} with random starts.
+\item If that fails (or if \code{start_vals} provided): \code{minpack.lm::nlsLM()} using
+\code{start_vals} (user or internally estimated).
+\item If that fails and \code{fallback_to_nlsr = TRUE}: \code{nlsr::wrapnlsr()}.
 }
 
-The returned object has class `"cp_model_nls"` (when `return_all = TRUE`) with
-components: `model`, `method` (the algorithm used), `equation`, `start_vals`,
-`nlsLM_fit`, `nlsr_fit`, and the `data` used. This is convenient for custom
+The returned object has class \code{"cp_model_nls"} (when \code{return_all = TRUE}) with
+components: \code{model}, \code{method} (the algorithm used), \code{equation}, \code{start_vals},
+\code{nlsLM_fit}, \code{nlsr_fit}, and the \code{data} used. This is convenient for custom
 print/summary/plot methods.
 }
 \section{Convergence & warnings}{
 
-- Check convergence codes and residual diagnostics from the underlying fit.
-- Poor scaling or extreme `y` dispersion can make parameters weakly identified.
-- For `"exponential"`, the model fits on the \eqn{\log_{10}(y)} scale internally.
+\itemize{
+\item Check convergence codes and residual diagnostics from the underlying fit.
+\item Poor scaling or extreme \code{y} dispersion can make parameters weakly identified.
+\item For \code{"exponential"}, the model fits on the \eqn{\log_{10}(y)} scale internally.
+}
 }
 
 \examples{

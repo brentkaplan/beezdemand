@@ -13,11 +13,11 @@
 }
 \value{
 A data frame with one row per coefficient, containing columns:
-  \item{term}{The name of the model parameter}
-  \item{estimate}{The estimated coefficient value}
-  \item{std.error}{The standard error of the coefficient}
-  \item{statistic}{The t-statistic for the coefficient}
-  \item{p.value}{The p-value for the coefficient}
+\item{term}{The name of the model parameter}
+\item{estimate}{The estimated coefficient value}
+\item{std.error}{The standard error of the coefficient}
+\item{statistic}{The t-statistic for the coefficient}
+\item{p.value}{The p-value for the coefficient}
 }
 \description{
 This function extracts model coefficients from a cross-price demand model

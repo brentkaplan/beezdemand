@@ -12,38 +12,38 @@
 )
 }
 \arguments{
-\item{object}{A `beezdemand_nlme` object.}
+\item{object}{A \code{beezdemand_nlme} object.}
 
 \item{type}{Character, type of coefficients to extract. One of:
 \itemize{
-  \item `"fixed"`: Returns only fixed effects (equivalent to `fixef(object)`).
-  \item `"random"`: Returns only random effects (equivalent to `ranef(object)`).
-  \item `"combined"` (default): Returns subject-specific coefficients, where each
-        subject's coefficient is the sum of the corresponding fixed effect
-        and that subject's random effect deviation. This is equivalent to
-        what `stats::coef()` on an `nlme` object returns.
+\item \code{"fixed"}: Returns only fixed effects (equivalent to \code{fixef(object)}).
+\item \code{"random"}: Returns only random effects (equivalent to \code{ranef(object)}).
+\item \code{"combined"} (default): Returns subject-specific coefficients, where each
+subject's coefficient is the sum of the corresponding fixed effect
+and that subject's random effect deviation. This is equivalent to
+what \code{stats::coef()} on an \code{nlme} object returns.
 }}
 
-\item{report_space}{Character. One of `"internal"` (default), `"natural"`, or `"log10"`.}
+\item{report_space}{Character. One of \code{"internal"} (default), \code{"natural"}, or \code{"log10"}.}
 
-\item{...}{Additional arguments passed to the underlying `nlme` coefficient extraction
-functions (`nlme::fixef()`, `nlme::ranef()`, or `stats::coef.nlme()`).}
+\item{...}{Additional arguments passed to the underlying \code{nlme} coefficient extraction
+functions (\code{nlme::fixef()}, \code{nlme::ranef()}, or \code{stats::coef.nlme()}).}
 }
 \value{
-Depending on `type`:
-  \itemize{
-    \item `type="fixed"`: A named numeric vector of fixed-effect coefficients.
-    \item `type="random"`: A data frame (or list of data frames if multiple levels of grouping)
-          of random effects, as returned by `ranef.nlme()`.
-    \item `type="combined"`: A data frame where rows are subjects (from `id_var`)
-          and columns are the Q0 and alpha parameters, representing subject-specific
-          estimates (on the log10 scale).
-  }
+Depending on \code{type}:
+\itemize{
+\item \code{type="fixed"}: A named numeric vector of fixed-effect coefficients.
+\item \code{type="random"}: A data frame (or list of data frames if multiple levels of grouping)
+of random effects, as returned by \code{ranef.nlme()}.
+\item \code{type="combined"}: A data frame where rows are subjects (from \code{id_var})
+and columns are the Q0 and alpha parameters, representing subject-specific
+estimates (on the log10 scale).
+}
 }
 \description{
 Provides methods to extract fixed effects, random effects, or subject-specific
-(combined fixed + random) coefficients from a `beezdemand_nlme` object.
-This is an S3 method for the generic `coef` function.
+(combined fixed + random) coefficients from a \code{beezdemand_nlme} object.
+This is an S3 method for the generic \code{coef} function.
 }
 \examples{
 \dontrun{

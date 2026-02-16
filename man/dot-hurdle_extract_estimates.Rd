@@ -21,7 +21,7 @@
 }
 \value{
 A list with coefficients, se, variance_components, correlations,
-  and random effects matrix.
+and random effects matrix.
 }
 \description{
 Internal function to extract coefficients, standard errors, and derived

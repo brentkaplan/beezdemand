@@ -10,20 +10,20 @@
 \item{x}{An object of class \code{beezdemand_hurdle}.}
 
 \item{report_space}{Character. Reporting space for core demand parameters.
-One of `"internal"`, `"natural"`, or `"log10"`.}
+One of \code{"internal"}, \code{"natural"}, or \code{"log10"}.}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
 A tibble with columns:
-  \describe{
-    \item{term}{Parameter name}
-    \item{estimate}{Point estimate}
-    \item{std.error}{Standard error}
-    \item{statistic}{z-value}
-    \item{p.value}{P-value}
-    \item{component}{One of "zero_probability", "consumption", "variance", or "fixed"}
-  }
+\describe{
+\item{term}{Parameter name}
+\item{estimate}{Point estimate}
+\item{std.error}{Standard error}
+\item{statistic}{z-value}
+\item{p.value}{P-value}
+\item{component}{One of "zero_probability", "consumption", "variance", or "fixed"}
+}
 }
 \description{
 Returns a tibble of model coefficients in tidy format.

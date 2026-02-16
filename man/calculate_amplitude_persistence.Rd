@@ -18,33 +18,33 @@ calculate_amplitude_persistence(
 )
 }
 \arguments{
-\item{fit}{An object of class `beezdemand_fixed`, `beezdemand_hurdle`, `beezdemand_nlme`,
-or a `data.frame`.}
+\item{fit}{An object of class \code{beezdemand_fixed}, \code{beezdemand_hurdle}, \code{beezdemand_nlme},
+or a \code{data.frame}.}
 
 \item{amplitude}{Character vector of column names to consider for the Amplitude factor.
 The function will use the first column found in the data. Default is
-`c("Intensity", "Q0d", "Q0")`.}
+\code{c("Intensity", "Q0d", "Q0")}.}
 
 \item{persistence}{Character vector of column names to include in the Persistence factor.
-Default is `c("BP0", "Pmaxe", "Omaxe", "Alpha")`. All found columns will be used.}
+Default is \code{c("BP0", "Pmaxe", "Omaxe", "Alpha")}. All found columns will be used.}
 
-\item{use_inv_alpha}{Logical. If "Alpha" (or a variation) is present in `persistence`,
-should it be inverted (1/Alpha) before standardization? Default is `TRUE`.}
+\item{use_inv_alpha}{Logical. If "Alpha" (or a variation) is present in \code{persistence},
+should it be inverted (1/Alpha) before standardization? Default is \code{TRUE}.}
 
-\item{strict}{Logical. If `TRUE` (default), missing metrics, duplicated `id`s, and other
+\item{strict}{Logical. If \code{TRUE} (default), missing metrics, duplicated \code{id}s, and other
 data integrity problems produce errors instead of warnings.}
 
 \item{min_persistence_components}{Integer. Minimum number of non-missing standardized
-persistence components required to compute `Persistence` for a given `id`.
-If fewer are available, `Persistence` is set to `NA`. Default is `2`.}
+persistence components required to compute \code{Persistence} for a given \code{id}.
+If fewer are available, \code{Persistence} is set to \code{NA}. Default is \code{2}.}
 
-\item{empirical_y_var}{For `beezdemand_nlme` objects, optional column name in `fit$data`
-to use when computing empirical indices (e.g., `BP0`). This is important when the
-fitted `y_var` is transformed (e.g., log10). If `NULL`, the method will attempt to
-choose a sensible default and may error in `strict` mode if ambiguous.}
+\item{empirical_y_var}{For \code{beezdemand_nlme} objects, optional column name in \code{fit$data}
+to use when computing empirical indices (e.g., \code{BP0}). This is important when the
+fitted \code{y_var} is transformed (e.g., log10). If \code{NULL}, the method will attempt to
+choose a sensible default and may error in \code{strict} mode if ambiguous.}
 
 \item{basis_means}{Optional named numeric vector of means to use for Z-score standardization.
-Names must match the columns used (e.g., `c(Intensity = 10, BP0 = 5)`).
+Names must match the columns used (e.g., \code{c(Intensity = 10, BP0 = 5)}).
 If NULL (default), the sample means are used.}
 
 \item{basis_sds}{Optional named numeric vector of standard deviations to use for Z-score standardization.
@@ -54,7 +54,7 @@ Names must match the columns used. If NULL (default), the sample SDs are used.}
 }
 \value{
 A data frame with the original ID and calculated Amplitude and Persistence scores,
-  along with the standardized (Z-scored) constituent metrics.
+along with the standardized (Z-scored) constituent metrics.
 }
 \description{
 Calculates Amplitude and Persistence latent factors from demand metrics
@@ -62,26 +62,30 @@ for various beezdemand model objects.
 }
 \details{
 This function calculates Amplitude and Persistence by:
-1. Extracting the relevant demand metrics from the `fit` object.
-2. Resolving requested metric columns (case-insensitive, with limited synonym support
-   for common beezdemand outputs).
-3. Inverting Alpha if requested (1/Alpha).
-4. Standardizing (Z-scoring) the metrics. If `basis_means` and `basis_sds` are provided,
-   they are used; otherwise, the current sample's statistics are used.
-5. Aggregating the Z-scores into the two latent factors.
+\enumerate{
+\item Extracting the relevant demand metrics from the \code{fit} object.
+\item Resolving requested metric columns (case-insensitive, with limited synonym support
+for common beezdemand outputs).
+\item Inverting Alpha if requested (1/Alpha).
+\item Standardizing (Z-scoring) the metrics. If \code{basis_means} and \code{basis_sds} are provided,
+they are used; otherwise, the current sample's statistics are used.
+\item Aggregating the Z-scores into the two latent factors.
+}
 
-**Amplitude** is defined by the variable specified in `amplitude` (typically Intensity/Q0).
-**Persistence** is defined as the mean of the standardized values of the variables
-specified in `persistence` (typically Breakpoint, Pmax, Omax, and 1/Alpha).
+\strong{Amplitude} is defined by the variable specified in \code{amplitude} (typically Intensity/Q0).
+\strong{Persistence} is defined as the mean of the standardized values of the variables
+specified in \code{persistence} (typically Breakpoint, Pmax, Omax, and 1/Alpha).
 }
 \section{Models}{
 
-* **beezdemand_fixed**: Extracts metrics from `fit$results`.
-* **beezdemand_hurdle**: Extracts metrics from `fit$subject_pars`.
-* **beezdemand_nlme**: Calculates subject-specific parameters from fixed and random effects.
-  Parameters `Q0` and `Alpha` are assumed to be on `log10` scale for `zben` and `simplified`
-  equations and are converted to linear scale. Omax and Pmax are calculated empirically
-  from predictions. Breakpoint is calculated empirically from the raw data.
+\itemize{
+\item \strong{beezdemand_fixed}: Extracts metrics from \code{fit$results}.
+\item \strong{beezdemand_hurdle}: Extracts metrics from \code{fit$subject_pars}.
+\item \strong{beezdemand_nlme}: Calculates subject-specific parameters from fixed and random effects.
+Parameters \code{Q0} and \code{Alpha} are assumed to be on \code{log10} scale for \code{zben} and \code{simplified}
+equations and are converted to linear scale. Omax and Pmax are calculated empirically
+from predictions. Breakpoint is calculated empirically from the raw data.
+}
 }
 
 \examples{
