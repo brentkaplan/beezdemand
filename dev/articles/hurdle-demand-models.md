@@ -28,42 +28,40 @@ The hurdle model has two parts:
 
 ### Part I: Binary Model (Probability of Zero Consumption)
 
-$$\text{logit}\left( \pi_{ij} \right) = \beta_{0} + \beta_{1} \cdot \log\left( \text{price} + \epsilon \right) + a_{i}$$
+\text{logit}(\pi\_{ij}) = \beta_0 + \beta_1 \cdot \log(\text{price} +
+\epsilon) + a_i
 
 Where:
 
-- $\pi_{ij}$ = probability of zero consumption for subject $i$ at price
-  $j$
-- $\beta_{0}$ = intercept (baseline log-odds of zero consumption)
-- $\beta_{1}$ = slope (effect of log-price on log-odds of zero)
-- $\epsilon$ = small constant (default 0.001) for handling zero prices
-- $a_{i}$ = subject-specific random intercept
+- \pi\_{ij} = probability of zero consumption for subject i at price j
+- \beta_0 = intercept (baseline log-odds of zero consumption)
+- \beta_1 = slope (effect of log-price on log-odds of zero)
+- \epsilon = small constant (default 0.001) for handling zero prices
+- a_i = subject-specific random intercept
 
 ### Part II: Continuous Model (Consumption Given Positive)
 
-**With 3 random effects:**
-$$\log\left( Q_{ij} \right) = \left( \log Q_{0} + b_{i} \right) + k \cdot \left( \exp\left( - \left( \alpha + c_{i} \right) \cdot \text{price} \right) - 1 \right) + \varepsilon_{ij}$$
+**With 3 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
+(\exp(-(\alpha + c_i) \cdot \text{price}) - 1) + \varepsilon\_{ij}
 
-**With 2 random effects:**
-$$\log\left( Q_{ij} \right) = \left( \log Q_{0} + b_{i} \right) + k \cdot \left( \exp\left( - \alpha \cdot \text{price} \right) - 1 \right) + \varepsilon_{ij}$$
+**With 2 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
+(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon\_{ij}
 
 Where:
 
-- $Q_{0}$ = intensity (consumption at price 0)
-- $k$ = scaling parameter for exponential decay
-- $\alpha$ = elasticity parameter
-- $b_{i}$ = subject-specific random effect on intensity
-- $c_{i}$ = subject-specific random effect on elasticity (3-RE model
-  only)
+- Q_0 = intensity (consumption at price 0)
+- k = scaling parameter for exponential decay
+- \alpha = elasticity parameter
+- b_i = subject-specific random effect on intensity
+- c_i = subject-specific random effect on elasticity (3-RE model only)
 
 ### Random Effects Structure
 
 The random effects follow a multivariate normal distribution:
 
-- **2-RE model:**
-  $\left( a_{i},b_{i} \right) \sim \text{MVN}\left( 0,\Sigma_{2 \times 2} \right)$
-- **3-RE model:**
-  $\left( a_{i},b_{i},c_{i} \right) \sim \text{MVN}\left( 0,\Sigma_{3 \times 3} \right)$
+- **2-RE model:** (a_i, b_i) \sim \text{MVN}(0, \Sigma\_{2 \times 2})
+- **3-RE model:** (a_i, b_i, c_i) \sim \text{MVN}(0, \Sigma\_{3 \times
+  3})
 
 ## Getting Started
 
@@ -172,22 +170,22 @@ plot_qq(fit2)
 
 The `subject_pars` data frame contains:
 
-| Parameter    | Description                                                                                             |
-|--------------|---------------------------------------------------------------------------------------------------------|
-| `a_i`        | Random effect for Part I (zeros probability)                                                            |
-| `b_i`        | Random effect for Part II (intensity)                                                                   |
-| `c_i`        | Random effect for alpha (3-RE model only)                                                               |
-| `Q0`         | Individual intensity: $\exp\left( \log Q_{0} + b_{i} \right)$                                           |
-| `alpha`      | Individual elasticity: $\alpha + c_{i}$ (or just $\alpha$ for 2-RE)                                     |
-| `breakpoint` | Price where P(zero) = 0.5: $\exp\left( - \left( \beta_{0} + a_{i} \right)/\beta_{1} \right) - \epsilon$ |
-| `Pmax`       | Price at maximum expenditure                                                                            |
-| `Omax`       | Maximum expenditure                                                                                     |
+| Parameter    | Description                                                            |
+|--------------|------------------------------------------------------------------------|
+| `a_i`        | Random effect for Part I (zeros probability)                           |
+| `b_i`        | Random effect for Part II (intensity)                                  |
+| `c_i`        | Random effect for alpha (3-RE model only)                              |
+| `Q0`         | Individual intensity: \exp(\log Q_0 + b_i)                             |
+| `alpha`      | Individual elasticity: \alpha + c_i (or just \alpha for 2-RE)          |
+| `breakpoint` | Price where P(zero) = 0.5: \exp(-(\beta_0 + a_i) / \beta_1) - \epsilon |
+| `Pmax`       | Price at maximum expenditure                                           |
+| `Omax`       | Maximum expenditure                                                    |
 
 ## Model Selection: 2-RE vs 3-RE
 
 ### When to Use Each
 
-- **2-RE model**: When you believe elasticity ($\alpha$) is relatively
+- **2-RE model**: When you believe elasticity (\alpha) is relatively
   constant across subjects
 - **3-RE model**: When you believe elasticity varies meaningfully
   between subjects

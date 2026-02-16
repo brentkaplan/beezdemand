@@ -35,7 +35,7 @@ plot(
 - inv_fun:
 
   Optional function to inverse-transform predictions. Default is
-  \`identity\`.
+  `identity`.
 
 - n_points:
 
@@ -67,7 +67,7 @@ plot(
 
 - inverse_fun:
 
-  \`r lifecycle::badge("deprecated")\` Use \`inv_fun\` instead.
+  **\[deprecated\]** Use `inv_fun` instead.
 
 - ...:
 

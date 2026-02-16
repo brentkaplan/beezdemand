@@ -86,4 +86,4 @@ Inherit and extend layer for use in ggplot draw
 
 ## Author
 
-Shawn Gilroy \<shawn.gilroy@temple.edu\>
+Shawn Gilroy <shawn.gilroy@temple.edu>

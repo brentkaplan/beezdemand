@@ -1,11 +1,15 @@
 # Create a Pseudo-Log LL4 Transformation Object for ggplot2
 
-Generates a \`scales::trans\` object using the \`ll4\` transformation.
-This transformation object can be passed to the \`trans\` argument of
-\`ggplot2::scale_x_continuous\` or \`ggplot2::scale_y_continuous\`. It's
-designed for non-negative data and handles zero values gracefully. The
-"pseudo" aspect is conceptual, similar to \`pseudo_log_trans\` in that
-it handles a range including zero, but the transformation is \`ll4\`.
+Generates a
+[`scales::trans`](https://scales.r-lib.org/reference/new_transform.html)
+object using the `ll4` transformation. This transformation object can be
+passed to the `trans` argument of
+[`ggplot2::scale_x_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+or
+[`ggplot2::scale_y_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html).
+It's designed for non-negative data and handles zero values gracefully.
+The "pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that
+it handles a range including zero, but the transformation is `ll4`.
 
 ## Usage
 
@@ -17,12 +21,12 @@ pseudo_ll4_trans(lambda = 4)
 
 - lambda:
 
-  A positive numeric scalar, the lambda parameter for the \`ll4\`
-  transformation. Default is \`4\`.
+  A positive numeric scalar, the lambda parameter for the `ll4`
+  transformation. Default is `4`.
 
 ## Value
 
-A \`trans\` object (from the \`scales\` package).
+A `trans` object (from the `scales` package).
 
 ## See also
 

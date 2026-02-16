@@ -13,15 +13,15 @@ anova(object, ...)
 
 - object:
 
-  A \`beezdemand_hurdle\` model.
+  A `beezdemand_hurdle` model.
 
 - ...:
 
-  Additional \`beezdemand_hurdle\` models to compare.
+  Additional `beezdemand_hurdle` models to compare.
 
 ## Value
 
-An object of class \`anova.beezdemand\` containing:
+An object of class `anova.beezdemand` containing:
 
 - table:
 

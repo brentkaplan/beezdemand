@@ -17,8 +17,8 @@ tidy(x, report_space = c("natural", "log10"), ...)
 
 - report_space:
 
-  Character. Reporting space for core parameters. One of \`"natural"\`
-  (default) or \`"log10"\`.
+  Character. Reporting space for core parameters. One of `"natural"`
+  (default) or `"log10"`.
 
 - ...:
 

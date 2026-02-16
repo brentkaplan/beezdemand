@@ -13,7 +13,7 @@ print(x, ...)
 
 - x:
 
-  A \`beezdemand_diagnostics\` object.
+  A `beezdemand_diagnostics` object.
 
 - ...:
 

@@ -34,8 +34,8 @@ dataset is in its final form. Used within FitCurves
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\> Shawn P Gilroy
-\<shawn.gilroy@temple.edu\>
+Brent Kaplan <bkaplan.ku@gmail.com> Shawn P Gilroy
+<shawn.gilroy@temple.edu>
 
 ## Examples
 

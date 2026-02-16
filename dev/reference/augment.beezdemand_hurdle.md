@@ -52,12 +52,17 @@ A tibble containing the original data plus:
 
 ## Details
 
-For two-part hurdle models: - \`.fitted\` gives predicted demand on the
-natural consumption scale - \`.fitted_prob\` gives the predicted
-probability of positive consumption - \`.resid\` is defined only for
-positive observations as log(y) - .fitted_link - Observations with zero
-consumption have \`.resid = NA\` since they are explained by Part I (the
-zero-probability component), not Part II
+For two-part hurdle models:
+
+- `.fitted` gives predicted demand on the natural consumption scale
+
+- `.fitted_prob` gives the predicted probability of positive consumption
+
+- `.resid` is defined only for positive observations as log(y) -
+  .fitted_link
+
+- Observations with zero consumption have `.resid = NA` since they are
+  explained by Part I (the zero-probability component), not Part II
 
 ## Examples
 

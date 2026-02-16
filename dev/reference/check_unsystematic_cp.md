@@ -72,7 +72,7 @@ check_unsystematic_cp(
 
 ## Value
 
-A data frame of class \`cp_unsystematic\` with core results:
+A data frame of class `cp_unsystematic` with core results:
 
 - delta_direction:
 
@@ -102,7 +102,7 @@ A data frame of class \`cp_unsystematic\` with core results:
 
   Integer. Detected returns from non-0 to 0.
 
-If \`detailed = TRUE\`, returns additional columns:
+If `detailed = TRUE`, returns additional columns:
 
 - delta_down:
 

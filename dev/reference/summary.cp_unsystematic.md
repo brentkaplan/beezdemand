@@ -1,9 +1,9 @@
 # Summarize Cross-Price Unsystematic Data Check Results
 
 Summarizes systematic and unsystematic patterns from multiple calls to
-\`check_unsystematic_cp()\`. This includes overall proportions, trend
-and bounce direction counts, and optionally summaries by subject or
-group.
+[`check_unsystematic_cp()`](https://brentkaplan.github.io/beezdemand/reference/check_unsystematic_cp.md).
+This includes overall proportions, trend and bounce direction counts,
+and optionally summaries by subject or group.
 
 ## Usage
 
@@ -17,10 +17,10 @@ summary(object, ...)
 - object:
 
   A data frame containing results from multiple
-  \`check_unsystematic_cp()\` calls, with at minimum the columns
-  'delta_direction', 'bounce_direction', and 'bounce_any'. Columns 'id',
-  'group', 'reversals', and 'returns' are optional but allow extended
-  summaries.
+  [`check_unsystematic_cp()`](https://brentkaplan.github.io/beezdemand/reference/check_unsystematic_cp.md)
+  calls, with at minimum the columns 'delta_direction',
+  'bounce_direction', and 'bounce_any'. Columns 'id', 'group',
+  'reversals', and 'returns' are optional but allow extended summaries.
 
 - ...:
 
@@ -28,7 +28,7 @@ summary(object, ...)
 
 ## Value
 
-A list of class \`summary.cp_unsystematic\` with the following elements:
+A list of class `summary.cp_unsystematic` with the following elements:
 
 - total_patterns:
 

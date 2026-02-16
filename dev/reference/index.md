@@ -460,4 +460,4 @@ Functions that have been deprecated and will be removed in future
 versions.
 
 - [`pull()`](https://brentkaplan.github.io/beezdemand/reference/pull.md)
-  : Pull
+  **\[deprecated\]** : Pull

@@ -11,7 +11,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Open_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Fira_Mono-0.4.10/font.css" rel="stylesheet">
@@ -86,7 +87,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-02-15</h4>
+            <h4 data-toc-skip class="date">2026-02-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/beezdemand.Rmd" class="external-link"><code>vignettes/beezdemand.Rmd</code></a></small>
       <div class="d-none name"><code>beezdemand.Rmd</code></div>
@@ -1645,21 +1646,18 @@ rows)</caption>
 <p><img src="beezdemand_files/figure-html/hs-residuals-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
 <div class="section level5">
-<h5 id="normalized-alpha-alpha">Normalized Alpha
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>α</mi><mo>*</mo></msup><annotation encoding="application/x-tex">\alpha^*</annotation></semantics></math>)<a class="anchor" aria-label="anchor" href="#normalized-alpha-alpha"></a>
+<h5 id="normalized-alpha-alpha">Normalized Alpha (<span class="math inline">\alpha^*</span>)<a class="anchor" aria-label="anchor" href="#normalized-alpha-alpha"></a>
 </h5>
-<p>When <code>k</code> varies across participants or studies, raw
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-values are not directly comparable. The <code>alpha_star</code> column
-in <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output provides a normalized version (Strategy B;
-Rzeszutek et al., 2025) that adjusts for the scaling constant:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>α</mi><mo>*</mo></msup><mo>=</mo><mfrac><mrow><mo>−</mo><mi>α</mi></mrow><mrow><mo>ln</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><mn>1</mn><mrow><mi>k</mi><mo>⋅</mo><mo>ln</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\alpha^* = \frac{-\alpha}{\ln\!\left(1 - \frac{1}{k \cdot \ln(b)}\right)}</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-is the logarithmic base (10 for HS/Koff equations). Standard errors are
-computed via the delta method. <code>alpha_star</code> requires
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>⋅</mo><mo>ln</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">k \cdot \ln(b) &gt; 1</annotation></semantics></math>;
-otherwise <code>NA</code> is returned.</p>
+<p>When <code>k</code> varies across participants or studies, raw <span class="math inline">\alpha</span> values are not directly comparable.
+The <code>alpha_star</code> column in <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output
+provides a normalized version (Strategy B; Rzeszutek et al., 2025) that
+adjusts for the scaling constant:</p>
+<p><span class="math display">\alpha^* = \frac{-\alpha}{\ln\!\left(1 -
+\frac{1}{k \cdot \ln(b)}\right)}</span></p>
+<p>where <span class="math inline">b</span> is the logarithmic base (10
+for HS/Koff equations). Standard errors are computed via the delta
+method. <code>alpha_star</code> requires <span class="math inline">k
+\cdot \ln(b) &gt; 1</span>; otherwise <code>NA</code> is returned.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## alpha_star is included in tidy() output for HS and Koff equations</span></span>
 <span><span class="va">hs_tidy</span><span class="op">[</span><span class="va">hs_tidy</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"alpha_star"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"term"</span>, <span class="st">"estimate"</span>, <span class="st">"std.error"</span><span class="op">)</span><span class="op">]</span></span>
@@ -1697,12 +1695,8 @@ each averaged point (but disregarding within-subject clustering):</p>
 </h4>
 <p>As mentioned earlier, in <code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>, when
 <code>k = "share"</code> this parameter will be a shared parameter
-across all datasets (globally) while estimating
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_0</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-locally. While this works, it may take some time with larger sample
-sizes.</p>
+across all datasets (globally) while estimating <span class="math inline">Q_0</span> and <span class="math inline">\alpha</span> locally. While this works, it may take
+some time with larger sample sizes.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="st">"share"</span><span class="op">)</span></span></code></pre></div>
 <table style="width:100%;" class="table">

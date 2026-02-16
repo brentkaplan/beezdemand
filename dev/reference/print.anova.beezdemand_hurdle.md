@@ -13,7 +13,7 @@ print(x, digits = 4, ...)
 
 - x:
 
-  An \`anova.beezdemand\` object.
+  An `anova.beezdemand` object.
 
 - digits:
 

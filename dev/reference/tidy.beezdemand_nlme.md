@@ -26,8 +26,8 @@ tidy(
 
 - report_space:
 
-  Character. Reporting space for core parameters. One of \`"natural"\`
-  or \`"log10"\` (default depends on \`param_space\` used for fitting).
+  Character. Reporting space for core parameters. One of `"natural"` or
+  `"log10"` (default depends on `param_space` used for fitting).
 
 - ...:
 
@@ -35,7 +35,16 @@ tidy(
 
 ## Value
 
-A tibble of model coefficients with columns: - \`term\`: Parameter
-name - \`estimate\`: Point estimate - \`std.error\`: Standard error -
-\`statistic\`: t-value - \`p.value\`: P-value - \`component\`: "fixed"
-or "variance"
+A tibble of model coefficients with columns:
+
+- `term`: Parameter name
+
+- `estimate`: Point estimate
+
+- `std.error`: Standard error
+
+- `statistic`: t-value
+
+- `p.value`: P-value
+
+- `component`: "fixed" or "variance"

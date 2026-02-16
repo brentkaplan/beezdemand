@@ -13,7 +13,7 @@ print(x, ...)
 
 - x:
 
-  A \`summary.\*\` object
+  A `summary.*` object
 
 - ...:
 

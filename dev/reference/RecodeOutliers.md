@@ -40,7 +40,7 @@ higher/lower than the greatest nonoutlier value. Disregards 'NA' values.
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

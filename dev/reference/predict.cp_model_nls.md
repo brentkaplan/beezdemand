@@ -27,11 +27,11 @@ predict(
 
 - inv_fun:
 
-  Optional inverse transformation function. Default is \`identity\`.
+  Optional inverse transformation function. Default is `identity`.
 
 - inverse_fun:
 
-  \`r lifecycle::badge("deprecated")\` Use \`inv_fun\` instead.
+  **\[deprecated\]** Use `inv_fun` instead.
 
 - ...:
 

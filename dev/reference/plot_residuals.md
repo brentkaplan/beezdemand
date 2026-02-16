@@ -17,9 +17,15 @@ plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
 
 - type:
 
-  Character; type of residual plot. One of: - \`"fitted"\`: Residuals vs
-  fitted values - \`"histogram"\`: Histogram of residuals - \`"qq"\`:
-  Q-Q plot of residuals - \`"all"\`: All plots combined (default)
+  Character; type of residual plot. One of:
+
+  - `"fitted"`: Residuals vs fitted values
+
+  - `"histogram"`: Histogram of residuals
+
+  - `"qq"`: Q-Q plot of residuals
+
+  - `"all"`: All plots combined (default)
 
 - ...:
 

@@ -18,8 +18,8 @@ summary(object, report_space = c("natural", "log10"), ...)
 
 - report_space:
 
-  Character. Reporting space for core parameters. One of \`"natural"\`
-  or \`"log10"\` (default depends on \`param_space\` used for fitting).
+  Character. Reporting space for core parameters. One of `"natural"` or
+  `"log10"` (default depends on `param_space` used for fitting).
 
 - ...:
 
@@ -27,10 +27,20 @@ summary(object, report_space = c("natural", "log10"), ...)
 
 ## Value
 
-A \`summary.beezdemand_nlme\` object (inherits from
-\`beezdemand_summary\`) with fields including: - \`call\`: The original
-function call - \`model_class\`: "beezdemand_nlme" - \`backend\`:
-"nlme" - \`equation_form\`: The equation form used ("zben" or
-"simplified") - \`coefficients\`: Tibble of fixed effects with
-std.error, statistic, p.value - \`random_effects\`: VarCorr output for
-random effects - \`logLik\`, \`AIC\`, \`BIC\`: Model fit statistics
+A `summary.beezdemand_nlme` object (inherits from `beezdemand_summary`)
+with fields including:
+
+- `call`: The original function call
+
+- `model_class`: "beezdemand_nlme"
+
+- `backend`: "nlme"
+
+- `equation_form`: The equation form used ("zben" or "simplified")
+
+- `coefficients`: Tibble of fixed effects with std.error, statistic,
+  p.value
+
+- `random_effects`: VarCorr output for random effects
+
+- `logLik`, `AIC`, `BIC`: Model fit statistics

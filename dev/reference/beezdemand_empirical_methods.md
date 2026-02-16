@@ -1,7 +1,8 @@
 # S3 Methods for beezdemand_empirical Objects
 
 Methods for printing, summarizing, and visualizing objects of class
-\`beezdemand_empirical\` created by \[get_empirical_measures()\].
+`beezdemand_empirical` created by
+[`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md).
 
 ## Usage
 
@@ -20,7 +21,7 @@ plot(x, type = "histogram", ...)
 
 - x, object:
 
-  A \`beezdemand_empirical\` object
+  A `beezdemand_empirical` object
 
 - ...:
 
@@ -38,18 +39,25 @@ plot(x, type = "histogram", ...)
 
 ## Value
 
-- \`print()\` - Returns the object invisibly (called for side effects)
+- [`print()`](https://rdrr.io/r/base/print.html) - Returns the object
+  invisibly (called for side effects)
 
-- \`summary()\` - Returns a list with extended summary information
+- [`summary()`](https://rdrr.io/r/base/summary.html) - Returns a list
+  with extended summary information
 
-- \`plot()\` - Returns a ggplot2 object
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) - Returns a
+  ggplot2 object
 
 ## Details
 
-\## Print Method Displays a compact summary showing the number of
-subjects analyzed and a preview of the empirical measures table.
+### Print Method
 
-\## Summary Method Provides extended information including:
+Displays a compact summary showing the number of subjects analyzed and a
+preview of the empirical measures table.
+
+### Summary Method
+
+Provides extended information including:
 
 - Data summary (subjects, zero consumption patterns, completeness)
 
@@ -58,10 +66,11 @@ subjects analyzed and a preview of the empirical measures table.
 
 - Missing data patterns
 
-\## Plot Method Creates visualizations of empirical measures across
-subjects.
+### Plot Method
 
-\*\*Histogram type\*\* (default):
+Creates visualizations of empirical measures across subjects.
+
+**Histogram type** (default):
 
 - Six-panel faceted plot showing distribution of each measure
 
@@ -69,7 +78,7 @@ subjects.
 
 - Uses modern beezdemand styling
 
-\*\*Matrix type\*\*:
+**Matrix type**:
 
 - Scatterplot matrix (pairs plot) showing relationships between measures
 
@@ -83,7 +92,7 @@ subjects.
 
 ## See also
 
-\[get_empirical_measures()\]
+[`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md)
 
 ## Examples
 

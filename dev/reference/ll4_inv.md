@@ -1,7 +1,7 @@
 # Inverse Log-Logistic Transformation (Inverse LL4-like)
 
-Applies the inverse of the \`ll4\` transformation. Given \`y = ll4(x)\`,
-this function calculates \`x = (base^(y \* lambda) - 1)^(1/lambda)\`.
+Applies the inverse of the `ll4` transformation. Given `y = ll4(x)`,
+this function calculates `x = (base^(y * lambda) - 1)^(1/lambda)`.
 
 ## Usage
 
@@ -13,25 +13,24 @@ ll4_inv(y, lambda = 4, base = 10)
 
 - y:
 
-  A numeric vector or scalar of transformed values (output from
-  \`ll4\`).
+  A numeric vector or scalar of transformed values (output from `ll4`).
 
 - lambda:
 
   A positive numeric scalar, the lambda parameter used in the original
-  \`ll4\` transformation. Must match the one used for the forward
-  transform. Default is \`4\`.
+  `ll4` transformation. Must match the one used for the forward
+  transform. Default is `4`.
 
 - base:
 
   A positive numeric scalar, the base of the logarithm used in the
-  original \`ll4\` transformation. Must match. Default is \`10\`.
+  original `ll4` transformation. Must match. Default is `10`.
 
 ## Value
 
 A numeric vector or scalar of the original, untransformed values. May
-return \`NaN\` if \`(base^(y \* lambda) - 1)\` is negative and
-\`1/lambda\` implies an even root (e.g., if \`lambda\` is 2 or 4).
+return `NaN` if `(base^(y * lambda) - 1)` is negative and `1/lambda`
+implies an even root (e.g., if `lambda` is 2 or 4).
 
 ## Examples
 

@@ -373,8 +373,6 @@ The following deprecations will take effect in version 0.2.0:
 
 ## beezdemand 0.1.2
 
-CRAN release: 2023-08-26
-
 - No longer relies on `nlmrt` and instead relies on `nlsr`
 
 - Fixes an issue where CheckUnsystematic may not flag certain cases when
@@ -395,8 +393,6 @@ CRAN release: 2023-08-26
   parameter and allow for user-specified starting values.
 
 ## beezdemand 0.1.0
-
-CRAN release: 2018-07-31
 
 - Package successfully on CRAN!
 

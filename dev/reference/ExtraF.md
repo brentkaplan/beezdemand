@@ -77,7 +77,7 @@ One alpha better than individual alphas?
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

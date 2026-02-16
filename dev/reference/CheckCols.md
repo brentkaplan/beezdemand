@@ -40,4 +40,4 @@ Check column names
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>

@@ -62,4 +62,4 @@ variance–covariance matrix (or SE vector) is supplied.
 Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N.
 (2025). Overviewing the exponential model of demand and introducing a
 simplification that solves issues of span, scale, and zeros.
-\*Experimental and Clinical Psychopharmacology\*.
+*Experimental and Clinical Psychopharmacology*.

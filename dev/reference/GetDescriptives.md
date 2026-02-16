@@ -44,12 +44,15 @@ Dataframe with descriptive statistics
 
 ## Details
 
-\`r lifecycle::badge("superseded")\`
+**\[superseded\]**
 
-\`GetDescriptives()\` has been superseded by
-\[get_descriptive_summary()\], which provides a modern S3 interface with
-standardized methods (\`print()\`, \`summary()\`, \`plot()\`).
-\`GetDescriptives()\` will continue to work but is no longer recommended
+`GetDescriptives()` has been superseded by
+[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md),
+which provides a modern S3 interface with standardized methods
+([`print()`](https://rdrr.io/r/base/print.html),
+[`summary()`](https://rdrr.io/r/base/summary.html),
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html)).
+`GetDescriptives()` will continue to work but is no longer recommended
 for new code.
 
 Provides the following descriptive statistics from purchase task data at
@@ -59,11 +62,12 @@ and maximum consumption.
 
 ## See also
 
-\[get_descriptive_summary()\] for the modern interface
+[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md)
+for the modern interface
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

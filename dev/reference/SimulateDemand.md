@@ -49,7 +49,7 @@ Koffarnus, Franck, Stein, & Bickel (2015).
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

@@ -32,4 +32,4 @@ Derivative-based optimization strategy
 
 ## Author
 
-Shawn Gilroy \<sgilroy1@lsu.edu\>
+Shawn Gilroy <sgilroy1@lsu.edu>

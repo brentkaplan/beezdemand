@@ -2,8 +2,8 @@
 
 Provides methods to extract fixed effects, random effects, or
 subject-specific (combined fixed + random) coefficients from a
-\`beezdemand_nlme\` object. This is an S3 method for the generic
-\`coef\` function.
+`beezdemand_nlme` object. This is an S3 method for the generic `coef`
+function.
 
 ## Usage
 
@@ -21,46 +21,48 @@ coef(
 
 - object:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - type:
 
   Character, type of coefficients to extract. One of:
 
-  - \`"fixed"\`: Returns only fixed effects (equivalent to
-    \`fixef(object)\`).
+  - `"fixed"`: Returns only fixed effects (equivalent to
+    `fixef(object)`).
 
-  - \`"random"\`: Returns only random effects (equivalent to
-    \`ranef(object)\`).
+  - `"random"`: Returns only random effects (equivalent to
+    `ranef(object)`).
 
-  - \`"combined"\` (default): Returns subject-specific coefficients,
-    where each subject's coefficient is the sum of the corresponding
-    fixed effect and that subject's random effect deviation. This is
-    equivalent to what \`stats::coef()\` on an \`nlme\` object returns.
+  - `"combined"` (default): Returns subject-specific coefficients, where
+    each subject's coefficient is the sum of the corresponding fixed
+    effect and that subject's random effect deviation. This is
+    equivalent to what
+    [`stats::coef()`](https://rdrr.io/r/stats/coef.html) on an `nlme`
+    object returns.
 
 - report_space:
 
-  Character. One of \`"internal"\` (default), \`"natural"\`, or
-  \`"log10"\`.
+  Character. One of `"internal"` (default), `"natural"`, or `"log10"`.
 
 - ...:
 
-  Additional arguments passed to the underlying \`nlme\` coefficient
-  extraction functions (\`nlme::fixef()\`, \`nlme::ranef()\`, or
-  \`stats::coef.nlme()\`).
+  Additional arguments passed to the underlying `nlme` coefficient
+  extraction functions
+  ([`nlme::fixef()`](https://rdrr.io/pkg/nlme/man/fixed.effects.html),
+  [`nlme::ranef()`](https://rdrr.io/pkg/nlme/man/random.effects.html),
+  or `stats::coef.nlme()`).
 
 ## Value
 
-Depending on \`type\`:
+Depending on `type`:
 
-- \`type="fixed"\`: A named numeric vector of fixed-effect coefficients.
+- `type="fixed"`: A named numeric vector of fixed-effect coefficients.
 
-- \`type="random"\`: A data frame (or list of data frames if multiple
-  levels of grouping) of random effects, as returned by
-  \`ranef.nlme()\`.
+- `type="random"`: A data frame (or list of data frames if multiple
+  levels of grouping) of random effects, as returned by `ranef.nlme()`.
 
-- \`type="combined"\`: A data frame where rows are subjects (from
-  \`id_var\`) and columns are the Q0 and alpha parameters, representing
+- `type="combined"`: A data frame where rows are subjects (from
+  `id_var`) and columns are the Q0 and alpha parameters, representing
   subject-specific estimates (on the log10 scale).
 
 ## See also

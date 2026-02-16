@@ -17,9 +17,12 @@ summary(object, report_space = c("natural", "log10"), ...)
 
 - report_space:
 
-  Character. Reporting space for core parameters. One of: -
-  \`"natural"\`: report natural-scale parameters (default) -
-  \`"log10"\`: report \`log10()\`-scale parameters when defined
+  Character. Reporting space for core parameters. One of:
+
+  - `"natural"`: report natural-scale parameters (default)
+
+  - `"log10"`: report [`log10()`](https://rdrr.io/r/base/Log.html)-scale
+    parameters when defined
 
 - ...:
 

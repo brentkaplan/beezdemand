@@ -113,22 +113,28 @@ of model objects, (3) list of individual dataframes used in fitting
 
 ## Details
 
-\`r lifecycle::badge("superseded")\`
+**\[superseded\]**
 
-\`FitCurves()\` has been superseded by \[fit_demand_fixed()\], which
-provides a modern S3 interface with standardized methods (\`summary()\`,
-\`tidy()\`, \`glance()\`, \`predict()\`). \`FitCurves()\` will continue
-to work but is no longer recommended for new code. See
-\`vignette("migration-guide")\` for migration instructions.
+`FitCurves()` has been superseded by
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
+which provides a modern S3 interface with standardized methods
+([`summary()`](https://rdrr.io/r/base/summary.html),
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+[`glance()`](https://generics.r-lib.org/reference/glance.html),
+[`predict()`](https://rdrr.io/r/stats/predict.html)). `FitCurves()` will
+continue to work but is no longer recommended for new code. See
+[`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
+for migration instructions.
 
 ## See also
 
-\[fit_demand_fixed()\] for the modern interface
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+for the modern interface
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\> Shawn Gilroy
-\<shawn.gilroy@temple.edu\>
+Brent Kaplan <bkaplan.ku@gmail.com> Shawn Gilroy
+<shawn.gilroy@temple.edu>
 
 ## Examples
 

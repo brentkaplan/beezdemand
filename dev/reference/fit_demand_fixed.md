@@ -2,7 +2,9 @@
 
 Modern interface for fitting individual demand curves via nonlinear
 least squares. Returns a structured S3 object with standard methods
-including \`summary()\`, \`tidy()\`, and \`glance()\`.
+including [`summary()`](https://rdrr.io/r/base/summary.html),
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html), and
+[`glance()`](https://generics.r-lib.org/reference/glance.html).
 
 ## Usage
 
@@ -24,55 +26,59 @@ fit_demand_fixed(
 
 - data:
 
-  Data frame in long format with columns: \`id\`, \`x\` (price), \`y\`
+  Data frame in long format with columns: `id`, `x` (price), `y`
   (consumption).
 
 - equation:
 
-  Character. Equation type: \`"hs"\` (Hursh & Silberberg, 2008),
-  \`"koff"\` (Koffarnus et al., 2015), \`"simplified"\` (Rzeszutek et
-  al., 2025; simplified exponential with normalized decay, no \`k\`
-  parameter), or \`"linear"\`. The modern aliases \`"exponential"\`
-  (equivalent to \`"hs"\`) and \`"exponentiated"\` (equivalent to
-  \`"koff"\`) are also accepted. Default \`"hs"\`.
+  Character. Equation type: `"hs"` (Hursh & Silberberg, 2008), `"koff"`
+  (Koffarnus et al., 2015), `"simplified"` (Rzeszutek et al., 2025;
+  simplified exponential with normalized decay, no `k` parameter), or
+  `"linear"`. The modern aliases `"exponential"` (equivalent to `"hs"`)
+  and `"exponentiated"` (equivalent to `"koff"`) are also accepted.
+  Default `"hs"`.
 
 - k:
 
-  Scaling constant. Numeric value (fixed), \`"ind"\` (individual),
-  \`"fit"\` (free parameter), or \`"range"\` (data-driven). Default
-  \`2\`.
+  Scaling constant. Numeric value (fixed), `"ind"` (individual), `"fit"`
+  (free parameter), or `"range"` (data-driven). Default `2`.
 
 - agg:
 
-  Character. Aggregation method: \`"Mean"\`, \`"Pooled"\`, or \`NULL\`
-  for individual fits. Default \`NULL\`.
+  Character. Aggregation method: `"Mean"`, `"Pooled"`, or `NULL` for
+  individual fits. Default `NULL`.
 
 - x_var:
 
-  Character. Name of the price column. Default \`"x"\`.
+  Character. Name of the price column. Default `"x"`.
 
 - y_var:
 
-  Character. Name of the consumption column. Default \`"y"\`.
+  Character. Name of the consumption column. Default `"y"`.
 
 - id_var:
 
-  Character. Name of the subject identifier column. Default \`"id"\`.
+  Character. Name of the subject identifier column. Default `"id"`.
 
 - param_space:
 
-  Character. Parameterization used for fitting. One of: - \`"natural"\`:
-  fit \`Q0\`, \`alpha\` (and \`k\` if \`k = "fit"\`) on their natural
-  scale - \`"log10"\`: fit \`log10(Q0)\`, \`log10(alpha)\` (and
-  \`log10(k)\` if \`k = "fit"\`)
+  Character. Parameterization used for fitting. One of:
+
+  - `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their
+    natural scale
+
+  - `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if
+    `k = "fit"`)
 
 - ...:
 
-  Additional arguments passed to the underlying \`FitCurves()\` engine.
+  Additional arguments passed to the underlying
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  engine.
 
 ## Value
 
-An object of class \`beezdemand_fixed\` with components:
+An object of class `beezdemand_fixed` with components:
 
 - results:
 
@@ -80,7 +86,7 @@ An object of class \`beezdemand_fixed\` with components:
 
 - fits:
 
-  List of model fit objects (if \`detailed = TRUE\` internally)
+  List of model fit objects (if `detailed = TRUE` internally)
 
 - predictions:
 
@@ -120,7 +126,8 @@ An object of class \`beezdemand_fixed\` with components:
 
 ## Details
 
-This function is a modern wrapper around the legacy \`FitCurves()\`
+This function is a modern wrapper around the legacy
+[`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
 function. It provides the same fitting capabilities but returns a
 structured S3 object with standardized methods for model interrogation.
 

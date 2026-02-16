@@ -1,10 +1,10 @@
 # Predict Method for beezdemand_nlme Objects
 
-Generates point predictions from a fitted \`beezdemand_nlme\` model.
+Generates point predictions from a fitted `beezdemand_nlme` model.
 Predictions can be made at the population level (fixed effects only) or
 group/subject level (fixed + random effects). The output scale depends
-on the \`equation_form\` used during model fitting and whether
-\`inv_fun\` is applied.
+on the `equation_form` used during model fitting and whether `inv_fun`
+is applied.
 
 ## Usage
 
@@ -27,71 +27,73 @@ predict(
 
 - object:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - newdata:
 
   Optional data frame for which to make predictions. Must contain
-  \`x_var\` and all \`factors\` specified in the original model. If
-  group-level predictions are desired (\`level=1\`), the \`id_var\`
-  column from the original fit must also be present in \`newdata\` and
-  its levels should correspond to those in the original data for
-  meaningful random effect application. If \`NULL\`, predictions are
-  made for the data used in fitting the model.
+  `x_var` and all `factors` specified in the original model. If
+  group-level predictions are desired (`level=1`), the `id_var` column
+  from the original fit must also be present in `newdata` and its levels
+  should correspond to those in the original data for meaningful random
+  effect application. If `NULL`, predictions are made for the data used
+  in fitting the model.
 
 - type:
 
-  One of \`"response"\` (default), \`"link"\`, \`"population"\`, or
-  \`"individual"\`. \`"population"\` and \`"individual"\` are aliases
-  that set \`level\` to \`0\` or \`1\`, respectively.
+  One of `"response"` (default), `"link"`, `"population"`, or
+  `"individual"`. `"population"` and `"individual"` are aliases that set
+  `level` to `0` or `1`, respectively.
 
 - level:
 
-  Integer, prediction level for \`nlme::predict.nlme()\`:
+  Integer, prediction level for
+  [`nlme::predict.nlme()`](https://rdrr.io/pkg/nlme/man/predict.nlme.html):
 
-  - \`0\`: Population predictions (based on fixed effects only).
+  - `0`: Population predictions (based on fixed effects only).
 
-  - \`1\` (or higher, up to number of grouping levels in model):
+  - `1` (or higher, up to number of grouping levels in model):
     Group-specific predictions (fixed effects + random effects for the
-    specified \`id_var\` level).
+    specified `id_var` level).
 
-  Default is \`0\`.
+  Default is `0`.
 
 - inv_fun:
 
   Optional function to inverse-transform the predictions. Example: If
-  \`y_var\` was log10-transformed during fitting and \`equation_form\`
-  like "zben" produces predictions on that log10 scale, \`inv_fun =
-  function(x) 10^x\` would convert predictions back to the original
-  consumption scale. If \`equation_form\` was "simplified" (which models
-  raw Y), \`inv_fun\` might be \`identity\` or not needed if predictions
-  are already on the desired scale.
+  `y_var` was log10-transformed during fitting and `equation_form` like
+  "zben" produces predictions on that log10 scale,
+  `inv_fun = function(x) 10^x` would convert predictions back to the
+  original consumption scale. If `equation_form` was "simplified" (which
+  models raw Y), `inv_fun` might be `identity` or not needed if
+  predictions are already on the desired scale.
 
 - se.fit:
 
-  Logical; if \`TRUE\`, includes a \`.se.fit\` column (currently \`NA\`
-  because standard errors are not implemented for \`beezdemand_nlme\`
+  Logical; if `TRUE`, includes a `.se.fit` column (currently `NA`
+  because standard errors are not implemented for `beezdemand_nlme`
   predictions).
 
 - interval:
 
-  One of \`"none"\` (default) or \`"confidence"\`. When requested,
-  \`.lower\`/\`.upper\` are returned as \`NA\`.
+  One of `"none"` (default) or `"confidence"`. When requested,
+  `.lower`/`.upper` are returned as `NA`.
 
 - interval_level:
 
-  Confidence level when \`interval = "confidence"\`. Currently used only
+  Confidence level when `interval = "confidence"`. Currently used only
   for validation.
 
 - ...:
 
-  Additional arguments passed to \`nlme::predict.nlme()\`.
+  Additional arguments passed to
+  [`nlme::predict.nlme()`](https://rdrr.io/pkg/nlme/man/predict.nlme.html).
 
 ## Value
 
-A tibble containing the original \`newdata\` columns plus \`.fitted\`.
-When requested, \`.se.fit\` and \`.lower\`/\`.upper\` are included
-(currently \`NA\`).
+A tibble containing the original `newdata` columns plus `.fitted`. When
+requested, `.se.fit` and `.lower`/`.upper` are included (currently
+`NA`).
 
 ## See also
 

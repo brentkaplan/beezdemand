@@ -91,20 +91,23 @@ Data frame
 
 ## Details
 
-\`r lifecycle::badge("superseded")\`
+**\[superseded\]**
 
-\`FitMeanCurves()\` has been superseded by \[fit_demand_fixed()\] with
-the \`agg\` parameter. \`FitMeanCurves()\` will continue to work but is
-no longer recommended for new code. See \`vignette("migration-guide")\`
+`FitMeanCurves()` has been superseded by
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+with the `agg` parameter. `FitMeanCurves()` will continue to work but is
+no longer recommended for new code. See
+[`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
 for migration instructions.
 
 ## See also
 
-\[fit_demand_fixed()\] for the modern interface with \`agg\` parameter
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+for the modern interface with `agg` parameter
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

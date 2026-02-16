@@ -23,8 +23,8 @@ check_demand_model(object, ...)
 
 - object:
 
-  A fitted model object of class \`beezdemand_hurdle\`,
-  \`beezdemand_nlme\`, or \`beezdemand_fixed\`.
+  A fitted model object of class `beezdemand_hurdle`, `beezdemand_nlme`,
+  or `beezdemand_fixed`.
 
 - ...:
 
@@ -32,7 +32,7 @@ check_demand_model(object, ...)
 
 ## Value
 
-An object of class \`beezdemand_diagnostics\` containing:
+An object of class `beezdemand_diagnostics` containing:
 
 - convergence:
 
@@ -74,13 +74,15 @@ The function checks for:
 
 ## Note
 
-This function is named \`check_demand_model()\` to avoid potential
-conflicts with \`performance::check_model()\` from the performance
-package.
+This function is named `check_demand_model()` to avoid potential
+conflicts with
+[`performance::check_model()`](https://easystats.github.io/performance/reference/check_model.html)
+from the performance package.
 
 ## See also
 
-\[plot_residuals()\], \[plot_qq()\]
+[`plot_residuals()`](https://brentkaplan.github.io/beezdemand/reference/plot_residuals.md),
+[`plot_qq()`](https://brentkaplan.github.io/beezdemand/reference/plot_qq.md)
 
 ## Examples
 

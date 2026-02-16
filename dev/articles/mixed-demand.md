@@ -9,11 +9,11 @@ package. We will focus on the
 function and its associated helper functions for extracting results,
 making predictions, and visualizing fits. These models allow for
 individual differences (random effects) and the examination of how
-various factors (fixed effects) influence demand parameters like $Q_{0}$
-(maximum consumption at zero price) and $\alpha$ (sensitivity of demand
-to price). The parameters $Q_{0}$ and $\alpha$ are estimated on a log10
-scale for numerical stability, but reporting functions will provide them
-on their natural, interpretable scale.
+various factors (fixed effects) influence demand parameters like Q\_{0}
+(maximum consumption at zero price) and \alpha (sensitivity of demand to
+price). The parameters Q\_{0} and \alpha are estimated on a log10 scale
+for numerical stability, but reporting functions will provide them on
+their natural, interpretable scale.
 
 For advanced topics including multi-factor models, collapsing factor
 levels, estimated marginal means, pairwise comparisons, continuous
@@ -96,7 +96,7 @@ print(fit_apt_zben)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55c6b49766a8>
+    #> <environment: 0x55af37872d90>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -171,7 +171,7 @@ print(fit_apt_simplified)
     #> Equation Form Selected:  simplified 
     #> NLME Model Formula:
     #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-    #> <environment: 0x55c6a3d0dd08>
+    #> <environment: 0x55af2abde2c8>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -250,7 +250,7 @@ print(fit_apt_exponentiated)
     #> Equation Form Selected:  exponentiated 
     #> NLME Model Formula:
     #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-    #> <environment: 0x55c6ae36c948>
+    #> <environment: 0x55af306848f8>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -374,7 +374,7 @@ plot_residuals(fit_apt_zben)$fitted
 
 #### Basic Model (No Factors)
 
-This model estimates global $Q_{0}$ and $\alpha$ parameters with random
+This model estimates global Q\_{0} and \alpha parameters with random
 effects for subjects.
 
 ``` r
@@ -406,7 +406,7 @@ print(fit_no_factors_vignette)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55c6ad729c88>
+    #> <environment: 0x55af2a319d78>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  monkey 
@@ -445,7 +445,7 @@ model converged, it prints the nlme model summary.
 
 #### Model with One Factor
 
-Let’s model $Q_{0}$ and $\alpha$ as varying by dose for Alfentanil.
+Let’s model Q\_{0} and \alpha as varying by dose for Alfentanil.
 
 ``` r
 fit_one_factor_dose <- fit_demand_mixed(
@@ -472,7 +472,7 @@ print(fit_one_factor_dose)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55c6ae52d4b8>
+    #> <environment: 0x55af25168700>
     #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
     #> Factors:  dose 
     #> Interaction Term Included:  FALSE 
@@ -565,7 +565,7 @@ if (!is.null(active_fit$model)) {
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55c6ae52d4b8>
+    #> <environment: 0x55af25168700>
     #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
     #> Factors:  dose 
     #> Interaction Term Included:  FALSE 
@@ -872,7 +872,7 @@ plot_object +
 
 The beezdemand package provides a suite of tools for robustly fitting
 nonlinear mixed-effects demand models and interpreting their parameters.
-By parameterizing $Q_{0}$ and $\alpha$ on the log10 scale, numerical
+By parameterizing Q\_{0} and \alpha on the log10 scale, numerical
 stability is enhanced, while helper functions allow for easy
 back-transformation and interpretation on the natural scale.
 

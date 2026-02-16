@@ -1,8 +1,8 @@
 # Print Method for beezdemand_nlme Objects
 
-Provides a concise summary of a \`beezdemand_nlme\` object, typically
+Provides a concise summary of a `beezdemand_nlme` object, typically
 displaying the call, model specifications, and key results from the
-\`nlme\` fit if successful.
+`nlme` fit if successful.
 
 ## Usage
 
@@ -15,19 +15,19 @@ print(x, digits = max(3L, getOption("digits") - 3L), ...)
 
 - x:
 
-  An object of class \`beezdemand_nlme\`.
+  An object of class `beezdemand_nlme`.
 
 - digits:
 
-  Minimal number of significant digits, see \`print.default\`.
+  Minimal number of significant digits, see `print.default`.
 
 - ...:
 
-  Additional arguments passed to \`print.nlme\` if the model exists.
+  Additional arguments passed to `print.nlme` if the model exists.
 
 ## Value
 
-Invisibly returns the original object \`x\`.
+Invisibly returns the original object `x`.
 
 ## Examples
 

@@ -75,7 +75,7 @@ will soon replace ReplaceZeros and certain arguments in FitCurves.
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

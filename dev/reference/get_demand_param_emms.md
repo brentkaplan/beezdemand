@@ -1,9 +1,9 @@
 # Get Estimated Marginal Means for Demand Parameters
 
 Calculates Estimated Marginal Means (EMMs) for Q0 and alpha parameters
-from a \`beezdemand_nlme\` model for all combinations of specified
-factor levels. Reports parameters on both their estimation scale (log10)
-and their natural, back-transformed scale. Optionally includes Essential
+from a `beezdemand_nlme` model for all combinations of specified factor
+levels. Reports parameters on both their estimation scale (log10) and
+their natural, back-transformed scale. Optionally includes Essential
 Value (EV).
 
 ## Usage
@@ -23,17 +23,17 @@ get_demand_param_emms(
 
 - fit_obj:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - factors_in_emm:
 
   Character vector of factor names to compute EMMs over. Defaults to all
-  factors present in the \`fit_obj\`.
+  factors present in the `fit_obj`.
 
 - at:
 
   Optional named list specifying levels of conditioning variables for
-  \`emmeans::ref_grid()\`.
+  [`emmeans::ref_grid()`](https://rvlenth.github.io/emmeans/reference/ref_grid.html).
 
 - ci_level:
 
@@ -43,11 +43,12 @@ get_demand_param_emms(
 
   Logical. If TRUE, calculates and includes Essential Value (EV) derived
   from alpha, along with its confidence interval (calculated by
-  back-transforming the CI of alpha_param_log10). Default \`FALSE\`.
+  back-transforming the CI of alpha_param_log10). Default `FALSE`.
 
 - ...:
 
-  Additional arguments passed to \`emmeans::emmeans()\`.
+  Additional arguments passed to
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
 
 ## Value
 
@@ -55,7 +56,7 @@ A tibble containing:
 
 - Factor levels:
 
-  Columns for each factor in \`factors_in_emm\`.
+  Columns for each factor in `factors_in_emm`.
 
 - Q0_param_log10, alpha_param_log10:
 
@@ -70,7 +71,7 @@ A tibble containing:
 
 - EV, LCL_EV, UCL_EV:
 
-  (If \`include_ev=TRUE\`) Essential Value and its CI.
+  (If `include_ev=TRUE`) Essential Value and its CI.
 
 ## Examples
 

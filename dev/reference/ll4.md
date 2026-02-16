@@ -1,10 +1,10 @@
 # Log-Logistic Transformation (LL4-like)
 
 Applies a log-logistic like transformation, specifically
-\`log_base(x^lambda + 1) / lambda\`. This transformation is useful for
+`log_base(x^lambda + 1) / lambda`. This transformation is useful for
 compressing data that spans several orders of magnitude while handling
-zero values gracefully (as \`x=0\` yields \`0\`). It's a variation
-related to the Box-Cox transformation or a generalized logarithm.
+zero values gracefully (as `x=0` yields `0`). It's a variation related
+to the Box-Cox transformation or a generalized logarithm.
 
 ## Usage
 
@@ -21,18 +21,17 @@ ll4(x, lambda = 4, base = 10)
 - lambda:
 
   A positive numeric scalar, the lambda parameter of the transformation.
-  Controls the curvature. Default is \`4\`.
+  Controls the curvature. Default is `4`.
 
 - base:
 
-  A positive numeric scalar, the base of the logarithm. Default is
-  \`10\`.
+  A positive numeric scalar, the base of the logarithm. Default is `10`.
 
 ## Value
 
-A numeric vector or scalar of the transformed values. Returns \`NaN\`
-for \`x \< 0\` if \`lambda\` results in non-real numbers (e.g., even
-root of negative). However, the intended domain is \`x \>= 0\`.
+A numeric vector or scalar of the transformed values. Returns `NaN` for
+`x < 0` if `lambda` results in non-real numbers (e.g., even root of
+negative). However, the intended domain is `x >= 0`.
 
 ## Examples
 

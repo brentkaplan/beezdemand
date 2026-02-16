@@ -1,7 +1,7 @@
 # Extract Random Effects from a beezdemand_nlme Model
 
-S3 method for \`ranef\` for objects of class \`beezdemand_nlme\`.
-Extracts the random effects from the fitted \`nlme\` model.
+S3 method for `ranef` for objects of class `beezdemand_nlme`. Extracts
+the random effects from the fitted `nlme` model.
 
 ## Usage
 
@@ -14,16 +14,17 @@ ranef(object, ...)
 
 - object:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - ...:
 
-  Additional arguments passed to \`nlme::ranef()\`.
+  Additional arguments passed to
+  [`nlme::ranef()`](https://rdrr.io/pkg/nlme/man/random.effects.html).
 
 ## Value
 
 A data frame (or list of data frames if multiple levels of grouping) of
-random effects, as returned by \`ranef.nlme()\`.
+random effects, as returned by `ranef.nlme()`.
 
 ## See also
 

@@ -40,8 +40,8 @@ plot(
 - inv_fun:
 
   Optional function to inverse-transform predictions. Default is
-  \`identity\`. Not typically used for linear models but included for
-  API consistency.
+  `identity`. Not typically used for linear models but included for API
+  consistency.
 
 - n_points:
 

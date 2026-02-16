@@ -31,5 +31,5 @@ get_pooled_nls_starts(data, y_var, x_var, equation_form)
 
 ## Value
 
-A named list with \`Q0\` and \`alpha\` starting values if successful,
-else \`NULL\`.
+A named list with `Q0` and `alpha` starting values if successful, else
+`NULL`.

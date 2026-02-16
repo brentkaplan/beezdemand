@@ -32,23 +32,28 @@ Data frame of empirical measures
 
 ## Details
 
-\`r lifecycle::badge("superseded")\`
+**\[superseded\]**
 
-\`GetEmpirical()\` has been superseded by \[get_empirical_measures()\],
+`GetEmpirical()` has been superseded by
+[`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md),
 which provides a modern S3 interface with standardized methods
-(\`print()\`, \`summary()\`, \`plot()\`). \`GetEmpirical()\` will
-continue to work but is no longer recommended for new code.
+([`print()`](https://rdrr.io/r/base/print.html),
+[`summary()`](https://rdrr.io/r/base/summary.html),
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html)).
+`GetEmpirical()` will continue to work but is no longer recommended for
+new code.
 
 Will calculate and return the following empirical measures: Intensity,
 BP0, BP1, Omax, and Pmax
 
 ## See also
 
-\[get_empirical_measures()\] for the modern interface
+[`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md)
+for the modern interface
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

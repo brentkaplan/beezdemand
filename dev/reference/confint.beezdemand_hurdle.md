@@ -20,7 +20,8 @@ confint(
 
 - object:
 
-  A \`beezdemand_hurdle\` object from \[fit_demand_hurdle()\].
+  A `beezdemand_hurdle` object from
+  [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md).
 
 - parm:
 
@@ -33,9 +34,12 @@ confint(
 
 - report_space:
 
-  Character. Reporting space for parameters: - \`"internal"\`:
-  parameters on internal/fitting scale (log for Q0, alpha) -
-  \`"natural"\`: back-transformed to natural scale
+  Character. Reporting space for parameters:
+
+  - `"internal"`: parameters on internal/fitting scale (log for Q0,
+    alpha)
+
+  - `"natural"`: back-transformed to natural scale
 
 - ...:
 
@@ -43,19 +47,20 @@ confint(
 
 ## Value
 
-A tibble with columns: \`term\`, \`estimate\`, \`conf.low\`,
-\`conf.high\`, \`level\`, \`component\`, \`estimate_scale\`.
+A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+`level`, `component`, `estimate_scale`.
 
 ## Details
 
 Confidence intervals are computed using the asymptotic normal
-approximation based on standard errors from \`TMB::sdreport()\`. For
+approximation based on standard errors from
+[`TMB::sdreport()`](https://rdrr.io/pkg/TMB/man/sdreport.html). For
 parameters estimated on the log scale (Q0, alpha, k), intervals can be
-back-transformed to the natural scale using \`report_space =
-"natural"\`.
+back-transformed to the natural scale using `report_space = "natural"`.
 
-The transformation uses: - For log-scale parameters: exp(estimate +/- z
-\* SE)
+The transformation uses:
+
+- For log-scale parameters: exp(estimate +/- z \* SE)
 
 ## Examples
 

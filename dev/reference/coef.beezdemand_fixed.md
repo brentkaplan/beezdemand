@@ -13,12 +13,11 @@ coef(object, report_space = c("internal", "natural", "log10"), ...)
 
 - object:
 
-  A \`beezdemand_fixed\` object.
+  A `beezdemand_fixed` object.
 
 - report_space:
 
-  One of \`"internal"\`, \`"natural"\`, or \`"log10"\`. Default
-  \`"internal"\`.
+  One of `"internal"`, `"natural"`, or `"log10"`. Default `"internal"`.
 
 - ...:
 
@@ -26,5 +25,5 @@ coef(object, report_space = c("internal", "natural", "log10"), ...)
 
 ## Value
 
-A tibble with columns \`id\`, \`term\`, \`estimate\`,
-\`estimate_scale\`, \`term_display\`.
+A tibble with columns `id`, `term`, `estimate`, `estimate_scale`,
+`term_display`.

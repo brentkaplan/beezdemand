@@ -21,9 +21,20 @@ glance(x, ...)
 
 ## Value
 
-A one-row tibble of model statistics with columns: - \`model_class\`:
-"beezdemand_nlme" - \`backend\`: "nlme" - \`equation_form\`: The
-equation form used - \`nobs\`: Number of observations - \`n_subjects\`:
-Number of subjects - \`converged\`: Convergence status - \`logLik\`,
-\`AIC\`, \`BIC\`: Model fit statistics - \`sigma\`: Residual standard
-error
+A one-row tibble of model statistics with columns:
+
+- `model_class`: "beezdemand_nlme"
+
+- `backend`: "nlme"
+
+- `equation_form`: The equation form used
+
+- `nobs`: Number of observations
+
+- `n_subjects`: Number of subjects
+
+- `converged`: Convergence status
+
+- `logLik`, `AIC`, `BIC`: Model fit statistics
+
+- `sigma`: Residual standard error

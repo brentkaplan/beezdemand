@@ -27,10 +27,10 @@ predict(
 - newdata:
 
   Optional data frame containing a price column matching the fitted
-  object's \`x_var\`. If \`newdata\` includes the id column,
+  object's `x_var`. If `newdata` includes the id column,
   subject-specific predictions are returned; otherwise population
-  predictions are returned. If \`newdata\` is \`NULL\`, returns
-  predictions for all subjects across a price grid.
+  predictions are returned. If `newdata` is `NULL`, returns predictions
+  for all subjects across a price grid.
 
 - type:
 
@@ -54,24 +54,24 @@ predict(
 
   `"parameters"`
 
-  :   Subject-specific parameters (no \`.fitted\` column)
+  :   Subject-specific parameters (no `.fitted` column)
 
 - prices:
 
-  Optional numeric vector of prices used only when \`newdata = NULL\`.
+  Optional numeric vector of prices used only when `newdata = NULL`.
 
 - se.fit:
 
-  Logical; if \`TRUE\`, includes a \`.se.fit\` column (delta-method via
-  \`sdreport\` when available).
+  Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
+  `sdreport` when available).
 
 - interval:
 
-  One of \`"none"\` (default) or \`"confidence"\`.
+  One of `"none"` (default) or `"confidence"`.
 
 - level:
 
-  Confidence level when \`interval = "confidence"\`.
+  Confidence level when `interval = "confidence"`.
 
 - ...:
 
@@ -79,11 +79,11 @@ predict(
 
 ## Value
 
-For \`type = "parameters"\`, a tibble of subject-level parameters.
-Otherwise, a tibble containing the \`newdata\` columns plus \`.fitted\`
-and helper columns \`predicted_log_consumption\`,
-\`predicted_consumption\`, \`prob_zero\`, and \`expected_consumption\`.
-When requested, \`.se.fit\` and \`.lower\`/\`.upper\` are included.
+For `type = "parameters"`, a tibble of subject-level parameters.
+Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
+helper columns `predicted_log_consumption`, `predicted_consumption`,
+`prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
+`.lower`/`.upper` are included.
 
 ## Examples
 

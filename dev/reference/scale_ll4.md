@@ -1,7 +1,7 @@
 # Create an LL4-like Scale for ggplot2 Axes
 
-This function generates a \`ggplot2\` continuous scale that applies the
-\`ll4\` transformation (and its inverse \`ll4_inv\`) to an axis. This is
+This function generates a `ggplot2` continuous scale that applies the
+`ll4` transformation (and its inverse `ll4_inv`) to an axis. This is
 useful for visualizing data spanning multiple orders of magnitude while
 handling zeros.
 
@@ -15,18 +15,20 @@ scale_ll4(..., lambda = 4)
 
 - ...:
 
-  Arguments passed on to \`ggplot2::scale_y_continuous\` or
-  \`ggplot2::scale_x_continuous\` (e.g., \`name\`, \`breaks\`,
-  \`labels\`).
+  Arguments passed on to
+  [`ggplot2::scale_y_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+  or
+  [`ggplot2::scale_x_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+  (e.g., `name`, `breaks`, `labels`).
 
 - lambda:
 
-  A positive numeric scalar, the lambda parameter for the \`ll4\`
-  transformation. Default is \`4\`.
+  A positive numeric scalar, the lambda parameter for the `ll4`
+  transformation. Default is `4`.
 
 ## Value
 
-A \`ggplot2\` scale object.
+A `ggplot2` scale object.
 
 ## See also
 

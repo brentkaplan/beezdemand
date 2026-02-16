@@ -1,7 +1,8 @@
 # S3 Methods for beezdemand_descriptive Objects
 
 Methods for printing, summarizing, and visualizing objects of class
-\`beezdemand_descriptive\` created by \[get_descriptive_summary()\].
+`beezdemand_descriptive` created by
+[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md).
 
 ## Usage
 
@@ -20,7 +21,7 @@ plot(x, x_trans = "identity", y_trans = "identity", show_zeros = FALSE, ...)
 
 - x, object:
 
-  A \`beezdemand_descriptive\` object
+  A `beezdemand_descriptive` object
 
 - ...:
 
@@ -29,7 +30,8 @@ plot(x, x_trans = "identity", y_trans = "identity", show_zeros = FALSE, ...)
 - x_trans:
 
   Character string specifying x-axis transformation. Options: "identity"
-  (default), "log10", "log", "sqrt". See \[scales::transform_log10()\]
+  (default), "log10", "log", "sqrt". See
+  [`scales::transform_log10()`](https://scales.r-lib.org/reference/transform_log.html)
   etc.
 
 - y_trans:
@@ -44,18 +46,25 @@ plot(x, x_trans = "identity", y_trans = "identity", show_zeros = FALSE, ...)
 
 ## Value
 
-- \`print()\` - Returns the object invisibly (called for side effects)
+- [`print()`](https://rdrr.io/r/base/print.html) - Returns the object
+  invisibly (called for side effects)
 
-- \`summary()\` - Returns a list with extended summary information
+- [`summary()`](https://rdrr.io/r/base/summary.html) - Returns a list
+  with extended summary information
 
-- \`plot()\` - Returns a ggplot2 object
+- [`plot()`](https://rdrr.io/r/graphics/plot.default.html) - Returns a
+  ggplot2 object
 
 ## Details
 
-\## Print Method Displays a compact summary showing the number of
-subjects and prices analyzed, plus a preview of the statistics table.
+### Print Method
 
-\## Summary Method Provides extended information including:
+Displays a compact summary showing the number of subjects and prices
+analyzed, plus a preview of the statistics table.
+
+### Summary Method
+
+Provides extended information including:
 
 - Data summary (subjects, prices analyzed)
 
@@ -65,8 +74,10 @@ subjects and prices analyzed, plus a preview of the statistics table.
 
 - Missing data summary
 
-\## Plot Method Creates a boxplot showing the distribution of
-consumption at each price point. Features:
+### Plot Method
+
+Creates a boxplot showing the distribution of consumption at each price
+point. Features:
 
 - Red cross markers indicate means
 
@@ -76,11 +87,12 @@ consumption at each price point. Features:
 
 - Supports axis transformations (log, sqrt, etc.)
 
-- Uses modern beezdemand styling via \[theme_apa()\]
+- Uses modern beezdemand styling via
+  [`theme_apa()`](https://brentkaplan.github.io/beezdemand/reference/theme_apa.md)
 
 ## See also
 
-\[get_descriptive_summary()\]
+[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md)
 
 ## Examples
 

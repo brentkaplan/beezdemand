@@ -41,9 +41,9 @@ fit_demand_mixed(
 - y_var:
 
   Character string, the name of the dependent variable column. For
-  \`equation_form = "zben"\`, this should be log-transformed consumption
-  (e.g., "y_ll4"). For \`equation_form = "simplified"\` or
-  \`"exponentiated"\`, this should be raw, untransformed consumption
+  `equation_form = "zben"`, this should be log-transformed consumption
+  (e.g., "y_ll4"). For `equation_form = "simplified"` or
+  `"exponentiated"`, this should be raw, untransformed consumption
   (e.g., "y").
 
 - x_var:
@@ -59,82 +59,85 @@ fit_demand_mixed(
 - factors:
 
   A character vector of factor names (up to two) by which Q0 and alpha
-  are expected to vary (e.g., \`c("dose", "treatment")\`).
+  are expected to vary (e.g., `c("dose", "treatment")`).
 
 - factor_interaction:
 
-  Logical. If \`TRUE\` and two factors are provided, their interaction
+  Logical. If `TRUE` and two factors are provided, their interaction
   term is included in the fixed effects for Q0 and alpha. Defaults to
-  \`FALSE\` (additive effects).
+  `FALSE` (additive effects).
 
 - equation_form:
 
   Character string specifying the demand equation form. Options are:
 
-  - \`"zben"\` (default): Assumes \`y_var\` is log-transformed.
-    Equation: \`y_var ~ Q0 \* exp(-(10^alpha / Q0) \* (10^Q0) \*
-    x_var)\`. Model parameter \`Q0\` represents \`log10(True Max
-    Consumption)\`. Model parameter \`alpha\` represents \`log10(True
-    Alpha Sensitivity)\`.
+  - `"zben"` (default): Assumes `y_var` is log-transformed. Equation:
+    `y_var ~ Q0 * exp(-(10^alpha / Q0) * (10^Q0) * x_var)`. Model
+    parameter `Q0` represents `log10(True Max Consumption)`. Model
+    parameter `alpha` represents `log10(True Alpha Sensitivity)`.
 
-  - \`"simplified"\`: Assumes \`y_var\` is raw (untransformed)
-    consumption. Equation: \`y_var ~ (10^Q0) \* exp(-(10^alpha) \*
-    (10^Q0) \* x_var)\`. Model parameter \`Q0\` represents \`log10(True
-    Max Consumption)\`. Model parameter \`alpha\` represents
-    \`log10(True Alpha Sensitivity)\`.
+  - `"simplified"`: Assumes `y_var` is raw (untransformed) consumption.
+    Equation: `y_var ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x_var)`.
+    Model parameter `Q0` represents `log10(True Max Consumption)`. Model
+    parameter `alpha` represents `log10(True Alpha Sensitivity)`.
 
-  - \`"exponentiated"\`: Koffarnus et al. (2015) exponentiated equation.
-    Assumes \`y_var\` is raw (untransformed) consumption. Requires the
-    \`k\` parameter. Equation (log10 param_space): \`y_var ~ (10^Q0) \*
-    10^(k \* (exp(-(10^alpha) \* (10^Q0) \* x_var) - 1))\`. Equation
-    (natural param_space): \`y_var ~ Q0 \* 10^(k \* (exp(-alpha \* Q0 \*
-    x_var) - 1))\`.
+  - `"exponentiated"`: Koffarnus et al. (2015) exponentiated equation.
+    Assumes `y_var` is raw (untransformed) consumption. Requires the `k`
+    parameter. Equation (log10 param_space):
+    `y_var ~ (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x_var) - 1))`.
+    Equation (natural param_space):
+    `y_var ~ Q0 * 10^(k * (exp(-alpha * Q0 * x_var) - 1))`.
 
 - param_space:
 
   Character. Parameterization used for fitting core demand parameters.
-  One of: - \`"log10"\`: treat \`Q0\` and \`alpha\` as \`log10(Q0)\` and
-  \`log10(alpha)\` (default) - \`"natural"\`: treat \`Q0\` and \`alpha\`
-  as natural-scale parameters
+  One of:
 
-  Notes: - For \`equation_form = "zben"\`, only \`"log10"\` is currently
-  supported. - For \`equation_form = "simplified"\` or
-  \`"exponentiated"\`, both \`"log10"\` and \`"natural"\` are supported.
+  - `"log10"`: treat `Q0` and `alpha` as `log10(Q0)` and `log10(alpha)`
+    (default)
+
+  - `"natural"`: treat `Q0` and `alpha` as natural-scale parameters
+
+  Notes:
+
+  - For `equation_form = "zben"`, only `"log10"` is currently supported.
+
+  - For `equation_form = "simplified"` or `"exponentiated"`, both
+    `"log10"` and `"natural"` are supported.
 
 - k:
 
-  Numeric. Range parameter (in log10 units) used with \`equation_form =
-  "exponentiated"\`. If \`NULL\` (default), k is calculated from the
-  data range: \`log10(max(y)) - log10(min(y)) + 0.5\`. Ignored for other
-  equation forms.
+  Numeric. Range parameter (in log10 units) used with
+  `equation_form = "exponentiated"`. If `NULL` (default), k is
+  calculated from the data range: `log10(max(y)) - log10(min(y)) + 0.5`.
+  Ignored for other equation forms.
 
 - custom_model_formula:
 
   An optional custom nonlinear model formula (nlme format). If provided,
-  this overrides \`equation_form\`. The user is responsible for ensuring
-  the \`y_var\` scale matches the formula and that starting values are
-  appropriate. The formula should use parameters named \`Q0\` and
-  \`alpha\`.
+  this overrides `equation_form`. The user is responsible for ensuring
+  the `y_var` scale matches the formula and that starting values are
+  appropriate. The formula should use parameters named `Q0` and `alpha`.
 
 - fixed_rhs:
 
   Optional one-sided formula or character string specifying the
-  right-hand side (RHS) for the fixed-effects linear models of \`Q0\`
-  and \`alpha\`. When provided, this RHS is used for both parameters and
-  overrides \`factors\`, \`factor_interaction\`, and
-  \`continuous_covariates\` for building the fixed-effects design
-  matrix. Example: \`"~ 1 + drug \* dose + session"\`.
+  right-hand side (RHS) for the fixed-effects linear models of `Q0` and
+  `alpha`. When provided, this RHS is used for both parameters and
+  overrides `factors`, `factor_interaction`, and `continuous_covariates`
+  for building the fixed-effects design matrix. Example:
+  `"~ 1 + drug * dose + session"`.
 
 - continuous_covariates:
 
   Optional character vector of continuous (numeric) predictor names to
-  be included additively in the fixed-effects RHS when \`fixed_rhs\` is
-  \`NULL\`. These variables are not coerced to factors and are stored
-  for downstream functions (e.g., plotting) to condition on.
+  be included additively in the fixed-effects RHS when `fixed_rhs` is
+  `NULL`. These variables are not coerced to factors and are stored for
+  downstream functions (e.g., plotting) to condition on.
 
 - start_value_method:
 
-  Character, method to generate starting values if \`start_values\` is
+  Character, method to generate starting values if `start_values` is
   NULL. Options: "heuristic" (default, uses data-driven heuristics) or
   "pooled_nls" (fits a simpler pooled NLS model first; falls back to
   heuristic if NLS fails).
@@ -142,43 +145,51 @@ fit_demand_mixed(
 - random_effects:
 
   A formula or a list of formulas for the random effects structure.
-  Default \`nlme::pdDiag(Q0 + alpha ~ 1)\`.
+  Default `nlme::pdDiag(Q0 + alpha ~ 1)`.
 
 - covariance_structure:
 
   Character, covariance structure for random effects. Options:
-  \`"pdDiag"\` (default) or \`"pdSymm"\`
+  `"pdDiag"` (default) or `"pdSymm"`
 
 - start_values:
 
-  Optional named list of starting values for fixed effects. If \`NULL\`,
-  defaults are estimated based on \`equation_form\` and \`y_var\` scale.
+  Optional named list of starting values for fixed effects. If `NULL`,
+  defaults are estimated based on `equation_form` and `y_var` scale.
 
 - collapse_levels:
 
   Optional named list specifying factor level collapsing separately for
-  Q0 and alpha parameters. Structure: “\` list( Q0 = list(factor_name =
-  list(new_level = c(old_levels), ...)), alpha = list(factor_name =
-  list(new_level = c(old_levels), ...)) ) “\` Either \`Q0\` or \`alpha\`
-  (or both) can be omitted to use original factor levels for that
-  parameter. This allows different collapsing schemes for each
-  parameter. Ignored if \`fixed_rhs\` is provided.
+  Q0 and alpha parameters. Structure:
+
+      list(
+        Q0 = list(factor_name = list(new_level = c(old_levels), ...)),
+        alpha = list(factor_name = list(new_level = c(old_levels), ...))
+      )
+
+  Either `Q0` or `alpha` (or both) can be omitted to use original factor
+  levels for that parameter. This allows different collapsing schemes
+  for each parameter. Ignored if `fixed_rhs` is provided.
 
 - nlme_control:
 
-  Control parameters for \`nlme::nlme()\`.
+  Control parameters for
+  [`nlme::nlme()`](https://rdrr.io/pkg/nlme/man/nlme.html).
 
 - method:
 
-  Fitting method for \`nlme::nlme()\` ("ML" or "REML"). Default "ML".
+  Fitting method for
+  [`nlme::nlme()`](https://rdrr.io/pkg/nlme/man/nlme.html) ("ML" or
+  "REML"). Default "ML".
 
 - ...:
 
-  Additional arguments passed to \`nlme::nlme()\`.
+  Additional arguments passed to
+  [`nlme::nlme()`](https://rdrr.io/pkg/nlme/man/nlme.html).
 
 ## Value
 
-An object of class \`beezdemand_nlme\`.
+An object of class `beezdemand_nlme`.
 
 ## Examples
 
@@ -214,7 +225,7 @@ print(fit)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c63241f788>
+#> <environment: 0x56297202a400>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 

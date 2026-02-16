@@ -1,7 +1,7 @@
 # Extract Fixed Effects from a beezdemand_nlme Model
 
-S3 method for \`fixef\` for objects of class \`beezdemand_nlme\`.
-Extracts the fixed-effect coefficients from the fitted \`nlme\` model.
+S3 method for `fixef` for objects of class `beezdemand_nlme`. Extracts
+the fixed-effect coefficients from the fitted `nlme` model.
 
 ## Usage
 
@@ -14,11 +14,12 @@ fixef(object, ...)
 
 - object:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - ...:
 
-  Additional arguments passed to \`nlme::fixef()\`.
+  Additional arguments passed to
+  [`nlme::fixef()`](https://rdrr.io/pkg/nlme/man/fixed.effects.html).
 
 ## Value
 

@@ -18,11 +18,11 @@ summary(object, inv_fun = identity, inverse_fun = deprecated(), ...)
 - inv_fun:
 
   Optional function to inverse-transform predictions (e.g., ll4_inv).
-  Default is \`identity\`.
+  Default is `identity`.
 
 - inverse_fun:
 
-  \`r lifecycle::badge("deprecated")\` Use \`inv_fun\` instead.
+  **\[deprecated\]** Use `inv_fun` instead.
 
 - ...:
 

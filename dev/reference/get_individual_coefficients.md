@@ -20,7 +20,8 @@ get_individual_coefficients(
 
 - fit_obj:
 
-  A \`beezdemand_nlme\` object returned by \`fit_demand_mixed()\`.
+  A `beezdemand_nlme` object returned by
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md).
 
 - params:
 
@@ -36,32 +37,46 @@ get_individual_coefficients(
 
 ## Value
 
-A data frame with individual-level predicted coefficients. - In "wide"
-format: rows are individuals, columns are parameter-factor
-combinations - In "long" format: columns are id, parameter, condition,
-coefficient_value
+A data frame with individual-level predicted coefficients.
 
-Column naming convention for wide format: -
-\`estimated\_{param}\_intercept\`: Baseline/reference level
-coefficient - \`estimated\_{param}\_{factor}{level}\`: Factor
-level-specific coefficient
+- In "wide" format: rows are individuals, columns are parameter-factor
+  combinations
+
+- In "long" format: columns are id, parameter, condition,
+  coefficient_value
+
+Column naming convention for wide format:
+
+- `estimated_\{param\}_intercept`: Baseline/reference level coefficient
+
+- `estimated_\{param\}_\{factor\}\{level\}`: Factor level-specific
+  coefficient
 
 All coefficients are on the log10 scale (same as model estimation
-scale). To convert to natural scale, use \`10^coefficient\`.
+scale). To convert to natural scale, use `10^coefficient`.
 
 ## Details
 
 Individual-level coefficients represent the predicted parameter values
 for each subject in the study. For models with factors, these
-coefficients combine: 1. The baseline intercept effect (fixed + random)
-2. The factor-specific effect (fixed + random) for each factor level
+coefficients combine:
 
-This is equivalent to manually calculating: \`coefficient =
-intercept_fixed + intercept_random + factor_fixed + factor_random\`
+1.  The baseline intercept effect (fixed + random)
 
-The function automatically handles: - Models with or without factors -
-Any number of factor levels - Missing random effects (defaults to 0) -
-Complex factor structures with multiple factors
+2.  The factor-specific effect (fixed + random) for each factor level
+
+This is equivalent to manually calculating:
+`coefficient = intercept_fixed + intercept_random + factor_fixed + factor_random`
+
+The function automatically handles:
+
+- Models with or without factors
+
+- Any number of factor levels
+
+- Missing random effects (defaults to 0)
+
+- Complex factor structures with multiple factors
 
 For models without factors, only intercept coefficients are calculated.
 For models with factors, both intercept and factor-level coefficients

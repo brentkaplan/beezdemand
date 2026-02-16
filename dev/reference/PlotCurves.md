@@ -45,8 +45,8 @@ Creates and saves plots of individual demand curves
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>, Shawn Gilroy
-\<shawn.gilroy@temple.edu\>
+Brent Kaplan <bkaplan.ku@gmail.com>, Shawn Gilroy
+<shawn.gilroy@temple.edu>
 
 ## Examples
 

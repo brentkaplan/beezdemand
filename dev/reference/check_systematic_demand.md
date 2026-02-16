@@ -2,7 +2,8 @@
 
 Modern interface for screening purchase task data using Stein et al.
 (2015) criteria. Returns a structured object with standardized output
-vocabulary that is consistent with \`check_systematic_cp()\`.
+vocabulary that is consistent with
+[`check_systematic_cp()`](https://brentkaplan.github.io/beezdemand/reference/check_systematic_cp.md).
 
 ## Usage
 
@@ -23,42 +24,42 @@ check_systematic_demand(
 
 - data:
 
-  Data frame in long format with columns: \`id\`, \`x\` (price), \`y\`
+  Data frame in long format with columns: `id`, `x` (price), `y`
   (consumption).
 
 - trend_threshold:
 
   Numeric. Threshold for trend detection (log-log slope). Default
-  \`0.025\`.
+  `0.025`.
 
 - bounce_threshold:
 
-  Numeric. Threshold for bounce proportion. Default \`0.10\`.
+  Numeric. Threshold for bounce proportion. Default `0.10`.
 
 - max_reversals:
 
-  Integer. Maximum allowed reversals from zero. Default \`0\`.
+  Integer. Maximum allowed reversals from zero. Default `0`.
 
 - consecutive_zeros:
 
   Integer. Consecutive zeros required for reversal detection. Default
-  \`2\` (per Stein et al. 2015).
+  `2` (per Stein et al. 2015).
 
 - x_var:
 
-  Character. Name of the price column. Default \`"x"\`.
+  Character. Name of the price column. Default `"x"`.
 
 - y_var:
 
-  Character. Name of the consumption column. Default \`"y"\`.
+  Character. Name of the consumption column. Default `"y"`.
 
 - id_var:
 
-  Character. Name of the subject identifier column. Default \`"id"\`.
+  Character. Name of the subject identifier column. Default `"id"`.
 
 ## Value
 
-An object of class \`beezdemand_systematicity\` with components:
+An object of class `beezdemand_systematicity` with components:
 
 - results:
 
@@ -86,7 +87,7 @@ An object of class \`beezdemand_systematicity\` with components:
 
 ## Details
 
-The \`results\` tibble contains standardized columns for both demand and
+The `results` tibble contains standardized columns for both demand and
 cross-price systematicity checks:
 
 - id:

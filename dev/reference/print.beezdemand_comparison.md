@@ -13,7 +13,7 @@ print(x, digits = 3, ...)
 
 - x:
 
-  A \`beezdemand_comparison\` object.
+  A `beezdemand_comparison` object.
 
 - digits:
 

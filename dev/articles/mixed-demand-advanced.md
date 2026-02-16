@@ -54,8 +54,8 @@ fit_one_factor_dose <- fit_demand_mixed(
 
 ### Model with Two Factors (Additive)
 
-Here, $Q_{0}$ and $\alpha$ vary by drug and dose additively. For this,
-we need more data than just ko_alf, so we use `ko`. Note: With complex
+Here, Q\_{0} and \alpha vary by drug and dose additively. For this, we
+need more data than just ko_alf, so we use `ko`. Note: With complex
 models and small sample sizes, convergence can be challenging. The
 start_value_method = “pooled_nls” is often more robust for complex
 models.
@@ -84,7 +84,7 @@ run it.
 ### Collapsing Factor Levels
 
 Sometimes you might want to group levels of a factor, and you may want
-different groupings for $Q_{0}$ versus $\alpha$. The `collapse_levels`
+different groupings for Q\_{0} versus \alpha. The `collapse_levels`
 argument allows you to specify separate collapsing schemes for each
 parameter.
 
@@ -152,7 +152,7 @@ if (
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55f189439c78>
+    #> <environment: 0x556ac754dc10>
     #> Fixed Effects Structure (Q0):     ~ dose_Q0 
     #> Fixed Effects Structure (alpha):  ~ dose_alpha 
     #> Factors:  dose 
@@ -197,8 +197,8 @@ if (
 
 This is particularly useful when you want fine-grained distinctions for
 one parameter but not the other. For instance, you might hypothesize
-that maximum consumption ($Q_{0}$) varies by dose, but sensitivity
-($\alpha$) does not.
+that maximum consumption (Q\_{0}) varies by dose, but sensitivity
+(\alpha) does not.
 
 ``` r
 # Q0: keep 2 collapsed levels (low vs high)
@@ -262,7 +262,7 @@ if (
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x55f18482e428>
+    #> <environment: 0x556ac847eae8>
     #> Fixed Effects Structure (Q0):     ~ dose_Q0 
     #> Fixed Effects Structure (alpha):  ~ 1 
     #> Factors:  dose 
@@ -511,7 +511,7 @@ plot_object +
 
 ### Analyzing Estimated Marginal Means (`get_demand_param_emms`)
 
-This function helps interpret how factors affect $Q_{0}$ and $\alpha$,
+This function helps interpret how factors affect Q\_{0} and \alpha,
 providing estimates on both log10 and natural scales, and optionally
 Essential Value (EV).
 
@@ -597,7 +597,7 @@ if (!is.null(emm_model_to_use)) {
 
 ### Performing Pairwise Comparisons (`get_demand_comparisons`)
 
-Compare levels of factors for $Q_{0}$ and $\alpha$.
+Compare levels of factors for Q\_{0} and \alpha.
 
 **Note on `collapse_levels`:** When using models fit with asymmetric
 `collapse_levels`, comparisons are only performed for parameters that
@@ -668,7 +668,7 @@ vignette by default (they can be slow and may fail to converge). Set
 #### More Complex Random Effects Structures
 
 This example shows how to specify a more complex random-effects
-structure (e.g., random slopes) for $Q_{0}$ and $\alpha$.
+structure (e.g., random slopes) for Q\_{0} and \alpha.
 
 Now let’s demonstrate how to extract individual-level predicted
 coefficients using the

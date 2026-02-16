@@ -11,7 +11,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Open_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Fira_Mono-0.4.10/font.css" rel="stylesheet">
@@ -151,54 +152,53 @@ model</li>
 <div class="section level3">
 <h3 id="part-i-binary-model-probability-of-zero-consumption">Part I: Binary Model (Probability of Zero Consumption)<a class="anchor" aria-label="anchor" href="#part-i-binary-model-probability-of-zero-consumption"></a>
 </h3>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">logit</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>π</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mo>⋅</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtext mathvariant="normal">price</mtext><mo>+</mo><mi>ϵ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>a</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\text{logit}(\pi_{ij}) = \beta_0 + \beta_1 \cdot \log(\text{price} + \epsilon) + a_i</annotation></semantics></math></p>
+<p><span class="math display">\text{logit}(\pi_{ij}) = \beta_0 + \beta_1
+\cdot \log(\text{price} + \epsilon) + a_i</span></p>
 <p>Where:</p>
 <ul>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>π</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">\pi_{ij}</annotation></semantics></math>
-= probability of zero consumption for subject
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-at price
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
+<span class="math inline">\pi_{ij}</span> = probability of zero
+consumption for subject <span class="math inline">i</span> at price
+<span class="math inline">j</span>
 </li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\beta_0</annotation></semantics></math>
-= intercept (baseline log-odds of zero consumption)</li>
+<span class="math inline">\beta_0</span> = intercept (baseline
+log-odds of zero consumption)</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>1</mn></msub><annotation encoding="application/x-tex">\beta_1</annotation></semantics></math>
-= slope (effect of log-price on log-odds of zero)</li>
+<span class="math inline">\beta_1</span> = slope (effect of
+log-price on log-odds of zero)</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϵ</mi><annotation encoding="application/x-tex">\epsilon</annotation></semantics></math>
-= small constant (default 0.001) for handling zero prices</li>
+<span class="math inline">\epsilon</span> = small constant (default
+0.001) for handling zero prices</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_i</annotation></semantics></math>
-= subject-specific random intercept</li>
+<span class="math inline">a_i</span> = subject-specific random
+intercept</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="part-ii-continuous-model-consumption-given-positive">Part II: Continuous Model (Consumption Given Positive)<a class="anchor" aria-label="anchor" href="#part-ii-continuous-model-consumption-given-positive"></a>
 </h3>
-<p><strong>With 3 random effects:</strong>
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Q</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>Q</mi><mn>0</mn></msub><mo>+</mo><msub><mi>b</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>k</mi><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo>+</mo><msub><mi>c</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><mtext mathvariant="normal">price</mtext><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot \text{price}) - 1) + \varepsilon_{ij}</annotation></semantics></math></p>
-<p><strong>With 2 random effects:</strong>
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Q</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>Q</mi><mn>0</mn></msub><mo>+</mo><msub><mi>b</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>k</mi><mo>⋅</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mi>α</mi><mo>⋅</mo><mtext mathvariant="normal">price</mtext><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon_{ij}</annotation></semantics></math></p>
+<p><strong>With 3 random effects:</strong> <span class="math display">\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot
+(\exp(-(\alpha + c_i) \cdot \text{price}) - 1) +
+\varepsilon_{ij}</span></p>
+<p><strong>With 2 random effects:</strong> <span class="math display">\log(Q_{ij}) = (\log Q_0 + b_i) + k \cdot
+(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon_{ij}</span></p>
 <p>Where:</p>
 <ul>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_0</annotation></semantics></math>
-= intensity (consumption at price 0)</li>
+<span class="math inline">Q_0</span> = intensity (consumption at
+price 0)</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-= scaling parameter for exponential decay</li>
+<span class="math inline">k</span> = scaling parameter for
+exponential decay</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-= elasticity parameter</li>
+<span class="math inline">\alpha</span> = elasticity parameter</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>b</mi><mi>i</mi></msub><annotation encoding="application/x-tex">b_i</annotation></semantics></math>
-= subject-specific random effect on intensity</li>
+<span class="math inline">b_i</span> = subject-specific random
+effect on intensity</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mi>i</mi></msub><annotation encoding="application/x-tex">c_i</annotation></semantics></math>
-= subject-specific random effect on elasticity (3-RE model only)</li>
+<span class="math inline">c_i</span> = subject-specific random
+effect on elasticity (3-RE model only)</li>
 </ul>
 </div>
 <div class="section level3">
@@ -207,12 +207,12 @@ at price
 <p>The random effects follow a multivariate normal distribution:</p>
 <ul>
 <li>
-<strong>2-RE model:</strong>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msub><mi>b</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∼</mo><mtext mathvariant="normal">MVN</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msub><mi>Σ</mi><mrow><mn>2</mn><mo>×</mo><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">(a_i, b_i) \sim \text{MVN}(0, \Sigma_{2 \times 2})</annotation></semantics></math>
+<strong>2-RE model:</strong> <span class="math inline">(a_i, b_i)
+\sim \text{MVN}(0, \Sigma_{2 \times 2})</span>
 </li>
 <li>
-<strong>3-RE model:</strong>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msub><mi>b</mi><mi>i</mi></msub><mo>,</mo><msub><mi>c</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∼</mo><mtext mathvariant="normal">MVN</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msub><mi>Σ</mi><mrow><mn>3</mn><mo>×</mo><mn>3</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">(a_i, b_i, c_i) \sim \text{MVN}(0, \Sigma_{3 \times 3})</annotation></semantics></math>
+<strong>3-RE model:</strong> <span class="math inline">(a_i, b_i,
+c_i) \sim \text{MVN}(0, \Sigma_{3 \times 3})</span>
 </li>
 </ul>
 </div>
@@ -423,22 +423,19 @@ log(price)</td>
 </tr>
 <tr class="even">
 <td><code>Q0</code></td>
-<td>Individual intensity:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>Q</mi><mn>0</mn></msub><mo>+</mo><msub><mi>b</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\exp(\log Q_0 + b_i)</annotation></semantics></math>
+<td>Individual intensity: <span class="math inline">\exp(\log Q_0 +
+b_i)</span>
 </td>
 </tr>
 <tr class="odd">
 <td><code>alpha</code></td>
-<td>Individual elasticity:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>+</mo><msub><mi>c</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\alpha + c_i</annotation></semantics></math>
-(or just
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-for 2-RE)</td>
+<td>Individual elasticity: <span class="math inline">\alpha + c_i</span>
+(or just <span class="math inline">\alpha</span> for 2-RE)</td>
 </tr>
 <tr class="even">
 <td><code>breakpoint</code></td>
-<td>Price where P(zero) = 0.5:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>a</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>/</mi><msub><mi>β</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>ϵ</mi></mrow><annotation encoding="application/x-tex">\exp(-(\beta_0 + a_i) / \beta_1) - \epsilon</annotation></semantics></math>
+<td>Price where P(zero) = 0.5: <span class="math inline">\exp(-(\beta_0
++ a_i) / \beta_1) - \epsilon</span>
 </td>
 </tr>
 <tr class="odd">
@@ -461,9 +458,8 @@ for 2-RE)</td>
 </h3>
 <ul>
 <li>
-<strong>2-RE model</strong>: When you believe elasticity
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>)
-is relatively constant across subjects</li>
+<strong>2-RE model</strong>: When you believe elasticity (<span class="math inline">\alpha</span>) is relatively constant across
+subjects</li>
 <li>
 <strong>3-RE model</strong>: When you believe elasticity varies
 meaningfully between subjects</li>

@@ -1,8 +1,8 @@
 # Print Method for beezdemand Summary Objects
 
 Fallback print method for summary objects inheriting from
-\`beezdemand_summary\`. Specific summary classes should implement their
-own \`print.summary.\*\` methods for detailed output; this provides a
+`beezdemand_summary`. Specific summary classes should implement their
+own `print.summary.*` methods for detailed output; this provides a
 minimal fallback.
 
 ## Usage
@@ -16,7 +16,7 @@ print(x, ...)
 
 - x:
 
-  A summary object with class including \`beezdemand_summary\`.
+  A summary object with class including `beezdemand_summary`.
 
 - ...:
 
@@ -24,4 +24,4 @@ print(x, ...)
 
 ## Value
 
-Invisibly returns \`x\`.
+Invisibly returns `x`.

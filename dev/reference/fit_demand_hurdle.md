@@ -177,9 +177,10 @@ for likelihood ratio tests comparing nested models.
 
 The TMB backend estimates positive-constrained parameters on the
 natural-log scale: \\\log(Q_0)\\, \\\log(\alpha)\\, and \\\log(k)\\.
-Reporting methods (\`summary()\`, \`tidy()\`, \`coef()\`) can
-back-transform to the natural scale or present parameters on the
-\\\log\_{10}\\ scale.
+Reporting methods ([`summary()`](https://rdrr.io/r/base/summary.html),
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+[`coef()`](https://rdrr.io/r/stats/coef.html)) can back-transform to the
+natural scale or present parameters on the \\\log\_{10}\\ scale.
 
 To compare \\\alpha\\ estimates with models fit in \\\log\_{10}\\ space,
 use: \$\$\log\_{10}(\alpha) = \log(\alpha) / \log(10).\$\$

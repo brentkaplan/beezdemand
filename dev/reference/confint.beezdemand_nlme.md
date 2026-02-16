@@ -14,7 +14,8 @@ confint(object, parm = NULL, level = 0.95, method = c("wald", "profile"), ...)
 
 - object:
 
-  A \`beezdemand_nlme\` object from \[fit_demand_mixed()\].
+  A `beezdemand_nlme` object from
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md).
 
 - parm:
 
@@ -27,29 +28,36 @@ confint(object, parm = NULL, level = 0.95, method = c("wald", "profile"), ...)
 
 - method:
 
-  Character. Method for computing intervals: - \`"wald"\`: Wald-type
-  intervals using asymptotic normality (default, fast) - \`"profile"\`:
-  Profile likelihood intervals via \`nlme::intervals()\` (slower but
-  more accurate for small samples)
+  Character. Method for computing intervals:
+
+  - `"wald"`: Wald-type intervals using asymptotic normality (default,
+    fast)
+
+  - `"profile"`: Profile likelihood intervals via
+    [`nlme::intervals()`](https://rdrr.io/pkg/nlme/man/intervals.html)
+    (slower but more accurate for small samples)
 
 - ...:
 
-  Additional arguments passed to \`nlme::intervals()\` when \`method =
-  "profile"\`.
+  Additional arguments passed to
+  [`nlme::intervals()`](https://rdrr.io/pkg/nlme/man/intervals.html)
+  when `method = "profile"`.
 
 ## Value
 
-A tibble with columns: \`term\`, \`estimate\`, \`conf.low\`,
-\`conf.high\`, \`level\`, \`component\`.
+A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+`level`, `component`.
 
 ## Details
 
 For Wald intervals, confidence bounds are computed as estimate ± z \* SE
 using standard errors from the model summary.
 
-For profile intervals, \`nlme::intervals()\` is called on the underlying
-nlme model object. This method provides more accurate intervals but can
-be computationally intensive for complex models.
+For profile intervals,
+[`nlme::intervals()`](https://rdrr.io/pkg/nlme/man/intervals.html) is
+called on the underlying nlme model object. This method provides more
+accurate intervals but can be computationally intensive for complex
+models.
 
 ## Examples
 

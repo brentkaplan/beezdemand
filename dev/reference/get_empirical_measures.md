@@ -4,9 +4,10 @@ Calculates empirical (model-free) measures of demand from purchase task
 data. These metrics characterize consumption patterns without fitting a
 demand curve model.
 
-This is the modern replacement for \[GetEmpirical()\], returning a
-structured S3 object with dedicated methods for printing, summarizing,
-and visualizing.
+This is the modern replacement for
+[`GetEmpirical()`](https://brentkaplan.github.io/beezdemand/reference/GetEmpirical.md),
+returning a structured S3 object with dedicated methods for printing,
+summarizing, and visualizing.
 
 ## Usage
 
@@ -37,7 +38,7 @@ get_empirical_measures(data, x_var = "x", y_var = "y", id_var = "id")
 
 ## Value
 
-An S3 object of class \`beezdemand_empirical\` containing:
+An S3 object of class `beezdemand_empirical` containing:
 
 - **measures** - Data frame with one row per subject and columns:
 
@@ -60,7 +61,7 @@ An S3 object of class \`beezdemand_empirical\` containing:
 
 ## Details
 
-\## Empirical Measures
+### Empirical Measures
 
 - **Intensity** - The consumption value at the lowest price point.
   Reflects unrestricted demand or preferred level of consumption.
@@ -93,11 +94,14 @@ An S3 object of class \`beezdemand_empirical\` containing:
 
 ## See also
 
-- \[GetEmpirical()\] - Legacy function (superseded)
+- [`GetEmpirical()`](https://brentkaplan.github.io/beezdemand/reference/GetEmpirical.md) -
+  Legacy function (superseded)
 
-- \[plot.beezdemand_empirical()\] - Visualization method
+- [`plot.beezdemand_empirical()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_empirical_methods.md) -
+  Visualization method
 
-- \[summary.beezdemand_empirical()\] - Extended summary
+- [`summary.beezdemand_empirical()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_empirical_methods.md) -
+  Extended summary
 
 ## Examples
 

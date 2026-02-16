@@ -15,7 +15,8 @@ confint(object, parm = NULL, level = 0.95, ...)
 
 - object:
 
-  A \`beezdemand_fixed\` object from \[fit_demand_fixed()\].
+  A `beezdemand_fixed` object from
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
 
 - parm:
 
@@ -32,19 +33,20 @@ confint(object, parm = NULL, level = 0.95, ...)
 
 ## Value
 
-A tibble with columns: \`id\`, \`term\`, \`estimate\`, \`conf.low\`,
-\`conf.high\`, \`level\`.
+A tibble with columns: `id`, `term`, `estimate`, `conf.low`,
+`conf.high`, `level`.
 
 ## Details
 
-For \`beezdemand_fixed\` objects, confidence intervals are computed
-using the asymptotic normal approximation: estimate +/- z \* SE. If
-standard errors are not available for a parameter, the confidence bounds
-will be \`NA\`.
+For `beezdemand_fixed` objects, confidence intervals are computed using
+the asymptotic normal approximation: estimate +/- z \* SE. If standard
+errors are not available for a parameter, the confidence bounds will be
+`NA`.
 
-When the underlying NLS fit objects are available (from \`detailed =
-TRUE\`), this method attempts to use \`nlstools::confint2()\` for more
-accurate profile-based intervals.
+When the underlying NLS fit objects are available (from
+`detailed = TRUE`), this method attempts to use
+[`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html)
+for more accurate profile-based intervals.
 
 ## Examples
 

@@ -41,7 +41,7 @@ Creates individual demand curves
 
 ## Author
 
-Shawn Gilroy \<shawn.gilroy@temple.edu\>
+Shawn Gilroy <shawn.gilroy@temple.edu>
 
 ## Examples
 

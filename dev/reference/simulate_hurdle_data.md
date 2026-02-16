@@ -56,7 +56,7 @@ simulate_hurdle_data(
 
 - logQ0:
 
-  \`r lifecycle::badge("deprecated")\` Use \`log_q0\` instead.
+  **\[deprecated\]** Use `log_q0` instead.
 
 - k:
 

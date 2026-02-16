@@ -5,9 +5,10 @@ including measures of central tendency (mean, median), variability (SD),
 range (min, max), and data quality (proportion of zeros, missing
 values).
 
-This is the modern replacement for \[GetDescriptives()\], returning a
-structured S3 object with dedicated methods for printing, summarizing,
-and visualizing.
+This is the modern replacement for
+[`GetDescriptives()`](https://brentkaplan.github.io/beezdemand/reference/GetDescriptives.md),
+returning a structured S3 object with dedicated methods for printing,
+summarizing, and visualizing.
 
 ## Usage
 
@@ -38,7 +39,7 @@ get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
 
 ## Value
 
-An S3 object of class \`beezdemand_descriptive\` containing:
+An S3 object of class `beezdemand_descriptive` containing:
 
 - **statistics** - Data frame with 8 columns (Price, Mean, Median, SD,
   PropZeros, NAs, Min, Max) and one row per unique price
@@ -67,11 +68,14 @@ For each unique price in the dataset, the function calculates:
 
 ## See also
 
-- \[GetDescriptives()\] - Legacy function (superseded)
+- [`GetDescriptives()`](https://brentkaplan.github.io/beezdemand/reference/GetDescriptives.md) -
+  Legacy function (superseded)
 
-- \[plot.beezdemand_descriptive()\] - Visualization method
+- [`plot.beezdemand_descriptive()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_descriptive_methods.md) -
+  Visualization method
 
-- \[summary.beezdemand_descriptive()\] - Extended summary
+- [`summary.beezdemand_descriptive()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_descriptive_methods.md) -
+  Extended summary
 
 ## Examples
 

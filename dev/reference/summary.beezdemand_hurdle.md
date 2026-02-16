@@ -19,11 +19,16 @@ summary(object, report_space = c("natural", "log10", "internal"), ...)
 
 - report_space:
 
-  Character. Reporting space for core demand parameters. One of: -
-  \`"internal"\`: report internal/fitting parameters (default internal
-  naming) - \`"natural"\`: report natural-scale parameters when a
-  natural mapping exists - \`"log10"\`: report \`log10()\`-scale
-  parameters when a mapping exists
+  Character. Reporting space for core demand parameters. One of:
+
+  - `"internal"`: report internal/fitting parameters (default internal
+    naming)
+
+  - `"natural"`: report natural-scale parameters when a natural mapping
+    exists
+
+  - `"log10"`: report [`log10()`](https://rdrr.io/r/base/Log.html)-scale
+    parameters when a mapping exists
 
 - ...:
 

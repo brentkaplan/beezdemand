@@ -30,10 +30,15 @@ beezdemand_calc_pmax_omax(
 
 - params:
 
-  Named list of parameters. Names depend on model_type: - hs/koff:
-  alpha, q0, k - hurdle: alpha, q0, k (note: hurdle uses different
-  formula) - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside
-  exponent) - snd/simplified: alpha, q0
+  Named list of parameters. Names depend on model_type:
+
+  - hs/koff: alpha, q0, k
+
+  - hurdle: alpha, q0, k (note: hurdle uses different formula)
+
+  - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
+
+  - snd/simplified: alpha, q0
 
 - param_scales:
 

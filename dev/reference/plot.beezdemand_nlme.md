@@ -1,6 +1,6 @@
 # Plot Method for beezdemand_nlme Objects
 
-Creates a ggplot2 visualization of a fitted \`beezdemand_nlme\` model,
+Creates a ggplot2 visualization of a fitted `beezdemand_nlme` model,
 showing observed data points and/or model prediction lines.
 
 ## Usage
@@ -46,7 +46,7 @@ plot(
 
 - x:
 
-  A \`beezdemand_nlme\` object.
+  A `beezdemand_nlme` object.
 
 - type:
 
@@ -58,11 +58,11 @@ plot(
 
 - show_observed:
 
-  Logical. If TRUE, plots the original data points. Default \`TRUE\`.
+  Logical. If TRUE, plots the original data points. Default `TRUE`.
 
 - observed_point_alpha:
 
-  Alpha for observed points. Default \`0.6\`.
+  Alpha for observed points. Default `0.6`.
 
 - show_pred:
 
@@ -71,16 +71,16 @@ plot(
 
 - n_points:
 
-  Integer. Number of points for prediction lines. Default \`100\`.
+  Integer. Number of points for prediction lines. Default `100`.
 
 - inv_fun:
 
   Optional function to inverse-transform y-axis and predictions. Default
-  \`identity\`.
+  `identity`.
 
 - facet:
 
-  Optional faceting formula (e.g., \`~ dose\`).
+  Optional faceting formula (e.g., `~ dose`).
 
 - at:
 
@@ -95,19 +95,19 @@ plot(
 - color_by:
 
   Optional character string: name of a factor to color lines and/or
-  points by. Must be a column in \`x\$data\`.
+  points by. Must be a column in `x$data`.
 
 - linetype_by:
 
   Optional character string: name of a factor for linetypes of
   population prediction lines if individual lines are also shown
   (otherwise applies to the shown lines). Must be a model factor in
-  \`x\$param_info\$factors\`.
+  `x$param_info$factors`.
 
 - shape_by:
 
   Optional character string: name of a factor for shapes of observed
-  points. Must be a column in \`x\$data\`.
+  points. Must be a column in `x$data`.
 
 - x_trans:
 
@@ -161,23 +161,23 @@ plot(
 
 - observed_point_size:
 
-  Size for observed points. Default \`2\`.
+  Size for observed points. Default `2`.
 
 - pop_line_size:
 
-  Size for population prediction lines. Default \`1\`.
+  Size for population prediction lines. Default `1`.
 
 - ind_line_size:
 
-  Size for individual prediction lines. Default \`0.6\`.
+  Size for individual prediction lines. Default `0.6`.
 
 - pop_line_alpha:
 
-  Alpha for population prediction lines. Default \`0.9\`.
+  Alpha for population prediction lines. Default `0.9`.
 
 - ind_line_alpha:
 
-  Alpha for individual prediction lines. Default \`0.3\`.
+  Alpha for individual prediction lines. Default `0.3`.
 
 - ...:
 

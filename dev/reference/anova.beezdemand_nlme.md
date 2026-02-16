@@ -13,21 +13,22 @@ anova(object, ...)
 
 - object:
 
-  A \`beezdemand_nlme\` model.
+  A `beezdemand_nlme` model.
 
 - ...:
 
-  Additional \`beezdemand_nlme\` models to compare.
+  Additional `beezdemand_nlme` models to compare.
 
 ## Value
 
-An object of class \`anova.beezdemand\` containing model comparison
+An object of class `anova.beezdemand` containing model comparison
 statistics.
 
 ## Details
 
-For NLME models, this method delegates to \`nlme::anova.lme()\` on the
-underlying model objects when possible.
+For NLME models, this method delegates to
+[`nlme::anova.lme()`](https://rdrr.io/pkg/nlme/man/anova.lme.html) on
+the underlying model objects when possible.
 
 ## Examples
 

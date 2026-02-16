@@ -4,8 +4,10 @@ Calculates the k scaling parameter used in demand curve equations to
 normalize consumption across different units or ranges. The k value is
 derived from the logarithmic range of consumption values.
 
-This is the modern replacement for \[GetK()\], with explicit parameters
-for the adjustment value and optional verbose output.
+This is the modern replacement for
+[`GetK()`](https://brentkaplan.github.io/beezdemand/reference/GetK.md),
+with explicit parameters for the adjustment value and optional verbose
+output.
 
 ## Usage
 
@@ -64,7 +66,7 @@ The k parameter is calculated as:
 where max and min are the maximum and minimum non-zero consumption
 values.
 
-\## Use in Demand Equations
+### Use in Demand Equations
 
 The k parameter appears in several demand curve equations:
 
@@ -74,7 +76,7 @@ The k parameter appears in several demand curve equations:
 
 - Ensures numerical stability during model fitting
 
-\## Calculation Modes
+### Calculation Modes
 
 - **use_means = TRUE** (default): Calculates k from mean consumption at
   each price point. Recommended when data has multiple subjects, as it
@@ -88,15 +90,17 @@ The k parameter appears in several demand curve equations:
 
 - Only non-zero consumption values are used (zero values are excluded)
 
-- Missing values (NA) are automatically removed via \`na.rm = TRUE\`
+- Missing values (NA) are automatically removed via `na.rm = TRUE`
 
 - The default adjustment of 0.5 is conventional but can be modified
 
 ## See also
 
-- \[GetK()\] - Legacy function (superseded)
+- [`GetK()`](https://brentkaplan.github.io/beezdemand/reference/GetK.md) -
+  Legacy function (superseded)
 
-- \[FitCurves()\] - Uses k parameter in demand curve fitting
+- [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md) -
+  Uses k parameter in demand curve fitting
 
 ## Examples
 

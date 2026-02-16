@@ -522,19 +522,20 @@ plot_residuals(fit_hs)$fitted
 
 ![](beezdemand_files/figure-html/hs-residuals-1.png)
 
-##### Normalized Alpha ($\alpha^{*}$)
+##### Normalized Alpha (\alpha^\*)
 
-When `k` varies across participants or studies, raw $\alpha$ values are
+When `k` varies across participants or studies, raw \alpha values are
 not directly comparable. The `alpha_star` column in
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) output
 provides a normalized version (Strategy B; Rzeszutek et al., 2025) that
 adjusts for the scaling constant:
 
-$$\alpha^{*} = \frac{- \alpha}{\ln\!\left( 1 - \frac{1}{k \cdot \ln(b)} \right)}$$
+\alpha^\* = \frac{-\alpha}{\ln\\\left(1 - \frac{1}{k \cdot
+\ln(b)}\right)}
 
-where $b$ is the logarithmic base (10 for HS/Koff equations). Standard
-errors are computed via the delta method. `alpha_star` requires
-$k \cdot \ln(b) > 1$; otherwise `NA` is returned.
+where b is the logarithmic base (10 for HS/Koff equations). Standard
+errors are computed via the delta method. `alpha_star` requires k \cdot
+\ln(b) \> 1; otherwise `NA` is returned.
 
 ``` r
 ## alpha_star is included in tidy() output for HS and Koff equations
@@ -582,8 +583,8 @@ fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Pooled")
 As mentioned earlier, in
 [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
 when `k = "share"` this parameter will be a shared parameter across all
-datasets (globally) while estimating $Q_{0}$ and $\alpha$ locally. While
-this works, it may take some time with larger sample sizes.
+datasets (globally) while estimating Q_0 and \alpha locally. While this
+works, it may take some time with larger sample sizes.
 
 ``` r
 fit_demand_fixed(data = apt, equation = "hs", k = "share")

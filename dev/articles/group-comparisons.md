@@ -60,9 +60,9 @@ knitr::kable(apt[1:20, ])
 
 The
 [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md)
-function will determine whether a single $\alpha$ or a single $Q_{0}$ is
-better than multiple $\alpha$s or $Q_{0}$s. A resulting *F* statistic
-will be reported along with a *p* value.
+function will determine whether a single \alpha or a single Q_0 is
+better than multiple \alphas or Q_0s. A resulting *F* statistic will be
+reported along with a *p* value.
 
 ``` r
 ## in order for this to run, you will have had to run the code immediately

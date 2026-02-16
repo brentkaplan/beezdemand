@@ -1,9 +1,11 @@
 # Get Trends (Slopes) of Demand Parameters with respect to Continuous Covariates
 
-Computes the trend (slope) of \`Q0\` and/or \`alpha\` with respect to
-one or more continuous covariates using \`emmeans::emtrends()\` on a
-fitted \`beezdemand_nlme\` model. Trends are computed on the parameter
-estimation scale (log10), consistent with how parameters are modeled.
+Computes the trend (slope) of `Q0` and/or `alpha` with respect to one or
+more continuous covariates using
+[`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html)
+on a fitted `beezdemand_nlme` model. Trends are computed on the
+parameter estimation scale (log10), consistent with how parameters are
+modeled.
 
 ## Usage
 
@@ -23,12 +25,13 @@ get_demand_param_trends(
 
 - fit_obj:
 
-  A \`beezdemand_nlme\` object from \`fit_demand_mixed()\`.
+  A `beezdemand_nlme` object from
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md).
 
 - params:
 
   Character vector of parameters to analyze: any of "Q0", "alpha".
-  Default \`c("Q0", "alpha")\`.
+  Default `c("Q0", "alpha")`.
 
 - covariates:
 
@@ -38,12 +41,13 @@ get_demand_param_trends(
 - specs:
 
   A formula specifying the factors over which to produce trends (e.g.,
-  \`~ drug\` for trends by drug; \`~ 1\` for overall). Default \`~ 1\`.
+  `~ drug` for trends by drug; `~ 1` for overall). Default `~ 1`.
 
 - at:
 
   Optional named list to condition variables (factors or continuous)
-  when computing trends (passed through to \`emmeans::ref_grid\`).
+  when computing trends (passed through to
+  [`emmeans::ref_grid`](https://rvlenth.github.io/emmeans/reference/ref_grid.html)).
 
 - ci_level:
 
@@ -51,14 +55,15 @@ get_demand_param_trends(
 
 - ...:
 
-  Additional args passed to \`emmeans::emtrends()\`.
+  Additional args passed to
+  [`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html).
 
 ## Value
 
 A tibble combining trends for each requested parameter and covariate,
-including columns for grouping factors (from \`specs\`), \`parameter\`,
-\`covariate\`, \`trend\` (slope on log10 scale), and its CI
-(\`lower.CL\`, \`upper.CL\`).
+including columns for grouping factors (from `specs`), `parameter`,
+`covariate`, `trend` (slope on log10 scale), and its CI (`lower.CL`,
+`upper.CL`).
 
 ## Examples
 

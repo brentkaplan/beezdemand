@@ -34,7 +34,7 @@ Replaces specified number of 0s with replacement value.
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

@@ -24,7 +24,7 @@ Theme for ggplot graphics that closely align with APA formatting
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

@@ -18,8 +18,8 @@ plot_qq(object, which = NULL, ...)
 
 - object:
 
-  A fitted model object with random effects (\`beezdemand_hurdle\` or
-  \`beezdemand_nlme\`).
+  A fitted model object with random effects (`beezdemand_hurdle` or
+  `beezdemand_nlme`).
 
 - which:
 

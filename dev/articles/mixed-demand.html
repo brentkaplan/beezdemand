@@ -11,7 +11,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Open_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Fira_Mono-0.4.10/font.css" rel="stylesheet">
@@ -86,7 +87,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-02-15</h4>
+            <h4 data-toc-skip class="date">2026-02-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/mixed-demand.Rmd" class="external-link"><code>vignettes/mixed-demand.Rmd</code></a></small>
       <div class="d-none name"><code>mixed-demand.Rmd</code></div>
@@ -103,16 +104,11 @@ package. We will focus on the <code><a href="../reference/fit_demand_mixed.html"
 and its associated helper functions for extracting results, making
 predictions, and visualizing fits. These models allow for individual
 differences (random effects) and the examination of how various factors
-(fixed effects) influence demand parameters like
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_{0}</annotation></semantics></math>
-(maximum consumption at zero price) and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-(sensitivity of demand to price). The parameters
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_{0}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-are estimated on a log10 scale for numerical stability, but reporting
-functions will provide them on their natural, interpretable scale.</p>
+(fixed effects) influence demand parameters like <span class="math inline">Q_{0}</span> (maximum consumption at zero price) and
+<span class="math inline">\alpha</span> (sensitivity of demand to
+price). The parameters <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> are estimated on a log10 scale for
+numerical stability, but reporting functions will provide them on their
+natural, interpretable scale.</p>
 <p>For advanced topics including multi-factor models, collapsing factor
 levels, estimated marginal means, pairwise comparisons, continuous
 covariates, and complex random effects structures, see
@@ -187,7 +183,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6b49766a8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af37872d90&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -258,7 +254,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6a3d0dd08&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af2abde2c8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -332,7 +328,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6ae36c948&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af306848f8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -441,11 +437,9 @@ helpers as standard post-fit checks.</p>
 <div class="section level4">
 <h4 id="basic-model-no-factors">Basic Model (No Factors)<a class="anchor" aria-label="anchor" href="#basic-model-no-factors"></a>
 </h4>
-<p>This model estimates global
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_{0}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-parameters with random effects for subjects.</p>
+<p>This model estimates global <span class="math inline">Q_{0}</span>
+and <span class="math inline">\alpha</span> parameters with random
+effects for subjects.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make sure a similar 'fit_no_factors' was created successfully in your environment</span></span>
 <span><span class="co"># For the vignette, let's create one that is more likely to converge quickly</span></span>
@@ -473,7 +467,7 @@ parameters with random effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6ad729c88&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af2a319d78&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -512,11 +506,7 @@ model converged, it prints the nlme model summary.</p>
 <div class="section level4">
 <h4 id="model-with-one-factor">Model with One Factor<a class="anchor" aria-label="anchor" href="#model-with-one-factor"></a>
 </h4>
-<p>Let’s model
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_{0}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-as varying by dose for Alfentanil.</p>
+<p>Let’s model <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> as varying by dose for Alfentanil.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_one_factor_dose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">ko_alf</span>,</span>
@@ -540,7 +530,7 @@ as varying by dose for Alfentanil.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6ae52d4b8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af25168700&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -631,7 +621,7 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c6ae52d4b8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55af25168700&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -933,13 +923,9 @@ breaks:</p>
 </h2>
 <p>The beezdemand package provides a suite of tools for robustly fitting
 nonlinear mixed-effects demand models and interpreting their parameters.
-By parameterizing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Q</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Q_{0}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-on the log10 scale, numerical stability is enhanced, while helper
-functions allow for easy back-transformation and interpretation on the
-natural scale.</p>
+By parameterizing <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> on the log10 scale, numerical
+stability is enhanced, while helper functions allow for easy
+back-transformation and interpretation on the natural scale.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See Also<a class="anchor" aria-label="anchor" href="#see-also"></a>

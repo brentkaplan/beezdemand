@@ -1,32 +1,32 @@
 # Fit cross-price demand with NLS (+ robust fallbacks)
 
-Fits a \*\*cross-price demand\*\* curve using log10-parameterization for
+Fits a **cross-price demand** curve using log10-parameterization for
 numerical stability. The optimizer estimates parameters on the log10
 scale where applicable, ensuring positive constraints are naturally
 satisfied.
 
-\*\*Equation forms:\*\*
+**Equation forms:**
 
-\- \*\*Exponentiated\*\* (default): \$\$y = Q\_{alone} \cdot 10^{I \cdot
-\exp(-\beta \cdot x)}\$\$
+- **Exponentiated** (default): \$\$y = Q\_{alone} \cdot 10^{I \cdot
+  \exp(-\beta \cdot x)}\$\$
 
-\- \*\*Exponential\*\* (fits on log10 response scale): \$\$\log\_{10}(y)
-= \log\_{10}(Q\_{alone}) + I \cdot \exp(-\beta \cdot x)\$\$
+- **Exponential** (fits on log10 response scale): \$\$\log\_{10}(y) =
+  \log\_{10}(Q\_{alone}) + I \cdot \exp(-\beta \cdot x)\$\$
 
-\- \*\*Additive\*\* (level on \\y\\): \$\$y = Q\_{alone} + I \cdot
-\exp(-\beta \cdot x)\$\$
+- **Additive** (level on \\y\\): \$\$y = Q\_{alone} + I \cdot
+  \exp(-\beta \cdot x)\$\$
 
 where \\x\\ is the alternative product price (or "cross" price) and
 \\y\\ is consumption of the target good.
 
-\*\*Optimizer parameters (log10 parameterization):\*\*
+**Optimizer parameters (log10 parameterization):**
 
 - `log10_qalone`: \\\log\_{10}(Q\_{alone})\\ - baseline consumption when
   the alternative is effectively absent.
 
-- `I`: cross-price \*\*interaction intensity\*\*; sign and magnitude
-  reflect substitution/complementarity. Unconstrained (can be negative
-  for substitutes).
+- `I`: cross-price **interaction intensity**; sign and magnitude reflect
+  substitution/complementarity. Unconstrained (can be negative for
+  substitutes).
 
 - `log10_beta`: \\\log\_{10}(\beta)\\ - rate at which cross-price
   influence decays as \\x\\ increases.
@@ -35,10 +35,13 @@ Natural-scale values are recovered as \\Q\_{alone} =
 10^{log10\\qalone}\\ and \\\beta = 10^{log10\\beta}\\.
 
 The function first attempts a multi-start nonlinear least squares fit
-(\`nls.multstart\`). If that fails—or if explicit \`start_vals\` are
-provided—it falls back to \`minpack.lm::nlsLM\`. Optionally, it will
-make a final attempt with \`nlsr::wrapnlsr\`. Returns either the fitted
-model or a structured object with metadata for downstream methods.
+(`nls.multstart`). If that fails—or if explicit `start_vals` are
+provided—it falls back to
+[`minpack.lm::nlsLM`](https://rdrr.io/pkg/minpack.lm/man/nlsLM.html).
+Optionally, it will make a final attempt with
+[`nlsr::wrapnlsr`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html). Returns
+either the fitted model or a structured object with metadata for
+downstream methods.
 
 ## Usage
 
@@ -58,25 +61,25 @@ fit_cp_nls(
 
 - data:
 
-  A data frame with columns \`x\` (alternative price) and \`y\`
+  A data frame with columns `x` (alternative price) and `y`
   (consumption). Additional columns are ignored. Input is validated
   internally.
 
 - equation:
 
-  Character string; model family, one of \`c("exponentiated",
-  "exponential", "additive")\`. Default is \`"exponentiated"\`.
+  Character string; model family, one of
+  `c("exponentiated", "exponential", "additive")`. Default is
+  `"exponentiated"`.
 
 - start_vals:
 
-  Optional \*\*named list\*\* of initial values for parameters
-  \`log10_qalone\`, \`I\`, and \`log10_beta\`. If \`NULL\`, the function
-  derives plausible ranges from the data and uses multi-start search.
+  Optional **named list** of initial values for parameters
+  `log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
+  plausible ranges from the data and uses multi-start search.
 
 - iter:
 
-  Integer; number of random starts for \`nls.multstart\` (default
-  \`100\`).
+  Integer; number of random starts for `nls.multstart` (default `100`).
 
 - bounds:
 
@@ -85,67 +88,73 @@ fit_cp_nls(
 
 - fallback_to_nlsr:
 
-  Logical; if \`TRUE\` (default), try \`nlsr::wrapnlsr\` when both
-  multi-start NLS and \`nlsLM\` fail.
+  Logical; if `TRUE` (default), try
+  [`nlsr::wrapnlsr`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html) when
+  both multi-start NLS and `nlsLM` fail.
 
 - return_all:
 
-  Logical; if \`TRUE\` (default), return a list containing the model and
-  useful metadata. If \`FALSE\`, return the bare fitted model object.
+  Logical; if `TRUE` (default), return a list containing the model and
+  useful metadata. If `FALSE`, return the bare fitted model object.
 
 ## Value
 
-If \`return_all = TRUE\` (default): a list of class \`"cp_model_nls"\`:
+If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
 
-- \`model\`: the fitted object from the successful backend.
+- `model`: the fitted object from the successful backend.
 
-- \`method\`: one of \`"nls_multstart"\`, \`"nlsLM"\`, or
-  \`"wrapnlsr"\`.
+- `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
 
-- \`equation\`: the model family used.
+- `equation`: the model family used.
 
-- \`start_vals\`: named list of starting values (final used).
+- `start_vals`: named list of starting values (final used).
 
-- \`nlsLM_fit\`, \`nlsr_fit\`: fits from later stages (if attempted).
+- `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
 
-- \`data\`: the 2-column data frame actually fit.
+- `data`: the 2-column data frame actually fit.
 
-If \`return_all = FALSE\`: the fitted model object from the successful
+If `return_all = FALSE`: the fitted model object from the successful
 backend.
 
 ## Details
 
-\*\*Start values.\*\* When \`start_vals\` is missing, the function: (1)
-estimates a reasonable range for \`log10_qalone\` from the observed
-\`y\`, (2) estimates \`log10_beta\` from the price range, and (3)
-launches a multi-start grid in \`nls.multstart\`.
+**Start values.** When `start_vals` is missing, the function: (1)
+estimates a reasonable range for `log10_qalone` from the observed `y`,
+(2) estimates `log10_beta` from the price range, and (3) launches a
+multi-start grid in `nls.multstart`.
 
-\*\*Zero handling for exponential equation.\*\* Since the exponential
+**Zero handling for exponential equation.** Since the exponential
 equation fits on the \\\log\_{10}(y)\\ scale, observations with \\y \le
 0\\ are automatically removed with a warning. Use the exponentiated or
 additive forms if you need to retain zero consumption values.
 
-\*\*Fitting pipeline (short-circuiting):\*\*
+**Fitting pipeline (short-circuiting):**
 
-1.  \`nls.multstart::nls_multstart()\` with random starts.
+1.  [`nls.multstart::nls_multstart()`](https://rdrr.io/pkg/nls.multstart/man/nls_multstart.html)
+    with random starts.
 
-2.  If that fails (or if \`start_vals\` provided):
-    \`minpack.lm::nlsLM()\` using \`start_vals\` (user or internally
-    estimated).
+2.  If that fails (or if `start_vals` provided):
+    [`minpack.lm::nlsLM()`](https://rdrr.io/pkg/minpack.lm/man/nlsLM.html)
+    using `start_vals` (user or internally estimated).
 
-3.  If that fails and \`fallback_to_nlsr = TRUE\`: \`nlsr::wrapnlsr()\`.
+3.  If that fails and `fallback_to_nlsr = TRUE`:
+    [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html).
 
-The returned object has class \`"cp_model_nls"\` (when \`return_all =
-TRUE\`) with components: \`model\`, \`method\` (the algorithm used),
-\`equation\`, \`start_vals\`, \`nlsLM_fit\`, \`nlsr_fit\`, and the
-\`data\` used. This is convenient for custom print/summary/plot methods.
+The returned object has class `"cp_model_nls"` (when
+`return_all = TRUE`) with components: `model`, `method` (the algorithm
+used), `equation`, `start_vals`, `nlsLM_fit`, `nlsr_fit`, and the `data`
+used. This is convenient for custom print/summary/plot methods.
 
 ## Convergence & warnings
 
-\- Check convergence codes and residual diagnostics from the underlying
-fit. - Poor scaling or extreme \`y\` dispersion can make parameters
-weakly identified. - For \`"exponential"\`, the model fits on the
-\\\log\_{10}(y)\\ scale internally.
+- Check convergence codes and residual diagnostics from the underlying
+  fit.
+
+- Poor scaling or extreme `y` dispersion can make parameters weakly
+  identified.
+
+- For `"exponential"`, the model fits on the \\\log\_{10}(y)\\ scale
+  internally.
 
 ## See also
 

@@ -26,22 +26,24 @@ Numeric
 
 ## Details
 
-\`r lifecycle::badge("superseded")\`
+**\[superseded\]**
 
-\`GetK()\` has been superseded by \[get_k()\], which provides explicit
-parameters for the adjustment value and optional verbose output for
-better transparency. \`GetK()\` will continue to work but is no longer
-recommended for new code.
+`GetK()` has been superseded by
+[`get_k()`](https://brentkaplan.github.io/beezdemand/reference/get_k.md),
+which provides explicit parameters for the adjustment value and optional
+verbose output for better transparency. `GetK()` will continue to work
+but is no longer recommended for new code.
 
 Will look for maximum/minimum greater zero
 
 ## See also
 
-\[get_k()\] for the modern interface
+[`get_k()`](https://brentkaplan.github.io/beezdemand/reference/get_k.md)
+for the modern interface
 
 ## Author
 
-Brent Kaplan \<bkaplan.ku@gmail.com\>
+Brent Kaplan <bkaplan.ku@gmail.com>
 
 ## Examples
 

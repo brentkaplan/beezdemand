@@ -1,7 +1,8 @@
 # Confidence Intervals for Cross-Price NLS Model Parameters
 
 Computes confidence intervals for parameters from a nonlinear
-cross-price demand model using \`nlstools::confint2()\`.
+cross-price demand model using
+[`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html).
 
 ## Usage
 
@@ -20,7 +21,8 @@ confint(
 
 - object:
 
-  A \`cp_model_nls\` object from \[fit_cp_nls()\].
+  A `cp_model_nls` object from
+  [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md).
 
 - parm:
 
@@ -34,26 +36,31 @@ confint(
 - method:
 
   Character. Method for computing intervals passed to
-  \`nlstools::confint2()\`: - \`"asymptotic"\` (default): Wald-type
-  asymptotic intervals - \`"profile"\`: Profile-t confidence intervals
+  [`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html):
+
+  - `"asymptotic"` (default): Wald-type asymptotic intervals
+
+  - `"profile"`: Profile-t confidence intervals
 
 - ...:
 
-  Additional arguments passed to \`nlstools::confint2()\`.
+  Additional arguments passed to
+  [`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html).
 
 ## Value
 
-A tibble with columns: \`term\`, \`estimate\`, \`conf.low\`,
-\`conf.high\`, \`level\`, \`method\`.
+A tibble with columns: `term`, `estimate`, `conf.low`, `conf.high`,
+`level`, `method`.
 
 ## Details
 
-This method wraps \`nlstools::confint2()\` to provide confidence
-intervals for the log10-parameterized coefficients (\`log10_qalone\`,
-\`I\`, \`log10_beta\`).
+This method wraps
+[`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html)
+to provide confidence intervals for the log10-parameterized coefficients
+(`log10_qalone`, `I`, `log10_beta`).
 
 For back-transformed natural-scale confidence intervals, apply the
-transformation: \`10^conf.low\` and \`10^conf.high\` for log10-scale
+transformation: `10^conf.low` and `10^conf.high` for log10-scale
 parameters.
 
 ## Examples
