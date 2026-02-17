@@ -634,6 +634,8 @@ for more advanced workflows:
 
 - [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
   – Choosing the right model class for your data
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
+  – In-depth fixed-effect demand modeling
 - [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
   – Extra sum-of-squares F-test for group comparisons
 - [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)

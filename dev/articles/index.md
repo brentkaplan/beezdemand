@@ -6,6 +6,8 @@
   beezdemand](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
 - [How to Use Cross-Price Demand Model
   Functions](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+- [Fixed-Effect Demand Modeling with
+  \`beezdemand\`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
 - [Group Comparisons with Extra Sum-of-Squares
   F-Test](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
 - [Hurdle Demand
