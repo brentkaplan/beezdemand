@@ -1,0 +1,309 @@
+---
+title: "Fixed-Effect Demand Modeling with `beezdemand`"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fixed-Effect Demand Modeling with `beezdemand`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  dev = "png",
+  dpi = 144,
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE,
+  cache = TRUE,
+  cache.path = "fixed-demand_cache/",
+  autodep = TRUE
+)
+
+library(beezdemand)
+library(dplyr)
+library(ggplot2)
+
+data("apt", package = "beezdemand", envir = environment())
+
+cache_key_object <- function(x) {
+  tmp <- tempfile(fileext = ".rds")
+  saveRDS(x, tmp)
+  on.exit(unlink(tmp), add = TRUE)
+  unname(tools::md5sum(tmp))
+}
+
+knitr::opts_chunk$set(
+  cache.extra = list(
+    beezdemand_version = as.character(utils::packageVersion("beezdemand")),
+    apt = cache_key_object(apt)
+  )
+)
+```
+
+# Introduction
+
+This vignette demonstrates how to fit individual (fixed-effect) demand curves
+using `fit_demand_fixed()`. This function fits separate nonlinear least squares
+(NLS) models for each subject, producing per-subject estimates of demand
+parameters like $Q_{0}$ (intensity) and $\alpha$ (elasticity).
+
+**When to use fixed-effect models:** Fixed-effect models are appropriate when
+you want independent curve fits for each participant. They make no assumptions
+about the distribution of parameters across subjects and are the simplest
+approach to demand curve analysis. For hierarchical models that share
+information across subjects, see `vignette("mixed-demand")`. For guidance on
+choosing between approaches, see `vignette("model-selection")`.
+
+**Data format:** All modeling functions expect long-format data with columns
+`id` (subject identifier), `x` (price), and `y` (consumption). See
+`vignette("beezdemand")` for details on data preparation and conversion from
+wide format.
+
+# Fitting with Different Equations
+
+`fit_demand_fixed()` supports several equation forms. We demonstrate the three
+most common below using the `apt` (Alcohol Purchase Task) dataset.
+
+## Hursh & Silberberg ("hs")
+The exponential model of demand (Hursh & Silberberg, 2008):
+
+$$\log_{10}(Q) = \log_{10}(Q_0) + k \cdot (e^{-\alpha \cdot Q_0 \cdot x} - 1)$$
+
+```{r fit_hs}
+fit_hs <- fit_demand_fixed(apt, equation = "hs", k = 2)
+fit_hs
+```
+
+## Koffarnus ("koff")
+
+The exponentiated model (Koffarnus et al., 2015):
+
+$$Q = Q_0 \cdot 10^{k \cdot (e^{-\alpha \cdot Q_0 \cdot x} - 1)}$$
+
+```{r fit_koff}
+fit_koff <- fit_demand_fixed(apt, equation = "koff", k = 2)
+fit_koff
+```
+
+## Simplified ("simplified")
+
+The simplified exponential model (Rzeszutek et al., 2025) does not require a
+scaling constant $k$:
+
+$$Q = Q_0 \cdot e^{-\alpha \cdot Q_0 \cdot x}$$
+
+```{r fit_simplified}
+fit_simplified <- fit_demand_fixed(apt, equation = "simplified")
+fit_simplified
+```
+
+# The k Parameter
+
+The scaling constant $k$ controls the range of the demand function. For the
+`"hs"` and `"koff"` equations, `k` can be specified in several ways:
+
+| `k` value | Behavior |
+|-----------|----------|
+| Numeric (e.g., `2`) | Fixed constant for all subjects (default) |
+| `"ind"` | Individual $k$ per subject, computed from each subject's data range |
+| `"share"` | Single shared $k$ estimated across all subjects via global regression |
+| `"fit"` | $k$ is a free parameter estimated jointly with $Q_0$ and $\alpha$ |
+
+```{r fit_k_options, eval = FALSE}
+## Fixed k (default)
+fit_demand_fixed(apt, equation = "hs", k = 2)
+
+## Individual k per subject
+fit_demand_fixed(apt, equation = "hs", k = "ind")
+
+## Shared k across subjects
+fit_demand_fixed(apt, equation = "hs", k = "share")
+
+## Fitted k as free parameter
+fit_demand_fixed(apt, equation = "hs", k = "fit")
+```
+
+The `param_space` argument controls whether optimization is performed on the
+natural scale (`"natural"`, the default) or log10 scale (`"log10"`). The log10
+scale can improve convergence for some datasets:
+
+```{r fit_log10, eval = FALSE}
+fit_demand_fixed(apt, equation = "hs", k = 2, param_space = "log10")
+```
+
+# Inspecting Fits
+
+All `beezdemand_fixed` objects support the standard `tidy()`, `glance()`,
+`augment()`, and `confint()` methods for programmatic access to results.
+
+## tidy(): Per-Subject Parameter Estimates
+
+```{r tidy}
+tidy(fit_hs)
+```
+
+## glance(): Model-Level Summary
+
+```{r glance}
+glance(fit_hs)
+```
+
+## augment(): Fitted Values and Residuals
+
+```{r augment}
+augment(fit_hs)
+```
+
+## confint(): Confidence Intervals
+
+```{r confint}
+confint(fit_hs)
+```
+
+## summary(): Formatted Summary
+
+The `summary()` method provides a formatted overview including parameter
+distributions across subjects:
+
+```{r summary}
+summary(fit_hs)
+```
+
+# Normalized Alpha ($\alpha^*$)
+
+When $k$ varies across participants or studies (e.g., `k = "ind"` or
+`k = "fit"`), raw $\alpha$ values are not directly comparable. The `alpha_star`
+column in `tidy()` output provides a normalized version (Strategy B; Rzeszutek
+et al., 2025) that adjusts for the scaling constant:
+
+$$\alpha^* = \frac{-\alpha}{\ln\!\left(1 - \frac{1}{k \cdot \ln(b)}\right)}$$
+
+where $b$ is the logarithmic base (10 for HS/Koff equations). Standard errors
+are computed via the delta method. `alpha_star` requires $k \cdot \ln(b) > 1$;
+otherwise `NA` is returned.
+
+```{r alpha_star}
+tidy(fit_hs) |>
+  filter(term == "alpha_star") |>
+  select(id, term, estimate, std.error)
+```
+
+# Plotting
+
+## Basic Demand Curves
+
+The `plot()` method displays fitted demand curves with observed data points.
+The x-axis defaults to a log10 scale:
+
+```{r plot_basic, cache = FALSE}
+plot(fit_hs)
+```
+
+## Faceted by Subject
+
+Use `facet = TRUE` to show each subject in a separate panel:
+
+```{r plot_facet, cache = FALSE, fig.height = 8}
+plot(fit_hs, facet = TRUE)
+```
+
+## Axis Transformations
+
+Control the x- and y-axis transformations with `x_trans` and `y_trans`:
+
+```{r plot_transforms, cache = FALSE}
+plot(fit_hs, x_trans = "pseudo_log", y_trans = "pseudo_log")
+```
+
+# Diagnostics
+
+## Model Checks
+
+`check_demand_model()` summarizes convergence, residual properties, and
+potential issues:
+
+```{r diagnostics}
+check_demand_model(fit_hs)
+```
+
+## Residual Plots
+
+`plot_residuals()` produces diagnostic plots. Use `$fitted` for a
+residuals-vs-fitted plot:
+
+```{r residuals, cache = FALSE}
+plot_residuals(fit_hs)$fitted
+```
+
+# Predictions
+
+## Default Predictions
+
+`predict()` with no arguments returns fitted values at the observed prices:
+
+```{r predict_default}
+predict(fit_hs)
+```
+
+## Custom Price Grid
+
+Supply `newdata` to predict at specific prices:
+
+```{r predict_custom}
+new_prices <- data.frame(x = c(0, 0.5, 1, 2, 5, 10, 20))
+predict(fit_hs, newdata = new_prices)
+```
+
+# Aggregated Models
+
+Instead of fitting each subject individually, you can fit a single curve to
+aggregated data.
+
+## Mean Aggregation
+
+`agg = "Mean"` computes the mean consumption at each price across subjects,
+then fits a single curve to those means:
+
+```{r agg_mean}
+fit_mean <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Mean")
+fit_mean
+```
+
+```{r agg_mean_plot, cache = FALSE}
+plot(fit_mean)
+```
+
+## Pooled Aggregation
+
+`agg = "Pooled"` fits a single curve to all data points pooled together,
+retaining error around each observation but ignoring within-subject clustering:
+
+```{r agg_pooled}
+fit_pooled <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Pooled")
+fit_pooled
+```
+
+```{r agg_pooled_plot, cache = FALSE}
+plot(fit_pooled)
+```
+
+# Conclusion
+
+The `fit_demand_fixed()` interface provides a modern, consistent API for
+individual demand curve fitting with full support for the `tidy()` / `glance()`
+/ `augment()` workflow. For datasets where borrowing strength across subjects
+is desirable, consider the mixed-effects or hurdle model approaches.
+
+# See Also
+
+- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("model-selection")` -- Choosing the right model class
+- `vignette("group-comparisons")` -- Extra sum-of-squares F-test for group comparisons
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)
+- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models via TMB
+- `vignette("migration-guide")` -- Migrating from `FitCurves()` to `fit_demand_fixed()`

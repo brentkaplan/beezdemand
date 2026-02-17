@@ -44,6 +44,8 @@ navbar:
         - text: Model Types
         - text: Group Comparisons (Extra F-Test)
           href: articles/group-comparisons.html
+        - text: Fixed-Effect Models
+          href: articles/fixed-demand.html
         - text: Mixed-Effects Models
           href: articles/mixed-demand.html
         - text: "Advanced Mixed-Effects Models"

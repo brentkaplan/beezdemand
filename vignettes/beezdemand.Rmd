@@ -400,6 +400,7 @@ Now that you are familiar with the basics, explore the other vignettes for more
 advanced workflows:
 
 - `vignette("model-selection")` -- Choosing the right model class for your data
+- `vignette("fixed-demand")` -- In-depth fixed-effect demand modeling
 - `vignette("group-comparisons")` -- Extra sum-of-squares F-test for group comparisons
 - `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)
 - `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics (factors, EMMs, covariates)
