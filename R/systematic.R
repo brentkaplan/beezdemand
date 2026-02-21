@@ -161,7 +161,7 @@ check_unsystematic_cp <- function(
 
   if (verbose) {
     bounce_proportion <- bounce_above / (data_length - 1)
-    print(paste("Bounce up proportion (expected_down=TRUE):", round(bounce_proportion, 4)))
+    message(paste("Bounce up proportion (expected_down=TRUE):", round(bounce_proportion, 4)))
   }
 
 } else {
@@ -171,7 +171,7 @@ check_unsystematic_cp <- function(
 
     if (verbose) {
       bounce_proportion <- bounce_above / (data_length - 1)
-      print(paste("Bounce up proportion:", round(bounce_proportion, 4)))
+      message(paste("Bounce up proportion:", round(bounce_proportion, 4)))
     }
   }
 
@@ -181,7 +181,7 @@ check_unsystematic_cp <- function(
 
     if (verbose) {
       bounce_proportion <- bounce_below / (data_length - 1)
-      print(paste("Bounce down proportion:", round(bounce_proportion, 4)))
+      message(paste("Bounce down proportion:", round(bounce_proportion, 4)))
     }
   }
 
@@ -200,8 +200,8 @@ check_unsystematic_cp <- function(
     bounce_none <- min(proportion_above, proportion_below) > bounce_none_threshold
 
     if (verbose) {
-      print(paste("Bounce above proportion (no trend):", round(proportion_above, 4)))
-      print(paste("Bounce below proportion (no trend):", round(proportion_below, 4)))
+      message(paste("Bounce above proportion (no trend):", round(proportion_above, 4)))
+      message(paste("Bounce below proportion (no trend):", round(proportion_below, 4)))
     }
   }
 }

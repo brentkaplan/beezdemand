@@ -27,7 +27,7 @@ utils::globalVariables(c("X", "Y", "group", "id", "x", "x1", "x2", "y", "y1", "y
 ##' @noRd
 minTicks <- function(maj) {
   minticks <- vector(length = (length(maj)-1) * 10)
-  for (i in 1:length(maj)) {
+  for (i in seq_along(maj)) {
     if (i == length(maj)) {
       return(minticks)
     }
@@ -173,7 +173,8 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
 PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "apa")) {
   style <- match.arg(style)
   if (!any(adf$y > 0)) {
-   return(print("Warning: No positive consumption values!"))
+   warning("No positive consumption values!")
+   return(invisible(NULL))
   }
   
   if (!all(is.na(newdats$y))) {
@@ -219,7 +220,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
-        beezdemand::theme_beezdemand(style = style) +
+        theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -253,7 +254,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "
         ggplot2::coord_cartesian(ylim=c(min(c(0.1, tempnew$y)), max(c(tempnew$y, pointFrame$y)) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         annotation_logticks(sides = "b") +
-        beezdemand::theme_beezdemand(style = style) +
+        theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -303,7 +304,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "
                       labels=c("0.00",  0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)) +
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
-        beezdemand::theme_beezdemand(style = style) +
+        theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),
@@ -339,7 +340,7 @@ PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "
         ggplot2::coord_cartesian(ylim=c(0.1, max(pointFrame$Y) * 1.15)) +
         ggplot2::ggtitle(paste("Participant", dfrow[["id"]], sep = "-")) +
         ggplot2::annotation_logticks(sides = "b") +
-        beezdemand::theme_beezdemand(style = style) +
+        theme_beezdemand(style = style) +
         ggplot2::theme(strip.background = element_blank(),
               strip.text = element_blank(),
               plot.title = element_text(hjust = 0.5),

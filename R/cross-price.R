@@ -382,7 +382,7 @@ fit_cp_linear <- function(
       filter_target = TRUE
     )
 
-    if (log10x & any(data$x <= 0)) {
+    if (log10x && any(data$x <= 0)) {
       data <- data[data$x > 0, ]
       warning("Filtered out non-positive x values for log10 transformation")
     }
@@ -436,7 +436,7 @@ fit_cp_linear <- function(
       require_id = TRUE
     )
 
-    if (log10x & any(data$x <= 0)) {
+    if (log10x && any(data$x <= 0)) {
       data <- data[data$x > 0, ]
       warning("Filtered out non-positive x values for log10 transformation")
     }
