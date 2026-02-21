@@ -605,7 +605,7 @@ print(mc_results$summary)
 #> logsigma_a logsigma_a  0.0000000    -0.8292708 -0.8292707526                NA
 #> logsigma_b logsigma_b -0.6931472    -0.7515787 -0.0584315206       -8.42988650
 #> logsigma_e logsigma_e -1.2039728    -1.2031988  0.0007740471        0.06429108
-#> rho_ab_raw rho_ab_raw  0.3095196     3.3914059  3.0818863073      995.69987344
+#> rho_ab_raw rho_ab_raw  0.3095196     3.3914059  3.0818862996      995.69987094
 #>            empirical_se      mean_se    se_ratio coverage_95 n_valid
 #> beta0        0.17283314 2.928410e-01   1.6943567           1      10
 #> beta1        0.32768830 4.440363e-01   1.3550569           1      10
@@ -615,7 +615,7 @@ print(mc_results$summary)
 #> logsigma_a   1.02444987 1.095008e+00   1.0688738           1      10
 #> logsigma_b   0.07955811 1.110739e-01   1.3961355           1      10
 #> logsigma_e   0.05163320 4.697075e-02   0.9097006           1      10
-#> rho_ab_raw   4.07800961 1.152679e+03 282.6572698           1      10
+#> rho_ab_raw   4.07800960 1.152679e+03 282.6573410           1      10
 
 # Check convergence rate
 cat("Convergence rate:", mc_results$n_converged / mc_results$n_sim, "\n")

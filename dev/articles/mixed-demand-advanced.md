@@ -155,7 +155,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x557f6c92fe40>
+#> <environment: 0x555c5f205220>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ dose_alpha 
 #> Factors:  dose 
@@ -182,7 +182,7 @@ if (
 #>  Level: monkey
 #>  Structure: Diagonal
 #>         Q0.(Intercept) alpha.(Intercept)  Residual
-#> StdDev:   4.402379e-06      2.693143e-06 0.1903097
+#> StdDev:   4.401177e-06      2.693877e-06 0.1903097
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -264,7 +264,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x557f6d85ec08>
+#> <environment: 0x555c60132398>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ 1 
 #> Factors:  dose 
@@ -290,7 +290,7 @@ if (
 #>  Level: monkey
 #>  Structure: Diagonal
 #>         Q0.(Intercept)        alpha  Residual
-#> StdDev:   4.408558e-06 2.697616e-06 0.1906036
+#> StdDev:   4.409119e-06 2.697381e-06 0.1906036
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 

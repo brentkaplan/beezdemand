@@ -753,7 +753,7 @@ Pooled model parameter estimates by product group
 # Show one plot example
 fit_pooled |>
     dplyr::filter(group == "E-Cigarettes") |>
-    pull(plot) |>
+    dplyr::pull(plot) |>
     pluck(1)
 ```
 
@@ -831,7 +831,7 @@ fit_mean |>
 # Show one example plot
 fit_mean |>
     dplyr::filter(group %in% "E-Cigarettes") |>
-    pull(plot) |>
+    dplyr::pull(plot) |>
     pluck(1)
 ```
 

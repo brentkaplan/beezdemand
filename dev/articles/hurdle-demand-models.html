@@ -347,24 +347,24 @@ for:</p>
 <span><span class="co">#&gt; Fixed Effects:</span></span>
 <span><span class="co">#&gt; --------------</span></span>
 <span><span class="co">#&gt;              Estimate Std. Error t value</span></span>
-<span><span class="co">#&gt; beta0      -392.08389  146.77189  -2.671</span></span>
-<span><span class="co">#&gt; beta1       135.79393   50.43534   2.692</span></span>
+<span><span class="co">#&gt; beta0      -392.08424  146.77064  -2.671</span></span>
+<span><span class="co">#&gt; beta1       135.79403   50.43489   2.692</span></span>
 <span><span class="co">#&gt; log_q0        1.93813    0.11712  16.548</span></span>
 <span><span class="co">#&gt; log_k         0.55505    0.09013   6.158</span></span>
 <span><span class="co">#&gt; log_alpha    -2.31478    0.16822 -13.760</span></span>
-<span><span class="co">#&gt; logsigma_a    5.76791    1.48290   3.890</span></span>
-<span><span class="co">#&gt; logsigma_b   -1.04114    0.22837  -4.559</span></span>
+<span><span class="co">#&gt; logsigma_a    5.76791    1.48287   3.890</span></span>
+<span><span class="co">#&gt; logsigma_b   -1.04114    0.22836  -4.559</span></span>
 <span><span class="co">#&gt; logsigma_e   -1.63184    0.06063 -26.914</span></span>
-<span><span class="co">#&gt; rho_ab_raw   -0.19191    0.23755  -0.808</span></span>
+<span><span class="co">#&gt; rho_ab_raw   -0.19191    0.23754  -0.808</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variance Components:</span></span>
 <span><span class="co">#&gt; --------------------</span></span>
 <span><span class="co">#&gt;           Estimate  Std. Error</span></span>
 <span><span class="co">#&gt; alpha       0.0988      0.0166</span></span>
 <span><span class="co">#&gt; k           1.7420      0.1570</span></span>
-<span><span class="co">#&gt; var_a  102315.9811 303448.4197</span></span>
+<span><span class="co">#&gt; var_a  102316.4496 303443.2535</span></span>
 <span><span class="co">#&gt; var_b       0.1246      0.0569</span></span>
-<span><span class="co">#&gt; cov_ab    -21.4106     12.6867</span></span>
+<span><span class="co">#&gt; cov_ab    -21.4106     12.6866</span></span>
 <span><span class="co">#&gt; var_e       0.0382      0.0046</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Correlations:</span></span>
@@ -407,9 +407,9 @@ for:</p>
 <span><span class="co"># Extract coefficients</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         beta0         beta1    logsigma_a    logsigma_b    logsigma_e </span></span>
-<span><span class="co">#&gt; -392.08388527  135.79392969    5.76791058   -1.04113709   -1.63183780 </span></span>
+<span><span class="co">#&gt; -392.08424414  135.79402761    5.76791287   -1.04113716   -1.63183781 </span></span>
 <span><span class="co">#&gt;    rho_ab_raw            Q0         alpha             k </span></span>
-<span><span class="co">#&gt;   -0.19191270    6.94572117    0.09878808    1.74202555</span></span>
+<span><span class="co">#&gt;   -0.19191230    6.94572447    0.09878809    1.74202549</span></span>
 <span></span>
 <span><span class="co"># Standardized tidy summaries</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -433,12 +433,12 @@ for:</p>
 <span><span class="co"># Get subject-specific parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    id       a_i        b_i        Q0      alpha breakpoint     Pmax      Omax</span></span>
-<span><span class="co">#&gt; 1  19 -88.44332  0.5148917 11.623368 0.09878808  34.419425 99.99996 203.61909</span></span>
-<span><span class="co">#&gt; 2  30 -21.33122 -0.6512294  3.621529 0.09878808  20.997058 99.99996  63.44224</span></span>
-<span><span class="co">#&gt; 3  38  40.35739 -0.2348858  5.491712 0.09878808  13.330756 99.99996  96.20424</span></span>
-<span><span class="co">#&gt; 4  60  31.73711  0.1663618  8.202899 0.09878808  14.204504 99.99996 143.69903</span></span>
-<span><span class="co">#&gt; 5  68  31.19341  0.4228985 10.601806 0.09878808  14.261494 99.99996 185.72327</span></span>
-<span><span class="co">#&gt; 6 106 116.82448 -0.2317217  5.509116 0.09878808   7.590564 99.99996  96.50913</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  19 -88.44328  0.5148913 11.623368 0.09878809  34.419417 99.99996 203.61911</span></span>
+<span><span class="co">#&gt; 2  30 -21.33116 -0.6512299  3.621529 0.09878809  20.997058 99.99996  63.44224</span></span>
+<span><span class="co">#&gt; 3  38  40.35748 -0.2348862  5.491712 0.09878809  13.330758 99.99996  96.20426</span></span>
+<span><span class="co">#&gt; 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504 99.99996 143.69905</span></span>
+<span><span class="co">#&gt; 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495 99.99996 185.72329</span></span>
+<span><span class="co">#&gt; 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564 99.99996  96.50914</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -459,7 +459,7 @@ quick post-fit checks.</p>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residuals:</span></span>
-<span><span class="co">#&gt;   Mean: 5.393e-05</span></span>
+<span><span class="co">#&gt;   Mean: 5.392e-05</span></span>
 <span><span class="co">#&gt;   SD: 0.1896</span></span>
 <span><span class="co">#&gt;   Range: [-0.6119, 0.4986]</span></span>
 <span><span class="co">#&gt;   Outliers: 2 observations</span></span>

@@ -184,7 +184,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x563cdf120438&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x558209ac6448&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -255,7 +255,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x563cd255c718&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5581fd21e048&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -329,7 +329,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x563cd7f48be0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x558202cd8088&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -465,7 +465,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x563cd1bbc5b0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5581fc5f52a0&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -488,7 +488,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;                   Q0        alpha  Residual</span></span>
-<span><span class="co">#&gt; StdDev: 5.262806e-06 3.217697e-06 0.2275573</span></span>
+<span><span class="co">#&gt; StdDev: 5.264342e-06 3.217971e-06 0.2275573</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -528,7 +528,7 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x563ccc84ca18&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5581f7d97600&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -547,14 +547,14 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047 </span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Random effects:</span></span>
 <span><span class="co">#&gt;  Formula: list(Q0 ~ 1, alpha ~ 1)</span></span>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;         Q0.(Intercept) alpha.(Intercept)  Residual</span></span>
-<span><span class="co">#&gt; StdDev:   3.762036e-06      2.300115e-06 0.1625574</span></span>
+<span><span class="co">#&gt; StdDev:   3.760034e-06      2.301156e-06 0.1625574</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -600,8 +600,8 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt; monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) </span></span>
 <span><span class="co">#&gt;                   Variance     StdDev      </span></span>
-<span><span class="co">#&gt; Q0.(Intercept)    1.415292e-11 3.762036e-06</span></span>
-<span><span class="co">#&gt; alpha.(Intercept) 5.290530e-12 2.300115e-06</span></span>
+<span><span class="co">#&gt; Q0.(Intercept)    1.413786e-11 3.760034e-06</span></span>
+<span><span class="co">#&gt; alpha.(Intercept) 5.295319e-12 2.301156e-06</span></span>
 <span><span class="co">#&gt; Residual          2.642491e-02 1.625574e-01</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residual standard error: 0.1626 </span></span>
@@ -616,14 +616,14 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048</span></span>
 <span></span>
 <span><span class="co"># Random effects (deviations from fixed)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
-<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
-<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
+<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
+<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
 <span></span>
 <span><span class="co"># Subject-specific coefficients (fixed + random)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"combined"</span><span class="op">)</span><span class="op">)</span></span>
@@ -632,21 +632,21 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt; C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt;   alpha.dose0.003</span></span>
-<span><span class="co">#&gt; A     0.009734047</span></span>
-<span><span class="co">#&gt; B     0.009734047</span></span>
-<span><span class="co">#&gt; C     0.009734047</span></span>
+<span><span class="co">#&gt; A     0.009734048</span></span>
+<span><span class="co">#&gt; B     0.009734048</span></span>
+<span><span class="co">#&gt; C     0.009734048</span></span>
 <span></span>
 <span><span class="co"># Access nlme fixef/ranef directly</span></span>
 <span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/fixed.effects.html" class="external-link">fixef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048</span></span>
 <span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
-<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
-<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
+<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
+<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
 <span></span>
 <span><span class="co"># Start values that were used for the NLME fit</span></span>
 <span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">start_values_used</span></span>
