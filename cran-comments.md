@@ -1,10 +1,14 @@
 ## Test environments
-* macOS Tahoe 26.2, R 4.5.1 (local)
+* macOS Sequoia 26.3, R 4.5.2 (local)
 * TODO: win-builder (devel and release)
 * TODO: R-hub (linux, windows)
 
 ## R CMD check results
-TODO: Update after running fresh R CMD check --as-cran
+0 errors | 0 warnings | 1 note
+
+The single NOTE is from CRAN incoming feasibility checks: some
+pkgdown URLs return 404 because the GitHub Pages site has not yet
+been deployed (will be published upon CRAN acceptance).
 
 ## Submission comments
 
@@ -16,7 +20,7 @@ This is a major update (0.1.2 -> 0.2.0) with significant new functionality:
 * New mixed-effects demand modeling with `fit_demand_mixed()`
 * Comprehensive broom integration (tidy, glance, augment methods)
 * Model comparison, diagnostics, and confidence interval methods
-* Six vignettes covering all major workflows
+* Nine vignettes covering all major workflows
 
 ### Package size note
 The installed package size is approximately 22 MB, with the `libs`

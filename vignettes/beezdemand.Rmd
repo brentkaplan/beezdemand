@@ -163,33 +163,25 @@ The dataset is now "tidy" because: (1) each variable forms a column, (2) each ob
 
 ### Obtain Descriptive Data
 
-Descriptive values of responses at each price can be obtained easily. The modern
-`get_descriptive_summary()` returns a tibble; the legacy `GetDescriptives()` is
-also available. The resulting table includes mean, standard deviation, proportion
-of zeros, number of NAs, and minimum and maximum values. If `bwplot = TRUE`, a
-box-and-whisker plot is also created and saved. By default, this location is a
-folder named "plots" one level up from the current working directory. The user
-may additionally specify the directory that the plot should save into, the type
-of file (either `"png"` or `"pdf"`), and the filename. Notice the red crosses
-indicate the mean. Defaults are shown here:
+Descriptive statistics at each price point can be obtained using
+`get_descriptive_summary()`, which returns an S3 object with `print()`,
+`summary()`, and `plot()` methods. The legacy `GetDescriptives()` is also
+available for backward compatibility.
 
-```{r descriptive, eval = FALSE}
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
-                filename = "bwplot")
-```
-
-<center><img src="bwplot.pdf" alt="Box-and-whisker plot"  width="504"
-height="432"/></center>
-
-And here is the table that is returned from the function:
-
-```{r descriptive-output, echo=FALSE, results='asis'}
-descr <- GetDescriptives(apt)
+```{r descriptive}
+desc <- get_descriptive_summary(apt)
 knitr::kable(
-    descr,
+    desc$statistics,
     caption = "Descriptive statistics by price point",
     digits = 2
 )
+```
+
+The `plot()` method creates a box-and-whisker plot with mean values shown
+as red crosses:
+
+```{r descriptive-plot, fig.width=7, fig.height=5}
+plot(desc)
 ```
 
 ### Change Data
