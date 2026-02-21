@@ -110,7 +110,7 @@ normalize_equation <- function(equation) {
 ##' @return Vector
 ##' @importFrom lifecycle deprecate_warn
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
-##' @export
+##' @keywords internal
 pull <- function(x, y) {
   lifecycle::deprecate_warn(
     "0.2.0",

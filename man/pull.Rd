@@ -26,3 +26,4 @@ Pull vector from data frame
 \author{
 Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }
+\keyword{internal}

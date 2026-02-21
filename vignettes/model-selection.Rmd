@@ -64,7 +64,7 @@ head(systematic_check$results)
 # Filter to systematic data only (those that pass all criteria)
 systematic_ids <- systematic_check$results |>
   filter(systematic) |>
-  pull(id)
+  dplyr::pull(id)
 
 apt_clean <- apt |>
   filter(as.character(id) %in% systematic_ids)
