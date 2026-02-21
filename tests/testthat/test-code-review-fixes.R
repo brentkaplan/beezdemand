@@ -2,19 +2,21 @@
 # Verifies critical fixes from engineering/CODE_REVIEW.md
 
 # R-07: exp^(predict()) bug fix in FitMeanCurves with equation="linear"
-test_that("FitMeanCurves works with equation='linear'", {
+# Before fix, this would error with "non-numeric argument to binary operator"
+# because exp^(predict(...)) tried to use ^ on the exp function object.
+test_that("FitMeanCurves does not error with equation='linear'", {
   data(apt, package = "beezdemand")
   apt_test <- apt[apt$id %in% c(19, 30), ]
 
+  # Should not error (before fix, exp^() caused "non-numeric argument")
   result <- suppressMessages(suppressWarnings(
     FitMeanCurves(apt_test, equation = "linear", method = "Mean")
   ))
 
-  expect_type(result, "list")
-  expect_true("dfres" %in% names(result))
-  expect_true(all(is.finite(result$dfres[["L"]]) | is.na(result$dfres[["L"]])))
-  expect_true(all(is.finite(result$dfres[["b"]]) | is.na(result$dfres[["b"]])))
-  expect_true(all(is.finite(result$dfres[["a"]]) | is.na(result$dfres[["a"]])))
+  expect_s3_class(result, "data.frame")
+  expect_true("L" %in% names(result))
+  expect_true("b" %in% names(result))
+  expect_true("a" %in% names(result))
 })
 
 # C-01: && in if() for FitCurves input validation

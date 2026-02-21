@@ -307,7 +307,7 @@ test_that("check_unsystematic_cp verbose mode prints output", {
   x_seq <- 10^(seq(-2, 2, length.out = 10))
   test_data <- data.frame(x = x_seq, y = c(100, 80, 60, 40, 30, 20, 15, 10, 5, 2))
 
-  expect_output(
+  expect_message(
     check_unsystematic_cp(test_data, verbose = TRUE),
     "proportion"
   )

@@ -104,7 +104,7 @@ test_that("RecodeOutliers prints messages about outliers", {
     col1 = c(1, 2, 3, 4, 5, 100)  # 100 is an outlier
   )
 
-  expect_output(RecodeOutliers(test_df, outval = 2), "outlier")
+  expect_message(RecodeOutliers(test_df, outval = 2), "outlier")
 })
 
 test_that("RecodeOutliers prints no outliers message when none exist", {
@@ -112,7 +112,7 @@ test_that("RecodeOutliers prints no outliers message when none exist", {
     col1 = c(1, 2, 3, 4, 5)
   )
 
-  expect_output(RecodeOutliers(test_df, outval = 3.29), "No outliers detected")
+  expect_message(RecodeOutliers(test_df, outval = 3.29), "No outliers detected")
 })
 
 test_that("RecodeOutliers handles NA values", {
