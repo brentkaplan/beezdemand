@@ -44,7 +44,7 @@ Brent Kaplan <bkaplan.ku@gmail.com> Shawn P Gilroy
 # \donttest{
 GetSharedK(apt, "hs", sharecol = "id")
 #> Beginning search for best-starting k
-#> Best k fround at 0.93813356574003 = err: 0.744881846162718
+#> Best k found at 0.93813356574003 = err: 0.744881846162718
 #> Searching for shared K, this can take a while...
 #>       k 
 #> 3.31833 

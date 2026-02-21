@@ -49,11 +49,11 @@ Brent Kaplan <bkaplan.ku@gmail.com>
 # \donttest{
 emp <- GetEmpirical(apt)
 RecodeOutliers(emp[, c(2:6)], unitshigher = 1)
-#> [1] "No outliers detected in column: Intensity."
-#> [1] "No outliers detected in column: BP0."
-#> [1] "No outliers detected in column: BP1."
-#> [1] "No outliers detected in column: Omaxe."
-#> [1] "No outliers detected in column: Pmaxe."
-#> [1] "A total of 0 outlying values were replaced"
+#> No outliers detected in column: Intensity.
+#> No outliers detected in column: BP0.
+#> No outliers detected in column: BP1.
+#> No outliers detected in column: Omaxe.
+#> No outliers detected in column: Pmaxe.
+#> A total of 0 outlying values were replaced
 # }
 ```

@@ -68,10 +68,6 @@ reported along with a *p* value.
 ## in order for this to run, you will have had to run the code immediately
 ## preceeding (i.e., the code to generate the groups)
 ef <- ExtraF(dat = apt, equation = "koff", k = 2, groupcol = "group", verbose = TRUE)
-#> [1] "Null hypothesis: alpha same for all data sets"
-#> [1] "Alternative hypothesis: alpha different for each data set"
-#> [1] "Conclusion: fail to reject the null hypothesis"
-#> [1] "F(1,156) = 0.0298, p = 0.8631"
 ```
 
 A summary table (broken up here for ease of display) will be created

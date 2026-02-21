@@ -88,9 +88,9 @@ apt$group <- NA
 apt[apt$id %in% sample(unique(apt$id), length(unique(apt$id))/2), "group"] <- "a"
 apt$group[is.na(apt$group)] <- "b"
 ExtraF(apt, "koff", k = 2, groupcol = "group")
-#> [1] "Null hypothesis: alpha same for all data sets"
-#> [1] "Alternative hypothesis: alpha different for each data set"
-#> [1] "Conclusion: reject the null hypothesis"
-#> [1] "F(1,156) = 7.4511, p = 0.0071"
+#> Null hypothesis: alpha same for all data sets
+#> Alternative hypothesis: alpha different for each data set
+#> Conclusion: reject the null hypothesis
+#> F(1,156) = 7.4511, p = 0.0071
 # }
 ```

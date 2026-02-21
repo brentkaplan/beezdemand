@@ -266,11 +266,7 @@ be reported along with a <em>p</em> value.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## in order for this to run, you will have had to run the code immediately</span></span>
 <span><span class="co">## preceeding (i.e., the code to generate the groups)</span></span>
-<span><span class="va">ef</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExtraF.html">ExtraF</a></span><span class="op">(</span>dat <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"koff"</span>, k <span class="op">=</span> <span class="fl">2</span>, groupcol <span class="op">=</span> <span class="st">"group"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Null hypothesis: alpha same for all data sets"</span></span>
-<span><span class="co">#&gt; [1] "Alternative hypothesis: alpha different for each data set"</span></span>
-<span><span class="co">#&gt; [1] "Conclusion: fail to reject the null hypothesis"</span></span>
-<span><span class="co">#&gt; [1] "F(1,156) = 0.0298, p = 0.8631"</span></span></code></pre></div>
+<span><span class="va">ef</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExtraF.html">ExtraF</a></span><span class="op">(</span>dat <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"koff"</span>, k <span class="op">=</span> <span class="fl">2</span>, groupcol <span class="op">=</span> <span class="st">"group"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>A summary table (broken up here for ease of display) will be created
 when the option <code>verbose = TRUE</code>. This table can be accessed
 as the <code>dfres</code> object resulting from <code>ExtraF</code>. In

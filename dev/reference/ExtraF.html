@@ -145,10 +145,10 @@
 <span class="r-in"><span><span class="va">apt</span><span class="op">[</span><span class="va">apt</span><span class="op">$</span><span class="va">id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">apt</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">apt</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span>, <span class="st">"group"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"a"</span></span></span>
 <span class="r-in"><span><span class="va">apt</span><span class="op">$</span><span class="va">group</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">apt</span><span class="op">$</span><span class="va">group</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"b"</span></span></span>
 <span class="r-in"><span><span class="fu">ExtraF</span><span class="op">(</span><span class="va">apt</span>, <span class="st">"koff"</span>, k <span class="op">=</span> <span class="fl">2</span>, groupcol <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Null hypothesis: alpha same for all data sets"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Alternative hypothesis: alpha different for each data set"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Conclusion: reject the null hypothesis"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "F(1,156) = 7.4511, p = 0.0071"</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Null hypothesis: alpha same for all data sets</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Alternative hypothesis: alpha different for each data set</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Conclusion: reject the null hypothesis</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> F(1,156) = 7.4511, p = 0.0071</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

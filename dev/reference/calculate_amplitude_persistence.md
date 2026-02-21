@@ -129,7 +129,7 @@ data(apt, package = "beezdemand")
 fit <- FitCurves(apt, "hs", k = "share")
 #> Warning: Zeros found in data not compatible with equation! Dropping zeros!
 #> Beginning search for best-starting k
-#> Best k fround at 0.93813356574003 = err: 0.744881846162718
+#> Best k found at 0.93813356574003 = err: 0.744881846162718
 #> Searching for shared K, this can take a while...
 calculate_amplitude_persistence(fit)
 #>     id z_Intensity z_BP0    z_Pmaxe    z_Omaxe z_inv_alpha   Amplitude

@@ -96,7 +96,7 @@ print(fit_apt_zben)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x564cd563e680>
+    #> <environment: 0x559d3e46af58>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -171,7 +171,7 @@ print(fit_apt_simplified)
     #> Equation Form Selected:  simplified 
     #> NLME Model Formula:
     #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-    #> <environment: 0x564cc89a43a8>
+    #> <environment: 0x559d317d8080>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -250,7 +250,7 @@ print(fit_apt_exponentiated)
     #> Equation Form Selected:  exponentiated 
     #> NLME Model Formula:
     #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-    #> <environment: 0x564cce45a2e8>
+    #> <environment: 0x559d375dc0b0>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  id 
@@ -406,7 +406,7 @@ print(fit_no_factors_vignette)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x564cc80e38d0>
+    #> <environment: 0x559d30f198c8>
     #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
     #> Factors: None
     #> ID Variable for Random Effects:  monkey 
@@ -472,7 +472,7 @@ print(fit_one_factor_dose)
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x564cc303a4f0>
+    #> <environment: 0x559d2c191250>
     #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
     #> Factors:  dose 
     #> Interaction Term Included:  FALSE 
@@ -565,7 +565,7 @@ if (!is.null(active_fit$model)) {
     #> Equation Form Selected:  zben 
     #> NLME Model Formula:
     #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x564cc303a4f0>
+    #> <environment: 0x559d2c191250>
     #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
     #> Factors:  dose 
     #> Interaction Term Included:  FALSE 

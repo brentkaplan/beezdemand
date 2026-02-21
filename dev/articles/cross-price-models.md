@@ -81,7 +81,6 @@ fit_alone <- fit_demand_fixed(
     equation = "koff",
     k = 2
 )
-#> [1] "Data casted as data.frame"
 
 # View results
 fit_alone
@@ -115,7 +114,6 @@ fit_own <- fit_demand_fixed(
     equation = "koff",
     k = 2
 )
-#> [1] "Data casted as data.frame"
 
 # View results
 fit_own
