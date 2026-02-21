@@ -101,7 +101,7 @@ FitCurves <- function(
 
   param_space <- match.arg(param_space)
 
-  if (!is.numeric(constrainq0) & !is.null(constrainq0)) {
+  if (!is.numeric(constrainq0) && !is.null(constrainq0)) {
     stop("Q0 constraint must be a number", call. = FALSE)
   }
 
@@ -267,8 +267,6 @@ FitCurves <- function(
       names(upper) <- tolower(names(upper))
     }
   }
-
-  ## TODO: if groupcol is specified (or not), manufacture vector to loop (paste(agg, grps, sep = "-"))
 
   k_term <- if (identical(kest, "fit") && identical(param_space, "log10")) {
     "10^k"
@@ -684,7 +682,7 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
   dfrow[["id"]] <- pid
   dfrow[1, "N"] <- nrow(adf)
   dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
-  dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(summary(fit)[[10]][c(1:3), 2])
+  dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(coef(summary(fit))[c(1:3), 2])
   dfrow[1, "R2"] <- 1.0 -
     (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
   dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
@@ -706,7 +704,7 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
   dfrow[1, "SdRes"] <- sqrt(
     dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
   )
-  dfrow[1, "Notes"] <- if ("nls2" %in% class(fit)) {
+  dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
     "wrapnls failed to converge, reverted to nlxb"
   } else {
     fit$convInfo$stopMessage
@@ -783,7 +781,7 @@ ExtractCoefs <- function(
       }
       dfrow[1, c("Alpha")] <- alpha_hat
     }
-    dfrow[1, "Notes"] <- if ("nls2" %in% class(fit)) {
+    dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
       "wrapnls failed to converge, reverted to nlxb"
     } else {
       fit$convInfo$stopMessage
@@ -801,8 +799,8 @@ ExtractCoefs <- function(
     dfrow[1, "K"] <- k_hat
     if (!inherits(fit, what = "error")) {
       if (is.null(constrainq0)) {
-        se_q0 <- summary(fit)[[10]]["q0", "Std. Error"]
-        se_alpha <- summary(fit)[[10]]["alpha", "Std. Error"]
+        se_q0 <- coef(summary(fit))["q0", "Std. Error"]
+        se_alpha <- coef(summary(fit))["alpha", "Std. Error"]
         ci_q0 <- nlstools::confint2(fit)["q0", ]
         ci_alpha <- nlstools::confint2(fit)["alpha", ]
         if (identical(param_space, "log10")) {
@@ -816,7 +814,7 @@ ExtractCoefs <- function(
         dfrow[1, c("AlphaLow", "AlphaHigh")] <- ci_alpha
       } else {
         dfrow[1, c("Q0se")] <- NA
-        se_alpha <- summary(fit)[[10]]["alpha", "Std. Error"]
+        se_alpha <- coef(summary(fit))["alpha", "Std. Error"]
         ci_alpha <- nlstools::confint2(fit)["alpha", ]
         if (identical(param_space, "log10")) {
           se_alpha <- log(10) * (10^as.numeric(coef(fit)["alpha"])) * se_alpha
@@ -863,7 +861,7 @@ ExtractCoefs <- function(
               keep <- intersect(c("alpha", "k"), colnames(vc))
               vc[keep, keep, drop = FALSE]
             } else {
-              se_mat <- summary(fit)[[10]]
+              se_mat <- coef(summary(fit))
               se_vec <- c(alpha = se_mat["alpha", "Std. Error"])
               if (kest == "fit" && "k" %in% rownames(se_mat)) {
                 se_vec <- c(se_vec, k = se_mat["k", "Std. Error"])
@@ -921,7 +919,7 @@ ExtractCoefs <- function(
       dfrow[1, "Pmaxd"] <- 1 /
         (dfrow[1, "Q0d"] * dfrow[1, "Alpha"] * (dfrow[1, "K"]^1.5)) *
         (0.083 * dfrow[1, "K"] + 0.65)
-      dfrow[1, "Pmaxa"] <- beezdemand::GetAnalyticPmax(
+      dfrow[1, "Pmaxa"] <- GetAnalyticPmax(
         dfrow[1, "Alpha"],
         dfrow[1, "K"],
         dfrow[1, "Q0d"]
@@ -1181,7 +1179,6 @@ FitMeanCurves <- function(
   }
 
   ## If no k is provided, otherwise
-  ## TODO: provide a character element to fit empirical max/min range
   if (!equation == "linear") {
     if (missing(k)) {
       k <- GetK(dat)
@@ -1272,9 +1269,9 @@ FitMeanCurves <- function(
       dfres[["L"]] <- as.numeric(coef(fit)["l"])
       dfres[["b"]] <- as.numeric(coef(fit)["b"])
       dfres[["a"]] <- as.numeric(coef(fit)["a"])
-      dfres[["Lse"]] <- as.numeric(summary(fit)[[10]][1, 2])
-      dfres[["bse"]] <- as.numeric(summary(fit)[[10]][2, 2])
-      dfres[["ase"]] <- as.numeric(summary(fit)[[10]][3, 2])
+      dfres[["Lse"]] <- as.numeric(coef(summary(fit))[1, 2])
+      dfres[["bse"]] <- as.numeric(coef(summary(fit))[2, 2])
+      dfres[["ase"]] <- as.numeric(coef(summary(fit))[3, 2])
       dfres[["R2"]] <- 1.0 -
         (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
       dfres[["LLow"]] <- nlstools::confint2(fit)[1]
@@ -1298,8 +1295,8 @@ FitMeanCurves <- function(
       }
       dfres[["Alpha"]] <- as.numeric(coef(fit)["alpha"])
       dfres[["Q0d"]] <- as.numeric(coef(fit)["q0"])
-      dfres[["Q0se"]] <- summary(fit)[[10]][1, 2]
-      dfres[["Alphase"]] <- summary(fit)[[10]][2, 2]
+      dfres[["Q0se"]] <- coef(summary(fit))[1, 2]
+      dfres[["Alphase"]] <- coef(summary(fit))[2, 2]
       dfres[["Q0Low"]] <- nlstools::confint2(fit)[1]
       dfres[["Q0High"]] <- nlstools::confint2(fit)[3]
       dfres[["AlphaLow"]] <- nlstools::confint2(fit)[2]
@@ -1308,7 +1305,7 @@ FitMeanCurves <- function(
       dfres[["Pmaxd"]] <- 1 /
         (dfres[["Q0d"]] * dfres[["Alpha"]] * (dfres[["K"]]^1.5)) *
         (0.083 * dfres[["K"]] + 0.65)
-      dfres[["Pmaxa"]] <- beezdemand::GetAnalyticPmax(
+      dfres[["Pmaxa"]] <- GetAnalyticPmax(
         dfres[["Alpha"]],
         dfres[["K"]],
         dfres[["Q0d"]]
@@ -1391,7 +1388,7 @@ FitMeanCurves <- function(
         tempnew$k = dfres[["K"]]
         tempnew$y <- predict(fit, newdata = tempnew)
       } else if (equation == "linear") {
-        tempnew$y <- exp^(predict(fit, newdata = tempnew))
+        tempnew$y <- exp(predict(fit, newdata = tempnew))
       }
       tempnew$expend <- tempnew$x * tempnew$y
 
@@ -1527,7 +1524,6 @@ ExtraF <- function(
     stop("Need to provide a dataframe!", call. = FALSE)
   }
   origcols <- colnames(dat)
-  #browser()
   dat <- CheckCols(
     dat,
     xcol = xcol,
@@ -1564,7 +1560,6 @@ ExtraF <- function(
   if (!missing(k)) {
     bfk <- k
   } else {
-    ## TODO: allow to specify id column in GetSharedK
     #kdat <- dat
     #colnames(kdat) <- c("old-id", "id", "x", "y")
     bfk <- try(
@@ -1683,7 +1678,7 @@ ExtraF <- function(
 
   ## on group by group basis
   lstfits <- vector(mode = "list", length = length(grps))
-  for (i in 1:length(grps)) {
+  for (i in seq_along(grps)) {
     #tmp <- subset(dat, id %in% i) ## groupcol %in% i
     tmp <- subset(dat, group %in% grps[i])
     lstfits[[i]] <- try(
@@ -1707,36 +1702,36 @@ ExtraF <- function(
     }
   }
   ss1 <- sum(resid(fit)^2)
-  ss2 <- sum(sapply(sapply(sapply(lstfits, resid), function(x) x^2), sum))
+  ss2 <- sum(vapply(lstfits, function(x) sum(resid(x)^2), numeric(1)))
   df1 <- df.residual(fit)
-  df2 <- sum(sapply(lstfits, df.residual))
+  df2 <- sum(vapply(lstfits, df.residual, numeric(1)))
 
-  F <- ((ss1 - ss2) / ss2) / ((df1 - df2) / df2)
-  pval <- 1 - pf(F, (df1 - df2), df2)
+  f_stat <- ((ss1 - ss2) / ss2) / ((df1 - df2) / df2)
+  pval <- 1 - pf(f_stat, (df1 - df2), df2)
   critF <- qf(c(0.025, 0.975), (df1 - df2), df2)
 
-  print(paste0(
+  message(paste0(
     "Null hypothesis: ",
     if (compare == "alpha") "alpha" else "q0",
     " same for all data sets"
   ))
-  print(paste0(
+  message(paste0(
     "Alternative hypothesis: ",
     if (compare == "alpha") "alpha" else "q0",
     " different for each data set"
   ))
-  print(paste0(
+  message(paste0(
     "Conclusion: ",
     if (pval < .05) "reject" else "fail to reject",
     " the null hypothesis"
   ))
-  print(paste0(
+  message(paste0(
     "F(",
     (df1 - df2),
     ",",
     df2,
     ") = ",
-    round(F, 4),
+    round(f_stat, 4),
     ", p = ",
     round(pval, 4)
   ))
@@ -1789,7 +1784,7 @@ ExtraF <- function(
     dfres[i, "Pmaxd"] <- 1 /
       (dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"]^1.5)) *
       (0.083 * dfres[i, "K"] + 0.65)
-    dfres[i, "Pmaxa"] <- beezdemand::GetAnalyticPmax(
+    dfres[i, "Pmaxa"] <- GetAnalyticPmax(
       dfres[i, "Alpha"],
       dfres[i, "K"],
       dfres[i, "Q0d"]
@@ -1852,7 +1847,7 @@ ExtraF <- function(
     dfres[i, "Pmaxd"] <- 1 /
       (dfres[i, "Q0d"] * dfres[i, "Alpha"] * (dfres[i, "K"]^1.5)) *
       (0.083 * dfres[i, "K"] + 0.65)
-    dfres[i, "Pmaxa"] <- beezdemand::GetAnalyticPmax(
+    dfres[i, "Pmaxa"] <- GetAnalyticPmax(
       dfres[i, "Alpha"],
       dfres[i, "K"],
       dfres[i, "Q0d"]
@@ -1926,13 +1921,13 @@ ExtraF <- function(
     ",",
     df2,
     ") = ",
-    round(F, 4),
+    round(f_stat, 4),
     ", p = ",
     round(pval, 4)
   )
 
   results <- list(
-    "ftest" = list("F" = F, "pval" = pval, "df1" = (df1 - df2), "df2" = df2),
+    "ftest" = list("F" = f_stat, "pval" = pval, "df1" = (df1 - df2), "df2" = df2),
     "dfres" = dfres,
     "newdat" = newdat,
     "simpmodel" = fit,
@@ -2061,7 +2056,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       for (j in unique(dat$ref)) {
         currentData <- dat[dat$ref == j, ]
 
-        for (i in 1:nrow(presort)) {
+        for (i in seq_len(nrow(presort))) {
           presort[i, ]$sumSquares <- getSumOfSquaresExponential(
             presort, # Values to check
             i, # Index of values
@@ -2095,7 +2090,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       presort$sumSquares <- NA
     }
 
-    message(sprintf("Best k fround at %s = err: %s", bestFrame$K[1], bestSS))
+    message(sprintf("Best k found at %s = err: %s", bestFrame$K[1], bestSS))
 
     vecStartQ0 <- bestFrame$Q0
     vecStartAlpha <- bestFrame$Alpha
@@ -2199,7 +2194,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       for (j in unique(dat$ref)) {
         currentData <- dat[dat$ref == j, ]
 
-        for (i in 1:nrow(presort)) {
+        for (i in seq_len(nrow(presort))) {
           presort[i, ]$sumSquares <- getSumOfSquaresExponentiated(
             presort, # Values to check
             i, # Index of values
@@ -2232,7 +2227,7 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
 
       presort$sumSquares <- NA
     }
-    message(sprintf("Best k fround at %s = err: %s", bestFrame$K[1], bestSS))
+    message(sprintf("Best k found at %s = err: %s", bestFrame$K[1], bestSS))
 
     vecStartQ0 <- bestFrame$Q0
     vecStartAlpha <- bestFrame$Alpha
@@ -2338,9 +2333,9 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @export
 GetAnalyticPmax <- function(Alpha, K, Q0) {
   if (K <= exp(1) / log(10)) {
-    return(beezdemand::GetAnalyticPmaxFallback(K, Alpha, Q0))
+    return(GetAnalyticPmaxFallback(K, Alpha, Q0))
   } else {
-    return(-beezdemand::lambertW(z = -1 / log((10^K))) / (Alpha * Q0))
+    return(-lambertW(z = -1 / log((10^K))) / (Alpha * Q0))
   }
 }
 
