@@ -255,28 +255,24 @@ Data](https://vita.had.co.nz/papers/tidy-data.html).
 
 #### Obtain Descriptive Data
 
-Descriptive values of responses at each price can be obtained easily.
-The modern
-[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md)
-returns a tibble; the legacy
+Descriptive statistics at each price point can be obtained using
+[`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md),
+which returns an S3 object with
+[`print()`](https://rdrr.io/r/base/print.html),
+[`summary()`](https://rdrr.io/r/base/summary.html), and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods. The
+legacy
 [`GetDescriptives()`](https://brentkaplan.github.io/beezdemand/reference/GetDescriptives.md)
-is also available. The resulting table includes mean, standard
-deviation, proportion of zeros, number of NAs, and minimum and maximum
-values. If `bwplot = TRUE`, a box-and-whisker plot is also created and
-saved. By default, this location is a folder named “plots” one level up
-from the current working directory. The user may additionally specify
-the directory that the plot should save into, the type of file (either
-`"png"` or `"pdf"`), and the filename. Notice the red crosses indicate
-the mean. Defaults are shown here:
+is also available for backward compatibility.
 
 ``` r
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
-                filename = "bwplot")
+desc <- get_descriptive_summary(apt)
+knitr::kable(
+    desc$statistics,
+    caption = "Descriptive statistics by price point",
+    digits = 2
+)
 ```
-
-![Box-and-whisker plot](bwplot.pdf)
-
-And here is the table that is returned from the function:
 
 | Price | Mean | Median |   SD | PropZeros | NAs | Min | Max |
 |:------|-----:|-------:|-----:|----------:|----:|----:|----:|
@@ -298,6 +294,15 @@ And here is the table that is returned from the function:
 | 20    |  0.8 |    0.0 | 1.14 |       0.6 |   0 |   0 |   3 |
 
 Descriptive statistics by price point
+
+The [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
+creates a box-and-whisker plot with mean values shown as red crosses:
+
+``` r
+plot(desc)
+```
+
+![](beezdemand_files/figure-html/descriptive-plot-1.png)
 
 #### Change Data
 
