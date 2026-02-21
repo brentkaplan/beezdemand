@@ -439,7 +439,7 @@ run_hurdle_monte_carlo <- function(
   }
 
   # Combine results
-  non_null_results <- results_list[!sapply(results_list, is.null)]
+  non_null_results <- results_list[!vapply(results_list, is.null, logical(1))]
   n_converged <- length(non_null_results)
 
   if (n_converged == 0) {

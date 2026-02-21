@@ -132,7 +132,7 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   lrt_results <- NULL
 
   # Check backend compatibility for LRT
-  backends <- sapply(model_info, `[[`, "backend")
+  backends <- vapply(model_info, `[[`, character(1), "backend")
   same_backend <- length(unique(backends)) == 1
 
   if (!same_backend && test == "lrt") {

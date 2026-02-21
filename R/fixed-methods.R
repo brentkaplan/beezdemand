@@ -476,9 +476,9 @@ summary.beezdemand_fixed <- function(
       })
 
       # Aggregate results
-      pmax_vals <- sapply(pmax_results, function(x) x$pmax_model)
-      omax_vals <- sapply(pmax_results, function(x) x$omax_model)
-      methods <- sapply(pmax_results, function(x) x$method_model)
+      pmax_vals <- vapply(pmax_results, function(x) x$pmax_model, numeric(1))
+      omax_vals <- vapply(pmax_results, function(x) x$omax_model, numeric(1))
+      methods <- vapply(pmax_results, function(x) x$method_model, character(1))
 
       # Store per-subject in results
       object$results$pmax_model <- pmax_vals

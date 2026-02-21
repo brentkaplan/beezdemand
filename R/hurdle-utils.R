@@ -215,9 +215,9 @@ calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
   }))
 
   data.frame(
-    Pmax = sapply(results, `[[`, "Pmax"),
-    Omax = sapply(results, `[[`, "Omax"),
-    Qmax = sapply(results, `[[`, "Qmax")
+    Pmax = vapply(results, `[[`, numeric(1), "Pmax"),
+    Omax = vapply(results, `[[`, numeric(1), "Omax"),
+    Qmax = vapply(results, `[[`, numeric(1), "Qmax")
   )
 }
 

@@ -363,7 +363,7 @@ fit_demand_mixed <- function(
   } else if (
     inherits(random_effects, "pdMat") ||
       (is.list(random_effects) &&
-        all(sapply(random_effects, inherits, "pdMat")))
+        all(vapply(random_effects, inherits, logical(1), "pdMat")))
   ) {
     # CASE 2: User provided an advanced, pre-constructed pdMat object
     # (or a list of them, e.g., for pdBlocked).

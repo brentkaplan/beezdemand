@@ -1133,7 +1133,7 @@ plot.beezdemand_hurdle <- function(
 
     pars_long <- data.frame(
       parameter = factor(
-        rep(unlist(labels_list), sapply(values_list, length)),
+        rep(unlist(labels_list), vapply(values_list, length, integer(1))),
         levels = unlist(labels_list)
       ),
       value = unlist(values_list)
