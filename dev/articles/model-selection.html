@@ -158,26 +158,33 @@ expenditure)</p>
 <p>Before fitting any model, always check your data for systematic
 responding.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://brentkaplan.github.io/beezdemand/">beezdemand</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Use the apt dataset</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Check for systematic demand</span></span>
+<code class="sourceCode R"><span><span class="co"># Check for systematic demand</span></span>
 <span><span class="va">systematic_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_systematic_demand.html">check_systematic_demand</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">systematic_check</span><span class="op">$</span><span class="va">results</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 15</span></span></span>
+<span><span class="co">#&gt;   id    type   trend_stat trend_threshold trend_direction trend_pass bounce_stat</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 19    demand      0.211           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 30    demand      0.144           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 38    demand      0.788           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 60    demand      0.909           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 68    demand      0.909           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 106   demand      0.818           0.025 down            TRUE                 0</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8 more variables: bounce_threshold &lt;dbl&gt;, bounce_direction &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   bounce_pass &lt;lgl&gt;, reversals &lt;int&gt;, reversals_pass &lt;lgl&gt;, returns &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   n_positive &lt;int&gt;, systematic &lt;lgl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Filter to systematic data only (those that pass all criteria)</span></span>
 <span><span class="va">systematic_ids</span> <span class="op">&lt;-</span> <span class="va">systematic_check</span><span class="op">$</span><span class="va">results</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">systematic</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">systematic</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/pull.html">pull</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">apt_clean</span> <span class="op">&lt;-</span> <span class="va">apt</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">systematic_ids</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">systematic_ids</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Systematic participants:"</span>, <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">apt_clean</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>,</span>
-<span>    <span class="st">"of"</span>, <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">apt</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Systematic participants:"</span>, <span class="fu">n_distinct</span><span class="op">(</span><span class="va">apt_clean</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>,</span>
+<span>    <span class="st">"of"</span>, <span class="fu">n_distinct</span><span class="op">(</span><span class="va">apt</span><span class="op">$</span><span class="va">id</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Systematic participants: 10 of 10</span></span></code></pre></div>
 <p>The <code><a href="../reference/check_systematic_demand.html">check_systematic_demand()</a></code> function applies criteria
 from Stein et al. (2015) to identify nonsystematic responding patterns
 including:</p>
@@ -212,10 +219,7 @@ zeros</li>
 <h3 id="complete-example">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://brentkaplan.github.io/beezdemand/">beezdemand</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Fit individual demand curves using the Hursh &amp; Silberberg equation</span></span>
+<code class="sourceCode R"><span><span class="co"># Fit individual demand curves using the Hursh &amp; Silberberg equation</span></span>
 <span><span class="va">fit_fixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
 <span>  equation <span class="op">=</span> <span class="st">"hs"</span>,</span>
@@ -224,19 +228,67 @@ zeros</li>
 <span></span>
 <span><span class="co"># Print summary</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
+<span><span class="co">#&gt; ==========================</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Call:</span></span>
+<span><span class="co">#&gt; fit_demand_fixed(data = apt, equation = "hs", k = 2)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Equation: hs </span></span>
+<span><span class="co">#&gt; k: fixed (2) </span></span>
+<span><span class="co">#&gt; Subjects: 10 ( 10 converged, 0 failed)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span>
 <span></span>
 <span><span class="co"># Get tidy coefficient table</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 10</span></span></span>
+<span><span class="co">#&gt;   id    term  estimate std.error statistic p.value component estimate_scale</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 19    Q0       10.2      0.269        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 30    Q0        2.81     0.226        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 38    Q0        4.50     0.215        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 60    Q0        9.92     0.459        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 68    Q0       10.4      0.329        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 106   Q0        5.68     0.300        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Get model-level statistics</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Plot individual curves</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_fixed</span>, type <span class="op">=</span> <span class="st">"individual"</span>, ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"19"</span>, <span class="st">"51"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Basic diagnostics</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 12</span></span></span>
+<span><span class="co">#&gt;   model_class      backend equation k_spec     nobs n_subjects n_success n_fail</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Plot individual curves</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_fixed</span>, type <span class="op">=</span> <span class="st">"individual"</span>, ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"19"</span>, <span class="st">"51"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="model-selection_files/figure-html/fixed-plot-1.png" class="r-plt" alt="Individual demand curves for two example participants." width="1008"><p class="caption">
+Individual demand curves for two example participants.
+</p>
+</div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Basic diagnostics</span></span>
 <span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Model Diagnostics</span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; Model class: beezdemand_fixed </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Convergence:</span></span>
+<span><span class="co">#&gt;   Status: Converged</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Residuals:</span></span>
+<span><span class="co">#&gt;   Mean: 0.0284</span></span>
+<span><span class="co">#&gt;   SD: 0.5306</span></span>
+<span><span class="co">#&gt;   Range: [-1.458, 2.228]</span></span>
+<span><span class="co">#&gt;   Outliers: 3 observations</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; --------------------------------------------------</span></span>
+<span><span class="co">#&gt; Issues Detected (1):</span></span>
+<span><span class="co">#&gt;   1. Detected 3 potential outliers across subjects</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -260,7 +312,7 @@ zeros</li>
 <p>For the mixed-effects approach with the <code>zben</code> equation
 form, transform your consumption data using the LL4 (log-log with
 4-parameter adjustment):</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Transform consumption using LL4</span></span>
 <span><span class="va">apt_ll4</span> <span class="op">&lt;-</span> <span class="va">apt</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>y_ll4 <span class="op">=</span> <span class="fu"><a href="../reference/ll4.html">ll4</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
@@ -273,7 +325,7 @@ form, transform your consumption data using the LL4 (log-log with
 <div class="section level3">
 <h3 id="complete-example-1">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-1"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit mixed-effects model</span></span>
 <span><span class="va">fit_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt_ll4</span>,</span>
@@ -296,11 +348,13 @@ form, transform your consumption data using the LL4 (log-log with
 </h3>
 <p>For experimental designs with factors, you can use
 <code>emmeans</code> for post-hoc comparisons:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For a model with factors (example with ko dataset):</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Prepare data with LL4 transformation</span></span>
+<span><span class="co"># (Note: the ko dataset already includes a y_ll4 column, but we</span></span>
+<span><span class="co"># recreate it here to demonstrate the transformation workflow)</span></span>
 <span><span class="va">ko_ll4</span> <span class="op">&lt;-</span> <span class="va">ko</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>y_ll4 <span class="op">=</span> <span class="fu"><a href="../reference/ll4.html">ll4</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -313,11 +367,11 @@ form, transform your consumption data using the LL4 (log-log with
 <span>  equation_form <span class="op">=</span> <span class="st">"zben"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Get estimated marginal means for Q0 across drug levels</span></span>
-<span><span class="va">emms</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit</span>, param <span class="op">=</span> <span class="st">"Q0"</span>, by <span class="op">=</span> <span class="st">"drug"</span><span class="op">)</span></span>
+<span><span class="co"># Get estimated marginal means for Q0 and alpha across drug levels</span></span>
+<span><span class="va">emms</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit</span>, factors_in_emm <span class="op">=</span> <span class="st">"drug"</span>, include_ev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Compare drug conditions</span></span>
-<span><span class="va">comps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit</span>, param <span class="op">=</span> <span class="st">"Q0"</span>, by <span class="op">=</span> <span class="st">"drug"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Pairwise comparisons of drug conditions</span></span>
+<span><span class="va">comps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit</span>, compare_specs <span class="op">=</span> <span class="op">~</span><span class="va">drug</span>, contrast_type <span class="op">=</span> <span class="st">"pairwise"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -351,7 +405,7 @@ regression)</li>
 <div class="section level3">
 <h3 id="complete-example-2">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-2"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit hurdle model with 3 random effects</span></span>
 <span><span class="va">fit_hurdle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
@@ -379,7 +433,7 @@ regression)</li>
 <h3 id="comparing-hurdle-models">Comparing Hurdle Models<a class="anchor" aria-label="anchor" href="#comparing-hurdle-models"></a>
 </h3>
 <p>Compare nested models using likelihood ratio tests:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit full model (3 random effects)</span></span>
 <span><span class="va">fit_hurdle3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
@@ -407,6 +461,66 @@ regression)</li>
 </div>
 </div>
 <div class="section level2">
+<h2 id="choosing-an-equation">Choosing an Equation<a class="anchor" aria-label="anchor" href="#choosing-an-equation"></a>
+</h2>
+<p>The <code>equation</code> argument determines the functional form of
+the demand curve. Each equation has trade-offs in terms of flexibility,
+zero handling, and comparability across studies.</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="17%">
+<col width="17%">
+<col width="26%">
+<col width="21%">
+<col width="17%">
+</colgroup>
+<thead><tr class="header">
+<th>Equation</th>
+<th>Function</th>
+<th align="center">Handles Zeros</th>
+<th align="center">k Required</th>
+<th>Best For</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"hs"</code></td>
+<td>Hursh &amp; Silberberg (2008)</td>
+<td align="center">No</td>
+<td align="center">Yes</td>
+<td>Traditional analyses, compatibility with older literature</td>
+</tr>
+<tr class="even">
+<td><code>"koff"</code></td>
+<td>Koffarnus et al. (2015)</td>
+<td align="center">No</td>
+<td align="center">Yes</td>
+<td>Modified exponential, widely used in applied research</td>
+</tr>
+<tr class="odd">
+<td><code>"simplified"</code></td>
+<td>Rzeszutek et al. (2025)</td>
+<td align="center">Yes</td>
+<td align="center">No</td>
+<td>Modern analyses; avoids k-dependency and zero issues</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommendations:</strong></p>
+<ul>
+<li>For <strong>new analyses</strong>, consider using
+<code>"simplified"</code> (also called SND) as it handles zeros natively
+and does not require specifying <code>k</code>, making results more
+comparable across studies.</li>
+<li>For <strong>replication or comparability</strong> with existing
+literature, use <code>"hs"</code> or <code>"koff"</code> with the same
+<code>k</code> specification as the original study.</li>
+<li>When using <code>"hs"</code> or <code>"koff"</code>, zeros in
+consumption data are incompatible with the log transformation and will
+be dropped with a warning.</li>
+</ul>
+<hr>
+</div>
+<div class="section level2">
 <h2 id="choosing-parameters">Choosing Parameters<a class="anchor" aria-label="anchor" href="#choosing-parameters"></a>
 </h2>
 <div class="section level3">
@@ -428,7 +542,7 @@ parameter</li>
 <strong><code>k = "share"</code></strong>: Fit a single k shared
 across all participants</li>
 </ul>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Different k specifications</span></span>
 <span><span class="va">fit_k2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>          <span class="co"># Fixed at 2</span></span>
 <span><span class="va">fit_kind</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, k <span class="op">=</span> <span class="st">"ind"</span><span class="op">)</span>    <span class="co"># Individual</span></span>
@@ -609,6 +723,10 @@ and Clinical Psychopharmacology, 23</em>(5), 377-386.</li>
 Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
 economic demand: An introduction. <em>Perspectives on Behavior Science,
 44</em>(2), 333-358.</li>
+<li>Rzeszutek, M. J., Regnier, S. D., Franck, C. T., &amp; Koffarnus, M.
+N. (2025). Overviewing the exponential model of demand and introducing a
+simplification that solves issues of span, scale, and zeros.
+<em>Experimental and Clinical Psychopharmacology</em>.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -60,26 +60,31 @@ models and small sample sizes, convergence can be challenging. The
 start_value_method = “pooled_nls” is often more robust for complex
 models.
 
-This example is omitted from the rendered vignette (it can be slow and
-may fail to converge). Set `render_fast <- FALSE` in the setup chunk to
-run it.
+*This example is computationally intensive and is not run during
+standard vignette building. To run it, set
+`BEEZDEMAND_VIGNETTE_MODE=full` as an environment variable before
+building. When successful, the output shows fixed-effect estimates for
+each drug and dose combination on Q0 and alpha, plus random-effects
+variance components.*
 
 #### Model with Two Factors and Interaction
 
 This allows the effect of dose to be different for each drug (and
 vice-versa).
 
-This example is omitted from the rendered vignette (it can be slow and
-may fail to converge). Set `render_fast <- FALSE` in the setup chunk to
-run it.
+*This example is computationally intensive and is not run during
+standard vignette building. The interaction model allows the effect of
+dose to differ by drug (and vice versa), producing drug:dose interaction
+terms in the fixed-effects table.*
 
 #### Using Different equation_form and y_var
 
 The simplified equation form expects y_var to be raw consumption.
 
-This example is omitted from the rendered vignette (it can be slow and
-may fail to converge). Set `render_fast <- FALSE` in the setup chunk to
-run it.
+*This example uses `equation_form = "simplified"` with raw consumption
+values (no LL4 transformation needed). The simplified equation handles
+zeros natively. When this example runs, the output resembles the `zben`
+model output but with `y` as the dependent variable.*
 
 ### Collapsing Factor Levels
 
@@ -137,61 +142,60 @@ if (
 } else {
   cat("Collapsed levels model failed to converge.\n")
 }
+#> Demand NLME Model Fit ('beezdemand_nlme' object)
+#> ---------------------------------------------------
+#> 
+#> Call:
+#> fit_demand_mixed(data = ko_alf, y_var = "y_ll4", x_var = "x", 
+#>     id_var = "monkey", factors = "dose", equation_form = "zben", 
+#>     collapse_levels = list(Q0 = list(dose = list(low_doses = c("3e-04", 
+#>         "0.001"), high_dose = "0.003")), alpha = list(dose = list(low_doses = c("3e-04", 
+#>         "0.001"), high_dose = "0.003"))), nlme_control = quick_nlme_control)
+#> 
+#> Equation Form Selected:  zben 
+#> NLME Model Formula:
+#> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> <environment: 0x557f6c92fe40>
+#> Fixed Effects Structure (Q0):     ~ dose_Q0 
+#> Fixed Effects Structure (alpha):  ~ dose_alpha 
+#> Factors:  dose 
+#> Interaction Term Included:  FALSE 
+#> ID Variable for Random Effects:  monkey 
+#> 
+#> Start Values Used (Fixed Effects Intercepts):
+#>   Q0 Intercept (log10 scale):  2.271 
+#>   alpha Intercept (log10 scale):  -3 
+#> 
+#> --- NLME Model Fit Summary (from nlme object) ---
+#> Nonlinear mixed-effects model fit by maximum likelihood
+#>   Model: nlme_model_formula_obj 
+#>   Data: data 
+#>   Log-likelihood: 10.80738
+#>   Fixed: list(Q0 ~ dose_Q0, alpha ~ dose_alpha) 
+#>            Q0.(Intercept)       Q0.dose_Q0low_doses         alpha.(Intercept) 
+#>                1.89628442                0.37072017               -4.64112061 
+#> alpha.dose_alphalow_doses 
+#>               -0.04341491 
+#> 
+#> Random effects:
+#>  Formula: list(Q0 ~ 1, alpha ~ 1)
+#>  Level: monkey
+#>  Structure: Diagonal
+#>         Q0.(Intercept) alpha.(Intercept)  Residual
+#> StdDev:   4.402379e-06      2.693143e-06 0.1903097
+#> 
+#> Number of Observations: 45
+#> Number of Groups: 3 
+#> 
+#> --- Additional Fit Statistics ---
+#> Log-likelihood:  10.81 
+#> AIC:  -7.615 
+#> BIC:  5.032 
+#> ---------------------------------------------------
+#> 
+#> Q0 params: 2 
+#> alpha params: 2
 ```
-
-    #> Demand NLME Model Fit ('beezdemand_nlme' object)
-    #> ---------------------------------------------------
-    #> 
-    #> Call:
-    #> fit_demand_mixed(data = ko_alf, y_var = "y_ll4", x_var = "x", 
-    #>     id_var = "monkey", factors = "dose", equation_form = "zben", 
-    #>     collapse_levels = list(Q0 = list(dose = list(low_doses = c("3e-04", 
-    #>         "0.001"), high_dose = "0.003")), alpha = list(dose = list(low_doses = c("3e-04", 
-    #>         "0.001"), high_dose = "0.003"))), nlme_control = quick_nlme_control)
-    #> 
-    #> Equation Form Selected:  zben 
-    #> NLME Model Formula:
-    #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x5587a8541570>
-    #> Fixed Effects Structure (Q0):     ~ dose_Q0 
-    #> Fixed Effects Structure (alpha):  ~ dose_alpha 
-    #> Factors:  dose 
-    #> Interaction Term Included:  FALSE 
-    #> ID Variable for Random Effects:  monkey 
-    #> 
-    #> Start Values Used (Fixed Effects Intercepts):
-    #>   Q0 Intercept (log10 scale):  2.271 
-    #>   alpha Intercept (log10 scale):  -3 
-    #> 
-    #> --- NLME Model Fit Summary (from nlme object) ---
-    #> Nonlinear mixed-effects model fit by maximum likelihood
-    #>   Model: nlme_model_formula_obj 
-    #>   Data: data 
-    #>   Log-likelihood: 10.80738
-    #>   Fixed: list(Q0 ~ dose_Q0, alpha ~ dose_alpha) 
-    #>            Q0.(Intercept)       Q0.dose_Q0low_doses         alpha.(Intercept) 
-    #>                1.89628442                0.37072017               -4.64112061 
-    #> alpha.dose_alphalow_doses 
-    #>               -0.04341491 
-    #> 
-    #> Random effects:
-    #>  Formula: list(Q0 ~ 1, alpha ~ 1)
-    #>  Level: monkey
-    #>  Structure: Diagonal
-    #>         Q0.(Intercept) alpha.(Intercept)  Residual
-    #> StdDev:   4.401177e-06      2.693877e-06 0.1903097
-    #> 
-    #> Number of Observations: 45
-    #> Number of Groups: 3 
-    #> 
-    #> --- Additional Fit Statistics ---
-    #> Log-likelihood:  10.81 
-    #> AIC:  -7.615 
-    #> BIC:  5.032 
-    #> ---------------------------------------------------
-    #> 
-    #> Q0 params: 2 
-    #> alpha params: 2
 
 #### Example: Different collapsing for Q0 and alpha
 
@@ -247,63 +251,62 @@ if (
 } else {
   cat("Asymmetric collapsed levels model failed to converge.\n")
 }
+#> Demand NLME Model Fit ('beezdemand_nlme' object)
+#> ---------------------------------------------------
+#> 
+#> Call:
+#> fit_demand_mixed(data = ko_alf, y_var = "y_ll4", x_var = "x", 
+#>     id_var = "monkey", factors = "dose", equation_form = "zben", 
+#>     collapse_levels = list(Q0 = list(dose = list(low_doses = c("3e-04", 
+#>         "0.001"), high_dose = "0.003")), alpha = list(dose = list(all_doses = c("3e-04", 
+#>         "0.001", "0.003")))), nlme_control = quick_nlme_control)
+#> 
+#> Equation Form Selected:  zben 
+#> NLME Model Formula:
+#> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> <environment: 0x557f6d85ec08>
+#> Fixed Effects Structure (Q0):     ~ dose_Q0 
+#> Fixed Effects Structure (alpha):  ~ 1 
+#> Factors:  dose 
+#> Interaction Term Included:  FALSE 
+#> ID Variable for Random Effects:  monkey 
+#> 
+#> Start Values Used (Fixed Effects Intercepts):
+#>   Could not determine Q0/alpha intercepts from start_values_used structure.
+#>   Full start_values_used vector:
+#> [1]  2.271  0.000 -3.000
+#> 
+#> --- NLME Model Fit Summary (from nlme object) ---
+#> Nonlinear mixed-effects model fit by maximum likelihood
+#>   Model: nlme_model_formula_obj 
+#>   Data: data 
+#>   Log-likelihood: 10.73793
+#>   Fixed: list(Q0 ~ dose_Q0, alpha ~ 1) 
+#>      Q0.(Intercept) Q0.dose_Q0low_doses               alpha 
+#>           1.9041039           0.3572637          -4.6750675 
+#> 
+#> Random effects:
+#>  Formula: list(Q0 ~ 1, alpha ~ 1)
+#>  Level: monkey
+#>  Structure: Diagonal
+#>         Q0.(Intercept)        alpha  Residual
+#> StdDev:   4.408558e-06 2.697616e-06 0.1906036
+#> 
+#> Number of Observations: 45
+#> Number of Groups: 3 
+#> 
+#> --- Additional Fit Statistics ---
+#> Log-likelihood:  10.74 
+#> AIC:  -9.476 
+#> BIC:  1.364 
+#> ---------------------------------------------------
+#> 
+#> Q0 params: 2 
+#> alpha params: 1 
+#> 
+#> Q0 formula: ~ dose_Q0 
+#> alpha formula: ~ 1
 ```
-
-    #> Demand NLME Model Fit ('beezdemand_nlme' object)
-    #> ---------------------------------------------------
-    #> 
-    #> Call:
-    #> fit_demand_mixed(data = ko_alf, y_var = "y_ll4", x_var = "x", 
-    #>     id_var = "monkey", factors = "dose", equation_form = "zben", 
-    #>     collapse_levels = list(Q0 = list(dose = list(low_doses = c("3e-04", 
-    #>         "0.001"), high_dose = "0.003")), alpha = list(dose = list(all_doses = c("3e-04", 
-    #>         "0.001", "0.003")))), nlme_control = quick_nlme_control)
-    #> 
-    #> Equation Form Selected:  zben 
-    #> NLME Model Formula:
-    #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-    #> <environment: 0x5587a9470528>
-    #> Fixed Effects Structure (Q0):     ~ dose_Q0 
-    #> Fixed Effects Structure (alpha):  ~ 1 
-    #> Factors:  dose 
-    #> Interaction Term Included:  FALSE 
-    #> ID Variable for Random Effects:  monkey 
-    #> 
-    #> Start Values Used (Fixed Effects Intercepts):
-    #>   Could not determine Q0/alpha intercepts from start_values_used structure.
-    #>   Full start_values_used vector:
-    #> [1]  2.271  0.000 -3.000
-    #> 
-    #> --- NLME Model Fit Summary (from nlme object) ---
-    #> Nonlinear mixed-effects model fit by maximum likelihood
-    #>   Model: nlme_model_formula_obj 
-    #>   Data: data 
-    #>   Log-likelihood: 10.73793
-    #>   Fixed: list(Q0 ~ dose_Q0, alpha ~ 1) 
-    #>      Q0.(Intercept) Q0.dose_Q0low_doses               alpha 
-    #>           1.9041039           0.3572637          -4.6750675 
-    #> 
-    #> Random effects:
-    #>  Formula: list(Q0 ~ 1, alpha ~ 1)
-    #>  Level: monkey
-    #>  Structure: Diagonal
-    #>         Q0.(Intercept)        alpha  Residual
-    #> StdDev:   4.409119e-06 2.697381e-06 0.1906036
-    #> 
-    #> Number of Observations: 45
-    #> Number of Groups: 3 
-    #> 
-    #> --- Additional Fit Statistics ---
-    #> Log-likelihood:  10.74 
-    #> AIC:  -9.476 
-    #> BIC:  1.364 
-    #> ---------------------------------------------------
-    #> 
-    #> Q0 params: 2 
-    #> alpha params: 1 
-    #> 
-    #> Q0 formula: ~ dose_Q0 
-    #> alpha formula: ~ 1
 
 **Note:** When all levels of a factor are collapsed to a single level
 for a parameter, that factor is automatically removed from the formula
@@ -366,31 +369,28 @@ if (
 } else {
   cat("Asymmetric collapsed model not available for EMM demonstration.\n")
 }
+#> --- EMMs with collapsed factors ---
+#> # A tibble: 2 × 16
+#>   dose      Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
+#>   <fct>              <dbl>              <dbl>              <dbl>      <dbl>
+#> 1 high_dose           1.90               1.77               2.04       80.2
+#> 2 low_doses           2.26               2.16               2.36      183. 
+#> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
+#> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
+#> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
+#> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
+#> 
+#> --- Comparisons with collapsed factors ---
+#> 
+#> Q0 contrasts (collapsed levels):
+#> # A tibble: 1 × 8
+#>   contrast_definition   estimate     SE    df lower.CL upper.CL t.ratio  p.value
+#>   <chr>                    <dbl>  <dbl> <dbl>    <dbl>    <dbl>   <dbl>    <dbl>
+#> 1 high_dose - low_doses   -0.357 0.0803    40   -0.520   -0.195   -4.45  6.73e-5
+#> 
+#> alpha contrasts (intercept-only, no comparisons):
+#> # A tibble: 0 × 0
 ```
-
-    #> --- EMMs with collapsed factors ---
-
-    #> # A tibble: 2 × 16
-    #>   dose      Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
-    #>   <fct>              <dbl>              <dbl>              <dbl>      <dbl>
-    #> 1 high_dose           1.90               1.77               2.04       80.2
-    #> 2 low_doses           2.26               2.16               2.36      183. 
-    #> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
-    #> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
-    #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
-    #> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
-    #> 
-    #> --- Comparisons with collapsed factors ---
-
-    #> 
-    #> Q0 contrasts (collapsed levels):
-    #> # A tibble: 1 × 8
-    #>   contrast_definition   estimate     SE    df lower.CL upper.CL t.ratio  p.value
-    #>   <chr>                    <dbl>  <dbl> <dbl>    <dbl>    <dbl>   <dbl>    <dbl>
-    #> 1 high_dose - low_doses   -0.357 0.0803    40   -0.520   -0.195   -4.45  6.73e-5
-    #> 
-    #> alpha contrasts (intercept-only, no comparisons):
-    #> # A tibble: 0 × 0
 
 ### Visualizing Multi-Factor Models
 
@@ -493,9 +493,8 @@ if (
 } else {
   cat("fit_simplified_example model object not available for plotting.\n")
 }
+#> fit_simplified_example model object not available for plotting.
 ```
-
-    #> fit_simplified_example model object not available for plotting.
 
 Users can further customize the returned ggplot object by adding more
 layers or theme adjustments. For instance, to add custom axis limits or
@@ -567,33 +566,30 @@ if (!is.null(emm_model_to_use)) {
     "No suitable model with factors converged for EMM analysis in the vignette.\n"
   )
 }
+#> --- EMMs for model with factors: dose ---
+#> # A tibble: 3 × 16
+#>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
+#>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
+#> 1 3e-04           2.42               2.27               2.56      260. 
+#> 2 0.001           2.16               2.03               2.28      144. 
+#> 3 0.003           1.90               1.78               2.02       78.8
+#> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
+#> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
+#> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
+#> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
+#> 
+#> --- EMMs for observed factor combinations only: ---
+#> # A tibble: 3 × 16
+#>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
+#>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
+#> 1 3e-04           2.42               2.27               2.56      260. 
+#> 2 0.001           2.16               2.03               2.28      144. 
+#> 3 0.003           1.90               1.78               2.02       78.8
+#> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
+#> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
+#> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
+#> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
 ```
-
-    #> --- EMMs for model with factors: dose ---
-
-    #> # A tibble: 3 × 16
-    #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
-    #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
-    #> 1 3e-04           2.42               2.27               2.56      260. 
-    #> 2 0.001           2.16               2.03               2.28      144. 
-    #> 3 0.003           1.90               1.78               2.02       78.8
-    #> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
-    #> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
-    #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
-    #> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
-    #> 
-    #> --- EMMs for observed factor combinations only: ---
-
-    #> # A tibble: 3 × 16
-    #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
-    #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
-    #> 1 3e-04           2.42               2.27               2.56      260. 
-    #> 2 0.001           2.16               2.03               2.28      144. 
-    #> 3 0.003           1.90               1.78               2.02       78.8
-    #> # ℹ 11 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>,
-    #> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
-    #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
-    #> #   UCL_alpha_natural <dbl>, EV <dbl>, LCL_EV <dbl>, UCL_EV <dbl>
 
 ### Performing Pairwise Comparisons (`get_demand_comparisons`)
 
@@ -645,15 +641,13 @@ if (
     "No suitable model with factors converged for comparisons in the vignette.\n"
   )
 }
+#> --- Pairwise comparisons for 'dose' (averaging over other factors if any): ---
+#> Demand Parameter Comparisons (from beezdemand_nlme fit)
+#> EMMs computed over: ~dose 
+#> Contrast type: pairwise
+#> P-value adjustment method: fdr 
+#> ==================================================
 ```
-
-    #> --- Pairwise comparisons for 'dose' (averaging over other factors if any): ---
-
-    #> Demand Parameter Comparisons (from beezdemand_nlme fit)
-    #> EMMs computed over: ~dose 
-    #> Contrast type: pairwise
-    #> P-value adjustment method: fdr 
-    #> ==================================================
 
 ### Advanced Topics
 
@@ -661,9 +655,11 @@ if (
 experienced users. These advanced topics require deeper understanding of
 mixed-effects models and may be computationally intensive.
 
-**Performance Note**: The sections below are omitted from the rendered
-vignette by default (they can be slow and may fail to converge). Set
-`render_fast <- FALSE` in the setup chunk to run them.
+**Performance Note**: The code examples in the sections below are
+computationally intensive and are not evaluated during standard vignette
+building. The code is shown for reference. To run these examples, set
+the environment variable `BEEZDEMAND_VIGNETTE_MODE=full` before building
+vignettes.
 
 #### More Complex Random Effects Structures
 

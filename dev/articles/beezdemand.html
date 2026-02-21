@@ -162,7 +162,7 @@ development branch in <code>install_github</code>:</p>
 </h4>
 <p>An example dataset of responses on an Alcohol Purchase Task is
 provided. This object is called <code>apt</code> and is located within
-the <code>beezdemand</code> package. These data are a subset of from the
+the <code>beezdemand</code> package. These data are a subset from the
 paper by Kaplan &amp; Reed (2018). Participants (id) reported the number
 of alcoholic drinks (y) they would be willing to purchase and consume at
 various prices (x; USD). Note the format of the data, which is called
@@ -319,7 +319,7 @@ Google Forms:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## the following code takes the apt data, which are in long format, and converts</span></span>
 <span><span class="co">## to a wide format that might be seen from data collection software</span></span>
-<span><span class="va">wide</span> <span class="op">&lt;-</span> <span class="fu">spread</span><span class="op">(</span><span class="va">apt</span>, <span class="va">x</span>, <span class="va">y</span><span class="op">)</span></span>
+<span><span class="va">wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span><span class="va">apt</span>, names_from <span class="op">=</span> <span class="va">x</span>, values_from <span class="op">=</span> <span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"price_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">16</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
 <span>    <span class="va">wide</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">]</span>,</span>
@@ -583,8 +583,8 @@ on.</p>
 </tbody>
 </table>
 <p>Now we can convert into a long format using some of the helpful
-functions in the <code>tidyverse</code> package (make sure the package
-is loaded before trying the commands below).</p>
+functions in the <code>tidyr</code> package (make sure the package is
+loaded before trying the commands below).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## using the dataframe 'wide', we pivot all columns except 'id' into long format,</span></span>
 <span><span class="co">## creating 'price' and 'consumption' columns</span></span>
@@ -1132,7 +1132,8 @@ can be customized.</p>
 </h4>
 <p>Results of the analysis return both empirical and derived measures
 for use in additional analyses and model specification. Equations
-include the linear model, exponential model, and exponentiated model.
+include the linear model, exponential model, exponentiated model, and
+simplified exponential model (Rzeszutek et al., 2025).
 <code>beezdemand</code> also supports mixed-effects and hurdle demand
 models (see the dedicated vignettes for those workflows).</p>
 <div class="section level5">
@@ -1210,8 +1211,9 @@ consistent methods like <code><a href="https://rdrr.io/r/base/summary.html" clas
 <p>Key arguments:</p>
 <ul>
 <li><p><code>equation</code> can be <code>"linear"</code>,
-<code>"hs"</code>, or <code>"koff"</code> (Hursh &amp; Silberberg, 2008;
-Koffarnus et al., 2015).</p></li>
+<code>"hs"</code>, <code>"koff"</code>, or <code>"simplified"</code>
+(Hursh &amp; Silberberg, 2008; Koffarnus et al., 2015; Rzeszutek et al.,
+2025).</p></li>
 <li><p><code>k</code> can be a fixed numeric value (e.g.,
 <code>2</code>) or one of the helper modes: <code>"ind"</code>,
 <code>"fit"</code>, or <code>"share"</code>.</p></li>
@@ -1471,7 +1473,7 @@ rows)</caption>
 <td align="left">60</td>
 <td align="left">Q0</td>
 <td align="right">9.924274</td>
-<td align="right">9.024320</td>
+<td align="right">9.024321</td>
 <td align="right">10.824227</td>
 <td align="right">0.95</td>
 </tr>
@@ -1678,15 +1680,23 @@ method. <code>alpha_star</code> requires <span class="math inline">k
 (Koffarnus et al., 2015):</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"koff"</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>"simplified"</code> equation (Rzeszutek et al., 2025), also
+known as the Simplified Exponential with Normalized Decay (SND), handles
+zeros natively without requiring data transformation and does not
+require a <code>k</code> parameter:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"simplified"</span><span class="op">)</span></span></code></pre></div>
+<p>For a more detailed treatment of the simplified equation, see
+<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code>.</p>
 <p>By specifying <code>agg = "Mean"</code>, y values at each x value are
 aggregated and a single curve is fit to the data (disregarding error
 around each averaged point):</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, agg <span class="op">=</span> <span class="st">"Mean"</span><span class="op">)</span></span></code></pre></div>
 <p>By specifying <code>agg = "Pooled"</code>, y values at each x value
 are aggregated and a single curve is fit to the data and error around
 each averaged point (but disregarding within-subject clustering):</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, agg <span class="op">=</span> <span class="st">"Pooled"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -1697,7 +1707,7 @@ each averaged point (but disregarding within-subject clustering):</p>
 <code>k = "share"</code> this parameter will be a shared parameter
 across all datasets (globally) while estimating <span class="math inline">Q_0</span> and <span class="math inline">\alpha</span> locally. While this works, it may take
 some time with larger sample sizes.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="st">"share"</span><span class="op">)</span></span></code></pre></div>
 <table style="width:100%;" class="table">
 <caption>Parameter estimates (<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, first 10
@@ -1767,7 +1777,7 @@ rows)</caption>
 <td align="left">60</td>
 <td align="left">Q0</td>
 <td align="right">9.721379</td>
-<td align="right">0.4371060</td>
+<td align="right">0.4371061</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 <td align="left">fixed</td>
@@ -1900,7 +1910,7 @@ rows)</caption>
 </h4>
 <p>To learn more about a function and what arguments it takes, type “?”
 in front of the function name.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Modern interface (recommended)</span></span>
 <span><span class="op">?</span><span class="va">check_systematic_demand</span></span>
 <span></span>

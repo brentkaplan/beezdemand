@@ -226,7 +226,7 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Subjects: 10, Observations: 160
 #>   Fixed parameters: 9, Random effects per subject: 2
 #>   Optimizing...
-#>   Converged in 95 iterations
+#>   Converged in 93 iterations
 #>   Computing standard errors...
 #> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
 #> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
@@ -258,7 +258,7 @@ summary(fit3)
 #> Fixed Effects:
 #> --------------
 #>              Estimate Std. Error t value
-#> beta0      -293.94893  160.41399  -1.832
+#> beta0      -293.94893  160.41398  -1.832
 #> beta1       104.07743   61.07262   1.704
 #> log_q0        1.87220    0.12435  15.056
 #> log_k         1.83359    0.56794   3.228
@@ -276,7 +276,7 @@ summary(fit3)
 #>          Estimate Std. Error
 #> alpha      0.0176     0.0115
 #> k          6.2563     3.5532
-#> var_a  17607.7218 47451.7806
+#> var_a  17607.7199 47451.7741
 #> var_b      0.1488     0.0682
 #> var_c      0.2050     0.0977
 #> cov_ab     9.2703     7.6244

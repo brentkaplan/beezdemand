@@ -66,14 +66,14 @@ devtools::install_github("brentkaplan/beezdemand@develop")
 
 An example dataset of responses on an Alcohol Purchase Task is provided.
 This object is called `apt` and is located within the `beezdemand`
-package. These data are a subset of from the paper by Kaplan & Reed
-(2018). Participants (id) reported the number of alcoholic drinks (y)
-they would be willing to purchase and consume at various prices (x;
-USD). Note the format of the data, which is called “long format”. Long
-format data are data structured such that repeated observations are
-stacked in multiple rows, rather than across columns. First, take a look
-at an extract of the dataset `apt`, where I’ve subsetted rows 1 through
-10 and 17 through 26:
+package. These data are a subset from the paper by Kaplan & Reed (2018).
+Participants (id) reported the number of alcoholic drinks (y) they would
+be willing to purchase and consume at various prices (x; USD). Note the
+format of the data, which is called “long format”. Long format data are
+data structured such that repeated observations are stacked in multiple
+rows, rather than across columns. First, take a look at an extract of
+the dataset `apt`, where I’ve subsetted rows 1 through 10 and 17 through
+26:
 
 |     |  id |   x |   y |
 |:----|----:|----:|----:|
@@ -116,7 +116,7 @@ Forms:
 ``` r
 ## the following code takes the apt data, which are in long format, and converts
 ## to a wide format that might be seen from data collection software
-wide <- spread(apt, x, y)
+wide <- as.data.frame(tidyr::pivot_wider(apt, names_from = x, values_from = y))
 colnames(wide) <- c("id", paste0("price_", seq(1, 16, by = 1)))
 knitr::kable(
     wide[1:5, 1:10],
@@ -177,8 +177,8 @@ knitr::kable(
 Wide format data with price column names
 
 Now we can convert into a long format using some of the helpful
-functions in the `tidyverse` package (make sure the package is loaded
-before trying the commands below).
+functions in the `tidyr` package (make sure the package is loaded before
+trying the commands below).
 
 ``` r
 ## using the dataframe 'wide', we pivot all columns except 'id' into long format,
@@ -360,9 +360,10 @@ Systematicity check results (first 5 participants)
 
 Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
-the linear model, exponential model, and exponentiated model.
-`beezdemand` also supports mixed-effects and hurdle demand models (see
-the dedicated vignettes for those workflows).
+the linear model, exponential model, exponentiated model, and simplified
+exponential model (Rzeszutek et al., 2025). `beezdemand` also supports
+mixed-effects and hurdle demand models (see the dedicated vignettes for
+those workflows).
 
 ##### Obtaining Empirical Measures
 
@@ -402,8 +403,9 @@ It returns a structured S3 object with consistent methods like
 
 Key arguments:
 
-- `equation` can be `"linear"`, `"hs"`, or `"koff"` (Hursh & Silberberg,
-  2008; Koffarnus et al., 2015).
+- `equation` can be `"linear"`, `"hs"`, `"koff"`, or `"simplified"`
+  (Hursh & Silberberg, 2008; Koffarnus et al., 2015; Rzeszutek et al.,
+  2025).
 
 - `k` can be a fixed numeric value (e.g., `2`) or one of the helper
   modes: `"ind"`, `"fit"`, or `"share"`.
@@ -466,7 +468,7 @@ Model summary
 | 19  | Q0   | 10.158665 | 9.632351 | 10.684978 |  0.95 |
 | 30  | Q0   |  2.807366 | 2.364853 |  3.249880 |  0.95 |
 | 38  | Q0   |  4.497456 | 4.076679 |  4.918233 |  0.95 |
-| 60  | Q0   |  9.924274 | 9.024320 | 10.824227 |  0.95 |
+| 60  | Q0   |  9.924274 | 9.024321 | 10.824227 |  0.95 |
 | 68  | Q0   | 10.390384 | 9.745502 | 11.035267 |  0.95 |
 | 106 | Q0   |  5.683566 | 5.095025 |  6.272107 |  0.95 |
 | 113 | Q0   |  6.195949 | 5.854112 |  6.537785 |  0.95 |
@@ -567,6 +569,18 @@ al., 2015):
 fit_demand_fixed(data = apt, equation = "koff", k = 2)
 ```
 
+The `"simplified"` equation (Rzeszutek et al., 2025), also known as the
+Simplified Exponential with Normalized Decay (SND), handles zeros
+natively without requiring data transformation and does not require a
+`k` parameter:
+
+``` r
+fit_demand_fixed(data = apt, equation = "simplified")
+```
+
+For a more detailed treatment of the simplified equation, see
+[`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md).
+
 By specifying `agg = "Mean"`, y values at each x value are aggregated
 and a single curve is fit to the data (disregarding error around each
 averaged point):
@@ -600,7 +614,7 @@ fit_demand_fixed(data = apt, equation = "hs", k = "share")
 | 19  | Q0   | 10.014576 | 0.2429150 |        NA |      NA | fixed     | natural        | Q0           |         10.014576 |
 | 30  | Q0   |  2.766313 | 0.2192797 |        NA |      NA | fixed     | natural        | Q0           |          2.766313 |
 | 38  | Q0   |  4.485810 | 0.2074990 |        NA |      NA | fixed     | natural        | Q0           |          4.485810 |
-| 60  | Q0   |  9.721379 | 0.4371060 |        NA |      NA | fixed     | natural        | Q0           |          9.721379 |
+| 60  | Q0   |  9.721379 | 0.4371061 |        NA |      NA | fixed     | natural        | Q0           |          9.721379 |
 | 68  | Q0   | 10.293139 | 0.3179671 |        NA |      NA | fixed     | natural        | Q0           |         10.293139 |
 | 106 | Q0   |  5.654329 | 0.2826797 |        NA |      NA | fixed     | natural        | Q0           |          5.654329 |
 | 113 | Q0   |  6.169268 | 0.1640778 |        NA |      NA | fixed     | natural        | Q0           |          6.169268 |

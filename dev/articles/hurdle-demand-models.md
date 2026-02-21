@@ -108,9 +108,11 @@ fit2 <- fit_demand_hurdle(
     x_var = "x",
     id_var = "id",
     random_effects = c("zeros", "q0"), # 2 random effects
-    verbose = 1
+    verbose = 0
 )
+```
 
+``` r
 # Fit 3-RE model (more flexible)
 fit3 <- fit_demand_hurdle(
     data = apt,
@@ -127,19 +129,114 @@ fit3 <- fit_demand_hurdle(
 ``` r
 # View summary
 summary(fit2)
+#> 
+#> Two-Part Mixed Effects Hurdle Demand Model
+#> ============================================
+#> 
+#> Call:
+#> fit_demand_hurdle(data = apt, y_var = "y", x_var = "x", id_var = "id", 
+#>     random_effects = c("zeros", "q0"), verbose = 0)
+#> 
+#> Convergence: Yes 
+#> Number of subjects: 10 
+#> Number of observations: 160 
+#> Random effects: 2 (zeros, q0) 
+#> 
+#> Fixed Effects:
+#> --------------
+#>              Estimate Std. Error t value
+#> beta0      -392.08389  146.77189  -2.671
+#> beta1       135.79393   50.43534   2.692
+#> log_q0        1.93813    0.11712  16.548
+#> log_k         0.55505    0.09013   6.158
+#> log_alpha    -2.31478    0.16822 -13.760
+#> logsigma_a    5.76791    1.48290   3.890
+#> logsigma_b   -1.04114    0.22837  -4.559
+#> logsigma_e   -1.63184    0.06063 -26.914
+#> rho_ab_raw   -0.19191    0.23755  -0.808
+#> 
+#> Variance Components:
+#> --------------------
+#>           Estimate  Std. Error
+#> alpha       0.0988      0.0166
+#> k           1.7420      0.1570
+#> var_a  102315.9811 303448.4197
+#> var_b       0.1246      0.0569
+#> cov_ab    -21.4106     12.6867
+#> var_e       0.0382      0.0046
+#> 
+#> Correlations:
+#> -------------
+#>        Estimate Std. Error
+#> rho_ab  -0.1896      0.229
+#> 
+#> Model Fit:
+#> ----------
+#>   Log-likelihood: 2.31
+#>   AIC: 13.38
+#>   BIC: 41.06
+#> 
+#> Demand Metrics (Group-Level):
+#> -----------------------------
+#>   Pmax (price at max expenditure): 20.0000
+#>   Omax (max expenditure): 30.9810
+#>   Q at Pmax: 1.5491
+#>   Elasticity at Pmax: -0.4772
+#>   Method: numerical_optimize_observed_domain
+#> 
+#> Derived Parameters (Individual-Level Summary):
+#> ----------------------------------------------
+#>   Q0 (Intensity):
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   3.622   5.496   7.585   7.365   8.544  11.623 
+#>   Alpha:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#> 0.09879 0.09879 0.09879 0.09879 0.09879 0.09879 
+#>   Breakpoint:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   7.591  13.549  16.183  17.986  21.796  34.419 
+#>   Pmax:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>     100     100     100     100     100     100 
+#>   Omax:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   63.44   96.28  132.88  129.03  149.67  203.62
 
 # Extract coefficients
 coef(fit2)
+#>         beta0         beta1    logsigma_a    logsigma_b    logsigma_e 
+#> -392.08388527  135.79392969    5.76791058   -1.04113709   -1.63183780 
+#>    rho_ab_raw            Q0         alpha             k 
+#>   -0.19191270    6.94572117    0.09878808    1.74202555
 
 # Standardized tidy summaries
 tidy(fit2) |> head()
+#> # A tibble: 6 × 9
+#>   term        estimate std.error statistic  p.value component     estimate_scale
+#>   <chr>          <dbl>     <dbl>     <dbl>    <dbl> <chr>         <chr>         
+#> 1 beta0      -392.      147.         -2.67 7.55e- 3 zero_probabi… logit         
+#> 2 beta1       136.       50.4         2.69 7.09e- 3 zero_probabi… logit         
+#> 3 Q0            6.95      0.813       8.54 1.36e-17 consumption   natural       
+#> 4 k             1.74      0.157      11.1  1.32e-28 consumption   natural       
+#> 5 alpha         0.0988    0.0166      5.94 2.77e- 9 consumption   natural       
+#> 6 logsigma_a    5.77      1.48        3.89 1.00e- 4 variance      natural       
+#> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 glance(fit2)
-
-# Fitted values + residuals
-augment(fit2) |> head()
+#> # A tibble: 1 × 9
+#>   model_class   backend  nobs n_subjects n_random_effects converged logLik   AIC
+#>   <chr>         <chr>   <int>      <int>            <int> <lgl>      <dbl> <dbl>
+#> 1 beezdemand_h… TMB       160         10                2 TRUE        2.31  13.4
+#> # ℹ 1 more variable: BIC <dbl>
 
 # Get subject-specific parameters
 head(get_subject_pars(fit2))
+#>    id       a_i        b_i        Q0      alpha breakpoint     Pmax      Omax
+#> 1  19 -88.44332  0.5148917 11.623368 0.09878808  34.419425 99.99996 203.61909
+#> 2  30 -21.33122 -0.6512294  3.621529 0.09878808  20.997058 99.99996  63.44224
+#> 3  38  40.35739 -0.2348858  5.491712 0.09878808  13.330756 99.99996  96.20424
+#> 4  60  31.73711  0.1663618  8.202899 0.09878808  14.204504 99.99996 143.69903
+#> 5  68  31.19341  0.4228985 10.601806 0.09878808  14.261494 99.99996 185.72327
+#> 6 106 116.82448 -0.2317217  5.509116 0.09878808   7.590564 99.99996  96.50913
 ```
 
 ## Diagnostics
@@ -150,9 +247,38 @@ and the plotting helpers for quick post-fit checks.
 
 ``` r
 check_demand_model(fit2)
+#> 
+#> Model Diagnostics
+#> ================================================== 
+#> Model class: beezdemand_hurdle 
+#> 
+#> Convergence:
+#>   Status: Converged
+#> 
+#> Random Effects:
+#> 
+#> Residuals:
+#>   Mean: 5.393e-05
+#>   SD: 0.1896
+#>   Range: [-0.6119, 0.4986]
+#>   Outliers: 2 observations
+#> 
+#> --------------------------------------------------
+#> Issues Detected (1):
+#>   1. Detected 2 potential outliers (|resid| > 3)
+#> 
+#> Recommendations:
+#>   - Investigate outlying observations
 plot_residuals(fit2)$fitted
+```
+
+![](hurdle-demand-models_files/figure-html/diagnostics-1.png)
+
+``` r
 plot_qq(fit2)
 ```
+
+![](hurdle-demand-models_files/figure-html/diagnostics-2.png)
 
 ## Understanding Results
 
@@ -218,10 +344,24 @@ A significant p-value suggests the 3-RE model provides a better fit.
 ``` r
 # Population demand curve
 plot(fit2, type = "demand")
+```
 
+![Population demand curve from 2-RE hurdle
+model.](hurdle-demand-models_files/figure-html/plotting-demand-1.png)
+
+Population demand curve from 2-RE hurdle model.
+
+``` r
 # Probability of zero consumption
 plot(fit2, type = "probability")
+```
 
+![Probability of zero consumption as a function of
+price.](hurdle-demand-models_files/figure-html/plotting-probability-1.png)
+
+Probability of zero consumption as a function of price.
+
+``` r
 # Distribution of individual parameters
 plot(fit2, type = "parameters")
 plot(fit2, type = "parameters", parameters = c("Q0", "alpha", "Pmax"))

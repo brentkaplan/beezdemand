@@ -31,15 +31,21 @@ Before fitting any model, always check your data for systematic
 responding.
 
 ``` r
-library(beezdemand)
-library(dplyr)
-
-# Use the apt dataset
-data(apt)
-
 # Check for systematic demand
 systematic_check <- check_systematic_demand(apt)
 head(systematic_check$results)
+#> # A tibble: 6 × 15
+#>   id    type   trend_stat trend_threshold trend_direction trend_pass bounce_stat
+#>   <chr> <chr>       <dbl>           <dbl> <chr>           <lgl>            <dbl>
+#> 1 19    demand      0.211           0.025 down            TRUE                 0
+#> 2 30    demand      0.144           0.025 down            TRUE                 0
+#> 3 38    demand      0.788           0.025 down            TRUE                 0
+#> 4 60    demand      0.909           0.025 down            TRUE                 0
+#> 5 68    demand      0.909           0.025 down            TRUE                 0
+#> 6 106   demand      0.818           0.025 down            TRUE                 0
+#> # ℹ 8 more variables: bounce_threshold <dbl>, bounce_direction <chr>,
+#> #   bounce_pass <lgl>, reversals <int>, reversals_pass <lgl>, returns <int>,
+#> #   n_positive <int>, systematic <lgl>
 
 # Filter to systematic data only (those that pass all criteria)
 systematic_ids <- systematic_check$results |>
@@ -51,6 +57,7 @@ apt_clean <- apt |>
 
 cat("Systematic participants:", n_distinct(apt_clean$id),
     "of", n_distinct(apt$id), "\n")
+#> Systematic participants: 10 of 10
 ```
 
 The
@@ -80,9 +87,6 @@ when you want:
 ### Complete Example
 
 ``` r
-library(beezdemand)
-data(apt)
-
 # Fit individual demand curves using the Hursh & Silberberg equation
 fit_fixed <- fit_demand_fixed(
   data = apt,
@@ -92,19 +96,71 @@ fit_fixed <- fit_demand_fixed(
 
 # Print summary
 print(fit_fixed)
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "hs", k = 2)
+#> 
+#> Equation: hs 
+#> k: fixed (2) 
+#> Subjects: 10 ( 10 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 
 # Get tidy coefficient table
 tidy(fit_fixed) |> head()
+#> # A tibble: 6 × 10
+#>   id    term  estimate std.error statistic p.value component estimate_scale
+#>   <chr> <chr>    <dbl>     <dbl>     <dbl>   <dbl> <chr>     <chr>         
+#> 1 19    Q0       10.2      0.269        NA      NA fixed     natural       
+#> 2 30    Q0        2.81     0.226        NA      NA fixed     natural       
+#> 3 38    Q0        4.50     0.215        NA      NA fixed     natural       
+#> 4 60    Q0        9.92     0.459        NA      NA fixed     natural       
+#> 5 68    Q0       10.4      0.329        NA      NA fixed     natural       
+#> 6 106   Q0        5.68     0.300        NA      NA fixed     natural       
+#> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 
 # Get model-level statistics
 glance(fit_fixed)
+#> # A tibble: 1 × 12
+#>   model_class      backend equation k_spec     nobs n_subjects n_success n_fail
+#>   <chr>            <chr>   <chr>    <chr>     <int>      <int>     <int>  <int>
+#> 1 beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0
+#> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
+```
 
+``` r
 # Plot individual curves
 plot(fit_fixed, type = "individual", ids = c("19", "51"))
+```
 
+![Individual demand curves for two example
+participants.](model-selection_files/figure-html/fixed-plot-1.png)
+
+Individual demand curves for two example participants.
+
+``` r
 # Basic diagnostics
 check_demand_model(fit_fixed)
-plot_residuals(fit_fixed)$fitted
+#> 
+#> Model Diagnostics
+#> ================================================== 
+#> Model class: beezdemand_fixed 
+#> 
+#> Convergence:
+#>   Status: Converged
+#> 
+#> Residuals:
+#>   Mean: 0.0284
+#>   SD: 0.5306
+#>   Range: [-1.458, 2.228]
+#>   Outliers: 3 observations
+#> 
+#> --------------------------------------------------
+#> Issues Detected (1):
+#>   1. Detected 3 potential outliers across subjects
 ```
 
 ------------------------------------------------------------------------
@@ -170,6 +226,8 @@ post-hoc comparisons:
 data(ko)
 
 # Prepare data with LL4 transformation
+# (Note: the ko dataset already includes a y_ll4 column, but we
+# recreate it here to demonstrate the transformation workflow)
 ko_ll4 <- ko |>
   dplyr::mutate(y_ll4 = ll4(y))
 
@@ -182,11 +240,11 @@ fit <- fit_demand_mixed(
   equation_form = "zben"
 )
 
-# Get estimated marginal means for Q0 across drug levels
-emms <- get_demand_param_emms(fit, param = "Q0", by = "drug")
+# Get estimated marginal means for Q0 and alpha across drug levels
+emms <- get_demand_param_emms(fit, factors_in_emm = "drug", include_ev = TRUE)
 
-# Compare drug conditions
-comps <- get_demand_comparisons(fit, param = "Q0", by = "drug")
+# Pairwise comparisons of drug conditions
+comps <- get_demand_comparisons(fit, compare_specs = ~drug, contrast_type = "pairwise")
 ```
 
 ------------------------------------------------------------------------
@@ -268,6 +326,32 @@ compare_hurdle_models(fit_hurdle3, fit_hurdle2)
 # Unified model comparison (AIC/BIC + LRT when appropriate)
 compare_models(fit_hurdle3, fit_hurdle2)
 ```
+
+------------------------------------------------------------------------
+
+## Choosing an Equation
+
+The `equation` argument determines the functional form of the demand
+curve. Each equation has trade-offs in terms of flexibility, zero
+handling, and comparability across studies.
+
+| Equation       | Function                  | Handles Zeros | k Required | Best For                                                  |
+|----------------|---------------------------|:-------------:|:----------:|-----------------------------------------------------------|
+| `"hs"`         | Hursh & Silberberg (2008) |      No       |    Yes     | Traditional analyses, compatibility with older literature |
+| `"koff"`       | Koffarnus et al. (2015)   |      No       |    Yes     | Modified exponential, widely used in applied research     |
+| `"simplified"` | Rzeszutek et al. (2025)   |      Yes      |     No     | Modern analyses; avoids k-dependency and zero issues      |
+
+**Recommendations:**
+
+- For **new analyses**, consider using `"simplified"` (also called SND)
+  as it handles zeros natively and does not require specifying `k`,
+  making results more comparable across studies.
+- For **replication or comparability** with existing literature, use
+  `"hs"` or `"koff"` with the same `k` specification as the original
+  study.
+- When using `"hs"` or `"koff"`, zeros in consumption data are
+  incompatible with the log transformation and will be dropped with a
+  warning.
 
 ------------------------------------------------------------------------
 
@@ -390,3 +474,7 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
   Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
   economic demand: An introduction. *Perspectives on Behavior Science,
   44*(2), 333-358.
+- Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N.
+  (2025). Overviewing the exponential model of demand and introducing a
+  simplification that solves issues of span, scale, and zeros.
+  *Experimental and Clinical Psychopharmacology*.

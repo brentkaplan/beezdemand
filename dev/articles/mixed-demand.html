@@ -172,8 +172,8 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span>  nlme_control <span class="op">=</span> <span class="va">quick_nlme_control</span>,</span>
 <span>  start_value_method <span class="op">=</span> <span class="st">"heuristic"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
 <span><span class="co">#&gt; ---------------------------------------------------</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
@@ -184,7 +184,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d3e46af58&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x563cdf120438&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -216,8 +216,8 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Log-likelihood:  146.8 </span></span>
 <span><span class="co">#&gt; AIC:  -283.6 </span></span>
 <span><span class="co">#&gt; BIC:  -268.2 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">fit_apt_zben</span>,</span>
 <span>  inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
@@ -233,7 +233,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <div class="section level5">
 <h5 id="simplified-exponential">Simplified Exponential<a class="anchor" aria-label="anchor" href="#simplified-exponential"></a>
 </h5>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_apt_simplified</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt_ll4</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -243,8 +243,8 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span>  nlme_control <span class="op">=</span> <span class="va">quick_nlme_control</span>,</span>
 <span>  start_value_method <span class="op">=</span> <span class="st">"heuristic"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_simplified</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_simplified</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
 <span><span class="co">#&gt; ---------------------------------------------------</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
@@ -255,7 +255,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d317d8080&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x563cd255c718&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -287,8 +287,8 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Log-likelihood:  -172.8 </span></span>
 <span><span class="co">#&gt; AIC:  355.6 </span></span>
 <span><span class="co">#&gt; BIC:  371 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">fit_apt_simplified</span>,</span>
 <span>  x_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>,</span>
@@ -306,7 +306,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 al. (2015) equation via <code>equation_form = "exponentiated"</code>. By
 default, the scaling constant <code>k</code> will be computed from the
 data range (you can also specify it directly).</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_apt_exponentiated</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -317,8 +317,8 @@ data range (you can also specify it directly).</p>
 <span>  nlme_control <span class="op">=</span> <span class="va">quick_nlme_control</span>,</span>
 <span>  start_value_method <span class="op">=</span> <span class="st">"heuristic"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_exponentiated</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_apt_exponentiated</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
 <span><span class="co">#&gt; ---------------------------------------------------</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
@@ -329,7 +329,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d375dc0b0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x563cd7f48be0&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -361,7 +361,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Log-likelihood:  -181.4 </span></span>
 <span><span class="co">#&gt; AIC:  372.8 </span></span>
 <span><span class="co">#&gt; BIC:  388.1 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre>
+<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -371,16 +371,15 @@ data range (you can also specify it directly).</p>
 <p>All modern model classes support <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>,
 <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> to standardize
 programmatic access to estimates, model summaries, and residuals.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 10</span></span></span>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 10</span></span></span>
 <span><span class="co">#&gt;   model_class     backend equation_form  nobs n_subjects converged logLik   AIC</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_nlme nlme    zben            160         10 TRUE        147. -<span style="color: #BB0000;">284.</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: BIC &lt;dbl&gt;, sigma &lt;dbl&gt;</span></span></span></code></pre>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 9</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: BIC &lt;dbl&gt;, sigma &lt;dbl&gt;</span></span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 9</span></span></span>
 <span><span class="co">#&gt;   term     estimate std.error statistic   p.value component estimate_scale</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0        7.21      0.919        7.85  4.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span> fixed     natural       </span></span>
@@ -388,10 +387,9 @@ programmatic access to estimates, model summaries, and residuals.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0        0.028<span style="text-decoration: underline;">6</span>   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> alpha     0.052<span style="text-decoration: underline;">3</span>   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Residual  0.006<span style="text-decoration: underline;">26</span>  <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   id        x     y y_ll4 .fitted   .resid .fixed</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 19      0      10 1.00    1.02  -<span style="color: #BB0000;">0.019</span><span style="color: #BB0000; text-decoration: underline;">5</span>   0.858</span></span>
@@ -399,16 +397,16 @@ programmatic access to estimates, model summaries, and residuals.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 19      1      10 1.00    0.969  0.030<span style="text-decoration: underline;">5</span>   0.785</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 19      1.5     8 0.903   0.945 -<span style="color: #BB0000;">0.042</span><span style="color: #BB0000; text-decoration: underline;">3</span>   0.751</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 19      2       8 0.903   0.922 -<span style="color: #BB0000;">0.018</span><span style="color: #BB0000; text-decoration: underline;">8</span>   0.718</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 19      2.5     8 0.903   0.899  0.004<span style="text-decoration: underline;">13</span>  0.687</span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 19      2.5     8 0.903   0.899  0.004<span style="text-decoration: underline;">13</span>  0.687</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
 </h3>
 <p>Use <code><a href="../reference/check_demand_model.html">check_demand_model()</a></code> and the residual plotting
 helpers as standard post-fit checks.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model Diagnostics</span></span>
 <span><span class="co">#&gt; ================================================== </span></span>
 <span><span class="co">#&gt; Model class: beezdemand_nlme </span></span>
@@ -431,9 +429,8 @@ helpers as standard post-fit checks.</p>
 <span><span class="co">#&gt;   1. Detected 1 potential outliers (|resid| &gt; 3 SD)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Recommendations:</span></span>
-<span><span class="co">#&gt;   - Investigate outlying observations</span></span></code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
+<span><span class="co">#&gt;   - Investigate outlying observations</span></span>
+<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
 <p><img src="mixed-demand_files/figure-html/diagnostics-1.png" class="r-plt" alt="" width="1008"></p>
 <div class="section level4">
 <h4 id="basic-model-no-factors">Basic Model (No Factors)<a class="anchor" aria-label="anchor" href="#basic-model-no-factors"></a>
@@ -441,7 +438,7 @@ helpers as standard post-fit checks.</p>
 <p>This model estimates global <span class="math inline">Q_{0}</span>
 and <span class="math inline">\alpha</span> parameters with random
 effects for subjects.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make sure a similar 'fit_no_factors' was created successfully in your environment</span></span>
 <span><span class="co"># For the vignette, let's create one that is more likely to converge quickly</span></span>
 <span><span class="co"># by using only Alfentanil data, which is less complex than the full dataset.</span></span>
@@ -456,8 +453,8 @@ effects for subjects.</p>
 <span>  nlme_control <span class="op">=</span> <span class="va">quick_nlme_control</span>, <span class="co"># Use quicker control for vignette</span></span>
 <span>  start_value_method <span class="op">=</span> <span class="st">"heuristic"</span> <span class="co"># Heuristic is faster for simple model</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_no_factors_vignette</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_no_factors_vignette</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
 <span><span class="co">#&gt; ---------------------------------------------------</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
@@ -468,7 +465,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d30f198c8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x563cd1bbc5b0&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -491,7 +488,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;                   Q0        alpha  Residual</span></span>
-<span><span class="co">#&gt; StdDev: 5.264342e-06 3.217971e-06 0.2275573</span></span>
+<span><span class="co">#&gt; StdDev: 5.262806e-06 3.217697e-06 0.2275573</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -500,7 +497,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Log-likelihood:  2.764 </span></span>
 <span><span class="co">#&gt; AIC:  4.473 </span></span>
 <span><span class="co">#&gt; BIC:  13.51 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre>
+<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre></div>
 <p>The output shows the model call, selected equation form, and if the
 model converged, it prints the nlme model summary.</p>
 </div>
@@ -508,7 +505,7 @@ model converged, it prints the nlme model summary.</p>
 <h4 id="model-with-one-factor">Model with One Factor<a class="anchor" aria-label="anchor" href="#model-with-one-factor"></a>
 </h4>
 <p>Let’s model <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> as varying by dose for Alfentanil.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_one_factor_dose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">ko_alf</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y_ll4"</span>,</span>
@@ -519,98 +516,7 @@ model converged, it prints the nlme model summary.</p>
 <span>  nlme_control <span class="op">=</span> <span class="va">quick_nlme_control</span>,</span>
 <span>  start_value_method <span class="op">=</span> <span class="st">"heuristic"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; fit_demand_mixed(data = ko_alf, y_var = "y_ll4", x_var = "x", </span></span>
-<span><span class="co">#&gt;     id_var = "monkey", factors = "dose", equation_form = "zben", </span></span>
-<span><span class="co">#&gt;     start_value_method = "heuristic", nlme_control = quick_nlme_control)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
-<span><span class="co">#&gt; NLME Model Formula:</span></span>
-<span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d2c191250&gt;</span></span>
-<span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
-<span><span class="co">#&gt; Factors:  dose </span></span>
-<span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
-<span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Start Values Used (Fixed Effects Intercepts):</span></span>
-<span><span class="co">#&gt;   Q0 Intercept (log10 scale):  2.271 </span></span>
-<span><span class="co">#&gt;   alpha Intercept (log10 scale):  -3 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- NLME Model Fit Summary (from nlme object) ---</span></span>
-<span><span class="co">#&gt; Nonlinear mixed-effects model fit by maximum likelihood</span></span>
-<span><span class="co">#&gt;   Model: nlme_model_formula_obj </span></span>
-<span><span class="co">#&gt;   Data: data </span></span>
-<span><span class="co">#&gt;   Log-likelihood: 17.90035</span></span>
-<span><span class="co">#&gt;   Fixed: list(Q0 ~ dose, alpha ~ dose) </span></span>
-<span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
-<span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
-<span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Random effects:</span></span>
-<span><span class="co">#&gt;  Formula: list(Q0 ~ 1, alpha ~ 1)</span></span>
-<span><span class="co">#&gt;  Level: monkey</span></span>
-<span><span class="co">#&gt;  Structure: Diagonal</span></span>
-<span><span class="co">#&gt;         Q0.(Intercept) alpha.(Intercept)  Residual</span></span>
-<span><span class="co">#&gt; StdDev:   3.760034e-06      2.301156e-06 0.1625574</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of Observations: 45</span></span>
-<span><span class="co">#&gt; Number of Groups: 3 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- Additional Fit Statistics ---</span></span>
-<span><span class="co">#&gt; Log-likelihood:  17.9 </span></span>
-<span><span class="co">#&gt; AIC:  -17.8 </span></span>
-<span><span class="co">#&gt; BIC:  -1.541 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre>
-</div>
-<div class="section level4">
-<h4 id="inspecting-model-fits">Inspecting Model Fits<a class="anchor" aria-label="anchor" href="#inspecting-model-fits"></a>
-</h4>
-<p>Once a model is fit, you can inspect it using several S3 methods.
-We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Use a fit that is likely to have converged, e.g., fit_one_factor_dose</span></span>
-<span><span class="va">active_fit</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">fit_one_factor_dose</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="va">fit_no_factors_vignette</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"--- Using S3 print() method: ---\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n--- Using S3 summary() method: ---\n"</span><span class="op">)</span></span>
-<span>  <span class="co"># The summary.beezdemand_nlme method calls summary.nlme and formats it</span></span>
-<span>  <span class="va">model_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">model_summary</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n--- Extracting Coefficients using S3 coef(): ---\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Fixed effects:\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">active_fit</span>, type <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nRandom effects (deviations):\n"</span><span class="op">)</span></span>
-<span>  <span class="co"># Printing ranef can be long, so let's show head</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">active_fit</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nSubject-specific coefficients (fixed + random):\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">active_fit</span>, type <span class="op">=</span> <span class="st">"combined"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="co"># Default type</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nUsing S3 fixef() and ranef():\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/fixed.effects.html" class="external-link">fixef</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nStart values that were used for the NLME fit:\n"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">$</span><span class="va">start_values_used</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"No suitable model converged for detailed inspection in the vignette.\n"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; --- Using S3 print() method: ---</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Demand NLME Model Fit ('beezdemand_nlme' object)</span></span>
 <span><span class="co">#&gt; ---------------------------------------------------</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -622,7 +528,7 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x559d2c191250&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x563ccc84ca18&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -641,14 +547,14 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734047 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Random effects:</span></span>
 <span><span class="co">#&gt;  Formula: list(Q0 ~ 1, alpha ~ 1)</span></span>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;         Q0.(Intercept) alpha.(Intercept)  Residual</span></span>
-<span><span class="co">#&gt; StdDev:   3.760034e-06      2.301156e-06 0.1625574</span></span>
+<span><span class="co">#&gt; StdDev:   3.762036e-06      2.300115e-06 0.1625574</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -657,9 +563,15 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt; Log-likelihood:  17.9 </span></span>
 <span><span class="co">#&gt; AIC:  -17.8 </span></span>
 <span><span class="co">#&gt; BIC:  -1.541 </span></span>
-<span><span class="co">#&gt; ---------------------------------------------------</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- Using S3 summary() method: ---</span></span>
+<span><span class="co">#&gt; ---------------------------------------------------</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="inspecting-model-fits">Inspecting Model Fits<a class="anchor" aria-label="anchor" href="#inspecting-model-fits"></a>
+</h4>
+<p>Once a model is fit, you can inspect it using several S3 methods.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Summary</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Nonlinear Mixed-Effects Demand Model Summary</span></span>
 <span><span class="co">#&gt; ================================================== </span></span>
@@ -688,8 +600,8 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt; monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) </span></span>
 <span><span class="co">#&gt;                   Variance     StdDev      </span></span>
-<span><span class="co">#&gt; Q0.(Intercept)    1.413786e-11 3.760034e-06</span></span>
-<span><span class="co">#&gt; alpha.(Intercept) 5.295319e-12 2.301156e-06</span></span>
+<span><span class="co">#&gt; Q0.(Intercept)    1.415292e-11 3.762036e-06</span></span>
+<span><span class="co">#&gt; alpha.(Intercept) 5.290530e-12 2.300115e-06</span></span>
 <span><span class="co">#&gt; Residual          2.642491e-02 1.625574e-01</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residual standard error: 0.1626 </span></span>
@@ -697,78 +609,58 @@ We’ll use <code>fit_one_factor_dose</code> if it converged.</p>
 <span><span class="co">#&gt; Model Fit:</span></span>
 <span><span class="co">#&gt;   Log-Likelihood: 17.9 </span></span>
 <span><span class="co">#&gt;   AIC: -17.8 </span></span>
-<span><span class="co">#&gt;   BIC: -1.54 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- Extracting Coefficients using S3 coef(): ---</span></span>
-<span><span class="co">#&gt; Fixed effects:</span></span>
+<span><span class="co">#&gt;   BIC: -1.54</span></span>
+<span></span>
+<span><span class="co"># Fixed effects</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Random effects (deviations):</span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span></span>
+<span><span class="co"># Random effects (deviations from fixed)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
-<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
-<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Subject-specific coefficients (fixed + random):</span></span>
+<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
+<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
+<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span></span>
+<span><span class="co"># Subject-specific coefficients (fixed + random)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"combined"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) Q0.dose0.001 Q0.dose0.003 alpha.(Intercept) alpha.dose0.001</span></span>
 <span><span class="co">#&gt; A        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt; B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt; C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt;   alpha.dose0.003</span></span>
-<span><span class="co">#&gt; A     0.009734048</span></span>
-<span><span class="co">#&gt; B     0.009734048</span></span>
-<span><span class="co">#&gt; C     0.009734048</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Using S3 fixef() and ranef():</span></span>
+<span><span class="co">#&gt; A     0.009734047</span></span>
+<span><span class="co">#&gt; B     0.009734047</span></span>
+<span><span class="co">#&gt; C     0.009734047</span></span>
+<span></span>
+<span><span class="co"># Access nlme fixef/ranef directly</span></span>
+<span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/fixed.effects.html" class="external-link">fixef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
-<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
-<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Start values that were used for the NLME fit:</span></span>
-<span><span class="co">#&gt; [1]  2.270679  0.000000  0.000000 -3.000000  0.000000  0.000000</span></span></code></pre>
+<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
+<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
+<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span></span>
+<span><span class="co"># Start values that were used for the NLME fit</span></span>
+<span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">start_values_used</span></span>
+<span><span class="co">#&gt; [1]  2.270679  0.000000  0.000000 -3.000000  0.000000  0.000000</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="making-predictions-predict">Making Predictions (predict())<a class="anchor" aria-label="anchor" href="#making-predictions-predict"></a>
 </h4>
 <p>The S3 <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> method can generate population-level or
 group-level predictions.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">active_fit</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"--- Population-level predictions (log10 scale for 'zben'): ---\n"</span><span class="op">)</span></span>
-<span>  <span class="va">preds_pop_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">active_fit</span>, level <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">preds_pop_log</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
-<span>    <span class="st">"\n--- Population-level predictions (natural scale, back-transformed): ---\n"</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="co"># Assuming y_var was ll4, inv_fun is ll4_inv</span></span>
-<span>  <span class="va">preds_pop_natural</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
-<span>    <span class="va">active_fit</span>,</span>
-<span>    level <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    inv_fun <span class="op">=</span> <span class="va">ll4_inv</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">preds_pop_natural</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
-<span>    <span class="st">"\n--- Group-level predictions for first few data points (log10 scale): ---\n"</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="co"># Need to ensure newdata has factors with correct levels if different from original</span></span>
-<span>  <span class="co"># For simplicity, predict on a subset of the original data</span></span>
-<span>  <span class="va">sample_newdata</span> <span class="op">&lt;-</span> <span class="va">active_fit</span><span class="op">$</span><span class="va">data</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span></span>
-<span>  <span class="va">preds_group_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">active_fit</span>, newdata <span class="op">=</span> <span class="va">sample_newdata</span>, level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">preds_group_log</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"No suitable model converged for predictions in the vignette.\n"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; --- Population-level predictions (log10 scale for 'zben'): ---</span></span>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Population-level predictions (log10 scale for 'zben')</span></span>
+<span><span class="va">preds_pop_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, level <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">preds_pop_log</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   monkey     x     y y_ll4 drug       dose  .fitted</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -777,9 +669,15 @@ group-level predictions.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A        100  66.5 1.82  Alfentanil 0.003   1.72 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A        320  39   1.59  Alfentanil 0.003   1.40 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A       <span style="text-decoration: underline;">1</span>000   9.5 0.978 Alfentanil 0.003   0.734</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> B         10  77   1.89  Alfentanil 0.003   1.88 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- Population-level predictions (natural scale, back-transformed): ---</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> B         10  77   1.89  Alfentanil 0.003   1.88</span></span>
+<span></span>
+<span><span class="co"># Population-level predictions (natural scale, back-transformed)</span></span>
+<span><span class="va">preds_pop_natural</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_one_factor_dose</span>,</span>
+<span>  level <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  inv_fun <span class="op">=</span> <span class="va">ll4_inv</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">preds_pop_natural</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
 <span><span class="co">#&gt;   monkey     x     y y_ll4 drug       dose  .fitted</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -788,9 +686,12 @@ group-level predictions.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A        100  66.5 1.82  Alfentanil 0.003   53.0 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A        320  39   1.59  Alfentanil 0.003   25.1 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A       <span style="text-decoration: underline;">1</span>000   9.5 0.978 Alfentanil 0.003    5.42</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> B         10  77   1.89  Alfentanil 0.003   75.6 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; --- Group-level predictions for first few data points (log10 scale): ---</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> B         10  77   1.89  Alfentanil 0.003   75.6</span></span>
+<span></span>
+<span><span class="co"># Group-level predictions for first few data points</span></span>
+<span><span class="va">sample_newdata</span> <span class="op">&lt;-</span> <span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">data</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span></span>
+<span><span class="va">preds_group_log</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, newdata <span class="op">=</span> <span class="va">sample_newdata</span>, level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">preds_group_log</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 7</span></span></span>
 <span><span class="co">#&gt;   monkey     x     y y_ll4 drug       dose  .fitted</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -798,7 +699,7 @@ group-level predictions.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A         32 110   2.04  Alfentanil 0.003   1.84 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A        100  66.5 1.82  Alfentanil 0.003   1.72 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A        320  39   1.59  Alfentanil 0.003   1.40 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A       <span style="text-decoration: underline;">1</span>000   9.5 0.978 Alfentanil 0.003   0.734</span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A       <span style="text-decoration: underline;">1</span>000   9.5 0.978 Alfentanil 0.003   0.734</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level3">
@@ -835,23 +736,15 @@ via <code>facet_formula</code>.</p></li>
 <p>Let’s use <code>fit_one_factor_dose</code> (modeling demand for
 Alfentanil by <code>dose</code>, with <code>y_ll4</code> as the
 dependent variable).</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Assuming fit_one_factor_dose was successfully created earlier in the vignette</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="co"># Define the inverse transformation function (if y_ll4 is log10(y))</span></span>
-<span>  <span class="co">#   ll4_inv &lt;- function(y_log10) 10^y_log10</span></span>
-<span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
-<span>    <span class="va">fit_one_factor_dose</span>,</span>
-<span>    inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
-<span>    color_by <span class="op">=</span> <span class="st">"dose"</span>, <span class="co"># Color lines and points by dose</span></span>
-<span>    shape_by <span class="op">=</span> <span class="st">"dose"</span>, <span class="co"># Different shapes for points by dose</span></span>
-<span>    observed_point_alpha <span class="op">=</span> <span class="fl">0.7</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Alfentanil Demand by Dose (Population Fit)"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"fit_one_factor_dose model object not available for plotting.\n"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_one_factor_dose</span>,</span>
+<span>  inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
+<span>  color_by <span class="op">=</span> <span class="st">"dose"</span>,</span>
+<span>  shape_by <span class="op">=</span> <span class="st">"dose"</span>,</span>
+<span>  observed_point_alpha <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Alfentanil Demand by Dose (Population Fit)"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="mixed-demand_files/figure-html/plot_one_factor-1.png" class="r-plt" alt="Demand curves for Alfentanil by dose (population level). y-axis on natural scale." width="1008"><p class="caption">
 Demand curves for Alfentanil by dose (population level). y-axis on
@@ -867,23 +760,19 @@ consumption scale using inv_fun.</p>
 </h4>
 <p>We can also visualize the individual subject fits by setting
 <code>show_pred_lines = "individual"</code>.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
-<span>    <span class="va">fit_one_factor_dose</span>,</span>
-<span>    show_pred_lines <span class="op">=</span> <span class="st">"individual"</span>,</span>
-<span>    inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
-<span>    color_by <span class="op">=</span> <span class="st">"dose"</span>, <span class="co"># Color lines by dose</span></span>
-<span>    observed_point_alpha <span class="op">=</span> <span class="fl">0.4</span>,</span>
-<span>    y_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>,</span>
-<span>    ind_line_alpha <span class="op">=</span> <span class="fl">.5</span>, <span class="co"># Make subject lines semi-transparent</span></span>
-<span>    title <span class="op">=</span> <span class="st">"Alfentanil Demand by Dose (Subject-Specific Fits)"</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides</a></span><span class="op">(</span>color <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guide_legend.html" class="external-link">guide_legend</a></span><span class="op">(</span>override.aes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="co"># Make legend opaque</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span><span class="op">~</span><span class="va">monkey</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"fit_one_factor_dose model object not available for plotting.\n"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_one_factor_dose</span>,</span>
+<span>  show_pred_lines <span class="op">=</span> <span class="st">"individual"</span>,</span>
+<span>  inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
+<span>  color_by <span class="op">=</span> <span class="st">"dose"</span>,</span>
+<span>  observed_point_alpha <span class="op">=</span> <span class="fl">0.4</span>,</span>
+<span>  y_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>,</span>
+<span>  ind_line_alpha <span class="op">=</span> <span class="fl">.5</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Alfentanil Demand by Dose (Subject-Specific Fits)"</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides</a></span><span class="op">(</span>color <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guide_legend.html" class="external-link">guide_legend</a></span><span class="op">(</span>override.aes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span><span class="op">~</span><span class="va">monkey</span><span class="op">)</span></span></code></pre></div>
 <p><img src="mixed-demand_files/figure-html/plot_one_factor_individual-1.png" class="r-plt" alt="" width="1008"></p>
 <p>Here, each thin line represents the fitted curve for an individual
 subject (monkey), colored by dose.</p>
@@ -893,24 +782,20 @@ subject (monkey), colored by dose.</p>
 </h4>
 <p>You can use <code>x_trans</code> and <code>y_trans</code> for axis
 transformations.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
-<span>    <span class="va">fit_one_factor_dose</span>,</span>
-<span>    inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
-<span>    color_by <span class="op">=</span> <span class="st">"dose"</span>,</span>
-<span>    x_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>, <span class="co"># Log10 transform the x-axis</span></span>
-<span>    y_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>, <span class="co"># Pseudo-log transform the y-axis</span></span>
-<span>    title <span class="op">=</span> <span class="st">"Alfentanil Demand (Log10 Price Scale)"</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"fit_one_factor_dose model object not available for plotting.\n"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_one_factor_dose</span>,</span>
+<span>  inv_fun <span class="op">=</span> <span class="va">ll4_inv</span>,</span>
+<span>  color_by <span class="op">=</span> <span class="st">"dose"</span>,</span>
+<span>  x_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>,</span>
+<span>  y_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Alfentanil Demand (Log10 Price Scale)"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="mixed-demand_files/figure-html/plot_one_factor_axes-1.png" class="r-plt" alt="" width="1008"></p>
 <p>Users can further customize the returned ggplot object by adding more
 layers or theme adjustments. For instance, to add custom axis limits or
 breaks:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plot_object</span> <span class="op">+</span></span>
 <span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span></span>
 <span>        limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1000</span><span class="op">)</span>,</span>

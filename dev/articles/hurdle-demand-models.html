@@ -88,6 +88,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
+            <h4 data-toc-skip class="date">2026-02-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/hurdle-demand-models.Rmd" class="external-link"><code>vignettes/hurdle-demand-models.Rmd</code></a></small>
       <div class="d-none name"><code>hurdle-demand-models.Rmd</code></div>
@@ -311,10 +312,10 @@ for:</p>
 <span>    x_var <span class="op">=</span> <span class="st">"x"</span>,</span>
 <span>    id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>    random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zeros"</span>, <span class="st">"q0"</span><span class="op">)</span>, <span class="co"># 2 random effects</span></span>
-<span>    verbose <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Fit 3-RE model (more flexible)</span></span>
+<span>    verbose <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fit 3-RE model (more flexible)</span></span>
 <span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">apt</span>,</span>
 <span>    y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -327,22 +328,117 @@ for:</p>
 <div class="section level3">
 <h3 id="interpreting-output">Interpreting Output<a class="anchor" aria-label="anchor" href="#interpreting-output"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># View summary</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Two-Part Mixed Effects Hurdle Demand Model</span></span>
+<span><span class="co">#&gt; ============================================</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Call:</span></span>
+<span><span class="co">#&gt; fit_demand_hurdle(data = apt, y_var = "y", x_var = "x", id_var = "id", </span></span>
+<span><span class="co">#&gt;     random_effects = c("zeros", "q0"), verbose = 0)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Convergence: Yes </span></span>
+<span><span class="co">#&gt; Number of subjects: 10 </span></span>
+<span><span class="co">#&gt; Number of observations: 160 </span></span>
+<span><span class="co">#&gt; Random effects: 2 (zeros, q0) </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Fixed Effects:</span></span>
+<span><span class="co">#&gt; --------------</span></span>
+<span><span class="co">#&gt;              Estimate Std. Error t value</span></span>
+<span><span class="co">#&gt; beta0      -392.08389  146.77189  -2.671</span></span>
+<span><span class="co">#&gt; beta1       135.79393   50.43534   2.692</span></span>
+<span><span class="co">#&gt; log_q0        1.93813    0.11712  16.548</span></span>
+<span><span class="co">#&gt; log_k         0.55505    0.09013   6.158</span></span>
+<span><span class="co">#&gt; log_alpha    -2.31478    0.16822 -13.760</span></span>
+<span><span class="co">#&gt; logsigma_a    5.76791    1.48290   3.890</span></span>
+<span><span class="co">#&gt; logsigma_b   -1.04114    0.22837  -4.559</span></span>
+<span><span class="co">#&gt; logsigma_e   -1.63184    0.06063 -26.914</span></span>
+<span><span class="co">#&gt; rho_ab_raw   -0.19191    0.23755  -0.808</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Variance Components:</span></span>
+<span><span class="co">#&gt; --------------------</span></span>
+<span><span class="co">#&gt;           Estimate  Std. Error</span></span>
+<span><span class="co">#&gt; alpha       0.0988      0.0166</span></span>
+<span><span class="co">#&gt; k           1.7420      0.1570</span></span>
+<span><span class="co">#&gt; var_a  102315.9811 303448.4197</span></span>
+<span><span class="co">#&gt; var_b       0.1246      0.0569</span></span>
+<span><span class="co">#&gt; cov_ab    -21.4106     12.6867</span></span>
+<span><span class="co">#&gt; var_e       0.0382      0.0046</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Correlations:</span></span>
+<span><span class="co">#&gt; -------------</span></span>
+<span><span class="co">#&gt;        Estimate Std. Error</span></span>
+<span><span class="co">#&gt; rho_ab  -0.1896      0.229</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Model Fit:</span></span>
+<span><span class="co">#&gt; ----------</span></span>
+<span><span class="co">#&gt;   Log-likelihood: 2.31</span></span>
+<span><span class="co">#&gt;   AIC: 13.38</span></span>
+<span><span class="co">#&gt;   BIC: 41.06</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Demand Metrics (Group-Level):</span></span>
+<span><span class="co">#&gt; -----------------------------</span></span>
+<span><span class="co">#&gt;   Pmax (price at max expenditure): 20.0000</span></span>
+<span><span class="co">#&gt;   Omax (max expenditure): 30.9810</span></span>
+<span><span class="co">#&gt;   Q at Pmax: 1.5491</span></span>
+<span><span class="co">#&gt;   Elasticity at Pmax: -0.4772</span></span>
+<span><span class="co">#&gt;   Method: numerical_optimize_observed_domain</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Derived Parameters (Individual-Level Summary):</span></span>
+<span><span class="co">#&gt; ----------------------------------------------</span></span>
+<span><span class="co">#&gt;   Q0 (Intensity):</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   3.622   5.496   7.585   7.365   8.544  11.623 </span></span>
+<span><span class="co">#&gt;   Alpha:</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt; 0.09879 0.09879 0.09879 0.09879 0.09879 0.09879 </span></span>
+<span><span class="co">#&gt;   Breakpoint:</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   7.591  13.549  16.183  17.986  21.796  34.419 </span></span>
+<span><span class="co">#&gt;   Pmax:</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;     100     100     100     100     100     100 </span></span>
+<span><span class="co">#&gt;   Omax:</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   63.44   96.28  132.88  129.03  149.67  203.62</span></span>
 <span></span>
 <span><span class="co"># Extract coefficients</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         beta0         beta1    logsigma_a    logsigma_b    logsigma_e </span></span>
+<span><span class="co">#&gt; -392.08388527  135.79392969    5.76791058   -1.04113709   -1.63183780 </span></span>
+<span><span class="co">#&gt;    rho_ab_raw            Q0         alpha             k </span></span>
+<span><span class="co">#&gt;   -0.19191270    6.94572117    0.09878808    1.74202555</span></span>
 <span></span>
 <span><span class="co"># Standardized tidy summaries</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
+<span><span class="co">#&gt;   term        estimate std.error statistic  p.value component     estimate_scale</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beta0      -<span style="color: #BB0000;">392.</span>      147.         -<span style="color: #BB0000;">2.67</span> 7.55<span style="color: #949494;">e</span><span style="color: #BB0000;">- 3</span> zero_probabi… logit         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> beta1       136.       50.4         2.69 7.09<span style="color: #949494;">e</span><span style="color: #BB0000;">- 3</span> zero_probabi… logit         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0            6.95      0.813       8.54 1.36<span style="color: #949494;">e</span><span style="color: #BB0000;">-17</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> k             1.74      0.157      11.1  1.32<span style="color: #949494;">e</span><span style="color: #BB0000;">-28</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> alpha         0.098<span style="text-decoration: underline;">8</span>    0.016<span style="text-decoration: underline;">6</span>      5.94 2.77<span style="color: #949494;">e</span><span style="color: #BB0000;">- 9</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> logsigma_a    5.77      1.48        3.89 1.00<span style="color: #949494;">e</span><span style="color: #BB0000;">- 4</span> variance      natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Fitted values + residuals</span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
+<span><span class="co">#&gt;   model_class   backend  nobs n_subjects n_random_effects converged logLik   AIC</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_h… TMB       160         10                2 TRUE        2.31  13.4</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: BIC &lt;dbl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Get subject-specific parameters</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    id       a_i        b_i        Q0      alpha breakpoint     Pmax      Omax</span></span>
+<span><span class="co">#&gt; 1  19 -88.44332  0.5148917 11.623368 0.09878808  34.419425 99.99996 203.61909</span></span>
+<span><span class="co">#&gt; 2  30 -21.33122 -0.6512294  3.621529 0.09878808  20.997058 99.99996  63.44224</span></span>
+<span><span class="co">#&gt; 3  38  40.35739 -0.2348858  5.491712 0.09878808  13.330756 99.99996  96.20424</span></span>
+<span><span class="co">#&gt; 4  60  31.73711  0.1663618  8.202899 0.09878808  14.204504 99.99996 143.69903</span></span>
+<span><span class="co">#&gt; 5  68  31.19341  0.4228985 10.601806 0.09878808  14.261494 99.99996 185.72327</span></span>
+<span><span class="co">#&gt; 6 106 116.82448 -0.2317217  5.509116 0.09878808   7.590564 99.99996  96.50913</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -350,10 +446,35 @@ for:</p>
 </h2>
 <p>Use <code><a href="../reference/check_demand_model.html">check_demand_model()</a></code> and the plotting helpers for
 quick post-fit checks.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span>
-<span><span class="fu"><a href="../reference/plot_qq.html">plot_qq</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Model Diagnostics</span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; Model class: beezdemand_hurdle </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Convergence:</span></span>
+<span><span class="co">#&gt;   Status: Converged</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Random Effects:</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Residuals:</span></span>
+<span><span class="co">#&gt;   Mean: 5.393e-05</span></span>
+<span><span class="co">#&gt;   SD: 0.1896</span></span>
+<span><span class="co">#&gt;   Range: [-0.6119, 0.4986]</span></span>
+<span><span class="co">#&gt;   Outliers: 2 observations</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; --------------------------------------------------</span></span>
+<span><span class="co">#&gt; Issues Detected (1):</span></span>
+<span><span class="co">#&gt;   1. Detected 2 potential outliers (|resid| &gt; 3)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Recommendations:</span></span>
+<span><span class="co">#&gt;   - Investigate outlying observations</span></span>
+<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
+<p><img src="hurdle-demand-models_files/figure-html/diagnostics-1.png" class="r-plt" alt="" width="1008"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_qq.html">plot_qq</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="hurdle-demand-models_files/figure-html/diagnostics-2.png" class="r-plt" alt="" width="1008"></p>
 </div>
 <div class="section level2">
 <h2 id="understanding-results">Understanding Results<a class="anchor" aria-label="anchor" href="#understanding-results"></a>
@@ -469,7 +590,7 @@ meaningfully between subjects</li>
 <div class="section level3">
 <h3 id="likelihood-ratio-test">Likelihood Ratio Test<a class="anchor" aria-label="anchor" href="#likelihood-ratio-test"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Compare nested models</span></span>
 <span><span class="fu"><a href="../reference/compare_hurdle_models.html">compare_hurdle_models</a></span><span class="op">(</span><span class="va">fit3</span>, <span class="va">fit2</span><span class="op">)</span></span>
 <span></span>
@@ -493,14 +614,24 @@ fit.</p>
 <div class="section level2">
 <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Population demand curve</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"demand"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Probability of zero consumption</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"probability"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Distribution of individual parameters</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"demand"</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="hurdle-demand-models_files/figure-html/plotting-demand-1.png" class="r-plt" alt="Population demand curve from 2-RE hurdle model." width="1008"><p class="caption">
+Population demand curve from 2-RE hurdle model.
+</p>
+</div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Probability of zero consumption</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"probability"</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="hurdle-demand-models_files/figure-html/plotting-probability-1.png" class="r-plt" alt="Probability of zero consumption as a function of price." width="1008"><p class="caption">
+Probability of zero consumption as a function of price.
+</p>
+</div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Distribution of individual parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"parameters"</span>, parameters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q0"</span>, <span class="st">"alpha"</span>, <span class="st">"Pmax"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -518,7 +649,7 @@ fit.</p>
 </h3>
 <p>The <code><a href="../reference/simulate_hurdle_data.html">simulate_hurdle_data()</a></code> function generates data from
 the hurdle model:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulate with default parameters</span></span>
 <span><span class="va">sim_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_hurdle_data.html">simulate_hurdle_data</a></span><span class="op">(</span></span>
 <span>    n_subjects <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -549,7 +680,7 @@ performance through simulation.</p>
 <p><strong>Note</strong>: Monte Carlo simulations are computationally
 intensive and not run during vignette building. The example below shows
 typical usage and expected output format.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run Monte Carlo study</span></span>
 <span><span class="va">mc_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_hurdle_monte_carlo.html">run_hurdle_monte_carlo</a></span><span class="op">(</span></span>
 <span>    n_sim <span class="op">=</span> <span class="fl">100</span>, <span class="co"># Number of simulations</span></span>
@@ -615,7 +746,7 @@ typical usage and expected output format.</p>
 <div class="section level3">
 <h3 id="combining-with-other-analyses">Combining with Other Analyses<a class="anchor" aria-label="anchor" href="#combining-with-other-analyses"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit hurdle model</span></span>
 <span><span class="va">hurdle_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">data</span>,</span>
 <span>    y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
@@ -633,7 +764,7 @@ typical usage and expected output format.</p>
 <div class="section level3">
 <h3 id="exporting-results">Exporting Results<a class="anchor" aria-label="anchor" href="#exporting-results"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Subject parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">hurdle_fit</span><span class="op">)</span>, <span class="st">"hurdle_subject_parameters.csv"</span><span class="op">)</span></span>
 <span></span>
@@ -659,7 +790,7 @@ which provides:</p>
 <div class="section level3">
 <h3 id="control-parameters">Control Parameters<a class="anchor" aria-label="anchor" href="#control-parameters"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>    <span class="va">data</span>,</span>
 <span>    y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -678,7 +809,7 @@ which provides:</p>
 <h3 id="custom-starting-values">Custom Starting Values<a class="anchor" aria-label="anchor" href="#custom-starting-values"></a>
 </h3>
 <p>For difficult optimization problems:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">custom_starts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    beta0 <span class="op">=</span> <span class="op">-</span><span class="fl">3.0</span>,</span>
 <span>    beta1 <span class="op">=</span> <span class="fl">1.5</span>,</span>

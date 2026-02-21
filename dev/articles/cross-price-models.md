@@ -1,5 +1,28 @@
 # How to Use Cross-Price Demand Model Functions
 
+## Introduction
+
+Cross-price demand analysis examines how consumption of one commodity
+changes as the price of another commodity varies. This is central to
+understanding economic relationships between goods:
+
+- **Substitutes**: When the price of the target commodity increases and
+  consumption of the alternative increases, the goods function as
+  substitutes (e.g., e-cigarettes and combustible cigarettes).
+- **Complements**: When the price of the target increases and
+  consumption of the alternative *decreases*, the goods function as
+  complements.
+- **Independent**: When the price of one commodity does not meaningfully
+  affect consumption of the other.
+
+These relationships are quantified through cross-price elasticity
+parameters. The `beezdemand` package provides nonlinear
+([`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)),
+linear
+([`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)),
+and mixed-effects linear (`fit_cp_linear(type = "mixed")`) approaches
+for cross-price modeling.
+
 ## Data Structure
 
 ``` r
@@ -351,7 +374,7 @@ knitr::kable(
 
 Systematicity check by product group (ETM dataset)
 
-### Demonstration from Rzeszutek et al. (under review)
+### Demonstration from Rzeszutek et al. (2025)
 
 #### Low Nicotine Study (Kaplan et al., 2018)
 
@@ -527,7 +550,7 @@ fit_all <- etm |>
     group_by(id, group) |>
     nest() |>
     mutate(
-        unsys = map(data, check_unsystematic_cp),
+        unsys = map(data, check_systematic_cp),
         fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
         summary = map(fit, summary),
         plot = map(fit, plot, x_trans = "log10"),
@@ -688,7 +711,7 @@ fit_pooled <- etm |>
     group_by(group) |>
     nest() |>
     mutate(
-        unsys = map(data, check_unsystematic_cp),
+        unsys = map(data, check_systematic_cp),
         fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
         summary = map(fit, summary),
         plot = map(fit, plot, x_trans = "log10"),
@@ -748,7 +771,7 @@ fit_mean <- etm |>
     group_by(group) |>
     nest() |>
     mutate(
-        unsys = map(data, check_unsystematic_cp),
+        unsys = map(data, check_systematic_cp),
         fit = map(data, fit_cp_nls, equation = "exponentiated", return_all = TRUE),
         summary = map(fit, summary),
         plot = map(fit, plot, x_trans = "log10"),

@@ -131,8 +131,8 @@ demonstrate the three most common below using the <code>apt</code>
 (e^{-\alpha \cdot Q_0 \cdot x} - 1)</span></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">fit_hs</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="va">fit_hs</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
 <span><span class="co">#&gt; ==========================</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -143,7 +143,7 @@ demonstrate the three most common below using the <code>apt</code>
 <span><span class="co">#&gt; k: fixed (2) </span></span>
 <span><span class="co">#&gt; Subjects: 10 ( 10 converged, 0 failed)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre>
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="koffarnus-koff">Koffarnus (“koff”)<a class="anchor" aria-label="anchor" href="#koffarnus-koff"></a>
@@ -151,10 +151,10 @@ demonstrate the three most common below using the <code>apt</code>
 <p>The exponentiated model (Koffarnus et al., 2015):</p>
 <p><span class="math display">Q = Q_0 \cdot 10^{k \cdot (e^{-\alpha
 \cdot Q_0 \cdot x} - 1)}</span></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_koff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"koff"</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">fit_koff</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="va">fit_koff</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
 <span><span class="co">#&gt; ==========================</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -165,7 +165,7 @@ demonstrate the three most common below using the <code>apt</code>
 <span><span class="co">#&gt; k: fixed (2) </span></span>
 <span><span class="co">#&gt; Subjects: 10 ( 10 converged, 0 failed)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre>
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="simplified-simplified">Simplified (“simplified”)<a class="anchor" aria-label="anchor" href="#simplified-simplified"></a>
@@ -174,10 +174,10 @@ demonstrate the three most common below using the <code>apt</code>
 require a scaling constant <span class="math inline">k</span>:</p>
 <p><span class="math display">Q = Q_0 \cdot e^{-\alpha \cdot Q_0 \cdot
 x}</span></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_simplified</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"simplified"</span><span class="op">)</span></span>
-<span><span class="va">fit_simplified</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="va">fit_simplified</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
 <span><span class="co">#&gt; ==========================</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -188,7 +188,7 @@ x}</span></p>
 <span><span class="co">#&gt; k: none (simplified equation) </span></span>
 <span><span class="co">#&gt; Subjects: 10 ( 10 converged, 0 failed)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre>
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -232,7 +232,7 @@ jointly with <span class="math inline">Q_0</span> and <span class="math inline">
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Fixed k (default)</span></span>
 <span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -248,7 +248,7 @@ jointly with <span class="math inline">Q_0</span> and <span class="math inline">
 is performed on the natural scale (<code>"natural"</code>, the default)
 or log10 scale (<code>"log10"</code>). The log10 scale can improve
 convergence for some datasets:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, param_space <span class="op">=</span> <span class="st">"log10"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -260,9 +260,9 @@ convergence for some datasets:</p>
 <div class="section level3">
 <h3 id="tidy-per-subject-parameter-estimates">tidy(): Per-Subject Parameter Estimates<a class="anchor" aria-label="anchor" href="#tidy-per-subject-parameter-estimates"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 40 × 10</span></span></span>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 40 × 10</span></span></span>
 <span><span class="co">#&gt;    id    term  estimate std.error statistic p.value component estimate_scale</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 19    Q0       10.2      0.269        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
@@ -276,25 +276,25 @@ convergence for some datasets:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 156   Q0        8.35     0.411        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 188   Q0        6.30     0.564        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="glance-model-level-summary">glance(): Model-Level Summary<a class="anchor" aria-label="anchor" href="#glance-model-level-summary"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 12</span></span></span>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 12</span></span></span>
 <span><span class="co">#&gt;   model_class      backend equation k_spec     nobs n_subjects n_success n_fail</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="augment-fitted-values-and-residuals">augment(): Fitted Values and Residuals<a class="anchor" aria-label="anchor" href="#augment-fitted-values-and-residuals"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 146 × 6</span></span></span>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 146 × 6</span></span></span>
 <span><span class="co">#&gt;    id        x     y     k .fitted  .resid</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 19      0      10     2   10.2  -<span style="color: #BB0000;">0.159</span> </span></span>
@@ -307,14 +307,14 @@ convergence for some datasets:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 19      4       7     2    7.03 -<span style="color: #BB0000;">0.033</span><span style="color: #BB0000; text-decoration: underline;">4</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 19      5       7     2    6.45  0.554 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 19      6       6     2    5.92  0.082<span style="text-decoration: underline;">0</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 136 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 136 more rows</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="confint-confidence-intervals">confint(): Confidence Intervals<a class="anchor" aria-label="anchor" href="#confint-confidence-intervals"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 40 × 6</span></span></span>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 40 × 6</span></span></span>
 <span><span class="co">#&gt;    id    term  estimate conf.low conf.high level</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 19    Q0       10.2      9.63     10.7   0.95</span></span>
@@ -327,16 +327,16 @@ convergence for some datasets:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 142   Q0        6.17     4.92      7.43  0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 156   Q0        8.35     7.54      9.15  0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 188   Q0        6.30     5.20      7.41  0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more rows</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="summary-formatted-summary">summary(): Formatted Summary<a class="anchor" aria-label="anchor" href="#summary-formatted-summary"></a>
 </h3>
 <p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> method provides a formatted overview
 including parameter distributions across subjects:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model Summary</span></span>
 <span><span class="co">#&gt; ================================================== </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -373,7 +373,7 @@ including parameter distributions across subjects:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 142   Q0         6.17     0.641           <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 142   alpha      0.002<span style="text-decoration: underline;">37</span>  0.000<span style="text-decoration: underline;">400</span>        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed     natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -391,11 +391,11 @@ output provides a normalized version (Strategy B; Rzeszutek et al.,
 for HS/Koff equations). Standard errors are computed via the delta
 method. <code>alpha_star</code> requires <span class="math inline">k
 \cdot \ln(b) &gt; 1</span>; otherwise <code>NA</code> is returned.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">==</span> <span class="st">"alpha_star"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">select</span><span class="op">(</span><span class="va">id</span>, <span class="va">term</span>, <span class="va">estimate</span>, <span class="va">std.error</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 4</span></span></span>
+<span>  <span class="fu">select</span><span class="op">(</span><span class="va">id</span>, <span class="va">term</span>, <span class="va">estimate</span>, <span class="va">std.error</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 4</span></span></span>
 <span><span class="co">#&gt;    id    term       estimate std.error</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 19    alpha_star  0.008<span style="text-decoration: underline;">36</span>  0.000<span style="text-decoration: underline;">249</span></span></span>
@@ -407,7 +407,7 @@ method. <code>alpha_star</code> requires <span class="math inline">k
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 113   alpha_star  0.008<span style="text-decoration: underline;">12</span>  0.000<span style="text-decoration: underline;">447</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 142   alpha_star  0.009<span style="text-decoration: underline;">69</span>  0.001<span style="text-decoration: underline;">63</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 156   alpha_star  0.019<span style="text-decoration: underline;">3</span>   0.000<span style="text-decoration: underline;">668</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 188   alpha_star  0.032<span style="text-decoration: underline;">1</span>   0.001<span style="text-decoration: underline;">84</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 188   alpha_star  0.032<span style="text-decoration: underline;">1</span>   0.001<span style="text-decoration: underline;">84</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a>
@@ -417,7 +417,7 @@ method. <code>alpha_star</code> requires <span class="math inline">k
 </h3>
 <p>The <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> method displays fitted demand curves with
 observed data points. The x-axis defaults to a log10 scale:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/plot_basic-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
@@ -426,7 +426,7 @@ observed data points. The x-axis defaults to a log10 scale:</p>
 </h3>
 <p>Use <code>facet = TRUE</code> to show each subject in a separate
 panel:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_hs</span>, facet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/plot_facet-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
@@ -435,7 +435,7 @@ panel:</p>
 </h3>
 <p>Control the x- and y-axis transformations with <code>x_trans</code>
 and <code>y_trans</code>:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_hs</span>, x_trans <span class="op">=</span> <span class="st">"pseudo_log"</span>, y_trans <span class="op">=</span> <span class="st">"pseudo_log"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/plot_transforms-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
@@ -448,9 +448,9 @@ and <code>y_trans</code>:</p>
 </h3>
 <p><code><a href="../reference/check_demand_model.html">check_demand_model()</a></code> summarizes convergence, residual
 properties, and potential issues:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model Diagnostics</span></span>
 <span><span class="co">#&gt; ================================================== </span></span>
 <span><span class="co">#&gt; Model class: beezdemand_fixed </span></span>
@@ -466,14 +466,14 @@ properties, and potential issues:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --------------------------------------------------</span></span>
 <span><span class="co">#&gt; Issues Detected (1):</span></span>
-<span><span class="co">#&gt;   1. Detected 3 potential outliers across subjects</span></span></code></pre>
+<span><span class="co">#&gt;   1. Detected 3 potential outliers across subjects</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="residual-plots">Residual Plots<a class="anchor" aria-label="anchor" href="#residual-plots"></a>
 </h3>
 <p><code><a href="../reference/plot_residuals.html">plot_residuals()</a></code> produces diagnostic plots. Use
 <code>$fitted</code> for a residuals-vs-fitted plot:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/residuals-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
@@ -486,9 +486,9 @@ properties, and potential issues:</p>
 </h3>
 <p><code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> with no arguments returns fitted values at the
 observed prices:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 160 × 3</span></span></span>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 160 × 3</span></span></span>
 <span><span class="co">#&gt;        x id    .fitted</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>     0 19      10.2 </span></span>
@@ -501,16 +501,16 @@ observed prices:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>     0 142      6.17</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>     0 156      8.35</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>     0 188      6.30</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 150 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 150 more rows</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="custom-price-grid">Custom Price Grid<a class="anchor" aria-label="anchor" href="#custom-price-grid"></a>
 </h3>
 <p>Supply <code>newdata</code> to predict at specific prices:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_prices</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_hs</span>, newdata <span class="op">=</span> <span class="va">new_prices</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 70 × 3</span></span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_hs</span>, newdata <span class="op">=</span> <span class="va">new_prices</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 70 × 3</span></span></span>
 <span><span class="co">#&gt;        x id    .fitted</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>     0 19      10.2 </span></span>
@@ -523,7 +523,7 @@ observed prices:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>     0 142      6.17</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>     0 156      8.35</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>     0 188      6.30</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 60 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 60 more rows</span></span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -536,10 +536,10 @@ curve to aggregated data.</p>
 </h3>
 <p><code>agg = "Mean"</code> computes the mean consumption at each price
 across subjects, then fits a single curve to those means:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_mean</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, agg <span class="op">=</span> <span class="st">"Mean"</span><span class="op">)</span></span>
-<span><span class="va">fit_mean</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="va">fit_mean</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
 <span><span class="co">#&gt; ==========================</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -551,8 +551,8 @@ across subjects, then fits a single curve to those means:</p>
 <span><span class="co">#&gt; Aggregation: Mean </span></span>
 <span><span class="co">#&gt; Subjects: 1 ( 1 converged, 0 failed)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_mean</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/agg_mean_plot-1.png" class="r-plt" alt="" width="1008"></p>
 </div>
@@ -562,10 +562,10 @@ across subjects, then fits a single curve to those means:</p>
 <p><code>agg = "Pooled"</code> fits a single curve to all data points
 pooled together, retaining error around each observation but ignoring
 within-subject clustering:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_pooled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, agg <span class="op">=</span> <span class="st">"Pooled"</span><span class="op">)</span></span>
-<span><span class="va">fit_pooled</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; </span></span>
+<span><span class="va">fit_pooled</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed-Effect Demand Model</span></span>
 <span><span class="co">#&gt; ==========================</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -577,8 +577,8 @@ within-subject clustering:</p>
 <span><span class="co">#&gt; Aggregation: Pooled </span></span>
 <span><span class="co">#&gt; Subjects: 1 ( 1 converged, 0 failed)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<span><span class="co">#&gt; Use summary() for parameter summaries, tidy() for tidy output.</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_pooled</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fixed-demand_files/figure-html/agg_pooled_plot-1.png" class="r-plt" alt="" width="1008"></p>
 </div>

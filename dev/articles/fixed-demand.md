@@ -40,20 +40,19 @@ x} - 1)
 ``` r
 fit_hs <- fit_demand_fixed(apt, equation = "hs", k = 2)
 fit_hs
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "hs", k = 2)
+#> 
+#> Equation: hs 
+#> k: fixed (2) 
+#> Subjects: 10 ( 10 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model
-    #> ==========================
-    #> 
-    #> Call:
-    #> fit_demand_fixed(data = apt, equation = "hs", k = 2)
-    #> 
-    #> Equation: hs 
-    #> k: fixed (2) 
-    #> Subjects: 10 ( 10 converged, 0 failed)
-    #> 
-    #> Use summary() for parameter summaries, tidy() for tidy output.
 
 ### Koffarnus (“koff”)
 
@@ -64,20 +63,19 @@ Q = Q_0 \cdot 10^{k \cdot (e^{-\alpha \cdot Q_0 \cdot x} - 1)}
 ``` r
 fit_koff <- fit_demand_fixed(apt, equation = "koff", k = 2)
 fit_koff
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "koff", k = 2)
+#> 
+#> Equation: koff 
+#> k: fixed (2) 
+#> Subjects: 10 ( 10 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model
-    #> ==========================
-    #> 
-    #> Call:
-    #> fit_demand_fixed(data = apt, equation = "koff", k = 2)
-    #> 
-    #> Equation: koff 
-    #> k: fixed (2) 
-    #> Subjects: 10 ( 10 converged, 0 failed)
-    #> 
-    #> Use summary() for parameter summaries, tidy() for tidy output.
 
 ### Simplified (“simplified”)
 
@@ -89,20 +87,19 @@ Q = Q_0 \cdot e^{-\alpha \cdot Q_0 \cdot x}
 ``` r
 fit_simplified <- fit_demand_fixed(apt, equation = "simplified")
 fit_simplified
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "simplified")
+#> 
+#> Equation: simplified 
+#> k: none (simplified equation) 
+#> Subjects: 10 ( 10 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model
-    #> ==========================
-    #> 
-    #> Call:
-    #> fit_demand_fixed(data = apt, equation = "simplified")
-    #> 
-    #> Equation: simplified 
-    #> k: none (simplified equation) 
-    #> Subjects: 10 ( 10 converged, 0 failed)
-    #> 
-    #> Use summary() for parameter summaries, tidy() for tidy output.
 
 ## The k Parameter
 
@@ -151,77 +148,73 @@ programmatic access to results.
 
 ``` r
 tidy(fit_hs)
+#> # A tibble: 40 × 10
+#>    id    term  estimate std.error statistic p.value component estimate_scale
+#>    <chr> <chr>    <dbl>     <dbl>     <dbl>   <dbl> <chr>     <chr>         
+#>  1 19    Q0       10.2      0.269        NA      NA fixed     natural       
+#>  2 30    Q0        2.81     0.226        NA      NA fixed     natural       
+#>  3 38    Q0        4.50     0.215        NA      NA fixed     natural       
+#>  4 60    Q0        9.92     0.459        NA      NA fixed     natural       
+#>  5 68    Q0       10.4      0.329        NA      NA fixed     natural       
+#>  6 106   Q0        5.68     0.300        NA      NA fixed     natural       
+#>  7 113   Q0        6.20     0.174        NA      NA fixed     natural       
+#>  8 142   Q0        6.17     0.641        NA      NA fixed     natural       
+#>  9 156   Q0        8.35     0.411        NA      NA fixed     natural       
+#> 10 188   Q0        6.30     0.564        NA      NA fixed     natural       
+#> # ℹ 30 more rows
+#> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 ```
-
-    #> # A tibble: 40 × 10
-    #>    id    term  estimate std.error statistic p.value component estimate_scale
-    #>    <chr> <chr>    <dbl>     <dbl>     <dbl>   <dbl> <chr>     <chr>         
-    #>  1 19    Q0       10.2      0.269        NA      NA fixed     natural       
-    #>  2 30    Q0        2.81     0.226        NA      NA fixed     natural       
-    #>  3 38    Q0        4.50     0.215        NA      NA fixed     natural       
-    #>  4 60    Q0        9.92     0.459        NA      NA fixed     natural       
-    #>  5 68    Q0       10.4      0.329        NA      NA fixed     natural       
-    #>  6 106   Q0        5.68     0.300        NA      NA fixed     natural       
-    #>  7 113   Q0        6.20     0.174        NA      NA fixed     natural       
-    #>  8 142   Q0        6.17     0.641        NA      NA fixed     natural       
-    #>  9 156   Q0        8.35     0.411        NA      NA fixed     natural       
-    #> 10 188   Q0        6.30     0.564        NA      NA fixed     natural       
-    #> # ℹ 30 more rows
-    #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 
 ### glance(): Model-Level Summary
 
 ``` r
 glance(fit_hs)
+#> # A tibble: 1 × 12
+#>   model_class      backend equation k_spec     nobs n_subjects n_success n_fail
+#>   <chr>            <chr>   <chr>    <chr>     <int>      <int>     <int>  <int>
+#> 1 beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0
+#> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 ```
-
-    #> # A tibble: 1 × 12
-    #>   model_class      backend equation k_spec     nobs n_subjects n_success n_fail
-    #>   <chr>            <chr>   <chr>    <chr>     <int>      <int>     <int>  <int>
-    #> 1 beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0
-    #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 
 ### augment(): Fitted Values and Residuals
 
 ``` r
 augment(fit_hs)
+#> # A tibble: 146 × 6
+#>    id        x     y     k .fitted  .resid
+#>    <chr> <dbl> <dbl> <dbl>   <dbl>   <dbl>
+#>  1 19      0      10     2   10.2  -0.159 
+#>  2 19      0.5    10     2    9.69  0.314 
+#>  3 19      1      10     2    9.24  0.760 
+#>  4 19      1.5     8     2    8.82 -0.819 
+#>  5 19      2       8     2    8.42 -0.421 
+#>  6 19      2.5     8     2    8.04 -0.0444
+#>  7 19      3       7     2    7.69 -0.689 
+#>  8 19      4       7     2    7.03 -0.0334
+#>  9 19      5       7     2    6.45  0.554 
+#> 10 19      6       6     2    5.92  0.0820
+#> # ℹ 136 more rows
 ```
-
-    #> # A tibble: 146 × 6
-    #>    id        x     y     k .fitted  .resid
-    #>    <chr> <dbl> <dbl> <dbl>   <dbl>   <dbl>
-    #>  1 19      0      10     2   10.2  -0.159 
-    #>  2 19      0.5    10     2    9.69  0.314 
-    #>  3 19      1      10     2    9.24  0.760 
-    #>  4 19      1.5     8     2    8.82 -0.819 
-    #>  5 19      2       8     2    8.42 -0.421 
-    #>  6 19      2.5     8     2    8.04 -0.0444
-    #>  7 19      3       7     2    7.69 -0.689 
-    #>  8 19      4       7     2    7.03 -0.0334
-    #>  9 19      5       7     2    6.45  0.554 
-    #> 10 19      6       6     2    5.92  0.0820
-    #> # ℹ 136 more rows
 
 ### confint(): Confidence Intervals
 
 ``` r
 confint(fit_hs)
+#> # A tibble: 40 × 6
+#>    id    term  estimate conf.low conf.high level
+#>    <chr> <chr>    <dbl>    <dbl>     <dbl> <dbl>
+#>  1 19    Q0       10.2      9.63     10.7   0.95
+#>  2 30    Q0        2.81     2.36      3.25  0.95
+#>  3 38    Q0        4.50     4.08      4.92  0.95
+#>  4 60    Q0        9.92     9.02     10.8   0.95
+#>  5 68    Q0       10.4      9.75     11.0   0.95
+#>  6 106   Q0        5.68     5.10      6.27  0.95
+#>  7 113   Q0        6.20     5.85      6.54  0.95
+#>  8 142   Q0        6.17     4.92      7.43  0.95
+#>  9 156   Q0        8.35     7.54      9.15  0.95
+#> 10 188   Q0        6.30     5.20      7.41  0.95
+#> # ℹ 30 more rows
 ```
-
-    #> # A tibble: 40 × 6
-    #>    id    term  estimate conf.low conf.high level
-    #>    <chr> <chr>    <dbl>    <dbl>     <dbl> <dbl>
-    #>  1 19    Q0       10.2      9.63     10.7   0.95
-    #>  2 30    Q0        2.81     2.36      3.25  0.95
-    #>  3 38    Q0        4.50     4.08      4.92  0.95
-    #>  4 60    Q0        9.92     9.02     10.8   0.95
-    #>  5 68    Q0       10.4      9.75     11.0   0.95
-    #>  6 106   Q0        5.68     5.10      6.27  0.95
-    #>  7 113   Q0        6.20     5.85      6.54  0.95
-    #>  8 142   Q0        6.17     4.92      7.43  0.95
-    #>  9 156   Q0        8.35     7.54      9.15  0.95
-    #> 10 188   Q0        6.30     5.20      7.41  0.95
-    #> # ℹ 30 more rows
 
 ### summary(): Formatted Summary
 
@@ -230,46 +223,45 @@ formatted overview including parameter distributions across subjects:
 
 ``` r
 summary(fit_hs)
+#> 
+#> Fixed-Effect Demand Model Summary
+#> ================================================== 
+#> 
+#> Equation: hs 
+#> k: fixed (2) 
+#> 
+#> Fit Summary:
+#>   Total subjects: 10 
+#>   Converged: 10 
+#>   Failed: 0 
+#>   Total observations: 146 
+#> 
+#> Parameter Summary (across subjects):
+#>   Q0:
+#>     Median: 6.2498 
+#>     Range: [ 2.8074 , 10.3904 ]
+#>   alpha:
+#>     Median: 0.004251 
+#>     Range: [ 0.001987 , 0.00785 ]
+#> 
+#> Per-subject coefficients:
+#> -------------------------
+#> # A tibble: 40 × 10
+#>    id    term      estimate std.error statistic p.value component estimate_scale
+#>    <chr> <chr>        <dbl>     <dbl>     <dbl>   <dbl> <chr>     <chr>         
+#>  1 106   Q0         5.68     0.300           NA      NA fixed     natural       
+#>  2 106   alpha      0.00628  0.000432        NA      NA fixed     natural       
+#>  3 106   alpha_st…  0.0257   0.00176         NA      NA fixed     natural       
+#>  4 106   k          2       NA               NA      NA fixed     natural       
+#>  5 113   Q0         6.20     0.174           NA      NA fixed     natural       
+#>  6 113   alpha      0.00199  0.000109        NA      NA fixed     natural       
+#>  7 113   alpha_st…  0.00812  0.000447        NA      NA fixed     natural       
+#>  8 113   k          2       NA               NA      NA fixed     natural       
+#>  9 142   Q0         6.17     0.641           NA      NA fixed     natural       
+#> 10 142   alpha      0.00237  0.000400        NA      NA fixed     natural       
+#> # ℹ 30 more rows
+#> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model Summary
-    #> ================================================== 
-    #> 
-    #> Equation: hs 
-    #> k: fixed (2) 
-    #> 
-    #> Fit Summary:
-    #>   Total subjects: 10 
-    #>   Converged: 10 
-    #>   Failed: 0 
-    #>   Total observations: 146 
-    #> 
-    #> Parameter Summary (across subjects):
-    #>   Q0:
-    #>     Median: 6.2498 
-    #>     Range: [ 2.8074 , 10.3904 ]
-    #>   alpha:
-    #>     Median: 0.004251 
-    #>     Range: [ 0.001987 , 0.00785 ]
-    #> 
-    #> Per-subject coefficients:
-    #> -------------------------
-    #> # A tibble: 40 × 10
-    #>    id    term      estimate std.error statistic p.value component estimate_scale
-    #>    <chr> <chr>        <dbl>     <dbl>     <dbl>   <dbl> <chr>     <chr>         
-    #>  1 106   Q0         5.68     0.300           NA      NA fixed     natural       
-    #>  2 106   alpha      0.00628  0.000432        NA      NA fixed     natural       
-    #>  3 106   alpha_st…  0.0257   0.00176         NA      NA fixed     natural       
-    #>  4 106   k          2       NA               NA      NA fixed     natural       
-    #>  5 113   Q0         6.20     0.174           NA      NA fixed     natural       
-    #>  6 113   alpha      0.00199  0.000109        NA      NA fixed     natural       
-    #>  7 113   alpha_st…  0.00812  0.000447        NA      NA fixed     natural       
-    #>  8 113   k          2       NA               NA      NA fixed     natural       
-    #>  9 142   Q0         6.17     0.641           NA      NA fixed     natural       
-    #> 10 142   alpha      0.00237  0.000400        NA      NA fixed     natural       
-    #> # ℹ 30 more rows
-    #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 
 ## Normalized Alpha (\alpha^\*)
 
@@ -291,21 +283,20 @@ errors are computed via the delta method. `alpha_star` requires k \cdot
 tidy(fit_hs) |>
   filter(term == "alpha_star") |>
   select(id, term, estimate, std.error)
+#> # A tibble: 10 × 4
+#>    id    term       estimate std.error
+#>    <chr> <chr>         <dbl>     <dbl>
+#>  1 19    alpha_star  0.00836  0.000249
+#>  2 30    alpha_star  0.0240   0.00276 
+#>  3 38    alpha_star  0.0172   0.00146 
+#>  4 60    alpha_star  0.0176   0.000592
+#>  5 68    alpha_star  0.0113   0.000394
+#>  6 106   alpha_star  0.0257   0.00176 
+#>  7 113   alpha_star  0.00812  0.000447
+#>  8 142   alpha_star  0.00969  0.00163 
+#>  9 156   alpha_star  0.0193   0.000668
+#> 10 188   alpha_star  0.0321   0.00184
 ```
-
-    #> # A tibble: 10 × 4
-    #>    id    term       estimate std.error
-    #>    <chr> <chr>         <dbl>     <dbl>
-    #>  1 19    alpha_star  0.00836  0.000249
-    #>  2 30    alpha_star  0.0240   0.00276 
-    #>  3 38    alpha_star  0.0172   0.00146 
-    #>  4 60    alpha_star  0.0176   0.000592
-    #>  5 68    alpha_star  0.0113   0.000394
-    #>  6 106   alpha_star  0.0257   0.00176 
-    #>  7 113   alpha_star  0.00812  0.000447
-    #>  8 142   alpha_star  0.00969  0.00163 
-    #>  9 156   alpha_star  0.0193   0.000668
-    #> 10 188   alpha_star  0.0321   0.00184
 
 ## Plotting
 
@@ -350,25 +341,24 @@ summarizes convergence, residual properties, and potential issues:
 
 ``` r
 check_demand_model(fit_hs)
+#> 
+#> Model Diagnostics
+#> ================================================== 
+#> Model class: beezdemand_fixed 
+#> 
+#> Convergence:
+#>   Status: Converged
+#> 
+#> Residuals:
+#>   Mean: 0.0284
+#>   SD: 0.5306
+#>   Range: [-1.458, 2.228]
+#>   Outliers: 3 observations
+#> 
+#> --------------------------------------------------
+#> Issues Detected (1):
+#>   1. Detected 3 potential outliers across subjects
 ```
-
-    #> 
-    #> Model Diagnostics
-    #> ================================================== 
-    #> Model class: beezdemand_fixed 
-    #> 
-    #> Convergence:
-    #>   Status: Converged
-    #> 
-    #> Residuals:
-    #>   Mean: 0.0284
-    #>   SD: 0.5306
-    #>   Range: [-1.458, 2.228]
-    #>   Outliers: 3 observations
-    #> 
-    #> --------------------------------------------------
-    #> Issues Detected (1):
-    #>   1. Detected 3 potential outliers across subjects
 
 ### Residual Plots
 
@@ -390,22 +380,21 @@ returns fitted values at the observed prices:
 
 ``` r
 predict(fit_hs)
+#> # A tibble: 160 × 3
+#>        x id    .fitted
+#>    <dbl> <chr>   <dbl>
+#>  1     0 19      10.2 
+#>  2     0 30       2.81
+#>  3     0 38       4.50
+#>  4     0 60       9.92
+#>  5     0 68      10.4 
+#>  6     0 106      5.68
+#>  7     0 113      6.20
+#>  8     0 142      6.17
+#>  9     0 156      8.35
+#> 10     0 188      6.30
+#> # ℹ 150 more rows
 ```
-
-    #> # A tibble: 160 × 3
-    #>        x id    .fitted
-    #>    <dbl> <chr>   <dbl>
-    #>  1     0 19      10.2 
-    #>  2     0 30       2.81
-    #>  3     0 38       4.50
-    #>  4     0 60       9.92
-    #>  5     0 68      10.4 
-    #>  6     0 106      5.68
-    #>  7     0 113      6.20
-    #>  8     0 142      6.17
-    #>  9     0 156      8.35
-    #> 10     0 188      6.30
-    #> # ℹ 150 more rows
 
 ### Custom Price Grid
 
@@ -414,22 +403,21 @@ Supply `newdata` to predict at specific prices:
 ``` r
 new_prices <- data.frame(x = c(0, 0.5, 1, 2, 5, 10, 20))
 predict(fit_hs, newdata = new_prices)
+#> # A tibble: 70 × 3
+#>        x id    .fitted
+#>    <dbl> <chr>   <dbl>
+#>  1     0 19      10.2 
+#>  2     0 30       2.81
+#>  3     0 38       4.50
+#>  4     0 60       9.92
+#>  5     0 68      10.4 
+#>  6     0 106      5.68
+#>  7     0 113      6.20
+#>  8     0 142      6.17
+#>  9     0 156      8.35
+#> 10     0 188      6.30
+#> # ℹ 60 more rows
 ```
-
-    #> # A tibble: 70 × 3
-    #>        x id    .fitted
-    #>    <dbl> <chr>   <dbl>
-    #>  1     0 19      10.2 
-    #>  2     0 30       2.81
-    #>  3     0 38       4.50
-    #>  4     0 60       9.92
-    #>  5     0 68      10.4 
-    #>  6     0 106      5.68
-    #>  7     0 113      6.20
-    #>  8     0 142      6.17
-    #>  9     0 156      8.35
-    #> 10     0 188      6.30
-    #> # ℹ 60 more rows
 
 ## Aggregated Models
 
@@ -444,21 +432,20 @@ subjects, then fits a single curve to those means:
 ``` r
 fit_mean <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Mean")
 fit_mean
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Mean")
+#> 
+#> Equation: hs 
+#> k: fixed (2) 
+#> Aggregation: Mean 
+#> Subjects: 1 ( 1 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model
-    #> ==========================
-    #> 
-    #> Call:
-    #> fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Mean")
-    #> 
-    #> Equation: hs 
-    #> k: fixed (2) 
-    #> Aggregation: Mean 
-    #> Subjects: 1 ( 1 converged, 0 failed)
-    #> 
-    #> Use summary() for parameter summaries, tidy() for tidy output.
 
 ``` r
 plot(fit_mean)
@@ -475,21 +462,20 @@ clustering:
 ``` r
 fit_pooled <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Pooled")
 fit_pooled
+#> 
+#> Fixed-Effect Demand Model
+#> ==========================
+#> 
+#> Call:
+#> fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Pooled")
+#> 
+#> Equation: hs 
+#> k: fixed (2) 
+#> Aggregation: Pooled 
+#> Subjects: 1 ( 1 converged, 0 failed)
+#> 
+#> Use summary() for parameter summaries, tidy() for tidy output.
 ```
-
-    #> 
-    #> Fixed-Effect Demand Model
-    #> ==========================
-    #> 
-    #> Call:
-    #> fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Pooled")
-    #> 
-    #> Equation: hs 
-    #> k: fixed (2) 
-    #> Aggregation: Pooled 
-    #> Subjects: 1 ( 1 converged, 0 failed)
-    #> 
-    #> Use summary() for parameter summaries, tidy() for tidy output.
 
 ``` r
 plot(fit_pooled)

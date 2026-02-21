@@ -97,6 +97,32 @@ Kaplan</h4>
     
     
 <div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
+<p>Cross-price demand analysis examines how consumption of one commodity
+changes as the price of another commodity varies. This is central to
+understanding economic relationships between goods:</p>
+<ul>
+<li>
+<strong>Substitutes</strong>: When the price of the target commodity
+increases and consumption of the alternative increases, the goods
+function as substitutes (e.g., e-cigarettes and combustible
+cigarettes).</li>
+<li>
+<strong>Complements</strong>: When the price of the target increases
+and consumption of the alternative <em>decreases</em>, the goods
+function as complements.</li>
+<li>
+<strong>Independent</strong>: When the price of one commodity does
+not meaningfully affect consumption of the other.</li>
+</ul>
+<p>These relationships are quantified through cross-price elasticity
+parameters. The <code>beezdemand</code> package provides nonlinear
+(<code><a href="../reference/fit_cp_nls.html">fit_cp_nls()</a></code>), linear (<code><a href="../reference/fit_cp_linear.html">fit_cp_linear()</a></code>), and
+mixed-effects linear (<code>fit_cp_linear(type = "mixed")</code>)
+approaches for cross-price modeling.</p>
+</div>
+<div class="section level2">
 <h2 id="data-structure">Data Structure<a class="anchor" aria-label="anchor" href="#data-structure"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -462,7 +488,7 @@ whether the products are substitutes (I &lt; 0) or complements (I &gt;
 </tbody>
 </table>
 <div class="section level3">
-<h3 id="demonstration-from-rzeszutek-et-al--under-review">Demonstration from Rzeszutek et al. (under review)<a class="anchor" aria-label="anchor" href="#demonstration-from-rzeszutek-et-al--under-review"></a>
+<h3 id="demonstration-from-rzeszutek-et-al--2025">Demonstration from Rzeszutek et al. (2025)<a class="anchor" aria-label="anchor" href="#demonstration-from-rzeszutek-et-al--2025"></a>
 </h3>
 <div class="section level4">
 <h4 id="low-nicotine-study-kaplan-et-al--2018">Low Nicotine Study (Kaplan et al., 2018)<a class="anchor" aria-label="anchor" href="#low-nicotine-study-kaplan-et-al--2018"></a>
@@ -677,7 +703,7 @@ data)</caption>
 <span>    <span class="fu">group_by</span><span class="op">(</span><span class="va">id</span>, <span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">nest</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span></span>
-<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_unsystematic_cp</span><span class="op">)</span>,</span>
+<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_systematic_cp</span><span class="op">)</span>,</span>
 <span>        fit <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">fit_cp_nls</span>, equation <span class="op">=</span> <span class="st">"exponentiated"</span>, return_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>        summary <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">summary</span><span class="op">)</span>,</span>
 <span>        plot <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">plot</span>, x_trans <span class="op">=</span> <span class="st">"log10"</span><span class="op">)</span>,</span>
@@ -1560,7 +1586,7 @@ data)</caption>
 <span>    <span class="fu">group_by</span><span class="op">(</span><span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">nest</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span></span>
-<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_unsystematic_cp</span><span class="op">)</span>,</span>
+<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_systematic_cp</span><span class="op">)</span>,</span>
 <span>        fit <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">fit_cp_nls</span>, equation <span class="op">=</span> <span class="st">"exponentiated"</span>, return_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>        summary <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">summary</span><span class="op">)</span>,</span>
 <span>        plot <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">plot</span>, x_trans <span class="op">=</span> <span class="st">"log10"</span><span class="op">)</span>,</span>
@@ -1681,7 +1707,7 @@ data)</caption>
 <span>    <span class="fu">group_by</span><span class="op">(</span><span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">nest</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span></span>
-<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_unsystematic_cp</span><span class="op">)</span>,</span>
+<span>        unsys <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">check_systematic_cp</span><span class="op">)</span>,</span>
 <span>        fit <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">data</span>, <span class="va">fit_cp_nls</span>, equation <span class="op">=</span> <span class="st">"exponentiated"</span>, return_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>        summary <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">summary</span><span class="op">)</span>,</span>
 <span>        plot <span class="op">=</span> <span class="fu">map</span><span class="op">(</span><span class="va">fit</span>, <span class="va">plot</span>, x_trans <span class="op">=</span> <span class="st">"log10"</span><span class="op">)</span>,</span>
