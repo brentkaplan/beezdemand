@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = FALSE, # Keep code chunks separate for clarity
+  collapse = TRUE,
   comment = "#>",   # R console style comments
   dev = "png",
   dpi = 144,
@@ -250,45 +250,27 @@ print(fit_one_factor_dose)
 
 ### Inspecting Model Fits
 
-Once a model is fit, you can inspect it using several S3 methods. We'll use `fit_one_factor_dose` if it converged.
+Once a model is fit, you can inspect it using several S3 methods.
 
 ```{r}
-# Use a fit that is likely to have converged, e.g., fit_one_factor_dose
-active_fit <- if (!is.null(fit_one_factor_dose$model)) {
-  fit_one_factor_dose
-} else {
-  fit_no_factors_vignette
-}
+# Summary
+summary(fit_one_factor_dose)
 
-if (!is.null(active_fit$model)) {
-  cat("--- Using S3 print() method: ---\n")
-  print(active_fit)
+# Fixed effects
+coef(fit_one_factor_dose, type = "fixed")
 
-  cat("\n--- Using S3 summary() method: ---\n")
-  # The summary.beezdemand_nlme method calls summary.nlme and formats it
-  model_summary <- summary(active_fit)
-  print(model_summary)
+# Random effects (deviations from fixed)
+head(coef(fit_one_factor_dose, type = "random"))
 
-  cat("\n--- Extracting Coefficients using S3 coef(): ---\n")
-  cat("Fixed effects:\n")
-  print(coef(active_fit, type = "fixed"))
+# Subject-specific coefficients (fixed + random)
+head(coef(fit_one_factor_dose, type = "combined"))
 
-  cat("\nRandom effects (deviations):\n")
-  # Printing ranef can be long, so let's show head
-  print(head(coef(active_fit, type = "random")))
+# Access nlme fixef/ranef directly
+nlme::fixef(fit_one_factor_dose)
+utils::head(nlme::ranef(fit_one_factor_dose))
 
-  cat("\nSubject-specific coefficients (fixed + random):\n")
-  print(head(coef(active_fit, type = "combined"))) # Default type
-
-  cat("\nUsing S3 fixef() and ranef():\n")
-  print(nlme::fixef(active_fit))
-  print(utils::head(nlme::ranef(active_fit)))
-
-  cat("\nStart values that were used for the NLME fit:\n")
-  print(active_fit$start_values_used)
-} else {
-  cat("No suitable model converged for detailed inspection in the vignette.\n")
-}
+# Start values that were used for the NLME fit
+fit_one_factor_dose$start_values_used
 ```
 
 ### Making Predictions (predict())
@@ -296,33 +278,22 @@ if (!is.null(active_fit$model)) {
 The S3 `predict()` method can generate population-level or group-level predictions.
 
 ```{r}
-if (!is.null(active_fit$model)) {
-  cat("--- Population-level predictions (log10 scale for 'zben'): ---\n")
-  preds_pop_log <- predict(active_fit, level = 0)
-  print(head(preds_pop_log))
+# Population-level predictions (log10 scale for 'zben')
+preds_pop_log <- predict(fit_one_factor_dose, level = 0)
+head(preds_pop_log)
 
-  cat(
-    "\n--- Population-level predictions (natural scale, back-transformed): ---\n"
-  )
-  # Assuming y_var was ll4, inv_fun is ll4_inv
-  preds_pop_natural <- predict(
-    active_fit,
-    level = 0,
-    inv_fun = ll4_inv
-  )
-  print(head(preds_pop_natural))
+# Population-level predictions (natural scale, back-transformed)
+preds_pop_natural <- predict(
+  fit_one_factor_dose,
+  level = 0,
+  inv_fun = ll4_inv
+)
+head(preds_pop_natural)
 
-  cat(
-    "\n--- Group-level predictions for first few data points (log10 scale): ---\n"
-  )
-  # Need to ensure newdata has factors with correct levels if different from original
-  # For simplicity, predict on a subset of the original data
-  sample_newdata <- active_fit$data[1:5, ]
-  preds_group_log <- predict(active_fit, newdata = sample_newdata, level = 1)
-  print(preds_group_log)
-} else {
-  cat("No suitable model converged for predictions in the vignette.\n")
-}
+# Group-level predictions for first few data points
+sample_newdata <- fit_one_factor_dose$data[1:5, ]
+preds_group_log <- predict(fit_one_factor_dose, newdata = sample_newdata, level = 1)
+preds_group_log
 ```
 
 ## Visualizing Model Fits with `plot()`
@@ -355,22 +326,14 @@ Let's use `fit_one_factor_dose` (modeling demand for Alfentanil
 by `dose`, with `y_ll4` as the dependent variable).
 
 ```{r plot_one_factor, cache = FALSE, fig.cap="Demand curves for Alfentanil by dose (population level). y-axis on natural scale."}
-# Assuming fit_one_factor_dose was successfully created earlier in the vignette
-if (!is.null(fit_one_factor_dose$model)) {
-  # Define the inverse transformation function (if y_ll4 is log10(y))
-  #   ll4_inv <- function(y_log10) 10^y_log10
-
-  plot(
-    fit_one_factor_dose,
-    inv_fun = ll4_inv,
-    color_by = "dose", # Color lines and points by dose
-    shape_by = "dose", # Different shapes for points by dose
-    observed_point_alpha = 0.7,
-    title = "Alfentanil Demand by Dose (Population Fit)"
-  )
-} else {
-  cat("fit_one_factor_dose model object not available for plotting.\n")
-}
+plot(
+  fit_one_factor_dose,
+  inv_fun = ll4_inv,
+  color_by = "dose",
+  shape_by = "dose",
+  observed_point_alpha = 0.7,
+  title = "Alfentanil Demand by Dose (Population Fit)"
+)
 ```
 
 This plot shows the population-level demand curves for each dose of Alfentanil.
@@ -381,22 +344,18 @@ The y-axis has been back-transformed to the natural consumption scale using inv_
 We can also visualize the individual subject fits by setting `show_pred_lines = "individual"`.
 
 ```{r plot_one_factor_individual, cache = FALSE}
-if (!is.null(fit_one_factor_dose$model)) {
-  plot(
-    fit_one_factor_dose,
-    show_pred_lines = "individual",
-    inv_fun = ll4_inv,
-    color_by = "dose", # Color lines by dose
-    observed_point_alpha = 0.4,
-    y_trans = "pseudo_log",
-    ind_line_alpha = .5, # Make subject lines semi-transparent
-    title = "Alfentanil Demand by Dose (Subject-Specific Fits)"
-  ) +
-    ggplot2::guides(color = guide_legend(override.aes = list(alpha = 1))) + # Make legend opaque
-    facet_grid(~monkey)
-} else {
-  cat("fit_one_factor_dose model object not available for plotting.\n")
-}
+plot(
+  fit_one_factor_dose,
+  show_pred_lines = "individual",
+  inv_fun = ll4_inv,
+  color_by = "dose",
+  observed_point_alpha = 0.4,
+  y_trans = "pseudo_log",
+  ind_line_alpha = .5,
+  title = "Alfentanil Demand by Dose (Subject-Specific Fits)"
+) +
+  ggplot2::guides(color = guide_legend(override.aes = list(alpha = 1))) +
+  facet_grid(~monkey)
 ```
 
 Here, each thin line represents the fitted curve for an individual subject (monkey), colored by dose.
@@ -406,18 +365,14 @@ Here, each thin line represents the fitted curve for an individual subject (monk
 You can use `x_trans` and `y_trans` for axis transformations.
 
 ```{r plot_one_factor_axes, cache = FALSE}
-if (!is.null(fit_one_factor_dose$model)) {
-  plot(
-    fit_one_factor_dose,
-    inv_fun = ll4_inv,
-    color_by = "dose",
-    x_trans = "pseudo_log", # Log10 transform the x-axis
-    y_trans = "pseudo_log", # Pseudo-log transform the y-axis
-    title = "Alfentanil Demand (Log10 Price Scale)"
-  )
-} else {
-  cat("fit_one_factor_dose model object not available for plotting.\n")
-}
+plot(
+  fit_one_factor_dose,
+  inv_fun = ll4_inv,
+  color_by = "dose",
+  x_trans = "pseudo_log",
+  y_trans = "pseudo_log",
+  title = "Alfentanil Demand (Log10 Price Scale)"
+)
 ```
 
 Users can further customize the returned ggplot

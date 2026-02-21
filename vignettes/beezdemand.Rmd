@@ -83,7 +83,7 @@ library(beezdemand)
 
 ### Example Dataset
 
-An example dataset of responses on an Alcohol Purchase Task is provided. This object is called `apt` and is located within the `beezdemand` package. These data are a subset of from the paper by Kaplan & Reed (2018). Participants (id) reported the number of alcoholic drinks (y) they would be willing to purchase and consume at various prices (x; USD). Note the format of the data, which is called "long format". Long format data are data structured such that repeated observations are stacked in multiple rows, rather than across columns. First, take a look at an extract of the dataset `apt`, where I've subsetted rows 1 through 10 and 17 through 26:
+An example dataset of responses on an Alcohol Purchase Task is provided. This object is called `apt` and is located within the `beezdemand` package. These data are a subset from the paper by Kaplan & Reed (2018). Participants (id) reported the number of alcoholic drinks (y) they would be willing to purchase and consume at various prices (x; USD). Note the format of the data, which is called "long format". Long format data are data structured such that repeated observations are stacked in multiple rows, rather than across columns. First, take a look at an extract of the dataset `apt`, where I've subsetted rows 1 through 10 and 17 through 26:
 
 ```{r example-data-set, echo=FALSE, results='asis'}
 knitr::kable(
@@ -101,7 +101,7 @@ Take for example the format of most datasets that would be exported from a data 
 ```{r example-wide}
 ## the following code takes the apt data, which are in long format, and converts
 ## to a wide format that might be seen from data collection software
-wide <- spread(apt, x, y)
+wide <- as.data.frame(tidyr::pivot_wider(apt, names_from = x, values_from = y))
 colnames(wide) <- c("id", paste0("price_", seq(1, 16, by = 1)))
 knitr::kable(
     wide[1:5, 1:10],
@@ -130,7 +130,7 @@ knitr::kable(
 )
 ```
 
-Now we can convert into a long format using some of the helpful functions in the `tidyverse` package (make sure the package is loaded before trying the commands below).
+Now we can convert into a long format using some of the helpful functions in the `tidyr` package (make sure the package is loaded before trying the commands below).
 
 ```{r example-w2l}
 ## using the dataframe 'wide', we pivot all columns except 'id' into long format,
@@ -235,7 +235,8 @@ knitr::kable(
 
 Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
-the linear model, exponential model, and exponentiated model. `beezdemand`
+the linear model, exponential model, exponentiated model, and
+simplified exponential model (Rzeszutek et al., 2025). `beezdemand`
 also supports mixed-effects and hurdle demand models (see the dedicated
 vignettes for those workflows).
 
@@ -266,7 +267,7 @@ consistent methods like `summary()`, `tidy()`, `glance()`, `predict()`,
 
 Key arguments:
 
-* `equation` can be `"linear"`, `"hs"`, or `"koff"` (Hursh & Silberberg, 2008; Koffarnus et al., 2015).
+* `equation` can be `"linear"`, `"hs"`, `"koff"`, or `"simplified"` (Hursh & Silberberg, 2008; Koffarnus et al., 2015; Rzeszutek et al., 2025).
 
 * `k` can be a fixed numeric value (e.g., `2`) or one of the helper modes:
   `"ind"`, `"fit"`, or `"share"`.
@@ -342,6 +343,16 @@ Here is the same idea specifying the `"koff"` equation (Koffarnus et al., 2015):
 ```{r koff, eval=FALSE}
 fit_demand_fixed(data = apt, equation = "koff", k = 2)
 ```
+
+The `"simplified"` equation (Rzeszutek et al., 2025), also known as the Simplified
+Exponential with Normalized Decay (SND), handles zeros natively without requiring
+data transformation and does not require a `k` parameter:
+
+```{r simplified, eval=FALSE}
+fit_demand_fixed(data = apt, equation = "simplified")
+```
+
+For a more detailed treatment of the simplified equation, see `vignette("fixed-demand")`.
 
 By specifying `agg = "Mean"`, y values at each x value are aggregated and a single curve is fit to the data (disregarding error around each averaged point):
 

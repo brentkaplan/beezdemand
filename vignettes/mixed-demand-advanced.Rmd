@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = FALSE, # Keep code chunks separate for clarity
+  collapse = TRUE,
   comment = "#>",   # R console style comments
   dev = "png",
   dpi = 144,
@@ -116,8 +116,10 @@ The start_value_method = "pooled_nls" is often more robust for complex models.
 ```{r two_factor_add_note, echo=FALSE, results='asis'}
 if (render_fast) {
   cat(
-    "This example is omitted from the rendered vignette (it can be slow and may fail to converge). ",
-    "Set `render_fast <- FALSE` in the setup chunk to run it.\n"
+    "*This example is computationally intensive and is not run during standard vignette building. ",
+    "To run it, set `BEEZDEMAND_VIGNETTE_MODE=full` as an environment variable before building. ",
+    "When successful, the output shows fixed-effect estimates for each drug and dose combination ",
+    "on Q0 and alpha, plus random-effects variance components.*\n"
   )
 }
 ```
@@ -158,8 +160,9 @@ This allows the effect of dose to be different for each drug (and vice-versa).
 ```{r two_factor_int_note, echo=FALSE, results='asis'}
 if (render_fast) {
   cat(
-    "This example is omitted from the rendered vignette (it can be slow and may fail to converge). ",
-    "Set `render_fast <- FALSE` in the setup chunk to run it.\n"
+    "*This example is computationally intensive and is not run during standard vignette building. ",
+    "The interaction model allows the effect of dose to differ by drug (and vice versa), ",
+    "producing drug:dose interaction terms in the fixed-effects table.*\n"
   )
 }
 ```
@@ -197,8 +200,9 @@ The simplified equation form expects y_var to be raw consumption.
 ```{r simplified_equation_note, echo=FALSE, results='asis'}
 if (render_fast) {
   cat(
-    "This example is omitted from the rendered vignette (it can be slow and may fail to converge). ",
-    "Set `render_fast <- FALSE` in the setup chunk to run it.\n"
+    "*This example uses `equation_form = \"simplified\"` with raw consumption values (no LL4 ",
+    "transformation needed). The simplified equation handles zeros natively. When this example ",
+    "runs, the output resembles the `zben` model output but with `y` as the dependent variable.*\n"
   )
 }
 ```
@@ -634,9 +638,10 @@ may be computationally intensive.
 ```{r advanced_topics_note, echo=FALSE, results='asis'}
 if (render_fast) {
   cat(
-    "**Performance Note**: The sections below are omitted from the rendered vignette by default ",
-    "(they can be slow and may fail to converge). ",
-    "Set `render_fast <- FALSE` in the setup chunk to run them.\n"
+    "**Performance Note**: The code examples in the sections below are computationally intensive ",
+    "and are not evaluated during standard vignette building. The code is shown for reference. ",
+    "To run these examples, set the environment variable `BEEZDEMAND_VIGNETTE_MODE=full` before ",
+    "building vignettes.\n"
   )
 }
 ```

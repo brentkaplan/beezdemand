@@ -1,6 +1,7 @@
 ---
 title: "Hurdle Demand Models"
 author: "Brent Kaplan"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Hurdle Demand Models}
@@ -19,6 +20,8 @@ knitr::opts_chunk$set(
     warning = FALSE,
     message = FALSE
 )
+
+library(beezdemand)
 ```
 
 ## Introduction
@@ -99,7 +102,7 @@ knitr::kable(
 
 ### Basic Model Fitting
 
-```{r basic-fit, eval=FALSE}
+```{r basic-fit}
 # Fit 2-RE model (simpler, faster)
 fit2 <- fit_demand_hurdle(
     data = apt,
@@ -107,9 +110,11 @@ fit2 <- fit_demand_hurdle(
     x_var = "x",
     id_var = "id",
     random_effects = c("zeros", "q0"), # 2 random effects
-    verbose = 1
+    verbose = 0
 )
+```
 
+```{r fit-3re, eval=FALSE}
 # Fit 3-RE model (more flexible)
 fit3 <- fit_demand_hurdle(
     data = apt,
@@ -123,7 +128,7 @@ fit3 <- fit_demand_hurdle(
 
 ### Interpreting Output
 
-```{r summary-example, eval=FALSE}
+```{r summary-example}
 # View summary
 summary(fit2)
 
@@ -134,9 +139,6 @@ coef(fit2)
 tidy(fit2) |> head()
 glance(fit2)
 
-# Fitted values + residuals
-augment(fit2) |> head()
-
 # Get subject-specific parameters
 head(get_subject_pars(fit2))
 ```
@@ -145,7 +147,7 @@ head(get_subject_pars(fit2))
 
 Use `check_demand_model()` and the plotting helpers for quick post-fit checks.
 
-```{r diagnostics, eval=FALSE}
+```{r diagnostics}
 check_demand_model(fit2)
 plot_residuals(fit2)$fitted
 plot_qq(fit2)
@@ -210,13 +212,17 @@ A significant p-value suggests the 3-RE model provides a better fit.
 
 ## Visualization
 
-```{r plotting, eval=FALSE}
+```{r plotting-demand, fig.cap="Population demand curve from 2-RE hurdle model."}
 # Population demand curve
 plot(fit2, type = "demand")
+```
 
+```{r plotting-probability, fig.cap="Probability of zero consumption as a function of price."}
 # Probability of zero consumption
 plot(fit2, type = "probability")
+```
 
+```{r plotting-extra, eval=FALSE}
 # Distribution of individual parameters
 plot(fit2, type = "parameters")
 plot(fit2, type = "parameters", parameters = c("Q0", "alpha", "Pmax"))
