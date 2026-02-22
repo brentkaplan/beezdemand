@@ -22,9 +22,14 @@ For NLME models, this method delegates to \code{nlme::anova.lme()} on the
 underlying model objects when possible.
 }
 \examples{
-\dontrun{
-fit1 <- fit_demand_mixed(data, random_effects = "Q0")
-fit2 <- fit_demand_mixed(data, random_effects = c("Q0", "alpha"))
+\donttest{
+data(ko)
+fit1 <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                         id_var = "monkey", equation_form = "zben",
+                         random_effects = Q0 ~ 1)
+fit2 <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                         id_var = "monkey", equation_form = "zben",
+                         random_effects = Q0 + alpha ~ 1)
 anova(fit1, fit2)
 }
 

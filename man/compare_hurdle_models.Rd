@@ -26,10 +26,11 @@ Typically used to test whether adding the random effect on alpha (c_i)
 significantly improves model fit (3-RE vs 2-RE models).
 }
 \examples{
-\dontrun{
-fit3 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+\donttest{
+data(apt)
+fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
                           random_effects = c("zeros", "q0", "alpha"))
-fit2 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
                           random_effects = c("zeros", "q0"))
 compare_hurdle_models(fit3, fit2)
 }

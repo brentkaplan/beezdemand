@@ -12,10 +12,4 @@ Data frame with columns: legacy, canonical, type.
 \description{
 Returns a data frame mapping legacy column names to canonical names.
 }
-\examples{
-\dontrun{
-get_legacy_mapping()
-}
-
-}
 \keyword{internal}

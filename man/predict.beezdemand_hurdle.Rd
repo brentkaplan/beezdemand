@@ -54,17 +54,15 @@ helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 Returns predictions from a fitted hurdle demand model.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 
 # Get subject-specific parameters
 pars <- predict(fit, type = "parameters")
 
 # Predict demand at specific prices
 demand <- predict(fit, type = "demand", prices = c(0, 0.5, 1, 2, 5))
-
-# Predict probability of zero consumption
-probs <- predict(fit, type = "probability", prices = seq(0, 10, by = 0.5))
 }
 
 }

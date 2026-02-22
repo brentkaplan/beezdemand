@@ -592,12 +592,11 @@ predict.cp_model_lm <- function(object, newdata = NULL, ...) {
 #'   with the corresponding predictions.
 #'
 #' @examples
-#' \dontrun{
-#' # Population-level predictions:
-#' predict(fit_out_3, newdata = ex_sub, pred_type = "fixed")
-#'
-#' # Subject-specific predictions:
-#' predict(fit_out_3, newdata = ex_sub, pred_type = "random")
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_linear(etm, type = "mixed")
+#' new_prices <- data.frame(x = c(2, 4, 8, 16, 32, 64))
+#' predict(fit, newdata = new_prices, pred_type = "fixed")
 #' }
 #'
 #' @export
@@ -737,12 +736,10 @@ summary.cp_model_lmer <- function(object, ...) {
 #'   \item{p.value}{The p-value for the coefficient}
 #'
 #' @examples
-#' \dontrun{
-#' # Fit a cross-price demand model
-#' model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-#'
-#' # Get coefficients in tidy format
-#' tidy(model)
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_nls(etm, equation = "exponentiated")
+#' tidy(fit)
 #' }
 #'
 #' @importFrom tibble rownames_to_column
@@ -797,12 +794,10 @@ tidy.cp_model_nls <- function(x, ...) {
 #'   \item{transform}{The transformation applied to the data, if any}
 #'
 #' @examples
-#' \dontrun{
-#' # Fit a cross-price demand model
-#' model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-#'
-#' # Get model summary statistics
-#' glance(model)
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_nls(etm, equation = "exponentiated")
+#' glance(fit)
 #' }
 #'
 #' @export
@@ -844,11 +839,10 @@ glance.cp_model_nls <- function(x, ...) {
 #' transformation: `10^conf.low` and `10^conf.high` for log10-scale parameters.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_nls(etm, equation = "exponentiated")
 #' confint(fit)
-#' confint(fit, level = 0.90)
-#' confint(fit, method = "profile")  # Profile-t intervals
 #' }
 #'
 #' @importFrom nlstools confint2

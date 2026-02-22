@@ -15,13 +15,4 @@ Character. Canonical parameter name or original if no mapping found.
 \description{
 Maps legacy or variant parameter names to canonical names.
 }
-\examples{
-\dontrun{
-get_canonical_param("Q0d")
-# Returns: "q0"
-get_canonical_param("Alpha")
-# Returns: "alpha"
-}
-
-}
 \keyword{internal}

@@ -110,24 +110,15 @@ A ggplot2 object.
 Creates visualizations of fitted demand curves from a hurdle demand model.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 
 # Plot mean demand curve
 plot(fit)
 
-# Plot probability curves
-plot(fit, type = "probability")
-
-# Plot subject-specific probability curves (with population overlay)
-plot(fit, type = "probability", ids = c("1", "2", "3"))
-plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
-
 # Plot parameter distributions
 plot(fit, type = "parameters")
-
-# Plot individual curves
-plot(fit, type = "individual", subjects = c("1", "2", "3"))
 }
 
 }

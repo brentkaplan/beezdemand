@@ -1337,14 +1337,14 @@ print.beezdemand_comparison <- function(x, digits = 3, ...) {
 #'   `covariate`, `trend` (slope on log10 scale), and its CI (`lower.CL`, `upper.CL`).
 #'
 #' @examples
-#' \dontrun{
-#' trends <- get_demand_param_trends(
-#'   fit_obj = my_fit,
-#'   params = c("Q0", "alpha"),
-#'   covariates = c("age", "dose_num"),
-#'   specs = ~ drug,
-#'   at = list(age = 21, dose_num = 0.5)
-#' )
+#' \donttest{
+#' data(ko)
+#' ko$dose_num <- as.numeric(as.character(ko$dose))
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", factors = "drug",
+#'                         equation_form = "zben")
+#' trends <- get_demand_param_trends(fit, covariates = "dose_num",
+#'                                   specs = ~ drug)
 #' }
 #'
 #' @importFrom emmeans ref_grid emtrends
@@ -1510,12 +1510,11 @@ get_demand_param_trends <- function(
 #' @method print beezdemand_nlme
 #' @export
 #' @examples
-#' \dontrun{
-#' # Assuming 'fit_two_factor_no_interaction' is a beezdemand_nlme object
-#' print(fit_two_factor_no_interaction)
-#'
-#' # If fitting failed, print() will display diagnostic information
-#' # about the failure instead of model results.
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", equation_form = "zben")
+#' print(fit)
 #' }
 print.beezdemand_nlme <- function(
   x,
@@ -2036,11 +2035,11 @@ glance.beezdemand_nlme <- function(x, ...) {
 #' computationally intensive for complex models.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_mixed(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", equation_form = "zben")
 #' confint(fit)
-#' confint(fit, level = 0.90)
-#' confint(fit, method = "profile")  # More accurate but slower
 #' }
 #'
 #' @importFrom stats qnorm
@@ -2189,21 +2188,13 @@ confint.beezdemand_nlme <- function(
 #' @seealso \code{\link{fixef.beezdemand_nlme}}, \code{\link{ranef.beezdemand_nlme}}
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object
-#' if (!is.null(fit_one_factor$model)) {
-#'   # Get fixed effects
-#'   fixed_coeffs <- coef(fit_one_factor, type = "fixed")
-#'   print(fixed_coeffs)
-#'
-#'   # Get random effects
-#'   random_effects_summary <- coef(fit_one_factor, type = "random")
-#'   print(random_effects_summary)
-#'
-#'   # Get subject-specific coefficients (default)
-#'   subject_coeffs <- coef(fit_one_factor) # or type = "combined"
-#'   print(subject_coeffs)
-#' }
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", equation_form = "zben")
+#' coef(fit, type = "fixed")
+#' coef(fit, type = "random")
+#' coef(fit, type = "combined")
 #' }
 coef.beezdemand_nlme <- function(
   object,
@@ -2360,30 +2351,15 @@ ranef.beezdemand_nlme <- function(object, ...) {
 #' @seealso \code{\link[nlme]{predict.nlme}}
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object
-#' # (e.g., using equation_form = "zben", y_var = "y_ll4")
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", equation_form = "zben")
+#' # Population-level predictions
+#' preds <- predict(fit, level = 0)
 #'
-#' if (!is.null(fit_one_factor$model)) {
-#'   # Population-level predictions for the original data
-#'   preds_pop_log_scale <- predict(fit_one_factor, level = 0)
-#'
-#'   # Back-transform to natural scale
-#'   preds_pop_natural_scale <- predict(fit_one_factor, level = 0, inv_fun = function(x) 10^x)
-#'
-#'   # Create some new data for prediction
-#'   # Ensure all necessary columns (x, factors, id if level=1) are present
-#'   # and factors have levels consistent with the model fit.
-#'
-#'   # Example: Predict for the first few rows of original data but at group level
-#'   # Make sure the id and factor levels in new_data_subset exist in original data
-#'   new_data_subset <- fit_one_factor$data[1:5, ]
-#'
-#'   preds_group_log_scale <- predict(fit_one_factor, newdata = new_data_subset, level = 1)
-#'
-#'   # For models fitted with equation_form="simplified" and raw y values,
-#'   # predictions are already on the raw y scale and no inv_fun is needed.
-#' }
+#' # Subject-level predictions
+#' preds_subj <- predict(fit, level = 1)
 #' }
 predict.beezdemand_nlme <- function(
   object,
@@ -3207,22 +3183,13 @@ plot.beezdemand_nlme <- function(
 #' For models with factors, both intercept and factor-level coefficients are provided.
 #'
 #' @examples
-#' \dontrun{
-#' # Fit a mixed-effects demand model
-#' fit <- fit_demand_mixed(data = mydata,
-#'                        y_var = "consumption",
-#'                        x_var = "price",
-#'                        id_var = "subject",
-#'                        factors = "treatment")
-#'
-#' # Get individual coefficients (wide format, both parameters)
+#' \donttest{
+#' data(ko)
+#' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                         id_var = "monkey", factors = "drug",
+#'                         equation_form = "zben")
 #' individual_coefs <- get_individual_coefficients(fit)
-#'
-#' # Get only Q0 coefficients in long format
-#' q0_coefs <- get_individual_coefficients(fit, params = "Q0", format = "long")
-#'
-#' # Convert to natural scale
-#' individual_coefs$Q0_natural <- 10^individual_coefs$estimated_Q0_intercept
+#' head(individual_coefs)
 #' }
 #'
 #' @seealso

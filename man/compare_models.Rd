@@ -79,16 +79,13 @@ p-values.
 }
 
 \examples{
-\dontrun{
-# Compare two hurdle models with different random effects
-fit2 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-fit3 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0", "alpha"))
+\donttest{
+data(apt)
+fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0"))
+fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0", "alpha"))
 compare_models(fit2, fit3)
-
-# Compare hurdle vs NLME (IC-only)
-fit_h <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-fit_n <- fit_demand_mixed(data, equation_form = "zben")
-compare_models(fit_h, fit_n, test = "none")
 }
 
 }

@@ -35,12 +35,11 @@ Generates predictions from a mixed-effects cross-price demand model (of class
 }
 }
 \examples{
-\dontrun{
-# Population-level predictions:
-predict(fit_out_3, newdata = ex_sub, pred_type = "fixed")
-
-# Subject-specific predictions:
-predict(fit_out_3, newdata = ex_sub, pred_type = "random")
+\donttest{
+data(etm)
+fit <- fit_cp_linear(etm, type = "mixed")
+new_prices <- data.frame(x = c(2, 4, 8, 16, 32, 64))
+predict(fit, newdata = new_prices, pred_type = "fixed")
 }
 
 }

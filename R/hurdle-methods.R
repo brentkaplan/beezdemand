@@ -64,8 +64,9 @@ print.beezdemand_hurdle <- function(x, ...) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' summary(fit)
 #' }
 #'
@@ -439,8 +440,9 @@ coef.beezdemand_hurdle <- function(
 #'   and attributes for degrees of freedom and number of observations.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' logLik(fit)
 #' }
 #'
@@ -513,17 +515,15 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'   `.lower`/`.upper` are included.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #'
 #' # Get subject-specific parameters
 #' pars <- predict(fit, type = "parameters")
 #'
 #' # Predict demand at specific prices
 #' demand <- predict(fit, type = "demand", prices = c(0, 0.5, 1, 2, 5))
-#'
-#' # Predict probability of zero consumption
-#' probs <- predict(fit, type = "probability", prices = seq(0, 10, by = 0.5))
 #' }
 #'
 #' @export
@@ -795,24 +795,15 @@ predict.beezdemand_hurdle <- function(
 #' @return A ggplot2 object.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #'
 #' # Plot mean demand curve
 #' plot(fit)
 #'
-#' # Plot probability curves
-#' plot(fit, type = "probability")
-#'
-#' # Plot subject-specific probability curves (with population overlay)
-#' plot(fit, type = "probability", ids = c("1", "2", "3"))
-#' plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
-#'
 #' # Plot parameter distributions
 #' plot(fit, type = "parameters")
-#'
-#' # Plot individual curves
-#' plot(fit, type = "individual", subjects = c("1", "2", "3"))
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_line geom_histogram facet_wrap labs
@@ -1338,9 +1329,10 @@ plot.beezdemand_hurdle <- function(
 #' @return A ggplot2 object.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
-#' plot_subject(fit, subject_id = "1")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#' plot_subject(fit, subject_id = "19")
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
@@ -1585,11 +1577,10 @@ glance.beezdemand_hurdle <- function(x, ...) {
 #' - For log-scale parameters: exp(estimate +/- z * SE)
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' confint(fit)
-#' confint(fit, level = 0.90)
-#' confint(fit, report_space = "natural")
 #' }
 #'
 #' @importFrom stats qnorm

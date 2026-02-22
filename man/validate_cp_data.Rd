@@ -32,20 +32,4 @@ filtering if specified. It ensures the data meets the requirements for analysis
 by checking for required columns, filtering by target type if needed, and
 confirming ID column presence when required.
 }
-\examples{
-\dontrun{
-# Basic validation requiring x and y columns
-validated_data <- validate_cp_data(my_data)
-
-# Require additional columns
-validated_data <- validate_cp_data(my_data,
-                                  required_cols = c("x", "y", "price"))
-
-# Require ID column and don't filter by target
-validated_data <- validate_cp_data(my_data,
-                                  filter_target = FALSE,
-                                  require_id = TRUE)
-}
-
-}
 \keyword{internal}

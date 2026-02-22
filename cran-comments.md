@@ -1,7 +1,8 @@
 ## Test environments
 * macOS Sequoia 26.3, R 4.5.2 (local)
-* TODO: win-builder (devel and release)
-* TODO: R-hub (linux, windows)
+* GitHub Actions: macOS-latest (R release)
+* GitHub Actions: Windows-latest (R release)
+* GitHub Actions: Ubuntu-latest (R devel, release, oldrel-1)
 
 ## R CMD check results
 0 errors | 0 warnings | 1 note

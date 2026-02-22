@@ -15,13 +15,4 @@ Character. Canonical metric name or original if no mapping found.
 \description{
 Maps legacy derived metric names to canonical names.
 }
-\examples{
-\dontrun{
-get_canonical_metric("Pmaxd")
-# Returns: "pmax_model"
-get_canonical_metric("Pmaxe")
-# Returns: "pmax_obs"
-}
-
-}
 \keyword{internal}

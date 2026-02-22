@@ -47,8 +47,9 @@ Provides a summary of a fitted hurdle demand model, including fixed effects,
 variance components, correlations, and fit statistics.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 summary(fit)
 }
 

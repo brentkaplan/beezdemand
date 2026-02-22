@@ -526,14 +526,6 @@ NULL
 #' @param scale Character. One of "natural", "log", "log10".
 #' @return Character. Formatted parameter name (e.g., "log10_alpha").
 #'
-#' @examples
-#' \dontrun{
-#' format_param_name("alpha", "log10")
-#' # Returns: "log10_alpha"
-#' format_param_name("q0", "natural")
-#' # Returns: "natural_q0"
-#' }
-#'
 #' @keywords internal
 format_param_name <- function(param, scale = c("natural", "log", "log10")) {
   scale <- match.arg(scale)
@@ -547,14 +539,6 @@ format_param_name <- function(param, scale = c("natural", "log", "log10")) {
 #'
 #' @param name Character. Input parameter name.
 #' @return Character. Canonical parameter name or original if no mapping found.
-#'
-#' @examples
-#' \dontrun{
-#' get_canonical_param("Q0d")
-#' # Returns: "q0"
-#' get_canonical_param("Alpha")
-#' # Returns: "alpha"
-#' }
 #'
 #' @keywords internal
 get_canonical_param <- function(name) {
@@ -575,14 +559,6 @@ get_canonical_param <- function(name) {
 #'
 #' @param name Character. Input metric name.
 #' @return Character. Canonical metric name or original if no mapping found.
-#'
-#' @examples
-#' \dontrun{
-#' get_canonical_metric("Pmaxd")
-#' # Returns: "pmax_model"
-#' get_canonical_metric("Pmaxe")
-#' # Returns: "pmax_obs"
-#' }
 #'
 #' @keywords internal
 get_canonical_metric <- function(name) {
@@ -634,11 +610,6 @@ validate_param_scale <- function(param, scale) {
 #' Returns a data frame mapping legacy column names to canonical names.
 #'
 #' @return Data frame with columns: legacy, canonical, type.
-#'
-#' @examples
-#' \dontrun{
-#' get_legacy_mapping()
-#' }
 #'
 #' @keywords internal
 get_legacy_mapping <- function() {

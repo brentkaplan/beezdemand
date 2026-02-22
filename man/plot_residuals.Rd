@@ -27,10 +27,10 @@ Creates diagnostic plots for model residuals including residuals vs fitted,
 scale-location, and histogram of residuals.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 plot_residuals(fit)
-plot_residuals(fit, type = "qq")
 }
 
 }

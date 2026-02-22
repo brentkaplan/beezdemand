@@ -51,8 +51,9 @@ This function is named \code{check_demand_model()} to avoid potential conflicts
 with \code{performance::check_model()} from the performance package.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 diagnostics <- check_demand_model(fit)
 print(diagnostics)
 }

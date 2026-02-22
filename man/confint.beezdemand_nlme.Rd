@@ -41,11 +41,11 @@ nlme model object. This method provides more accurate intervals but can be
 computationally intensive for complex models.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_mixed(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
 confint(fit)
-confint(fit, level = 0.90)
-confint(fit, method = "profile")  # More accurate but slower
 }
 
 }

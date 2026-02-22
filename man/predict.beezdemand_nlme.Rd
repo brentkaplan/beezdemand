@@ -67,30 +67,15 @@ group/subject level (fixed + random effects). The output scale depends
 on the \code{equation_form} used during model fitting and whether \code{inv_fun} is applied.
 }
 \examples{
-\dontrun{
-# Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object
-# (e.g., using equation_form = "zben", y_var = "y_ll4")
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
+# Population-level predictions
+preds <- predict(fit, level = 0)
 
-if (!is.null(fit_one_factor$model)) {
-  # Population-level predictions for the original data
-  preds_pop_log_scale <- predict(fit_one_factor, level = 0)
-
-  # Back-transform to natural scale
-  preds_pop_natural_scale <- predict(fit_one_factor, level = 0, inv_fun = function(x) 10^x)
-
-  # Create some new data for prediction
-  # Ensure all necessary columns (x, factors, id if level=1) are present
-  # and factors have levels consistent with the model fit.
-
-  # Example: Predict for the first few rows of original data but at group level
-  # Make sure the id and factor levels in new_data_subset exist in original data
-  new_data_subset <- fit_one_factor$data[1:5, ]
-
-  preds_group_log_scale <- predict(fit_one_factor, newdata = new_data_subset, level = 1)
-
-  # For models fitted with equation_form="simplified" and raw y values,
-  # predictions are already on the raw y scale and no inv_fun is needed.
-}
+# Subject-level predictions
+preds_subj <- predict(fit, level = 1)
 }
 }
 \seealso{

@@ -232,9 +232,10 @@ calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
 #' @return A named list with group-level Pmax, Omax, and Qmax.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
-#' group_metrics <- calc_group_metrics(fit)
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#' calc_group_metrics(fit)
 #' }
 #'
 #' @seealso \code{\link{calc_omax_pmax}}, \code{\link{fit_demand_hurdle}}
@@ -369,8 +370,9 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' pars <- get_subject_pars(fit)
 #' head(pars)
 #' }
@@ -406,10 +408,11 @@ get_subject_pars.beezdemand_hurdle <- function(object) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' fit3 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+#' \donttest{
+#' data(apt)
+#' fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #'                           random_effects = c("zeros", "q0", "alpha"))
-#' fit2 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+#' fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #'                           random_effects = c("zeros", "q0"))
 #' compare_hurdle_models(fit3, fit2)
 #' }
@@ -497,8 +500,9 @@ compare_hurdle_models <- function(model_full, model_reduced) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' get_hurdle_param_summary(fit)
 #' }
 #'

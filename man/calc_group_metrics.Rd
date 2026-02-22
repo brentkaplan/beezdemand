@@ -16,9 +16,10 @@ A named list with group-level Pmax, Omax, and Qmax.
 Calculates group-level (population) Omax and Pmax from a fitted hurdle demand model.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
-group_metrics <- calc_group_metrics(fit)
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+calc_group_metrics(fit)
 }
 
 }

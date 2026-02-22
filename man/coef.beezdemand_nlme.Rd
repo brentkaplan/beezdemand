@@ -46,21 +46,13 @@ Provides methods to extract fixed effects, random effects, or subject-specific
 This is an S3 method for the generic \code{coef} function.
 }
 \examples{
-\dontrun{
-# Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object
-if (!is.null(fit_one_factor$model)) {
-  # Get fixed effects
-  fixed_coeffs <- coef(fit_one_factor, type = "fixed")
-  print(fixed_coeffs)
-
-  # Get random effects
-  random_effects_summary <- coef(fit_one_factor, type = "random")
-  print(random_effects_summary)
-
-  # Get subject-specific coefficients (default)
-  subject_coeffs <- coef(fit_one_factor) # or type = "combined"
-  print(subject_coeffs)
-}
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
+coef(fit, type = "fixed")
+coef(fit, type = "random")
+coef(fit, type = "combined")
 }
 }
 \seealso{

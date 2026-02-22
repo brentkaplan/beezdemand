@@ -17,13 +17,4 @@ Character. Formatted parameter name (e.g., "log10_alpha").
 \description{
 Formats a canonical parameter name with the appropriate scale prefix.
 }
-\examples{
-\dontrun{
-format_param_name("alpha", "log10")
-# Returns: "log10_alpha"
-format_param_name("q0", "natural")
-# Returns: "natural_q0"
-}
-
-}
 \keyword{internal}

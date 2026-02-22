@@ -37,9 +37,10 @@ Creates a demand curve plot for a single subject with optional observed data
 and population reference curve.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
-plot_subject(fit, subject_id = "1")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+plot_subject(fit, subject_id = "19")
 }
 
 }

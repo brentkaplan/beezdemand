@@ -26,12 +26,10 @@ into a single-row data frame, following the conventions of the broom package.
 It returns goodness-of-fit measures and other model information.
 }
 \examples{
-\dontrun{
-# Fit a cross-price demand model
-model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-
-# Get model summary statistics
-glance(model)
+\donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
+glance(fit)
 }
 
 }

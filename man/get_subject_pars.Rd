@@ -28,8 +28,9 @@ Convenience function to extract subject-specific demand parameters from
 a fitted hurdle demand model. Equivalent to accessing \code{object$subject_pars}.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 pars <- get_subject_pars(fit)
 head(pars)
 }

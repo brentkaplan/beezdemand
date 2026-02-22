@@ -48,11 +48,10 @@ The transformation uses:
 }
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 confint(fit)
-confint(fit, level = 0.90)
-confint(fit, report_space = "natural")
 }
 
 }

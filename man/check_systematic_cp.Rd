@@ -69,12 +69,7 @@ from the legacy bounce counts and the number of price steps.
 }
 }
 \examples{
-\dontrun{
-# Check cross-price data with id column
-check <- check_systematic_cp(cp_data)
-
-# Check single pattern without id
-check_single <- check_systematic_cp(data.frame(x = 1:10, y = runif(10)))
-}
+data(etm)
+check <- check_systematic_cp(etm)
 
 }

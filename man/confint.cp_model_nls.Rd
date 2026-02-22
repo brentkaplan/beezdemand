@@ -45,11 +45,10 @@ For back-transformed natural-scale confidence intervals, apply the
 transformation: \code{10^conf.low} and \code{10^conf.high} for log10-scale parameters.
 }
 \examples{
-\dontrun{
-fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
+\donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
 confint(fit)
-confint(fit, level = 0.90)
-confint(fit, method = "profile")  # Profile-t intervals
 }
 
 }

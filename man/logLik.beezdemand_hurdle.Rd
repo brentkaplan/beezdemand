@@ -20,8 +20,9 @@ Extracts the log-likelihood from a fitted hurdle demand model.
 Useful for likelihood ratio tests comparing nested models.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 logLik(fit)
 }
 

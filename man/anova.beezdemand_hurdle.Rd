@@ -26,9 +26,12 @@ All models must be fit to the same data. Models are ordered by degrees of
 freedom, and sequential likelihood ratio tests are performed.
 }
 \examples{
-\dontrun{
-fit2 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-fit3 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0", "alpha"))
+\donttest{
+data(apt)
+fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0"))
+fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0", "alpha"))
 anova(fit2, fit3)
 }
 

@@ -65,22 +65,13 @@ For models without factors, only intercept coefficients are calculated.
 For models with factors, both intercept and factor-level coefficients are provided.
 }
 \examples{
-\dontrun{
-# Fit a mixed-effects demand model
-fit <- fit_demand_mixed(data = mydata,
-                       y_var = "consumption",
-                       x_var = "price",
-                       id_var = "subject",
-                       factors = "treatment")
-
-# Get individual coefficients (wide format, both parameters)
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", factors = "drug",
+                        equation_form = "zben")
 individual_coefs <- get_individual_coefficients(fit)
-
-# Get only Q0 coefficients in long format
-q0_coefs <- get_individual_coefficients(fit, params = "Q0", format = "long")
-
-# Convert to natural scale
-individual_coefs$Q0_natural <- 10^individual_coefs$estimated_Q0_intercept
+head(individual_coefs)
 }
 
 }

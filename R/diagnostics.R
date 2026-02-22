@@ -36,8 +36,9 @@
 #' with `performance::check_model()` from the performance package.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' diagnostics <- check_demand_model(fit)
 #' print(diagnostics)
 #' }
@@ -283,10 +284,10 @@ print.beezdemand_diagnostics <- function(x, ...) {
 #' @return A ggplot2 object or list of ggplot2 objects.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' plot_residuals(fit)
-#' plot_residuals(fit, type = "qq")
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_point geom_hline geom_histogram geom_qq
@@ -377,10 +378,10 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
 #' @return A ggplot2 object.
 #'
 #' @examples
-#' \dontrun{
-#' fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #' plot_qq(fit)
-#' plot_qq(fit, which = "Q0")
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_qq geom_qq_line facet_wrap labs theme_minimal

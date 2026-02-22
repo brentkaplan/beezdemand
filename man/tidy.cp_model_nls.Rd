@@ -26,12 +26,10 @@ It handles cases where model fitting failed gracefully, returning an empty
 data frame with the expected structure.
 }
 \examples{
-\dontrun{
-# Fit a cross-price demand model
-model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-
-# Get coefficients in tidy format
-tidy(model)
+\donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
+tidy(fit)
 }
 
 }

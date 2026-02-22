@@ -27,10 +27,10 @@ A ggplot2 object.
 Creates Q-Q plots for random effects to assess normality assumptions.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 plot_qq(fit)
-plot_qq(fit, which = "Q0")
 }
 
 }

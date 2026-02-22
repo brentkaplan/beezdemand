@@ -74,16 +74,13 @@
 #' longitudinal mixed effects model. *Biometrics*, 50(4), 1171-1177.
 #'
 #' @examples
-#' \dontrun{
-#' # Compare two hurdle models with different random effects
-#' fit2 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-#' fit3 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0", "alpha"))
+#' \donttest{
+#' data(apt)
+#' fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+#'                           random_effects = c("zeros", "q0"))
+#' fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+#'                           random_effects = c("zeros", "q0", "alpha"))
 #' compare_models(fit2, fit3)
-#'
-#' # Compare hurdle vs NLME (IC-only)
-#' fit_h <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-#' fit_n <- fit_demand_mixed(data, equation_form = "zben")
-#' compare_models(fit_h, fit_n, test = "none")
 #' }
 #'
 #' @seealso [compare_hurdle_models()] for the legacy hurdle-specific comparison
@@ -346,9 +343,12 @@ print.beezdemand_model_comparison <- function(x, digits = 4, ...) {
 #' freedom, and sequential likelihood ratio tests are performed.
 #'
 #' @examples
-#' \dontrun{
-#' fit2 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-#' fit3 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0", "alpha"))
+#' \donttest{
+#' data(apt)
+#' fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+#'                           random_effects = c("zeros", "q0"))
+#' fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+#'                           random_effects = c("zeros", "q0", "alpha"))
 #' anova(fit2, fit3)
 #' }
 #'
@@ -457,9 +457,14 @@ anova.beezdemand_hurdle <- function(object, ...) {
 #' underlying model objects when possible.
 #'
 #' @examples
-#' \dontrun{
-#' fit1 <- fit_demand_mixed(data, random_effects = "Q0")
-#' fit2 <- fit_demand_mixed(data, random_effects = c("Q0", "alpha"))
+#' \donttest{
+#' data(ko)
+#' fit1 <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                          id_var = "monkey", equation_form = "zben",
+#'                          random_effects = Q0 ~ 1)
+#' fit2 <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+#'                          id_var = "monkey", equation_form = "zben",
+#'                          random_effects = Q0 + alpha ~ 1)
 #' anova(fit1, fit2)
 #' }
 #'

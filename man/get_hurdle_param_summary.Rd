@@ -30,8 +30,9 @@ hurdle demand model. This is analogous to EMMs but based on empirical
 Bayes estimates of subject-specific parameters.
 }
 \examples{
-\dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+\donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 get_hurdle_param_summary(fit)
 }
 

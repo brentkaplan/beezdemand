@@ -22,11 +22,10 @@ displaying the call, model specifications, and key results from the
 \code{nlme} fit if successful.
 }
 \examples{
-\dontrun{
-# Assuming 'fit_two_factor_no_interaction' is a beezdemand_nlme object
-print(fit_two_factor_no_interaction)
-
-# If fitting failed, print() will display diagnostic information
-# about the failure instead of model results.
+\donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
+print(fit)
 }
 }

@@ -25,15 +25,12 @@ A larger dataset containing alcohol purchase task data with demographic covariat
 Suitable for testing hurdle models and mixed-effects models with covariates.
 }
 \examples{
-\dontrun{
+\donttest{
 data(apt_full)
-
-# Fit hurdle model
-fit <- fit_demand_hurdle(apt_full, y_var = "y", x_var = "x", id_var = "id")
-
-# Fit mixed model with gender as factor
-fit_mixed <- fit_demand_mixed(apt_full, y_var = "y", x_var = "x", id_var = "id",
-                              factors = "gender")
+# Use a subset for quick demonstration
+apt_sub <- apt_full[apt_full$id \%in\% unique(apt_full$id)[1:20], ]
+fit <- fit_demand_hurdle(apt_sub, y_var = "y", x_var = "x", id_var = "id")
+summary(fit)
 }
 
 }
