@@ -47,11 +47,54 @@ Invisibly returns a list with:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit3 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+# \donttest{
+data(apt)
+fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
                           random_effects = c("zeros", "q0", "alpha"))
-fit2 <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id",
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
+fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
                           random_effects = c("zeros", "q0"))
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 9, Recommended minimum: 45 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand2RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 9, Random effects per subject: 2
+#>   Optimizing...
+#>   Converged in 95 iterations
+#>   Computing standard errors...
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Done. Log-likelihood: 2.31
 compare_hurdle_models(fit3, fit2)
-} # }
+#> 
+#> Likelihood Ratio Test
+#> =====================
+#>           Model n_RE   LogLik df       AIC       BIC
+#>     Full (3 RE)    3 32.81453 12 -41.62905 -4.726965
+#>  Reduced (2 RE)    2  2.30934  9  13.38132 41.057884
+#> 
+#> LR statistic: 61.0104 
+#> df: 3 
+#> p-value: 3.5757e-13 
+# }
 ```

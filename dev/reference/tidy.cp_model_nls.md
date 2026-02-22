@@ -49,11 +49,15 @@ A data frame with one row per coefficient, containing columns:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Fit a cross-price demand model
-model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-
-# Get coefficients in tidy format
-tidy(model)
-} # }
+# \donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
+tidy(fit)
+#> # A tibble: 3 × 5
+#>   term         estimate std.error statistic  p.value
+#>   <chr>           <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 log10_qalone    0.743    0.0704    10.6   1.35e-21
+#> 2 I              -1.16     1.20      -0.964 3.36e- 1
+#> 3 log10_beta     -0.546    0.395     -1.38  1.67e- 1
+# }
 ```

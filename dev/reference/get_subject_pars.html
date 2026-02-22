@@ -113,11 +113,37 @@ a fitted hurdle demand model. Equivalent to accessing <code>object$subject_pars<
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">data</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Sample size may be too small for reliable estimation.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Consider using more subjects or the simpler 2-RE model.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Fitting HurdleDemand3RE model...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Part II: zhao_exponential</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 12, Random effects per subject: 3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 81 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: 32.81</span>
 <span class="r-in"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu">get_subject_pars</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pars</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    id       a_i        b_i        c_i        Q0      alpha breakpoint      Pmax</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  19 -24.18572  0.4327276 -0.1848782 10.023473 0.01460071  21.256530 13.292153</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  30 -51.52766 -0.8325815 -0.3938517  2.828144 0.01184726  27.643280 16.381413</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  38  18.03621 -0.3566930 -0.2240901  4.551737 0.01403927  14.167670 13.823717</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  60  41.85352  0.3917919  0.4987260  9.621440 0.02892408  11.269526  6.709803</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  68  23.55110  0.4511080  0.1328454 10.209411 0.02006133  13.436440  9.674080</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 106  82.94144 -0.1452772  0.3451208  5.623335 0.02480560   7.593382  7.823835</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Omax</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 44.18881</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 15.36567</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 20.86896</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 21.41158</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 32.75738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 14.59192</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

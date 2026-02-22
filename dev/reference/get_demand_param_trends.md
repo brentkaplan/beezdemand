@@ -68,13 +68,22 @@ including columns for grouping factors (from `specs`), `parameter`,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-trends <- get_demand_param_trends(
-  fit_obj = my_fit,
-  params = c("Q0", "alpha"),
-  covariates = c("age", "dose_num"),
-  specs = ~ drug,
-  at = list(age = 21, dose_num = 0.5)
-)
-} # }
+# \donttest{
+data(ko)
+ko$dose_num <- as.numeric(as.character(ko$dose))
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", factors = "drug",
+                        equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 6 (Q0: 3, alpha: 3)
+trends <- get_demand_param_trends(fit, covariates = "dose_num",
+                                  specs = ~ drug)
+#> Warning: No trends could be calculated. Check 'covariates', 'specs', and 'at'.
+# }
 ```

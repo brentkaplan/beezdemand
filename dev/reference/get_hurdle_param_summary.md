@@ -64,8 +64,32 @@ A data frame with summary statistics for each parameter:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+# \donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
 get_hurdle_param_summary(fit)
-} # }
+#>    parameter        mean          sd      median          lcl         ucl
+#> 1         Q0  6.96190164  2.46592004  6.23633363  3.215952223 10.16757498
+#> 2      alpha  0.01947681  0.00863862  0.01733102  0.009613567  0.03276271
+#> 3 breakpoint 16.99524872  6.50011282 15.06387016  8.420514104 26.82632102
+#> 4       Pmax 11.98608909  5.31880020 11.48311653  5.949514053 20.24056587
+#> 5       Omax 26.13650188 12.21190918 21.14026966 12.408941450 43.97742007
+#>            min         max n_valid
+#> 1  2.828143606 10.20941117      10
+#> 2  0.009339529  0.03387715      10
+#> 3  7.593381758 27.64328043      10
+#> 4  5.728784990 20.77994569      10
+#> 5 11.775173761 44.18881360      10
+# }
 ```

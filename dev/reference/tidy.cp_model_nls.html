@@ -108,13 +108,17 @@ data frame with the expected structure.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Fit a cross-price demand model</span></span></span>
-<span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_cp_nls.html">fit_cp_nls</a></span><span class="op">(</span><span class="va">data</span>, equation <span class="op">=</span> <span class="st">"exponentiated"</span>, return_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Get coefficients in tidy format</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">etm</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_cp_nls.html">fit_cp_nls</a></span><span class="op">(</span><span class="va">etm</span>, equation <span class="op">=</span> <span class="st">"exponentiated"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   term         estimate std.error statistic  p.value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> log10_qalone    0.743    0.070<span style="text-decoration: underline;">4</span>    10.6   1.35<span style="color: #949494;">e</span><span style="color: #BB0000;">-21</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> I              -<span style="color: #BB0000;">1.16</span>     1.20      -<span style="color: #BB0000;">0.964</span> 3.36<span style="color: #949494;">e</span><span style="color: #BB0000;">- 1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> log10_beta     -<span style="color: #BB0000;">0.546</span>    0.395     -<span style="color: #BB0000;">1.38</span>  1.67<span style="color: #949494;">e</span><span style="color: #BB0000;">- 1</span></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

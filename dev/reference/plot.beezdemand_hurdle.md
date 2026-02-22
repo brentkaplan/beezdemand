@@ -183,23 +183,28 @@ A ggplot2 object.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+# \donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
 
 # Plot mean demand curve
 plot(fit)
+#> Free is shown as `0.01` for purposes of plotting.
 
-# Plot probability curves
-plot(fit, type = "probability")
-
-# Plot subject-specific probability curves (with population overlay)
-plot(fit, type = "probability", ids = c("1", "2", "3"))
-plot(fit, type = "probability", ids = c("1", "2", "3"), facet = TRUE)
 
 # Plot parameter distributions
 plot(fit, type = "parameters")
 
-# Plot individual curves
-plot(fit, type = "individual", subjects = c("1", "2", "3"))
-} # }
+# }
 ```

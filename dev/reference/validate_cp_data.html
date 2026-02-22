@@ -106,24 +106,6 @@ in the data. Default is FALSE.</p></dd>
     <p>A validated (and potentially filtered) data frame.</p>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Basic validation requiring x and y columns</span></span></span>
-<span class="r-in"><span><span class="va">validated_data</span> <span class="op">&lt;-</span> <span class="fu">validate_cp_data</span><span class="op">(</span><span class="va">my_data</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Require additional columns</span></span></span>
-<span class="r-in"><span><span class="va">validated_data</span> <span class="op">&lt;-</span> <span class="fu">validate_cp_data</span><span class="op">(</span><span class="va">my_data</span>,</span></span>
-<span class="r-in"><span>                                  required_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x"</span>, <span class="st">"y"</span>, <span class="st">"price"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Require ID column and don't filter by target</span></span></span>
-<span class="r-in"><span><span class="va">validated_data</span> <span class="op">&lt;-</span> <span class="fu">validate_cp_data</span><span class="op">(</span><span class="va">my_data</span>,</span></span>
-<span class="r-in"><span>                                  filter_target <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
-<span class="r-in"><span>                                  require_id <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

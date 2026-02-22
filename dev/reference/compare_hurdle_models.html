@@ -105,13 +105,56 @@ significantly improves model fit (3-RE vs 2-RE models).</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">data</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
 <span class="r-in"><span>                          random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zeros"</span>, <span class="st">"q0"</span>, <span class="st">"alpha"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">data</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Sample size may be too small for reliable estimation.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Consider using more subjects or the simpler 2-RE model.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Fitting HurdleDemand3RE model...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Part II: zhao_exponential</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 12, Random effects per subject: 3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 81 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: 32.81</span>
+<span class="r-in"><span><span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
 <span class="r-in"><span>                          random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zeros"</span>, <span class="st">"q0"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Sample size may be too small for reliable estimation.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Parameters: 9, Recommended minimum: 45 subjects.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Consider using more subjects or the simpler 2-RE model.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Fitting HurdleDemand2RE model...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Part II: zhao_exponential</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 9, Random effects per subject: 2</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 95 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (1.742) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: 2.31</span>
 <span class="r-in"><span><span class="fu">compare_hurdle_models</span><span class="op">(</span><span class="va">fit3</span>, <span class="va">fit2</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Likelihood Ratio Test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> =====================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Model n_RE   LogLik df       AIC       BIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Full (3 RE)    3 32.81453 12 -41.62905 -4.726965</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Reduced (2 RE)    2  2.30934  9  13.38132 41.057884</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR statistic: 61.0104 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> df: 3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> p-value: 3.5757e-13 </span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

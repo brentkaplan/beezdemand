@@ -118,15 +118,65 @@ for the legacy hurdle-specific comparison
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Compare two hurdle models with different random effects
-fit2 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-fit3 <- fit_demand_hurdle(data, random_effects = c("zeros", "q0", "alpha"))
+# \donttest{
+data(apt)
+fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0"))
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 9, Recommended minimum: 45 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand2RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 9, Random effects per subject: 2
+#>   Optimizing...
+#>   Converged in 95 iterations
+#>   Computing standard errors...
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Done. Log-likelihood: 2.31
+fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
+                          random_effects = c("zeros", "q0", "alpha"))
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
 compare_models(fit2, fit3)
-
-# Compare hurdle vs NLME (IC-only)
-fit_h <- fit_demand_hurdle(data, random_effects = c("zeros", "q0"))
-fit_n <- fit_demand_mixed(data, equation_form = "zben")
-compare_models(fit_h, fit_n, test = "none")
-} # }
+#> Note: LRT assumes models are nested (reduced model is a special case of the full model). Nesting is not automatically verified. See ?compare_models for guidance on valid model comparisons.
+#> 
+#> Model Comparison
+#> ================================================== 
+#> 
+#>    Model             Class Backend nobs df  logLik      AIC     BIC delta_AIC
+#>  Model_1 beezdemand_hurdle     TMB  160  9  2.3093  13.3813 41.0579   55.0104
+#>  Model_2 beezdemand_hurdle     TMB  160 12 32.8145 -41.6291 -4.7270    0.0000
+#>  delta_BIC
+#>    45.7848
+#>     0.0000
+#> 
+#> Best model by BIC: Model_2 
+#> 
+#> Likelihood Ratio Tests:
+#> ---------------------------------------- 
+#>          Comparison LR_stat df  p_value
+#>  Model_1 vs Model_2 61.0104  3 3.58e-13
+#> 
+#> Notes:
+#>   - LRT nesting assumption not verified. 
+# }
 ```

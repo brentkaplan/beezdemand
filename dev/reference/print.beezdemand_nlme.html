@@ -94,13 +94,63 @@ displaying the call, model specifications, and key results from the
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Assuming 'fit_two_factor_no_interaction' is a beezdemand_nlme object</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_two_factor_no_interaction</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># If fitting failed, print() will display diagnostic information</span></span></span>
-<span class="r-in"><span><span class="co"># about the failure instead of model results.</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">ko</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>,</span></span>
+<span class="r-in"><span>                        id_var <span class="op">=</span> <span class="st">"monkey"</span>, equation_form <span class="op">=</span> <span class="st">"zben"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Generating starting values using method: 'heuristic'</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using heuristic method for starting values.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --- Fitting NLME Model ---</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Equation Form: zben</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Param Space: log10</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 2 (Q0: 1, alpha: 1)</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Demand NLME Model Fit ('beezdemand_nlme' object)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_demand_mixed(data = ko, y_var = "y_ll4", x_var = "x", id_var = "monkey", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     equation_form = "zben")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Equation Form Selected:  zben </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NLME Model Formula:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x5592e6341400&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Factors: None</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ID Variable for Random Effects:  monkey </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Start Values Used (Fixed Effects Intercepts):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Q0 Intercept (log10 scale):  2.271 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   alpha Intercept (log10 scale):  -3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --- NLME Model Fit Summary (from nlme object) ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Nonlinear mixed-effects model fit by maximum likelihood</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Model: nlme_model_formula_obj </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Data: data </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Log-likelihood: -25.98641</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Fixed: list(Q0 ~ 1, alpha ~ 1) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Q0     alpha </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2.158507 -4.586304 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Random effects:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula: list(Q0 ~ 1, alpha ~ 1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Level: monkey</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Structure: Diagonal</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   Q0      alpha  Residual</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> StdDev: 8.924541e-06 5.4422e-06 0.2933331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of Observations: 135</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of Groups: 3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --- Additional Fit Statistics ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -25.99 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC:  61.97 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC:  76.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---------------------------------------------------</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

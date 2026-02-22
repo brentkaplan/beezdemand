@@ -53,11 +53,13 @@ A one-row data frame with model summary statistics:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Fit a cross-price demand model
-model <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
-
-# Get model summary statistics
-glance(model)
-} # }
+# \donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
+glance(fit)
+#> # A tibble: 1 × 6
+#>   r.squared   aic   bic equation      method        transform
+#>       <dbl> <dbl> <dbl> <chr>         <chr>         <chr>    
+#> 1    0.0348 1744. 1758. exponentiated nls_multstart none     
+# }
 ```

@@ -98,16 +98,106 @@ Suitable for testing hurdle models and mixed-effects models with covariates.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit hurdle model</span></span></span>
-<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt_full</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Fit mixed model with gender as factor</span></span></span>
-<span class="r-in"><span><span class="va">fit_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">apt_full</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
-<span class="r-in"><span>                              factors <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="co"># Use a subset for quick demonstration</span></span></span>
+<span class="r-in"><span><span class="va">apt_sub</span> <span class="op">&lt;-</span> <span class="va">apt_full</span><span class="op">[</span><span class="va">apt_full</span><span class="op">$</span><span class="va">id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">]</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt_sub</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Sample size may be too small for reliable estimation.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 20, Parameters: 12, Recommended minimum: 60 subjects.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Consider using more subjects or the simpler 2-RE model.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Fitting HurdleDemand3RE model...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Part II: zhao_exponential</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 20, Observations: 340</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 12, Random effects per subject: 3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   WARNING: Did not converge (code 1: false convergence (8))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: -81.74</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Two-Part Mixed Effects Hurdle Demand Model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ============================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fit_demand_hurdle(data = apt_sub, y_var = "y", x_var = "x", id_var = "id")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence: No </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of subjects: 20 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of observations: 340 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Random effects: 3 (zeros, q0, alpha) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error   t value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta0      -1.068e+02        NaN       NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta1       1.038e+02  4.916e-01   211.100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> log_q0      1.998e+00        NaN       NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> log_k       3.090e+01        NaN       NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> log_alpha  -3.245e+01  9.069e-03 -3577.696</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> logsigma_a  6.384e+00  1.625e-02   392.831</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> logsigma_b -6.577e-01  1.761e-02   -37.348</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> logsigma_c -9.817e-01        NaN       NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> logsigma_e -1.532e+00  4.854e-02   -31.564</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_ab_raw -1.980e-02  2.425e-03    -8.165</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_ac_raw  1.669e-01  5.353e-03    31.176</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_bc_raw  3.480e-01        NaN       NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Variance Components:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> --------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha   0.000000e+00     0.0000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> k       2.630596e+13        NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> var_a   3.505057e+05 11391.5330</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> var_b   2.684000e-01     0.0095</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> var_c   1.404000e-01        NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_ab -6.071100e+00     0.4469</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_ac  3.667870e+01     2.5187</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_bc  6.340000e-02        NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> var_e   4.670000e-02     0.0045</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlations:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Estimate Std. Error</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_ab  -0.0198     0.0024</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_ac   0.1653     0.0052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rho_bc   0.3266        NaN</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Fit:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Log-likelihood: -81.74</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   AIC: 187.48</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   BIC: 233.43</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Demand Metrics (Group-Level):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -----------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Pmax (price at max expenditure): 4.6947</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Omax (max expenditure): 12.7530</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Q at Pmax: 2.7165</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Elasticity at Pmax: 0.0000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Method: analytic_lambert_w_hurdle</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Derived Parameters (Individual-Level Summary):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Q0 (Intensity):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.389   6.111   7.477   8.043  10.825  12.320 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Alpha:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4.420e-15 6.228e-15 7.358e-15 8.266e-15 9.276e-15 1.765e-14 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Breakpoint:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -0.000065  5.567882  8.984549  9.874247 10.916976 32.413180 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Pmax:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2.154   4.098   5.167   5.199   6.104   8.600 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Omax:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5.890   9.771  12.353  15.091  19.566  36.106 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

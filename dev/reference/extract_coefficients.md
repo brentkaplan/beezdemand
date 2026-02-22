@@ -35,6 +35,6 @@ data(etm, package = "beezdemand")
 fit <- fit_cp_nls(etm, equation = "exponentiated")
 extract_coefficients(fit)
 #> log10_qalone            I   log10_beta 
-#>     0.743096    -1.158117    -0.546300 
+#>    0.7430960   -1.1581171   -0.5463001 
 # }
 ```

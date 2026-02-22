@@ -39,21 +39,3 @@ validate_cp_data(
 ## Value
 
 A validated (and potentially filtered) data frame.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-# Basic validation requiring x and y columns
-validated_data <- validate_cp_data(my_data)
-
-# Require additional columns
-validated_data <- validate_cp_data(my_data,
-                                  required_cols = c("x", "y", "price"))
-
-# Require ID column and don't filter by target
-validated_data <- validate_cp_data(my_data,
-                                  filter_target = FALSE,
-                                  require_id = TRUE)
-} # }
-```

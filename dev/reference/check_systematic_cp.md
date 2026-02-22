@@ -100,11 +100,6 @@ For cross-price data, the wrapper preserves the legacy meaning of
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Check cross-price data with id column
-check <- check_systematic_cp(cp_data)
-
-# Check single pattern without id
-check_single <- check_systematic_cp(data.frame(x = 1:10, y = runif(10)))
-} # }
+data(etm)
+check <- check_systematic_cp(etm)
 ```

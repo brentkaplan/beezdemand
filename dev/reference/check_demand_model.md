@@ -87,9 +87,43 @@ from the performance package.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
+# \donttest{
+data(apt)
+fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
+#> Sample size may be too small for reliable estimation.
+#>   Subjects: 10, Parameters: 12, Recommended minimum: 60 subjects.
+#>   Consider using more subjects or the simpler 2-RE model.
+#> Fitting HurdleDemand3RE model...
+#>   Part II: zhao_exponential
+#>   Subjects: 10, Observations: 160
+#>   Fixed parameters: 12, Random effects per subject: 3
+#>   Optimizing...
+#>   Converged in 81 iterations
+#>   Computing standard errors...
+#> Done. Log-likelihood: 32.81
 diagnostics <- check_demand_model(fit)
 print(diagnostics)
-} # }
+#> 
+#> Model Diagnostics
+#> ================================================== 
+#> Model class: beezdemand_hurdle 
+#> 
+#> Convergence:
+#>   Status: Converged
+#> 
+#> Random Effects:
+#> 
+#> Residuals:
+#>   Mean: -2.962e-05
+#>   SD: 0.133
+#>   Range: [-0.4069, 0.4708]
+#>   Outliers: 2 observations
+#> 
+#> --------------------------------------------------
+#> Issues Detected (1):
+#>   1. Detected 2 potential outliers (|resid| > 3)
+#> 
+#> Recommendations:
+#>   - Investigate outlying observations
+# }
 ```

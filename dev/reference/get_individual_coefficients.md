@@ -94,21 +94,32 @@ for estimated marginal means
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Fit a mixed-effects demand model
-fit <- fit_demand_mixed(data = mydata,
-                       y_var = "consumption",
-                       x_var = "price",
-                       id_var = "subject",
-                       factors = "treatment")
-
-# Get individual coefficients (wide format, both parameters)
+# \donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", factors = "drug",
+                        equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 6 (Q0: 3, alpha: 3)
 individual_coefs <- get_individual_coefficients(fit)
-
-# Get only Q0 coefficients in long format
-q0_coefs <- get_individual_coefficients(fit, params = "Q0", format = "long")
-
-# Convert to natural scale
-individual_coefs$Q0_natural <- 10^individual_coefs$estimated_Q0_intercept
-} # }
+head(individual_coefs)
+#>   id estimated_Q0_intercept estimated_Q0_drugFentanyl
+#> 1  A               2.133994                  1.969328
+#> 2  B               2.133994                  1.969328
+#> 3  C               2.133994                  1.969328
+#>   estimated_Q0_drugRemifentanil estimated_alpha_intercept
+#> 1                      2.384881                 -4.663837
+#> 2                      2.384881                 -4.663837
+#> 3                      2.384881                 -4.663837
+#>   estimated_alpha_drugFentanyl estimated_alpha_drugRemifentanil
+#> 1                    -4.393874                        -4.708936
+#> 2                    -4.393874                        -4.708936
+#> 3                    -4.393874                        -4.708936
+# }
 ```

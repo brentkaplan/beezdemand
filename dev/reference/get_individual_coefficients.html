@@ -128,23 +128,34 @@ For models with factors, both intercept and factor-level coefficients are provid
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Fit a mixed-effects demand model</span></span></span>
-<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">mydata</span>,</span></span>
-<span class="r-in"><span>                       y_var <span class="op">=</span> <span class="st">"consumption"</span>,</span></span>
-<span class="r-in"><span>                       x_var <span class="op">=</span> <span class="st">"price"</span>,</span></span>
-<span class="r-in"><span>                       id_var <span class="op">=</span> <span class="st">"subject"</span>,</span></span>
-<span class="r-in"><span>                       factors <span class="op">=</span> <span class="st">"treatment"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Get individual coefficients (wide format, both parameters)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">ko</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>,</span></span>
+<span class="r-in"><span>                        id_var <span class="op">=</span> <span class="st">"monkey"</span>, factors <span class="op">=</span> <span class="st">"drug"</span>,</span></span>
+<span class="r-in"><span>                        equation_form <span class="op">=</span> <span class="st">"zben"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Generating starting values using method: 'heuristic'</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using heuristic method for starting values.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --- Fitting NLME Model ---</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Equation Form: zben</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Param Space: log10</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 6 (Q0: 3, alpha: 3)</span>
 <span class="r-in"><span><span class="va">individual_coefs</span> <span class="op">&lt;-</span> <span class="fu">get_individual_coefficients</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Get only Q0 coefficients in long format</span></span></span>
-<span class="r-in"><span><span class="va">q0_coefs</span> <span class="op">&lt;-</span> <span class="fu">get_individual_coefficients</span><span class="op">(</span><span class="va">fit</span>, params <span class="op">=</span> <span class="st">"Q0"</span>, format <span class="op">=</span> <span class="st">"long"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Convert to natural scale</span></span></span>
-<span class="r-in"><span><span class="va">individual_coefs</span><span class="op">$</span><span class="va">Q0_natural</span> <span class="op">&lt;-</span> <span class="fl">10</span><span class="op">^</span><span class="va">individual_coefs</span><span class="op">$</span><span class="va">estimated_Q0_intercept</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">individual_coefs</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id estimated_Q0_intercept estimated_Q0_drugFentanyl</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  A               2.133994                  1.969328</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  B               2.133994                  1.969328</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  C               2.133994                  1.969328</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   estimated_Q0_drugRemifentanil estimated_alpha_intercept</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                      2.384881                 -4.663837</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                      2.384881                 -4.663837</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                      2.384881                 -4.663837</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   estimated_alpha_drugFentanyl estimated_alpha_drugRemifentanil</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                    -4.393874                        -4.708936</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                    -4.393874                        -4.708936</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                    -4.393874                        -4.708936</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

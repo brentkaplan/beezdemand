@@ -55,11 +55,17 @@ with the corresponding predictions.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Population-level predictions:
-predict(fit_out_3, newdata = ex_sub, pred_type = "fixed")
-
-# Subject-specific predictions:
-predict(fit_out_3, newdata = ex_sub, pred_type = "random")
-} # }
+# \donttest{
+data(etm)
+fit <- fit_cp_linear(etm, type = "mixed")
+new_prices <- data.frame(x = c(2, 4, 8, 16, 32, 64))
+predict(fit, newdata = new_prices, pred_type = "fixed")
+#>    x   y_pred
+#> 1  2 2.951724
+#> 2  4 3.065139
+#> 3  8 3.291969
+#> 4 16 3.745629
+#> 5 32 4.652950
+#> 6 64 6.467591
+# }
 ```

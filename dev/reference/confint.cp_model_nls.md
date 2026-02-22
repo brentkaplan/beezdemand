@@ -66,10 +66,15 @@ parameters.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE)
+# \donttest{
+data(etm)
+fit <- fit_cp_nls(etm, equation = "exponentiated")
 confint(fit)
-confint(fit, level = 0.90)
-confint(fit, method = "profile")  # Profile-t intervals
-} # }
+#> # A tibble: 3 × 6
+#>   term         estimate conf.low conf.high level method    
+#>   <chr>           <dbl>    <dbl>     <dbl> <dbl> <chr>     
+#> 1 log10_qalone    0.743    0.604     0.882  0.95 asymptotic
+#> 2 I              -1.16    -3.53      1.21   0.95 asymptotic
+#> 3 log10_beta     -0.546   -1.32      0.231  0.95 asymptotic
+# }
 ```

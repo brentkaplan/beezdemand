@@ -119,22 +119,32 @@ estimates (on the log10 scale).</p></li>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit_one_factor</span><span class="op">$</span><span class="va">model</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="co"># Get fixed effects</span></span></span>
-<span class="r-in"><span>  <span class="va">fixed_coeffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor</span>, type <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fixed_coeffs</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span>  <span class="co"># Get random effects</span></span></span>
-<span class="r-in"><span>  <span class="va">random_effects_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">random_effects_summary</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span>  <span class="co"># Get subject-specific coefficients (default)</span></span></span>
-<span class="r-in"><span>  <span class="va">subject_coeffs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor</span><span class="op">)</span> <span class="co"># or type = "combined"</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">subject_coeffs</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">ko</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>,</span></span>
+<span class="r-in"><span>                        id_var <span class="op">=</span> <span class="st">"monkey"</span>, equation_form <span class="op">=</span> <span class="st">"zben"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Generating starting values using method: 'heuristic'</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using heuristic method for starting values.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> --- Fitting NLME Model ---</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Equation Form: zben</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Param Space: log10</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 2 (Q0: 1, alpha: 1)</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Q0     alpha </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  2.158507 -4.586304 </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Q0         alpha</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> A -8.206090e-12 -1.491344e-09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> B -1.086347e-10 -2.434156e-11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> C  1.168408e-10  1.515685e-09</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"combined"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         Q0     alpha</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> A 2.158507 -4.586304</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> B 2.158507 -4.586304</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> C 2.158507 -4.586304</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

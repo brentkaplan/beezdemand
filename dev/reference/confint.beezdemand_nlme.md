@@ -62,10 +62,23 @@ models.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- fit_demand_mixed(data, y_var = "y", x_var = "x", id_var = "id")
+# \donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 2 (Q0: 1, alpha: 1)
 confint(fit)
-confint(fit, level = 0.90)
-confint(fit, method = "profile")  # More accurate but slower
-} # }
+#> # A tibble: 2 × 6
+#>   term  estimate conf.low conf.high level component
+#>   <chr>    <dbl>    <dbl>     <dbl> <dbl> <chr>    
+#> 1 Q0        2.16     2.08      2.24  0.95 fixed    
+#> 2 alpha    -4.59    -4.64     -4.53  0.95 fixed    
+# }
 ```

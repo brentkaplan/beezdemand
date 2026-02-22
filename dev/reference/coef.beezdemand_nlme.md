@@ -73,20 +73,30 @@ Depending on `type`:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Assuming 'fit_one_factor' is a successfully fitted beezdemand_nlme object
-if (!is.null(fit_one_factor$model)) {
-  # Get fixed effects
-  fixed_coeffs <- coef(fit_one_factor, type = "fixed")
-  print(fixed_coeffs)
-
-  # Get random effects
-  random_effects_summary <- coef(fit_one_factor, type = "random")
-  print(random_effects_summary)
-
-  # Get subject-specific coefficients (default)
-  subject_coeffs <- coef(fit_one_factor) # or type = "combined"
-  print(subject_coeffs)
-}
-} # }
+# \donttest{
+data(ko)
+fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
+                        id_var = "monkey", equation_form = "zben")
+#> Generating starting values using method: 'heuristic'
+#> Using heuristic method for starting values.
+#> --- Fitting NLME Model ---
+#> Equation Form: zben
+#> Param Space: log10
+#> NLME Formula: y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
+#> Start values (first few): Q0_int=2.27, alpha_int=-3
+#> Number of fixed parameters: 2 (Q0: 1, alpha: 1)
+coef(fit, type = "fixed")
+#>        Q0     alpha 
+#>  2.158507 -4.586304 
+coef(fit, type = "random")
+#>              Q0         alpha
+#> A -8.206090e-12 -1.491344e-09
+#> B -1.086347e-10 -2.434156e-11
+#> C  1.168408e-10  1.515685e-09
+coef(fit, type = "combined")
+#>         Q0     alpha
+#> A 2.158507 -4.586304
+#> B 2.158507 -4.586304
+#> C 2.158507 -4.586304
+# }
 ```
