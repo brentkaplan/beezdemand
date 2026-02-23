@@ -63,4 +63,5 @@
 ^docs$
 ^pkgdown$
 ^AGENTS\.md$
+^LLMS\.md$
 ^context7\.json$
