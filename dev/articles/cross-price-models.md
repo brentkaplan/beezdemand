@@ -46,6 +46,11 @@ Typical columns: - `id`: participant identifier
 
 - `group`: product category
 
+These are the default canonical column names. If your data uses
+different names, pass `x_var`, `y_var`, `id_var`, `group_var`, or
+`target_var` arguments to the fitting functions (e.g.,
+`fit_cp_nls(data, x_var = "price", y_var = "qty")`).
+
 ## Complete Cross-Price Analysis Workflow
 
 This section demonstrates a complete analysis workflow using data that
@@ -166,7 +171,7 @@ alt_data <- cp |>
 
 # Fit cross-price model
 fit_alt <- fit_cp_nls(
-    dat = alt_data,
+    data = alt_data,
     equation = "exponentiated",
     return_all = TRUE
 )

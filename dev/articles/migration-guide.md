@@ -510,7 +510,7 @@ sessionInfo()
 #> [58] otel_0.2.0          lme4_1.1-38         ragg_1.5.0         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         
 #> [64] rbibutils_2.4.1     mgcv_1.9-3          rlang_1.1.7        
-#> [67] Rcpp_1.1.1          xtable_1.8-4        glue_1.8.0         
+#> [67] Rcpp_1.1.1          xtable_1.8-8        glue_1.8.0         
 #> [70] nlsr_2023.8.31      minqa_1.2.8         jsonlite_2.0.0     
 #> [73] R6_2.6.1            systemfonts_1.3.1   fs_1.6.6
 ```

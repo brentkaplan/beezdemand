@@ -131,9 +131,7 @@
 
 - New migration guide vignette
   ([`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md))
-  documenting the
-
-  transition from
+  documenting the transition from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
   to
   [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
@@ -211,8 +209,25 @@ This release introduces **Stability Contracts** for all model classes:
 - **glance() methods** return 1-row tibbles with columns: `model_class`,
   `backend`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC`.
 
-See the ARCHITECTURE.md “Stability Contracts” section for complete
-details.
+### API Changes
+
+- [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
+  and
+  [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
+  now accept `x_var`/`y_var` to map non-standard column names to
+  canonical ones (`"x"`, `"y"`).
+  [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
+  additionally accepts `id_var`, `group_var`, and `target_var`. Default
+  behavior is unchanged when these arguments are omitted.
+
+- [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
+  gains explicit `filter_target` and `target_level` top-level arguments
+  (previously these were handled implicitly via
+  [`validate_cp_data()`](https://brentkaplan.github.io/beezdemand/reference/validate_cp_data.md)).
+  Existing calls without these arguments are unaffected.
+
+- `fit_cp_nls(start_vals=)` is deprecated in favor of `start_values=`.
+  The old argument still works but emits a deprecation warning.
 
 ------------------------------------------------------------------------
 

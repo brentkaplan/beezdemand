@@ -112,10 +112,7 @@
 <div class="section level4">
 <h4 id="other-new-features-0-2-0">Other New Features<a class="anchor" aria-label="anchor" href="#other-new-features-0-2-0"></a></h4>
 <ul><li><p>New <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> methods for extracting confidence intervals from all model classes: <code>beezdemand_fixed</code>, <code>beezdemand_hurdle</code>, <code>beezdemand_nlme</code>, and <code>cp_model_nls</code>.</p></li>
-<li>
-<p>New migration guide vignette (<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code>) documenting the</p>
-<p>transition from <code><a href="../reference/FitCurves.html">FitCurves()</a></code> to <code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>.</p>
-</li>
+<li><p>New migration guide vignette (<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code>) documenting the transition from <code><a href="../reference/FitCurves.html">FitCurves()</a></code> to <code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>.</p></li>
 </ul></div>
 </div>
 <div class="section level3">
@@ -144,8 +141,13 @@
 <ul><li><p><strong>summary() objects</strong> now return structured S3 objects with class <code>c("summary.&lt;class&gt;", "beezdemand_summary")</code>. Required fields include: <code>call</code>, <code>model_class</code>, <code>backend</code>, <code>nobs</code>, <code>n_subjects</code>, <code>converged</code>, <code>logLik</code>, <code>AIC</code>, <code>BIC</code>, <code>coefficients</code> (tibble), <code>notes</code>.</p></li>
 <li><p><strong>tidy() methods</strong> return tibbles with columns: <code>term</code>, <code>estimate</code>, <code>std.error</code>, <code>statistic</code>, <code>p.value</code>. Multi-part models include a <code>component</code> column (e.g., “fixed”, “variance”, “derived”).</p></li>
 <li><p><strong>glance() methods</strong> return 1-row tibbles with columns: <code>model_class</code>, <code>backend</code>, <code>nobs</code>, <code>n_subjects</code>, <code>converged</code>, <code>logLik</code>, <code>AIC</code>, <code>BIC</code>.</p></li>
-</ul><p>See the ARCHITECTURE.md “Stability Contracts” section for complete details.</p>
-<hr></div>
+</ul></div>
+<div class="section level3">
+<h3 id="api-changes-0-2-0">API Changes<a class="anchor" aria-label="anchor" href="#api-changes-0-2-0"></a></h3>
+<ul><li><p><code><a href="../reference/fit_cp_nls.html">fit_cp_nls()</a></code> and <code><a href="../reference/fit_cp_linear.html">fit_cp_linear()</a></code> now accept <code>x_var</code>/<code>y_var</code> to map non-standard column names to canonical ones (<code>"x"</code>, <code>"y"</code>). <code><a href="../reference/fit_cp_linear.html">fit_cp_linear()</a></code> additionally accepts <code>id_var</code>, <code>group_var</code>, and <code>target_var</code>. Default behavior is unchanged when these arguments are omitted.</p></li>
+<li><p><code><a href="../reference/fit_cp_linear.html">fit_cp_linear()</a></code> gains explicit <code>filter_target</code> and <code>target_level</code> top-level arguments (previously these were handled implicitly via <code><a href="../reference/validate_cp_data.html">validate_cp_data()</a></code>). Existing calls without these arguments are unaffected.</p></li>
+<li><p><code>fit_cp_nls(start_vals=)</code> is deprecated in favor of <code>start_values=</code>. The old argument still works but emits a deprecation warning.</p></li>
+</ul><hr></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.3" id="beezdemand-013">beezdemand 0.1.3<a class="anchor" aria-label="anchor" href="#beezdemand-013"></a></h2>

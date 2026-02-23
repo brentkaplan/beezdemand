@@ -35,7 +35,7 @@ Natural-scale values are recovered as \\Q\_{alone} =
 10^{log10\\qalone}\\ and \\\beta = 10^{log10\\beta}\\.
 
 The function first attempts a multi-start nonlinear least squares fit
-(`nls.multstart`). If that fails—or if explicit `start_vals` are
+(`nls.multstart`). If that fails—or if explicit `start_values` are
 provided—it falls back to
 [`minpack.lm::nlsLM`](https://rdrr.io/pkg/minpack.lm/man/nlsLM.html).
 Optionally, it will make a final attempt with
@@ -49,7 +49,10 @@ downstream methods.
 fit_cp_nls(
   data,
   equation = c("exponentiated", "exponential", "additive"),
-  start_vals = NULL,
+  x_var = "x",
+  y_var = "y",
+  start_values = NULL,
+  start_vals = lifecycle::deprecated(),
   iter = 100,
   bounds = NULL,
   fallback_to_nlsr = TRUE,
@@ -61,9 +64,8 @@ fit_cp_nls(
 
 - data:
 
-  A data frame with columns `x` (alternative price) and `y`
-  (consumption). Additional columns are ignored. Input is validated
-  internally.
+  A data frame with columns for price and consumption. Additional
+  columns are ignored. Input is validated internally.
 
 - equation:
 
@@ -71,11 +73,26 @@ fit_cp_nls(
   `c("exponentiated", "exponential", "additive")`. Default is
   `"exponentiated"`.
 
-- start_vals:
+- x_var:
+
+  Character string; name of the price column in `data`. Default is
+  `"x"`. The column is renamed to `"x"` internally; see
+  [`validate_cp_data()`](https://brentkaplan.github.io/beezdemand/reference/validate_cp_data.md).
+
+- y_var:
+
+  Character string; name of the consumption column in `data`. Default is
+  `"y"`. The column is renamed to `"y"` internally.
+
+- start_values:
 
   Optional **named list** of initial values for parameters
   `log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
   plausible ranges from the data and uses multi-start search.
+
+- start_vals:
+
+  **\[deprecated\]** Use `start_values` instead.
 
 - iter:
 
@@ -107,7 +124,8 @@ If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
 
 - `equation`: the model family used.
 
-- `start_vals`: named list of starting values (final used).
+- `start_vals`: named list of starting values (final used; kept for
+  backward compatibility).
 
 - `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
 
@@ -118,7 +136,7 @@ backend.
 
 ## Details
 
-**Start values.** When `start_vals` is missing, the function: (1)
+**Start values.** When `start_values` is missing, the function: (1)
 estimates a reasonable range for `log10_qalone` from the observed `y`,
 (2) estimates `log10_beta` from the price range, and (3) launches a
 multi-start grid in `nls.multstart`.
@@ -133,9 +151,9 @@ additive forms if you need to retain zero consumption values.
 1.  [`nls.multstart::nls_multstart()`](https://rdrr.io/pkg/nls.multstart/man/nls_multstart.html)
     with random starts.
 
-2.  If that fails (or if `start_vals` provided):
+2.  If that fails (or if `start_values` provided):
     [`minpack.lm::nlsLM()`](https://rdrr.io/pkg/minpack.lm/man/nlsLM.html)
-    using `start_vals` (user or internally estimated).
+    using `start_values` (user or internally estimated).
 
 3.  If that fails and `fallback_to_nlsr = TRUE`:
     [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html).

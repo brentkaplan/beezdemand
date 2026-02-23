@@ -88,7 +88,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-02-22</h4>
+            <h4 data-toc-skip class="date">2026-02-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/cross-price-models.Rmd" class="external-link"><code>vignettes/cross-price-models.Rmd</code></a></small>
       <div class="d-none name"><code>cross-price-models.Rmd</code></div>
@@ -141,6 +141,11 @@ approaches for cross-price modeling.</p>
 <li><p><code>target</code>: condition type (e.g., “alt”)</p></li>
 <li><p><code>group</code>: product category</p></li>
 </ul>
+<p>These are the default canonical column names. If your data uses
+different names, pass <code>x_var</code>, <code>y_var</code>,
+<code>id_var</code>, <code>group_var</code>, or <code>target_var</code>
+arguments to the fitting functions (e.g.,
+<code>fit_cp_nls(data, x_var = "price", y_var = "qty")</code>).</p>
 </div>
 <div class="section level2">
 <h2 id="complete-cross-price-analysis-workflow">Complete Cross-Price Analysis Workflow<a class="anchor" aria-label="anchor" href="#complete-cross-price-analysis-workflow"></a>
@@ -263,7 +268,7 @@ function of target price:</p>
 <span></span>
 <span><span class="co"># Fit cross-price model</span></span>
 <span><span class="va">fit_alt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_cp_nls.html">fit_cp_nls</a></span><span class="op">(</span></span>
-<span>    dat <span class="op">=</span> <span class="va">alt_data</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">alt_data</span>,</span>
 <span>    equation <span class="op">=</span> <span class="st">"exponentiated"</span>,</span>
 <span>    return_all <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
