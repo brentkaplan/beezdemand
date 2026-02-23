@@ -10,10 +10,11 @@ for zero-heavy data, and cross-price substitution models.
 
 ## Data Format
 
-All modeling functions expect **long-format** data with three required columns:
-- `id` — subject/series identifier
-- `x` — price (independent variable, numeric, >= 0)
-- `y` — consumption (dependent variable, numeric, >= 0)
+All modeling functions expect **long-format** data. The default column names are
+`id` (subject/series identifier), `x` (price, numeric, >= 0), and `y`
+(consumption, numeric, >= 0). Most functions accept `id_var`, `x_var`, and
+`y_var` parameters to map non-standard column names. Cross-price fitters
+(`fit_cp_nls`, `fit_cp_linear`) also accept `group_var` and `target_var`.
 
 Wide-to-long: use `tidyr::pivot_longer()`. Zero replacement: use `ChangeData()`.
 For mixed models, consider `ll4()` transformation to handle zeros and wide range.

@@ -33,18 +33,23 @@
 #' \eqn{\beta = 10^{log10\_beta}}.
 #'
 #' The function first attempts a multi-start nonlinear least squares fit
-#' (`nls.multstart`). If that fails—or if explicit `start_vals` are provided—it
+#' (`nls.multstart`). If that fails—or if explicit `start_values` are provided—it
 #' falls back to `minpack.lm::nlsLM`. Optionally, it will make a final attempt
 #' with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
 #' with metadata for downstream methods.
 #'
-#' @param data A data frame with columns `x` (alternative price) and `y` (consumption).
+#' @param data A data frame with columns for price and consumption.
 #'             Additional columns are ignored. Input is validated internally.
 #' @param equation Character string; model family, one of
 #'   `c("exponentiated", "exponential", "additive")`. Default is `"exponentiated"`.
-#' @param start_vals Optional **named list** of initial values for parameters
+#' @param x_var Character string; name of the price column in `data`. Default is
+#'   `"x"`. The column is renamed to `"x"` internally; see `validate_cp_data()`.
+#' @param y_var Character string; name of the consumption column in `data`. Default
+#'   is `"y"`. The column is renamed to `"y"` internally.
+#' @param start_values Optional **named list** of initial values for parameters
 #'   `log10_qalone`, `I`, and `log10_beta`. If `NULL`, the function derives
 #'   plausible ranges from the data and uses multi-start search.
+#' @param start_vals `r lifecycle::badge("deprecated")` Use `start_values` instead.
 #' @param iter Integer; number of random starts for `nls.multstart` (default `100`).
 #' @param bounds Deprecated. Log10-parameterized parameters are naturally unbounded.
 #'   This argument is ignored but retained for backwards compatibility.
@@ -54,7 +59,7 @@
 #'   model and useful metadata. If `FALSE`, return the bare fitted model object.
 #'
 #' @details
-#' **Start values.** When `start_vals` is missing, the function:
+#' **Start values.** When `start_values` is missing, the function:
 #' (1) estimates a reasonable range for `log10_qalone` from the observed `y`,
 #' (2) estimates `log10_beta` from the price range, and (3) launches a multi-start
 #' grid in `nls.multstart`.
@@ -67,8 +72,8 @@
 #' **Fitting pipeline (short-circuiting):**
 #' \enumerate{
 #'   \item `nls.multstart::nls_multstart()` with random starts.
-#'   \item If that fails (or if `start_vals` provided): `minpack.lm::nlsLM()` using
-#'         `start_vals` (user or internally estimated).
+#'   \item If that fails (or if `start_values` provided): `minpack.lm::nlsLM()` using
+#'         `start_values` (user or internally estimated).
 #'   \item If that fails and `fallback_to_nlsr = TRUE`: `nlsr::wrapnlsr()`.
 #' }
 #'
@@ -83,7 +88,7 @@
 #'   \item `model`: the fitted object from the successful backend.
 #'   \item `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
 #'   \item `equation`: the model family used.
-#'   \item `start_vals`: named list of starting values (final used).
+#'   \item `start_vals`: named list of starting values (final used; kept for backward compatibility).
 #'   \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
 #'   \item `data`: the 2-column data frame actually fit.
 #' }
@@ -97,6 +102,7 @@
 #' @seealso
 #' \code{\link{check_unsystematic_cp}} for pre-fit data screening,
 #' \code{\link{validate_cp_data}} for input validation.
+#' @importFrom lifecycle deprecated is_present deprecate_warn
 #' @importFrom nls.multstart nls_multstart
 #' @importFrom nlsr wrapnlsr
 #' @importFrom minpack.lm nlsLM nls.lm.control
@@ -120,7 +126,10 @@
 fit_cp_nls <- function(
   data,
   equation = c("exponentiated", "exponential", "additive"),
-  start_vals = NULL,
+  x_var = "x",
+  y_var = "y",
+  start_values = NULL,
+  start_vals = lifecycle::deprecated(),
   iter = 100,
   bounds = NULL,
   fallback_to_nlsr = TRUE,
@@ -128,10 +137,21 @@ fit_cp_nls <- function(
 ) {
   equation <- match.arg(equation)
 
-  # Validate: Only x and y are required here.
+  # Handle deprecated start_vals argument
+  if (lifecycle::is_present(start_vals)) {
+    lifecycle::deprecate_warn(
+      "0.3.0",
+      "fit_cp_nls(start_vals=)",
+      "fit_cp_nls(start_values=)"
+    )
+    start_values <- start_vals
+  }
 
+  # Validate: Only x and y are required here.
   data <- validate_cp_data(
     data,
+    x_var = x_var,
+    y_var = y_var,
     required_cols = c("x", "y"),
     filter_target = FALSE
   )
@@ -206,7 +226,7 @@ fit_cp_nls <- function(
   )
 
   # If no explicit start values, use multi-start search
-  if (is.null(start_vals)) {
+  if (is.null(start_values)) {
     # Try nls.multstart first (no bounds for log-transformed parameters)
     nls_multi_fit <- tryCatch(
       {
@@ -244,14 +264,14 @@ fit_cp_nls <- function(
     }
   }
 
-  # If explicit start_vals provided or nls.multstart failed.
+  # If explicit start_values provided or nls.multstart failed.
   if (
-    !is.null(start_vals) ||
+    !is.null(start_values) ||
       (exists("nls_multi_fit") && inherits(nls_multi_fit, "error"))
   ) {
-    if (is.null(start_vals)) {
+    if (is.null(start_values)) {
       warning("nls.multstart failed; using estimated start values with nlsLM.")
-      start_vals <- list(
+      start_values <- list(
         log10_qalone = log10_qalone_mid,
         I = 0,
         log10_beta = log10_beta_mid
@@ -262,7 +282,7 @@ fit_cp_nls <- function(
       minpack.lm::nlsLM(
         formula = formula_nls,
         data = data,
-        start = start_vals,
+        start = start_values,
         control = minpack.lm::nls.lm.control(maxiter = 200)
       ),
       error = function(e) e
@@ -275,7 +295,7 @@ fit_cp_nls <- function(
           model = nlsLM_fit,
           method = used_method,
           equation = equation,
-          start_vals = start_vals,
+          start_vals = start_values,
           nlsLM_fit = nlsLM_fit,
           nlsr_fit = NULL,
           data = data
@@ -307,7 +327,7 @@ fit_cp_nls <- function(
         nlsr::wrapnlsr(
           formula = formula_nlsr,
           data = data,
-          start = start_vals
+          start = start_values
         ),
         error = function(e) e
       )
@@ -318,7 +338,7 @@ fit_cp_nls <- function(
           model = nlsr_fit,
           method = used_method,
           equation = equation,
-          start_vals = start_vals,
+          start_vals = start_values,
           nlsLM_fit = nlsLM_fit,
           nlsr_fit = nlsr_fit,
           data = data
@@ -339,13 +359,36 @@ fit_cp_nls <- function(
 # Linear Cross-Price Demand Model Fitting
 #' Fit a Linear Cross-Price Demand Model
 #'
-#' @param data A data frame containing columns: x and y, and optionally target, id, and group.
-#' @param type The type of model: "fixed" for standard linear or "mixed" for mixed effects.
-#' @param formula Optional formula override. If NULL, a formula will be constructed based on other parameters.
-#' @param log10x Logical; if TRUE and formula is NULL, uses log10(x) instead of x in the formula. Default is FALSE.
-#' @param group_effects Logical or character; if TRUE, includes group as a factor with interactions.
-#'        Can also be "intercept" for group intercepts only or "interaction" for full interactions. Default is FALSE.
-#' @param random_slope Logical; for mixed models, if TRUE, includes random slopes for x. Default is FALSE.
+#' @param data A data frame containing columns for price, consumption, and
+#'   optionally target indicator, subject identifier, and group.
+#' @param type The type of model: `"fixed"` for standard linear or `"mixed"` for
+#'   mixed effects.
+#' @param x_var Character string; name of the price column. Default is `"x"`.
+#'   Renamed to `"x"` internally.
+#' @param y_var Character string; name of the consumption column. Default is
+#'   `"y"`. Renamed to `"y"` internally.
+#' @param id_var Character string; name of the subject identifier column.
+#'   Default is `"id"`. Required for mixed models; renamed to `"id"` internally.
+#' @param group_var Character string; name of the group column. Default is
+#'   `"group"`. Renamed to `"group"` internally when present.
+#' @param target_var Character string; name of the target indicator column.
+#'   Default is `"target"`. Renamed to `"target"` internally when present.
+#' @param filter_target Logical; if TRUE (default), filters to rows where the
+#'   target column equals `target_level`.
+#' @param target_level Character string; value of the target column to retain
+#'   when `filter_target = TRUE`. Default is `"alt"`.
+#' @param formula Optional formula override. If NULL, a formula will be
+#'   constructed based on other parameters. If non-NULL and any `*_var` argument
+#'   differs from its default, an error is thrown because the formula references
+#'   canonical column names that no longer exist before renaming; rename columns
+#'   before calling, or omit the `formula` argument.
+#' @param log10x Logical; if TRUE and formula is NULL, uses `log10(x)` instead
+#'   of `x` in the formula. Default is FALSE.
+#' @param group_effects Logical or character; if TRUE, includes group as a factor
+#'   with interactions. Can also be `"intercept"` for group intercepts only or
+#'   `"interaction"` for full interactions. Default is FALSE.
+#' @param random_slope Logical; for mixed models, if TRUE, includes random slopes
+#'   for x. Default is FALSE.
 #' @param return_all Logical; if TRUE, returns additional model metadata.
 #' @param ... Additional arguments passed to underlying modeling functions.
 #' @return Fitted linear model.
@@ -354,6 +397,13 @@ fit_cp_nls <- function(
 fit_cp_linear <- function(
   data,
   type = c("fixed", "mixed"),
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  group_var = "group",
+  target_var = "target",
+  filter_target = TRUE,
+  target_level = "alt",
   formula = NULL,
   log10x = FALSE,
   group_effects = FALSE,
@@ -362,6 +412,18 @@ fit_cp_linear <- function(
   ...
 ) {
   type <- match.arg(type)
+
+  # Formula conflict check: custom *_var with non-NULL formula is ambiguous
+  non_default_vars <- !identical(x_var, "x") || !identical(y_var, "y") ||
+    !identical(id_var, "id") || !identical(group_var, "group") ||
+    !identical(target_var, "target")
+  if (!is.null(formula) && non_default_vars) {
+    stop(
+      "Custom formulas must use canonical column names (x, y, id, group, target).\n",
+      "When supplying a formula, rename your columns before calling fit_cp_linear() ",
+      "or omit the formula argument and let fit_cp_linear() build it automatically."
+    )
+  }
 
   # Determine required columns based on parameters
   required_cols <- c("x", "y")
@@ -378,8 +440,14 @@ fit_cp_linear <- function(
     # Validate and filter data for fixed effects model
     data <- validate_cp_data(
       data,
+      x_var = x_var,
+      y_var = y_var,
+      id_var = id_var,
+      group_var = group_var,
+      target_var = target_var,
       required_cols = required_cols,
-      filter_target = TRUE
+      filter_target = filter_target,
+      target_level = target_level
     )
 
     if (log10x && any(data$x <= 0)) {
@@ -431,8 +499,14 @@ fit_cp_linear <- function(
     # Validate data for mixed effects models
     data <- validate_cp_data(
       data,
+      x_var = x_var,
+      y_var = y_var,
+      id_var = id_var,
+      group_var = group_var,
+      target_var = target_var,
       required_cols = required_cols,
-      filter_target = TRUE,
+      filter_target = filter_target,
+      target_level = target_level,
       require_id = TRUE
     )
 

@@ -27,7 +27,7 @@ All demand functions expect **long-format** data:
 | `x` | Price (>= 0) | Yes — `x_var` param |
 | `y` | Consumption (>= 0) | Yes — `y_var` param |
 
-**Cross-price exception:** `fit_cp_nls()` and `fit_cp_linear()` require hardcoded column names `x`, `y`, `group`, `target`, `id` — no `_var` parameters.
+Cross-price fitters `fit_cp_nls()` and `fit_cp_linear()` now also accept `x_var`/`y_var` (and `id_var`/`group_var`/`target_var` for `fit_cp_linear()`); defaults remain `x`/`y`/`id`/`group`/`target`.
 
 ## Return Object Contracts
 
@@ -63,7 +63,7 @@ All demand functions expect **long-format** data:
 
 3. **Equation aliases:** `"hs"` (in `fit_demand_fixed`) corresponds to Hursh & Silberberg (2008). The same model is called `"zben"` in `fit_demand_mixed` and `"zhao_exponential"` in `fit_demand_hurdle`. Different names, same underlying exponential demand equation.
 
-4. **Cross-price column names:** Unlike demand functions, `fit_cp_nls()` and `fit_cp_linear()` do **not** accept `x_var`/`y_var` parameters. Columns must be named exactly `x`, `y`, `group`, `target`, `id`.
+4. **Cross-price column names:** `fit_cp_nls()` and `fit_cp_linear()` accept `x_var`/`y_var` (and `id_var`/`group_var`/`target_var` for `fit_cp_linear()`) to map non-standard column names to canonical ones. Defaults are `x`, `y`, `id`, `group`, `target`. Canonical names are always used in the returned `$data`.
 
 5. **Parameter space:** Many functions default to `param_space = "log10"` for estimation stability. Use `tidy(fit, report_space = "natural")` to get natural-scale estimates.
 

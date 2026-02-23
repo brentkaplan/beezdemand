@@ -7,7 +7,10 @@
 fit_cp_nls(
   data,
   equation = c("exponentiated", "exponential", "additive"),
-  start_vals = NULL,
+  x_var = "x",
+  y_var = "y",
+  start_values = NULL,
+  start_vals = lifecycle::deprecated(),
   iter = 100,
   bounds = NULL,
   fallback_to_nlsr = TRUE,
@@ -15,15 +18,23 @@ fit_cp_nls(
 )
 }
 \arguments{
-\item{data}{A data frame with columns \code{x} (alternative price) and \code{y} (consumption).
+\item{data}{A data frame with columns for price and consumption.
 Additional columns are ignored. Input is validated internally.}
 
 \item{equation}{Character string; model family, one of
 \code{c("exponentiated", "exponential", "additive")}. Default is \code{"exponentiated"}.}
 
-\item{start_vals}{Optional \strong{named list} of initial values for parameters
+\item{x_var}{Character string; name of the price column in \code{data}. Default is
+\code{"x"}. The column is renamed to \code{"x"} internally; see \code{validate_cp_data()}.}
+
+\item{y_var}{Character string; name of the consumption column in \code{data}. Default
+is \code{"y"}. The column is renamed to \code{"y"} internally.}
+
+\item{start_values}{Optional \strong{named list} of initial values for parameters
 \code{log10_qalone}, \code{I}, and \code{log10_beta}. If \code{NULL}, the function derives
 plausible ranges from the data and uses multi-start search.}
+
+\item{start_vals}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{start_values} instead.}
 
 \item{iter}{Integer; number of random starts for \code{nls.multstart} (default \code{100}).}
 
@@ -42,7 +53,7 @@ If \code{return_all = TRUE} (default): a list of class \code{"cp_model_nls"}:
 \item \code{model}: the fitted object from the successful backend.
 \item \code{method}: one of \code{"nls_multstart"}, \code{"nlsLM"}, or \code{"wrapnlsr"}.
 \item \code{equation}: the model family used.
-\item \code{start_vals}: named list of starting values (final used).
+\item \code{start_vals}: named list of starting values (final used; kept for backward compatibility).
 \item \code{nlsLM_fit}, \code{nlsr_fit}: fits from later stages (if attempted).
 \item \code{data}: the 2-column data frame actually fit.
 }
@@ -80,13 +91,13 @@ Natural-scale values are recovered as \eqn{Q_{alone} = 10^{log10\_qalone}} and
 \eqn{\beta = 10^{log10\_beta}}.
 
 The function first attempts a multi-start nonlinear least squares fit
-(\code{nls.multstart}). If that fails—or if explicit \code{start_vals} are provided—it
+(\code{nls.multstart}). If that fails—or if explicit \code{start_values} are provided—it
 falls back to \code{minpack.lm::nlsLM}. Optionally, it will make a final attempt
 with \code{nlsr::wrapnlsr}. Returns either the fitted model or a structured object
 with metadata for downstream methods.
 }
 \details{
-\strong{Start values.} When \code{start_vals} is missing, the function:
+\strong{Start values.} When \code{start_values} is missing, the function:
 (1) estimates a reasonable range for \code{log10_qalone} from the observed \code{y},
 (2) estimates \code{log10_beta} from the price range, and (3) launches a multi-start
 grid in \code{nls.multstart}.
@@ -99,8 +110,8 @@ retain zero consumption values.
 \strong{Fitting pipeline (short-circuiting):}
 \enumerate{
 \item \code{nls.multstart::nls_multstart()} with random starts.
-\item If that fails (or if \code{start_vals} provided): \code{minpack.lm::nlsLM()} using
-\code{start_vals} (user or internally estimated).
+\item If that fails (or if \code{start_values} provided): \code{minpack.lm::nlsLM()} using
+\code{start_values} (user or internally estimated).
 \item If that fails and \code{fallback_to_nlsr = TRUE}: \code{nlsr::wrapnlsr()}.
 }
 

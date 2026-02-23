@@ -29,8 +29,7 @@ All functions expect **long-format** data with three columns:
 - `x` — price (>= 0)
 - `y` — consumption (>= 0)
 
-Column names are customizable in most functions via `id_var`, `x_var`, `y_var` parameters.
-**Exception:** `fit_cp_nls()` and `fit_cp_linear()` require hardcoded column names `x`, `y` (and `group`, `target`, `id` for cross-price).
+Column names are customizable via `id_var`, `x_var`, `y_var` parameters (and `group_var`, `target_var` for cross-price functions).
 
 ## Data Screening
 
@@ -134,12 +133,14 @@ get_subject_pars(fit_h)            # Q0, alpha, breakpoint, Pmax, Omax per subje
 For modeling substitution between commodities.
 
 ```r
-# Data must have columns: x, y, group, target, id (hardcoded names)
+# Default column names: x, y, group, target, id
+# Use x_var/y_var/id_var/group_var/target_var to map non-standard names
 
 # Nonlinear cross-price
 fit_cp <- fit_cp_nls(
   data,
-  equation = "exponentiated"  # "exponentiated", "exponential", "additive"
+  equation = "exponentiated",  # "exponentiated", "exponential", "additive"
+  x_var = "x", y_var = "y"    # optional: map custom column names
 )
 
 # Linear cross-price

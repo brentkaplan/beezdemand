@@ -83,7 +83,6 @@
   `cp_model_nls`.
 
 * New migration guide vignette (`vignette("migration-guide")`) documenting the
-
   transition from `FitCurves()` to `fit_demand_fixed()`.
 
 ## Breaking Changes
@@ -141,7 +140,19 @@ This release introduces **Stability Contracts** for all model classes:
 * **glance() methods** return 1-row tibbles with columns: `model_class`,
   `backend`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC`.
 
-See the ARCHITECTURE.md "Stability Contracts" section for complete details.
+## API Changes
+
+* `fit_cp_nls()` and `fit_cp_linear()` now accept `x_var`/`y_var` to map
+  non-standard column names to canonical ones (`"x"`, `"y"`). `fit_cp_linear()`
+  additionally accepts `id_var`, `group_var`, and `target_var`. Default behavior
+  is unchanged when these arguments are omitted.
+
+* `fit_cp_linear()` gains explicit `filter_target` and `target_level` top-level
+  arguments (previously these were handled implicitly via `validate_cp_data()`).
+  Existing calls without these arguments are unaffected.
+
+* `fit_cp_nls(start_vals=)` is deprecated in favor of `start_values=`. The old
+  argument still works but emits a deprecation warning.
 
 ---
 

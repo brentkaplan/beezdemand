@@ -9,6 +9,13 @@
 fit_cp_linear(
   data,
   type = c("fixed", "mixed"),
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  group_var = "group",
+  target_var = "target",
+  filter_target = TRUE,
+  target_level = "alt",
   formula = NULL,
   log10x = FALSE,
   group_effects = FALSE,
@@ -34,18 +41,48 @@ fit_cp_linear.mixed(
 )
 }
 \arguments{
-\item{data}{A data frame containing columns: x and y, and optionally target, id, and group.}
+\item{data}{A data frame containing columns for price, consumption, and
+optionally target indicator, subject identifier, and group.}
 
-\item{type}{The type of model: "fixed" for standard linear or "mixed" for mixed effects.}
+\item{type}{The type of model: \code{"fixed"} for standard linear or \code{"mixed"} for
+mixed effects.}
 
-\item{formula}{Optional formula override. If NULL, a formula will be constructed based on other parameters.}
+\item{x_var}{Character string; name of the price column. Default is \code{"x"}.
+Renamed to \code{"x"} internally.}
 
-\item{log10x}{Logical; if TRUE and formula is NULL, uses log10(x) instead of x in the formula. Default is FALSE.}
+\item{y_var}{Character string; name of the consumption column. Default is
+\code{"y"}. Renamed to \code{"y"} internally.}
 
-\item{group_effects}{Logical or character; if TRUE, includes group as a factor with interactions.
-Can also be "intercept" for group intercepts only or "interaction" for full interactions. Default is FALSE.}
+\item{id_var}{Character string; name of the subject identifier column.
+Default is \code{"id"}. Required for mixed models; renamed to \code{"id"} internally.}
 
-\item{random_slope}{Logical; for mixed models, if TRUE, includes random slopes for x. Default is FALSE.}
+\item{group_var}{Character string; name of the group column. Default is
+\code{"group"}. Renamed to \code{"group"} internally when present.}
+
+\item{target_var}{Character string; name of the target indicator column.
+Default is \code{"target"}. Renamed to \code{"target"} internally when present.}
+
+\item{filter_target}{Logical; if TRUE (default), filters to rows where the
+target column equals \code{target_level}.}
+
+\item{target_level}{Character string; value of the target column to retain
+when \code{filter_target = TRUE}. Default is \code{"alt"}.}
+
+\item{formula}{Optional formula override. If NULL, a formula will be
+constructed based on other parameters. If non-NULL and any \verb{*_var} argument
+differs from its default, an error is thrown because the formula references
+canonical column names that no longer exist before renaming; rename columns
+before calling, or omit the \code{formula} argument.}
+
+\item{log10x}{Logical; if TRUE and formula is NULL, uses \code{log10(x)} instead
+of \code{x} in the formula. Default is FALSE.}
+
+\item{group_effects}{Logical or character; if TRUE, includes group as a factor
+with interactions. Can also be \code{"intercept"} for group intercepts only or
+\code{"interaction"} for full interactions. Default is FALSE.}
+
+\item{random_slope}{Logical; for mixed models, if TRUE, includes random slopes
+for x. Default is FALSE.}
 
 \item{return_all}{Logical; if TRUE, returns additional model metadata.}
 

@@ -419,3 +419,195 @@ test_that("fit_cp_nls handles negative I (substitutes)", {
   coefs <- coef(fit$model)
   expect_true(coefs["I"] < 0)
 })
+
+# ==============================================================================
+# Tests for *_var argument mapping (new in 0.3.0)
+# ==============================================================================
+
+test_that("fit_cp_nls works with non-default x_var and y_var", {
+  skip_if_not_installed("nls.multstart")
+
+  data_canon <- simulate_cp_exponentiated(n = 50, seed = 1)
+  # Rename canonical columns to custom names
+  data_custom <- data_canon
+  names(data_custom)[names(data_custom) == "x"] <- "price"
+  names(data_custom)[names(data_custom) == "y"] <- "qty"
+
+  fit_canon <- fit_cp_nls(
+    data_canon,
+    equation = "exponentiated",
+    return_all = TRUE,
+    iter = 50
+  )
+  fit_custom <- fit_cp_nls(
+    data_custom,
+    equation = "exponentiated",
+    x_var = "price",
+    y_var = "qty",
+    return_all = TRUE,
+    iter = 50
+  )
+
+  expect_s3_class(fit_custom, "cp_model_nls")
+  # Canonical names in stored data
+  expect_true("x" %in% names(fit_custom$data))
+  expect_true("y" %in% names(fit_custom$data))
+  # Coefficients should be approximately equal
+  expect_equal(
+    coef(fit_custom$model),
+    coef(fit_canon$model),
+    tolerance = 1e-4
+  )
+})
+
+test_that("fit_cp_nls emits deprecation warning for start_vals", {
+  skip_if_not_installed("nls.multstart")
+  skip_if_not_installed("lifecycle")
+
+  data <- simulate_cp_exponentiated(n = 50, seed = 42)
+  sv <- list(log10_qalone = 1, I = 1.5, log10_beta = -2)
+
+  lifecycle::expect_deprecated(
+    fit_cp_nls(
+      data,
+      equation = "exponentiated",
+      start_vals = sv,
+      return_all = TRUE
+    )
+  )
+})
+
+test_that("fit_cp_nls accepts start_values without warning", {
+  skip_if_not_installed("nls.multstart")
+
+  data <- simulate_cp_exponentiated(n = 50, seed = 42)
+  sv <- list(log10_qalone = 1, I = 1.5, log10_beta = -2)
+
+  expect_no_warning(
+    fit_cp_nls(
+      data,
+      equation = "exponentiated",
+      start_values = sv,
+      return_all = TRUE
+    )
+  )
+})
+
+test_that("fit_cp_nls errors on column collision", {
+  data <- simulate_cp_exponentiated(n = 20, seed = 1)
+  # data already has x and y; add a "price" col and request x_var = "price"
+  # but ALSO have "x" present -> collision
+  data$price <- data$x * 2
+
+  expect_error(
+    fit_cp_nls(data, x_var = "price"),
+    regexp = "x_var.*price.*column named.*x",
+    perl = TRUE
+  )
+})
+
+test_that("fit_cp_linear works with non-default *_var mapping (fixed)", {
+  skip_if_not_installed("lme4")
+
+  # Build data with canonical names, then rename
+  set.seed(99)
+  n <- 40
+  canon <- data.frame(
+    id     = rep(1:4, each = 10),
+    x      = runif(n, 1, 50),
+    y      = runif(n, 0, 20),
+    group  = rep(c("A", "B"), n / 2),
+    target = "alt"
+  )
+  custom <- canon
+  names(custom)[names(custom) == "x"]      <- "price"
+  names(custom)[names(custom) == "y"]      <- "qty"
+  names(custom)[names(custom) == "group"]  <- "grp"
+  names(custom)[names(custom) == "target"] <- "tgt"
+
+  fit <- fit_cp_linear(
+    custom,
+    type        = "fixed",
+    x_var       = "price",
+    y_var       = "qty",
+    group_var   = "grp",
+    target_var  = "tgt",
+    return_all  = TRUE
+  )
+
+  expect_s3_class(fit, "cp_model_lm")
+  # Canonical names in stored data
+  expect_true(all(c("x", "y") %in% names(fit$data)))
+  expect_false("price" %in% names(fit$data))
+  expect_false("qty" %in% names(fit$data))
+})
+
+test_that("fit_cp_linear explicit filter_target and target_level behave like defaults", {
+  set.seed(7)
+  n <- 30
+  data_with_target <- data.frame(
+    x      = runif(n, 1, 50),
+    y      = runif(n, 0, 20),
+    target = sample(c("alt", "own"), n, replace = TRUE)
+  )
+
+  fit_default <- fit_cp_linear(
+    data_with_target,
+    type       = "fixed",
+    return_all = TRUE
+  )
+  fit_explicit <- fit_cp_linear(
+    data_with_target,
+    type          = "fixed",
+    filter_target = TRUE,
+    target_level  = "alt",
+    return_all    = TRUE
+  )
+
+  expect_identical(fit_default$data, fit_explicit$data)
+})
+
+test_that("fit_cp_linear errors on formula conflict with non-default *_var", {
+  set.seed(42)
+  data <- data.frame(
+    price  = runif(20, 1, 50),
+    qty    = runif(20, 0, 20),
+    target = "alt"
+  )
+
+  expect_error(
+    fit_cp_linear(
+      data,
+      type    = "fixed",
+      x_var   = "price",
+      y_var   = "qty",
+      formula = qty ~ price
+    ),
+    regexp = "Custom formulas must use canonical column names"
+  )
+})
+
+test_that("S3 methods work after fitting with non-default *_var", {
+  skip_if_not_installed("nls.multstart")
+
+  data_custom <- simulate_cp_exponentiated(n = 50, seed = 5)
+  names(data_custom) <- c("alt_price", "target_cons")
+
+  fit <- fit_cp_nls(
+    data_custom,
+    equation = "exponentiated",
+    x_var    = "alt_price",
+    y_var    = "target_cons",
+    return_all = TRUE,
+    iter = 50
+  )
+
+  expect_s3_class(fit, "cp_model_nls")
+  # coef() should work without error
+  expect_no_error(coef(fit$model))
+  # predict() via S3 method (if available)
+  expect_no_error({
+    newdata <- data.frame(x = c(5, 10, 20))
+    predict(fit, newdata = newdata)
+  })
+})

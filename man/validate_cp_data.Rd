@@ -6,30 +6,64 @@
 \usage{
 validate_cp_data(
   data,
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  group_var = "group",
+  target_var = "target",
   required_cols = c("x", "y"),
   filter_target = TRUE,
+  target_level = "alt",
   require_id = FALSE
 )
 }
 \arguments{
 \item{data}{A data frame containing cross-price demand data.}
 
-\item{required_cols}{Character vector of required column names.
-Default is c("x", "y").}
+\item{x_var}{Character string; name of the price column. Default is \code{"x"}.
+If non-default, the column is renamed to \code{"x"} internally.}
 
-\item{filter_target}{Logical; if TRUE and data contains a "target" column,
-filters to keep only rows where target == "alt". Default is TRUE.}
+\item{y_var}{Character string; name of the consumption column. Default is \code{"y"}.
+If non-default, the column is renamed to \code{"y"} internally.}
 
-\item{require_id}{Logical; if TRUE, validates that an "id" column exists
-in the data. Default is FALSE.}
+\item{id_var}{Character string; name of the subject identifier column.
+Default is \code{"id"}. If non-default, the column is renamed to \code{"id"} internally.}
+
+\item{group_var}{Character string; name of the group column. Default is
+\code{"group"}. If non-default, the column is renamed to \code{"group"} internally.}
+
+\item{target_var}{Character string; name of the target indicator column.
+Default is \code{"target"}. If non-default, the column is renamed to \code{"target"}
+internally.}
+
+\item{required_cols}{Character vector of canonical column names to check after
+renaming. Default is \code{c("x", "y")}.}
+
+\item{filter_target}{Logical; if TRUE and data contains a \code{"target"} column,
+filters to keep only rows where \code{target == target_level}. Default is TRUE.}
+
+\item{target_level}{Character string; the value of the \code{target} column to
+retain when \code{filter_target = TRUE}. Default is \code{"alt"}.}
+
+\item{require_id}{Logical; if TRUE, validates that an \code{"id"} column exists
+in the data (after renaming). Default is FALSE.}
 }
 \value{
-A validated (and potentially filtered) data frame.
+A validated (and potentially filtered) data frame with canonical
+column names.
 }
 \description{
 This function performs validation checks on cross-price demand data and applies
 filtering if specified. It ensures the data meets the requirements for analysis
-by checking for required columns, filtering by target type if needed, and
-confirming ID column presence when required.
+by checking for required columns (after optional column renaming), filtering
+by target type if needed, and confirming ID column presence when required.
+}
+\details{
+Column renaming uses a collision-safe approach: if a non-default \verb{*_var}
+mapping is requested but the canonical target name already exists as a
+different column in \code{data}, the function stops with an informative error
+rather than silently overwriting data. After normalization, \verb{$data} on
+returned objects always uses canonical names (\code{x}, \code{y}, \code{id}, \code{group},
+\code{target}), which is required for S3 methods to work correctly.
 }
 \keyword{internal}
