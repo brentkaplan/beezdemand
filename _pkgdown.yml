@@ -90,6 +90,7 @@ reference:
   - title: Data Preparation
     desc: Functions for preparing and transforming demand data.
     contents:
+      - pivot_demand_data
       - ChangeData
       - ReplaceZeros
       - CheckCols
