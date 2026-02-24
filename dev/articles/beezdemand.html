@@ -88,7 +88,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-02-23</h4>
+            <h4 data-toc-skip class="date">2026-02-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/beezdemand.Rmd" class="external-link"><code>vignettes/beezdemand.Rmd</code></a></small>
       <div class="d-none name"><code>beezdemand.Rmd</code></div>
@@ -420,310 +420,26 @@ participant series contains a single row and multiple measurements
 within the participant are indicated by the columns. This data format is
 fine for some purposes; however, for <code>beezdemand</code>, data are
 required to be in “long format” (in the same format as the example data
-described earlier. In order to convert to the long format, some steps
-will be required.</p>
-<p>First, it is helpful to rename the columns to what the prices
-actually were. For example, for the purposes of our example dataset,
-price_1 was $0.00 (free), price_2 was $0.50, price_3 was $1.00, and so
-on.</p>
+described earlier). The <code><a href="../reference/pivot_demand_data.html">pivot_demand_data()</a></code> function makes
+this conversion easy.</p>
+<div class="section level5">
+<h5 id="quick-conversion-with-pivot_demand_data">Quick conversion with <code>pivot_demand_data()</code><a class="anchor" aria-label="anchor" href="#quick-conversion-with-pivot_demand_data"></a>
+</h5>
+<p>Since our column names (<code>price_1</code>, <code>price_2</code>,
+…) don’t encode the actual prices, we supply them via
+<code>x_values</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## make an object to hold what will be the new column names</span></span>
-<span><span class="va">newcolnames</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"0"</span>, <span class="st">"0.5"</span>, <span class="st">"1"</span>, <span class="st">"1.50"</span>, <span class="st">"2"</span>, <span class="st">"2.50"</span>, <span class="st">"3"</span>,</span>
-<span>                 <span class="st">"4"</span>, <span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span>, <span class="st">"9"</span>, <span class="st">"10"</span>, <span class="st">"15"</span>, <span class="st">"20"</span><span class="op">)</span></span>
-<span><span class="co">## current column names</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "id"       "price_1"  "price_2"  "price_3"  "price_4"  "price_5" </span></span>
-<span><span class="co">#&gt;  [7] "price_6"  "price_7"  "price_8"  "price_9"  "price_10" "price_11"</span></span>
-<span><span class="co">#&gt; [13] "price_12" "price_13" "price_14" "price_15" "price_16"</span></span>
-<span></span>
-<span><span class="co">## replace current column names with new column names</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">newcolnames</span></span>
-<span></span>
-<span><span class="co">## how new data look (first 5 rows only)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>    <span class="va">wide</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Wide format data with price column names"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<caption>Wide format data with price column names</caption>
-<colgroup>
-<col width="5%">
-<col width="5%">
-<col width="7%">
-<col width="5%">
-<col width="8%">
-<col width="5%">
-<col width="8%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-<col width="5%">
-</colgroup>
-<thead><tr class="header">
-<th align="right">id</th>
-<th align="right">0</th>
-<th align="right">0.5</th>
-<th align="right">1</th>
-<th align="right">1.50</th>
-<th align="right">2</th>
-<th align="right">2.50</th>
-<th align="right">3</th>
-<th align="right">4</th>
-<th align="right">5</th>
-<th align="right">6</th>
-<th align="right">7</th>
-<th align="right">8</th>
-<th align="right">9</th>
-<th align="right">10</th>
-<th align="right">15</th>
-<th align="right">20</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="right">19</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">7</td>
-<td align="right">7</td>
-<td align="right">7</td>
-<td align="right">6</td>
-<td align="right">6</td>
-<td align="right">5</td>
-<td align="right">5</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="right">30</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="right">38</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">60</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">6</td>
-<td align="right">6</td>
-<td align="right">5</td>
-<td align="right">5</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">3</td>
-<td align="right">2</td>
-<td align="right">2</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="right">68</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">9</td>
-<td align="right">9</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">7</td>
-<td align="right">6</td>
-<td align="right">5</td>
-<td align="right">5</td>
-<td align="right">5</td>
-<td align="right">4</td>
-<td align="right">4</td>
-<td align="right">3</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p>Now we can convert into a long format using some of the helpful
-functions in the <code>tidyr</code> package (make sure the package is
-loaded before trying the commands below).</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## using the dataframe 'wide', we pivot all columns except 'id' into long format,</span></span>
-<span><span class="co">## creating 'price' and 'consumption' columns</span></span>
-<span><span class="va">long</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="va">wide</span>, <span class="op">-</span><span class="va">id</span>, names_to <span class="op">=</span> <span class="st">"price"</span>, values_to <span class="op">=</span> <span class="st">"consumption"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## we'll sort the rows by id</span></span>
-<span><span class="va">long</span> <span class="op">&lt;-</span> <span class="fu">arrange</span><span class="op">(</span><span class="va">long</span>, <span class="va">id</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## view the first 20 rows</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>    <span class="va">long</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="op">]</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Converted to long format (first 20 rows)"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<caption>Converted to long format (first 20 rows)</caption>
-<thead><tr class="header">
-<th align="right">id</th>
-<th align="left">price</th>
-<th align="right">consumption</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">0</td>
-<td align="right">10</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">0.5</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">1</td>
-<td align="right">10</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">1.50</td>
-<td align="right">8</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">2</td>
-<td align="right">8</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">2.50</td>
-<td align="right">8</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">3</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">4</td>
-<td align="right">7</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">5</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">6</td>
-<td align="right">6</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">7</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">8</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">9</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">10</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="right">19</td>
-<td align="left">15</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="right">19</td>
-<td align="left">20</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="right">30</td>
-<td align="left">0</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="right">30</td>
-<td align="left">0.5</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="right">30</td>
-<td align="left">1</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="right">30</td>
-<td align="left">1.50</td>
-<td align="right">3</td>
-</tr>
-</tbody>
-</table>
-<p>Two final modifications we will make will be to (1) rename our
-columns to what the functions in <code>beezdemand</code> will expect to
-see: <code>id</code>, <code>x</code>, and <code>y</code>, and (2) ensure
-both x and y are in numeric format.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">long</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">long</span><span class="op">$</span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">long</span><span class="op">$</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="va">long</span><span class="op">$</span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">long</span><span class="op">$</span><span class="va">y</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pivot_demand_data.html">pivot_demand_data</a></span><span class="op">(</span></span>
+<span>  <span class="va">wide</span>,</span>
+<span>  format <span class="op">=</span> <span class="st">"long"</span>,</span>
+<span>  x_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">1.50</span>, <span class="fl">2</span>, <span class="fl">2.50</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span>, <span class="fl">6</span>, <span class="fl">7</span>, <span class="fl">8</span>, <span class="fl">9</span>, <span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">long</span><span class="op">)</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Final long format data with renamed columns (first 6 rows)"</span></span>
+<span>    caption <span class="op">=</span> <span class="st">"Wide to long conversion using pivot_demand_data()"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Final long format data with renamed columns (first 6
-rows)</caption>
+<caption>Wide to long conversion using pivot_demand_data()</caption>
 <thead><tr class="header">
 <th align="right">id</th>
 <th align="right">x</th>
@@ -762,11 +478,36 @@ rows)</caption>
 </tr>
 </tbody>
 </table>
-<p>The dataset is now “tidy” because: (1) each variable forms a column,
+<p>If your wide data already has numeric column names (e.g.,
+<code>"0"</code>, <code>"0.5"</code>, <code>"1"</code>),
+<code><a href="../reference/pivot_demand_data.html">pivot_demand_data()</a></code> will auto-detect the prices and no
+<code>x_values</code> argument is needed. See
+<code><a href="../reference/pivot_demand_data.html">?pivot_demand_data</a></code> for details.</p>
+<details><summary>
+Manual approach with tidyr (click to expand)
+</summary><p>For users who want to understand the underlying mechanics, here is
+the step-by-step approach using <code>tidyr</code> directly. First,
+rename columns to their actual prices:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## make a copy for the manual approach</span></span>
+<span><span class="va">wide_manual</span> <span class="op">&lt;-</span> <span class="va">wide</span></span>
+<span><span class="va">newcolnames</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"0"</span>, <span class="st">"0.5"</span>, <span class="st">"1"</span>, <span class="st">"1.50"</span>, <span class="st">"2"</span>, <span class="st">"2.50"</span>, <span class="st">"3"</span>,</span>
+<span>                 <span class="st">"4"</span>, <span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span>, <span class="st">"9"</span>, <span class="st">"10"</span>, <span class="st">"15"</span>, <span class="st">"20"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">wide_manual</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">newcolnames</span></span></code></pre></div>
+<p>Then pivot to long format, rename columns, and coerce to numeric:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">long_manual</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="va">wide_manual</span>, <span class="op">-</span><span class="va">id</span>,</span>
+<span>                                   names_to <span class="op">=</span> <span class="st">"price"</span>, values_to <span class="op">=</span> <span class="st">"consumption"</span><span class="op">)</span></span>
+<span><span class="va">long_manual</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">long_manual</span>, <span class="va">id</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">long_manual</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"x"</span>, <span class="st">"y"</span><span class="op">)</span></span>
+<span><span class="va">long_manual</span><span class="op">$</span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">long_manual</span><span class="op">$</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="va">long_manual</span><span class="op">$</span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">long_manual</span><span class="op">$</span><span class="va">y</span><span class="op">)</span></span></code></pre></div>
+</details><p>The dataset is now “tidy” because: (1) each variable forms a column,
 (2) each observation forms a row, and (3) each type of observational
 unit forms a table (in this case, our observational unit is the Alcohol
 Purchase Task data). To learn more about the benefits of tidy data,
 readers are encouraged to consult Hadley Wikham’s essay on <a href="https://vita.had.co.nz/papers/tidy-data.html" class="external-link">Tidy Data</a>.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="obtain-descriptive-data">Obtain Descriptive Data<a class="anchor" aria-label="anchor" href="#obtain-descriptive-data"></a>

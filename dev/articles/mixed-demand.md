@@ -94,7 +94,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c0ac1f88a0>
+#> <environment: 0x55d3fa15bbd0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -168,7 +168,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x55c09fae61a8>
+#> <environment: 0x55d3ee2c9e58>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -246,7 +246,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x55c09616ee90>
+#> <environment: 0x55d3eb58e4f0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -388,7 +388,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c09ee5bac8>
+#> <environment: 0x55d3eda03410>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -453,7 +453,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c09a91c268>
+#> <environment: 0x55d3e9277180>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 

@@ -88,6 +88,8 @@ Functions for checking systematic responding patterns in demand data.
 
 Functions for preparing and transforming demand data.
 
+- [`pivot_demand_data()`](https://brentkaplan.github.io/beezdemand/reference/pivot_demand_data.md)
+  : Reshape Demand Data Between Wide and Long Formats
 - [`ChangeData()`](https://brentkaplan.github.io/beezdemand/reference/ChangeData.md)
   : ChangeData
 - [`ReplaceZeros()`](https://brentkaplan.github.io/beezdemand/reference/ReplaceZeros.md)

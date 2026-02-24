@@ -139,99 +139,24 @@ participant series contains a single row and multiple measurements
 within the participant are indicated by the columns. This data format is
 fine for some purposes; however, for `beezdemand`, data are required to
 be in “long format” (in the same format as the example data described
-earlier. In order to convert to the long format, some steps will be
-required.
+earlier). The
+[`pivot_demand_data()`](https://brentkaplan.github.io/beezdemand/reference/pivot_demand_data.md)
+function makes this conversion easy.
 
-First, it is helpful to rename the columns to what the prices actually
-were. For example, for the purposes of our example dataset, price_1 was
-\$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on.
+##### Quick conversion with `pivot_demand_data()`
+
+Since our column names (`price_1`, `price_2`, …) don’t encode the actual
+prices, we supply them via `x_values`:
 
 ``` r
-## make an object to hold what will be the new column names
-newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
-                 "4", "5", "6", "7", "8", "9", "10", "15", "20")
-## current column names
-colnames(wide)
-#>  [1] "id"       "price_1"  "price_2"  "price_3"  "price_4"  "price_5" 
-#>  [7] "price_6"  "price_7"  "price_8"  "price_9"  "price_10" "price_11"
-#> [13] "price_12" "price_13" "price_14" "price_15" "price_16"
-
-## replace current column names with new column names
-colnames(wide) <- newcolnames
-
-## how new data look (first 5 rows only)
-knitr::kable(
-    wide[1:5, ],
-    caption = "Wide format data with price column names"
+long <- pivot_demand_data(
+  wide,
+  format = "long",
+  x_values = c(0, 0.5, 1, 1.50, 2, 2.50, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20)
 )
-```
-
-|  id |   0 | 0.5 |   1 | 1.50 |   2 | 2.50 |   3 |   4 |   5 |   6 |   7 |   8 |   9 |  10 |  15 |  20 |
-|----:|----:|----:|----:|-----:|----:|-----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-|  19 |  10 |  10 |  10 |    8 |   8 |    8 |   7 |   7 |   7 |   6 |   6 |   5 |   5 |   4 |   3 |   2 |
-|  30 |   3 |   3 |   3 |    3 |   2 |    2 |   2 |   2 |   2 |   2 |   2 |   2 |   1 |   1 |   1 |   1 |
-|  38 |   4 |   4 |   4 |    4 |   4 |    4 |   4 |   3 |   3 |   3 |   3 |   2 |   2 |   2 |   0 |   0 |
-|  60 |  10 |  10 |   8 |    8 |   6 |    6 |   5 |   5 |   4 |   4 |   3 |   3 |   2 |   2 |   0 |   0 |
-|  68 |  10 |  10 |   9 |    9 |   8 |    8 |   7 |   6 |   5 |   5 |   5 |   4 |   4 |   3 |   0 |   0 |
-
-Wide format data with price column names
-
-Now we can convert into a long format using some of the helpful
-functions in the `tidyr` package (make sure the package is loaded before
-trying the commands below).
-
-``` r
-## using the dataframe 'wide', we pivot all columns except 'id' into long format,
-## creating 'price' and 'consumption' columns
-long <- tidyr::pivot_longer(wide, -id, names_to = "price", values_to = "consumption")
-
-## we'll sort the rows by id
-long <- arrange(long, id)
-
-## view the first 20 rows
-knitr::kable(
-    long[1:20, ],
-    caption = "Converted to long format (first 20 rows)"
-)
-```
-
-|  id | price | consumption |
-|----:|:------|------------:|
-|  19 | 0     |          10 |
-|  19 | 0.5   |          10 |
-|  19 | 1     |          10 |
-|  19 | 1.50  |           8 |
-|  19 | 2     |           8 |
-|  19 | 2.50  |           8 |
-|  19 | 3     |           7 |
-|  19 | 4     |           7 |
-|  19 | 5     |           7 |
-|  19 | 6     |           6 |
-|  19 | 7     |           6 |
-|  19 | 8     |           5 |
-|  19 | 9     |           5 |
-|  19 | 10    |           4 |
-|  19 | 15    |           3 |
-|  19 | 20    |           2 |
-|  30 | 0     |           3 |
-|  30 | 0.5   |           3 |
-|  30 | 1     |           3 |
-|  30 | 1.50  |           3 |
-
-Converted to long format (first 20 rows)
-
-Two final modifications we will make will be to (1) rename our columns
-to what the functions in `beezdemand` will expect to see: `id`, `x`, and
-`y`, and (2) ensure both x and y are in numeric format.
-
-``` r
-colnames(long) <- c("id", "x", "y")
-
-long$x <- as.numeric(long$x)
-long$y <- as.numeric(long$y)
 knitr::kable(
     head(long),
-    caption = "Final long format data with renamed columns (first 6 rows)"
+    caption = "Wide to long conversion using pivot_demand_data()"
 )
 ```
 
@@ -244,7 +169,39 @@ knitr::kable(
 |  19 | 2.0 |   8 |
 |  19 | 2.5 |   8 |
 
-Final long format data with renamed columns (first 6 rows)
+Wide to long conversion using pivot_demand_data()
+
+If your wide data already has numeric column names (e.g., `"0"`,
+`"0.5"`, `"1"`),
+[`pivot_demand_data()`](https://brentkaplan.github.io/beezdemand/reference/pivot_demand_data.md)
+will auto-detect the prices and no `x_values` argument is needed. See
+[`?pivot_demand_data`](https://brentkaplan.github.io/beezdemand/reference/pivot_demand_data.md)
+for details.
+
+Manual approach with tidyr (click to expand)
+
+For users who want to understand the underlying mechanics, here is the
+step-by-step approach using `tidyr` directly. First, rename columns to
+their actual prices:
+
+``` r
+## make a copy for the manual approach
+wide_manual <- wide
+newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
+                 "4", "5", "6", "7", "8", "9", "10", "15", "20")
+colnames(wide_manual) <- newcolnames
+```
+
+Then pivot to long format, rename columns, and coerce to numeric:
+
+``` r
+long_manual <- tidyr::pivot_longer(wide_manual, -id,
+                                   names_to = "price", values_to = "consumption")
+long_manual <- dplyr::arrange(long_manual, id)
+colnames(long_manual) <- c("id", "x", "y")
+long_manual$x <- as.numeric(long_manual$x)
+long_manual$y <- as.numeric(long_manual$y)
+```
 
 The dataset is now “tidy” because: (1) each variable forms a column, (2)
 each observation forms a row, and (3) each type of observational unit
