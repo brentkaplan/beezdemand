@@ -109,55 +109,51 @@ knitr::kable(
 )
 ```
 
-A dataset such as this is referred to as "wide format" because each participant series contains a single row and multiple measurements within the participant are indicated by the columns. This data format is fine for some purposes; however, for `beezdemand`, data are required to be in "long format" (in the same format as the example data described earlier. In order to convert to the long format, some steps will be required.
+A dataset such as this is referred to as "wide format" because each participant series contains a single row and multiple measurements within the participant are indicated by the columns. This data format is fine for some purposes; however, for `beezdemand`, data are required to be in "long format" (in the same format as the example data described earlier). The `pivot_demand_data()` function makes this conversion easy.
 
-First, it is helpful to rename the columns to what the prices actually were. For example, for the purposes of our example dataset, price_1 was \$0.00 (free), price_2 was \$0.50, price_3 was \$1.00, and so on.
+#### Quick conversion with `pivot_demand_data()`
 
-```{r example-wide1}
-## make an object to hold what will be the new column names
-newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
-                 "4", "5", "6", "7", "8", "9", "10", "15", "20")
-## current column names
-colnames(wide)
+Since our column names (`price_1`, `price_2`, ...) don't encode the actual prices, we supply them via `x_values`:
 
-## replace current column names with new column names
-colnames(wide) <- newcolnames
-
-## how new data look (first 5 rows only)
-knitr::kable(
-    wide[1:5, ],
-    caption = "Wide format data with price column names"
+```{r example-pivot}
+long <- pivot_demand_data(
+  wide,
+  format = "long",
+  x_values = c(0, 0.5, 1, 1.50, 2, 2.50, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20)
 )
-```
-
-Now we can convert into a long format using some of the helpful functions in the `tidyr` package (make sure the package is loaded before trying the commands below).
-
-```{r example-w2l}
-## using the dataframe 'wide', we pivot all columns except 'id' into long format,
-## creating 'price' and 'consumption' columns
-long <- tidyr::pivot_longer(wide, -id, names_to = "price", values_to = "consumption")
-
-## we'll sort the rows by id
-long <- arrange(long, id)
-
-## view the first 20 rows
-knitr::kable(
-    long[1:20, ],
-    caption = "Converted to long format (first 20 rows)"
-)
-```
-
-Two final modifications we will make will be to (1) rename our columns to what the functions in `beezdemand` will expect to see: `id`, `x`, and `y`, and (2) ensure both x and y are in numeric format.
-```{r example-w2l2}
-colnames(long) <- c("id", "x", "y")
-
-long$x <- as.numeric(long$x)
-long$y <- as.numeric(long$y)
 knitr::kable(
     head(long),
-    caption = "Final long format data with renamed columns (first 6 rows)"
+    caption = "Wide to long conversion using pivot_demand_data()"
 )
 ```
+
+If your wide data already has numeric column names (e.g., `"0"`, `"0.5"`, `"1"`), `pivot_demand_data()` will auto-detect the prices and no `x_values` argument is needed. See `?pivot_demand_data` for details.
+
+<details>
+<summary>Manual approach with tidyr (click to expand)</summary>
+
+For users who want to understand the underlying mechanics, here is the step-by-step approach using `tidyr` directly. First, rename columns to their actual prices:
+
+```{r example-wide-manual}
+## make a copy for the manual approach
+wide_manual <- wide
+newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
+                 "4", "5", "6", "7", "8", "9", "10", "15", "20")
+colnames(wide_manual) <- newcolnames
+```
+
+Then pivot to long format, rename columns, and coerce to numeric:
+
+```{r example-w2l-manual}
+long_manual <- tidyr::pivot_longer(wide_manual, -id,
+                                   names_to = "price", values_to = "consumption")
+long_manual <- dplyr::arrange(long_manual, id)
+colnames(long_manual) <- c("id", "x", "y")
+long_manual$x <- as.numeric(long_manual$x)
+long_manual$y <- as.numeric(long_manual$y)
+```
+
+</details>
 
 The dataset is now "tidy" because: (1) each variable forms a column, (2) each observation forms a row, and (3) each type of observational unit forms a table (in this case, our observational unit is the Alcohol Purchase Task data). To learn more about the benefits of tidy data, readers are encouraged to consult Hadley Wikham's essay on [Tidy Data](https://vita.had.co.nz/papers/tidy-data.html).
 

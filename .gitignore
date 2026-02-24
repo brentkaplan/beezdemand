@@ -27,6 +27,7 @@ inst/doc
 man/figures/P*
 Notes.md
 lib/*
+.vscode/
 
 /.quarto/
 /src/*.so

@@ -57,6 +57,7 @@
 ^engineering$
 ^\.agents$
 ^\.env$
+^\.vscode$
 ^R/arg-matrix\.R$
 ^tests/testthat/test-arg-matrix\.R$
 ^_pkgdown\.yml$
