@@ -290,6 +290,17 @@ If you encounter issues during migration:
 2. Review the [beezdemand GitHub repository](https://github.com/brentkaplan/beezdemand)
 3. Open an issue if you find bugs or have feature requests
 
+# See Also
+
+- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("model-selection")` -- Choosing the right model class
+- `vignette("fixed-demand")` -- Fixed-effect demand modeling
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
+- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
+- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
+- `vignette("cross-price-models")` -- Cross-price demand analysis
+- `vignette("group-comparisons")` -- Group comparisons
+
 # Session Information
 
 ```{r session-info}
