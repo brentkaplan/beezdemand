@@ -1078,3 +1078,6 @@ cp_posthoc_intercepts(fit_mixed)
   – Advanced mixed-effects topics
 - [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
   – Two-part hurdle demand models
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
+  – Migrating from
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)

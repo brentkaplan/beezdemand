@@ -505,8 +505,12 @@ desirable, consider the mixed-effects or hurdle model approaches.
   – Extra sum-of-squares F-test for group comparisons
 - [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
   – Mixed-effects nonlinear demand models (NLME)
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
+  – Advanced mixed-effects topics
 - [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
   – Two-part hurdle demand models via TMB
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
+  – Cross-price demand analysis
 - [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
   – Migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)

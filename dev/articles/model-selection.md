@@ -440,6 +440,9 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 - **Getting Started**: See
   [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
   for basic usage
+- **Fixed-Effect Models**: See
+  [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
+  for individual demand curve fitting
 - **Group Comparisons**: See
   [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
   for extra sum-of-squares F-test
@@ -455,6 +458,10 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 - **Cross-Price**: See
   [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
   for substitution analyses
+- **Migration Guide**: See
+  [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
+  for migrating from
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
 
 ------------------------------------------------------------------------
 
