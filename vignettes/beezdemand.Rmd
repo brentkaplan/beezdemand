@@ -248,7 +248,7 @@ get_empirical_measures(apt)
 
 ```{r empirical-output, echo=FALSE, results='asis'}
 knitr::kable(
-    head(GetEmpirical(apt), 5),
+    head(get_empirical_measures(apt), 5),
     caption = "Empirical demand measures (first 5 participants)",
     digits = 3
 )
