@@ -399,5 +399,9 @@ the natural scale.
 
 - `vignette("mixed-demand-advanced")` -- Multi-factor models, collapsing levels, EMMs, comparisons, covariates, and trends
 - `vignette("model-selection")` -- Choosing the right model class
+- `vignette("fixed-demand")` -- Fixed-effect demand modeling
 - `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
+- `vignette("cross-price-models")` -- Cross-price demand analysis
+- `vignette("group-comparisons")` -- Group comparisons
+- `vignette("migration-guide")` -- Migrating from `FitCurves()`
 - `vignette("beezdemand")` -- Getting started with beezdemand

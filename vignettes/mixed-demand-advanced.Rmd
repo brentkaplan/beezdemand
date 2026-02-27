@@ -1054,5 +1054,9 @@ if (!is.null(fit_for_trends)) {
 
 - `vignette("mixed-demand")` -- Basic mixed-effects demand modeling
 - `vignette("model-selection")` -- Choosing the right model class
+- `vignette("fixed-demand")` -- Fixed-effect demand modeling
 - `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
+- `vignette("cross-price-models")` -- Cross-price demand analysis
+- `vignette("group-comparisons")` -- Group comparisons
+- `vignette("migration-guide")` -- Migrating from `FitCurves()`
 - `vignette("beezdemand")` -- Getting started with beezdemand
