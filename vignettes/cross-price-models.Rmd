@@ -603,3 +603,4 @@ cp_posthoc_intercepts(fit_mixed)
 - `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
 - `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
 - `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
+- `vignette("migration-guide")` -- Migrating from `FitCurves()`
