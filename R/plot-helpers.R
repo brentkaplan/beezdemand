@@ -23,8 +23,8 @@ beezdemand_normalize_plot_labels <- function(x_lab, y_lab, xlab, ylab) {
   if (!is.null(xlab)) {
     lifecycle::deprecate_warn(
       "0.2.0",
-      "plot(x, xlab = )",
-      "plot(x, x_lab = )"
+      "plot(xlab = )",
+      "plot(x_lab = )"
     )
     if (is.null(x_lab)) {
       x_lab <- xlab
@@ -33,8 +33,8 @@ beezdemand_normalize_plot_labels <- function(x_lab, y_lab, xlab, ylab) {
   if (!is.null(ylab)) {
     lifecycle::deprecate_warn(
       "0.2.0",
-      "plot(x, ylab = )",
-      "plot(x, y_lab = )"
+      "plot(ylab = )",
+      "plot(y_lab = )"
     )
     if (is.null(y_lab)) {
       y_lab <- ylab
