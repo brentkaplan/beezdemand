@@ -393,3 +393,14 @@ fit <- fit_demand_hurdle(data,
 Zhao, T., Luo, X., Chu, H., Le, C.T., Epstein, L.H. and Thomas, J.L. (2016), A two-part mixed effects model for cigarette purchase task data. *Jrnl Exper Analysis Behavior*, 106: 242-253. https://doi.org/10.1002/jeab.228
 
 Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psychological Review*, 115(1), 186-198.
+
+## See Also
+
+- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("model-selection")` -- Choosing the right model class
+- `vignette("fixed-demand")` -- Fixed-effect demand modeling
+- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
+- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
+- `vignette("cross-price-models")` -- Cross-price demand analysis
+- `vignette("group-comparisons")` -- Group comparisons
+- `vignette("migration-guide")` -- Migrating from `FitCurves()`
