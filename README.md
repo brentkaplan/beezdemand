@@ -30,23 +30,26 @@ me](mailto:bkaplan.ku@gmail.com).
 
 | Your Situation | Recommended Approach | Learn More |
 |----|----|----|
-| Single purchase task, individual fits | `fit_demand_fixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Need group comparisons, random effects | `fit_demand_mixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Cross-commodity substitution | `fit_cp_*()` functions | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
+| Single purchase task, individual fits | `fit_demand_fixed()` | [Fixed demand](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.html) |
+| Need group comparisons, random effects | `fit_demand_mixed()` | [Mixed demand](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
+| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
+| Cross-commodity substitution | `fit_cp_*()` functions | [Cross-price models](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
 
 For detailed guidance on choosing the right modeling approach, see the
-package vignette (`vignette("beezdemand")`).
+[model selection
+guide](https://brentkaplan.github.io/beezdemand/articles/model-selection.html)
+or `vignette("model-selection")`. Full documentation is available at the
+[pkgdown site](https://brentkaplan.github.io/beezdemand/).
 
 ## Installing beezdemand
 
 ### CRAN Release (recommended method)
 
-The latest stable version of `beezdemand` (currently v.0.2.0) can be
-found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and
-installed using the following command. The first time you install the
-package, you may be asked to select a CRAN mirror. Simply select the
-mirror geographically closest to you.
+The latest stable version of `beezdemand` can be found on
+[CRAN](https://CRAN.R-project.org/package=beezdemand) and installed
+using the following command. The first time you install the package, you
+may be asked to select a CRAN mirror. Simply select the mirror
+geographically closest to you.
 
 ``` r
 install.packages("beezdemand")
@@ -350,6 +353,14 @@ CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0
 | 68 | 3 | 0.9089 | Pass | 0 | Pass | 0 | Pass | 14 |
 
 ## Analyze Demand Data
+
+> **Note:** The examples below use the legacy `FitCurves()` API for
+> backward compatibility. For new projects, we recommend using
+> `fit_demand_fixed()` which provides a modern S3 interface with
+> `summary()`, `tidy()`, `glance()`, `predict()`, and `plot()` methods.
+> See `vignette("migration-guide")` or the [migration
+> guide](https://brentkaplan.github.io/beezdemand/articles/migration-guide.html)
+> for details.
 
 Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
@@ -720,10 +731,13 @@ knitr::kable(apt[1:20, ])
 ef <- ExtraF(dat = apt, equation = "koff", k = 2, groupcol = "group", verbose = TRUE)
 ```
 
-    [1] "Null hypothesis: alpha same for all data sets"
-    [1] "Alternative hypothesis: alpha different for each data set"
-    [1] "Conclusion: fail to reject the null hypothesis"
-    [1] "F(1,156) = 0.0298, p = 0.8631"
+    Null hypothesis: alpha same for all data sets
+
+    Alternative hypothesis: alpha different for each data set
+
+    Conclusion: fail to reject the null hypothesis
+
+    F(1,156) = 0.0298, p = 0.8631
 
 A summary table (broken up here for ease of display) will be created
 when the option `verbose = TRUE`. This table can be accessed as the
@@ -827,17 +841,17 @@ interactively show us each plot. Because we have 10 datasets in our
 directory.
 
 ``` r
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
+out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
 ```
 
     Beginning search for best-starting k
 
-    Best k fround at 0.93813356574003 = err: 0.744881846162718
+    Best k found at 0.93813356574003 = err: 0.744881846162718
 
     Searching for shared K, this can take a while...
 
 ``` r
-PlotCurves(dat = out, outdir = plotdir, device = "png", ask = F)
+PlotCurves(dat = out, outdir = plotdir, device = "png", ask = FALSE)
 ```
 
     10 plots saved in man/figures/
@@ -854,13 +868,13 @@ We can also make a plot of the mean data. Here, we again use
 data (thus not specifying any k) and specifying `agg = "Mean"`.
 
 ``` r
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = T)
+mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
 ```
 
     No k value specified. Defaulting to empirical mean range +.5
 
 ``` r
-PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = F)
+PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = FALSE)
 ```
 
     1 plots saved in man/figures/

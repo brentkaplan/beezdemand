@@ -34,18 +34,18 @@ but be aware that, as with any software release, there might be (unknown) bugs p
 
 | Your Situation | Recommended Approach | Learn More |
 |----------------|---------------------|------------|
-| Single purchase task, individual fits | `fit_demand_fixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Need group comparisons, random effects | `fit_demand_mixed()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
-| Cross-commodity substitution | `fit_cp_*()` functions | [CRAN page](https://CRAN.R-project.org/package=beezdemand) |
+| Single purchase task, individual fits | `fit_demand_fixed()` | [Fixed demand](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.html) |
+| Need group comparisons, random effects | `fit_demand_mixed()` | [Mixed demand](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
+| Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
+| Cross-commodity substitution | `fit_cp_*()` functions | [Cross-price models](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
 
-For detailed guidance on choosing the right modeling approach, see the package vignette (`vignette("beezdemand")`).
+For detailed guidance on choosing the right modeling approach, see the [model selection guide](https://brentkaplan.github.io/beezdemand/articles/model-selection.html) or `vignette("model-selection")`. Full documentation is available at the [pkgdown site](https://brentkaplan.github.io/beezdemand/).
 
 ## Installing beezdemand
 
 ### CRAN Release (recommended method)
 
-The latest stable version of `beezdemand` (currently v.0.2.0) can be found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and installed using the following command. The first time you install the package, you may be asked to select a CRAN mirror. Simply select the mirror geographically closest to you.
+The latest stable version of `beezdemand` can be found on [CRAN](https://CRAN.R-project.org/package=beezdemand) and installed using the following command. The first time you install the package, you may be asked to select a CRAN mirror. Simply select the mirror geographically closest to you.
 
 ```{r cran-install, eval = FALSE}
 install.packages("beezdemand")
@@ -66,20 +66,9 @@ library(beezdemand)
 ```
 
 ```{r packages, include = FALSE, echo = FALSE}
-if (!require(knitr)) {
-  install.packages("knitr")
-  library(knitr)
-}
-
-if (!require(tidyverse)) {
-  install.packages("tidyverse")
-  library(tidyverse)
-}
-
-if (!require(beezdemand)) {
-  install.packages("beezdemand")
-  library(beezdemand)
-}
+library(knitr)
+library(tidyverse)
+library(beezdemand)
 
 dat <- beezdemand::apt
 ```
@@ -212,6 +201,13 @@ knitr::kable(head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1,
 ```
 
 ## Analyze Demand Data
+
+> **Note:** The examples below use the legacy `FitCurves()` API for backward
+> compatibility. For new projects, we recommend using `fit_demand_fixed()` which
+> provides a modern S3 interface with `summary()`, `tidy()`, `glance()`,
+> `predict()`, and `plot()` methods. See `vignette("migration-guide")` or the
+> [migration guide](https://brentkaplan.github.io/beezdemand/articles/migration-guide.html)
+> for details.
 
 Results of the analysis return both empirical and derived measures for
 use in additional analyses and model specification. Equations include
@@ -426,18 +422,18 @@ Plots can be created using the `PlotCurves` function. This function takes the ou
 
 As a demonstration, let's first use `FitCurves` on the `apt` dataset, specifying `k = "share"` and `detailed = T`. This will return a list of objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new object, `out`, and tell the function to save the plots in the directory `"../plots/"` and `ask = FALSE` because we don't want `R` to interactively show us each plot. Because we have 10 datasets in our `apt` example, 10 plots will be created and saved in the `"../plots/"` directory.
 ```{r plots1, warning = FALSE}
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = T)
+out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
 
-PlotCurves(dat = out, outdir = plotdir, device = "png", ask = F)
+PlotCurves(dat = out, outdir = plotdir, device = "png", ask = FALSE)
 ```
 
 ![Demand curve for Participant 19 showing consumption decreasing with price](man/figures/Participant-19.png)
 
 We can also make a plot of the mean data. Here, we again use `FitCurves`, this time calculating a k from the observed range of the data (thus not specifying any k) and specifying `agg = "Mean"`.
 ```{r plots2, warning = FALSE}
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = T)
+mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
 
-PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = F)
+PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = FALSE)
 
 list.files("../plots/")
 ```

@@ -126,11 +126,12 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
     ending <- length(dat$fits)
   }
 
-  par(ask = ask)
+  oldpar <- par(ask = ask)
+  on.exit(par(oldpar), add = TRUE)
   
   for (i in 1:ending) {
     ggp <- PlotCurve(dat$adfs[[i]], dat$dfres[i, ], dat$newdats[[i]], ...)
-    if (!class(ggp)[[1]] == "character") {
+    if (!inherits(ggp, "character")) {
       if (ask) {
         suppressWarnings(print(ggp))
       } else {

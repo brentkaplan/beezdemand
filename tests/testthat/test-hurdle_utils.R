@@ -18,8 +18,8 @@ test_that("calc_omax_pmax handles k < e with numerical fallback", {
   # but numerical optimization can still find the maximum.
   # Per EQUATIONS_CONTRACT.md: implementation should fall back to numerical methods.
 
-  # Expect a message about k < e and numerical optimization
-  expect_message(
+  # Expect a warning about k < e and numerical optimization
+  expect_warning(
     result <- calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5),
     "k.*< e.*numerical optimization"
   )
@@ -151,4 +151,52 @@ test_that("compare_hurdle_models errors for non-hurdle objects", {
     compare_hurdle_models(list(), list()),
     "must be beezdemand_hurdle objects"
   )
+})
+
+test_that("zhao_exponential Pmax values are finite and positive (2-RE)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 42)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    part2 = "zhao_exponential",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  pars <- get_subject_pars(fit)
+  expect_true(all(is.finite(pars$Pmax)), info = "All 2-RE Pmax values should be finite")
+  expect_true(all(pars$Pmax > 0), info = "All 2-RE Pmax values should be positive")
+  expect_true(all(is.finite(pars$Omax)), info = "All 2-RE Omax values should be finite")
+  expect_true(all(pars$Omax > 0), info = "All 2-RE Omax values should be positive")
+})
+
+test_that("zhao_exponential Pmax values are finite and positive (3-RE)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(
+    n_subjects = 50,
+    n_random_effects = 3,
+    seed = 789
+  )
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    part2 = "zhao_exponential",
+    random_effects = c("zeros", "q0", "alpha"),
+    verbose = 0
+  )
+
+  pars <- get_subject_pars(fit)
+  expect_true(all(is.finite(pars$Pmax)), info = "All 3-RE Pmax values should be finite")
+  expect_true(all(pars$Pmax > 0), info = "All 3-RE Pmax values should be positive")
+  expect_true(all(is.finite(pars$Omax)), info = "All 3-RE Omax values should be finite")
+  expect_true(all(pars$Omax > 0), info = "All 3-RE Omax values should be positive")
 })

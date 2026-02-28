@@ -144,7 +144,7 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
 
   # Check if LRT is possible (same backend with valid likelihoods)
   can_lrt <- same_backend &&
-    all(sapply(model_info, function(x) !is.na(x$logLik))) &&
+    all(vapply(model_info, function(x) !is.na(x$logLik), logical(1))) &&
     backends[1] != "legacy"
 
   if (test == "auto") {
@@ -168,7 +168,7 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
       test <- "none"
     } else {
       # Check sample size consistency across models (only relevant when doing LRT)
-      nobs_values <- sapply(model_info, `[[`, "nobs")
+      nobs_values <- vapply(model_info, `[[`, numeric(1), "nobs")
       if (length(unique(stats::na.omit(nobs_values))) > 1) {
         warning(
           "Models appear to use different sample sizes. ",

@@ -13,7 +13,10 @@ been deployed (will be published upon CRAN acceptance).
 
 ## Submission comments
 
-This is a major update (0.1.2 -> 0.2.0) with significant new functionality:
+This is a major update (0.1.2 -> 0.2.0) with significant new functionality.
+(Version 0.1.3 was a GitHub-only release, never submitted to CRAN.)
+
+New in 0.2.0:
 
 * New two-part hurdle demand models via TMB (Template Model Builder)
 * New cross-price demand model functions

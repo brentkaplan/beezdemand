@@ -303,4 +303,18 @@ test_that("validate_hurdle_data catches invalid data", {
     validate_hurdle_data(df, "y", "x", "id"),
     "cannot be negative"
   )
+
+  # Insufficient observations (< 10)
+  df <- data.frame(id = rep(1:2, each = 3), x = rep(1:3, 2), y = rep(1:3, 2))
+  expect_error(
+    validate_hurdle_data(df, "y", "x", "id"),
+    "Insufficient data"
+  )
+
+  # Single subject (need at least 2 for mixed effects)
+  df <- data.frame(id = rep(1, 15), x = 1:15, y = 1:15)
+  expect_error(
+    validate_hurdle_data(df, "y", "x", "id"),
+    "at least 2 subjects"
+  )
 })

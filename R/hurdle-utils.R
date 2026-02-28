@@ -38,6 +38,11 @@
 #' @seealso \code{\link{calc_group_metrics}}, \code{\link{fit_demand_hurdle}}
 #' @export
 calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
+  lifecycle::deprecate_soft(
+    "0.2.0",
+    "calc_omax_pmax()",
+    "beezdemand_calc_pmax_omax()"
+  )
   # Handle edge cases
   if (is.na(alpha) || alpha <= 0 || is.na(k) || is.na(Q0)) {
     return(list(Pmax = NA_real_, Omax = NA_real_, Qmax = NA_real_))
@@ -64,14 +69,15 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
     # No local maximum - expenditure is monotonically increasing
     # Per EQUATIONS_CONTRACT.md: Pmax closed-form via Lambert W requires k >= e
     # Implementation returns a bounded-range maximum when k < e
-    message(
+    warning(
       sprintf(
         paste0(
           "Note: k (%.3f) < e (~2.718); the expenditure function has no interior maximum. ",
           "Returning the maximum over a bounded search interval via numerical optimization."
         ),
         k
-      )
+      ),
+      call. = FALSE
     )
 
     # Try numerical optimization as fallback
@@ -201,6 +207,11 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
 #'
 #' @keywords internal
 calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
+  lifecycle::deprecate_soft(
+    "0.2.0",
+    "calc_omax_pmax_vec()",
+    "beezdemand_calc_pmax_omax_vec()"
+  )
   n <- length(Q0)
   if (length(k) == 1) {
     k <- rep(k, n)

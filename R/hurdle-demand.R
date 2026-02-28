@@ -453,11 +453,23 @@ NULL
 
   # Calculate Omax and Pmax for each subject
   if (identical(part2, "zhao_exponential")) {
-    omax_pmax <- calc_omax_pmax_vec(
-      Q0 = subj_Q0,
-      k = exp(coefficients["log_k"]),
-      alpha = subj_alpha
+    price_split <- split(price, subject_id)
+    price_list <- lapply(seq_len(n_subjects), function(i) {
+      price_split[[as.character(i - 1L)]]
+    })
+
+    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      params_df = data.frame(
+        alpha = subj_alpha,
+        q0 = subj_Q0,
+        k = rep(exp(coefficients["log_k"]), n_subjects)
+      ),
+      model_type = "hurdle",
+      param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+      price_list = price_list,
+      compute_observed = FALSE
     )
+    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
   } else if (identical(part2, "exponential")) {
     price_split <- split(price, subject_id)
     price_list <- lapply(seq_len(n_subjects), function(i) {
@@ -991,11 +1003,23 @@ fit_demand_hurdle <- function(
 
     # Calculate Omax and Pmax for each subject (Part II mean)
     if (identical(part2, "zhao_exponential")) {
-      omax_pmax <- calc_omax_pmax_vec(
-        Q0 = subj_Q0,
-        k = exp(coefficients["log_k"]),
-        alpha = subj_alpha
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0,
+          k = rep(exp(coefficients["log_k"]), n_subjects)
+        ),
+        model_type = "hurdle",
+        param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
       )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "exponential")) {
       price_split <- split(price, subject_id)
       price_list <- lapply(seq_len(n_subjects), function(i) {
@@ -1080,11 +1104,23 @@ fit_demand_hurdle <- function(
 
     # Calculate Omax and Pmax for each subject (Part II mean)
     if (identical(part2, "zhao_exponential")) {
-      omax_pmax <- calc_omax_pmax_vec(
-        Q0 = subj_Q0,
-        k = exp(coefficients["log_k"]),
-        alpha = subj_alpha
+      price_split <- split(price, subject_id)
+      price_list <- lapply(seq_len(n_subjects), function(i) {
+        price_split[[as.character(i - 1L)]]
+      })
+
+      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+        params_df = data.frame(
+          alpha = subj_alpha,
+          q0 = subj_Q0,
+          k = rep(exp(coefficients["log_k"]), n_subjects)
+        ),
+        model_type = "hurdle",
+        param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
+        price_list = price_list,
+        compute_observed = FALSE
       )
+      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "exponential")) {
       price_split <- split(price, subject_id)
       price_list <- lapply(seq_len(n_subjects), function(i) {

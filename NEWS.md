@@ -68,13 +68,15 @@
 ### Modern Wrappers for Legacy Functions
 
 * New `get_empirical_measures()` as a modern replacement for `GetEmpirical()`.
-  Returns a tibble with consistent column naming.
+  Returns a `beezdemand_empirical` S3 object; access the results via
+  `$measures`.
 
 * New `get_descriptive_summary()` as a modern replacement for
-  `GetDescriptives()`. Returns a tibble with consistent column naming.
+  `GetDescriptives()`. Returns a `beezdemand_descriptive` S3 object; access
+  the results via `$statistics`.
 
-* New `get_k()` as a modern replacement for `GetK()`. Returns a tibble with
-  consistent column naming.
+* New `get_k()` as a modern replacement for `GetK()`. Returns a single numeric
+  k value with optional verbose output.
 
 ### Other New Features
 

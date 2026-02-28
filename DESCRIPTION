@@ -1,6 +1,6 @@
 Package: beezdemand
 Version: 0.2.0
-Date: 2026-02-01
+Date: 2026-02-27
 Title: Behavioral Economic Easy Demand
 Authors@R: c(person("Brent", "Kaplan", email = "bkaplan.ku@gmail.com", role = c("aut", "cre", "cph"),
              comment = c(ORCID = "0000-0002-3758-6776")),
