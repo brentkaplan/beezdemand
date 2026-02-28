@@ -88,7 +88,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-02-27</h4>
+            <h4 data-toc-skip class="date">2026-02-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/hurdle-demand-models.Rmd" class="external-link"><code>vignettes/hurdle-demand-models.Rmd</code></a></small>
       <div class="d-none name"><code>hurdle-demand-models.Rmd</code></div>
@@ -399,10 +399,10 @@ for:</p>
 <span><span class="co">#&gt;   7.591  13.549  16.183  17.986  21.796  34.419 </span></span>
 <span><span class="co">#&gt;   Pmax:</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt;     100     100     100     100     100     100 </span></span>
+<span><span class="co">#&gt;      20      20      20      20      20      20 </span></span>
 <span><span class="co">#&gt;   Omax:</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt;   63.44   96.28  132.88  129.03  149.67  203.62</span></span>
+<span><span class="co">#&gt;   16.15   24.51   33.83   32.85   38.11   51.85</span></span>
 <span></span>
 <span><span class="co"># Extract coefficients</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
@@ -432,13 +432,13 @@ for:</p>
 <span></span>
 <span><span class="co"># Get subject-specific parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    id       a_i        b_i        Q0      alpha breakpoint     Pmax      Omax</span></span>
-<span><span class="co">#&gt; 1  19 -88.44328  0.5148913 11.623368 0.09878809  34.419417 99.99996 203.61911</span></span>
-<span><span class="co">#&gt; 2  30 -21.33116 -0.6512299  3.621529 0.09878809  20.997058 99.99996  63.44224</span></span>
-<span><span class="co">#&gt; 3  38  40.35748 -0.2348862  5.491712 0.09878809  13.330758 99.99996  96.20426</span></span>
-<span><span class="co">#&gt; 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504 99.99996 143.69905</span></span>
-<span><span class="co">#&gt; 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495 99.99996 185.72329</span></span>
-<span><span class="co">#&gt; 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564 99.99996  96.50914</span></span></code></pre></div>
+<span><span class="co">#&gt;    id       a_i        b_i        Q0      alpha breakpoint Pmax     Omax</span></span>
+<span><span class="co">#&gt; 1  19 -88.44328  0.5148913 11.623368 0.09878809  34.419417   20 51.84539</span></span>
+<span><span class="co">#&gt; 2  30 -21.33116 -0.6512299  3.621529 0.09878809  20.997058   20 16.15363</span></span>
+<span><span class="co">#&gt; 3  38  40.35748 -0.2348862  5.491712 0.09878809  13.330758   20 24.49548</span></span>
+<span><span class="co">#&gt; 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504   20 36.58857</span></span>
+<span><span class="co">#&gt; 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495   20 47.28877</span></span>
+<span><span class="co">#&gt; 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564   20 24.57311</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">

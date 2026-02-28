@@ -120,7 +120,9 @@ maximum is found. For small alpha values, Pmax can be quite large.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Calculate for group-level parameters</span></span></span>
 <span class="r-in"><span><span class="fu">calc_omax_pmax</span><span class="op">(</span>Q0 <span class="op">=</span> <span class="fl">10</span>, k <span class="op">=</span> <span class="fl">2</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: k (2.000) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`calc_omax_pmax()` was deprecated in beezdemand 0.2.0.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use `beezdemand_calc_pmax_omax()` instead.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Note: k (2.000) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 19.99993</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

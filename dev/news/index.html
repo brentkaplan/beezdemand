@@ -105,9 +105,9 @@
 </ul></div>
 <div class="section level4">
 <h4 id="modern-wrappers-for-legacy-functions-0-2-0">Modern Wrappers for Legacy Functions<a class="anchor" aria-label="anchor" href="#modern-wrappers-for-legacy-functions-0-2-0"></a></h4>
-<ul><li><p>New <code><a href="../reference/get_empirical_measures.html">get_empirical_measures()</a></code> as a modern replacement for <code><a href="../reference/GetEmpirical.html">GetEmpirical()</a></code>. Returns a tibble with consistent column naming.</p></li>
-<li><p>New <code><a href="../reference/get_descriptive_summary.html">get_descriptive_summary()</a></code> as a modern replacement for <code><a href="../reference/GetDescriptives.html">GetDescriptives()</a></code>. Returns a tibble with consistent column naming.</p></li>
-<li><p>New <code><a href="../reference/get_k.html">get_k()</a></code> as a modern replacement for <code><a href="../reference/GetK.html">GetK()</a></code>. Returns a tibble with consistent column naming.</p></li>
+<ul><li><p>New <code><a href="../reference/get_empirical_measures.html">get_empirical_measures()</a></code> as a modern replacement for <code><a href="../reference/GetEmpirical.html">GetEmpirical()</a></code>. Returns a <code>beezdemand_empirical</code> S3 object; access the results via <code>$measures</code>.</p></li>
+<li><p>New <code><a href="../reference/get_descriptive_summary.html">get_descriptive_summary()</a></code> as a modern replacement for <code><a href="../reference/GetDescriptives.html">GetDescriptives()</a></code>. Returns a <code>beezdemand_descriptive</code> S3 object; access the results via <code>$statistics</code>.</p></li>
+<li><p>New <code><a href="../reference/get_k.html">get_k()</a></code> as a modern replacement for <code><a href="../reference/GetK.html">GetK()</a></code>. Returns a single numeric k value with optional verbose output.</p></li>
 </ul></div>
 <div class="section level4">
 <h4 id="other-new-features-0-2-0">Other New Features<a class="anchor" aria-label="anchor" href="#other-new-features-0-2-0"></a></h4>

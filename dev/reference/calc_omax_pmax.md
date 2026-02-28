@@ -67,7 +67,9 @@ maximum is found. For small alpha values, Pmax can be quite large.
 ``` r
 # Calculate for group-level parameters
 calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
-#> Note: k (2.000) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Warning: `calc_omax_pmax()` was deprecated in beezdemand 0.2.0.
+#> ℹ Please use `beezdemand_calc_pmax_omax()` instead.
+#> Warning: Note: k (2.000) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
 #> $Pmax
 #> [1] 19.99993
 #> 

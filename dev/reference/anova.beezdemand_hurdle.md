@@ -53,16 +53,6 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Optimizing...
 #>   Converged in 95 iterations
 #>   Computing standard errors...
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
-#> Note: k (1.742) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
 #> Done. Log-likelihood: 2.31
 fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
                           random_effects = c("zeros", "q0", "alpha"))

@@ -108,19 +108,21 @@
   [`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md)
   as a modern replacement for
   [`GetEmpirical()`](https://brentkaplan.github.io/beezdemand/reference/GetEmpirical.md).
-  Returns a tibble with consistent column naming.
+  Returns a `beezdemand_empirical` S3 object; access the results via
+  `$measures`.
 
 - New
   [`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md)
   as a modern replacement for
   [`GetDescriptives()`](https://brentkaplan.github.io/beezdemand/reference/GetDescriptives.md).
-  Returns a tibble with consistent column naming.
+  Returns a `beezdemand_descriptive` S3 object; access the results via
+  `$statistics`.
 
 - New
   [`get_k()`](https://brentkaplan.github.io/beezdemand/reference/get_k.md)
   as a modern replacement for
   [`GetK()`](https://brentkaplan.github.io/beezdemand/reference/GetK.md).
-  Returns a tibble with consistent column naming.
+  Returns a single numeric k value with optional verbose output.
 
 #### Other New Features
 
