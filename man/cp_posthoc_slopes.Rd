@@ -23,3 +23,10 @@ This function performs pairwise comparisons of slopes between groups in a
 cross-price demand model, but only when a significant interaction is present.
 The emmeans table showing estimated marginal means for slopes is always returned.
 }
+\examples{
+\donttest{
+data(etm)
+fit <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+cp_posthoc_slopes(fit)
+}
+}

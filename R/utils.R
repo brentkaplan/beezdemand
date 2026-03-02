@@ -144,6 +144,9 @@ trim.leading <- function(x) sub("^\\s+", "", x)
 ##' @param idcol Name of id column
 ##' @param groupcol Name of group column
 ##' @return Dataframe
+##' @examples
+##' dat <- data.frame(price = 1:5, quantity = c(10, 8, 5, 2, 0), subj = rep(1, 5))
+##' CheckCols(dat, xcol = "price", ycol = "quantity", idcol = "subj")
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @export
 CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
@@ -220,6 +223,13 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
 ##' @param eps error precision
 ##' @param min.imag minimum for imaginary solution
 ##' @return numeric
+##' @examples
+##' ## Principal branch: W(1) ~ 0.5671
+##' lambertW(1)
+##'
+##' ## Verify: W(z) * exp(W(z)) == z
+##' w <- lambertW(2)
+##' w * exp(w)
 ##' @author Benjamin Bolker (port)
 ##' @export
 lambertW = function(

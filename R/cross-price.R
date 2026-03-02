@@ -392,6 +392,17 @@ fit_cp_nls <- function(
 #' @param return_all Logical; if TRUE, returns additional model metadata.
 #' @param ... Additional arguments passed to underlying modeling functions.
 #' @return Fitted linear model.
+#' @examples
+#' \donttest{
+#' data(etm)
+#' ## Fixed-effects linear cross-price model
+#' fit_fixed <- fit_cp_linear(etm, type = "fixed", group_effects = TRUE)
+#' summary(fit_fixed)
+#'
+#' ## Mixed-effects linear cross-price model
+#' fit_mixed <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+#' summary(fit_mixed)
+#' }
 #' @importFrom lme4 lmer
 #' @export
 fit_cp_linear <- function(

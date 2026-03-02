@@ -664,6 +664,17 @@ NULL
 #'   \item{note_param_space}{Notes about parameter conversions}
 #' }
 #'
+#' @examples
+#' \donttest{
+#' result <- beezdemand_calc_pmax_omax(
+#'   model_type = "hs",
+#'   params = list(alpha = 0.001, q0 = 10, k = 3),
+#'   price_obs = c(0, 0.5, 1, 2, 4, 8, 16),
+#'   consumption_obs = c(10, 9, 8, 6, 3, 1, 0)
+#' )
+#' result$pmax_model
+#' result$omax_model
+#' }
 #' @keywords internal
 #' @export
 beezdemand_calc_pmax_omax <- function(
@@ -962,6 +973,15 @@ beezdemand_calc_pmax_omax <- function(
 #' @param ... Additional arguments passed to beezdemand_calc_pmax_omax
 #'
 #' @return Data frame with pmax/omax results for each subject
+#' @examples
+#' \donttest{
+#' params_df <- data.frame(
+#'   alpha = c(0.001, 0.002),
+#'   q0 = c(10, 15),
+#'   k = c(3, 3)
+#' )
+#' beezdemand_calc_pmax_omax_vec(params_df, model_type = "hs")
+#' }
 #' @keywords internal
 #' @export
 beezdemand_calc_pmax_omax_vec <- function(

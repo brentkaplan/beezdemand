@@ -121,6 +121,15 @@ for each series (or participant), several x values were presented.
 
 ## Converting from Wide to Long and Vice Versa
 
+For quick conversion, use the built-in convenience function:
+
+``` r
+long <- pivot_demand_data(wide, format = "long", id_var = "id")
+```
+
+Below is a manual walkthrough using `tidyr` for when you need more
+control.
+
 Take for example the format of most datasets that would be exported from
 a data collection software such as Qualtrics or SurveyMonkey or Google
 Forms:
@@ -250,45 +259,42 @@ Data](https://vita.had.co.nz/papers/tidy-data.html).
 
 ## Obtain Descriptive Data
 
-Descriptive values of responses at each price can be obtained easily.
-The resulting table includes mean, standard deviation, proportion of
-zeros, number of NAs, and minimum and maximum values. If
-`bwplot = TRUE`, a box-and-whisker plot is also created and saved. By
-default, this location is a folder named “plots” one level up from the
-current working directory. The user may additionally specify the
-directory that the plot should save into, the type of file (either
-`"png"` or `"pdf"`), and the filename. Notice the red crosses indicate
-the mean. Defaults are shown here:
+Descriptive statistics at each price (mean, SD, proportion of zeros,
+min, max) are available via `get_descriptive_summary()`:
 
 ``` r
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
-                filename = "bwplot")
+desc <- get_descriptive_summary(apt)
+desc
 ```
 
-To actually run the code and generate the file, we will turn
-`bwplot = TRUE`. The function will create a folder one level higher than
-the current folder (i.e., the `../` portion) and save the file,
-“bwplot.png” in the folder.
+    Descriptive Summary of Demand Data
+    ===================================
 
-``` r
-GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
-                filename = "bwplot")
-```
+    Call:
+    get_descriptive_summary(data = apt)
 
-    Warning: `GetDescriptives()` was deprecated in beezdemand 0.3.0.
-    ℹ Please use `get_descriptive_summary()` instead.
-    This warning is displayed once every 8 hours.
-    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-    generated.
+    Data Summary:
+      Subjects: 10
+      Prices analyzed: 16
 
-<figure>
-<img src="man/figures/bwplot.png"
-alt="Box-and-whisker plot showing consumption at each price point with mean values marked by red crosses" />
-<figcaption aria-hidden="true">Box-and-whisker plot showing consumption
-at each price point with mean values marked by red crosses</figcaption>
-</figure>
-
-And here is the table that is returned from the function:
+    Statistics by Price:
+     Price Mean Median   SD PropZeros NAs Min Max
+         0  6.8    6.5 2.62       0.0   0   3  10
+       0.5  6.8    6.5 2.62       0.0   0   3  10
+         1  6.5    6.5 2.27       0.0   0   3  10
+       1.5  6.1    6.0 1.91       0.0   0   3   9
+         2  5.3    5.5 1.89       0.0   0   2   8
+       2.5  5.2    5.0 1.87       0.0   0   2   8
+         3  4.8    5.0 1.48       0.0   0   2   7
+         4  4.3    4.5 1.57       0.0   0   2   7
+         5  3.9    3.5 1.45       0.0   0   2   7
+         6  3.5    3.0 1.43       0.0   0   2   6
+         7  3.3    3.0 1.34       0.0   0   2   6
+         8  2.6    2.5 1.51       0.1   0   0   5
+         9  2.4    2.0 1.58       0.1   0   0   5
+        10  2.2    2.0 1.32       0.1   0   0   4
+        15  1.1    0.5 1.37       0.5   0   0   3
+        20  0.8    0.0 1.14       0.6   0   0   3
 
 | Price | Mean | Median |   SD | PropZeros | NAs | Min | Max |
 |:------|-----:|-------:|-----:|----------:|----:|----:|----:|
@@ -308,6 +314,17 @@ And here is the table that is returned from the function:
 | 10    |  2.2 |    2.0 | 1.32 |       0.1 |   0 |   0 |   4 |
 | 15    |  1.1 |    0.5 | 1.37 |       0.5 |   0 |   0 |   3 |
 | 20    |  0.8 |    0.0 | 1.14 |       0.6 |   0 |   0 |   3 |
+
+A box-and-whisker plot is built in:
+
+``` r
+plot(desc)
+```
+
+<img src="man/figures/descriptive-modern-plot-1.png" alt="Box-and-whisker plot showing consumption at each price point"  />
+
+> **Legacy equivalent:** `GetDescriptives(dat = apt, bwplot = TRUE)`.
+> See `vignette("migration-guide")` for details.
 
 ## Change Data
 
@@ -336,51 +353,83 @@ ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE,
 
 ## Identify Unsystematic Responses
 
-Using the following function, we can examine the consistency of demand
-data using Stein et al.’s (2015) alogrithm for identifying unsystematic
-responses. Default values shown, but they can be customized.
+Stein et al.’s (2015) algorithm for identifying unsystematic responses
+is available via `check_systematic_demand()`:
 
 ``` r
-CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
+sys_check <- check_systematic_demand(apt)
+sys_check
 ```
 
-| id | TotalPass | DeltaQ | DeltaQPass | Bounce | BouncePass | Reversals | ReversalsPass | NumPosValues |
-|:---|---:|---:|:---|---:|:---|---:|:---|---:|
-| 19 | 3 | 0.2112 | Pass | 0 | Pass | 0 | Pass | 16 |
-| 30 | 3 | 0.1437 | Pass | 0 | Pass | 0 | Pass | 16 |
-| 38 | 3 | 0.7885 | Pass | 0 | Pass | 0 | Pass | 14 |
-| 60 | 3 | 0.9089 | Pass | 0 | Pass | 0 | Pass | 14 |
-| 68 | 3 | 0.9089 | Pass | 0 | Pass | 0 | Pass | 14 |
+
+    Systematicity Check (demand)
+    ------------------------------ 
+    Total patterns: 10 
+    Systematic: 10 ( 100 %)
+    Unsystematic: 0 ( 0 %)
+
+    Use summary() for details, tidy() for per-subject results.
+
+``` r
+summary(sys_check)
+```
+
+
+    Systematicity Check Summary (demand)
+    ================================================== 
+
+    Total patterns: 10 
+    Systematic: 10 ( 100 %)
+    Unsystematic: 0 ( 0 %)
+
+    Failures by Criterion:
+    # A tibble: 4 × 3
+      criterion n_fail pct_fail
+      <chr>      <int>    <dbl>
+    1 trend          0        0
+    2 bounce         0        0
+    3 reversals      0        0
+    4 overall        0        0
+
+> **Legacy equivalent:**
+> `CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)`.
+> See `vignette("migration-guide")` for details.
 
 ## Analyze Demand Data
 
-> **Note:** The examples below use the legacy `FitCurves()` API for
-> backward compatibility. For new projects, we recommend using
-> `fit_demand_fixed()` which provides a modern S3 interface with
-> `summary()`, `tidy()`, `glance()`, `predict()`, and `plot()` methods.
-> See `vignette("migration-guide")` or the [migration
-> guide](https://brentkaplan.github.io/beezdemand/articles/migration-guide.html)
-> for details.
-
-Results of the analysis return both empirical and derived measures for
-use in additional analyses and model specification. Equations include
-the linear model, exponential model, and exponentiated model. Nonlinear
-mixed-effects models and cross-price models are now supported as well;
-see the new sections below for quick-start examples.
-
 ### Obtaining Empirical Measures
 
-Empirical measures can be obtained separately on their own:
+Empirical measures (intensity, breakpoint, Omax, Pmax) can be obtained
+via `get_empirical_measures()`:
 
 ``` r
-GetEmpirical(dat = apt)
+emp <- get_empirical_measures(apt)
+emp
 ```
 
-    Warning: `GetEmpirical()` was deprecated in beezdemand 0.3.0.
-    ℹ Please use `get_empirical_measures()` instead.
-    This warning is displayed once every 8 hours.
-    Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-    generated.
+    Empirical Demand Measures
+    =========================
+
+    Call:
+    get_empirical_measures(data = apt)
+
+    Data Summary:
+      Subjects: 10
+      Subjects with zero consumption: Yes
+      Complete cases (no NAs): 6
+
+    Empirical Measures:
+      id Intensity BP0 BP1 Omaxe Pmaxe
+      19        10  NA  20    45    15
+      30         3  NA  20    20    20
+      38         4  15  10    21     7
+      60        10  15  10    24     8
+      68        10  15  10    36     9
+     106         5   8   7    15     5
+     113         6  NA  20    45    15
+     142         8  NA  20    60    20
+     156         7  20  15    21     7
+     188         5  15  10    15     5
 
 | id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
 |:----|----------:|----:|----:|------:|------:|
@@ -390,294 +439,174 @@ GetEmpirical(dat = apt)
 | 60  |        10 |  15 |  10 |    24 |     8 |
 | 68  |        10 |  15 |  10 |    36 |     9 |
 
-### Obtaining Derived Measures
+> **Legacy equivalent:** `GetEmpirical(dat = apt)`. See
+> `vignette("migration-guide")` for details.
 
-`FitCurves()` has several important arguments that can be passed. For
-the purposes of this document, focus will be on the two contemporary
-demand equations.
+### Fitting Demand Curves
 
-- `equation = "hs"` is the default but can accept the character strings
-  `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the
-  contemporary equations proposed by Hursh & Silberberg (2008) and
-  Koffarnus et al. (2015), respectively.
+The recommended function for fitting individual demand curves is
+`fit_demand_fixed()`. It provides a modern S3 interface with
+`summary()`, `coef()`, `tidy()`, `glance()`, `predict()`, and `plot()`
+methods.
 
-- `k` can take accept a specific number but by default will be
-  calculated based on the maximum and minimum y values of the entire
-  sample and adding .5. Adding this amount was originally proposed by
-  Steven R. Hursh in an early iteration of a Microsoft Excel spreadsheet
-  used to calculate demand metrics. This adjustment was adopted for two
-  reasons. First, when fitting $Q_0$ as a derived parameter, the value
-  may exceed the empirically observed intensity value. Thus, a k value
-  calculated based only on the observed range of data may underestimate
-  the full fitted range of the curve. Second, we have found that values
-  of $\alpha$ (as well as values that rely on $\alpha$, i.e. approximate
-  $P_{max}$) display greater discrepancies when smaller values of k are
-  used compared to larger values of k. Other options include `"ind"`,
-  which will calculate k based on individual basis, `"fit"`, which will
-  fit k as a free parameter on an individual basis, `"share"`, which
-  will fit k as a single shared parameter across all data sets (while
-  fitting individual $Q_0$ and $\alpha$).
+Key arguments:
 
-- `agg = NULL` is the default, which means no aggregation. When
-  `agg = "Mean"`, models are fit to the averaged data disregarding any
-  error. When `agg = "Pooled"`, all data are used and clustering within
-  individual is ignored.
+- `equation` — `"hs"` (Hursh & Silberberg, 2008; default) or `"koff"`
+  (Koffarnus et al., 2015).
+- `k` — scaling constant. By default, calculated from the sample range +
+  0.5. Other options: `"ind"` (individual), `"fit"` (free parameter),
+  `"share"` (shared across all series).
+- `agg` — `NULL` (individual fits; default), `"Mean"` (fit to averaged
+  data), or `"Pooled"` (fit to all data ignoring clustering).
 
-- `detailed = FALSE` is the default. This will output a single dataframe
-  of results, as shown below. When `detailed = TRUE`, the output is a 3
-  element list that includes (1) dataframe of results, (2) list of
-  nonlinear regression model objects, (3) list of dataframes containing
-  predicted x and y values (to be used in subsequent plotting), and (4)
-  list of individual dataframes used in fitting.
-
-- `lobound` and `hibound` can accept named vectors that will be used as
-  lower and upper bounds, respectively during fitting. If `k = "fit"`,
-  then it should look as follows (values are nonspecific):
-  `lobound = c("q0" = 0, "k" = 0, "alpha" = 0)` and
-  `hibound = c("q0" = 25, "k" = 10, "alpha" = 1)`. If `k` is not being
-  fit as a parameter, then only `"q0"` and `"alpha"` should be used in
-  bounding.
-
-Note: Fitting with an equation (e.g., `"linear"`, `"hs"`) that doesn’t
-work happily with zero consumption values results in the following. One,
-a message will appear saying that zeros are incompatible with the
-equation. Two, because zeros are removed prior to finding empirical
-(i.e., observed) measures, resulting BP0 values will be all NAs
-(reflective of the data transformations). The warning message will look
-as follows:
+#### Individual fits (Hursh & Silberberg equation)
 
 ``` r
-Warning message:
-Zeros found in data not compatible with equation! Dropping zeros!
+fit_hs <- fit_demand_fixed(apt, equation = "hs")
+fit_hs
 ```
 
-The simplest use of `FitCurves()` is shown here, only needing to specify
-`dat` and `equation`. All other arguments shown are set to their default
-values.
+
+    Fixed-Effect Demand Model
+    ==========================
+
+    Call:
+    fit_demand_fixed(data = apt, equation = "hs")
+
+    Equation: hs 
+    k: fixed (2) 
+    Subjects: 10 ( 10 converged, 0 failed)
+
+    Use summary() for parameter summaries, tidy() for tidy output.
+
+Extract coefficients and tidy output:
 
 ``` r
-FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE,
-          xcol = "x", ycol = "y", idcol = "id", groupcol = NULL)
+head(coef(fit_hs))
 ```
 
-Which is equivalent to:
+    # A tibble: 6 × 5
+      id    term  estimate estimate_scale term_display
+      <chr> <chr>    <dbl> <chr>          <chr>       
+    1 19    q0    10.2     natural        q0          
+    2 19    alpha  0.00205 natural        alpha       
+    3 30    q0     2.81    natural        q0          
+    4 30    alpha  0.00587 natural        alpha       
+    5 38    q0     4.50    natural        q0          
+    6 38    alpha  0.00420 natural        alpha       
+
+| id | term | estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
+|:---|:---|---:|---:|---:|---:|:---|:---|:---|---:|
+| 19 | Q0 | 10.158665 | 0.2685323 | NA | NA | fixed | natural | Q0 | 10.158665 |
+| 30 | Q0 | 2.807366 | 0.2257764 | NA | NA | fixed | natural | Q0 | 2.807366 |
+| 38 | Q0 | 4.497456 | 0.2146862 | NA | NA | fixed | natural | Q0 | 4.497456 |
+| 60 | Q0 | 9.924274 | 0.4591683 | NA | NA | fixed | natural | Q0 | 9.924274 |
+| 68 | Q0 | 10.390384 | 0.3290277 | NA | NA | fixed | natural | Q0 | 10.390384 |
+| 106 | Q0 | 5.683566 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683566 |
+| 113 | Q0 | 6.195949 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195949 |
+| 142 | Q0 | 6.171990 | 0.6408575 | NA | NA | fixed | natural | Q0 | 6.171990 |
+| 156 | Q0 | 8.348973 | 0.4105617 | NA | NA | fixed | natural | Q0 | 8.348973 |
+| 188 | Q0 | 6.303639 | 0.5636959 | NA | NA | fixed | natural | Q0 | 6.303639 |
+
+#### Koffarnus equation
 
 ``` r
-FitCurves(dat = apt, equation = "hs")
+fit_koff <- fit_demand_fixed(apt, equation = "koff")
+fit_koff
 ```
 
-Note that this ouput returns a message
-(`No k value specified. Defaulting to empirical mean range +.5`) and the
-aforementioned warning
-(`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`).
-With `detailed = FALSE`, the only output is the dataframe of results
-(broken up to show the different types of results). This example fits
-the exponential equation proposed by Hursh & Silberberg (2008):
 
-| id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
-|:----|----------:|:----|----:|------:|------:|
-| 19  |        10 | NA  |  20 |    45 |    15 |
-| 30  |         3 | NA  |  20 |    20 |    20 |
-| 38  |         4 | NA  |  10 |    21 |     7 |
-| 60  |        10 | NA  |  10 |    24 |     8 |
-| 68  |        10 | NA  |  10 |    36 |     9 |
+    Fixed-Effect Demand Model
+    ==========================
 
-Empirical Measures
+    Call:
+    fit_demand_fixed(data = apt, equation = "koff")
 
-| Equation |       Q0d |        K |     Alpha |        R2 |
-|:---------|----------:|---------:|----------:|----------:|
-| hs       | 10.475734 | 1.031479 | 0.0046571 | 0.9660008 |
-| hs       |  2.932406 | 1.031479 | 0.0134557 | 0.7922379 |
-| hs       |  4.523155 | 1.031479 | 0.0087935 | 0.8662632 |
-| hs       | 10.492133 | 1.031479 | 0.0102231 | 0.9664814 |
-| hs       | 10.651760 | 1.031479 | 0.0061262 | 0.9699408 |
+    Equation: koff 
+    k: fixed (2) 
+    Subjects: 10 ( 10 converged, 0 failed)
 
-Fitted Measures
+    Use summary() for parameter summaries, tidy() for tidy output.
 
-| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.4159581 | 0.0002358 | 0.0085214 | 0.0004314 | 16 | 0.0193354 | 0.0371632 | 9.583593 | 11.367876 |
-| 0.2506946 | 0.0017321 | 0.0246206 | 0.0031692 | 16 | 0.0978350 | 0.0835955 | 2.394720 | 3.470093 |
-| 0.2357693 | 0.0008878 | 0.0160899 | 0.0016244 | 14 | 0.0259083 | 0.0464653 | 4.009458 | 5.036853 |
-| 0.6219724 | 0.0005118 | 0.0187057 | 0.0009364 | 14 | 0.0236652 | 0.0444083 | 9.136972 | 11.847295 |
-| 0.3841063 | 0.0002713 | 0.0112094 | 0.0004964 | 14 | 0.0109439 | 0.0301992 | 9.814865 | 11.488656 |
-
-Uncertainty and Model Information
-
-|  AlphaLow | AlphaHigh |        EV |    Omaxd |
-|----------:|----------:|----------:|---------:|
-| 0.0041515 | 0.0051628 | 2.0496977 | 45.49394 |
-| 0.0097408 | 0.0171706 | 0.7094191 | 15.74587 |
-| 0.0068592 | 0.0107277 | 1.0855465 | 24.09418 |
-| 0.0091080 | 0.0113382 | 0.9337419 | 20.72481 |
-| 0.0055350 | 0.0067173 | 1.5581899 | 34.58471 |
-
-Derived Measures
-
-Here, the simplest form is shown specifying another equation, `"koff"`.
-This fits the modified exponential equation proposed by Koffarnus et
-al. (2015):
+#### Mean curve
 
 ``` r
-FitCurves(dat = apt, equation = "koff")
+fit_mean <- fit_demand_fixed(apt, equation = "hs", agg = "Mean")
+fit_mean
 ```
 
-| id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
-|:----|----------:|----:|----:|------:|------:|
-| 19  |        10 |  NA |  20 |    45 |    15 |
-| 30  |         3 |  NA |  20 |    20 |    20 |
-| 38  |         4 |  15 |  10 |    21 |     7 |
-| 60  |        10 |  15 |  10 |    24 |     8 |
-| 68  |        10 |  15 |  10 |    36 |     9 |
 
-Empirical Measures
+    Fixed-Effect Demand Model
+    ==========================
 
-| Equation |       Q0d |        K |     Alpha |        R2 |
-|:---------|----------:|---------:|----------:|----------:|
-| koff     | 10.131767 | 1.429419 | 0.0029319 | 0.9668576 |
-| koff     |  2.989613 | 1.429419 | 0.0093716 | 0.8136932 |
-| koff     |  4.607551 | 1.429419 | 0.0070562 | 0.8403625 |
-| koff     | 10.371088 | 1.429419 | 0.0068127 | 0.9659117 |
-| koff     | 10.703627 | 1.429419 | 0.0044361 | 0.9444897 |
+    Call:
+    fit_demand_fixed(data = apt, equation = "hs", agg = "Mean")
 
-Fitted Measures
+    Equation: hs 
+    k: fixed (2) 
+    Aggregation: Mean 
+    Subjects: 1 ( 1 converged, 0 failed)
 
-| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.2438729 | 0.0001663 | 0.0080957 | 0.0004592 | 16 | 2.908243 | 0.4557758 | 9.608712 | 10.654822 |
-| 0.1721284 | 0.0013100 | 0.0258774 | 0.0036171 | 16 | 1.490454 | 0.3262837 | 2.620434 | 3.358792 |
-| 0.3078231 | 0.0010631 | 0.0194838 | 0.0029354 | 16 | 4.429941 | 0.5625161 | 3.947336 | 5.267766 |
-| 0.4069382 | 0.0004577 | 0.0188117 | 0.0012639 | 16 | 5.010982 | 0.5982703 | 9.498292 | 11.243884 |
-| 0.4677467 | 0.0003736 | 0.0122493 | 0.0010315 | 16 | 8.350830 | 0.7723263 | 9.700410 | 11.706844 |
+    Use summary() for parameter summaries, tidy() for tidy output.
 
-Uncertainty and Model Information
-
-|  AlphaLow | AlphaHigh |        EV |    Omaxd |
-|----------:|----------:|----------:|---------:|
-| 0.0025752 | 0.0032886 | 1.9957818 | 46.56622 |
-| 0.0065620 | 0.0121812 | 0.6243741 | 14.56810 |
-| 0.0047761 | 0.0093362 | 0.8292621 | 19.34861 |
-| 0.0058310 | 0.0077945 | 0.8588915 | 20.03993 |
-| 0.0036349 | 0.0052373 | 1.3190323 | 30.77608 |
-
-Derived Measures
-
-By specifying `agg = "Mean"`, y values at each x value are aggregated
-and a single curve is fit to the data (disregarding error around each
-averaged point):
+#### Shared k
 
 ``` r
-FitCurves(dat = apt, equation = "hs", agg = "Mean")
+fit_share <- fit_demand_fixed(apt, equation = "hs", k = "share")
 ```
 
-| id   | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
-|:-----|----------:|:----|----:|------:|------:|
-| mean |       6.8 | NA  |  20 |  23.1 |     7 |
+    Beginning search for best-starting k
 
-Empirical Measures
+    Best k found at 0.93813356574003 = err: 0.744881846162718
 
-| Equation |      Q0d |        K |     Alpha |        R2 |
-|:---------|---------:|---------:|----------:|----------:|
-| hs       | 7.637436 | 1.429419 | 0.0066817 | 0.9807508 |
-
-Fitted Measures
-
-| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.3258955 | 0.0002218 | 0.0184497 | 0.0006125 | 16 | 0.02187 | 0.039524 | 6.93846 | 8.336413 |
-
-Uncertainty and Model Information
-
-|  AlphaLow | AlphaHigh |       EV |    Omaxd |
-|----------:|----------:|---------:|---------:|
-| 0.0062059 | 0.0071574 | 0.875742 | 20.43309 |
-
-Derived Measures
-
-By specifying `agg = "Pooled"`, y values at each x value are aggregated
-and a single curve is fit to the data and error around each averaged
-point (but disregarding within-subject clustering):
+    Searching for shared K, this can take a while...
 
 ``` r
-FitCurves(dat = apt, equation = "hs", agg = "Pooled")
+fit_share
 ```
 
-| id     | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
-|:-------|----------:|:----|----:|------:|------:|
-| pooled |       6.8 | NA  |  20 |  23.1 |     7 |
 
-Empirical Measures
+    Fixed-Effect Demand Model
+    ==========================
 
-| Equation |      Q0d |        K |     Alpha |       R2 |
-|:---------|---------:|---------:|----------:|---------:|
-| hs       | 6.592488 | 1.031479 | 0.0085032 | 0.460412 |
+    Call:
+    fit_demand_fixed(data = apt, equation = "hs", k = "share")
 
-Fitted Measures
+    Equation: hs 
+    k: share 
+    Subjects: 10 ( 10 converged, 0 failed)
 
-| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.4260507 | 0.0007125 | 0.0155587 | 0.0013037 | 146 | 4.677846 | 0.1802361 | 5.750367 | 7.434609 |
+    Use summary() for parameter summaries, tidy() for tidy output.
 
-Uncertainty and Model Information
+### Plotting Demand Curves
 
-|  AlphaLow | AlphaHigh |       EV |    Omaxd |
-|----------:|----------:|---------:|---------:|
-| 0.0070949 | 0.0099115 | 1.122607 | 24.91675 |
-
-Derived Measures
-
-## Share k Globally; Fit Other Parameters Locally
-
-As mentioned earlier, in the function `FitCurves`, when `k = "share"`
-this parameter will be a shared parameter across all datasets (globally)
-while estimating $Q_0$ and $\alpha$ locally. While this works, it may
-take some time with larger sample sizes.
+All `fit_demand_fixed()` results support `plot()`:
 
 ``` r
-FitCurves(dat = apt, equation = "hs", k = "share")
+plot(fit_hs, type = "individual", x_trans = "log10")
 ```
 
-| id  | Intensity | BP0 | BP1 | Omaxe | Pmaxe |
-|:----|----------:|:----|----:|------:|------:|
-| 19  |        10 | NA  |  20 |    45 |    15 |
-| 30  |         3 | NA  |  20 |    20 |    20 |
-| 38  |         4 | NA  |  10 |    21 |     7 |
-| 60  |        10 | NA  |  10 |    24 |     8 |
-| 68  |        10 | NA  |  10 |    36 |     9 |
+    Free is shown as `0.01` for purposes of plotting.
 
-Empirical Measures
+<img src="man/figures/plot-fixed-individual-1.png" alt="Individual demand curves for all participants showing consumption versus price on log scale"  />
 
-| Equation |       Q0d |       K |     Alpha |        R2 |
-|:---------|----------:|--------:|----------:|----------:|
-| hs       | 10.014576 | 3.31833 | 0.0011616 | 0.9820968 |
-| hs       |  2.766313 | 3.31833 | 0.0033331 | 0.7641766 |
-| hs       |  4.485810 | 3.31833 | 0.0024580 | 0.8803145 |
-| hs       |  9.721379 | 3.31833 | 0.0024219 | 0.9705985 |
-| hs       | 10.293139 | 3.31833 | 0.0015879 | 0.9722310 |
+``` r
+plot(fit_mean, x_trans = "log10")
+```
 
-Fitted Measures
+    Free is shown as `0.01` for purposes of plotting.
 
-| Q0se | Alphase | alpha_star | alpha_star_se | N | AbsSS | SdRes | Q0Low | Q0High |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.2429150 | 0.0000308 | 0.0082811 | 0.0002197 | 16 | 0.0101816 | 0.0269677 | 9.493575 | 10.535577 |
-| 0.2192797 | 0.0003739 | 0.0237620 | 0.0026655 | 16 | 0.1110490 | 0.0890622 | 2.296005 | 3.236621 |
-| 0.2074990 | 0.0001963 | 0.0175231 | 0.0013997 | 14 | 0.0231862 | 0.0439566 | 4.033709 | 4.937912 |
-| 0.4371060 | 0.0000778 | 0.0172657 | 0.0005547 | 14 | 0.0207584 | 0.0415916 | 8.769006 | 10.673751 |
-| 0.3179671 | 0.0000523 | 0.0113200 | 0.0003727 | 14 | 0.0101100 | 0.0290259 | 9.600348 | 10.985930 |
+<img src="man/figures/plot-fixed-mean-1.png" alt="Mean demand curve across all participants showing average consumption at each price on log scale"  />
 
-Uncertainty and Model Information
-
-|  AlphaLow | AlphaHigh |        EV |    Omaxd |
-|----------:|----------:|----------:|---------:|
-| 0.0010955 | 0.0012277 | 1.4241862 | 44.55169 |
-| 0.0025312 | 0.0041350 | 0.4963281 | 15.52624 |
-| 0.0020302 | 0.0028858 | 0.6730395 | 21.05416 |
-| 0.0022523 | 0.0025914 | 0.6830746 | 21.36808 |
-| 0.0014740 | 0.0017018 | 1.0418474 | 32.59129 |
-
-Derived Measures
+> **Legacy equivalent:** The `FitCurves()` + `PlotCurves()` workflow is
+> still available for backward compatibility. See
+> `vignette("migration-guide")` for transitioning from `FitCurves()` to
+> `fit_demand_fixed()`.
 
 ## Compare Values of $\alpha$ and $Q_0$ via Extra Sum-of-Squares *F*-Test
+
+> For mixed-effects group comparisons, consider `fit_demand_mixed()`
+> with group factors. See `vignette("group-comparisons")`.
 
 When one has multiple groups, it may be beneficial to compare whether
 separate curves are preferred over a single curve. This is accomplished
@@ -820,81 +749,6 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
 
 <img src="man/figures/plot-ftest-1.png" alt="Demand curves for two groups showing consumption versus price on log scale, with error bars and fitted exponential curves"  />
 
-## Plots
-
-Plots can be created using the `PlotCurves` function. This function
-takes the output from `FitCurves` when the argument from `FitCurves`,
-`detailed = TRUE`. The default will be to save figures into a plots
-folder created one directory above the current working directory.
-Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`,
-then plots will be shown interactively and not saved (`ask = FALSE` is
-the default). Graphs can automatically be created at both an aggregate
-and individual level.
-
-As a demonstration, let’s first use `FitCurves` on the `apt` dataset,
-specifying `k = "share"` and `detailed = T`. This will return a list of
-objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new
-object, `out`, and tell the function to save the plots in the directory
-`"../plots/"` and `ask = FALSE` because we don’t want `R` to
-interactively show us each plot. Because we have 10 datasets in our
-`apt` example, 10 plots will be created and saved in the `"../plots/"`
-directory.
-
-``` r
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
-```
-
-    Beginning search for best-starting k
-
-    Best k found at 0.93813356574003 = err: 0.744881846162718
-
-    Searching for shared K, this can take a while...
-
-``` r
-PlotCurves(dat = out, outdir = plotdir, device = "png", ask = FALSE)
-```
-
-    10 plots saved in man/figures/
-
-<figure>
-<img src="man/figures/Participant-19.png"
-alt="Demand curve for Participant 19 showing consumption decreasing with price" />
-<figcaption aria-hidden="true">Demand curve for Participant 19 showing
-consumption decreasing with price</figcaption>
-</figure>
-
-We can also make a plot of the mean data. Here, we again use
-`FitCurves`, this time calculating a k from the observed range of the
-data (thus not specifying any k) and specifying `agg = "Mean"`.
-
-``` r
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
-```
-
-    No k value specified. Defaulting to empirical mean range +.5
-
-``` r
-PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = FALSE)
-```
-
-    1 plots saved in man/figures/
-
-``` r
-list.files("../plots/")
-```
-
-     [1] "Participant-106.png"  "Participant-113.png"  "Participant-142.png" 
-     [4] "Participant-156.png"  "Participant-188.png"  "Participant-19.png"  
-     [7] "Participant-30.png"   "Participant-38.png"   "Participant-60.png"  
-    [10] "Participant-68.png"   "Participant-mean.png"
-
-<figure>
-<img src="man/figures/Participant-mean.png"
-alt="Mean demand curve across all participants showing average consumption at each price" />
-<figcaption aria-hidden="true">Mean demand curve across all participants
-showing average consumption at each price</figcaption>
-</figure>
-
 ## Cross-Price Demand Models
 
 In addition to classic purchase-task analyses, `beezdemand` now includes
@@ -999,10 +853,13 @@ front of the function name.
 
 ``` r
 ## Modern interface (recommended)
-?check_systematic_demand
 ?fit_demand_fixed
+?get_empirical_measures
+?get_descriptive_summary
+?check_systematic_demand
 
 ## Legacy interface (still available)
+?FitCurves
 ?CheckUnsystematic
 ```
 

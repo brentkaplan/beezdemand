@@ -94,3 +94,15 @@ Fitted linear model.
 \description{
 Fit a Linear Cross-Price Demand Model
 }
+\examples{
+\donttest{
+data(etm)
+## Fixed-effects linear cross-price model
+fit_fixed <- fit_cp_linear(etm, type = "fixed", group_effects = TRUE)
+summary(fit_fixed)
+
+## Mixed-effects linear cross-price model
+fit_mixed <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+summary(fit_mixed)
+}
+}

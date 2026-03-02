@@ -26,6 +26,14 @@ Ben Bolker's port of Lambert W from GNU Scientific Library (GPLV3)
 \details{
 Ben Bolker's port of Lambert W from GNU Scientific Library
 }
+\examples{
+## Principal branch: W(1) ~ 0.5671
+lambertW(1)
+
+## Verify: W(z) * exp(W(z)) == z
+w <- lambertW(2)
+w * exp(w)
+}
 \author{
 Benjamin Bolker (port)
 }

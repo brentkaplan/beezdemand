@@ -2329,6 +2329,8 @@ GetK <- function(dat, mnrange = TRUE) {
 ##' @param K k parameter ( > lower limit )
 ##' @param Q0 Q0
 ##' @return Numeric
+##' @examples
+##' GetAnalyticPmax(Alpha = 0.001, K = 3, Q0 = 10)
 ##' @author Shawn Gilroy <sgilroy1@@lsu.edu>
 ##' @export
 GetAnalyticPmax <- function(Alpha, K, Q0) {
@@ -2347,6 +2349,8 @@ GetAnalyticPmax <- function(Alpha, K, Q0) {
 ##' @param A_ alpha parameter
 ##' @param Q0_ q0 parameter
 ##' @return numeric
+##' @examples
+##' GetAnalyticPmaxFallback(K_ = 1, A_ = 0.001, Q0_ = 10)
 ##' @author Shawn Gilroy <sgilroy1@@lsu.edu>
 ##' @export
 GetAnalyticPmaxFallback <- function(K_, A_, Q0_) {

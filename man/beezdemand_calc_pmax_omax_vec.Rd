@@ -32,4 +32,14 @@ Data frame with pmax/omax results for each subject
 \description{
 Calculate Pmax/Omax for Multiple Subjects
 }
+\examples{
+\donttest{
+params_df <- data.frame(
+  alpha = c(0.001, 0.002),
+  q0 = c(10, 15),
+  k = c(3, 3)
+)
+beezdemand_calc_pmax_omax_vec(params_df, model_type = "hs")
+}
+}
 \keyword{internal}

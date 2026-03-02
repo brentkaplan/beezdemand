@@ -1718,6 +1718,12 @@ has_significant_interaction <- function(object, alpha = 0.05) {
 #' @param adjust Method for p-value adjustment; see emmeans::contrast (default: "tukey")
 #' @param ... Additional arguments passed to emmeans
 #' @return List containing the emmeans table and optionally pairwise comparisons if interaction is significant
+#' @examples
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+#' cp_posthoc_slopes(fit)
+#' }
 #' @importFrom emmeans emmeans emtrends contrast
 #' @export
 cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
@@ -1802,6 +1808,12 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 #' @param adjust Method for p-value adjustment; see emmeans::contrast (default: "tukey")
 #' @param ... Additional arguments passed to emmeans
 #' @return List containing the emmeans table and optionally pairwise comparisons if interaction is significant
+#' @examples
+#' \donttest{
+#' data(etm)
+#' fit <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+#' cp_posthoc_intercepts(fit)
+#' }
 #' @importFrom emmeans emmeans emtrends contrast
 #' @export
 cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {

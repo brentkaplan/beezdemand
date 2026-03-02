@@ -22,6 +22,9 @@ Fallback method for Analytic Pmax
 \details{
 Derivative-based optimization strategy
 }
+\examples{
+GetAnalyticPmaxFallback(K_ = 1, A_ = 0.001, Q0_ = 10)
+}
 \author{
 Shawn Gilroy \href{mailto:sgilroy1@lsu.edu}{sgilroy1@lsu.edu}
 }

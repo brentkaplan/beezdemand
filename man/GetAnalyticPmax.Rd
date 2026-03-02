@@ -22,6 +22,9 @@ Numeric
 \details{
 ...
 }
+\examples{
+GetAnalyticPmax(Alpha = 0.001, K = 3, Q0 = 10)
+}
 \author{
 Shawn Gilroy \href{mailto:sgilroy1@lsu.edu}{sgilroy1@lsu.edu}
 }

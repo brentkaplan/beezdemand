@@ -87,6 +87,14 @@ The first column contains the row number. The second column contains the id numb
 
 ## Converting from Wide to Long and Vice Versa
 
+For quick conversion, use the built-in convenience function:
+
+```{r pivot-convenience, eval = FALSE}
+long <- pivot_demand_data(wide, format = "long", id_var = "id")
+```
+
+Below is a manual walkthrough using `tidyr` for when you need more control.
+
 Take for example the format of most datasets that would be exported from a data collection software such as Qualtrics or SurveyMonkey or Google Forms:
 
 ```{r example-wide}
@@ -142,29 +150,26 @@ The dataset is now "tidy" because: (1) each variable forms a column, (2) each ob
 
 ## Obtain Descriptive Data
 
-Descriptive values of responses at each price can be obtained easily. The resulting table includes mean, standard
-deviation, proportion of zeros, number of NAs, and minimum and maximum values. If `bwplot = TRUE`, a box-and-whisker plot is also created and saved. By default, this location is a folder named "plots" one level up from the current working directory.  The user may additionally specify the directory that the plot should save into, the type of file (either `"png"` or `"pdf"`), and the filename. Notice the red crosses indicate the mean. Defaults are shown here:
+Descriptive statistics at each price (mean, SD, proportion of zeros, min, max) are
+available via `get_descriptive_summary()`:
 
-```{r descriptive, eval = FALSE}
-GetDescriptives(dat = apt, bwplot = FALSE, outdir = "../plots/", device = "png",
-                filename = "bwplot")
+```{r descriptive-modern}
+desc <- get_descriptive_summary(apt)
+desc
 ```
 
-To actually run the code and generate the file, we will turn `bwplot = TRUE`. The function will create a folder one level higher than the current folder (i.e., the `../` portion) and save the file, "bwplot.png" in the folder.
-
-```{r descriptive2, results = 'hide'}
-GetDescriptives(dat = apt, bwplot = TRUE, outdir = plotdir, device = "png",
-                filename = "bwplot")
+```{r descriptive-modern-table, echo=FALSE, results='asis'}
+knitr::kable(desc$statistics)
 ```
 
-![Box-and-whisker plot showing consumption at each price point with mean values marked by red crosses](man/figures/bwplot.png)
+A box-and-whisker plot is built in:
 
-And here is the table that is returned from the function:
-
-```{r descriptive-output, echo=FALSE, results='asis'}
-descr <- GetDescriptives(dat = apt)
-knitr::kable(descr)
+```{r descriptive-modern-plot, fig.alt = "Box-and-whisker plot showing consumption at each price point"}
+plot(desc)
 ```
+
+> **Legacy equivalent:** `GetDescriptives(dat = apt, bwplot = TRUE)`.
+> See `vignette("migration-guide")` for details.
 
 ## Change Data
 
@@ -187,179 +192,110 @@ ChangeData(dat = apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE,
 
 ## Identify Unsystematic Responses
 
-Using the following function, we can examine the consistency of demand data using Stein et al.'s (2015)
-alogrithm for identifying unsystematic responses. Default values
-shown, but they can be customized.
+Stein et al.'s (2015) algorithm for identifying unsystematic responses is
+available via `check_systematic_demand()`:
 
-```{r unsystematic, eval=FALSE}
-CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
+```{r unsystematic-modern}
+sys_check <- check_systematic_demand(apt)
+sys_check
 ```
 
-```{r unsystematic-output, echo=FALSE, results='asis'}
-knitr::kable(head(CheckUnsystematic(apt, deltaq = 0.025, bounce = 0.1,
-                                    reversals = 0, ncons0 = 2), 5))
+```{r unsystematic-modern-summary}
+summary(sys_check)
 ```
+
+> **Legacy equivalent:** `CheckUnsystematic(dat = apt, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)`.
+> See `vignette("migration-guide")` for details.
 
 ## Analyze Demand Data
 
-> **Note:** The examples below use the legacy `FitCurves()` API for backward
-> compatibility. For new projects, we recommend using `fit_demand_fixed()` which
-> provides a modern S3 interface with `summary()`, `tidy()`, `glance()`,
-> `predict()`, and `plot()` methods. See `vignette("migration-guide")` or the
-> [migration guide](https://brentkaplan.github.io/beezdemand/articles/migration-guide.html)
-> for details.
-
-Results of the analysis return both empirical and derived measures for
-use in additional analyses and model specification. Equations include
-the linear model, exponential model, and exponentiated model. Nonlinear
-mixed-effects models and cross-price models are now supported as well;
-see the new sections below for quick-start examples.
-
 ### Obtaining Empirical Measures
 
-Empirical measures can be obtained separately on their own:
+Empirical measures (intensity, breakpoint, Omax, Pmax) can be obtained via
+`get_empirical_measures()`:
 
-```{r empirical, eval=FALSE}
-GetEmpirical(dat = apt)
+```{r empirical-modern}
+emp <- get_empirical_measures(apt)
+emp
 ```
 
-```{r empirical-output, echo=FALSE, results='asis'}
-knitr::kable(head(GetEmpirical(apt), 5))
+```{r empirical-modern-table, echo=FALSE, results='asis'}
+knitr::kable(head(emp$measures, 5))
 ```
 
-### Obtaining Derived Measures
+> **Legacy equivalent:** `GetEmpirical(dat = apt)`.
+> See `vignette("migration-guide")` for details.
 
-`FitCurves()` has several important arguments that can be passed. For the purposes of this document, focus will be on the two contemporary demand equations.
+### Fitting Demand Curves
 
-* `equation = "hs"` is the default but can accept the character strings `"linear"`, `"hs"`, or `"koff"`, the latter two of which are the contemporary equations proposed by Hursh & Silberberg (2008) and Koffarnus et al. (2015), respectively.
+The recommended function for fitting individual demand curves is `fit_demand_fixed()`.
+It provides a modern S3 interface with `summary()`, `coef()`, `tidy()`, `glance()`,
+`predict()`, and `plot()` methods.
 
-* `k` can take accept a specific number but by default will be calculated based on the maximum and minimum y values of the entire sample and adding .5. Adding this amount was originally proposed by Steven R. Hursh in an early iteration of a Microsoft Excel spreadsheet used to calculate demand metrics. This adjustment was adopted for two reasons. First, when fitting $Q_0$ as a derived parameter, the value may exceed the empirically observed intensity value. Thus, a k value calculated based only on the observed range of data may underestimate the full fitted range of the curve. Second, we have found that values of $\alpha$ (as well as values that rely on $\alpha$, i.e. approximate $P_{max}$) display greater discrepancies when smaller values of k are used compared to larger values of k. Other options include `"ind"`, which will calculate k based on individual basis, `"fit"`, which will fit k as a free parameter on an individual basis, `"share"`, which will fit k as a single shared parameter across all data sets (while fitting individual $Q_0$ and $\alpha$).
+Key arguments:
 
-* `agg = NULL` is the default, which means no aggregation. When `agg = "Mean"`, models are fit to the averaged data disregarding any error. When `agg = "Pooled"`, all data are used and clustering within individual is ignored.
+* `equation` — `"hs"` (Hursh & Silberberg, 2008; default) or `"koff"` (Koffarnus et al., 2015).
+* `k` — scaling constant. By default, calculated from the sample range + 0.5. Other options: `"ind"` (individual), `"fit"` (free parameter), `"share"` (shared across all series).
+* `agg` — `NULL` (individual fits; default), `"Mean"` (fit to averaged data), or `"Pooled"` (fit to all data ignoring clustering).
 
-* `detailed = FALSE` is the default. This will output a single dataframe of results, as shown below. When `detailed = TRUE`, the output is a 3 element list that includes (1) dataframe of results, (2) list of nonlinear regression model objects, (3) list of dataframes containing predicted x and y values (to be used in subsequent plotting), and (4) list of individual dataframes used in fitting.
+#### Individual fits (Hursh & Silberberg equation)
 
-* `lobound` and `hibound` can accept named vectors that will be used as lower and upper bounds, respectively during fitting. If `k = "fit"`, then it should look as follows (values are nonspecific): `lobound = c("q0" = 0, "k" = 0, "alpha" = 0)` and `hibound = c("q0" = 25, "k" = 10, "alpha" = 1)`. If `k` is not being fit as a parameter, then only `"q0"` and `"alpha"` should be used in bounding.
-
-Note: Fitting with an equation (e.g., `"linear"`, `"hs"`) that doesn't work happily with zero consumption values results in the following. One, a message will appear saying that zeros are incompatible with the equation. Two, because zeros are removed prior to finding empirical (i.e., observed) measures, resulting BP0 values will be all NAs (reflective of the data transformations). The warning message will look as follows:
-
-```{r zero-warning, eval=FALSE}
-Warning message:
-Zeros found in data not compatible with equation! Dropping zeros!
+```{r fit-fixed-hs}
+fit_hs <- fit_demand_fixed(apt, equation = "hs")
+fit_hs
 ```
 
-The simplest use of `FitCurves()` is shown here, only needing to specify `dat` and `equation`. All other arguments shown are set to their default values.
+Extract coefficients and tidy output:
 
-```{r hs, eval=FALSE}
-FitCurves(dat = apt, equation = "hs", agg = NULL, detailed = FALSE,
-          xcol = "x", ycol = "y", idcol = "id", groupcol = NULL)
+```{r fit-fixed-coef}
+head(coef(fit_hs))
 ```
 
-Which is equivalent to:
-```{r hs2, eval=FALSE}
-FitCurves(dat = apt, equation = "hs")
+```{r fit-fixed-tidy, echo=FALSE, results='asis'}
+knitr::kable(head(broom::tidy(fit_hs), 10))
 ```
 
-Note that this ouput returns a message (`No k value specified. Defaulting to empirical mean range +.5`) and the aforementioned warning (`Warning message: Zeros found in data not compatible with equation! Dropping zeros!`). With `detailed = FALSE`, the only output is the dataframe of results (broken up to show the different types of results). This example fits the exponential equation proposed by Hursh & Silberberg (2008):
+#### Koffarnus equation
 
-```{r hs-setup, include=FALSE}
-fc <- FitCurves(dat = apt, equation = "hs")
-hs1 <- head(fc, 5)[ , 1:6]
-hs2 <- head(fc, 5)[ , 7:11]
-hs3 <- head(fc, 5)[ , 12:20]
-hs4 <- head(fc, 5)[ , 21:24]
+```{r fit-fixed-koff}
+fit_koff <- fit_demand_fixed(apt, equation = "koff")
+fit_koff
 ```
 
-```{r hs-output, echo=FALSE, results='asis'}
-knitr::kable(hs1, caption = "Empirical Measures")
-knitr::kable(hs2, caption = "Fitted Measures")
-knitr::kable(hs3, caption = "Uncertainty and Model Information")
-knitr::kable(hs4, caption = "Derived Measures")
+#### Mean curve
+
+```{r fit-fixed-mean}
+fit_mean <- fit_demand_fixed(apt, equation = "hs", agg = "Mean")
+fit_mean
 ```
 
-Here, the simplest form is shown specifying another equation, `"koff"`. This fits the modified exponential equation proposed by Koffarnus et al. (2015):
+#### Shared k
 
-```{r koff, eval=FALSE}
-FitCurves(dat = apt, equation = "koff")
+```{r fit-fixed-share}
+fit_share <- fit_demand_fixed(apt, equation = "hs", k = "share")
+fit_share
 ```
 
-```{r koff-setup, include = FALSE}
-fc <- FitCurves(dat = apt, equation = "koff")
-koff1 <- head(fc, 5)[ , 1:6]
-koff2 <- head(fc, 5)[ , 7:11]
-koff3 <- head(fc, 5)[ , 12:20]
-koff4 <- head(fc, 5)[ , 21:24]
+### Plotting Demand Curves
+
+All `fit_demand_fixed()` results support `plot()`:
+
+```{r plot-fixed-individual, warning = FALSE, fig.alt = "Individual demand curves for all participants showing consumption versus price on log scale"}
+plot(fit_hs, type = "individual", x_trans = "log10")
 ```
 
-```{r koff-output, echo=FALSE, results='asis'}
-knitr::kable(koff1, caption = "Empirical Measures")
-knitr::kable(koff2, caption = "Fitted Measures")
-knitr::kable(koff3, caption = "Uncertainty and Model Information")
-knitr::kable(koff4, caption = "Derived Measures")
+```{r plot-fixed-mean, warning = FALSE, fig.alt = "Mean demand curve across all participants showing average consumption at each price on log scale"}
+plot(fit_mean, x_trans = "log10")
 ```
 
-By specifying `agg = "Mean"`, y values at each x value are aggregated and a single curve is fit to the data (disregarding error around each averaged point):
-
-```{r agg-mean, eval = FALSE}
-FitCurves(dat = apt, equation = "hs", agg = "Mean")
-```
-
-```{r agg-mean-setup, include = FALSE}
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean")
-mn1 <- head(mn)[ , 1:6]
-mn2 <- head(mn)[ , 7:11]
-mn3 <- head(mn)[ , 12:20]
-mn4 <- head(mn)[ , 21:24]
-```
-
-```{r agg-mean-output, echo = FALSE, results = 'asis'}
-knitr::kable(mn1, caption = "Empirical Measures")
-knitr::kable(mn2, caption = "Fitted Measures")
-knitr::kable(mn3, caption = "Uncertainty and Model Information")
-knitr::kable(mn4, caption = "Derived Measures")
-```
-
-By specifying `agg = "Pooled"`, y values at each x value are aggregated and a single curve is fit to the data and error around each averaged point (but disregarding within-subject clustering):
-
-```{r agg-pooled, eval = FALSE}
-FitCurves(dat = apt, equation = "hs", agg = "Pooled")
-```
-
-```{r agg-pooled-setup, include = FALSE}
-pl <- FitCurves(dat = apt, equation = "hs", agg = "Pooled")
-pl1 <- head(pl)[ , 1:6]
-pl2 <- head(pl)[ , 7:11]
-pl3 <- head(pl)[ , 12:20]
-pl4 <- head(pl)[ , 21:24]
-```
-
-```{r agg-pooled-output, echo = FALSE, results = 'asis'}
-knitr::kable(pl1, caption = "Empirical Measures")
-knitr::kable(pl2, caption = "Fitted Measures")
-knitr::kable(pl3, caption = "Uncertainty and Model Information")
-knitr::kable(pl4, caption = "Derived Measures")
-```
-
-## Share k Globally; Fit Other Parameters Locally
-
-As mentioned earlier, in the function `FitCurves`, when `k = "share"` this parameter will be a shared parameter across all datasets (globally) while estimating $Q_0$ and $\alpha$ locally. While this works, it may take some time with larger sample sizes.
-
-```{r share, eval=FALSE}
-FitCurves(dat = apt, equation = "hs", k = "share")
-```
-
-```{r share-setup, include=FALSE}
-df <- FitCurves(dat = apt, equation = "hs", k = "share")
-```
-
-```{r share-output, echo=FALSE, results='asis'}
-knitr::kable(head(df, 5)[ , 1:6], caption = "Empirical Measures")
-knitr::kable(head(df, 5)[ , 7:11], caption = "Fitted Measures")
-knitr::kable(head(df, 5)[ , 12:20], caption = "Uncertainty and Model Information")
-knitr::kable(head(df, 5)[ , 21:24], caption = "Derived Measures")
-```
+> **Legacy equivalent:** The `FitCurves()` + `PlotCurves()` workflow is still
+> available for backward compatibility. See `vignette("migration-guide")` for
+> transitioning from `FitCurves()` to `fit_demand_fixed()`.
 
 ## Compare Values of $\alpha$ and $Q_0$ via Extra Sum-of-Squares _F_-Test
+
+> For mixed-effects group comparisons, consider `fit_demand_mixed()` with group factors.
+> See `vignette("group-comparisons")`.
 
 When one has multiple groups, it may be beneficial to compare whether separate curves are preferred over a single curve. This is accomplished by the Extra Sum-of-Squares _F_-test. This function (using the argument `compare`) will determine whether a single $\alpha$ or a single $Q_0$ is better than multiple $\alpha$s or $Q_0$s. A single curve will be fit, the residual deviations calculated and those residuals are compared to residuals obtained from multiple curves. A resulting _F_ statistic will be reporting along with a _p_ value.
 
@@ -415,30 +351,6 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
   ## with American Psychological Association style
   theme_apa()
 ```
-
-## Plots
-
-Plots can be created using the `PlotCurves` function. This function takes the output from `FitCurves` when the argument from `FitCurves`, `detailed = TRUE`. The default will be to save figures into a plots folder created one directory above the current working directory. Figures can be saved as either PNG or PDF. If the argument `ask = TRUE`, then plots will be shown interactively and not saved (`ask = FALSE` is the default). Graphs can automatically be created at both an aggregate and individual level.
-
-As a demonstration, let's first use `FitCurves` on the `apt` dataset, specifying `k = "share"` and `detailed = T`. This will return a list of objects to use in `PlotCurves`. In `PlotCurves`, we will feed in our new object, `out`, and tell the function to save the plots in the directory `"../plots/"` and `ask = FALSE` because we don't want `R` to interactively show us each plot. Because we have 10 datasets in our `apt` example, 10 plots will be created and saved in the `"../plots/"` directory.
-```{r plots1, warning = FALSE}
-out <- FitCurves(dat = apt, equation = "hs", k = "share", detailed = TRUE)
-
-PlotCurves(dat = out, outdir = plotdir, device = "png", ask = FALSE)
-```
-
-![Demand curve for Participant 19 showing consumption decreasing with price](man/figures/Participant-19.png)
-
-We can also make a plot of the mean data. Here, we again use `FitCurves`, this time calculating a k from the observed range of the data (thus not specifying any k) and specifying `agg = "Mean"`.
-```{r plots2, warning = FALSE}
-mn <- FitCurves(dat = apt, equation = "hs", agg = "Mean", detailed = TRUE)
-
-PlotCurves(dat = mn, outdir = plotdir, device = "png", ask = FALSE)
-
-list.files("../plots/")
-```
-
-![Mean demand curve across all participants showing average consumption at each price](man/figures/Participant-mean.png)
 
 ## Cross-Price Demand Models
 
@@ -539,10 +451,13 @@ To learn more about a function and what arguments it takes, type "?" in front of
 
 ```{r learn, eval=FALSE}
 ## Modern interface (recommended)
-?check_systematic_demand
 ?fit_demand_fixed
+?get_empirical_measures
+?get_descriptive_summary
+?check_systematic_demand
 
 ## Legacy interface (still available)
+?FitCurves
 ?CheckUnsystematic
 ```
 

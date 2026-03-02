@@ -26,6 +26,10 @@ Checks to ensure column names are specified
 \details{
 Check column names
 }
+\examples{
+dat <- data.frame(price = 1:5, quantity = c(10, 8, 5, 2, 0), subj = rep(1, 5))
+CheckCols(dat, xcol = "price", ycol = "quantity", idcol = "subj")
+}
 \author{
 Brent Kaplan \href{mailto:bkaplan.ku@gmail.com}{bkaplan.ku@gmail.com}
 }

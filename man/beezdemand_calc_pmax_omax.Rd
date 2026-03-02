@@ -77,4 +77,16 @@ Unified internal engine for pmax/omax computation. Supports analytic solutions
 (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
 observed (row-wise) metrics. Handles parameter-space conversions transparently.
 }
+\examples{
+\donttest{
+result <- beezdemand_calc_pmax_omax(
+  model_type = "hs",
+  params = list(alpha = 0.001, q0 = 10, k = 3),
+  price_obs = c(0, 0.5, 1, 2, 4, 8, 16),
+  consumption_obs = c(10, 9, 8, 6, 3, 1, 0)
+)
+result$pmax_model
+result$omax_model
+}
+}
 \keyword{internal}

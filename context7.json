@@ -1,4 +1,6 @@
 {
+  "url": "https://context7.com/brentkaplan/beezdemand",
+  "public_key": "pk_t47FUZ57eScJFQm16t36x",
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "beezdemand",
   "description": "R package for behavioral economic demand analysis. Fits exponential demand curves, mixed-effects models, and hurdle models for purchase task data.",
