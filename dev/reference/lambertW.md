@@ -41,3 +41,16 @@ Ben Bolker's port of Lambert W from GNU Scientific Library
 ## Author
 
 Benjamin Bolker (port)
+
+## Examples
+
+``` r
+## Principal branch: W(1) ~ 0.5671
+lambertW(1)
+#> [1] 0.5671433
+
+## Verify: W(z) * exp(W(z)) == z
+w <- lambertW(2)
+w * exp(w)
+#> [1] 2
+```

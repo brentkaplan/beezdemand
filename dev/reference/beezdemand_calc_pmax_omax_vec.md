@@ -44,3 +44,25 @@ beezdemand_calc_pmax_omax_vec(
 ## Value
 
 Data frame with pmax/omax results for each subject
+
+## Examples
+
+``` r
+# \donttest{
+params_df <- data.frame(
+  alpha = c(0.001, 0.002),
+  q0 = c(10, 15),
+  k = c(3, 3)
+)
+beezdemand_calc_pmax_omax_vec(params_df, model_type = "hs")
+#>   pmax_model omax_model q_at_pmax_model       method_model is_boundary_model
+#> 1  17.192027   57.73857        3.358450 analytic_lambert_w             FALSE
+#> 2   5.730676   28.86928        5.037675 analytic_lambert_w             FALSE
+#>   elasticity_at_pmax_model unit_elasticity_pass_model pmax_obs omax_obs
+#> 1                       -1                       TRUE       NA       NA
+#> 2                       -1                       TRUE       NA       NA
+#>   has_duplicate_prices n_max_ties
+#> 1                   NA         NA
+#> 2                   NA         NA
+# }
+```

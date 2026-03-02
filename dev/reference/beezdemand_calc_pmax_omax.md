@@ -164,3 +164,20 @@ A list with snake_case fields:
 - note_param_space:
 
   Notes about parameter conversions
+
+## Examples
+
+``` r
+# \donttest{
+result <- beezdemand_calc_pmax_omax(
+  model_type = "hs",
+  params = list(alpha = 0.001, q0 = 10, k = 3),
+  price_obs = c(0, 0.5, 1, 2, 4, 8, 16),
+  consumption_obs = c(10, 9, 8, 6, 3, 1, 0)
+)
+result$pmax_model
+#> [1] 17.19203
+result$omax_model
+#> [1] 57.73857
+# }
+```

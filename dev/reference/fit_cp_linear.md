@@ -123,3 +123,67 @@ fit_cp_linear.mixed(
 ## Value
 
 Fitted linear model.
+
+## Examples
+
+``` r
+# \donttest{
+data(etm)
+## Fixed-effects linear cross-price model
+fit_fixed <- fit_cp_linear(etm, type = "fixed", group_effects = TRUE)
+summary(fit_fixed)
+#> Linear Cross-Price Demand Model Summary
+#> =======================================
+#> 
+#> Formula: y ~ x * group 
+#> Method: lm 
+#> 
+#> Coefficients:
+#>                         Estimate Std. Error t value Pr(>|t|)  
+#> (Intercept)             0.400000   1.590686  0.2515  0.80168  
+#> x                       0.016667   0.052731  0.3161  0.75223  
+#> groupCombustibles       4.594527   2.249569  2.0424  0.04224 *
+#> groupE-Cigarettes       1.586070   2.249569  0.7051  0.48148  
+#> groupNon-Combustibles   3.572637   2.249569  1.5881  0.11362  
+#> x:groupCombustibles     0.073276   0.074572  0.9826  0.32682  
+#> x:groupE-Cigarettes     0.010981   0.074572  0.1473  0.88306  
+#> x:groupNon-Combustibles 0.075906   0.074572  1.0179  0.30979  
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> R-squared: 0.09809   Adjusted R-squared: 0.07087 
+
+## Mixed-effects linear cross-price model
+fit_mixed <- fit_cp_linear(etm, type = "mixed", group_effects = TRUE)
+summary(fit_mixed)
+#> Mixed-Effects Linear Cross-Price Demand Model Summary
+#> ====================================================
+#> 
+#> Formula: y ~ x * group + (1 | id) 
+#> Method: lmer 
+#> 
+#> Fixed Effects:
+#>                         Estimate Std. Error t value
+#> (Intercept)             0.400000   2.045999  0.1955
+#> x                       0.016667   0.044684  0.3730
+#> groupCombustibles       4.594527   1.906295  2.4102
+#> groupE-Cigarettes       1.586070   1.906295  0.8320
+#> groupNon-Combustibles   3.572637   1.906295  1.8741
+#> x:groupCombustibles     0.073276   0.063193  1.1596
+#> x:groupE-Cigarettes     0.010981   0.063193  0.1738
+#> x:groupNon-Combustibles 0.075906   0.063193  1.2012
+#> 
+#> Random Effects:
+#>     Group        Term Variance  Std.Dev       NA
+#>        id (Intercept)     <NA> 23.69132 4.867373
+#>  Residual        <NA>     <NA> 56.18664 7.495775
+#> 
+#> Model Fit:
+#> R2 (marginal): 0.09372   [Fixed effects only]
+#> R2 (conditional): 0.3625   [Fixed + random effects]
+#> AIC: 1692 
+#> BIC: 1727 
+#> 
+#> Note: R2 values for mixed models are approximate.
+# }
+```

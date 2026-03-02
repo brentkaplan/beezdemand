@@ -104,6 +104,27 @@
     <p>Data frame with pmax/omax results for each subject</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">params_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  alpha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.001</span>, <span class="fl">0.002</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  q0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  k <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">beezdemand_calc_pmax_omax_vec</span><span class="op">(</span><span class="va">params_df</span>, model_type <span class="op">=</span> <span class="st">"hs"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   pmax_model omax_model q_at_pmax_model       method_model is_boundary_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  17.192027   57.73857        3.358450 analytic_lambert_w             FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   5.730676   28.86928        5.037675 analytic_lambert_w             FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   elasticity_at_pmax_model unit_elasticity_pass_model pmax_obs omax_obs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                       -1                       TRUE       NA       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                       -1                       TRUE       NA       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   has_duplicate_prices n_max_ties</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                   NA         NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                   NA         NA</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

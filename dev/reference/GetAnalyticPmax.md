@@ -33,3 +33,10 @@ Numeric
 ## Author
 
 Shawn Gilroy <sgilroy1@lsu.edu>
+
+## Examples
+
+``` r
+GetAnalyticPmax(Alpha = 0.001, K = 3, Q0 = 10)
+#> [1] 17.19203
+```
