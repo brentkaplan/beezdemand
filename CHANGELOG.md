@@ -6,7 +6,45 @@ The format follows Keep a Changelog and this project adheres to Semantic Version
 
 ## [Unreleased]
 
-<!-- TODO: Populate entries for unreleased changes once available. -->
+## [0.2.0] - 2026-03-03
+
+### Added
+- Four-tier modeling framework: legacy NLS, fixed-effect (`fit_demand_fixed()`),
+  mixed-effects NLME (`fit_demand_mixed()`), and hurdle via TMB (`fit_demand_hurdle()`).
+- `fit_demand_fixed()` modern S3 wrapper for individual NLS demand curves with
+  `summary()`, `tidy()`, `glance()`, `predict()`, and `plot()` methods.
+- Koffarnus equation support in `fit_demand_mixed()` via `equation_form = "koff"`.
+- broom `augment()` methods for all model classes (`beezdemand_fixed`,
+  `beezdemand_hurdle`, `beezdemand_nlme`).
+- `compare_models()` unified model comparison with AIC, BIC, delta metrics,
+  and likelihood ratio tests.
+- `anova()` S3 methods for nested hurdle and NLME model comparison.
+- `check_demand_model()` diagnostic suite with convergence, boundary, and
+  residual checks for all model classes.
+- `plot_residuals()` and `plot_qq()` diagnostic plot functions.
+- Normalized alpha (`alpha_star`; Rzeszutek et al., 2025) across all model classes.
+- Modern wrappers: `get_empirical_measures()`, `get_descriptive_summary()`, `get_k()`.
+- `confint()` methods for all model classes.
+- `pivot_demand_data()` for wide/long data reshaping.
+- Systematicity wrappers: `check_systematic_demand()`, `check_systematic_cp()`.
+- Migration guide vignette (`vignette("migration-guide")`).
+
+### Changed
+- `summary()` methods for hurdle and NLME models now return structured S3 objects
+  (use `print(summary(fit))` for console output).
+- `fit_demand_hurdle()` fits demand parameters in natural-log space; `param_space`
+  argument removed.
+- `fit_cp_nls()` uses log10-parameterized optimizer coefficients; `"exponential"`
+  form fits on the `log10(y)` response scale.
+- `predict.cp_model_nls()` always returns `y_pred` on natural scale.
+- All `tidy()` and `glance()` methods return tibbles with `model_class` and `backend`.
+- All summary objects inherit from `beezdemand_summary` base class.
+- API standardization: stability contracts for summary, tidy, and glance outputs.
+
+### Deprecated
+- `FitCurves()` superseded by `fit_demand_fixed()`.
+- `FitMeanCurves()` superseded by `fit_demand_fixed(agg = ...)`.
+- `fit_cp_nls(start_vals=)` deprecated in favor of `start_values=`.
 
 ## [0.1.3] - 2025-04-20
 
@@ -137,11 +175,9 @@ When tags are available, update the compare links below.
 The repository URL from DESCRIPTION is https://github.com/brentkaplan/beezdemand
 -->
 
-[Unreleased]: https://github.com/brentkaplan/beezdemand/compare/v0.1.2...main
-<!-- TODO: Update to compare v0.1.3...main once a v0.1.3 tag is created. -->
-
+[Unreleased]: https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/brentkaplan/beezdemand/compare/v0.1.2...v0.1.3
-<!-- TODO: Add tag v0.1.3 (currently not found) to activate this link. -->
 
 [0.1.2]: https://github.com/brentkaplan/beezdemand/compare/v0.1.0...v0.1.2
 [0.1.1]: <!-- TODO: Add compare link once a v0.1.1 tag exists. -->
