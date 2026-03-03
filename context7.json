@@ -1,4 +1,29 @@
 {
-  "url": "https://context7.com/brentkaplan/beezdemand",
-  "public_key": "pk_t47FUZ57eScJFQm16t36x"
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "beezdemand",
+  "description": "R package for behavioral economic demand analysis. Fits exponential demand curves, mixed-effects models, and hurdle models for purchase task data.",
+  "branch": "master",
+  "folders": [
+    "R",
+    "vignettes",
+    "inst/llm",
+    "man"
+  ],
+  "excludeFolders": [
+    "src",
+    "docs",
+    "internal_docs"
+  ],
+  "rules": [
+    "All modeling functions expect long-format data. Defaults are id/x/y; most functions accept *_var mapping to rename columns. Cross-price fitters (fit_cp_nls, fit_cp_linear) now also accept x_var/y_var (and id_var/group_var/target_var for fit_cp_linear).",
+    "Prefer modern API (fit_demand_fixed, fit_demand_mixed, fit_demand_hurdle) over legacy FitCurves.",
+    "For zero-heavy data, use fit_demand_hurdle() or use simplified exponential in fit_demand_mixed().",
+    "Parameter names: Q0 = intensity, alpha = elasticity, k = range constant, Pmax = price at max expenditure.",
+    "Use get_subject_pars(), extract_coefficients(), or coef() to extract fitted parameters.",
+    "Cross-price functions are fit_cp_nls(), fit_cp_linear(), fit_cp_hurdle() — not demand functions.",
+    "Prefer pkgdown vignettes for workflow guidance: beezdemand, model-selection, hurdle-demand-models.",
+    "Dev docs at https://brentkaplan.github.io/beezdemand/dev/ for in-progress features.",
+    "Do not assume undocumented functions exist — verify against the reference index.",
+    "Full function reference: https://brentkaplan.github.io/beezdemand/reference/"
+  ]
 }
