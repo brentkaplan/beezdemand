@@ -1,0 +1,57 @@
+# Inverse Log-Logistic Transformation (Inverse LL4-like)
+
+Applies the inverse of the `ll4` transformation. Given `y = ll4(x)`,
+this function calculates `x = (base^(y * lambda) - 1)^(1/lambda)`.
+
+## Usage
+
+``` r
+ll4_inv(y, lambda = 4, base = 10)
+```
+
+## Arguments
+
+- y:
+
+  A numeric vector or scalar of transformed values (output from `ll4`).
+
+- lambda:
+
+  A positive numeric scalar, the lambda parameter used in the original
+  `ll4` transformation. Must match the one used for the forward
+  transform. Default is `4`.
+
+- base:
+
+  A positive numeric scalar, the base of the logarithm used in the
+  original `ll4` transformation. Must match. Default is `10`.
+
+## Value
+
+A numeric vector or scalar of the original, untransformed values. May
+return `NaN` if `(base^(y * lambda) - 1)` is negative and `1/lambda`
+implies an even root (e.g., if `lambda` is 2 or 4).
+
+## Examples
+
+``` r
+original_values <- c(0, 1, 10, 100, 1000)
+transformed_values <- ll4(original_values)
+back_transformed_values <- ll4_inv(transformed_values)
+print(data.frame(original_values, transformed_values, back_transformed_values))
+#>   original_values transformed_values back_transformed_values
+#> 1               0          0.0000000                       0
+#> 2               1          0.0752575                       1
+#> 3              10          1.0000109                      10
+#> 4             100          2.0000000                     100
+#> 5            1000          3.0000000                    1000
+all.equal(original_values, back_transformed_values) # Should be TRUE or very close
+#> [1] TRUE
+
+# Example with negative y (log-transformed value)
+# If y_ll4 = -0.5 (meaning original value was between 0 and 1 for log10)
+ll4_inv(-0.5, lambda = 4, base = 10) # (10^(-0.5*4) - 1)^(1/4) = (0.01 - 1)^(1/4) -> NaN
+#> [1] NaN
+# The ll4_inv function as provided will return NaN here.
+# A more robust version for demand might floor at 0 if NaN occurs.
+```
