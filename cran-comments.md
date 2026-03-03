@@ -1,5 +1,5 @@
 ## Test environments
-* macOS Sequoia 26.3, R 4.5.2 (local)
+* macOS Tahoe 26.3, R 4.5.2 (local)
 * GitHub Actions: macOS-latest (R release)
 * GitHub Actions: Windows-latest (R release)
 * GitHub Actions: Ubuntu-latest (R devel, release, oldrel-1)
@@ -7,9 +7,8 @@
 ## R CMD check results
 0 errors | 0 warnings | 1 note
 
-The single NOTE is from CRAN incoming feasibility checks: some
-pkgdown URLs return 404 because the GitHub Pages site has not yet
-been deployed (will be published upon CRAN acceptance).
+The single NOTE is the standard CRAN incoming feasibility check
+showing the maintainer email and tarball size.
 
 ## Submission comments
 
@@ -27,7 +26,7 @@ New in 0.2.0:
 * Nine vignettes covering all major workflows
 
 ### Package size note
-The installed package size is approximately 22 MB, with the `libs`
-subdirectory accounting for ~20 MB. This is due to TMB template
-compilation for the hurdle and joint hurdle models, which is typical
-for packages using TMB.
+The installed package size is approximately 21 MB, with the `libs`
+subdirectory accounting for ~12 MB. This is due to TMB (Template
+Model Builder) template compilation for the hurdle demand models,
+which is typical for packages using TMB.
