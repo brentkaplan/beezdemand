@@ -2,6 +2,8 @@
 
 ## beezdemand 0.2.0
 
+CRAN release: 2026-03-03
+
 ### Deprecations
 
 - [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
