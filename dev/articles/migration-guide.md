@@ -504,7 +504,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.0      beezdemand_0.2.0
+#> [1] dplyr_1.2.0           beezdemand_0.2.0.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.19         

@@ -55,7 +55,7 @@ print(fit)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x56332c3a85a0>
+#> <environment: 0x56007a40fb18>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 

@@ -5,7 +5,87 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and this project adheres to Semantic
 Versioning.
 
-## [Unreleased](https://github.com/brentkaplan/beezdemand/compare/v0.1.2...main)
+## [Unreleased](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD)
+
+## [0.2.0](https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0) - 2026-03-03
+
+### Added
+
+- Four-tier modeling framework: legacy NLS, fixed-effect
+  ([`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)),
+  mixed-effects NLME
+  ([`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)),
+  and hurdle via TMB
+  ([`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)).
+- [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  modern S3 wrapper for individual NLS demand curves with
+  [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+  [`glance()`](https://generics.r-lib.org/reference/glance.html),
+  [`predict()`](https://rdrr.io/r/stats/predict.html), and
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods.
+- Koffarnus equation support in
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  via `equation_form = "koff"`.
+- broom [`augment()`](https://generics.r-lib.org/reference/augment.html)
+  methods for all model classes (`beezdemand_fixed`,
+  `beezdemand_hurdle`, `beezdemand_nlme`).
+- [`compare_models()`](https://brentkaplan.github.io/beezdemand/reference/compare_models.md)
+  unified model comparison with AIC, BIC, delta metrics, and likelihood
+  ratio tests.
+- [`anova()`](https://rdrr.io/r/stats/anova.html) S3 methods for nested
+  hurdle and NLME model comparison.
+- [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  diagnostic suite with convergence, boundary, and residual checks for
+  all model classes.
+- [`plot_residuals()`](https://brentkaplan.github.io/beezdemand/reference/plot_residuals.md)
+  and
+  [`plot_qq()`](https://brentkaplan.github.io/beezdemand/reference/plot_qq.md)
+  diagnostic plot functions.
+- Normalized alpha (`alpha_star`; Rzeszutek et al., 2025) across all
+  model classes.
+- Modern wrappers:
+  [`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md),
+  [`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md),
+  [`get_k()`](https://brentkaplan.github.io/beezdemand/reference/get_k.md).
+- [`confint()`](https://rdrr.io/r/stats/confint.html) methods for all
+  model classes.
+- [`pivot_demand_data()`](https://brentkaplan.github.io/beezdemand/reference/pivot_demand_data.md)
+  for wide/long data reshaping.
+- Systematicity wrappers:
+  [`check_systematic_demand()`](https://brentkaplan.github.io/beezdemand/reference/check_systematic_demand.md),
+  [`check_systematic_cp()`](https://brentkaplan.github.io/beezdemand/reference/check_systematic_cp.md).
+- Migration guide vignette
+  ([`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)).
+
+### Changed
+
+- [`summary()`](https://rdrr.io/r/base/summary.html) methods for hurdle
+  and NLME models now return structured S3 objects (use
+  `print(summary(fit))` for console output).
+- [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+  fits demand parameters in natural-log space; `param_space` argument
+  removed.
+- [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
+  uses log10-parameterized optimizer coefficients; `"exponential"` form
+  fits on the `log10(y)` response scale.
+- [`predict.cp_model_nls()`](https://brentkaplan.github.io/beezdemand/reference/predict.cp_model_nls.md)
+  always returns `y_pred` on natural scale.
+- All [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+  [`glance()`](https://generics.r-lib.org/reference/glance.html) methods
+  return tibbles with `model_class` and `backend`.
+- All summary objects inherit from `beezdemand_summary` base class.
+- API standardization: stability contracts for summary, tidy, and glance
+  outputs.
+
+### Deprecated
+
+- [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  superseded by
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
+- [`FitMeanCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitMeanCurves.md)
+  superseded by `fit_demand_fixed(agg = ...)`.
+- `fit_cp_nls(start_vals=)` deprecated in favor of `start_values=`.
 
 ## [0.1.3](https://github.com/brentkaplan/beezdemand/compare/v0.1.2...v0.1.3) - 2025-04-20
 

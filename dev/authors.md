@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/brentkaplan/beezdemand/blob/v0.2.0/inst/CITATION)
+[`inst/CITATION`](https://github.com/brentkaplan/beezdemand/blob/develop/inst/CITATION)
 
 Kaplan BA, Gilroy SP, Reed DD, Koffarnus MN, Hursh SR (2019). “The R
 package beezdemand: Behavioral Economic Easy Demand.” *Perspectives on
@@ -30,12 +30,12 @@ Behavior Science*, **42**(1), 163–180.
     }
 
 Kaplan B (2026). *beezdemand: Behavioral Economic Easy Demand*. R
-package version 0.2.0, <https://brentkaplan.github.io/beezdemand/>.
+package version 0.2.0.9000, <https://brentkaplan.github.io/beezdemand/>.
 
     @Manual{,
       title = {beezdemand: Behavioral Economic Easy Demand},
       author = {Brent Kaplan},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.2.0.9000},
       url = {https://brentkaplan.github.io/beezdemand/},
     }

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/v0.2.0/CHANGELOG.md" class="external-link"><code>CHANGELOG.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/CHANGELOG.md" class="external-link"><code>CHANGELOG.md</code></a></small>
     </div>
 
 <div id="changelog" class="section level1">
@@ -59,14 +59,64 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format follows Keep a Changelog and this project adheres to Semantic Versioning.</p>
 <div class="section level2">
-<h2 id="unreleased"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.2...main" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
-<!-- TODO: Populate entries for unreleased changes once available. -->
+<h2 id="unreleased"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
+</div>
+<div class="section level2">
+<h2 id="id_020---2026-03-03">
+<a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0" class="external-link">0.2.0</a> - 2026-03-03<a class="anchor" aria-label="anchor" href="#id_020---2026-03-03"></a></h2>
+<div class="section level3">
+<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<ul><li>Four-tier modeling framework: legacy NLS, fixed-effect (<code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>), mixed-effects NLME (<code><a href="reference/fit_demand_mixed.html">fit_demand_mixed()</a></code>), and hurdle via TMB (<code><a href="reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code>).</li>
+<li>
+<code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> modern S3 wrapper for individual NLS demand curves with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods.</li>
+<li>Koffarnus equation support in <code><a href="reference/fit_demand_mixed.html">fit_demand_mixed()</a></code> via <code>equation_form = "koff"</code>.</li>
+<li>broom <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> methods for all model classes (<code>beezdemand_fixed</code>, <code>beezdemand_hurdle</code>, <code>beezdemand_nlme</code>).</li>
+<li>
+<code><a href="reference/compare_models.html">compare_models()</a></code> unified model comparison with AIC, BIC, delta metrics, and likelihood ratio tests.</li>
+<li>
+<code><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova()</a></code> S3 methods for nested hurdle and NLME model comparison.</li>
+<li>
+<code><a href="reference/check_demand_model.html">check_demand_model()</a></code> diagnostic suite with convergence, boundary, and residual checks for all model classes.</li>
+<li>
+<code><a href="reference/plot_residuals.html">plot_residuals()</a></code> and <code><a href="reference/plot_qq.html">plot_qq()</a></code> diagnostic plot functions.</li>
+<li>Normalized alpha (<code>alpha_star</code>; Rzeszutek et al., 2025) across all model classes.</li>
+<li>Modern wrappers: <code><a href="reference/get_empirical_measures.html">get_empirical_measures()</a></code>, <code><a href="reference/get_descriptive_summary.html">get_descriptive_summary()</a></code>, <code><a href="reference/get_k.html">get_k()</a></code>.</li>
+<li>
+<code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> methods for all model classes.</li>
+<li>
+<code><a href="reference/pivot_demand_data.html">pivot_demand_data()</a></code> for wide/long data reshaping.</li>
+<li>Systematicity wrappers: <code><a href="reference/check_systematic_demand.html">check_systematic_demand()</a></code>, <code><a href="reference/check_systematic_cp.html">check_systematic_cp()</a></code>.</li>
+<li>Migration guide vignette (<code><a href="articles/migration-guide.html">vignette("migration-guide")</a></code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<ul><li>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> methods for hurdle and NLME models now return structured S3 objects (use <code>print(summary(fit))</code> for console output).</li>
+<li>
+<code><a href="reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code> fits demand parameters in natural-log space; <code>param_space</code> argument removed.</li>
+<li>
+<code><a href="reference/fit_cp_nls.html">fit_cp_nls()</a></code> uses log10-parameterized optimizer coefficients; <code>"exponential"</code> form fits on the <code>log10(y)</code> response scale.</li>
+<li>
+<code><a href="reference/predict.cp_model_nls.html">predict.cp_model_nls()</a></code> always returns <code>y_pred</code> on natural scale.</li>
+<li>All <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> methods return tibbles with <code>model_class</code> and <code>backend</code>.</li>
+<li>All summary objects inherit from <code>beezdemand_summary</code> base class.</li>
+<li>API standardization: stability contracts for summary, tidy, and glance outputs.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="deprecated">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated"></a></h3>
+<ul><li>
+<code><a href="reference/FitCurves.html">FitCurves()</a></code> superseded by <code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>.</li>
+<li>
+<code><a href="reference/FitMeanCurves.html">FitMeanCurves()</a></code> superseded by <code>fit_demand_fixed(agg = ...)</code>.</li>
+<li>
+<code>fit_cp_nls(start_vals=)</code> deprecated in favor of <code>start_values=</code>.</li>
+</ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_013---2025-04-20">
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.2...v0.1.3" class="external-link">0.1.3</a> - 2025-04-20<a class="anchor" aria-label="anchor" href="#id_013---2025-04-20"></a></h2>
 <div class="section level3">
-<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
 <ul><li>Cross-price demand model suite:
 <ul><li>
 <code><a href="reference/check_unsystematic_cp.html">check_unsystematic_cp()</a></code> to detect unsystematic cross-price patterns.</li>
@@ -94,12 +144,12 @@
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.0...v0.1.2" class="external-link">0.1.2</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_012---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
+<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
 <ul><li>
 <code><a href="reference/ExtraF.html">ExtraF()</a></code> gained the ability to specify a start value for alpha.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
 <ul><li>Replaced dependency on <code>nlmrt</code> with <code>nlsr</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -114,7 +164,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.1.1%20tag%20exists.%20--">0.1.1</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_011---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
+<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
 <ul><li>Experimental <code><a href="reference/FitCurves.html">FitCurves()</a></code> arguments:
 <ul><li>
 <code>constrainq0</code> to fit alpha with Q0 constrained.</li>
@@ -128,7 +178,7 @@
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.0...v0.1.0" class="external-link">0.1.0</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_010---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
+<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
 <ul><li>Initial CRAN release.</li>
 </ul></div>
 </div>
@@ -146,7 +196,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.95%20tag%20exists.%20--">0.0.95</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0095---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
+<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> Output summary column formerly named <code>ID</code> is now <code>id</code> (lowercase). Update scripts to reference <code>id</code> accordingly.</li>
 </ul></div>
@@ -170,7 +220,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.90%20tag%20exists.%20--">0.0.90</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0090---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
+<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
 <ul><li>
 <code><a href="reference/ExtraF.html">ExtraF()</a></code> now compares both alpha and Q0.</li>
 <li>Functions now allow specifying column names where appropriate.</li>
@@ -181,12 +231,12 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.85%20tag%20exists.%20--">0.0.85</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0085---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
+<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
 <ul><li>
 <code><a href="reference/FitCurves.html">FitCurves()</a></code> supports fitting mean/pooled data via <code>method</code> argument.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
+<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> <code><a href="reference/FitCurves.html">FitCurves()</a></code> no longer accepts in-function data transformations. Perform transformations beforehand using <code><a href="reference/ChangeData.html">ChangeData()</a></code>.</li>
 <li>
@@ -203,12 +253,12 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.84%20tag%20exists.%20--">0.0.84</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0084---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
+<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
 <ul><li>
 <code><a href="reference/ChangeData.html">ChangeData()</a></code> introduced to replace <code><a href="reference/ReplaceZeros.html">ReplaceZeros()</a></code> and certain transformation arguments previously in <code><a href="reference/FitCurves.html">FitCurves()</a></code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
+<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
 <ul><li>
 <strong>BREAKING (temporary):</strong> <code><a href="reference/FitCurves.html">FitCurves()</a></code> returns a list object during transition. Update scripts to extract the first element if required; this was marked as temporary.</li>
 </ul></div>
@@ -222,7 +272,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.6%20tag%20exists.%20--">0.0.6</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_006---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
+<h3 id="added-8">Added<a class="anchor" aria-label="anchor" href="#added-8"></a></h3>
 <ul><li>
 <code><a href="reference/FitMeanCurves.html">FitMeanCurves()</a></code> for averaged or pooled data; can produce plots.</li>
 <li>
@@ -235,7 +285,7 @@
 <ul><li>Removed legacy code from an older workflow; all functions now use long-form data.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
+<h3 id="changed-5">Changed<a class="anchor" aria-label="anchor" href="#changed-5"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> Standardized on long-form data input across the package. Convert data to long format before using modeling functions.</li>
 </ul><hr></div>
@@ -246,8 +296,6 @@
 When tags are available, update the compare links below.
 The repository URL from DESCRIPTION is https://github.com/brentkaplan/beezdemand
 -->
-<!-- TODO: Update to compare v0.1.3...main once a v0.1.3 tag is created. -->
-<!-- TODO: Add tag v0.1.3 (currently not found) to activate this link. -->
 <!-- The initial tag compares to itself; replace with previous tag if known. -->
 </div>
 </div>
