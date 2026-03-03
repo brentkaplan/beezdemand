@@ -155,7 +155,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x56284dc1d1c8>
+#> <environment: 0x56525410da40>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ dose_alpha 
 #> Factors:  dose 
@@ -264,7 +264,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x56284eb4df70>
+#> <environment: 0x56525503e7e8>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ 1 
 #> Factors:  dose 
