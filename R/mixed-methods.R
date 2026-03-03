@@ -2675,6 +2675,69 @@ plot.beezdemand_nlme <- function(
     factors_alpha %||% character(0)
   ))
 
+  # --- Collapse-aware display factor mapping ---
+  # When collapse_levels was used, model_factors (e.g., "dose") map to collapsed
+  # columns (e.g., "dose_alpha") for visual grouping in population-level plots.
+  collapse_was_used <- !is.null(fit_obj$collapse_info)
+  display_factor_map <- character(0) # named vec: original_name -> display_col
+  display_factors <- model_factors # default: same as model_factors
+
+  if (collapse_was_used && !is.null(model_factors)) {
+    for (fac in model_factors) {
+      alpha_col <- paste0(fac, "_alpha")
+      q0_col <- paste0(fac, "_Q0")
+      alpha_ok <- alpha_col %in% factors_alpha &&
+        alpha_col %in% names(plot_data_orig) &&
+        is.factor(plot_data_orig[[alpha_col]])
+      q0_ok <- q0_col %in% factors_Q0 &&
+        q0_col %in% names(plot_data_orig) &&
+        is.factor(plot_data_orig[[q0_col]])
+
+      if (alpha_ok && q0_ok) {
+        # When Q0 and alpha have different collapse structures, pick the column
+        # with fewer levels for display grouping. This is a simplification:
+        # the plot shows one set of groups, not both structures simultaneously.
+        n_alpha <- nlevels(plot_data_orig[[alpha_col]])
+        n_q0 <- nlevels(plot_data_orig[[q0_col]])
+        display_factor_map[[fac]] <- if (n_alpha <= n_q0) {
+          alpha_col
+        } else {
+          q0_col
+        }
+      } else if (alpha_ok) {
+        display_factor_map[[fac]] <- alpha_col
+      } else if (q0_ok) {
+        display_factor_map[[fac]] <- q0_col
+      }
+    }
+
+    if (length(display_factor_map) > 0) {
+      display_factors <- vapply(
+        model_factors,
+        function(f) {
+          if (f %in% names(display_factor_map)) {
+            display_factor_map[[f]]
+          } else {
+            f
+          }
+        },
+        character(1),
+        USE.NAMES = FALSE
+      )
+    }
+  }
+
+  .remap_aesthetic <- function(var_name) {
+    if (is.null(var_name)) {
+      return(NULL)
+    }
+    if (var_name %in% names(display_factor_map)) {
+      display_factor_map[[var_name]]
+    } else {
+      var_name
+    }
+  }
+
   # Continuous candidates are RHS vars not declared as any kind of factor
   # AND not actually factor columns in the data
   cont_from_rhs <- setdiff(rhs_vars, all_factor_cols)
@@ -2745,6 +2808,26 @@ plot.beezdemand_nlme <- function(
       paste(title_base, "by", paste(model_factors, collapse = " & "))
     } else {
       title_base
+    }
+  }
+
+  # --- Remap aesthetic arguments to use display (collapsed) factor columns ---
+  color_by_orig <- color_by
+  shape_by_orig <- shape_by
+  linetype_by_orig <- linetype_by
+
+  color_by <- .remap_aesthetic(color_by)
+  shape_by <- .remap_aesthetic(shape_by)
+  linetype_by <- .remap_aesthetic(linetype_by)
+
+  if (!is.null(facet_formula) && is.character(facet_formula) &&
+    length(display_factor_map) > 0) {
+    for (orig_name in names(display_factor_map)) {
+      facet_formula <- gsub(
+        paste0("\\b", orig_name, "\\b"),
+        display_factor_map[[orig_name]],
+        facet_formula
+      )
     }
   }
 
@@ -2967,15 +3050,45 @@ plot.beezdemand_nlme <- function(
     pred_newdata <- pred_y$data
     subtitle_note <- subtitle_note || pred_y$dropped
 
+    # --- Aggregate population predictions for collapsed groups ---
+    # When collapse_levels is used, multiple original factor combos map to the
+    # same collapsed group. Average their population predictions so the plot
+    # shows one line per collapsed group (consistent with emmeans output).
+    if (current_pred_level == 0 && collapse_was_used &&
+      length(display_factor_map) > 0) {
+      # After aggregation, only display_factors + x + continuous + predicted_y
+      # survive. Original factor columns are dropped, which is fine since
+      # downstream aesthetics (color_by, linetype_by) have been remapped to
+      # display_factors and line grouping uses display_factors.
+      agg_group_cols <- c(display_factors, x_var_name, cont_covars_all)
+      agg_group_cols <- intersect(agg_group_cols, names(pred_newdata))
+      if (length(agg_group_cols) > 0) {
+        pred_newdata <- pred_newdata |>
+          dplyr::group_by(dplyr::across(dplyr::all_of(agg_group_cols))) |>
+          dplyr::summarise(
+            predicted_y_plotscale = mean(
+              .data$predicted_y_plotscale,
+              na.rm = TRUE
+            ),
+            .groups = "drop"
+          )
+      }
+    }
+
     # Sort pred_newdata
     grouping_vars_for_sort <- character(0)
     if (current_pred_level > 0 && id_var_name %in% names(pred_newdata)) {
       grouping_vars_for_sort <- c(grouping_vars_for_sort, id_var_name)
     }
-    if (!is.null(model_factors)) {
+    sort_factors <- if (current_pred_level == 0 && collapse_was_used) {
+      display_factors
+    } else {
+      model_factors
+    }
+    if (!is.null(sort_factors)) {
       grouping_vars_for_sort <- c(
         grouping_vars_for_sort,
-        intersect(model_factors, names(pred_newdata))
+        intersect(sort_factors, names(pred_newdata))
       )
     }
     grouping_vars_for_sort <- unique(grouping_vars_for_sort)
@@ -3022,11 +3135,20 @@ plot.beezdemand_nlme <- function(
       }
     }
 
-    # For population lines, ensure ALL model factors define distinct lines
-    if (current_pred_level == 0 && !is.null(model_factors)) {
-      for (fac in model_factors) {
-        if (fac %in% names(pred_newdata) && !(fac %in% line_group_vars)) {
-          line_group_vars <- c(line_group_vars, fac)
+    # For population lines, ensure ALL relevant factors define distinct lines
+    # Use display_factors (collapsed columns) when collapse_levels was used
+    if (current_pred_level == 0) {
+      pop_grouping_factors <- if (collapse_was_used &&
+        length(display_factor_map) > 0) {
+        display_factors
+      } else {
+        model_factors
+      }
+      if (!is.null(pop_grouping_factors)) {
+        for (fac in pop_grouping_factors) {
+          if (fac %in% names(pred_newdata) && !(fac %in% line_group_vars)) {
+            line_group_vars <- c(line_group_vars, fac)
+          }
         }
       }
     }
@@ -3117,15 +3239,16 @@ plot.beezdemand_nlme <- function(
     ggplot2::labs(title = title, subtitle = subtitle, x = xlab, y = ylab) +
     theme_beezdemand(style = style)
 
+  # Use original (user-facing) names for legend titles, not collapsed column names
   legend_labs_list <- list()
   if (!is.null(color_by)) {
-    legend_labs_list$color <- color_by
+    legend_labs_list$color <- color_by_orig
   }
   if (!is.null(shape_by)) {
-    legend_labs_list$shape <- shape_by
+    legend_labs_list$shape <- shape_by_orig
   }
   if (!is.null(linetype_by)) {
-    legend_labs_list$linetype <- linetype_by
+    legend_labs_list$linetype <- linetype_by_orig
   }
 
   if (length(legend_labs_list) > 0) {
