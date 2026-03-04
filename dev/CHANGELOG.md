@@ -7,6 +7,13 @@ Versioning.
 
 ## [Unreleased](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD)
 
+### Fixed
+
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  now filters emmeans grid to observed factor combinations before
+  computing contrasts, preventing phantom comparisons in unbalanced
+  multi-factor designs.
+
 ## [0.2.0](https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0) - 2026-03-03
 
 ### Added

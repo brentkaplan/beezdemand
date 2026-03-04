@@ -60,6 +60,11 @@
 <p>The format follows Keep a Changelog and this project adheres to Semantic Versioning.</p>
 <div class="section level2">
 <h2 id="unreleased"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
+<div class="section level3">
+<h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
+<ul><li>
+<code><a href="reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> now filters emmeans grid to observed factor combinations before computing contrasts, preventing phantom comparisons in unbalanced multi-factor designs.</li>
+</ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_020---2026-03-03">
@@ -153,7 +158,7 @@
 <ul><li>Replaced dependency on <code>nlmrt</code> with <code>nlsr</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
+<h3 id="fixed-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-1"></a></h3>
 <ul><li>
 <code><a href="reference/CheckUnsystematic.html">CheckUnsystematic()</a></code> correctly flags cases when data are passed as a tibble.</li>
 <li>Updated deprecated <code>ggplot2</code> arguments to current APIs.</li>
@@ -243,7 +248,7 @@
 <strong>BREAKING:</strong> <code><a href="reference/GetSharedK.html">GetSharedK()</a></code> no longer accepts data transformations. Transform data prior to calling.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="fixed-1">Fixed<a class="anchor" aria-label="anchor" href="#fixed-1"></a></h3>
+<h3 id="fixed-2">Fixed<a class="anchor" aria-label="anchor" href="#fixed-2"></a></h3>
 <ul><li>
 <code><a href="reference/FitCurves.html">FitCurves()</a></code> correctly reports alpha and Q0 standard errors when <code>k</code> is fitted as a free parameter.</li>
 </ul></div>

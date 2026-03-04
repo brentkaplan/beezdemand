@@ -56,6 +56,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0.9000" id="beezdemand-0209000-development">beezdemand 0.2.0.9000 (development)<a class="anchor" aria-label="anchor" href="#beezdemand-0209000-development"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0-9000"></a></h3>
+<ul><li>
+<code><a href="../reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> now restricts pairwise contrasts to observed factor combinations. Previously, with unbalanced designs (e.g., different dose levels per drug), the function computed contrasts on the full factorial grid, producing phantom comparisons for non-existent factor combinations and identical estimates across <code>contrast_by</code> groups in additive models.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="beezdemand-020">beezdemand 0.2.0<a class="anchor" aria-label="anchor" href="#beezdemand-020"></a></h2><p class="text-muted">CRAN release: 2026-03-03</p>
