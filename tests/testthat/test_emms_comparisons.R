@@ -470,3 +470,113 @@ test_that("get_demand_comparisons maps contrast_by to collapsed factor name", {
   # The mapped factor should appear in the results
   expect_true("factor2_alpha" %in% names(comps$alpha$contrasts_log10))
 })
+
+
+# =============================================================================
+# Tests for unbalanced factor filtering in get_demand_comparisons
+# =============================================================================
+
+test_that("get_demand_comparisons restricts to observed factor combinations", {
+  skip_on_cran()
+
+  # Create unbalanced data: drug A has doses 1,2,3; drug B has doses 2,3,4
+  set.seed(99)
+  make_rows <- function(drug_label, dose_levels, n_ids, id_offset) {
+    expand.grid(
+      id = factor(seq(id_offset + 1, id_offset + n_ids)),
+      x = c(0.1, 1, 10),
+      drug = drug_label,
+      dose = dose_levels
+    )
+  }
+  dat_a <- make_rows("A", c("d1", "d2", "d3"), n_ids = 5, id_offset = 0)
+  dat_b <- make_rows("B", c("d2", "d3", "d4"), n_ids = 5, id_offset = 5)
+  test_data <- rbind(dat_a, dat_b)
+  test_data$drug <- factor(test_data$drug)
+  test_data$dose <- factor(test_data$dose)
+  test_data$y <- 80 *
+    exp(-0.002 * 80 * test_data$x) +
+    rnorm(nrow(test_data), 0, 3)
+  test_data$y[test_data$y < 0.1] <- 0.1
+
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = c("drug", "dose"),
+    equation_form = "simplified"
+  )
+
+  expect_false(is.null(fit$model))
+
+  comps <- get_demand_comparisons(
+    fit,
+    compare_specs = ~ dose * drug,
+    contrast_by = "drug",
+    params_to_compare = "Q0"
+  )
+
+  contrasts_df <- comps$Q0$contrasts_log10
+  expect_true(is.data.frame(contrasts_df))
+  expect_true(nrow(contrasts_df) > 0)
+
+  # Drug A should only have C(3,2)=3 comparisons (doses d1, d2, d3)
+  drug_a_rows <- contrasts_df[contrasts_df$drug == "A", ]
+  expect_equal(nrow(drug_a_rows), 3)
+
+
+  # Drug B should only have C(3,2)=3 comparisons (doses d2, d3, d4)
+  drug_b_rows <- contrasts_df[contrasts_df$drug == "B", ]
+  expect_equal(nrow(drug_b_rows), 3)
+
+  # Total should be 6 (3 per drug), NOT 6 * 2 = 12 (C(4,2) per drug if unfiltered)
+  expect_equal(nrow(contrasts_df), 6)
+})
+
+
+test_that("get_demand_comparisons does not filter balanced designs", {
+  skip_on_cran()
+
+  # Balanced: both drugs have the same doses
+  set.seed(101)
+  test_data <- expand.grid(
+    id = factor(1:8),
+    x = c(0.1, 1, 10),
+    drug = c("A", "B"),
+    dose = c("d1", "d2", "d3")
+  )
+  test_data$drug <- factor(test_data$drug)
+  test_data$dose <- factor(test_data$dose)
+  test_data$y <- 80 *
+    exp(-0.002 * 80 * test_data$x) +
+    rnorm(nrow(test_data), 0, 3)
+  test_data$y[test_data$y < 0.1] <- 0.1
+
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = c("drug", "dose"),
+    equation_form = "simplified"
+  )
+
+  expect_false(is.null(fit$model))
+
+  comps <- get_demand_comparisons(
+    fit,
+    compare_specs = ~ dose * drug,
+    contrast_by = "drug",
+    params_to_compare = "Q0"
+  )
+
+  contrasts_df <- comps$Q0$contrasts_log10
+
+  # Each drug should have C(3,2) = 3 comparisons
+  drug_a_rows <- contrasts_df[contrasts_df$drug == "A", ]
+  drug_b_rows <- contrasts_df[contrasts_df$drug == "B", ]
+  expect_equal(nrow(drug_a_rows), 3)
+  expect_equal(nrow(drug_b_rows), 3)
+  expect_equal(nrow(contrasts_df), 6)
+})

@@ -1029,6 +1029,28 @@ get_demand_comparisons <- function(
     )
 
     if (!is.null(emms)) {
+      # --- Filter EMMs to observed factor combinations ---
+      if (length(actual_factors) > 0) {
+        emm_grid <- as.data.frame(emms@grid)
+        emm_grid$.row_idx <- seq_len(nrow(emm_grid))
+
+        observed_combos <- model_data |>
+          dplyr::distinct(dplyr::across(dplyr::any_of(actual_factors)))
+
+        matched <- dplyr::semi_join(
+          emm_grid, observed_combos,
+          by = actual_factors
+        )
+
+        if (nrow(matched) < nrow(emm_grid)) {
+          emms <- emms[sort(matched$.row_idx)]
+          message(
+            "  Filtered EMMs to ", nrow(matched), " observed combinations ",
+            "(from ", nrow(emm_grid), " full factorial)."
+          )
+        }
+      }
+
       current_param_results$emmeans <- tibble::as_tibble(summary(
         emms,
         infer = TRUE,

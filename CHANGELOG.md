@@ -6,6 +6,11 @@ The format follows Keep a Changelog and this project adheres to Semantic Version
 
 ## [Unreleased]
 
+### Fixed
+- `get_demand_comparisons()` now filters emmeans grid to observed factor
+  combinations before computing contrasts, preventing phantom comparisons
+  in unbalanced multi-factor designs.
+
 ## [0.2.0] - 2026-03-03
 
 ### Added

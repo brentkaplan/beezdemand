@@ -1,5 +1,13 @@
 # beezdemand 0.2.0.9000 (development)
 
+## Bug Fixes
+
+* `get_demand_comparisons()` now restricts pairwise contrasts to observed
+  factor combinations. Previously, with unbalanced designs (e.g., different
+  dose levels per drug), the function computed contrasts on the full factorial
+  grid, producing phantom comparisons for non-existent factor combinations
+  and identical estimates across `contrast_by` groups in additive models.
+
 # beezdemand 0.2.0
 
 ## Deprecations
