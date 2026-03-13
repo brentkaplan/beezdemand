@@ -123,7 +123,9 @@ test_that("plot_residuals works for hurdle models", {
   expect_s3_class(p_qq, "ggplot")
 })
 
-test_that("plot_residuals type='all' returns list of plots", {
+test_that("plot_residuals type='all' returns ggplot when patchwork available", {
+  skip_if_not_installed("patchwork")
+
   data(apt, package = "beezdemand")
 
   fit <- fit_demand_hurdle(
@@ -134,10 +136,24 @@ test_that("plot_residuals type='all' returns list of plots", {
 
   plots <- plot_residuals(fit, type = "all")
 
-  expect_type(plots, "list")
-  expect_true("fitted" %in% names(plots))
-  expect_true("histogram" %in% names(plots))
-  expect_true("qq" %in% names(plots))
+  # patchwork objects inherit from ggplot
+  expect_s3_class(plots, "ggplot")
+})
+
+test_that("plot_residuals type='all' returns object compatible with ggsave", {
+  skip_if_not_installed("patchwork")
+
+  data(apt, package = "beezdemand")
+
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  plots <- plot_residuals(fit, type = "all")
+  # patchwork objects are ggplot objects, which ggsave accepts
+  expect_s3_class(plots, "ggplot")
 })
 
 test_that("plot_qq.beezdemand_hurdle works", {

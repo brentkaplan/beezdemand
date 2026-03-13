@@ -580,8 +580,9 @@ fit_demand_mixed <- function(
     ")"
   )
 
+  nlme_fit_warnings <- character(0)
   fitted_nlme_model <- tryCatch(
-    {
+    withCallingHandlers(
       nlme::nlme(
         model = nlme_model_formula_obj,
         data = data,
@@ -592,8 +593,12 @@ fit_demand_mixed <- function(
         control = control_obj,
         method = method,
         ...
-      )
-    },
+      ),
+      warning = function(w) {
+        nlme_fit_warnings <<- c(nlme_fit_warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    ),
     error = function(e) {
       num_p_val <- if (!is.na(num_params_Q0) && !is.na(num_params_alpha)) {
         paste0(
@@ -666,6 +671,7 @@ fit_demand_mixed <- function(
       )
     ),
     start_values_used = start_values$fixed,
+    fit_warnings = nlme_fit_warnings,
     collapse_info = if (
       length(collapse_info$Q0) > 0 || length(collapse_info$alpha) > 0
     ) {

@@ -826,3 +826,74 @@ test_that("plot.beezdemand_nlme works with continuous covariates in fixed_rhs", 
   p <- plot(fit, at = list(dose_num = 0.005), show_pred_lines = "population")
   expect_s3_class(p, "ggplot")
 })
+
+
+# =============================================================================
+# Tests for warning capture and convergence detection (Bug 3)
+# =============================================================================
+
+test_that("fit_demand_mixed stores fit_warnings field", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+
+  fit <- fit_demand_mixed(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation_form = "zben"
+  )
+
+  expect_true("fit_warnings" %in% names(fit))
+  expect_type(fit$fit_warnings, "character")
+})
+
+test_that("glance.beezdemand_nlme reports actual convergence status", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+
+  fit <- fit_demand_mixed(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation_form = "zben"
+  )
+
+  skip_if(is.null(fit$model), "Model fitting failed")
+
+  g <- glance(fit)
+  expect_type(g$converged, "logical")
+})
+
+test_that(".check_nlme_convergence detects known warning patterns", {
+  fake <- structure(list(
+    model = list(apVar = matrix(1)),
+    fit_warnings = c("false convergence (8)")
+  ), class = "beezdemand_nlme")
+
+  result <- beezdemand:::.check_nlme_convergence(fake)
+  expect_false(result$converged)
+  expect_match(result$message, "false convergence")
+})
+
+test_that(".check_nlme_convergence handles old objects without fit_warnings", {
+  # Backward compatibility: old saved objects lack fit_warnings
+  fake <- structure(list(
+    model = list(apVar = matrix(1))
+    # no fit_warnings field
+  ), class = "beezdemand_nlme")
+
+  result <- beezdemand:::.check_nlme_convergence(fake)
+  expect_true(result$converged)
+  expect_null(result$message)
+})
+
+test_that(".check_nlme_convergence detects apVar character (singular Hessian)", {
+  fake <- structure(list(
+    model = list(apVar = "Non-positive definite approximate variance-covariance"),
+    fit_warnings = character(0)
+  ), class = "beezdemand_nlme")
+
+  result <- beezdemand:::.check_nlme_convergence(fake)
+  expect_false(result$converged)
+  expect_match(result$message, "Hessian")
+})

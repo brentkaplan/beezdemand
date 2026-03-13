@@ -356,12 +356,32 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
   }
 
   if (type == "all") {
-    # Return list of plots
-    class(plots) <- c("beezdemand_diagnostic_plots", "list")
-    return(plots)
+    if (requireNamespace("patchwork", quietly = TRUE)) {
+      return(patchwork::wrap_plots(plots, ncol = 2))
+    } else {
+      message("Install 'patchwork' for combined diagnostic plots. Returning list of individual plots.")
+      class(plots) <- c("beezdemand_diagnostic_plots", "list")
+      return(plots)
+    }
   } else {
     return(plots[[1]])
   }
+}
+
+
+#' Print Method for Diagnostic Plots
+#'
+#' @param x A `beezdemand_diagnostic_plots` object (list of ggplot objects).
+#' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
+#' @export
+print.beezdemand_diagnostic_plots <- function(x, ...) {
+  if (requireNamespace("patchwork", quietly = TRUE)) {
+    print(patchwork::wrap_plots(x, ncol = 2))
+  } else {
+    for (nm in names(x)) print(x[[nm]])
+  }
+  invisible(x)
 }
 
 
@@ -484,7 +504,7 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
   # Reshape for plotting
   re_data <- tidyr::pivot_longer(
     re[, c("id", re_cols), drop = FALSE],
-    cols = all_of(re_cols),
+    cols = tidyr::all_of(re_cols),
     names_to = "effect",
     values_to = "value"
   )
@@ -608,25 +628,43 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
 
 .check_nlme_convergence <- function(object) {
   converged <- TRUE
-  message <- NULL
+  messages <- character(0)
 
   if (is.null(object$model)) {
     return(list(converged = FALSE, message = "Model fitting failed"))
   }
 
-  # Check if model converged based on nlme diagnostics
-  # nlme doesn't have a simple convergence flag, but we can check for warnings
   model <- object$model
 
-  # Check apVar for convergence issues
+  # Check apVar for Hessian issues (existing check)
   if (is.character(model$apVar)) {
     converged <- FALSE
-    message <- "Hessian is not positive definite; variance estimates may be unreliable"
+    messages <- c(messages, "Hessian is not positive definite; variance estimates may be unreliable")
+  }
+
+  # Check stored fit warnings for convergence failure patterns
+  # NOTE: object$fit_warnings is NULL for pre-fix saved objects; length(NULL) == 0 is safe
+  fit_warnings <- object$fit_warnings
+  if (length(fit_warnings) > 0) {
+    convergence_patterns <- c(
+      "false convergence",
+      "singular", "Singularity",
+      "step halving factor reduced below minimum",
+      "maximum number of iterations",
+      "did not converge",
+      "iteration limit reached"
+    )
+    pattern_regex <- paste(convergence_patterns, collapse = "|")
+    bad_warnings <- fit_warnings[grepl(pattern_regex, fit_warnings, ignore.case = TRUE)]
+    if (length(bad_warnings) > 0) {
+      converged <- FALSE
+      messages <- c(messages, paste("Fit warning:", bad_warnings))
+    }
   }
 
   list(
     converged = converged,
-    message = message
+    message = if (length(messages) > 0) paste(messages, collapse = "; ") else NULL
   )
 }
 

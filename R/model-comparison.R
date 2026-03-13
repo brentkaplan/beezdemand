@@ -132,7 +132,9 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   backends <- vapply(model_info, `[[`, character(1), "backend")
   same_backend <- length(unique(backends)) == 1
 
-  if (!same_backend && test == "lrt") {
+  cross_backend <- !same_backend
+
+  if (cross_backend && test == "lrt") {
     warning(
       "Models have different backends (", paste(unique(backends), collapse = ", "),
       "). LRT cannot be performed; using IC-only comparison.",
@@ -140,6 +142,12 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
     )
     test <- "none"
     notes <- c(notes, "Models have different backends; LRT not applicable.")
+  }
+
+  if (cross_backend) {
+    notes <- c(notes,
+      "Information criteria are not comparable across modeling frameworks. Compare models within the same class, or compare qualitatively."
+    )
   }
 
   # Check if LRT is possible (same backend with valid likelihoods)
@@ -242,20 +250,23 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   }
 
   # Determine best model by IC (prefer BIC, fallback to AIC)
+  # Cross-backend: IC values are incommensurable, no winner can be declared
   best_idx <- NA_integer_
-  if (any(is.finite(comparison$BIC))) {
-    best_idx <- which.min(comparison$BIC)
-  } else if (any(is.finite(comparison$AIC))) {
-    best_idx <- which.min(comparison$AIC)
+  if (!cross_backend) {
+    if (any(is.finite(comparison$BIC))) {
+      best_idx <- which.min(comparison$BIC)
+    } else if (any(is.finite(comparison$AIC))) {
+      best_idx <- which.min(comparison$AIC)
+    }
   }
 
-  # Add delta columns
-  if (any(is.finite(comparison$AIC))) {
+  # Add delta columns (suppress for cross-backend comparisons)
+  if (!cross_backend && any(is.finite(comparison$AIC))) {
     comparison$delta_AIC <- comparison$AIC - min(comparison$AIC, na.rm = TRUE)
   } else {
     comparison$delta_AIC <- rep(NA_real_, nrow(comparison))
   }
-  if (any(is.finite(comparison$BIC))) {
+  if (!cross_backend && any(is.finite(comparison$BIC))) {
     comparison$delta_BIC <- comparison$BIC - min(comparison$BIC, na.rm = TRUE)
   } else {
     comparison$delta_BIC <- rep(NA_real_, nrow(comparison))
@@ -297,6 +308,12 @@ print.beezdemand_model_comparison <- function(x, digits = 4, ...) {
   comp$delta_BIC <- round(comp$delta_BIC, digits)
 
   print(comp, row.names = FALSE)
+
+  # Show cross-backend note prominently before best model
+  cross_backend_note <- grep("not comparable across modeling frameworks", x$notes, value = TRUE)
+  if (length(cross_backend_note) > 0) {
+    cat("\nNote:", cross_backend_note[1], "\n")
+  }
 
   if (is.na(x$best_model)) {
     cat("\nBest model: NA (no comparable information criteria available)\n")
@@ -556,11 +573,27 @@ print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
 
   } else if (inherits(model, "beezdemand_nlme")) {
     info$backend <- "nlme"
-    info$nobs <- tryCatch(nrow(model$model$data), error = function(e) NA_integer_)
-    info$df <- tryCatch(attr(stats::logLik(model$model), "df"), error = function(e) NA_integer_)
-    info$logLik <- tryCatch(as.numeric(stats::logLik(model$model)), error = function(e) NA_real_)
-    info$AIC <- tryCatch(stats::AIC(model$model), error = function(e) NA_real_)
-    info$BIC <- tryCatch(stats::BIC(model$model), error = function(e) NA_real_)
+    # Primary: model$data (always populated), fallback: model$model$data
+    info$nobs <- tryCatch(
+      nrow(model$data) %||% nrow(model$model$data) %||% NA_integer_,
+      error = function(e) NA_integer_
+    )
+    info$df <- tryCatch({
+      d <- attr(stats::logLik(model$model), "df")
+      if (is.null(d)) NA_integer_ else d
+    }, error = function(e) NA_integer_)
+    info$logLik <- tryCatch({
+      ll <- as.numeric(stats::logLik(model$model))
+      if (is.null(ll) || length(ll) == 0) NA_real_ else ll
+    }, error = function(e) NA_real_)
+    info$AIC <- tryCatch({
+      a <- stats::AIC(model$model)
+      if (is.null(a) || length(a) == 0) NA_real_ else a
+    }, error = function(e) NA_real_)
+    info$BIC <- tryCatch({
+      b <- stats::BIC(model$model)
+      if (is.null(b) || length(b) == 0) NA_real_ else b
+    }, error = function(e) NA_real_)
 
   } else if (inherits(model, "beezdemand_fixed")) {
     info$backend <- "legacy"

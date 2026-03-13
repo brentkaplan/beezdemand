@@ -1273,10 +1273,38 @@ validate_hurdle_data <- function(data, y_var, x_var, id_var) {
     stop("'", y_var, "' must be numeric (consumption variable)")
   }
 
-  # Check for negative values
-  if (any(data[[y_var]] < 0, na.rm = TRUE)) {
-    stop("Consumption values (", y_var, ") cannot be negative")
+  # Check for NaN values
+  if (any(is.nan(data[[y_var]]))) {
+    stop(sprintf(
+      "Consumption values (%s) contain %d NaN value(s). Clean data before fitting.",
+      y_var, sum(is.nan(data[[y_var]]))
+    ))
   }
+  if (any(is.nan(data[[x_var]]))) {
+    stop(sprintf(
+      "Price values (%s) contain %d NaN value(s). Clean data before fitting.",
+      x_var, sum(is.nan(data[[x_var]]))
+    ))
+  }
+
+  # Check for negative consumption values (with floating-point tolerance)
+  neg_mask <- data[[y_var]] < -1e-10
+  if (any(neg_mask, na.rm = TRUE)) {
+    neg_vals <- data[[y_var]][which(neg_mask)]
+    stop(sprintf(
+      "Consumption values (%s) contain %d negative value(s) (range: %.4g to %.4g). Values must be non-negative.",
+      y_var, sum(neg_mask, na.rm = TRUE), min(neg_vals), max(neg_vals)
+    ))
+  }
+  # Clamp near-zero negatives (floating-point artifacts) to 0
+  near_zero_neg <- !is.na(data[[y_var]]) & data[[y_var]] < 0 & data[[y_var]] >= -1e-10
+  if (any(near_zero_neg)) {
+    n_clamped <- sum(near_zero_neg)
+    message(sprintf("Note: %d near-zero negative value(s) in '%s' clamped to 0.", n_clamped, y_var))
+    data[[y_var]][near_zero_neg] <- 0
+  }
+
+  # Check for negative price values
   if (any(data[[x_var]] < 0, na.rm = TRUE)) {
     stop("Price values (", x_var, ") cannot be negative")
   }

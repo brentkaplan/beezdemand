@@ -2021,7 +2021,7 @@ glance.beezdemand_nlme <- function(x, ...) {
       x$formula_details$equation_form_selected,
     nobs = n_obs,
     n_subjects = n_subjects,
-    converged = TRUE,
+    converged = .check_nlme_convergence(x)$converged,
     logLik = as.numeric(stats::logLik(x$model)),
     AIC = stats::AIC(x$model),
     BIC = stats::BIC(x$model),
