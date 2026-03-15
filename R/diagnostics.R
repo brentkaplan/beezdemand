@@ -201,6 +201,101 @@ check_demand_model.beezdemand_fixed <- function(object, ...) {
 }
 
 
+#' @rdname check_demand_model
+#' @export
+check_demand_model.beezdemand_tmb <- function(object, ...) {
+  issues <- character(0)
+  recommendations <- character(0)
+
+  # 1. Check convergence
+  converged <- object$converged
+  convergence <- list(
+    converged = converged,
+    code = object$opt$convergence,
+    message = object$opt$message
+  )
+  if (!converged) {
+    issues <- c(issues, sprintf("Model did not converge (code %d: %s)",
+                                object$opt$convergence, object$opt$message))
+    recommendations <- c(recommendations,
+                         "Try different starting values, increase iterations, or simplify model")
+  }
+
+  # 2. Check Hessian positive definiteness
+  hessian_pd <- TRUE
+  if (!is.null(object$sdr)) {
+    pdHess <- tryCatch(object$sdr$pdHess, error = function(e) NA)
+    if (!is.na(pdHess) && !pdHess) {
+      hessian_pd <- FALSE
+      issues <- c(issues, "Hessian is not positive definite")
+      recommendations <- c(recommendations,
+                           "Model may be at a saddle point; try different starting values")
+    }
+  }
+
+  # 3. Check variance components near zero
+  coefs <- object$model$coefficients
+  re_variances <- list()
+  near_zero <- logical(0)
+
+  sigma_b <- exp(coefs[["logsigma_b"]])
+  re_variances[["sigma_b"]] <- sigma_b
+  near_zero <- c(near_zero, sigma_b < 1e-4)
+
+  if (object$param_info$n_random_effects == 2) {
+    sigma_c <- exp(coefs[["logsigma_c"]])
+    re_variances[["sigma_c"]] <- sigma_c
+    near_zero <- c(near_zero, sigma_c < 1e-4)
+  }
+
+  random_effects <- list(
+    variances = re_variances,
+    near_zero = near_zero
+  )
+
+  if (any(near_zero)) {
+    near_zero_re <- names(re_variances)[near_zero]
+    issues <- c(issues, paste("Random effect variance near zero:",
+                              paste(near_zero_re, collapse = ", ")))
+    recommendations <- c(recommendations, "Consider removing these random effects")
+  }
+
+  # 4. Check residuals
+  residuals_info <- list(has_outliers = FALSE, n_outliers = 0)
+  tryCatch({
+    aug <- augment(object)
+    resids <- aug$.resid
+    if (!all(is.na(resids))) {
+      sd_resid <- stats::sd(resids, na.rm = TRUE)
+      n_outliers <- sum(abs(resids) > 3 * sd_resid, na.rm = TRUE)
+      residuals_info$has_outliers <- n_outliers > 0
+      residuals_info$n_outliers <- n_outliers
+    }
+  }, error = function(e) NULL)
+
+  if (residuals_info$has_outliers) {
+    issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)",
+                                residuals_info$n_outliers))
+    recommendations <- c(recommendations, "Investigate outlying observations")
+  }
+
+  structure(
+    list(
+      model_class = "beezdemand_tmb",
+      convergence = convergence,
+      hessian_pd = hessian_pd,
+      boundary = list(at_boundary = character(0)),
+      residuals = residuals_info,
+      random_effects = random_effects,
+      issues = issues,
+      recommendations = recommendations,
+      n_issues = length(issues)
+    ),
+    class = "beezdemand_diagnostics"
+  )
+}
+
+
 #' Print Method for Model Diagnostics
 #'
 #' @param x A `beezdemand_diagnostics` object.

@@ -94,7 +94,8 @@ compare_models <- function(..., test = c("auto", "lrt", "none")) {
   }
 
   # Validate model classes
-  valid_classes <- c("beezdemand_hurdle", "beezdemand_nlme", "beezdemand_fixed")
+  valid_classes <- c("beezdemand_hurdle", "beezdemand_nlme", "beezdemand_fixed",
+                     "beezdemand_tmb")
 
   for (i in seq_along(models)) {
     if (!inherits(models[[i]], valid_classes)) {
@@ -594,6 +595,14 @@ print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
       b <- stats::BIC(model$model)
       if (is.null(b) || length(b) == 0) NA_real_ else b
     }, error = function(e) NA_real_)
+
+  } else if (inherits(model, "beezdemand_tmb")) {
+    info$backend <- "TMB"
+    info$nobs <- model$param_info$n_obs
+    info$df <- length(model$opt$par)
+    info$logLik <- model$loglik
+    info$AIC <- model$AIC
+    info$BIC <- model$BIC
 
   } else if (inherits(model, "beezdemand_fixed")) {
     info$backend <- "legacy"

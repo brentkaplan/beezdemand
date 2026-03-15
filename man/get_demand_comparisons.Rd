@@ -2,9 +2,12 @@
 % Please edit documentation in R/mixed-methods.R
 \name{get_demand_comparisons}
 \alias{get_demand_comparisons}
+\alias{get_demand_comparisons.beezdemand_nlme}
 \title{Get Pairwise Comparisons for Demand Parameters}
 \usage{
-get_demand_comparisons(
+get_demand_comparisons(fit_obj, ...)
+
+\method{get_demand_comparisons}{beezdemand_nlme}(
   fit_obj,
   params_to_compare = c("Q0", "alpha"),
   compare_specs = NULL,
@@ -19,6 +22,8 @@ get_demand_comparisons(
 }
 \arguments{
 \item{fit_obj}{A \code{beezdemand_nlme} object.}
+
+\item{...}{Additional arguments passed to \code{emmeans::emmeans()} or \code{emmeans::contrast()}.}
 
 \item{params_to_compare}{Character vector: "Q0", "alpha", or \code{c("Q0", "alpha")}. Default \code{c("Q0", "alpha")}.}
 
@@ -47,8 +52,6 @@ of the \code{contrast_by} variable(s). In such cases, consider analyzing main ef
 \item{ci_level}{Confidence level. Default 0.95.}
 
 \item{report_ratios}{Logical. If TRUE, reports contrasts as ratios. Default \code{TRUE}.}
-
-\item{...}{Additional arguments passed to \code{emmeans::emmeans()} or \code{emmeans::contrast()}.}
 }
 \value{
 A list named by parameter. Each element contains:

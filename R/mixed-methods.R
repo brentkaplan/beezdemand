@@ -156,7 +156,13 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #' @importFrom tidyr crossing
 #' @importFrom rlang .data `:=`
 #' @export
-get_demand_param_emms <- function(
+get_demand_param_emms <- function(fit_obj, ...) {
+  UseMethod("get_demand_param_emms")
+}
+
+#' @rdname get_demand_param_emms
+#' @export
+get_demand_param_emms.beezdemand_nlme <- function(
   fit_obj,
   factors_in_emm = NULL,
   at = NULL,
@@ -164,9 +170,6 @@ get_demand_param_emms <- function(
   include_ev = FALSE, # New argument
   ...
 ) {
-  if (!inherits(fit_obj, "beezdemand_nlme")) {
-    stop("Input 'fit_obj' must be a 'beezdemand_nlme' object.")
-  }
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -854,7 +857,13 @@ get_observed_demand_param_emms <- function(
 #' @importFrom rlang `:=` .data
 #' @importFrom dplyr select rename all_of any_of everything mutate
 #' @export
-get_demand_comparisons <- function(
+get_demand_comparisons <- function(fit_obj, ...) {
+  UseMethod("get_demand_comparisons")
+}
+
+#' @rdname get_demand_comparisons
+#' @export
+get_demand_comparisons.beezdemand_nlme <- function(
   fit_obj,
   params_to_compare = c("Q0", "alpha"),
   compare_specs = NULL,
@@ -866,9 +875,6 @@ get_demand_comparisons <- function(
   report_ratios = TRUE,
   ...
 ) {
-  if (!inherits(fit_obj, "beezdemand_nlme")) {
-    stop("Input 'fit_obj' must be a 'beezdemand_nlme' object.")
-  }
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }

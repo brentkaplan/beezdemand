@@ -5,6 +5,7 @@
 \alias{check_demand_model.beezdemand_hurdle}
 \alias{check_demand_model.beezdemand_nlme}
 \alias{check_demand_model.beezdemand_fixed}
+\alias{check_demand_model.beezdemand_tmb}
 \title{Check Demand Model Diagnostics}
 \usage{
 check_demand_model(object, ...)
@@ -14,6 +15,8 @@ check_demand_model(object, ...)
 \method{check_demand_model}{beezdemand_nlme}(object, ...)
 
 \method{check_demand_model}{beezdemand_fixed}(object, ...)
+
+\method{check_demand_model}{beezdemand_tmb}(object, ...)
 }
 \arguments{
 \item{object}{A fitted model object of class \code{beezdemand_hurdle},
