@@ -200,6 +200,10 @@ check_systematic_demand <- function(data,
 #' @param x_var Character. Name of the price column. Default `"x"`.
 #' @param y_var Character. Name of the consumption column. Default `"y"`.
 #' @param id_var Character. Name of the subject identifier column. Default `"id"`.
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, the check is run separately within each unique
+#'   combination of the `by` columns. Group columns are prepended to
+#'   `$results`. Default `NULL` (no grouping).
 #'
 #' @return An object of class `beezdemand_systematicity` with the same structure
 #'   as `check_systematic_demand()`, with `type = "cp"`.
@@ -236,8 +240,38 @@ check_systematic_cp <- function(data,
                                 expected_down = FALSE,
                                 x_var = "x",
                                 y_var = "y",
-                                id_var = "id") {
+                                id_var = "id",
+                                by = NULL) {
   call <- match.call()
+
+  # --- grouped dispatch ---
+  if (!is.null(by)) {
+    split_out <- beezdemand_split_by(data, by, function(slice, key_row) {
+      obj <- check_systematic_cp(
+        data = slice,
+        trend_threshold = trend_threshold,
+        bounce_threshold_down = bounce_threshold_down,
+        bounce_threshold_up = bounce_threshold_up,
+        bounce_threshold_none = bounce_threshold_none,
+        consecutive_zeros = consecutive_zeros,
+        consecutive_nonzeros = consecutive_nonzeros,
+        expected_down = expected_down,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        by = NULL
+      )
+      for (col in rev(by)) {
+        obj$results <- tibble::add_column(obj$results, !!col := key_row[[col]], .before = 1)
+      }
+      obj$results
+    })
+
+    combined <- dplyr::bind_rows(split_out$results)
+    return(new_beezdemand_systematicity(
+      results = combined, type = "cp", call = call, by_var = by
+    ))
+  }
 
   # Rename columns if needed
   if (x_var != "x" || y_var != "y") {

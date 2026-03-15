@@ -13,7 +13,9 @@
   equation,
   price,
   subject_id,
-  k_fixed = NULL
+  k_fixed = NULL,
+  X_q0 = NULL,
+  X_alpha = NULL
 )
 }
 \arguments{

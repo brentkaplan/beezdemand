@@ -232,7 +232,7 @@ summary.beezdemand_hurdle <- function(
     list(
       call = object$call,
       model_class = "beezdemand_hurdle",
-      backend = "TMB",
+      backend = "TMB_hurdle",
       param_space = object$param_space %||% "natural",
       report_space = report_space,
       coefficients = coefficients,
@@ -1539,7 +1539,7 @@ tidy.beezdemand_hurdle <- function(
 glance.beezdemand_hurdle <- function(x, ...) {
   tibble::tibble(
     model_class = "beezdemand_hurdle",
-    backend = "TMB",
+    backend = "TMB_hurdle",
     nobs = x$param_info$n_obs,
     n_subjects = x$param_info$n_subjects,
     n_random_effects = x$param_info$n_random_effects,

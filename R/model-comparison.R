@@ -565,7 +565,7 @@ print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
   )
 
   if (inherits(model, "beezdemand_hurdle")) {
-    info$backend <- "TMB"
+    info$backend <- "TMB_hurdle"
     info$nobs <- nrow(model$data)
     info$df <- length(model$model$coefficients)
     info$logLik <- model$loglik
@@ -597,12 +597,27 @@ print.anova.beezdemand_hurdle <- function(x, digits = 4, ...) {
     }, error = function(e) NA_real_)
 
   } else if (inherits(model, "beezdemand_tmb")) {
-    info$backend <- "TMB"
-    info$nobs <- model$param_info$n_obs
-    info$df <- length(model$opt$par)
-    info$logLik <- model$loglik
-    info$AIC <- model$AIC
-    info$BIC <- model$BIC
+    info$backend <- "TMB_mixed"
+    info$nobs <- tryCatch(
+      model$param_info$n_obs,
+      error = function(e) NA_integer_
+    )
+    info$df <- tryCatch(
+      length(model$opt$par),
+      error = function(e) NA_integer_
+    )
+    info$logLik <- tryCatch(
+      model$loglik,
+      error = function(e) NA_real_
+    )
+    info$AIC <- tryCatch(
+      model$AIC,
+      error = function(e) NA_real_
+    )
+    info$BIC <- tryCatch(
+      model$BIC,
+      error = function(e) NA_real_
+    )
 
   } else if (inherits(model, "beezdemand_fixed")) {
     info$backend <- "legacy"

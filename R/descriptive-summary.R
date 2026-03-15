@@ -187,7 +187,7 @@ get_descriptive_summary <- function(data,
         n_prices = np,
         prices = prices
       ),
-      data = df  # Store for plot method
+      data = tibble::as_tibble(df)  # Store for plot method
     ),
     class = "beezdemand_descriptive"
   )

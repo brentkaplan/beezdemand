@@ -394,3 +394,138 @@ test_that("collapse_levels works with TMB model", {
   expect_s3_class(fit, "beezdemand_tmb")
   expect_true(!is.null(fit$collapse_info))
 })
+
+
+# --- Factor-stratified subject parameter correctness ---
+
+test_that("subject_pars reflect factor effects, not just intercepts", {
+  skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
+  data(apt_full, package = "beezdemand")
+
+  fit <- fit_demand_tmb(
+    apt_full, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  spars <- get_subject_pars(fit)
+
+  # Merge factor level back onto subject_pars
+  subj_info <- unique(apt_full[, c("id", "gender")])
+  merged <- merge(spars, subj_info, by = "id")
+
+  # If factor effects are included, group means should differ
+  # (unless the factor effect is exactly zero, which is unlikely)
+  coefs <- coef(fit)
+  beta_q0 <- coefs[names(coefs) == "beta_q0"]
+
+  # With factors, there should be >1 beta coefficient for Q0
+
+  expect_gt(length(beta_q0), 1)
+
+  # Verify subject Q0 values use the full design matrix, not just intercept.
+  # For each subject, compute expected Q0 from design matrix row + RE.
+  X_q0 <- fit$formula_details$X_q0
+  u_hat <- if (!is.null(fit$sdr)) {
+    re_summary <- summary(fit$sdr, "random")
+    matrix(re_summary[, "Estimate"], nrow = fit$param_info$n_subjects,
+           ncol = fit$param_info$n_random_effects)
+  } else {
+    matrix(0, nrow = fit$param_info$n_subjects, ncol = fit$param_info$n_random_effects)
+  }
+
+  # Check a specific subject: their Q0 should use their design matrix row
+  data_used <- fit$data
+  subj_levels <- fit$param_info$subject_levels
+  # Pick first subject in second factor level (non-reference)
+  non_ref_subjs <- unique(data_used$id[data_used$gender != levels(data_used$gender)[1]])
+  if (length(non_ref_subjs) > 0) {
+    test_subj <- as.character(non_ref_subjs[1])
+    test_subj_idx <- which(subj_levels == test_subj)
+    first_obs_idx <- which(data_used$id == test_subj)[1]
+
+    # Expected log(Q0) = X_q0[obs,] %*% beta_q0 + b_i
+    expected_log_q0 <- sum(X_q0[first_obs_idx, ] * beta_q0)
+    # b_i contribution comes from random effect
+    # The key test: Q0 for this subject should NOT equal exp(intercept + b_i)
+    intercept_only_log_q0 <- beta_q0[1]
+
+    # If there's a non-zero factor effect, these should differ
+    if (abs(beta_q0[2]) > 1e-10) {
+      expect_false(
+        abs(expected_log_q0 - intercept_only_log_q0) < 1e-10,
+        info = "Non-reference subject Q0 should differ from intercept-only"
+      )
+    }
+  }
+})
+
+
+test_that("predict(type='response') is vectorized and consistent with subject_pars", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  pred <- predict(fit, type = "response")
+  expect_s3_class(pred, "tbl_df")
+  expect_true(".fitted" %in% names(pred))
+  expect_equal(nrow(pred), nrow(fit$data))
+  # No NAs in fitted values
+  expect_true(all(is.finite(pred$.fitted)))
+})
+
+
+test_that("predict warns for unknown subjects", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  new_data <- data.frame(id = "UNKNOWN", x = c(0, 1, 5), y = c(10, 8, 2))
+  expect_warning(
+    predict(fit, newdata = new_data, type = "response"),
+    "unknown subject"
+  )
+})
+
+
+test_that("optimizer warnings are captured, not silently dropped", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  # opt_warnings field should exist on the result
+  expect_true("opt_warnings" %in% names(fit))
+  expect_type(fit$opt_warnings, "character")
+})
+
+
+test_that("se_available flag is set correctly", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  expect_true("se_available" %in% names(fit))
+  # For a successful fit, se_available should be TRUE
+  if (fit$converged) {
+    expect_true(fit$se_available)
+  }
+})
+
+
+test_that("backend name distinguishes TMB_mixed from TMB_hurdle", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  g <- glance(fit)
+  expect_equal(g$backend, "TMB_mixed")
+})

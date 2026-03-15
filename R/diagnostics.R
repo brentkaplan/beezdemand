@@ -261,7 +261,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
   }
 
   # 4. Check residuals
-  residuals_info <- list(has_outliers = FALSE, n_outliers = 0)
+  residuals_info <- list(has_outliers = FALSE, n_outliers = 0,
+                         computation_failed = FALSE)
   tryCatch({
     aug <- augment(object)
     resids <- aug$.resid
@@ -271,7 +272,10 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
       residuals_info$has_outliers <- n_outliers > 0
       residuals_info$n_outliers <- n_outliers
     }
-  }, error = function(e) NULL)
+  }, error = function(e) {
+    warning("Residual computation failed: ", e$message, call. = FALSE)
+    residuals_info$computation_failed <<- TRUE
+  })
 
   if (residuals_info$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)",

@@ -49,7 +49,7 @@ test_that("glance.beezdemand_hurdle meets contract", {
   expect_true(all(c("model_class", "backend", "nobs", "n_subjects",
                     "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$model_class, "beezdemand_hurdle")
-  expect_equal(g$backend, "TMB")
+  expect_equal(g$backend, "TMB_hurdle")
 })
 
 

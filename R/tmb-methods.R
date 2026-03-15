@@ -195,12 +195,21 @@ summary.beezdemand_tmb <- function(
       object$param_info$n_dropped
     ))
   }
+  if (isFALSE(object$se_available)) {
+    notes <- c(notes, "Standard errors unavailable (sdreport failed); CIs will be NA.")
+  }
+  if (length(object$opt_warnings %||% character(0)) > 0) {
+    notes <- c(notes, sprintf(
+      "Optimizer produced %d warning(s) during fitting.",
+      length(object$opt_warnings)
+    ))
+  }
 
   result <- structure(
     list(
       call = object$call,
       model_class = "beezdemand_tmb",
-      backend = "TMB",
+      backend = "TMB_mixed",
       equation = object$param_info$equation,
       coefficients = coefficients,
       variance_components = vc$table,
@@ -469,44 +478,41 @@ predict.beezdemand_tmb <- function(
     ))
   }
 
-  # type == "response": subject-specific fitted values
+  # type == "response": subject-specific fitted values (vectorized)
   if (is.null(newdata)) {
     newdata <- object$data
   }
 
-  subjects <- as.character(object$param_info$subject_levels)
   spars <- object$subject_pars
 
-  # Build predictions per observation
-  n <- nrow(newdata)
-  fitted_vals <- numeric(n)
+  # Map each observation to its subject's parameters
+  subj_ids <- as.character(newdata[[id_var]])
+  subj_match <- match(subj_ids, spars$id)
 
-  for (i in seq_len(n)) {
-    subj <- as.character(newdata[[id_var]][i])
-    price_i <- newdata[[x_var]][i]
+  # For unknown subjects, fall back to population reference-level parameters
+  beta_q0_idx <- which(names(coefs) == "beta_q0")
+  beta_alpha_idx <- which(names(coefs) == "beta_alpha")
+  pop_Q0 <- exp(coefs[beta_q0_idx[1]])
+  pop_alpha <- exp(coefs[beta_alpha_idx[1]])
 
-    row_idx <- which(spars$id == subj)
-    if (length(row_idx) == 0) {
-      # Unknown subject: use population parameters
-      beta_q0_idx <- which(names(coefs) == "beta_q0")
-      beta_alpha_idx <- which(names(coefs) == "beta_alpha")
-      Q0_i <- exp(coefs[beta_q0_idx[1]])
-      alpha_i <- exp(coefs[beta_alpha_idx[1]])
-    } else {
-      Q0_i <- spars$Q0[row_idx[1]]
-      alpha_i <- spars$alpha[row_idx[1]]
-    }
-
-    beta_q0_idx <- which(names(coefs) == "beta_q0")
-    log_q0_i <- log(Q0_i)
-
-    fitted_vals[i] <- .tmb_predict_equation(
-      price_i, Q0_i, alpha_i,
-      k = if (has_k) .tmb_get_k(object) else NA,
-      log_q0 = log_q0_i,
-      equation = equation
+  n_unknown <- sum(is.na(subj_match))
+  if (n_unknown > 0) {
+    warning(
+      sprintf("%d observation(s) from unknown subject(s); using population reference-level parameters.", n_unknown),
+      call. = FALSE
     )
   }
+
+  Q0_vec <- ifelse(is.na(subj_match), pop_Q0, spars$Q0[subj_match])
+  alpha_vec <- ifelse(is.na(subj_match), pop_alpha, spars$alpha[subj_match])
+  price_vec <- newdata[[x_var]]
+  k_val <- if (has_k) .tmb_get_k(object) else NA
+
+  fitted_vals <- .tmb_predict_equation(
+    price_vec, Q0_vec, alpha_vec,
+    k = k_val, log_q0 = log(Q0_vec),
+    equation = equation
+  )
 
   out <- tibble::as_tibble(newdata)
   out$.fitted <- fitted_vals
@@ -821,7 +827,7 @@ tidy.beezdemand_tmb <- function(
 glance.beezdemand_tmb <- function(x, ...) {
   tibble::tibble(
     model_class = "beezdemand_tmb",
-    backend = "TMB",
+    backend = "TMB_mixed",
     equation = x$param_info$equation,
     nobs = x$param_info$n_obs,
     n_subjects = x$param_info$n_subjects,

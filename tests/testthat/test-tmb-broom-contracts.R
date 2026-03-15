@@ -43,7 +43,7 @@ test_that("glance.beezdemand_tmb returns one-row tibble", {
   expect_true(all(c("model_class", "backend", "equation", "nobs", "n_subjects",
                      "converged", "logLik", "AIC", "BIC") %in% names(gl)))
   expect_equal(gl$model_class, "beezdemand_tmb")
-  expect_equal(gl$backend, "TMB")
+  expect_equal(gl$backend, "TMB_mixed")
   expect_equal(gl$equation, "exponential")
 })
 

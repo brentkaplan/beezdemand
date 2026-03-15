@@ -25,7 +25,7 @@ test_that("summary.beezdemand_hurdle meets contract", {
   expect_true("model_class" %in% names(s))
   expect_equal(s$model_class, "beezdemand_hurdle")
   expect_true("backend" %in% names(s))
-  expect_equal(s$backend, "TMB")
+  expect_equal(s$backend, "TMB_hurdle")
   expect_true("nobs" %in% names(s))
   expect_true("n_subjects" %in% names(s))
   expect_true("converged" %in% names(s))

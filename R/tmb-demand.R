@@ -287,6 +287,7 @@ best_result <- NULL
 
   for (s in seq_along(start_sets)) {
     starts_i <- start_sets[[s]]
+    opt_warnings_i <- character(0)
 
     result <- tryCatch({
       obj_i <- TMB::MakeADFun(
@@ -310,11 +311,13 @@ best_result <- NULL
           )
         ),
         warning = function(w) {
+          opt_warnings_i <<- c(opt_warnings_i, conditionMessage(w))
           invokeRestart("muffleWarning")
         }
       )
 
-      list(obj = obj_i, opt = opt_i, nll = opt_i$objective, start_idx = s)
+      list(obj = obj_i, opt = opt_i, nll = opt_i$objective, start_idx = s,
+           opt_warnings = opt_warnings_i)
     }, error = function(e) {
       if (verbose >= 2) {
         message(sprintf("  Start set %d failed: %s", s, e$message))
@@ -450,15 +453,16 @@ best_result <- NULL
 #' @keywords internal
 .tmb_compute_subject_pars <- function(
   coefficients, u_hat, subject_levels, n_re, has_k,
-  equation, price, subject_id, k_fixed = NULL
+  equation, price, subject_id, k_fixed = NULL,
+  X_q0 = NULL, X_alpha = NULL
 ) {
   n_subjects <- length(subject_levels)
 
-  # Get fixed effect intercepts
+  # Get beta vectors
   beta_q0_idx <- which(names(coefficients) == "beta_q0")
   beta_alpha_idx <- which(names(coefficients) == "beta_alpha")
-  log_q0_intercept <- coefficients[beta_q0_idx[1]]
-  log_alpha_intercept <- coefficients[beta_alpha_idx[1]]
+  beta_q0 <- unname(coefficients[beta_q0_idx])
+  beta_alpha <- unname(coefficients[beta_alpha_idx])
 
   # Build covariance matrix and transform u_hat
   sigma_b <- exp(coefficients[["logsigma_b"]])
@@ -474,7 +478,14 @@ best_result <- NULL
     )
     L <- tryCatch(
       t(chol(Sigma)),
-      error = function(e) diag(c(sigma_b, sigma_c))
+      error = function(e) {
+        warning(
+          "Covariance matrix not positive definite; dropping RE correlation. ",
+          "Subject-specific parameters assume independent random effects.",
+          call. = FALSE
+        )
+        diag(c(sigma_b, sigma_c))
+      }
     )
     re_mat <- t(L %*% t(u_hat))
     colnames(re_mat) <- c("b_i", "c_i")
@@ -483,13 +494,35 @@ best_result <- NULL
     colnames(re_mat) <- "b_i"
   }
 
-  # Subject-specific Q0 and alpha
-  subj_Q0 <- exp(log_q0_intercept + re_mat[, "b_i"])
-  if (n_re == 2) {
-    subj_alpha <- exp(log_alpha_intercept + re_mat[, "c_i"])
-  } else {
-    subj_alpha <- rep(exp(log_alpha_intercept), n_subjects)
+  # Subject-specific Q0 and alpha using full design matrix rows
+  subj_log_q0 <- numeric(n_subjects)
+  subj_log_alpha <- numeric(n_subjects)
+
+  for (i in seq_len(n_subjects)) {
+    # Find first observation for this subject to get their design matrix row
+    first_obs <- which(subject_id == (i - 1L))[1]
+
+    if (!is.null(X_q0) && ncol(X_q0) > 1) {
+      subj_log_q0[i] <- sum(X_q0[first_obs, ] * beta_q0) + re_mat[i, "b_i"]
+    } else {
+      subj_log_q0[i] <- beta_q0[1] + re_mat[i, "b_i"]
+    }
+
+    if (!is.null(X_alpha) && ncol(X_alpha) > 1) {
+      log_alpha_i <- sum(X_alpha[first_obs, ] * beta_alpha)
+    } else {
+      log_alpha_i <- beta_alpha[1]
+    }
+
+    if (n_re == 2) {
+      subj_log_alpha[i] <- log_alpha_i + re_mat[i, "c_i"]
+    } else {
+      subj_log_alpha[i] <- log_alpha_i
+    }
   }
+
+  subj_Q0 <- exp(subj_log_q0)
+  subj_alpha <- exp(subj_log_alpha)
 
   # Compute Pmax/Omax
   if (has_k) {
@@ -501,14 +534,13 @@ best_result <- NULL
       k_val <- 2  # fallback default
     }
 
-    # Determine model_type for pmax engine
-    model_type <- if (equation == "exponential") "hs" else "hs"
-    # Note: for exponentiated (koff), same underlying formula
-    # just different error structure; pmax engine uses same model_type
+    # Both exponential and exponentiated use the same Pmax formula
+    model_type <- "hs"
 
     price_split <- split(price, subject_id)
     price_list <- lapply(seq_len(n_subjects), function(i) {
-      price_split[[as.character(i - 1L)]]
+      ps <- price_split[[as.character(i - 1L)]]
+      if (is.null(ps)) numeric(0) else ps
     })
 
     omax_pmax <- beezdemand_calc_pmax_omax_vec(
@@ -526,7 +558,8 @@ best_result <- NULL
     # simplified/zben: no k
     price_split <- split(price, subject_id)
     price_list <- lapply(seq_len(n_subjects), function(i) {
-      price_split[[as.character(i - 1L)]]
+      ps <- price_split[[as.character(i - 1L)]]
+      if (is.null(ps)) numeric(0) else ps
     })
 
     omax_pmax <- beezdemand_calc_pmax_omax_vec(
@@ -695,10 +728,6 @@ fit_demand_tmb <- function(
 
   # Validate random_effects
   valid_re <- c("q0", "alpha")
-  if (is.character(random_effects) && length(random_effects) == 1 &&
-      random_effects == "q0") {
-    random_effects <- "q0"
-  }
   if (!all(random_effects %in% valid_re)) {
     stop("random_effects must be a subset of: ",
          paste(valid_re, collapse = ", "), call. = FALSE)
@@ -854,6 +883,7 @@ fit_demand_tmb <- function(
       silent = verbose < 2
     )
 
+    opt_warnings <- character(0)
     opt <- withCallingHandlers(
       nlminb(
         start = obj$par,
@@ -866,9 +896,21 @@ fit_demand_tmb <- function(
         )
       ),
       warning = function(w) {
+        opt_warnings <<- c(opt_warnings, conditionMessage(w))
         invokeRestart("muffleWarning")
       }
     )
+  }
+
+  # Collect optimization warnings
+  if (isTRUE(multi_start)) {
+    opt_warnings <- result$opt_warnings %||% character(0)
+  }
+  if (length(opt_warnings) > 0 && verbose >= 1) {
+    unique_warnings <- unique(opt_warnings)
+    for (w in unique_warnings) {
+      message("  Optimizer warning: ", w)
+    }
   }
 
   converged <- opt$convergence == 0
@@ -902,7 +944,9 @@ fit_demand_tmb <- function(
     equation = equation,
     price = prepared$price,
     subject_id = prepared$subject_id,
-    k_fixed = if (has_k && !estimate_k) k else NULL
+    k_fixed = if (has_k && !estimate_k) k else NULL,
+    X_q0 = design$X_q0,
+    X_alpha = design$X_alpha
   )
 
   # Compute log-likelihood, AIC, BIC
@@ -923,6 +967,8 @@ fit_demand_tmb <- function(
         variance_components = estimates$variance_components
       ),
       random_effects = random_effects,
+      opt_warnings = opt_warnings,
+      se_available = !is.null(estimates$sdr),
       subject_pars = subject_pars,
       tmb_obj = obj,
       opt = opt,
