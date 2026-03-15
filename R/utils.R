@@ -769,6 +769,83 @@ beezdemand_empty_derived_metrics <- function() {
   )
 }
 
+#' Split Data by Grouping Variables and Apply Function
+#'
+#' Internal helper that splits a data frame by the columns in `by`,
+#' applies `FUN(slice, key_row)` to each group, and returns a named list
+#' of results.
+#'
+#' @param data A data frame.
+#' @param by Character vector of column names to split by.
+#' @param FUN Function taking two arguments: the data subset and a one-row
+#'   data frame of group key values. Must return the per-group result.
+#' @param call Caller environment for error reporting.
+#'
+#' @return A list with:
+#'   \describe{
+#'     \item{results}{Named list of per-group FUN outputs}
+#'     \item{group_keys}{Data frame of unique group combinations}
+#'   }
+#'
+#' @keywords internal
+beezdemand_split_by <- function(data, by, FUN, call = rlang::caller_env()) {
+  # Validate by columns exist
+
+  missing <- setdiff(by, names(data))
+  if (length(missing) > 0) {
+    validation_error(
+      paste0(
+        "`by` column(s) not found in data: ",
+        paste(missing, collapse = ", ")
+      ),
+      arg = "by",
+      call = call
+    )
+  }
+
+  # Drop rows with NA in grouping columns
+
+  na_mask <- rowSums(is.na(data[, by, drop = FALSE])) > 0
+  if (any(na_mask)) {
+    n_na <- sum(na_mask)
+    warning(sprintf(
+      "%d row(s) with NA in grouping column(s) (%s) removed before splitting.",
+      n_na, paste(by, collapse = ", ")
+    ))
+    data <- data[!na_mask, , drop = FALSE]
+  }
+
+  # Build unique group keys (sorted)
+  group_keys <- unique(data[, by, drop = FALSE])
+  group_keys <- group_keys[do.call(order, group_keys), , drop = FALSE]
+  rownames(group_keys) <- NULL
+
+  # Build group labels for naming
+  group_labels <- apply(group_keys, 1, function(row) {
+    paste(by, row, sep = "=", collapse = ", ")
+  })
+
+  # Split and apply
+  results <- vector("list", nrow(group_keys))
+  names(results) <- group_labels
+
+  for (i in seq_len(nrow(group_keys))) {
+    key_row <- group_keys[i, , drop = FALSE]
+
+    # Build logical mask for this group
+    mask <- rep(TRUE, nrow(data))
+    for (col in by) {
+      mask <- mask & (data[[col]] == key_row[[col]])
+    }
+    slice <- data[mask, , drop = FALSE]
+
+    results[[i]] <- FUN(slice, key_row)
+  }
+
+  list(results = results, group_keys = group_keys)
+}
+
+
 #' Print Method for beezdemand Summary Objects
 #'
 #' Fallback print method for summary objects inheriting from `beezdemand_summary`.

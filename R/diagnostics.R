@@ -449,7 +449,7 @@ plot_qq.beezdemand_hurdle <- function(object, which = NULL, ...) {
   # Reshape for plotting
   re_data <- tidyr::pivot_longer(
     subj_pars[, c("id", available_cols), drop = FALSE],
-    cols = tidyr::all_of(available_cols),
+    cols = dplyr::all_of(available_cols),
     names_to = "effect",
     values_to = "value"
   )
@@ -504,7 +504,7 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
   # Reshape for plotting
   re_data <- tidyr::pivot_longer(
     re[, c("id", re_cols), drop = FALSE],
-    cols = tidyr::all_of(re_cols),
+    cols = dplyr::all_of(re_cols),
     names_to = "effect",
     values_to = "value"
   )
@@ -648,7 +648,7 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
   if (length(fit_warnings) > 0) {
     convergence_patterns <- c(
       "false convergence",
-      "singular", "Singularity",
+      "singular",
       "step halving factor reduced below minimum",
       "maximum number of iterations",
       "did not converge",

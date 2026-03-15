@@ -1290,3 +1290,140 @@ augment.beezdemand_fixed <- function(x, newdata = NULL, ...) {
 
   tibble::as_tibble(dplyr::bind_rows(results))
 }
+
+
+# =============================================================================
+# S3 methods for beezdemand_fixed_grouped
+# =============================================================================
+
+#' Print Method for beezdemand_fixed_grouped
+#'
+#' @param x A beezdemand_fixed_grouped object
+#' @param ... Additional arguments (ignored)
+#' @return Invisibly returns the input object \code{x}.
+#' @export
+print.beezdemand_fixed_grouped <- function(x, ...) {
+  cat("\nGrouped Fixed-Effect Demand Model\n")
+  cat("==================================\n\n")
+
+  cat("Call:\n")
+  print(x$call)
+  cat("\n")
+
+  cat("Grouped by:", paste(x$by_var, collapse = ", "), "\n")
+  cat("Equation:", x$equation, "\n")
+  cat("k:", x$k_spec, "\n")
+  if (!is.null(x$agg)) {
+    cat("Aggregation:", x$agg, "\n")
+  }
+  cat("\n")
+
+  for (i in seq_along(x$groups)) {
+    g <- x$groups[[i]]
+    label <- names(x$groups)[i]
+    cat(sprintf(
+      "  %s: %d subjects (%d converged, %d failed)\n",
+      label, g$n_total, g$n_success, g$n_fail
+    ))
+  }
+
+  cat("\nUse tidy() for combined tidy output, coef() for coefficients.\n")
+  invisible(x)
+}
+
+#' Tidy Method for beezdemand_fixed_grouped
+#'
+#' Calls \code{tidy()} on each per-group child and prepends group columns.
+#'
+#' @param x A beezdemand_fixed_grouped object
+#' @param ... Additional arguments passed to \code{tidy.beezdemand_fixed()}
+#' @return A tibble with group columns prepended
+#' @export
+tidy.beezdemand_fixed_grouped <- function(x, ...) {
+  rows <- lapply(seq_along(x$groups), function(i) {
+    child_tidy <- tidy(x$groups[[i]], ...)
+    key_row <- x$group_keys[i, , drop = FALSE]
+    for (col in rev(x$by_var)) {
+      child_tidy <- tibble::add_column(child_tidy, !!col := key_row[[col]], .before = 1)
+    }
+    child_tidy
+  })
+  dplyr::bind_rows(rows)
+}
+
+#' Extract Coefficients from Grouped Fixed-Effect Demand Fit
+#'
+#' @param object A beezdemand_fixed_grouped object
+#' @param ... Additional arguments passed to \code{coef.beezdemand_fixed()}
+#' @return A tibble with group columns prepended
+#' @export
+coef.beezdemand_fixed_grouped <- function(object, ...) {
+  rows <- lapply(seq_along(object$groups), function(i) {
+    child_coef <- coef(object$groups[[i]], ...)
+    key_row <- object$group_keys[i, , drop = FALSE]
+    for (col in rev(object$by_var)) {
+      child_coef <- tibble::add_column(child_coef, !!col := key_row[[col]], .before = 1)
+    }
+    child_coef
+  })
+  dplyr::bind_rows(rows)
+}
+
+#' Glance Method for beezdemand_fixed_grouped
+#'
+#' Returns one row per group with model-level summaries.
+#'
+#' @param x A beezdemand_fixed_grouped object
+#' @param ... Additional arguments passed to \code{glance.beezdemand_fixed()}
+#' @return A tibble with group columns prepended
+#' @export
+glance.beezdemand_fixed_grouped <- function(x, ...) {
+  rows <- lapply(seq_along(x$groups), function(i) {
+    child_glance <- glance(x$groups[[i]], ...)
+    key_row <- x$group_keys[i, , drop = FALSE]
+    for (col in rev(x$by_var)) {
+      child_glance <- tibble::add_column(child_glance, !!col := key_row[[col]], .before = 1)
+    }
+    child_glance
+  })
+  dplyr::bind_rows(rows)
+}
+
+#' Summary Method for beezdemand_fixed_grouped
+#'
+#' Returns a named list of per-group summaries.
+#'
+#' @param object A beezdemand_fixed_grouped object
+#' @param ... Additional arguments passed to \code{summary.beezdemand_fixed()}
+#' @return A named list of per-group summary objects
+#' @export
+summary.beezdemand_fixed_grouped <- function(object, ...) {
+  summaries <- lapply(object$groups, function(g) summary(g, ...))
+  names(summaries) <- names(object$groups)
+  summaries
+}
+
+#' Plot Method for beezdemand_fixed_grouped
+#'
+#' Calls \code{plot()} on each per-group child and combines with
+#' \code{patchwork::wrap_plots()} if available, otherwise returns a list.
+#'
+#' @param x A beezdemand_fixed_grouped object
+#' @param ... Additional arguments passed to \code{plot.beezdemand_fixed()}
+#' @return A combined patchwork plot if patchwork is available, otherwise a
+#'   named list of ggplot objects
+#' @export
+plot.beezdemand_fixed_grouped <- function(x, ...) {
+  plots <- lapply(seq_along(x$groups), function(i) {
+    label <- names(x$groups)[i]
+    plot(x$groups[[i]], subtitle = label, ...)
+  })
+  names(plots) <- names(x$groups)
+
+  if (requireNamespace("patchwork", quietly = TRUE)) {
+    patchwork::wrap_plots(plots, ncol = 1)
+  } else {
+    message("Install 'patchwork' for combined plots. Returning list of plots.")
+    plots
+  }
+}

@@ -80,6 +80,26 @@ to identify nonsystematic responding patterns including:
 - **Bounce**: Limited price-to-price increases in consumption
 - **Reversals**: No consumption after sustained zeros
 
+### Grouped Checks with `by`
+
+When your data includes grouping variables (gender, condition, etc.), use
+`by` to run checks and summaries within each group:
+
+```{r check-by-group}
+data(apt_full)
+
+# Systematicity check by gender
+sys_by_gender <- check_systematic_demand(apt_full, by = "gender")
+sys_by_gender
+
+# Descriptive summary by gender
+desc_by_gender <- get_descriptive_summary(apt_full, by = "gender")
+desc_by_gender$statistics |> head()
+```
+
+The `by` parameter also works with `fit_demand_fixed()` — see
+`vignette("fixed-demand")` for a full grouped analysis example.
+
 ---
 
 # Tier 1: Fixed-Effects NLS

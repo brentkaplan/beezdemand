@@ -4,7 +4,13 @@
 \alias{get_descriptive_summary}
 \title{Calculate Descriptive Statistics by Price}
 \usage{
-get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
+get_descriptive_summary(
+  data,
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  by = NULL
+)
 }
 \arguments{
 \item{data}{A data frame in long format with columns for subject ID, price, and consumption}
@@ -14,6 +20,11 @@ get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
 \item{y_var}{Character string specifying the column name for consumption (default: "y")}
 
 \item{id_var}{Character string specifying the column name for subject ID (default: "id")}
+
+\item{by}{Optional character vector of column names to group by.
+When supplied, statistics are computed separately within each unique
+combination of the \code{by} columns. Group columns are prepended to
+\verb{$statistics} and \verb{$data}. Default \code{NULL} (no grouping).}
 }
 \value{
 An S3 object of class \code{beezdemand_descriptive} containing:
@@ -60,6 +71,12 @@ plot(desc)
 
 # Extended summary with distribution info
 summary(desc)
+
+# Grouped summary — statistics and plots faceted by group
+data(apt_full)
+desc_g <- get_descriptive_summary(apt_full, by = "gender")
+desc_g$statistics
+plot(desc_g)
 }
 
 }

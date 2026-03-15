@@ -359,3 +359,25 @@ test_that("validate_hurdle_data rejects NaN values", {
     "NaN"
   )
 })
+
+test_that("validate_hurdle_data rejects Inf in consumption", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$y[1] <- Inf
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "Inf/-Inf"
+  )
+})
+
+test_that("validate_hurdle_data rejects Inf in price", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$x[1] <- Inf
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "Inf/-Inf"
+  )
+})

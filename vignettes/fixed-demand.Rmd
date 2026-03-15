@@ -292,6 +292,62 @@ fit_pooled
 plot(fit_pooled)
 ```
 
+# Grouped Analysis with `by`
+
+When your dataset includes grouping variables (e.g., gender, condition, drug),
+you can run fits separately per group using the `by` parameter. This replaces
+manual `split()` / `lapply()` / `bind_rows()` workflows.
+
+We use the `apt_full` dataset, which includes demographic columns like `gender`:
+
+```{r grouped-setup}
+data("apt_full", package = "beezdemand", envir = environment())
+```
+
+## Fitting by Group
+
+```{r grouped-fit}
+fit_by_gender <- fit_demand_fixed(
+  apt_full, equation = "hs", k = 2, by = "gender"
+)
+fit_by_gender
+```
+
+The result is a `beezdemand_fixed_grouped` object containing one child
+`beezdemand_fixed` fit per group. All standard accessors prepend the grouping
+column(s) automatically:
+
+```{r grouped-tidy}
+tidy(fit_by_gender) |> head(10)
+```
+
+```{r grouped-glance}
+glance(fit_by_gender)
+```
+
+## Grouped Plotting
+
+`plot()` combines per-group panels:
+
+```{r grouped-plot, cache = FALSE, fig.height = 8}
+plot(fit_by_gender)
+```
+
+## Grouped Systematicity and Descriptive Checks
+
+The `by` parameter works the same way in `check_systematic_demand()` and
+`get_descriptive_summary()`:
+
+```{r grouped-systematic}
+sys <- check_systematic_demand(apt_full, by = "gender")
+sys
+```
+
+```{r grouped-descriptive, cache = FALSE, fig.height = 6}
+desc <- get_descriptive_summary(apt_full, by = "gender")
+plot(desc)
+```
+
 # Conclusion
 
 The `fit_demand_fixed()` interface provides a modern, consistent API for

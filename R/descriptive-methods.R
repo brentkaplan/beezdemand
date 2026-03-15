@@ -81,6 +81,10 @@ print.beezdemand_descriptive <- function(x, ...) {
   print(x$call)
   cat("\n")
 
+  if (!is.null(x$by_var)) {
+    cat("Grouped by:", paste(x$by_var, collapse = ", "), "\n")
+  }
+
   cat("Data Summary:\n")
   cat(sprintf("  Subjects: %d\n", x$data_summary$n_subjects))
   cat(sprintf("  Prices analyzed: %d\n", x$data_summary$n_prices))
@@ -182,6 +186,14 @@ plot.beezdemand_descriptive <- function(x,
     } else {
       p <- p + ggplot2::scale_y_continuous(trans = y_trans)
     }
+  }
+
+  # Add faceting for grouped objects
+  if (!is.null(x$by_var)) {
+    facet_formula <- stats::as.formula(
+      paste("~", paste(x$by_var, collapse = " + "))
+    )
+    p <- p + ggplot2::facet_wrap(facet_formula)
   }
 
   # Optionally add zero proportion labels

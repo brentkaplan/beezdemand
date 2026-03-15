@@ -1287,6 +1287,20 @@ validate_hurdle_data <- function(data, y_var, x_var, id_var) {
     ))
   }
 
+  # Check for Inf/-Inf values
+  if (any(is.infinite(data[[y_var]]))) {
+    stop(sprintf(
+      "Consumption values (%s) contain %d Inf/-Inf value(s). Clean data before fitting.",
+      y_var, sum(is.infinite(data[[y_var]]))
+    ))
+  }
+  if (any(is.infinite(data[[x_var]]))) {
+    stop(sprintf(
+      "Price values (%s) contain %d Inf/-Inf value(s). Clean data before fitting.",
+      x_var, sum(is.infinite(data[[x_var]]))
+    ))
+  }
+
   # Check for negative consumption values (with floating-point tolerance)
   neg_mask <- data[[y_var]] < -1e-10
   if (any(neg_mask, na.rm = TRUE)) {
