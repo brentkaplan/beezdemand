@@ -450,7 +450,7 @@ best_result <- NULL
 #' @keywords internal
 .tmb_compute_subject_pars <- function(
   coefficients, u_hat, subject_levels, n_re, has_k,
-  equation, price, subject_id
+  equation, price, subject_id, k_fixed = NULL
 ) {
   n_subjects <- length(subject_levels)
 
@@ -493,7 +493,13 @@ best_result <- NULL
 
   # Compute Pmax/Omax
   if (has_k) {
-    k_val <- exp(coefficients[["log_k"]])
+    if ("log_k" %in% names(coefficients)) {
+      k_val <- exp(coefficients[["log_k"]])
+    } else if (!is.null(k_fixed)) {
+      k_val <- k_fixed
+    } else {
+      k_val <- 2  # fallback default
+    }
 
     # Determine model_type for pmax engine
     model_type <- if (equation == "exponential") "hs" else "hs"
@@ -629,20 +635,16 @@ best_result <- NULL
 #'   }
 #'
 #' @details
-#' ## Why TMB?
+#' Traditional NLME approaches using \code{nlme::nlme()} universally fail for
+#' demand equations because the PNLS algorithm with numerical finite-difference
+#' gradients cannot navigate the likelihood surface. TMB succeeds using exact
+#' automatic differentiation, Laplace approximation, and joint marginal
+#' likelihood optimization.
 #'
-#' Traditional NLME approaches using `nlme::nlme()` universally fail for demand
-#' equations because the PNLS algorithm with numerical finite-difference gradients
-#' cannot navigate the likelihood surface. TMB succeeds using exact automatic
-#' differentiation, Laplace approximation, and joint marginal likelihood
-#' optimization.
-#'
-#' ## Estimating k
-#'
-#' When `estimate_k = TRUE`, k is estimated as a free parameter alongside Q0 and
-#' alpha. This typically improves model fit substantially (AIC improvements of
-#' >3,000 points in some datasets). The conventional fixed-k approach
-#' (Hursh & Silberberg, 2008) often overestimates k by 3-8x.
+#' When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
+#' Q0 and alpha. This typically improves model fit substantially. The
+#' conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
+#' k by 3-8x.
 #'
 #' @examples
 #' \donttest{
@@ -899,7 +901,8 @@ fit_demand_tmb <- function(
     has_k = has_k,
     equation = equation,
     price = prepared$price,
-    subject_id = prepared$subject_id
+    subject_id = prepared$subject_id,
+    k_fixed = if (has_k && !estimate_k) k else NULL
   )
 
   # Compute log-likelihood, AIC, BIC

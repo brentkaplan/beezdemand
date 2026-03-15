@@ -109,20 +109,16 @@ for exact automatic differentiation and Laplace approximation. This provides
 reliable convergence where traditional NLME approaches fail.
 }
 \details{
-\subsection{Why TMB?}{
+Traditional NLME approaches using \code{nlme::nlme()} universally fail for
+demand equations because the PNLS algorithm with numerical finite-difference
+gradients cannot navigate the likelihood surface. TMB succeeds using exact
+automatic differentiation, Laplace approximation, and joint marginal
+likelihood optimization.
 
-Traditional NLME approaches using \code{nlme::nlme()} universally fail for demand
-equations because the PNLS algorithm with numerical finite-difference gradients
-cannot navigate the likelihood surface. TMB succeeds using exact automatic
-differentiation, Laplace approximation, and joint marginal likelihood
-optimization.
-}
-
-\subsection{Estimating k}{
-
-When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside Q0 and
-alpha. This typically improves model fit substantially (AIC improvements of3,000 points in some datasets). The conventional fixed-k approach(Hursh & Silberberg, 2008) often overestimates k by 3-8x.
-}
+When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
+Q0 and alpha. This typically improves model fit substantially. The
+conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
+k by 3-8x.
 }
 \examples{
 \donttest{

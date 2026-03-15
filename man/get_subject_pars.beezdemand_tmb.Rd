@@ -12,7 +12,7 @@
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-A data frame with columns: id, b_i, \link{c_i}, Q0, alpha, Pmax, Omax.
+A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
 }
 \description{
 Get Subject-Specific Parameters from TMB Model

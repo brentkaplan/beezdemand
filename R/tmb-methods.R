@@ -2,6 +2,19 @@
 # S3 Methods for beezdemand_tmb Objects
 # ==============================================================================
 
+#' Get k value from TMB model (handles both estimated and fixed k)
+#' @keywords internal
+.tmb_get_k <- function(object) {
+  coefs <- object$model$coefficients
+  if ("log_k" %in% names(coefs)) {
+    exp(coefs[["log_k"]])
+  } else if (!is.null(object$param_info$k_fixed)) {
+    object$param_info$k_fixed
+  } else {
+    NA_real_
+  }
+}
+
 # --- print ---
 
 #' Print Method for TMB Mixed-Effects Demand Model
@@ -445,7 +458,7 @@ predict.beezdemand_tmb <- function(
 
     fitted <- .tmb_predict_equation(
       prices, Q0, alpha_val,
-      k = if (has_k) exp(coefs[["log_k"]]) else NA,
+      k = if (has_k) .tmb_get_k(object) else NA,
       log_q0 = log_q0,
       equation = equation
     )
@@ -489,7 +502,7 @@ predict.beezdemand_tmb <- function(
 
     fitted_vals[i] <- .tmb_predict_equation(
       price_i, Q0_i, alpha_i,
-      k = if (has_k) exp(coefs[["log_k"]]) else NA,
+      k = if (has_k) .tmb_get_k(object) else NA,
       log_q0 = log_q0_i,
       equation = equation
     )
@@ -536,7 +549,7 @@ predict.beezdemand_tmb <- function(
 #' @param object A \code{beezdemand_tmb} object.
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return A data frame with columns: id, b_i, [c_i], Q0, alpha, Pmax, Omax.
+#' @return A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
 #' @export
 get_subject_pars.beezdemand_tmb <- function(object, ...) {
   object$subject_pars
@@ -649,7 +662,7 @@ plot.beezdemand_tmb <- function(
       Q0_j <- spars$Q0[j]
       alpha_j <- spars$alpha[j]
       log_q0_j <- log(Q0_j)
-      k_val <- if (has_k) exp(coefs[["log_k"]]) else NA
+      k_val <- if (has_k) .tmb_get_k(x) else NA
 
       y_pred <- .tmb_predict_equation(
         prices, Q0_j, alpha_j,
@@ -1219,7 +1232,7 @@ calc_group_metrics.beezdemand_tmb <- function(object, ...) {
   alpha_val <- exp(coefs[beta_alpha_idx[1]])
 
   if (has_k) {
-    k_val <- exp(coefs[["log_k"]])
+    k_val <- .tmb_get_k(object)
     model_type <- "hs"
 
     result <- beezdemand_calc_pmax_omax(

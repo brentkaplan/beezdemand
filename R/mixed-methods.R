@@ -162,6 +162,13 @@ get_demand_param_emms <- function(fit_obj, ...) {
 
 #' @rdname get_demand_param_emms
 #' @export
+get_demand_param_emms.default <- function(fit_obj, ...) {
+  stop("Input 'fit_obj' must be a 'beezdemand_nlme' or 'beezdemand_tmb' object.",
+       call. = FALSE)
+}
+
+#' @rdname get_demand_param_emms
+#' @export
 get_demand_param_emms.beezdemand_nlme <- function(
   fit_obj,
   factors_in_emm = NULL,
@@ -859,6 +866,13 @@ get_observed_demand_param_emms <- function(
 #' @export
 get_demand_comparisons <- function(fit_obj, ...) {
   UseMethod("get_demand_comparisons")
+}
+
+#' @rdname get_demand_comparisons
+#' @export
+get_demand_comparisons.default <- function(fit_obj, ...) {
+  stop("Input 'fit_obj' must be a 'beezdemand_nlme' or 'beezdemand_tmb' object.",
+       call. = FALSE)
 }
 
 #' @rdname get_demand_comparisons

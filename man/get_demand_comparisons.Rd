@@ -2,10 +2,13 @@
 % Please edit documentation in R/mixed-methods.R
 \name{get_demand_comparisons}
 \alias{get_demand_comparisons}
+\alias{get_demand_comparisons.default}
 \alias{get_demand_comparisons.beezdemand_nlme}
 \title{Get Pairwise Comparisons for Demand Parameters}
 \usage{
 get_demand_comparisons(fit_obj, ...)
+
+\method{get_demand_comparisons}{default}(fit_obj, ...)
 
 \method{get_demand_comparisons}{beezdemand_nlme}(
   fit_obj,

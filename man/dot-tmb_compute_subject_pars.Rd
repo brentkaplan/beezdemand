@@ -12,7 +12,8 @@
   has_k,
   equation,
   price,
-  subject_id
+  subject_id,
+  k_fixed = NULL
 )
 }
 \arguments{

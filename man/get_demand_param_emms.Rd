@@ -2,10 +2,13 @@
 % Please edit documentation in R/mixed-methods.R
 \name{get_demand_param_emms}
 \alias{get_demand_param_emms}
+\alias{get_demand_param_emms.default}
 \alias{get_demand_param_emms.beezdemand_nlme}
 \title{Get Estimated Marginal Means for Demand Parameters}
 \usage{
 get_demand_param_emms(fit_obj, ...)
+
+\method{get_demand_param_emms}{default}(fit_obj, ...)
 
 \method{get_demand_param_emms}{beezdemand_nlme}(
   fit_obj,

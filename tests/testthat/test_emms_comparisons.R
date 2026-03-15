@@ -385,7 +385,7 @@ test_that("get_demand_comparisons EMMs have correct factor levels", {
 test_that("get_demand_param_emms errors on invalid fit object", {
   expect_error(
     get_demand_param_emms(list(a = 1)),
-    "must be a 'beezdemand_nlme' object"
+    "must be a 'beezdemand_nlme' or 'beezdemand_tmb' object"
   )
 })
 
@@ -405,7 +405,7 @@ test_that("get_demand_param_emms errors on NULL model", {
 test_that("get_demand_comparisons errors on invalid fit object", {
   expect_error(
     get_demand_comparisons(list(a = 1)),
-    "must be a 'beezdemand_nlme' object"
+    "must be a 'beezdemand_nlme' or 'beezdemand_tmb' object"
   )
 })
 
