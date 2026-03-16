@@ -398,7 +398,7 @@ test_that("collapse_levels works with TMB model", {
 
 # --- Factor-stratified subject parameter correctness ---
 
-test_that("subject_pars reflect factor effects, not just intercepts", {
+test_that("subject_pars Q0 matches design-matrix computation for each subject", {
   skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
   data(apt_full, package = "beezdemand")
 
@@ -408,54 +408,48 @@ test_that("subject_pars reflect factor effects, not just intercepts", {
   )
 
   spars <- get_subject_pars(fit)
-
-  # Merge factor level back onto subject_pars
-  subj_info <- unique(apt_full[, c("id", "gender")])
-  merged <- merge(spars, subj_info, by = "id")
-
-  # If factor effects are included, group means should differ
-  # (unless the factor effect is exactly zero, which is unlikely)
   coefs <- coef(fit)
   beta_q0 <- coefs[names(coefs) == "beta_q0"]
-
-  # With factors, there should be >1 beta coefficient for Q0
-
-  expect_gt(length(beta_q0), 1)
-
-  # Verify subject Q0 values use the full design matrix, not just intercept.
-  # For each subject, compute expected Q0 from design matrix row + RE.
   X_q0 <- fit$formula_details$X_q0
-  u_hat <- if (!is.null(fit$sdr)) {
-    re_summary <- summary(fit$sdr, "random")
-    matrix(re_summary[, "Estimate"], nrow = fit$param_info$n_subjects,
-           ncol = fit$param_info$n_random_effects)
-  } else {
-    matrix(0, nrow = fit$param_info$n_subjects, ncol = fit$param_info$n_random_effects)
-  }
-
-  # Check a specific subject: their Q0 should use their design matrix row
   data_used <- fit$data
   subj_levels <- fit$param_info$subject_levels
-  # Pick first subject in second factor level (non-reference)
-  non_ref_subjs <- unique(data_used$id[data_used$gender != levels(data_used$gender)[1]])
-  if (length(non_ref_subjs) > 0) {
-    test_subj <- as.character(non_ref_subjs[1])
-    test_subj_idx <- which(subj_levels == test_subj)
-    first_obs_idx <- which(data_used$id == test_subj)[1]
+  n_re <- fit$param_info$n_random_effects
 
-    # Expected log(Q0) = X_q0[obs,] %*% beta_q0 + b_i
-    expected_log_q0 <- sum(X_q0[first_obs_idx, ] * beta_q0)
-    # b_i contribution comes from random effect
-    # The key test: Q0 for this subject should NOT equal exp(intercept + b_i)
-    intercept_only_log_q0 <- beta_q0[1]
+  # Model should have factor betas
+  expect_gt(length(beta_q0), 1)
 
-    # If there's a non-zero factor effect, these should differ
-    if (abs(beta_q0[2]) > 1e-10) {
-      expect_false(
-        abs(expected_log_q0 - intercept_only_log_q0) < 1e-10,
-        info = "Non-reference subject Q0 should differ from intercept-only"
-      )
-    }
+  # Extract random effects
+  re_summary <- summary(fit$sdr, "random")
+  u_hat <- matrix(re_summary[, "Estimate"],
+                  nrow = fit$param_info$n_subjects, ncol = n_re)
+
+  # Reconstruct Cholesky-transformed RE for Q0
+  sigma_b <- exp(coefs[["logsigma_b"]])
+  if (n_re == 2) {
+    sigma_c <- exp(coefs[["logsigma_c"]])
+    rho_bc <- tanh(coefs[["rho_bc_raw"]])
+    Sigma <- matrix(c(sigma_b^2, sigma_b * sigma_c * rho_bc,
+                      sigma_b * sigma_c * rho_bc, sigma_c^2), 2)
+    L <- t(chol(Sigma))
+    re_mat <- t(L %*% t(u_hat))
+  } else {
+    re_mat <- matrix(sigma_b * u_hat[, 1], ncol = 1)
+  }
+
+  # Build subject_id mapping
+  ids <- data_used[[fit$param_info$id_var]]
+  subject_map <- setNames(seq_along(subj_levels) - 1L, subj_levels)
+  subject_id <- as.integer(subject_map[as.character(ids)])
+
+  # Verify EVERY subject's Q0 against independent computation
+  for (i in seq_along(subj_levels)) {
+    first_obs <- which(subject_id == (i - 1L))[1]
+    expected_log_q0 <- sum(X_q0[first_obs, ] * beta_q0) + re_mat[i, 1]
+    expected_Q0 <- exp(expected_log_q0)
+
+    actual_Q0 <- spars$Q0[spars$id == subj_levels[i]]
+    expect_equal(actual_Q0, expected_Q0, tolerance = 1e-8,
+                 label = paste("Q0 for subject", subj_levels[i]))
   }
 })
 

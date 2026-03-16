@@ -495,20 +495,22 @@ best_result <- NULL
   }
 
   # Subject-specific Q0 and alpha using full design matrix rows
+  # Pre-compute first observation index per subject (O(n) vs O(n*m))
+  first_obs_per_subject <- match(seq_len(n_subjects) - 1L, subject_id)
+
   subj_log_q0 <- numeric(n_subjects)
   subj_log_alpha <- numeric(n_subjects)
 
   for (i in seq_len(n_subjects)) {
-    # Find first observation for this subject to get their design matrix row
-    first_obs <- which(subject_id == (i - 1L))[1]
+    first_obs <- first_obs_per_subject[i]
 
-    if (!is.null(X_q0) && ncol(X_q0) > 1) {
+    if (!is.null(X_q0)) {
       subj_log_q0[i] <- sum(X_q0[first_obs, ] * beta_q0) + re_mat[i, "b_i"]
     } else {
       subj_log_q0[i] <- beta_q0[1] + re_mat[i, "b_i"]
     }
 
-    if (!is.null(X_alpha) && ncol(X_alpha) > 1) {
+    if (!is.null(X_alpha)) {
       log_alpha_i <- sum(X_alpha[first_obs, ] * beta_alpha)
     } else {
       log_alpha_i <- beta_alpha[1]

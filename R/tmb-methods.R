@@ -204,6 +204,11 @@ summary.beezdemand_tmb <- function(
       length(object$opt_warnings)
     ))
   }
+  if (!is.null(object$param_info$factors) && length(object$param_info$factors) > 0) {
+    notes <- c(notes,
+      "Population metrics reflect reference level. Use get_demand_param_emms() for per-group estimates."
+    )
+  }
 
   result <- structure(
     list(

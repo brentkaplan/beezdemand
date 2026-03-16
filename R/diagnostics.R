@@ -277,7 +277,10 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     residuals_info$computation_failed <<- TRUE
   })
 
-  if (residuals_info$has_outliers) {
+  if (residuals_info$computation_failed) {
+    issues <- c(issues, "Residual computation failed; outlier check skipped")
+    recommendations <- c(recommendations, "Check augment() output manually")
+  } else if (residuals_info$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)",
                                 residuals_info$n_outliers))
     recommendations <- c(recommendations, "Investigate outlying observations")
