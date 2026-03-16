@@ -238,6 +238,156 @@ NULL
 }
 
 
+#' Expand Partial Bounds to Full Parameter Vector
+#'
+#' @param bounds Named numeric vector of user-specified bounds (possibly partial),
+#'   or NULL.
+#' @param par_names Character vector of optimizer parameter names (from
+#'   `names(obj$par)`). May contain repeated names for vector parameters.
+#' @param default_val Default bound value: `-Inf` for lower, `Inf` for upper.
+#'
+#' @return Numeric vector of length `length(par_names)` with user bounds applied
+#'   to all matching positions and `default_val` elsewhere.
+#' @keywords internal
+.expand_bounds <- function(bounds, par_names, default_val) {
+  if (is.null(bounds)) return(rep(default_val, length(par_names)))
+  result <- rep(default_val, length(par_names))
+  names(result) <- par_names
+  for (nm in names(bounds)) {
+    idx <- which(par_names == nm)
+    if (length(idx) > 0) {
+      result[idx] <- bounds[nm]
+    } else {
+      warning("Bounds specified for unknown parameter '", nm, "' (ignored)",
+              call. = FALSE)
+    }
+  }
+  result
+}
+
+
+#' Run a Single TMB Optimization
+#'
+#' Dispatches to either `nlminb` or `optim(method = "L-BFGS-B")` and
+#' normalizes the return value so that downstream code always sees the same
+#' field names regardless of optimizer.
+#'
+#' @param obj TMB objective function object (from `TMB::MakeADFun`).
+#' @param start Named numeric vector of starting parameter values.
+#' @param tmb_control Control list (merged defaults + user overrides).
+#' @param user_specified Character vector of field names the user explicitly
+#'   provided in `tmb_control`.
+#' @param verbose Integer verbosity level.
+#'
+#' @return A list with elements:
+#'   \describe{
+#'     \item{`opt`}{Named list with `$par`, `$objective`, `$convergence`,
+#'       `$message` — guaranteed non-NULL character for `$message`.}
+#'     \item{`warnings`}{Character vector of optimizer warnings captured during
+#'       the run.}
+#'   }
+#' @keywords internal
+.tmb_run_optimizer <- function(obj, start, tmb_control, user_specified, verbose) {
+  optimizer <- tmb_control$optimizer
+  iter_max <- tmb_control$iter_max
+  eval_max <- tmb_control$eval_max
+  rel_tol <- tmb_control$rel_tol
+
+  # Effective trace: user-specified takes precedence
+
+  trace <- if ("trace" %in% user_specified) {
+    as.integer(tmb_control$trace)
+  } else if (verbose >= 2) {
+    1L
+  } else {
+    0L
+  }
+
+  # Expand bounds
+  par_names <- names(start)
+  lower <- .expand_bounds(tmb_control$lower, par_names, -Inf)
+  upper <- .expand_bounds(tmb_control$upper, par_names, Inf)
+
+  opt_warnings <- character(0)
+
+  if (optimizer == "nlminb") {
+    opt <- tryCatch(
+      withCallingHandlers(
+        nlminb(
+          start = start,
+          objective = obj$fn,
+          gradient = obj$gr,
+          lower = lower,
+          upper = upper,
+          control = list(
+            eval.max = eval_max,
+            iter.max = iter_max,
+            rel.tol = rel_tol,
+            trace = trace
+          )
+        ),
+        warning = function(w) {
+          opt_warnings <<- c(opt_warnings, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) {
+        list(
+          par = start,
+          objective = Inf,
+          convergence = 99L,
+          message = conditionMessage(e)
+        )
+      }
+    )
+  } else {
+    # L-BFGS-B via stats::optim
+    opt <- tryCatch(
+      {
+        raw <- withCallingHandlers(
+          stats::optim(
+            par = start,
+            fn = obj$fn,
+            gr = obj$gr,
+            method = "L-BFGS-B",
+            lower = lower,
+            upper = upper,
+            control = list(
+              maxit = iter_max,
+              trace = trace
+            )
+          ),
+          warning = function(w) {
+            opt_warnings <<- c(opt_warnings, conditionMessage(w))
+            invokeRestart("muffleWarning")
+          }
+        )
+        # Normalize to nlminb field names
+        list(
+          par = raw$par,
+          objective = raw$value,
+          convergence = raw$convergence,
+          message = raw$message %||% "maximum iterations reached"
+        )
+      },
+      error = function(e) {
+        list(
+          par = start,
+          objective = Inf,
+          convergence = 99L,
+          message = conditionMessage(e)
+        )
+      }
+    )
+  }
+
+  # Guarantee $message is non-NULL character
+  if (is.null(opt$message)) opt$message <- "unknown"
+
+  list(opt = opt, warnings = opt_warnings)
+}
+
+
 #' Multi-Start TMB Optimization
 #'
 #' @param tmb_data TMB data list.
@@ -245,12 +395,13 @@ NULL
 #' @param map TMB map list.
 #' @param n_re Integer.
 #' @param tmb_control Control parameters.
+#' @param user_specified Character vector of user-specified tmb_control fields.
 #' @param verbose Integer verbosity level.
 #'
 #' @return List with obj, opt, start_used.
 #' @keywords internal
 .tmb_multi_start <- function(tmb_data, start_values, map, n_re,
-                              tmb_control, verbose) {
+                              tmb_control, user_specified, verbose) {
   # Generate 3 starting value sets
   start_sets <- list()
   start_sets[[1]] <- start_values  # Data-driven
@@ -282,8 +433,7 @@ NULL
   start_sets[[3]] <- s3
 
   best_nll <- Inf
-
-best_result <- NULL
+  best_result <- NULL
 
   for (s in seq_along(start_sets)) {
     starts_i <- start_sets[[s]]
@@ -299,22 +449,11 @@ best_result <- NULL
         silent = verbose < 2
       )
 
-      opt_i <- withCallingHandlers(
-        nlminb(
-          start = obj_i$par,
-          objective = obj_i$fn,
-          gradient = obj_i$gr,
-          control = list(
-            eval.max = tmb_control$eval_max,
-            iter.max = tmb_control$iter_max,
-            trace = if (verbose >= 2) 1 else 0
-          )
-        ),
-        warning = function(w) {
-          opt_warnings_i <<- c(opt_warnings_i, conditionMessage(w))
-          invokeRestart("muffleWarning")
-        }
+      opt_result_i <- .tmb_run_optimizer(
+        obj_i, obj_i$par, tmb_control, user_specified, verbose
       )
+      opt_i <- opt_result_i$opt
+      opt_warnings_i <- opt_result_i$warnings
 
       list(obj = obj_i, opt = opt_i, nll = opt_i$objective, start_idx = s,
            opt_warnings = opt_warnings_i)
@@ -642,10 +781,30 @@ best_result <- NULL
 #'   `list(Q0 = list(factor = list(new = c(old))), alpha = list(...))`.
 #' @param start_values Named list of starting values. If `NULL`, data-driven
 #'   defaults are used.
-#' @param tmb_control List of control parameters:
+#' @param tmb_control List of control parameters for the optimizer:
 #'   \describe{
+#'     \item{`optimizer`}{Character. `"nlminb"` (default) or `"L-BFGS-B"`.
+#'       L-BFGS-B can recover from nlminb convergence failures (code 1 or 8).}
 #'     \item{`iter_max`}{Maximum iterations (default 1000).}
-#'     \item{`eval_max`}{Maximum function evaluations (default 2000).}
+#'     \item{`eval_max`}{Maximum function evaluations (default 2000). Only
+#'       applies to nlminb; L-BFGS-B has no function evaluation limit.}
+#'     \item{`rel_tol`}{Relative convergence tolerance (default 1e-10). Only
+#'       applies to nlminb.}
+#'     \item{`lower`}{Named numeric vector of lower bounds on optimizer-scale
+#'       parameters (default NULL = no bounds). Names must match optimizer
+#'       parameter names (e.g., `log_k`, `beta_q0`, `logsigma_b`). Note that
+#'       most parameters are in log-space: e.g., to constrain k between 0.14
+#'       and 55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)`. A bound name
+#'       applies to *all* occurrences of that parameter (e.g., both elements
+#'       of `beta_q0`).}
+#'     \item{`upper`}{Named numeric vector of upper bounds (see `lower`).}
+#'     \item{`warm_start`}{Named numeric vector of starting values in
+#'       optimizer space (e.g., from a previous `fit$opt$par`). When provided,
+#'       `multi_start` is automatically disabled. This differs from
+#'       `start_values`, which operates in parameter space before
+#'       `TMB::MakeADFun()`. Length must match the number of free parameters.}
+#'     \item{`trace`}{Non-negative integer controlling optimizer trace output
+#'       (default 0). When not explicitly set, inherits from `verbose >= 2`.}
 #'   }
 #' @param multi_start Logical. If `TRUE` (default), try 3 starting value sets
 #'   and select the best.
@@ -657,7 +816,7 @@ best_result <- NULL
 #'     \item{model}{List with coefficients, se, variance_components}
 #'     \item{subject_pars}{Data frame of subject-specific Q0, alpha, Pmax, Omax}
 #'     \item{tmb_obj}{TMB objective function object}
-#'     \item{opt}{nlminb optimization result}
+#'     \item{opt}{Optimization result (normalized across optimizers)}
 #'     \item{sdr}{TMB sdreport object}
 #'     \item{converged}{Logical convergence indicator}
 #'     \item{loglik}{Log-likelihood at convergence}
@@ -863,15 +1022,75 @@ fit_demand_tmb <- function(
   }
 
   # Fill in default tmb_control values
-  default_control <- list(iter_max = 1000, eval_max = 2000)
+  default_control <- list(
+    iter_max   = 1000,
+    eval_max   = 2000,
+    optimizer  = "nlminb",
+    rel_tol    = 1e-10,
+    lower      = NULL,
+    upper      = NULL,
+    warm_start = NULL,
+    trace      = 0
+  )
+  user_specified <- names(tmb_control)
   tmb_control <- modifyList(default_control, tmb_control)
+
+
+  # --- Input validation ---
+  valid_optimizers <- c("nlminb", "L-BFGS-B")
+  if (!tmb_control$optimizer %in% valid_optimizers) {
+    stop(sprintf("tmb_control$optimizer must be one of: %s (got '%s')",
+                 paste(valid_optimizers, collapse = ", "),
+                 tmb_control$optimizer), call. = FALSE)
+  }
+
+  if (!is.numeric(tmb_control$rel_tol) || length(tmb_control$rel_tol) != 1 ||
+      !is.finite(tmb_control$rel_tol) || tmb_control$rel_tol <= 0) {
+    stop("tmb_control$rel_tol must be a single positive finite number",
+         call. = FALSE)
+  }
+
+  if (!is.numeric(tmb_control$trace) || length(tmb_control$trace) != 1 ||
+      tmb_control$trace < 0) {
+    stop("tmb_control$trace must be a single non-negative number",
+         call. = FALSE)
+  }
+
+  if (!is.null(tmb_control$lower)) {
+    if (!is.numeric(tmb_control$lower))
+      stop("tmb_control$lower must be a named numeric vector", call. = FALSE)
+    if (is.null(names(tmb_control$lower)))
+      stop("tmb_control$lower must be a named numeric vector", call. = FALSE)
+  }
+  if (!is.null(tmb_control$upper)) {
+    if (!is.numeric(tmb_control$upper))
+      stop("tmb_control$upper must be a named numeric vector", call. = FALSE)
+    if (is.null(names(tmb_control$upper)))
+      stop("tmb_control$upper must be a named numeric vector", call. = FALSE)
+  }
+
+  if (!is.null(tmb_control$warm_start) && !is.numeric(tmb_control$warm_start)) {
+    stop("tmb_control$warm_start must be a numeric vector", call. = FALSE)
+  }
+
+  # Warn about rel_tol + L-BFGS-B only when user explicitly provided rel_tol
+  if (tmb_control$optimizer == "L-BFGS-B" && "rel_tol" %in% user_specified) {
+    warning("rel_tol is ignored by L-BFGS-B optimizer; it only applies to nlminb",
+            call. = FALSE)
+  }
+
+  # warm_start overrides multi_start
+  if (!is.null(tmb_control$warm_start) && isTRUE(multi_start)) {
+    message("multi_start disabled when warm_start is provided")
+    multi_start <- FALSE
+  }
 
   # Fit model
   if (verbose >= 1) message("  Optimizing...")
 
   if (isTRUE(multi_start)) {
     result <- .tmb_multi_start(
-      tmb_data, default_starts, map, n_re, tmb_control, verbose
+      tmb_data, default_starts, map, n_re, tmb_control, user_specified, verbose
     )
     obj <- result$obj
     opt <- result$opt
@@ -885,23 +1104,27 @@ fit_demand_tmb <- function(
       silent = verbose < 2
     )
 
-    opt_warnings <- character(0)
-    opt <- withCallingHandlers(
-      nlminb(
-        start = obj$par,
-        objective = obj$fn,
-        gradient = obj$gr,
-        control = list(
-          eval.max = tmb_control$eval_max,
-          iter.max = tmb_control$iter_max,
-          trace = if (verbose >= 2) 1 else 0
-        )
-      ),
-      warning = function(w) {
-        opt_warnings <<- c(opt_warnings, conditionMessage(w))
-        invokeRestart("muffleWarning")
+    # Apply warm_start after MakeADFun (replaces optimizer starting point)
+    if (!is.null(tmb_control$warm_start)) {
+      ws <- tmb_control$warm_start
+      if (length(ws) != length(obj$par))
+        stop(sprintf(
+          "warm_start has %d elements but model expects %d free parameters",
+          length(ws), length(obj$par)), call. = FALSE)
+      if (any(!is.finite(ws)))
+        stop("warm_start contains non-finite values", call. = FALSE)
+      if (!is.null(names(ws)) && !identical(names(ws), names(obj$par))) {
+        warning("warm_start names don't match model parameters; using positional matching",
+                call. = FALSE)
       }
+      obj$par[] <- ws
+    }
+
+    opt_result <- .tmb_run_optimizer(
+      obj, obj$par, tmb_control, user_specified, verbose
     )
+    opt <- opt_result$opt
+    opt_warnings <- opt_result$warnings
   }
 
   # Collect optimization warnings

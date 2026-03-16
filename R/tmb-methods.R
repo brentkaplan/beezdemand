@@ -381,12 +381,23 @@ logLik.beezdemand_tmb <- function(object, ...) {
 
 #' @export
 AIC.beezdemand_tmb <- function(object, ..., k = 2) {
+  if (k != 2) {
+    # Recompute with custom penalty multiplier
+    nll <- -object$loglik
+    n_params <- length(object$opt$par)
+    return(2 * nll + k * n_params)
+  }
   object$AIC
 }
 
 #' @export
 BIC.beezdemand_tmb <- function(object, ...) {
   object$BIC
+}
+
+#' @export
+nobs.beezdemand_tmb <- function(object, ...) {
+  object$param_info$n_obs %||% nrow(object$data)
 }
 
 
@@ -404,6 +415,11 @@ fixef.beezdemand_tmb <- function(object, ...) {
 }
 
 #' Extract Random Effects from TMB Model
+#'
+#' Returns subject-level random effect deviations on the natural (log) scale.
+#' These are the Cholesky-transformed deviations (`b_i` for Q0, `c_i` for
+#' alpha), not standardized scores. To obtain the standardized random effects
+#' (`u` matrix), access `object$tmb_obj` directly.
 #'
 #' @param object A \code{beezdemand_tmb} object.
 #' @param ... Additional arguments.
@@ -873,7 +889,11 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' @param object A \code{beezdemand_tmb} object.
 #' @param parm Character vector of parameter names.
 #' @param level Confidence level (default 0.95).
-#' @param report_space Character. `"internal"` or `"natural"`.
+#' @param report_space Character. `"internal"` or `"natural"`. When
+#'   `"natural"`, `beta_q0`, `beta_alpha`, and `log_k` are exponentiated
+#'   to the natural scale. Variance parameters (`logsigma_*`, `rho_bc_raw`)
+#'   remain on their internal scales; use [summary()] or
+#'   `.tmb_format_variance_components()` for transformed variance components.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with term, estimate, conf.low, conf.high, level.

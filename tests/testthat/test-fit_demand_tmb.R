@@ -523,3 +523,282 @@ test_that("backend name distinguishes TMB_mixed from TMB_hurdle", {
   g <- glance(fit)
   expect_equal(g$backend, "TMB_mixed")
 })
+
+
+# ==============================================================================
+# Optimizer control tests
+# ==============================================================================
+
+test_that("L-BFGS-B optimizer produces valid fit", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(optimizer = "L-BFGS-B"),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_s3_class(fit, "beezdemand_tmb")
+  expect_true(is.finite(fit$AIC))
+  expect_true(is.finite(fit$opt$objective))
+  expect_true(is.character(fit$opt$message))
+  expect_false(is.null(fit$opt$message))
+})
+
+test_that("warm_start from previous fit works", {
+  data(apt, package = "beezdemand")
+  fit1 <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", multi_start = FALSE, verbose = 0
+  )
+
+  fit2 <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(warm_start = fit1$opt$par),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_s3_class(fit2, "beezdemand_tmb")
+  expect_true(is.finite(fit2$opt$objective))
+})
+
+test_that("warm_start disables multi_start with message", {
+  data(apt, package = "beezdemand")
+  fit1 <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", multi_start = FALSE, verbose = 0
+  )
+
+  expect_message(
+    fit_demand_tmb(
+      apt, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated",
+      tmb_control = list(warm_start = fit1$opt$par),
+      multi_start = TRUE, verbose = 0
+    ),
+    "multi_start disabled"
+  )
+})
+
+test_that("warm_start length validation errors on mismatch", {
+  data(apt, package = "beezdemand")
+
+  expect_error(
+    fit_demand_tmb(
+      apt, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated",
+      tmb_control = list(warm_start = c(1, 2, 3)),
+      multi_start = FALSE, verbose = 0
+    ),
+    "warm_start has 3 elements"
+  )
+})
+
+test_that("rel_tol is passed to nlminb", {
+  data(apt, package = "beezdemand")
+  # Tighter tolerance should still work
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(rel_tol = 1e-12),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_s3_class(fit, "beezdemand_tmb")
+  expect_true(is.finite(fit$opt$objective))
+})
+
+test_that("invalid optimizer is rejected", {
+  data(apt, package = "beezdemand")
+
+  expect_error(
+    fit_demand_tmb(
+      apt, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated",
+      tmb_control = list(optimizer = "fake"),
+      verbose = 0
+    ),
+    "must be one of"
+  )
+})
+
+test_that("bounds with L-BFGS-B are applied", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(
+      optimizer = "L-BFGS-B",
+      lower = c(log_k = -2),
+      upper = c(log_k = 4)
+    ),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_s3_class(fit, "beezdemand_tmb")
+  expect_true(is.finite(fit$opt$objective))
+  # k should be within bounds
+  if ("log_k" %in% names(fit$opt$par)) {
+    expect_gte(fit$opt$par[["log_k"]], -2)
+    expect_lte(fit$opt$par[["log_k"]], 4)
+  }
+})
+
+test_that("S3 methods work with L-BFGS-B fit", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(optimizer = "L-BFGS-B"),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_true(is.numeric(coef(fit)))
+  expect_true(length(coef(fit)) > 0)
+
+  s <- summary(fit)
+  expect_s3_class(s, "summary.beezdemand_tmb")
+
+  pred <- predict(fit, type = "parameters")
+  expect_true(is.data.frame(pred))
+
+  g <- glance(fit)
+  expect_true(is.finite(g$AIC))
+
+  t <- tidy(fit)
+  expect_true(is.data.frame(t))
+})
+
+test_that("rel_tol warning only when user-specified with L-BFGS-B", {
+  data(apt, package = "beezdemand")
+
+  # No rel_tol warning when rel_tol is not user-specified
+  ws <- testthat::capture_warnings(
+    fit_demand_tmb(
+      apt, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated",
+      tmb_control = list(optimizer = "L-BFGS-B"),
+      multi_start = FALSE, verbose = 0
+    )
+  )
+  expect_false(any(grepl("rel_tol", ws)))
+
+  # Warning when rel_tol IS user-specified
+  ws2 <- testthat::capture_warnings(
+    fit_demand_tmb(
+      apt, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated",
+      tmb_control = list(optimizer = "L-BFGS-B", rel_tol = 1e-12),
+      multi_start = FALSE, verbose = 0
+    )
+  )
+  expect_true(any(grepl("rel_tol is ignored", ws2)))
+})
+
+test_that("input validation catches bad tmb_control values", {
+  data(apt, package = "beezdemand")
+
+  # Non-numeric rel_tol
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(rel_tol = "small"), verbose = 0
+    ),
+    "rel_tol must be a single positive finite number"
+  )
+
+  # Negative trace
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(trace = -1), verbose = 0
+    ),
+    "trace must be a single non-negative number"
+  )
+
+  # Non-numeric warm_start
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(warm_start = "bad"), verbose = 0
+    ),
+    "warm_start must be a numeric vector"
+  )
+
+  # Non-numeric lower
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(lower = "bad"), verbose = 0
+    ),
+    "lower must be a named numeric vector"
+  )
+})
+
+test_that("nobs returns correct observation count", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", multi_start = FALSE, verbose = 0
+  )
+
+  n <- nobs(fit)
+  expect_true(is.numeric(n))
+  expect_equal(n, fit$param_info$n_obs)
+  expect_equal(n, nrow(fit$data))
+})
+
+test_that("nobs fallback works when param_info$n_obs is NULL", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", multi_start = FALSE, verbose = 0
+  )
+
+  # Simulate legacy object without n_obs
+  fit2 <- fit
+  fit2$param_info$n_obs <- NULL
+  expect_equal(nobs(fit2), nrow(fit2$data))
+})
+
+test_that("unnamed bounds are rejected", {
+  data(apt, package = "beezdemand")
+
+  # Unnamed lower bounds
+
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(lower = c(-2, 4)),
+      verbose = 0
+    ),
+    "lower must be a named numeric vector"
+  )
+
+  # Unnamed upper bounds
+  expect_error(
+    fit_demand_tmb(
+      apt, equation = "exponentiated",
+      tmb_control = list(upper = c(1, 2)),
+      verbose = 0
+    ),
+    "upper must be a named numeric vector"
+  )
+})
+
+test_that("normalized opt$message is never NULL", {
+  data(apt, package = "beezdemand")
+
+  # L-BFGS-B fit
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated",
+    tmb_control = list(optimizer = "L-BFGS-B"),
+    multi_start = FALSE, verbose = 0
+  )
+
+  expect_true(!is.null(fit$opt$message))
+  expect_true(is.character(fit$opt$message))
+  expect_true(nchar(fit$opt$message) > 0)
+})
