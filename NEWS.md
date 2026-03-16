@@ -1,5 +1,18 @@
 # beezdemand 0.2.0.9000 (development)
 
+## New Features
+
+* `fit_demand_tmb()` now exposes full optimizer controls via `tmb_control`:
+  - `optimizer`: Choose between `"nlminb"` (default) and `"L-BFGS-B"` for
+    recovering from convergence failures (code 1 or 8).
+  - `rel_tol`: Convergence tolerance for nlminb (default 1e-10).
+  - `lower`/`upper`: Named numeric vectors for parameter bounds on the
+    optimizer scale. Bounds apply to all occurrences of repeated parameter
+    names (e.g., `beta_q0`).
+  - `warm_start`: Restart optimization from a previous `fit$opt$par` vector.
+    Automatically disables `multi_start`.
+  - `trace`: Optimizer trace output control (default 0).
+
 ## Bug Fixes
 
 * `get_demand_comparisons()` now restricts pairwise contrasts to observed
