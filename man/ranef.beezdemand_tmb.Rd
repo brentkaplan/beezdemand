@@ -15,5 +15,8 @@
 Data frame with subject-level random effects.
 }
 \description{
-Extract Random Effects from TMB Model
+Returns subject-level random effect deviations on the natural (log) scale.
+These are the Cholesky-transformed deviations (\code{b_i} for Q0, \code{c_i} for
+alpha), not standardized scores. To obtain the standardized random effects
+(\code{u} matrix), access \code{object$tmb_obj} directly.
 }

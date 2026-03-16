@@ -72,10 +72,30 @@ their interaction.}
 \item{start_values}{Named list of starting values. If \code{NULL}, data-driven
 defaults are used.}
 
-\item{tmb_control}{List of control parameters:
+\item{tmb_control}{List of control parameters for the optimizer:
 \describe{
+\item{\code{optimizer}}{Character. \code{"nlminb"} (default) or \code{"L-BFGS-B"}.
+L-BFGS-B can recover from nlminb convergence failures (code 1 or 8).}
 \item{\code{iter_max}}{Maximum iterations (default 1000).}
-\item{\code{eval_max}}{Maximum function evaluations (default 2000).}
+\item{\code{eval_max}}{Maximum function evaluations (default 2000). Only
+applies to nlminb; L-BFGS-B has no function evaluation limit.}
+\item{\code{rel_tol}}{Relative convergence tolerance (default 1e-10). Only
+applies to nlminb.}
+\item{\code{lower}}{Named numeric vector of lower bounds on optimizer-scale
+parameters (default NULL = no bounds). Names must match optimizer
+parameter names (e.g., \code{log_k}, \code{beta_q0}, \code{logsigma_b}). Note that
+most parameters are in log-space: e.g., to constrain k between 0.14
+and 55, use \code{lower = c(log_k = -2)}, \code{upper = c(log_k = 4)}. A bound name
+applies to \emph{all} occurrences of that parameter (e.g., both elements
+of \code{beta_q0}).}
+\item{\code{upper}}{Named numeric vector of upper bounds (see \code{lower}).}
+\item{\code{warm_start}}{Named numeric vector of starting values in
+optimizer space (e.g., from a previous \code{fit$opt$par}). When provided,
+\code{multi_start} is automatically disabled. This differs from
+\code{start_values}, which operates in parameter space before
+\code{TMB::MakeADFun()}. Length must match the number of free parameters.}
+\item{\code{trace}}{Non-negative integer controlling optimizer trace output
+(default 0). When not explicitly set, inherits from \code{verbose >= 2}.}
 }}
 
 \item{multi_start}{Logical. If \code{TRUE} (default), try 3 starting value sets
@@ -91,7 +111,7 @@ An object of class \code{beezdemand_tmb} containing:
 \item{model}{List with coefficients, se, variance_components}
 \item{subject_pars}{Data frame of subject-specific Q0, alpha, Pmax, Omax}
 \item{tmb_obj}{TMB objective function object}
-\item{opt}{nlminb optimization result}
+\item{opt}{Optimization result (normalized across optimizers)}
 \item{sdr}{TMB sdreport object}
 \item{converged}{Logical convergence indicator}
 \item{loglik}{Log-likelihood at convergence}

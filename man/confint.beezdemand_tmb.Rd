@@ -19,7 +19,11 @@
 
 \item{level}{Confidence level (default 0.95).}
 
-\item{report_space}{Character. \code{"internal"} or \code{"natural"}.}
+\item{report_space}{Character. \code{"internal"} or \code{"natural"}. When
+\code{"natural"}, \code{beta_q0}, \code{beta_alpha}, and \code{log_k} are exponentiated
+to the natural scale. Variance parameters (\verb{logsigma_*}, \code{rho_bc_raw})
+remain on their internal scales; use \code{\link[=summary]{summary()}} or
+\code{.tmb_format_variance_components()} for transformed variance components.}
 
 \item{...}{Additional arguments.}
 }

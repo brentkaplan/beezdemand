@@ -4,7 +4,15 @@
 \alias{.tmb_multi_start}
 \title{Multi-Start TMB Optimization}
 \usage{
-.tmb_multi_start(tmb_data, start_values, map, n_re, tmb_control, verbose)
+.tmb_multi_start(
+  tmb_data,
+  start_values,
+  map,
+  n_re,
+  tmb_control,
+  user_specified,
+  verbose
+)
 }
 \arguments{
 \item{tmb_data}{TMB data list.}
@@ -16,6 +24,8 @@
 \item{n_re}{Integer.}
 
 \item{tmb_control}{Control parameters.}
+
+\item{user_specified}{Character vector of user-specified tmb_control fields.}
 
 \item{verbose}{Integer verbosity level.}
 }
