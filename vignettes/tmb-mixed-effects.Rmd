@@ -1,0 +1,542 @@
+---
+title: "TMB Mixed-Effects Demand Models"
+author: "Brent Kaplan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{TMB Mixed-Effects Demand Models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dev = "png",
+  dpi = 144,
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE,
+  cache = TRUE,
+  cache.path = "tmb-mixed-effects_cache/",
+  autodep = TRUE
+)
+
+library(beezdemand)
+library(dplyr)
+library(ggplot2)
+
+data("apt_full", package = "beezdemand", envir = environment())
+
+# Set `BEEZDEMAND_VIGNETTE_MODE=full` to run the slower examples.
+render_fast <- tolower(Sys.getenv("BEEZDEMAND_VIGNETTE_MODE", "fast")) != "full"
+
+cache_key_object <- function(x) {
+  tmp <- tempfile(fileext = ".rds")
+  saveRDS(x, tmp)
+  on.exit(unlink(tmp), add = TRUE)
+  unname(tools::md5sum(tmp))
+}
+
+knitr::opts_chunk$set(
+  cache.extra = list(
+    beezdemand_version = as.character(utils::packageVersion("beezdemand")),
+    apt_full = cache_key_object(apt_full)
+  )
+)
+```
+
+```{r data-setup, include = FALSE}
+# Consistent subset used throughout the vignette
+set.seed(42)
+ids_sub <- sample(unique(apt_full$id), 100)
+dat <- apt_full[apt_full$id %in% ids_sub, ]
+```
+
+## Introduction
+
+`fit_demand_tmb()` fits continuous mixed-effects demand models using
+[Template Model Builder](https://github.com/kaskr/adcomp) (TMB). It is the
+modern alternative to `fit_demand_mixed()` (which uses `nlme`) and provides
+several advantages:
+
+- **Automatic differentiation** -- exact gradients via compiled C++, replacing
+  the numerical finite-difference approximations used by `nlme`
+- **Laplace approximation** -- integrates over random effects analytically
+  rather than relying on iterative linearization
+- **Multi-start optimization** -- automatically tries multiple starting-value
+  sets and keeps the best fit
+- **Four equation forms** -- exponential, exponentiated, simplified, and
+  zero-bounded exponential (zben)
+- **Factor and covariate support** -- design matrices for group comparisons
+  with estimated marginal means (EMMs) and pairwise contrasts
+
+This vignette covers `fit_demand_tmb()` for continuous consumption data. For
+**two-part hurdle models** that explicitly model zero consumption, see
+`vignette("hurdle-demand-models")`. For **individual NLS curves**, see
+`vignette("fixed-demand")`.
+
+## Quick Start
+
+```{r quick-fit}
+fit <- fit_demand_tmb(
+  dat,
+  y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  random_effects = c("q0", "alpha"),
+  verbose = 0
+)
+fit
+```
+
+```{r quick-summary}
+summary(fit)
+```
+
+```{r quick-plot, fig.cap = "Population demand curve from the exponential equation."}
+plot(fit, type = "demand")
+```
+
+The `exponential` equation (Hursh & Silberberg, 2008) models log-transformed
+consumption and is the most reliable choice for 2-random-effect models. It
+automatically drops zero-consumption observations.
+
+## Choosing an Equation
+
+`fit_demand_tmb()` supports four demand equations:
+
+| Equation | Response | Zeros | k | Best for |
+|----------|----------|-------|---|----------|
+| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; robust 2-RE convergence |
+| `"exponentiated"` | Raw Q | Allowed | Estimated or fixed | Data with few zeros; 1-RE models |
+| `"simplified"` | Raw Q | Allowed | None | Simpler model without k |
+| `"zben"` | LL4(Q) | Allowed (via transform) | None | Wide dynamic range with LL4 compression |
+
+### Mathematical Specifications
+
+**Exponential** (Hursh & Silberberg, 2008):
+$$\log(Q_{ij}) = \log(Q_{0i}) + k \left(e^{-\alpha_i \cdot Q_{0i} \cdot C_j} - 1\right) + \varepsilon_{ij}$$
+
+**Exponentiated** (Koffarnus et al., 2015):
+$$Q_{ij} = Q_{0i} \cdot 10^{k \left(e^{-\alpha_i \cdot Q_{0i} \cdot C_j} - 1\right)} + \varepsilon_{ij}$$
+
+**Simplified**:
+$$Q_{ij} = Q_{0i} \cdot e^{-\alpha_i \cdot Q_{0i} \cdot C_j} + \varepsilon_{ij}$$
+
+**Zero-bounded exponential (zben)** (see `src/MixedDemand.h` for full
+specification):
+$$\log_{10}(Q_{0i}) \cdot e^{-\frac{\alpha_i}{\log_{10}(Q_{0i})} \cdot Q_{0i} \cdot C_j} + \varepsilon_{ij}$$
+
+where $Q_{0i} = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}_{Q_0} + b_i)$,
+$\alpha_i = \exp(\mathbf{x}_i^\top \boldsymbol{\beta}_\alpha + c_i)$, and
+$(b_i, c_i)$ are correlated random effects.
+
+```{r eq-exponential}
+fit_exp <- fit_demand_tmb(dat, equation = "exponential",
+                          random_effects = c("q0", "alpha"), verbose = 0)
+```
+
+```{r eq-exponentiated}
+# exponentiated converges reliably with 1-RE
+fit_expon <- fit_demand_tmb(dat, equation = "exponentiated",
+                            random_effects = "q0", verbose = 0)
+```
+
+```{r eq-simplified}
+fit_simp <- fit_demand_tmb(dat, equation = "simplified",
+                           random_effects = "q0", verbose = 0)
+```
+
+```{r eq-zben}
+dat$y_ll4 <- ll4(dat$y)
+fit_zben <- fit_demand_tmb(dat, y_var = "y_ll4", equation = "zben",
+                           random_effects = "q0", verbose = 0)
+```
+
+```{r eq-compare}
+data.frame(
+  equation = c("exponential", "exponentiated", "simplified", "zben"),
+  random_effects = c("2-RE", "1-RE", "1-RE", "1-RE"),
+  converged = c(fit_exp$converged, fit_expon$converged,
+                fit_simp$converged, fit_zben$converged),
+  AIC = round(c(AIC(fit_exp), AIC(fit_expon),
+                AIC(fit_simp), AIC(fit_zben)), 1)
+)
+```
+
+**Note:** AIC values are not directly comparable across equations because they
+model different response scales (log Q vs raw Q vs LL4(Q)).
+
+**Convergence tip:** The `exponential` equation is the most reliable for
+2-random-effect models. The `exponentiated` equation works well with 1-RE but
+can struggle to converge with 2-RE, especially with smaller samples.
+
+## Random Effects Structure
+
+`fit_demand_tmb()` supports two configurations:
+
+- `random_effects = "q0"` -- **1-RE**: random intercept on $Q_0$ only;
+  $\alpha$ is constant across subjects
+- `random_effects = c("q0", "alpha")` -- **2-RE**: random effects on both
+  $Q_0$ and $\alpha$ with an estimated correlation
+
+```{r re-compare}
+fit_1re <- fit_demand_tmb(dat, equation = "exponential",
+                          random_effects = "q0", verbose = 0)
+fit_2re <- fit  # reuse from Quick Start (exponential, 2-RE)
+```
+
+```{r re-compare-output}
+compare_models(fit_1re, fit_2re)
+```
+
+A significant LRT p-value and substantially lower AIC/BIC for the 2-RE model
+indicate that subjects differ meaningfully in both intensity ($Q_0$) and
+elasticity ($\alpha$).
+
+```{r re-ranef}
+head(nlme::ranef(fit_2re))
+```
+
+The `b_i` column is the random deviation on log($Q_0$) and `c_i` is the
+random deviation on log($\alpha$) for each subject.
+
+## Estimating vs. Fixing k
+
+For the `exponential` and `exponentiated` equations, $k$ scales the range of
+the demand curve. By default it is estimated (`estimate_k = TRUE`). You can
+fix it at the conventional value of 2 (Hursh & Silberberg, 2008):
+
+```{r k-compare}
+fit_k_free <- fit_demand_tmb(dat, equation = "exponential",
+                              random_effects = c("q0", "alpha"),
+                              estimate_k = TRUE, verbose = 0)
+fit_k_fixed <- fit_demand_tmb(dat, equation = "exponential",
+                               random_effects = c("q0", "alpha"),
+                               estimate_k = FALSE, k = 2, verbose = 0)
+
+data.frame(
+  k = c("estimated", "fixed at 2"),
+  converged = c(fit_k_free$converged, fit_k_fixed$converged),
+  AIC = round(c(AIC(fit_k_free), AIC(fit_k_fixed)), 1),
+  k_value = round(c(exp(coef(fit_k_free)[["log_k"]]), 2), 3)
+)
+```
+
+The `simplified` and `zben` equations do not use a $k$ parameter.
+
+## Examining Results
+
+### Summary and Coefficients
+
+```{r results-summary}
+summary(fit_2re)
+```
+
+```{r results-tidy}
+tidy(fit_2re)
+```
+
+```{r results-glance}
+glance(fit_2re)
+```
+
+### Subject-Specific Parameters
+
+Each subject gets empirical Bayes estimates of $Q_0$, $\alpha$, $P_{max}$, and
+$O_{max}$:
+
+```{r results-subject-pars}
+spars <- get_subject_pars(fit_2re)
+head(spars)
+```
+
+```{r results-subject-summary}
+spars |>
+  summarise(
+    across(c(Q0, alpha, Pmax, Omax),
+           list(median = median, mean = mean, sd = sd),
+           .names = "{.col}_{.fn}")
+  ) |>
+  tidyr::pivot_longer(everything(), names_to = c("parameter", "stat"),
+                      names_sep = "_") |>
+  tidyr::pivot_wider(names_from = stat, values_from = value) |>
+  mutate(across(where(is.numeric), \(x) round(x, 4)))
+```
+
+### Confidence Intervals
+
+```{r results-confint}
+confint(fit_2re)
+```
+
+By default, confidence intervals are on the internal (log) scale. Use
+`report_space = "natural"` for back-transformed intervals:
+
+```{r results-confint-natural}
+confint(fit_2re, report_space = "natural")
+```
+
+### Predictions
+
+Three prediction types are available:
+
+```{r predict-response}
+# Fitted values for observed data
+pred_resp <- predict(fit_2re, type = "response")
+head(pred_resp)
+```
+
+```{r predict-demand}
+# Population demand curve at specific prices
+predict(fit_2re, type = "demand", prices = c(0, 0.5, 1, 2, 5, 10, 20))
+```
+
+```{r predict-parameters}
+# Subject-level parameter estimates (same as get_subject_pars)
+pred_pars <- predict(fit_2re, type = "parameters")
+head(pred_pars)
+```
+
+### Population Metrics
+
+```{r results-group-metrics}
+calc_group_metrics(fit_2re)
+```
+
+### Visualization
+
+```{r plot-demand, fig.cap = "Population-level demand curve with confidence band."}
+plot(fit_2re, type = "demand")
+```
+
+```{r plot-individual, fig.cap = "Individual demand curves for a random sample of subjects."}
+plot(fit_2re, type = "individual")
+```
+
+```{r plot-parameters, fig.cap = "Distribution of subject-specific demand parameters."}
+plot(fit_2re, type = "parameters")
+```
+
+## Group Comparisons
+
+To test whether demand parameters differ by group, pass factor variables via
+the `factors` argument. This adds fixed effects to the design matrices for both
+$Q_0$ and $\alpha$.
+
+```{r factor-setup}
+# Filter to Male/Female for a clean two-level comparison
+dat_mf <- dat |> filter(gender %in% c("Male", "Female"))
+
+fit_gender <- fit_demand_tmb(
+  dat_mf,
+  y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  factors = "gender",
+  random_effects = c("q0", "alpha"),
+  verbose = 0
+)
+fit_gender
+```
+
+### Estimated Marginal Means
+
+```{r emms-q0}
+get_demand_param_emms(fit_gender, param = "Q0")
+```
+
+```{r emms-alpha}
+get_demand_param_emms(fit_gender, param = "alpha")
+```
+
+EMMs are reported on both the natural scale (`estimate`) and log scale
+(`estimate_log`). The natural-scale estimates represent the population-average
+$Q_0$ or $\alpha$ for each group.
+
+### Pairwise Comparisons
+
+```{r comparisons-q0}
+get_demand_comparisons(fit_gender, param = "Q0")
+```
+
+```{r comparisons-alpha}
+get_demand_comparisons(fit_gender, param = "alpha")
+```
+
+The `estimate_ratio` column gives the multiplicative ratio between groups on
+the natural scale (e.g., a ratio of 1.34 means Group A's $Q_0$ is 34% higher
+than Group B's).
+
+```{r factor-interaction, eval = !render_fast, include = !render_fast}
+# Factor interaction: gender x age group
+dat_mf$age_group <- ifelse(
+  dat_mf$age < median(dat_mf$age, na.rm = TRUE), "younger", "older"
+)
+
+fit_interact <- fit_demand_tmb(
+  dat_mf, y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  factors = c("gender", "age_group"),
+  factor_interaction = TRUE,
+  random_effects = c("q0", "alpha"),
+  verbose = 0
+)
+get_demand_param_emms(fit_interact, param = "Q0")
+```
+
+```{r asis-interaction-note, eval = render_fast, results = 'asis', echo = FALSE}
+cat("*Factor interaction and continuous covariate sections are skipped in fast",
+    "render mode. Set `BEEZDEMAND_VIGNETTE_MODE=full` to include them.*\n")
+```
+
+```{r continuous-covariates, eval = !render_fast, include = !render_fast}
+# Continuous covariates enter the design matrices for Q0 and alpha
+fit_cov <- fit_demand_tmb(
+  dat_mf, y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  continuous_covariates = "age",
+  random_effects = c("q0", "alpha"),
+  verbose = 0
+)
+tidy(fit_cov)
+```
+
+```{r collapse-levels, eval = !render_fast, include = !render_fast}
+# Asymmetric factor collapsing: different groupings for Q0 vs alpha
+dat_mf$age_group <- cut(
+  dat_mf$age,
+  breaks = c(0, 25, 40, Inf),
+  labels = c("young", "mid", "older")
+)
+
+fit_collapsed <- fit_demand_tmb(
+  dat_mf, y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  factors = "age_group",
+  # Collapse "young" and "mid" into "young_mid" for Q0,
+
+  # but collapse "mid" with "older" for alpha
+  collapse_levels = list(
+    Q0 = list(age_group = c("young" = "young_mid", "mid" = "young_mid",
+                            "older" = "older")),
+    alpha = list(age_group = c("young" = "young", "mid" = "older",
+                               "older" = "older"))
+  ),
+  random_effects = "q0",
+  verbose = 0
+)
+tidy(fit_collapsed)
+```
+
+## Model Comparison
+
+Use `compare_models()` to compare nested TMB models via likelihood ratio test,
+AIC, and BIC:
+
+```{r model-comparison}
+compare_models(fit_1re, fit_2re)
+```
+
+**Valid comparisons** require models fit on the same data with the same
+equation and response scale. Models with different equations (e.g., exponential
+vs exponentiated) model different responses and cannot be compared via AIC.
+
+## Convergence Tips
+
+If a model fails to converge, try these strategies in order:
+
+| Strategy | How | When |
+|----------|-----|------|
+| Reduce random effects | `random_effects = "q0"` | 2-RE models struggling |
+| Use exponential equation | `equation = "exponential"` | Exponentiated/simplified not converging |
+| Fix k | `estimate_k = FALSE, k = 2` | k estimate drifting to extreme values |
+| Increase iterations | `tmb_control = list(iter_max = 2000)` | "false convergence" messages |
+| Try L-BFGS-B | `tmb_control = list(optimizer = "L-BFGS-B")` | nlminb not making progress |
+| Set parameter bounds | `tmb_control = list(lower = ..., upper = ...)` | Estimates at boundaries |
+| Warm start | `tmb_control = list(warm_start = prev_fit$opt$par)` | Refining a near-converged fit |
+
+```{r convergence-examples, eval = FALSE}
+# Switch optimizer
+fit <- fit_demand_tmb(
+  dat, equation = "exponential",
+  tmb_control = list(optimizer = "L-BFGS-B"),
+  verbose = 0
+)
+
+# Warm-start from a previous fit
+fit2 <- fit_demand_tmb(
+  dat, equation = "exponential",
+  tmb_control = list(warm_start = fit$opt$par),
+  verbose = 0
+)
+
+# Apply parameter bounds
+fit3 <- fit_demand_tmb(
+  dat, equation = "exponential",
+  tmb_control = list(
+    lower = c(log_k = -2),
+    upper = c(log_k = 4)
+  ),
+  verbose = 0
+)
+
+# Disable multi-start for faster iteration during exploration
+fit4 <- fit_demand_tmb(
+  dat, equation = "exponential",
+  multi_start = FALSE,
+  verbose = 2
+)
+```
+
+### tmb_control Options
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `optimizer` | `"nlminb"` | `"nlminb"` or `"L-BFGS-B"` |
+| `iter_max` | 1000 | Maximum iterations |
+| `eval_max` | 2000 | Maximum evaluations (nlminb only) |
+| `rel_tol` | 1e-10 | Relative tolerance (nlminb only) |
+| `lower` / `upper` | NULL | Named numeric bounds on log-scale parameters |
+| `warm_start` | NULL | Starting values from a previous `fit$opt$par` |
+| `trace` | 0 | Optimizer trace level |
+
+## Choosing Between fit_demand_tmb() and fit_demand_mixed()
+
+| Feature | `fit_demand_tmb()` | `fit_demand_mixed()` |
+|---------|-------------------|---------------------|
+| Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
+| Equations | exponential, exponentiated, simplified, zben | zben, simplified |
+| k parameter | Estimated or fixed | Not available |
+| Random effects | 1 or 2 (Q0, alpha) | Configurable via nlme |
+| Convergence | Robust (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
+| Speed | Fast (compiled C++) | Variable |
+| Post-hoc EMMs | `get_demand_param_emms()` | `get_demand_param_emms()` (via emmeans) |
+| Factors/covariates | Design matrices | Formula-based |
+
+Prefer `fit_demand_tmb()` for new work. `fit_demand_mixed()` remains useful
+when you need specific `nlme` features like custom correlation structures or
+when working with existing pipelines.
+
+## References
+
+Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value.
+*Psychological Review*, 115(1), 186--198.
+
+Koffarnus, M. N., Franck, C. T., Stein, J. S., & Bickel, W. K. (2015). A
+modified exponential behavioral economic demand model to better describe
+consumption data. *Experimental and Clinical Psychopharmacology*, 23(6),
+504--512.
+
+Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M. (2016).
+TMB: Automatic differentiation and Laplace approximation. *Journal of
+Statistical Software*, 70(5), 1--21.
+
+## See Also
+
+- `vignette("fixed-demand")` -- Individual NLS demand curves
+- `vignette("mixed-demand")` -- NLME-based mixed-effects models
+- `vignette("mixed-demand-advanced")` -- Advanced topics: multi-factor designs, collapse_levels
+- `vignette("hurdle-demand-models")` -- Two-part hurdle models for zero-heavy data
+- `vignette("model-selection")` -- Choosing the right demand model
