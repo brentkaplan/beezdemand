@@ -444,6 +444,10 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #'   `"parameters"` (subject-specific parameters), or `"demand"` (population
 #'   demand curve).
 #' @param prices Optional numeric vector of prices for population prediction.
+#' @param scale Character. Output scale for predictions: `"model"` returns values
+#'   on the model's native scale (e.g., LL4-transformed for zben, log for
+#'   exponential), while `"natural"` automatically back-transforms to the
+#'   natural consumption scale. Default is `"model"` for backward compatibility.
 #' @param ... Additional arguments.
 #'
 #' @return Depends on `type`:
@@ -457,9 +461,11 @@ predict.beezdemand_tmb <- function(
   newdata = NULL,
   type = c("response", "parameters", "demand"),
   prices = NULL,
+  scale = c("model", "natural"),
   ...
 ) {
   type <- match.arg(type)
+  scale <- match.arg(scale)
 
   if (type == "parameters") {
     return(tibble::as_tibble(object$subject_pars))
@@ -492,6 +498,11 @@ predict.beezdemand_tmb <- function(
       log_q0 = log_q0,
       equation = equation
     )
+
+    ## Back-transform to natural scale if requested
+    if (scale == "natural") {
+      fitted <- .tmb_backtransform(fitted, equation)
+    }
 
     return(tibble::tibble(
       price = prices,
@@ -535,6 +546,11 @@ predict.beezdemand_tmb <- function(
     equation = equation
   )
 
+  ## Back-transform to natural scale if requested
+  if (scale == "natural") {
+    fitted_vals <- .tmb_backtransform(fitted_vals, equation)
+  }
+
   out <- tibble::as_tibble(newdata)
   out$.fitted <- fitted_vals
   out
@@ -565,6 +581,22 @@ predict.beezdemand_tmb <- function(
       rate <- (alpha / Q0_log10) * Q0
       Q0_log10 * exp(-rate * price)
     }
+  )
+}
+
+
+#' Back-transform predictions from model scale to natural consumption scale
+#'
+#' @param fitted Numeric vector of predictions on model scale.
+#' @param equation Character. The equation used for fitting.
+#'
+#' @return Numeric vector of predictions on the natural (consumption) scale.
+#' @keywords internal
+.tmb_backtransform <- function(fitted, equation) {
+  switch(equation,
+    zben = ll4_inv(fitted),
+    exponential = exp(fitted),
+    fitted # exponentiated, simplified already on natural scale
   )
 }
 

@@ -483,6 +483,79 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 }
 
 
+# ---- Marginal P(zero) integration helpers ----
+
+#' Compute marginal (population-averaged) P(zero)
+#'
+#' Dispatches to the chosen integration method.
+#'
+#' @param object A `beezdemand_hurdle` object.
+#' @param prices Numeric vector of prices.
+#' @param method One of `"kde"`, `"normal"`, `"empirical"`.
+#' @return Numeric vector of marginal P(zero) values.
+#' @keywords internal
+#' @noRd
+.compute_marginal_pzero <- function(object, prices, method = "kde") {
+  coefs <- object$model$coefficients
+  beta0 <- unname(coefs[["beta0"]])
+  beta1 <- unname(coefs[["beta1"]])
+  epsilon <- object$param_info$epsilon
+
+  re <- object$random_effects
+  a_i <- re[, "a_i"]
+
+  logsigma_a <- coefs[["logsigma_a"]]
+  sigma_a <- exp(logsigma_a)
+
+  if (method == "kde" && length(unique(a_i)) < 3) {
+    warning(
+      "Fewer than 3 unique random intercepts; falling back to 'normal' method.",
+      call. = FALSE
+    )
+    method <- "normal"
+  }
+
+  switch(method,
+    kde = .marginal_pzero_kde(a_i, beta0, beta1, prices, epsilon),
+    normal = .marginal_pzero_normal(sigma_a, beta0, beta1, prices, epsilon),
+    empirical = .marginal_pzero_empirical(a_i, beta0, beta1, prices, epsilon)
+  )
+}
+
+#' Marginal P(zero) via kernel density estimation
+#' @noRd
+.marginal_pzero_kde <- function(a_i, beta0, beta1, prices, epsilon, n_grid = 512) {
+  kde <- stats::density(a_i, n = n_grid)
+  w <- kde$y / sum(kde$y)
+  vapply(prices, function(p) {
+    sum(w * stats::plogis(beta0 + kde$x + beta1 * log(p + epsilon)))
+  }, numeric(1))
+}
+
+#' Marginal P(zero) via normal integration
+#' @noRd
+.marginal_pzero_normal <- function(sigma_a, beta0, beta1, prices, epsilon) {
+
+  vapply(prices, function(p) {
+    log_price_term <- beta1 * log(p + epsilon)
+    stats::integrate(
+      function(a) {
+        stats::plogis(beta0 + a + log_price_term) * stats::dnorm(a, 0, sigma_a)
+      },
+      lower = -4 * sigma_a, upper = 4 * sigma_a
+    )$value
+  }, numeric(1))
+}
+
+#' Marginal P(zero) via empirical averaging over BLUPs
+#' @noRd
+.marginal_pzero_empirical <- function(a_i, beta0, beta1, prices, epsilon) {
+  vapply(prices, function(p) {
+    mean(stats::plogis(beta0 + a_i + beta1 * log(p + epsilon)))
+  }, numeric(1))
+}
+
+
 #' Predict Method for Hurdle Demand Models
 #'
 #' @description
@@ -502,13 +575,42 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'     \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 #'   }
 #' @param prices Optional numeric vector of prices used only when `newdata = NULL`.
+#' @param marginal Logical; if `TRUE` and `type = "probability"`, computes
+#'   population-averaged (marginal) P(zero) by integrating over the random
+#'   intercept distribution, rather than conditional (RE = 0) predictions.
+#'   Default is `FALSE`.
+#' @param marginal_method Character. Method for marginal integration; one of
+#'   `"kde"` (default, kernel density estimate of BLUPs), `"normal"` (integrate
+#'   over the model-assumed N(0, sigma_a) distribution), or `"empirical"`
+#'   (simple average over BLUPs). Ignored when `marginal = FALSE`.
 #' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
 #'   `sdreport` when available).
 #' @param interval One of `"none"` (default) or `"confidence"`.
 #' @param level Confidence level when `interval = "confidence"`.
 #' @param ... Unused.
 #'
+#' @details
+#' ## Marginal P(zero)
+#'
+#' The conditional P(zero) curve (when `marginal = FALSE`) sets the random
+#' intercept to zero, which produces a near step-function that misrepresents
+#' the observed fraction of zero responses. The marginal curve integrates over
+#' the random effect distribution, answering "what fraction of the population
+#' has stopped buying at this price?"
+#'
+#' The `"kde"` and `"empirical"` methods integrate over empirical Bayes
+#' estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
+#' compared to the true random effects, so these methods slightly
+#' underestimate the RE variance. In practice, this shrinkage bias is often
+#' smaller than the bias from assuming normality when the true RE distribution
+#' is non-normal. The `"normal"` method integrates over the model-assumed
+#' N(0, sigma_a) distribution, which is correct under the model but may be
+#' wrong if the normality assumption is violated. Use [plot_qq()] to assess
+#' RE normality.
+#'
 #' @return For `type = "parameters"`, a tibble of subject-level parameters.
+#'   For `type = "probability"` with `marginal = TRUE`, a tibble with columns
+#'   for price, `prob_zero`, and `.fitted` (no subject column).
 #'   Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
 #'   helper columns `predicted_log_consumption`, `predicted_consumption`,
 #'   `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
@@ -532,6 +634,8 @@ predict.beezdemand_hurdle <- function(
   newdata = NULL,
   type = c("response", "link", "parameters", "probability", "demand"),
   prices = NULL,
+  marginal = FALSE,
+  marginal_method = c("kde", "normal", "empirical"),
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -552,6 +656,56 @@ predict.beezdemand_hurdle <- function(
   # For type = "parameters", just return subject-specific parameters
   if (type == "parameters") {
     return(tibble::as_tibble(object$subject_pars))
+  }
+
+  marginal_method <- match.arg(marginal_method)
+
+  if (isTRUE(marginal) && type != "probability") {
+    warning("'marginal' only applies to type = 'probability'; ignoring.",
+            call. = FALSE)
+    marginal <- FALSE
+  }
+
+  if (isTRUE(marginal)) {
+    # Build price vector without subject expansion
+    if (!is.null(newdata)) {
+      if (!is.data.frame(newdata)) newdata <- as.data.frame(newdata)
+      if (!(x_var %in% names(newdata))) {
+        stop("`newdata` must include the price column `", x_var, "`.",
+             call. = FALSE)
+      }
+      if (id_var %in% names(newdata)) {
+        warning("'marginal = TRUE' produces population-level predictions; ignoring '",
+                id_var, "' column.", call. = FALSE)
+      }
+      price_vec <- newdata[[x_var]]
+    } else if (!is.null(prices)) {
+      price_vec <- prices
+    } else {
+      price_vec <- sort(unique(object$data[[x_var]]))
+    }
+
+    prob_marginal <- .compute_marginal_pzero(
+      object, price_vec, method = marginal_method
+    )
+
+    out <- tibble::tibble(
+      !!x_var := price_vec,
+      prob_zero = prob_marginal,
+      .fitted = prob_marginal
+    )
+    attr(out, "marginal_method") <- marginal_method
+
+    if (isTRUE(se.fit) || interval != "none") {
+      warning("Standard errors not yet supported for marginal predictions; returning NA.",
+              call. = FALSE)
+      out$.se.fit <- NA_real_
+      if (interval != "none") {
+        out$.lower <- NA_real_
+        out$.upper <- NA_real_
+      }
+    }
+    return(out)
   }
 
   if (!is.null(newdata)) {
@@ -790,6 +944,13 @@ predict.beezdemand_hurdle <- function(
 #' @param pop_line_size Line size for population curve.
 #' @param ind_line_alpha Alpha for individual curves.
 #' @param ind_line_size Line size for individual curves.
+#' @param marginal Logical; if `TRUE` (default) and `type = "probability"`,
+#'   the population curve shows the marginal (population-averaged) P(zero)
+#'   instead of the conditional (RE = 0) curve. Set to `FALSE` for the old
+#'   conditional behavior.
+#' @param marginal_method Character. Method for marginal integration when
+#'   `marginal = TRUE`. One of `"kde"` (default), `"normal"`, or
+#'   `"empirical"`. See [predict.beezdemand_hurdle()] for details.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A ggplot2 object.
@@ -837,6 +998,8 @@ plot.beezdemand_hurdle <- function(
   pop_line_size = 1.0,
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
+  marginal = TRUE,
+  marginal_method = c("kde", "normal", "empirical"),
   ...
 ) {
   y_trans_missing <- is.null(y_trans)
@@ -1033,11 +1196,17 @@ plot.beezdemand_hurdle <- function(
     }
 
     if (any(show_pred %in% "population")) {
-      pop_data <- data.frame(
-        price = prices,
-        eta = beta0 + beta1 * log(prices + epsilon)
-      )
-      pop_data$prob_zero <- stats::plogis(pop_data$eta)
+      marginal_method <- match.arg(marginal_method)
+      if (isTRUE(marginal)) {
+        pop_pzero <- .compute_marginal_pzero(x, prices, method = marginal_method)
+        pop_data <- data.frame(price = prices, prob_zero = pop_pzero)
+      } else {
+        pop_data <- data.frame(
+          price = prices,
+          eta = beta0 + beta1 * log(prices + epsilon)
+        )
+        pop_data$prob_zero <- stats::plogis(pop_data$eta)
+      }
 
       pop_df <- data.frame(x = pop_data$price, y = pop_data$prob_zero)
       free_pop <- beezdemand_apply_free_trans(pop_df, "x", x_trans, free_trans)

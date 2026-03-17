@@ -2,6 +2,14 @@
 
 ## New Features
 
+* `predict.beezdemand_hurdle(type = "probability", marginal = TRUE)` computes
+  population-averaged P(zero) by integrating over the random intercept
+  distribution. Three methods: `"kde"` (default), `"normal"`, `"empirical"`.
+
+* `plot.beezdemand_hurdle(type = "probability")` now shows the marginal
+  (population-averaged) P(zero) curve by default. Set `marginal = FALSE` for
+  the old conditional (RE = 0) behavior.
+
 * `fit_demand_tmb()` now exposes full optimizer controls via `tmb_control`:
   - `optimizer`: Choose between `"nlminb"` (default) and `"L-BFGS-B"` for
     recovering from convergence failures (code 1 or 8).

@@ -31,6 +31,8 @@
   pop_line_size = 1,
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
+  marginal = TRUE,
+  marginal_method = c("kde", "normal", "empirical"),
   ...
 )
 }
@@ -100,6 +102,15 @@ to drop x <= 0 values instead.}
 \item{ind_line_alpha}{Alpha for individual curves.}
 
 \item{ind_line_size}{Line size for individual curves.}
+
+\item{marginal}{Logical; if \code{TRUE} (default) and \code{type = "probability"},
+the population curve shows the marginal (population-averaged) P(zero)
+instead of the conditional (RE = 0) curve. Set to \code{FALSE} for the old
+conditional behavior.}
+
+\item{marginal_method}{Character. Method for marginal integration when
+\code{marginal = TRUE}. One of \code{"kde"} (default), \code{"normal"}, or
+\code{"empirical"}. See \code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}} for details.}
 
 \item{...}{Additional arguments (currently unused).}
 }

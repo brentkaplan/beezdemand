@@ -9,6 +9,8 @@
   newdata = NULL,
   type = c("response", "link", "parameters", "probability", "demand"),
   prices = NULL,
+  marginal = FALSE,
+  marginal_method = c("kde", "normal", "empirical"),
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -34,6 +36,16 @@ If \code{newdata} is \code{NULL}, returns predictions for all subjects across a 
 
 \item{prices}{Optional numeric vector of prices used only when \code{newdata = NULL}.}
 
+\item{marginal}{Logical; if \code{TRUE} and \code{type = "probability"}, computes
+population-averaged (marginal) P(zero) by integrating over the random
+intercept distribution, rather than conditional (RE = 0) predictions.
+Default is \code{FALSE}.}
+
+\item{marginal_method}{Character. Method for marginal integration; one of
+\code{"kde"} (default, kernel density estimate of BLUPs), \code{"normal"} (integrate
+over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
+(simple average over BLUPs). Ignored when \code{marginal = FALSE}.}
+
 \item{se.fit}{Logical; if \code{TRUE}, includes a \code{.se.fit} column (delta-method via
 \code{sdreport} when available).}
 
@@ -45,6 +57,8 @@ If \code{newdata} is \code{NULL}, returns predictions for all subjects across a 
 }
 \value{
 For \code{type = "parameters"}, a tibble of subject-level parameters.
+For \code{type = "probability"} with \code{marginal = TRUE}, a tibble with columns
+for price, \code{prob_zero}, and \code{.fitted} (no subject column).
 Otherwise, a tibble containing the \code{newdata} columns plus \code{.fitted} and
 helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 \code{prob_zero}, and \code{expected_consumption}. When requested, \code{.se.fit} and
@@ -52,6 +66,26 @@ helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 }
 \description{
 Returns predictions from a fitted hurdle demand model.
+}
+\details{
+\subsection{Marginal P(zero)}{
+
+The conditional P(zero) curve (when \code{marginal = FALSE}) sets the random
+intercept to zero, which produces a near step-function that misrepresents
+the observed fraction of zero responses. The marginal curve integrates over
+the random effect distribution, answering "what fraction of the population
+has stopped buying at this price?"
+
+The \code{"kde"} and \code{"empirical"} methods integrate over empirical Bayes
+estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
+compared to the true random effects, so these methods slightly
+underestimate the RE variance. In practice, this shrinkage bias is often
+smaller than the bias from assuming normality when the true RE distribution
+is non-normal. The \code{"normal"} method integrates over the model-assumed
+N(0, sigma_a) distribution, which is correct under the model but may be
+wrong if the normality assumption is violated. Use \code{\link[=plot_qq]{plot_qq()}} to assess
+RE normality.
+}
 }
 \examples{
 \donttest{

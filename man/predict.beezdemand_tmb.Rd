@@ -9,6 +9,7 @@
   newdata = NULL,
   type = c("response", "parameters", "demand"),
   prices = NULL,
+  scale = c("model", "natural"),
   ...
 )
 }
@@ -22,6 +23,11 @@
 demand curve).}
 
 \item{prices}{Optional numeric vector of prices for population prediction.}
+
+\item{scale}{Character. Output scale for predictions: \code{"model"} returns values
+on the model's native scale (e.g., LL4-transformed for zben, log for
+exponential), while \code{"natural"} automatically back-transforms to the
+natural consumption scale. Default is \code{"model"} for backward compatibility.}
 
 \item{...}{Additional arguments.}
 }
