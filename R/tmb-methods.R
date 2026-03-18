@@ -2,6 +2,50 @@
 # S3 Methods for beezdemand_tmb Objects
 # ==============================================================================
 
+#' Build display term names from TMB model coefficient names
+#'
+#' Maps raw optimizer names (beta_q0, beta_alpha, etc.) to readable display
+#' names (Q0:(Intercept), alpha:genderMale, etc.) using design matrix column
+#' names. Used by summary(), tidy(), and confint() to avoid duplicated logic.
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param nms Character vector of raw parameter names (from
+#'   \code{names(coef(object))}). If NULL, extracted from object.
+#'
+#' @return A list with components:
+#'   \describe{
+#'     \item{term}{Character vector of display names.}
+#'     \item{q0_idx}{Integer vector of beta_q0 positions.}
+#'     \item{alpha_idx}{Integer vector of beta_alpha positions.}
+#'     \item{other_idx}{Integer vector of non-beta positions.}
+#'   }
+#' @keywords internal
+.tmb_build_term_names <- function(object, nms = NULL) {
+  if (is.null(nms)) {
+    nms <- names(object$model$coefficients)
+  }
+
+  q0_idx <- which(nms == "beta_q0")
+  alpha_idx <- which(nms == "beta_alpha")
+  other_idx <- which(!nms %in% c("beta_q0", "beta_alpha"))
+
+  q0_colnames <- colnames(object$formula_details$X_q0)
+  alpha_colnames <- colnames(object$formula_details$X_alpha)
+
+  term <- character(length(nms))
+  term[q0_idx] <- paste0("Q0:", q0_colnames)
+  term[alpha_idx] <- paste0("alpha:", alpha_colnames)
+  term[other_idx] <- nms[other_idx]
+
+  list(
+    term = term,
+    q0_idx = q0_idx,
+    alpha_idx = alpha_idx,
+    other_idx = other_idx
+  )
+}
+
+
 #' Get k value from TMB model (handles both estimated and fixed k)
 #' @keywords internal
 .tmb_get_k <- function(object) {
@@ -102,18 +146,10 @@ summary.beezdemand_tmb <- function(
   nms <- names(coefs)
 
   # Create term names from parameter vectors
-  q0_idx <- which(nms == "beta_q0")
-  alpha_idx <- which(nms == "beta_alpha")
-  other_idx <- which(!nms %in% c("beta_q0", "beta_alpha"))
-
-  # Get design matrix column names for readable term labels
-  q0_colnames <- colnames(object$formula_details$X_q0)
-  alpha_colnames <- colnames(object$formula_details$X_alpha)
-
-  term <- character(length(nms))
-  term[q0_idx] <- paste0("Q0:", q0_colnames)
-  term[alpha_idx] <- paste0("alpha:", alpha_colnames)
-  term[other_idx] <- nms[other_idx]
+  tn <- .tmb_build_term_names(object, nms)
+  term <- tn$term
+  q0_idx <- tn$q0_idx
+  alpha_idx <- tn$alpha_idx
 
   # Determine component and scale for each coefficient
   component <- character(length(nms))
@@ -484,13 +520,22 @@ predict.beezdemand_tmb <- function(
       prices <- seq(0, max_price, length.out = 200)
     }
 
-    # Get population intercepts
+    # Get population intercepts (reference level only)
     beta_q0_idx <- which(names(coefs) == "beta_q0")
     beta_alpha_idx <- which(names(coefs) == "beta_alpha")
     log_q0 <- coefs[beta_q0_idx[1]]
     log_alpha <- coefs[beta_alpha_idx[1]]
     Q0 <- exp(log_q0)
     alpha_val <- exp(log_alpha)
+
+    if (!is.null(object$param_info$factors) &&
+        length(object$param_info$factors) > 0) {
+      warning(
+        "Demand curve reflects reference level only. ",
+        "Use get_demand_param_emms() for per-group curves.",
+        call. = FALSE
+      )
+    }
 
     fitted <- .tmb_predict_equation(
       prices, Q0, alpha_val,
@@ -563,8 +608,8 @@ predict.beezdemand_tmb <- function(
 .tmb_predict_equation <- function(price, Q0, alpha, k, log_q0, equation) {
   switch(equation,
     exponential = {
-      # Returns log(Q)
-      log_q0 + k * (exp(-alpha * Q0 * price) - 1)
+      # Returns log(Q): ln(Q) = ln(Q0) + k*ln(10)*(exp(-α*Q0*C) - 1)
+      log_q0 + k * log(10) * (exp(-alpha * Q0 * price) - 1)
     },
     exponentiated = {
       # Returns raw Q
@@ -578,6 +623,8 @@ predict.beezdemand_tmb <- function(
     zben = {
       # Returns LL4(Q) scale
       Q0_log10 <- log_q0 / log(10)
+      # Clamp to avoid division by zero when Q0 ≈ 1 (log10(Q0) ≈ 0)
+      Q0_log10 <- sign(Q0_log10) * pmax(abs(Q0_log10), 1e-6)
       rate <- (alpha / Q0_log10) * Q0
       Q0_log10 * exp(-rate * price)
     }
@@ -820,17 +867,10 @@ tidy.beezdemand_tmb <- function(
   nms <- names(coefs)
 
   # Create term names
-  q0_idx <- which(nms == "beta_q0")
-  alpha_idx <- which(nms == "beta_alpha")
-
-  q0_colnames <- colnames(x$formula_details$X_q0)
-  alpha_colnames <- colnames(x$formula_details$X_alpha)
-
-  term <- character(length(nms))
-  term[q0_idx] <- paste0("Q0:", q0_colnames)
-  term[alpha_idx] <- paste0("alpha:", alpha_colnames)
-  other_idx <- which(!nms %in% c("beta_q0", "beta_alpha"))
-  term[other_idx] <- nms[other_idx]
+  tn <- .tmb_build_term_names(x, nms)
+  term <- tn$term
+  q0_idx <- tn$q0_idx
+  alpha_idx <- tn$alpha_idx
 
   # Determine component
   component <- character(length(nms))
@@ -943,26 +983,25 @@ confint.beezdemand_tmb <- function(
   se_vec <- object$model$se
   nms <- names(coefs)
 
+  # Build display names first (before filtering) so parm can match either
+
+  tn <- .tmb_build_term_names(object, nms)
+  term <- tn$term
+
   if (!is.null(parm)) {
-    keep <- nms %in% parm
+    # Match against display names first, then fall back to raw names
+    keep <- term %in% parm | nms %in% parm
     coefs <- coefs[keep]
     se_vec <- se_vec[keep]
     nms <- nms[keep]
+    term <- term[keep]
   }
 
   z <- stats::qnorm((1 + level) / 2)
 
-  # Create readable term names
+  # Re-derive indices for the (possibly filtered) vector
   q0_idx <- which(nms == "beta_q0")
   alpha_idx <- which(nms == "beta_alpha")
-  q0_colnames <- colnames(object$formula_details$X_q0)
-  alpha_colnames <- colnames(object$formula_details$X_alpha)
-
-  term <- character(length(nms))
-  term[q0_idx] <- paste0("Q0:", q0_colnames)
-  term[alpha_idx] <- paste0("alpha:", alpha_colnames)
-  other_idx <- which(!nms %in% c("beta_q0", "beta_alpha"))
-  term[other_idx] <- nms[other_idx]
 
   estimates <- coefs
   conf_low <- coefs - z * se_vec

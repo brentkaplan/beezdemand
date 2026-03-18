@@ -129,8 +129,9 @@ Type MixedDemand(objective_function<Type>* obj) {
 
     if (eqn_type == 0) {
       // Exponential (HS): Gaussian on log(Q)
-      // mu = log(Q0) + k * (exp(-alpha * Q0 * price) - 1)
-      Type mu = log_q0_i + k * (exp(-alpha_i * Q0_i * price(i)) - Type(1.0));
+      // HS equation: log10(Q) = log10(Q0) + k*(exp(-α*Q0*C) - 1)
+      // In natural log: ln(Q) = ln(Q0) + k*ln(10)*(exp(-α*Q0*C) - 1)
+      Type mu = log_q0_i + k * log(Type(10.0)) * (exp(-alpha_i * Q0_i * price(i)) - Type(1.0));
       resid = (y(i) - mu) / sigma_e;
 
     } else if (eqn_type == 1) {
@@ -153,6 +154,8 @@ Type MixedDemand(objective_function<Type>* obj) {
       // rate = (alpha / Q0_log10) * Q0
       // y_pred = Q0_log10 * exp(-rate * price)
       Type Q0_log10 = log_q0_i / log(Type(10.0));
+      // Clamp to avoid division by zero when Q0 ≈ 1 (log10(Q0) ≈ 0)
+      Q0_log10 = CppAD::CondExpGt(CppAD::abs(Q0_log10), Type(1e-6), Q0_log10, Type(1e-6));
       Type rate = (alpha_i / Q0_log10) * Q0_i;
       Type y_pred = Q0_log10 * exp(-rate * price(i));
       resid = (y(i) - y_pred) / sigma_e;

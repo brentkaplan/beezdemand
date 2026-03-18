@@ -802,3 +802,286 @@ test_that("normalized opt$message is never NULL", {
   expect_true(is.character(fit$opt$message))
   expect_true(nchar(fit$opt$message) > 0)
 })
+
+
+# ==============================================================================
+# Non-convergence and failure mode tests (#4)
+# ==============================================================================
+
+test_that("degenerate data produces non-converged model with graceful S3 methods", {
+  # 2 subjects, 3 prices: too little data for a mixed model to converge well
+
+  degen <- data.frame(
+    id = rep(c("S1", "S2"), each = 3),
+    x = rep(c(0, 1, 10), 2),
+    y = c(10, 8, 1, 12, 7, 0.5)
+  )
+
+  # Should not error — should produce a result even if not converged
+  fit <- tryCatch(
+    fit_demand_tmb(
+      degen, y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponentiated", multi_start = FALSE, verbose = 0,
+      tmb_control = list(iter_max = 5)  # Force early stop
+    ),
+    error = function(e) NULL
+  )
+
+  # If it returns a result (may error with only 2 subjects), verify graceful handling
+  if (!is.null(fit)) {
+    expect_s3_class(fit, "beezdemand_tmb")
+
+    # S3 methods should not error on non-converged models
+    expect_no_error(print(fit))
+    expect_no_error(coef(fit))
+    expect_no_error(summary(fit))
+    expect_no_error(glance(fit))
+
+    # tidy should return a tibble
+    t <- tidy(fit)
+    expect_s3_class(t, "tbl_df")
+
+    # confint should return a tibble (may have NA bounds)
+    ci <- confint(fit)
+    expect_s3_class(ci, "tbl_df")
+    expect_true(all(c("term", "estimate", "conf.low", "conf.high") %in% names(ci)))
+  }
+})
+
+test_that("summary notes non-convergence and SE unavailability", {
+  data(apt, package = "beezdemand")
+
+  # Force non-convergence by limiting iterations
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", multi_start = FALSE, verbose = 0,
+    tmb_control = list(iter_max = 2)
+  )
+
+  if (!fit$converged) {
+    s <- summary(fit)
+    expect_true(any(grepl("did not converge", s$notes, ignore.case = TRUE)))
+  }
+
+  # Simulate SE unavailability
+  fit2 <- fit
+  fit2$se_available <- FALSE
+  s2 <- summary(fit2)
+  expect_true(any(grepl("Standard errors unavailable", s2$notes)))
+})
+
+
+# ==============================================================================
+# Equation-specific prediction and parameter correctness tests (#7)
+# ==============================================================================
+
+test_that("exponential equation ln(10) fix: predictions match HS formula", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  coefs <- coef(fit)
+  beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
+  beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
+  Q0 <- exp(beta_q0)
+  alpha_val <- exp(beta_alpha)
+  k_val <- exp(coefs[["log_k"]])
+
+  # Predict at specific prices
+  prices <- c(0, 1, 5, 10)
+  pred <- predict(fit, type = "demand", prices = prices)
+
+  # Manual HS in natural log: ln(Q) = ln(Q0) + k*ln(10)*(exp(-α*Q0*C) - 1)
+  expected <- unname(beta_q0 + k_val * log(10) * (exp(-alpha_val * Q0 * prices) - 1))
+  expect_equal(pred$.fitted, expected, tolerance = 1e-10)
+
+  # At price = 0, prediction should equal ln(Q0)
+  expect_equal(pred$.fitted[1], unname(beta_q0), tolerance = 1e-10)
+})
+
+test_that("exponentiated equation predictions match Koffarnus formula", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", verbose = 0
+  )
+
+  coefs <- coef(fit)
+  beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
+  beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
+  Q0 <- exp(beta_q0)
+  alpha_val <- exp(beta_alpha)
+  k_val <- exp(coefs[["log_k"]])
+
+  prices <- c(0, 1, 5, 10)
+  pred <- predict(fit, type = "demand", prices = prices)
+
+  # Koffarnus: Q_pred = exp(ln(Q0) + k*ln(10)*(exp(-α*Q0*C) - 1))
+  log_Q_pred <- beta_q0 + k_val * log(10) * (exp(-alpha_val * Q0 * prices) - 1)
+  expected <- unname(exp(log_Q_pred))
+  expect_equal(pred$.fitted, expected, tolerance = 1e-10)
+
+  # At price = 0, prediction should equal Q0
+  expect_equal(pred$.fitted[1], unname(Q0), tolerance = 1e-6)
+})
+
+test_that("simplified equation predictions match Q0*exp(-α*Q0*C)", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "simplified", verbose = 0
+  )
+
+  coefs <- coef(fit)
+  beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
+  beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
+  Q0 <- exp(beta_q0)
+  alpha_val <- exp(beta_alpha)
+
+  prices <- c(0, 1, 5, 10)
+  pred <- predict(fit, type = "demand", prices = prices)
+
+  expected <- unname(Q0 * exp(-alpha_val * Q0 * prices))
+  expect_equal(pred$.fitted, expected, tolerance = 1e-10)
+
+  # At price = 0, prediction should equal Q0
+  expect_equal(pred$.fitted[1], unname(Q0), tolerance = 1e-10)
+})
+
+test_that("zben equation predictions match formula with singularity protection", {
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  coefs <- coef(fit)
+  beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
+  beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
+  Q0 <- exp(beta_q0)
+  alpha_val <- exp(beta_alpha)
+
+  prices <- c(0, 1, 5, 10)
+  pred <- predict(fit, type = "demand", prices = prices)
+
+  # zben: Q0_log10 = ln(Q0)/ln(10), rate = (α/Q0_log10)*Q0, y = Q0_log10*exp(-rate*C)
+  Q0_log10 <- unname(beta_q0 / log(10))
+  Q0_log10 <- sign(Q0_log10) * max(abs(Q0_log10), 1e-6)
+  rate <- unname((alpha_val / Q0_log10) * Q0)
+  expected <- Q0_log10 * exp(-rate * prices)
+  expect_equal(pred$.fitted, expected, tolerance = 1e-10)
+})
+
+test_that("exponential backtransform to natural scale works", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  # Model scale should be log(Q)
+  pred_model <- predict(fit, type = "demand", prices = c(0, 1, 5))
+  # Natural scale should be exp(log(Q)) = Q
+  pred_natural <- predict(fit, type = "demand", prices = c(0, 1, 5),
+                          scale = "natural")
+  expect_equal(pred_natural$.fitted, exp(pred_model$.fitted), tolerance = 1e-10)
+})
+
+test_that("exponentiated Pmax/Omax are computed correctly", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponentiated", verbose = 0
+  )
+
+  # All subjects should have finite Pmax/Omax
+  spars <- get_subject_pars(fit)
+  expect_true(all(is.finite(spars$Pmax)))
+  expect_true(all(is.finite(spars$Omax)))
+  expect_true(all(spars$Pmax > 0))
+  expect_true(all(spars$Omax > 0))
+
+  # Group metrics should also be finite
+  gm <- calc_group_metrics(fit)
+  expect_true(is.finite(gm$Pmax))
+  expect_true(is.finite(gm$Omax))
+})
+
+test_that("simplified Pmax/Omax use SND model type", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "simplified", verbose = 0
+  )
+
+  spars <- get_subject_pars(fit)
+  expect_true(all(is.finite(spars$Pmax)))
+  expect_true(all(is.finite(spars$Omax)))
+
+  gm <- calc_group_metrics(fit)
+  expect_true(is.finite(gm$Pmax))
+  expect_true(is.finite(gm$Omax))
+})
+
+
+# ==============================================================================
+# confint parm matching tests (#6)
+# ==============================================================================
+
+test_that("confint parm filters by display names", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  # Full confint for reference
+  ci_all <- confint(fit)
+  expect_gt(nrow(ci_all), 0)
+
+  # Filter by display name (e.g., "Q0:(Intercept)")
+  q0_display <- ci_all$term[grepl("^Q0:", ci_all$term)][1]
+  ci_display <- confint(fit, parm = q0_display)
+  expect_equal(nrow(ci_display), 1)
+  expect_equal(ci_display$term, q0_display)
+
+  # Filter by raw name should still work
+  ci_raw <- confint(fit, parm = "log_k")
+  expect_equal(nrow(ci_raw), 1)
+  expect_true(grepl("log_k", ci_raw$term))
+})
+
+
+# ==============================================================================
+# Population prediction warning with factors (#3)
+# ==============================================================================
+
+test_that("predict(type='demand') warns when factors are present", {
+  skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
+  data(apt_full, package = "beezdemand")
+
+  fit <- fit_demand_tmb(
+    apt_full, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  expect_warning(
+    predict(fit, type = "demand", prices = c(0, 1, 5)),
+    "reference level"
+  )
+})
+
+test_that("predict(type='demand') does NOT warn without factors", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  expect_no_warning(
+    predict(fit, type = "demand", prices = c(0, 1, 5))
+  )
+})

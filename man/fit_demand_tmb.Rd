@@ -139,6 +139,13 @@ When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
 Q0 and alpha. This typically improves model fit substantially. The
 conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
 k by 3-8x.
+
+\strong{Error model considerations:} The \code{exponentiated} and
+\code{simplified} equations use a Gaussian error model on raw consumption
+(Q), which assigns non-zero density to negative values. For data with many
+near-zero observations, prefer \code{exponential} (Gaussian on log Q, zeros
+dropped) or \code{zben} (Gaussian on LL4-transformed Q, zeros handled by
+the transformation).
 }
 \examples{
 \donttest{
