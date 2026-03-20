@@ -139,16 +139,30 @@ test_that("predict marginal warns when newdata includes id column", {
   )
 })
 
-test_that("predict marginal warns when type != probability", {
+test_that("predict marginal warns for unsupported types (link, parameters)", {
   skip_on_cran()
   skip_if_not_installed("TMB")
 
   fit <- .make_hurdle_fit()
 
+  # marginal is supported for probability, response, and demand
+  # but warns for link
   expect_warning(
-    predict(fit, type = "demand", marginal = TRUE, prices = c(1, 5)),
+    predict(fit, type = "link", marginal = TRUE, prices = c(1, 5)),
     "only applies to type"
   )
+})
+
+test_that("predict marginal works for type='demand' without warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .make_hurdle_fit()
+
+  out <- predict(fit, type = "demand", marginal = TRUE, prices = c(1, 5))
+  expect_s3_class(out, "tbl_df")
+  expect_true(".fitted" %in% names(out))
+  expect_equal(nrow(out), 2)
 })
 
 test_that("predict marginal se.fit warns and returns NA", {

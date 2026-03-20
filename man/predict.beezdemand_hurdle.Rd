@@ -11,6 +11,7 @@
   prices = NULL,
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
+  correction = TRUE,
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -36,15 +37,27 @@ If \code{newdata} is \code{NULL}, returns predictions for all subjects across a 
 
 \item{prices}{Optional numeric vector of prices used only when \code{newdata = NULL}.}
 
-\item{marginal}{Logical; if \code{TRUE} and \code{type = "probability"}, computes
-population-averaged (marginal) P(zero) by integrating over the random
-intercept distribution, rather than conditional (RE = 0) predictions.
-Default is \code{FALSE}.}
+\item{marginal}{Logical; if \code{TRUE}, computes population-averaged (marginal)
+predictions by integrating over the random effects distribution.
+For \code{type = "probability"}, uses KDE/Normal/Empirical integration of the
+binary component. For \code{type = "response"} and \code{type = "demand"}, uses
+Monte Carlo integration over all random effects, producing the
+\strong{population-average} demand curve (accounting for Jensen's inequality).
+Default is \code{FALSE}, which gives conditional (RE = 0) predictions
+representing a "typical" subject at the center of the RE distribution.}
 
 \item{marginal_method}{Character. Method for marginal integration; one of
 \code{"kde"} (default, kernel density estimate of BLUPs), \code{"normal"} (integrate
 over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
 (simple average over BLUPs). Ignored when \code{marginal = FALSE}.}
+
+\item{correction}{Logical; if \code{TRUE} (default), applies the lognormal
+retransformation correction \code{exp(sigma_e^2 / 2)} when back-transforming
+from the log scale to the natural consumption scale. This produces
+the \strong{arithmetic mean} (conditional on Q > 0). Set to \code{FALSE} to obtain
+the \strong{median} (geometric mean), which is useful for individual-level
+"most likely" predictions. Only applies to \code{type = "response"} and
+\code{type = "demand"}.}
 
 \item{se.fit}{Logical; if \code{TRUE}, includes a \code{.se.fit} column (delta-method via
 \code{sdreport} when available).}
@@ -68,6 +81,22 @@ helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 Returns predictions from a fitted hurdle demand model.
 }
 \details{
+\subsection{Retransformation correction}{
+
+The hurdle model specifies Gaussian errors on log-consumption (Part II):
+\code{log(Q) ~ N(mu, sigma_e^2)}. The conditional distribution of Q given
+Q > 0 is therefore lognormal. The arithmetic mean of a lognormal is
+\code{exp(mu + sigma_e^2/2)}, not \code{exp(mu)}. Using \code{exp(mu)} returns the
+\strong{median} (geometric mean), which systematically underestimates the
+arithmetic mean by a factor of \code{exp(sigma_e^2/2)}. This correction is
+applied by default when \code{type = "response"} or \code{type = "demand"}. Set
+\code{correction = FALSE} to obtain the median instead.
+
+This is a parametric correction assuming normality of log-scale residuals
+(Duan, 1983). Under the model's normality assumption, this is equivalent to
+Duan's nonparametric smearing estimator.
+}
+
 \subsection{Marginal P(zero)}{
 
 The conditional P(zero) curve (when \code{marginal = FALSE}) sets the random
@@ -85,6 +114,28 @@ is non-normal. The \code{"normal"} method integrates over the model-assumed
 N(0, sigma_a) distribution, which is correct under the model but may be
 wrong if the normality assumption is violated. Use \code{\link[=plot_qq]{plot_qq()}} to assess
 RE normality.
+}
+
+\subsection{Conditional vs. marginal demand predictions}{
+
+Population-level demand predictions (when no subject ID is provided) can be
+computed in two ways:
+\itemize{
+\item \strong{Conditional (default, \code{marginal = FALSE}):} Sets all random effects to
+zero and evaluates the demand function at the fixed-effect (population)
+parameters. For nonlinear models, this corresponds to the \strong{conditional
+mode}, not the population-average mean.
+\item \strong{Marginal (\code{marginal = TRUE}):} Integrates the prediction over the
+estimated random-effects distribution via Monte Carlo sampling. This gives
+the \strong{population-average} demand curve. Due to Jensen's inequality, this
+curve lies above the conditional curve when the demand function is convex
+in the random effects (which it is for exponential demand with log-normal
+Q0 and alpha).
+}
+
+The conditional prediction is appropriate for characterizing a "typical"
+subject. The marginal prediction is appropriate for predicting aggregate
+consumption in a population.
 }
 }
 \examples{

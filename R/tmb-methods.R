@@ -484,6 +484,14 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #'   on the model's native scale (e.g., LL4-transformed for zben, log for
 #'   exponential), while `"natural"` automatically back-transforms to the
 #'   natural consumption scale. Default is `"model"` for backward compatibility.
+#'
+#'   When `scale = "natural"` and `equation = "exponential"`, the lognormal
+#'   retransformation correction `exp(sigma_e^2/2)` is applied to produce
+#'   the conditional mean (not median). For `"exponentiated"` and `"simplified"`
+#'   equations, predictions are already on the natural scale and no correction
+#'   is needed. For `"zben"`, `ll4_inv()` is applied; because ll4_inv is
+#'   nonlinear, this gives the value corresponding to the conditional mean on
+#'   the LL4 scale (approximately the median on the natural scale).
 #' @param ... Additional arguments.
 #'
 #' @return Depends on `type`:
@@ -546,7 +554,8 @@ predict.beezdemand_tmb <- function(
 
     ## Back-transform to natural scale if requested
     if (scale == "natural") {
-      fitted <- .tmb_backtransform(fitted, equation)
+      se <- exp(coefs[["logsigma_e"]])
+      fitted <- .tmb_backtransform(fitted, equation, sigma_e = se)
     }
 
     return(tibble::tibble(
@@ -593,7 +602,8 @@ predict.beezdemand_tmb <- function(
 
   ## Back-transform to natural scale if requested
   if (scale == "natural") {
-    fitted_vals <- .tmb_backtransform(fitted_vals, equation)
+    se <- exp(coefs[["logsigma_e"]])
+    fitted_vals <- .tmb_backtransform(fitted_vals, equation, sigma_e = se)
   }
 
   out <- tibble::as_tibble(newdata)
@@ -623,8 +633,10 @@ predict.beezdemand_tmb <- function(
     zben = {
       # Returns LL4(Q) scale
       Q0_log10 <- log_q0 / log(10)
-      # Clamp to avoid division by zero when Q0 ≈ 1 (log10(Q0) ≈ 0)
-      Q0_log10 <- sign(Q0_log10) * pmax(abs(Q0_log10), 1e-6)
+      # Clamp to positive minimum to avoid division by zero (Q0_nat = 1)
+      # and sign-flip divergence (Q0_nat < 1 → negative Q0_log10 →
+      # negative decay rate → demand increases with price)
+      Q0_log10 <- pmax(Q0_log10, 1e-3)
       rate <- (alpha / Q0_log10) * Q0
       Q0_log10 * exp(-rate * price)
     }
@@ -636,13 +648,25 @@ predict.beezdemand_tmb <- function(
 #'
 #' @param fitted Numeric vector of predictions on model scale.
 #' @param equation Character. The equation used for fitting.
+#' @param sigma_e Numeric scalar. Residual standard deviation on the model scale.
+#'   Used for lognormal retransformation correction when `correction = TRUE`.
+#' @param correction Logical. If `TRUE`, applies the lognormal retransformation
+#'   correction `exp(sigma_e^2 / 2)` for the exponential equation. Default `TRUE`.
 #'
 #' @return Numeric vector of predictions on the natural (consumption) scale.
 #' @keywords internal
-.tmb_backtransform <- function(fitted, equation) {
+.tmb_backtransform <- function(fitted, equation, sigma_e = NULL, correction = TRUE) {
   switch(equation,
     zben = ll4_inv(fitted),
-    exponential = exp(fitted),
+    exponential = {
+      # Lognormal retransformation: E[Q|Q>0] = exp(mu + sigma_e^2/2)
+      cf <- if (isTRUE(correction) && !is.null(sigma_e)) {
+        exp(sigma_e^2 / 2)
+      } else {
+        1
+      }
+      exp(fitted) * cf
+    },
     fitted # exponentiated, simplified already on natural scale
   )
 }
@@ -667,18 +691,28 @@ get_subject_pars.beezdemand_tmb <- function(object, ...) {
 #' Plot TMB Mixed-Effects Demand Model
 #'
 #' @param x A \code{beezdemand_tmb} object.
-#' @param type Character. One of `"demand"` (population curve), `"individual"`
-#'   (per-subject curves), `"parameters"` (parameter distributions).
+#' @param type Character. One of `"demand"` (population curve with data),
+#'   `"individual"` (per-subject curves), `"parameters"` (parameter
+#'   distributions).
 #' @param ids Character vector of subject IDs to plot (for individual type).
 #' @param prices Optional numeric vector of prices for curve generation.
 #' @param show_population Logical. Show population curve overlay.
 #' @param show_observed Logical. Show observed data points.
+#' @param show_pred Character. Which predictions to show: `"population"`,
+#'   `"individual"`, or `"both"`. If `NULL` (default), determined by `type`.
 #' @param x_trans Character. X-axis transformation.
 #' @param y_trans Character. Y-axis transformation.
-#' @param inv_fun Optional function to back-transform y-axis (e.g., `ll4_inv`).
+#' @param inv_fun Optional function to back-transform y-axis. For `zben` and
+#'   `exponential` equations, the inverse link is applied automatically by
+#'   default so all demand plots are on the consumption scale.
+#' @param x_limits,y_limits Numeric length-2 vectors for axis limits.
 #' @param x_lab Character. X-axis label.
 #' @param y_lab Character. Y-axis label.
 #' @param style Character. Plot style: "modern" or "apa".
+#' @param observed_point_alpha,observed_point_size Numeric. Aesthetics for
+#'   observed data points.
+#' @param pop_line_alpha,pop_line_size Numeric. Aesthetics for population curve.
+#' @param ind_line_alpha,ind_line_size Numeric. Aesthetics for individual curves.
 #' @param ... Additional arguments.
 #'
 #' @return A ggplot2 object.
@@ -690,19 +724,28 @@ plot.beezdemand_tmb <- function(
   prices = NULL,
   show_population = TRUE,
   show_observed = TRUE,
+  show_pred = NULL,
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   y_trans = NULL,
   inv_fun = NULL,
+  x_limits = NULL,
+  y_limits = NULL,
   x_lab = NULL,
   y_lab = NULL,
   style = c("modern", "apa"),
+  observed_point_alpha = 0.3,
+  observed_point_size = 1.5,
+  pop_line_alpha = 1.0,
+  pop_line_size = 1.2,
+  ind_line_alpha = 0.3,
+  ind_line_size = 0.5,
   ...
 ) {
   type <- match.arg(type)
   x_trans <- match.arg(x_trans)
   y_trans_missing <- is.null(y_trans)
   if (y_trans_missing) {
-    y_trans <- if (x$param_info$equation == "exponential") "linear" else "pseudo_log"
+    y_trans <- "pseudo_log"
   }
   y_trans <- match.arg(y_trans, c("log10", "log", "linear", "pseudo_log"))
   style <- match.arg(style)
@@ -710,12 +753,18 @@ plot.beezdemand_tmb <- function(
   equation <- x$param_info$equation
   x_var <- x$param_info$x_var
   id_var <- x$param_info$id_var
+
+  # Auto-apply inverse link for equations that predict on a transformed scale,
+  # so demand plots always show the consumption scale by default
+  if (is.null(inv_fun) && equation %in% c("zben", "exponential")) {
+    # For axis-scale back-transformation (plotting), use correction = FALSE
+    # to show the median curve; retransformation correction applies to E[Y]
+    inv_fun <- function(y) .tmb_backtransform(y, equation, correction = FALSE)
+    attr(inv_fun, "auto") <- TRUE
+  }
+
   x_lab <- x_lab %||% "Price"
-  y_lab <- y_lab %||% switch(equation,
-    exponential = "log(Consumption)",
-    zben = "LL4(Consumption)",
-    "Consumption"
-  )
+  y_lab <- y_lab %||% "Consumption"
 
   # Price sequence
   if (is.null(prices)) {
@@ -724,7 +773,15 @@ plot.beezdemand_tmb <- function(
   }
 
   if (type == "parameters") {
-    return(.tmb_plot_parameters(x, style = style))
+    par_trans <- list(...)$par_trans
+    return(.tmb_plot_parameters(x, style = style, par_trans = par_trans))
+  }
+
+  # Resolve show_pred
+  if (!is.null(show_pred)) {
+    show_pred <- match.arg(show_pred, c("population", "individual", "both"),
+                           several.ok = TRUE)
+    if ("both" %in% show_pred) show_pred <- c("population", "individual")
   }
 
   # Population prediction
@@ -736,11 +793,17 @@ plot.beezdemand_tmb <- function(
 
   p <- ggplot2::ggplot()
 
-  # Observed data
-  if (show_observed && type != "demand") {
+  # Observed data overlay (shown for both demand and individual types)
+  if (show_observed) {
     obs_data <- x$data
     y_obs <- obs_data[[x$param_info$y_var]]
-    if (!is.null(inv_fun)) y_obs <- inv_fun(y_obs)
+    # Only back-transform observed data when it is stored on the model scale.
+    # For "exponential", data is already natural-scale (zeros dropped by fit);
+    # for "zben", data is on the LL4-transformed scale and needs inv_fun.
+    # User-supplied inv_fun always applies (they know what they're doing).
+    obs_needs_transform <- !is.null(inv_fun) &&
+      (equation %in% c("zben") || !isTRUE(attr(inv_fun, "auto")))
+    if (obs_needs_transform) y_obs <- inv_fun(y_obs)
     obs_df <- data.frame(
       price = obs_data[[x_var]],
       consumption = y_obs,
@@ -750,11 +813,11 @@ plot.beezdemand_tmb <- function(
       data = obs_df,
       ggplot2::aes(x = .data$price, y = .data$consumption,
                    group = .data$id),
-      alpha = 0.3, size = 1.5
+      alpha = observed_point_alpha, size = observed_point_size
     )
   }
 
-  if (type == "individual" && show_observed) {
+  if (type == "individual") {
     # Subject-specific curves
     spars <- x$subject_pars
     coefs <- x$model$coefficients
@@ -787,7 +850,7 @@ plot.beezdemand_tmb <- function(
     p <- p + ggplot2::geom_line(
       data = subj_curves,
       ggplot2::aes(x = .data$price, y = .data$.fitted, group = .data$id),
-      alpha = 0.3, linewidth = 0.5
+      alpha = ind_line_alpha, linewidth = ind_line_size
     )
   }
 
@@ -795,37 +858,43 @@ plot.beezdemand_tmb <- function(
     p <- p + ggplot2::geom_line(
       data = pop_pred,
       ggplot2::aes(x = .data$price, y = .data$.fitted),
-      color = "blue", linewidth = 1.2
+      color = beezdemand_style_color(style, "primary"),
+      linewidth = pop_line_size,
+      alpha = pop_line_alpha
     )
   }
 
   # Axis transforms
-  if (x_trans == "log10") {
-    p <- p + ggplot2::scale_x_log10()
-  } else if (x_trans == "pseudo_log") {
-    p <- p + ggplot2::scale_x_continuous(trans = scales::pseudo_log_trans())
-  }
+  x_limits <- beezdemand_resolve_limits(x_limits, x_trans, axis = "x")
+  y_limits <- beezdemand_resolve_limits(y_limits, y_trans, axis = "y")
 
-  if (y_trans == "log10") {
-    p <- p + ggplot2::scale_y_log10()
-  } else if (y_trans == "pseudo_log") {
-    p <- p + ggplot2::scale_y_continuous(trans = scales::pseudo_log_trans())
-  }
+  p <- p +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      limits = x_limits
+    ) +
+    ggplot2::scale_y_continuous(
+      trans = beezdemand_get_trans(y_trans),
+      limits = y_limits
+    )
 
   p <- p +
     ggplot2::labs(x = x_lab, y = y_lab) +
-    ggplot2::theme_minimal()
-
-  if (style == "apa") {
-    p <- p + theme_apa()
-  }
+    theme_beezdemand(style = style)
 
   p
 }
 
 
 #' @keywords internal
-.tmb_plot_parameters <- function(x, style = "modern") {
+.tmb_plot_parameters <- function(x, style = "modern", par_trans = NULL) {
+  # Default transforms: log10 for alpha (always extremely right-skewed)
+  default_trans <- list(alpha = "log10")
+  if (!is.null(par_trans)) {
+    default_trans[names(par_trans)] <- par_trans
+  }
+  par_trans <- default_trans
+
   spars <- x$subject_pars
   plot_data <- tidyr::pivot_longer(
     spars,
@@ -834,13 +903,52 @@ plot.beezdemand_tmb <- function(
     values_to = "value"
   )
 
-  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$value)) +
-    ggplot2::geom_histogram(bins = 20, fill = "steelblue", alpha = 0.7) +
-    ggplot2::facet_wrap(~ parameter, scales = "free") +
-    ggplot2::labs(x = "Value", y = "Count") +
-    ggplot2::theme_minimal()
+  # Apply per-parameter transforms and update facet labels
+  plot_data$display_param <- plot_data$parameter
+  for (pname in names(par_trans)) {
+    tfun <- par_trans[[pname]]
+    if (is.character(tfun)) {
+      tfun_name <- tfun
+      tfun <- switch(tfun,
+        log10 = log10,
+        log = log,
+        sqrt = sqrt,
+        identity = identity,
+        stop("Unknown transform: ", tfun, call. = FALSE)
+      )
+    } else {
+      tfun_name <- "f"
+    }
+    idx <- plot_data$parameter == pname
+    if (any(idx)) {
+      vals <- plot_data$value[idx]
+      # Filter to valid values for the transform
+      valid <- is.finite(vals) & vals > 0
+      plot_data$value[idx & !valid] <- NA
+      plot_data$value[idx & valid] <- tfun(vals[valid])
+      if (!identical(tfun_name, "identity")) {
+        plot_data$display_param[idx] <- paste0(tfun_name, "(", pname, ")")
+      }
+    }
+  }
 
-  if (style == "apa") p <- p + theme_apa()
+  plot_data <- plot_data[is.finite(plot_data$value), ]
+
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$value)) +
+    ggplot2::geom_histogram(
+      bins = 20,
+      fill = beezdemand_style_color(style, "accent"),
+      color = "white",
+      alpha = 0.7
+    ) +
+    ggplot2::facet_wrap(~ display_param, scales = "free") +
+    ggplot2::labs(
+      title = "Distribution of Subject-Specific Parameters",
+      x = "Value",
+      y = "Count"
+    ) +
+    theme_beezdemand(style = style)
+
   p
 }
 
@@ -939,7 +1047,10 @@ glance.beezdemand_tmb <- function(x, ...) {
 #' @param newdata Optional data frame.
 #' @param ... Additional arguments.
 #'
-#' @return A tibble with original data plus .fitted and .resid columns.
+#' @return A tibble with original data plus `.fitted`, `.resid`, and
+#'   `.std_resid` columns. Residuals are computed on the model's native scale
+#'   (log scale for `"exponential"`, natural/LL4 scale for others) to match the
+#'   C++ likelihood.
 #' @export
 augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
   pred <- predict(x, newdata = newdata, type = "response")
@@ -949,7 +1060,19 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
   data_used <- if (is.null(newdata)) x$data else newdata
   y_obs <- data_used[[y_var]]
 
-  pred$.resid <- y_obs - pred$.fitted
+  # Compute residuals on model scale (matching C++ likelihood)
+  if (equation == "exponential") {
+    # Model operates on log(Q); y_obs is natural consumption
+    pred$.resid <- log(y_obs) - pred$.fitted
+  } else {
+    # exponentiated/simplified/zben: y and fitted on same scale
+    pred$.resid <- y_obs - pred$.fitted
+  }
+
+  # Standardized Pearson residuals: (y - mu) / sigma_e
+  sigma_e <- exp(x$model$coefficients[["logsigma_e"]])
+  pred$.std_resid <- pred$.resid / sigma_e
+
   pred
 }
 

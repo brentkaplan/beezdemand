@@ -154,8 +154,10 @@ Type MixedDemand(objective_function<Type>* obj) {
       // rate = (alpha / Q0_log10) * Q0
       // y_pred = Q0_log10 * exp(-rate * price)
       Type Q0_log10 = log_q0_i / log(Type(10.0));
-      // Clamp to avoid division by zero when Q0 ≈ 1 (log10(Q0) ≈ 0)
-      Q0_log10 = CppAD::CondExpGt(CppAD::abs(Q0_log10), Type(1e-6), Q0_log10, Type(1e-6));
+      // Clamp to positive minimum to avoid division by zero (Q0_nat = 1)
+      // and sign-flip divergence (Q0_nat < 1 → negative Q0_log10 →
+      // negative decay rate → demand increases with price)
+      Q0_log10 = CppAD::CondExpGt(Q0_log10, Type(1e-3), Q0_log10, Type(1e-3));
       Type rate = (alpha_i / Q0_log10) * Q0_i;
       Type y_pred = Q0_log10 * exp(-rate * price(i));
       resid = (y(i) - y_pred) / sigma_e;

@@ -133,6 +133,27 @@ test_that("ll4_inv handles NA values", {
   expect_equal(result[1], 0)
 })
 
+test_that("ll4_inv returns 0 for negative y instead of NaN", {
+  # Negative y on LL4 scale means consumption < 0 which is impossible
+  result <- ll4_inv(-0.5, lambda = 4, base = 10)
+  expect_equal(result, 0)
+
+  # Multiple negative values
+  result_vec <- ll4_inv(c(-1, -0.5, -0.1), lambda = 4, base = 10)
+  expect_equal(result_vec, c(0, 0, 0))
+
+  # No NaN anywhere in the output
+  test_range <- seq(-1, 3, by = 0.1)
+  result_range <- ll4_inv(test_range)
+  expect_false(any(is.nan(result_range)))
+})
+
+test_that("ll4_inv returns 0 at boundary and positive for positive y", {
+  expect_equal(ll4_inv(0), 0)
+  expect_gt(ll4_inv(0.01), 0)
+  expect_gt(ll4_inv(1), 0)
+})
+
 # =============================================================================
 # Tests for scale_ll4 (ggplot2 scale)
 # =============================================================================

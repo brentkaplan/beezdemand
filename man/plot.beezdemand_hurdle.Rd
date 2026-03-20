@@ -33,6 +33,7 @@
   ind_line_size = 0.7,
   marginal = TRUE,
   marginal_method = c("kde", "normal", "empirical"),
+  par_trans = NULL,
   ...
 )
 }
@@ -111,6 +112,11 @@ conditional behavior.}
 \item{marginal_method}{Character. Method for marginal integration when
 \code{marginal = TRUE}. One of \code{"kde"} (default), \code{"normal"}, or
 \code{"empirical"}. See \code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}} for details.}
+
+\item{par_trans}{Named list of transformations for parameter distribution
+plots (when \code{type = "parameters"}). Names are parameter names (e.g.,
+\code{"alpha"}), values are transformation names (e.g., \code{"log10"}). Default
+applies \code{log10} to alpha.}
 
 \item{...}{Additional arguments (currently unused).}
 }

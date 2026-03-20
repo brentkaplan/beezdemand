@@ -27,7 +27,7 @@ test_that("augment.beezdemand_hurdle returns expected columns", {
   expect_equal(nrow(aug), nrow(apt))
 })
 
-test_that("augment.beezdemand_hurdle residuals are NA for zeros",
+test_that("augment.beezdemand_hurdle default (combined) gives residuals for all obs",
 {
   data(apt, package = "beezdemand")
 
@@ -37,7 +37,24 @@ test_that("augment.beezdemand_hurdle residuals are NA for zeros",
     verbose = 0
   )
 
+  # Default component = "combined" returns randomized quantile residuals
+  # which are defined for ALL observations (including zeros)
   aug <- augment(fit)
+  expect_true(all(!is.na(aug$.resid)))
+})
+
+test_that("augment.beezdemand_hurdle continuous residuals are NA for zeros",
+{
+  data(apt, package = "beezdemand")
+
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  # component = "continuous" gives Part II residuals only
+  aug <- augment(fit, component = "continuous")
 
   # Residuals should be NA where y == 0
   zeros_idx <- apt$y == 0

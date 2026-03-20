@@ -969,13 +969,14 @@ test_that("zben equation predictions match formula with singularity protection",
 
   # zben: Q0_log10 = ln(Q0)/ln(10), rate = (α/Q0_log10)*Q0, y = Q0_log10*exp(-rate*C)
   Q0_log10 <- unname(beta_q0 / log(10))
-  Q0_log10 <- sign(Q0_log10) * max(abs(Q0_log10), 1e-6)
+  # Positive clamp to prevent singularity and sign-flip divergence
+  Q0_log10 <- max(Q0_log10, 1e-3)
   rate <- unname((alpha_val / Q0_log10) * Q0)
   expected <- Q0_log10 * exp(-rate * prices)
   expect_equal(pred$.fitted, expected, tolerance = 1e-10)
 })
 
-test_that("exponential backtransform to natural scale works", {
+test_that("exponential backtransform to natural scale includes retransformation correction", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(
     apt, y_var = "y", x_var = "x", id_var = "id",
@@ -984,10 +985,13 @@ test_that("exponential backtransform to natural scale works", {
 
   # Model scale should be log(Q)
   pred_model <- predict(fit, type = "demand", prices = c(0, 1, 5))
-  # Natural scale should be exp(log(Q)) = Q
+  # Natural scale: exp(log(Q)) * exp(sigma_e^2/2) — lognormal mean correction
   pred_natural <- predict(fit, type = "demand", prices = c(0, 1, 5),
                           scale = "natural")
-  expect_equal(pred_natural$.fitted, exp(pred_model$.fitted), tolerance = 1e-10)
+  sigma_e <- exp(fit$model$coefficients[["logsigma_e"]])
+  correction <- exp(sigma_e^2 / 2)
+  expect_equal(pred_natural$.fitted, exp(pred_model$.fitted) * correction,
+               tolerance = 1e-10)
 })
 
 test_that("exponentiated Pmax/Omax are computed correctly", {

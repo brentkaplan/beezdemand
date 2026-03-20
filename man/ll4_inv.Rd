@@ -17,12 +17,26 @@ original \code{ll4} transformation. Must match. Default is \code{10}.}
 }
 \value{
 A numeric vector or scalar of the original, untransformed values.
-May return \code{NaN} if \code{(base^(y * lambda) - 1)} is negative and \code{1/lambda} implies
-an even root (e.g., if \code{lambda} is 2 or 4).
+Returns \code{0} when the intermediate quantity \code{base^(y * lambda) - 1} is
+negative (i.e., when \code{y < 0} for \code{base = 10} and even \code{lambda}), since
+consumption cannot be negative.
 }
 \description{
 Applies the inverse of the \code{ll4} transformation.
 Given \code{y = ll4(x)}, this function calculates \code{x = (base^(y * lambda) - 1)^(1/lambda)}.
+}
+\details{
+\strong{Domain and boundary behavior.} The inverse LL4 transformation is defined
+for \code{y >= 0} (when \code{base = 10} and \code{lambda = 4}). For \code{y < 0}, the
+intermediate quantity \code{base^(y * lambda) - 1} becomes negative, and raising
+a negative number to the fractional power \code{1/lambda} is undefined in real
+arithmetic. In this case, the function returns \code{0} (consumption cannot be
+negative).
+
+This boundary condition arises in practice when a model predicts fitted values
+below zero on the LL4 scale --- typically for extrapolation to very high
+prices. The mapping to zero is the natural floor because \code{ll4(0) = 0} and
+the LL4 transformation is monotonically increasing on \verb{[0, Inf)}.
 }
 \examples{
 original_values <- c(0, 1, 10, 100, 1000)
@@ -31,9 +45,6 @@ back_transformed_values <- ll4_inv(transformed_values)
 print(data.frame(original_values, transformed_values, back_transformed_values))
 all.equal(original_values, back_transformed_values) # Should be TRUE or very close
 
-# Example with negative y (log-transformed value)
-# If y_ll4 = -0.5 (meaning original value was between 0 and 1 for log10)
-ll4_inv(-0.5, lambda = 4, base = 10) # (10^(-0.5*4) - 1)^(1/4) = (0.01 - 1)^(1/4) -> NaN
-# The ll4_inv function as provided will return NaN here.
-# A more robust version for demand might floor at 0 if NaN occurs.
+# Negative y values are mapped to 0 (consumption floor)
+ll4_inv(-0.5, lambda = 4, base = 10) # Returns 0
 }

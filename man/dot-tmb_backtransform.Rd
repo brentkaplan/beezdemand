@@ -4,12 +4,18 @@
 \alias{.tmb_backtransform}
 \title{Back-transform predictions from model scale to natural consumption scale}
 \usage{
-.tmb_backtransform(fitted, equation)
+.tmb_backtransform(fitted, equation, sigma_e = NULL, correction = TRUE)
 }
 \arguments{
 \item{fitted}{Numeric vector of predictions on model scale.}
 
 \item{equation}{Character. The equation used for fitting.}
+
+\item{sigma_e}{Numeric scalar. Residual standard deviation on the model scale.
+Used for lognormal retransformation correction when \code{correction = TRUE}.}
+
+\item{correction}{Logical. If \code{TRUE}, applies the lognormal retransformation
+correction \code{exp(sigma_e^2 / 2)} for the exponential equation. Default \code{TRUE}.}
 }
 \value{
 Numeric vector of predictions on the natural (consumption) scale.

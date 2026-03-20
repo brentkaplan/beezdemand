@@ -556,6 +556,95 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 }
 
 
+#' Monte Carlo marginal demand prediction
+#'
+#' Integrates the demand function over the random effects distribution to
+#' produce population-average predictions (accounting for Jensen's inequality).
+#'
+#' @param object A `beezdemand_hurdle` object.
+#' @param prices Numeric vector of prices.
+#' @param type One of `"response"` or `"demand"`.
+#' @param correction Logical; apply lognormal retransformation correction.
+#' @param n_draws Number of MC draws from the RE distribution.
+#'
+#' @return A tibble with price, .fitted, and supporting columns.
+#' @noRd
+.compute_marginal_demand <- function(object, prices, type = "demand",
+                                     correction = TRUE, n_draws = 1000L) {
+  coefs <- object$model$coefficients
+  beta0 <- unname(coefs[["beta0"]])
+  beta1 <- unname(coefs[["beta1"]])
+  log_q0 <- unname(coefs[["log_q0"]] %||% coefs[["logQ0"]])
+  log_alpha <- unname(coefs[["log_alpha"]] %||% coefs[["alpha"]])
+  epsilon <- object$param_info$epsilon
+  part2 <- object$param_info$part2 %||% "zhao_exponential"
+  has_k <- !identical(part2, "simplified_exponential")
+  log_k <- if (has_k) unname(coefs[["log_k"]] %||% log(coefs[["k"]])) else NA_real_
+  k_val <- if (has_k) exp(log_k) else NA_real_
+
+  sigma_a <- exp(coefs[["logsigma_a"]])
+  sigma_b <- exp(coefs[["logsigma_b"]])
+  sigma_e <- exp(coefs[["logsigma_e"]])
+  n_re <- object$param_info$n_random_effects
+  sigma_c <- if (n_re == 3) exp(coefs[["logsigma_c"]]) else 0
+
+  cf <- if (isTRUE(correction)) exp(sigma_e^2 / 2) else 1
+
+  # Draw random effects
+  set.seed(42L)
+  a_draws <- stats::rnorm(n_draws, 0, sigma_a)
+  b_draws <- stats::rnorm(n_draws, 0, sigma_b)
+  c_draws <- if (n_re == 3) stats::rnorm(n_draws, 0, sigma_c) else rep(0, n_draws)
+
+  # For each price, average over MC draws
+  n_prices <- length(prices)
+  avg_consumption <- numeric(n_prices)
+  avg_prob_zero <- numeric(n_prices)
+  avg_expected <- numeric(n_prices)
+
+  for (ip in seq_len(n_prices)) {
+    p <- prices[ip]
+
+    # Part I: P(zero) for each draw
+    eta <- beta0 + beta1 * log(p + epsilon) + a_draws
+    pz <- stats::plogis(eta)
+
+    # Part II: consumption for each draw
+    alpha_i <- exp(log_alpha + c_draws)
+    Q0_i <- exp(log_q0 + b_draws)
+
+    mu <- if (identical(part2, "simplified_exponential")) {
+      (log_q0 + b_draws) - alpha_i * Q0_i * p
+    } else if (identical(part2, "exponential")) {
+      (log_q0 + b_draws) + k_val * (exp(-alpha_i * Q0_i * p) - 1)
+    } else {
+      (log_q0 + b_draws) + k_val * (exp(-alpha_i * p) - 1)
+    }
+
+    consumption <- exp(mu) * cf
+
+    avg_consumption[ip] <- mean(consumption)
+    avg_prob_zero[ip] <- mean(pz)
+    avg_expected[ip] <- mean(consumption * (1 - pz))
+  }
+
+  x_var <- object$param_info$x_var
+
+  fitted_vals <- switch(type,
+    response = avg_consumption,
+    demand = avg_expected
+  )
+
+  tibble::tibble(
+    !!x_var := prices,
+    predicted_consumption = avg_consumption,
+    prob_zero = avg_prob_zero,
+    expected_consumption = avg_expected,
+    .fitted = fitted_vals
+  )
+}
+
+
 #' Predict Method for Hurdle Demand Models
 #'
 #' @description
@@ -575,14 +664,25 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'     \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 #'   }
 #' @param prices Optional numeric vector of prices used only when `newdata = NULL`.
-#' @param marginal Logical; if `TRUE` and `type = "probability"`, computes
-#'   population-averaged (marginal) P(zero) by integrating over the random
-#'   intercept distribution, rather than conditional (RE = 0) predictions.
-#'   Default is `FALSE`.
+#' @param marginal Logical; if `TRUE`, computes population-averaged (marginal)
+#'   predictions by integrating over the random effects distribution.
+#'   For `type = "probability"`, uses KDE/Normal/Empirical integration of the
+#'   binary component. For `type = "response"` and `type = "demand"`, uses
+#'   Monte Carlo integration over all random effects, producing the
+#'   **population-average** demand curve (accounting for Jensen's inequality).
+#'   Default is `FALSE`, which gives conditional (RE = 0) predictions
+#'   representing a "typical" subject at the center of the RE distribution.
 #' @param marginal_method Character. Method for marginal integration; one of
 #'   `"kde"` (default, kernel density estimate of BLUPs), `"normal"` (integrate
 #'   over the model-assumed N(0, sigma_a) distribution), or `"empirical"`
 #'   (simple average over BLUPs). Ignored when `marginal = FALSE`.
+#' @param correction Logical; if `TRUE` (default), applies the lognormal
+#'   retransformation correction `exp(sigma_e^2 / 2)` when back-transforming
+#'   from the log scale to the natural consumption scale. This produces
+#'   the **arithmetic mean** (conditional on Q > 0). Set to `FALSE` to obtain
+#'   the **median** (geometric mean), which is useful for individual-level
+#'   "most likely" predictions. Only applies to `type = "response"` and
+#'   `type = "demand"`.
 #' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
 #'   `sdreport` when available).
 #' @param interval One of `"none"` (default) or `"confidence"`.
@@ -590,6 +690,21 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #' @param ... Unused.
 #'
 #' @details
+#' ## Retransformation correction
+#'
+#' The hurdle model specifies Gaussian errors on log-consumption (Part II):
+#' `log(Q) ~ N(mu, sigma_e^2)`. The conditional distribution of Q given
+#' Q > 0 is therefore lognormal. The arithmetic mean of a lognormal is
+#' `exp(mu + sigma_e^2/2)`, not `exp(mu)`. Using `exp(mu)` returns the
+#' **median** (geometric mean), which systematically underestimates the
+#' arithmetic mean by a factor of `exp(sigma_e^2/2)`. This correction is
+#' applied by default when `type = "response"` or `type = "demand"`. Set
+#' `correction = FALSE` to obtain the median instead.
+#'
+#' This is a parametric correction assuming normality of log-scale residuals
+#' (Duan, 1983). Under the model's normality assumption, this is equivalent to
+#' Duan's nonparametric smearing estimator.
+#'
 #' ## Marginal P(zero)
 #'
 #' The conditional P(zero) curve (when `marginal = FALSE`) sets the random
@@ -607,6 +722,27 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #' N(0, sigma_a) distribution, which is correct under the model but may be
 #' wrong if the normality assumption is violated. Use [plot_qq()] to assess
 #' RE normality.
+#'
+#' ## Conditional vs. marginal demand predictions
+#'
+#' Population-level demand predictions (when no subject ID is provided) can be
+#' computed in two ways:
+#'
+#' - **Conditional (default, `marginal = FALSE`):** Sets all random effects to
+#'   zero and evaluates the demand function at the fixed-effect (population)
+#'   parameters. For nonlinear models, this corresponds to the **conditional
+#'   mode**, not the population-average mean.
+#'
+#' - **Marginal (`marginal = TRUE`):** Integrates the prediction over the
+#'   estimated random-effects distribution via Monte Carlo sampling. This gives
+#'   the **population-average** demand curve. Due to Jensen's inequality, this
+#'   curve lies above the conditional curve when the demand function is convex
+#'   in the random effects (which it is for exponential demand with log-normal
+#'   Q0 and alpha).
+#'
+#' The conditional prediction is appropriate for characterizing a "typical"
+#' subject. The marginal prediction is appropriate for predicting aggregate
+#' consumption in a population.
 #'
 #' @return For `type = "parameters"`, a tibble of subject-level parameters.
 #'   For `type = "probability"` with `marginal = TRUE`, a tibble with columns
@@ -636,6 +772,7 @@ predict.beezdemand_hurdle <- function(
   prices = NULL,
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
+  correction = TRUE,
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -660,8 +797,8 @@ predict.beezdemand_hurdle <- function(
 
   marginal_method <- match.arg(marginal_method)
 
-  if (isTRUE(marginal) && type != "probability") {
-    warning("'marginal' only applies to type = 'probability'; ignoring.",
+  if (isTRUE(marginal) && !type %in% c("probability", "response", "demand")) {
+    warning("'marginal' only applies to type = 'probability', 'response', or 'demand'; ignoring.",
             call. = FALSE)
     marginal <- FALSE
   }
@@ -685,16 +822,39 @@ predict.beezdemand_hurdle <- function(
       price_vec <- sort(unique(object$data[[x_var]]))
     }
 
-    prob_marginal <- .compute_marginal_pzero(
-      object, price_vec, method = marginal_method
+    if (type == "probability") {
+      # Existing marginal P(zero) integration
+      prob_marginal <- .compute_marginal_pzero(
+        object, price_vec, method = marginal_method
+      )
+
+      out <- tibble::tibble(
+        !!x_var := price_vec,
+        prob_zero = prob_marginal,
+        .fitted = prob_marginal
+      )
+      attr(out, "marginal_method") <- marginal_method
+
+      if (isTRUE(se.fit) || interval != "none") {
+        warning("Standard errors not yet supported for marginal predictions; returning NA.",
+                call. = FALSE)
+        out$.se.fit <- NA_real_
+        if (interval != "none") {
+          out$.lower <- NA_real_
+          out$.upper <- NA_real_
+        }
+      }
+      return(out)
+    }
+
+    # Marginal integration for type = "response" or "demand":
+    # Monte Carlo integration over the random effects distribution
+    out <- .compute_marginal_demand(
+      object, price_vec, type = type, correction = correction,
+      n_draws = 1000L
     )
 
-    out <- tibble::tibble(
-      !!x_var := price_vec,
-      prob_zero = prob_marginal,
-      .fitted = prob_marginal
-    )
-    attr(out, "marginal_method") <- marginal_method
+    attr(out, "marginal_method") <- "monte_carlo"
 
     if (isTRUE(se.fit) || interval != "none") {
       warning("Standard errors not yet supported for marginal predictions; returning NA.",
@@ -795,7 +955,18 @@ predict.beezdemand_hurdle <- function(
   }
 
   predicted_log_consumption <- as.numeric(mu)
-  predicted_consumption <- exp(predicted_log_consumption)
+
+  # Lognormal retransformation correction (Duan, 1983):
+
+  # log(Q) ~ N(mu, sigma_e^2) implies E[Q|Q>0] = exp(mu + sigma_e^2/2),
+  # not exp(mu) which is the median. The bias factor exp(sigma_e^2/2) > 1.
+  if (isTRUE(correction) && type %in% c("response", "demand")) {
+    sigma_e <- exp(object$model$coefficients[["logsigma_e"]])
+    correction_factor <- exp(sigma_e^2 / 2)
+  } else {
+    correction_factor <- 1
+  }
+  predicted_consumption <- exp(predicted_log_consumption) * correction_factor
   expected_consumption <- predicted_consumption * (1 - prob_zero)
 
   out <- tibble::as_tibble(newdata)
@@ -847,6 +1018,8 @@ predict.beezdemand_hurdle <- function(
       log_alpha_t <- unname(theta[["log_alpha"]] %||% theta[["alpha"]])
       log_k_t <- if (has_k) unname(theta[["log_k"]] %||% log(theta[["k"]])) else NA_real_
       k_t <- if (has_k) exp(log_k_t) else NA_real_
+      logsigma_e_t <- unname(theta[["logsigma_e"]])
+      sigma_e_t <- exp(logsigma_e_t)
 
       eta_t <- beta0_t + beta1_t * log(x + epsilon) + a_row
       prob0_t <- stats::plogis(eta_t)
@@ -861,7 +1034,13 @@ predict.beezdemand_hurdle <- function(
         (log_q0_t + b_row) + k_t * (exp(-alpha_t * x) - 1)
       }
 
-      resp_t <- exp(mu_t)
+      # Apply retransformation correction if enabled
+      cf_t <- if (isTRUE(correction) && type %in% c("response", "demand")) {
+        exp(sigma_e_t^2 / 2)
+      } else {
+        1
+      }
+      resp_t <- exp(mu_t) * cf_t
       dem_t <- resp_t * (1 - prob0_t)
 
       switch(
@@ -890,8 +1069,20 @@ predict.beezdemand_hurdle <- function(
 
     if (interval != "none") {
       z <- stats::qnorm((1 + level) / 2)
-      out$.lower <- out$.fitted - z * out$.se.fit
-      out$.upper <- out$.fitted + z * out$.se.fit
+      if (type %in% c("response", "demand")) {
+        # Construct CIs on the log scale then back-transform via exp().
+        # This guarantees asymmetric, always-positive intervals for
+        # consumption quantities (Meeker & Escobar, 1995).
+        log_fitted <- log(out$.fitted)
+        # SE on the log scale via delta method: se(log(f)) = se(f) / f
+        se_log <- out$.se.fit / out$.fitted
+        out$.lower <- exp(log_fitted - z * se_log)
+        out$.upper <- exp(log_fitted + z * se_log)
+      } else {
+        # For link and probability types, symmetric Wald CIs are appropriate
+        out$.lower <- out$.fitted - z * out$.se.fit
+        out$.upper <- out$.fitted + z * out$.se.fit
+      }
     }
   }
 
@@ -951,6 +1142,10 @@ predict.beezdemand_hurdle <- function(
 #' @param marginal_method Character. Method for marginal integration when
 #'   `marginal = TRUE`. One of `"kde"` (default), `"normal"`, or
 #'   `"empirical"`. See [predict.beezdemand_hurdle()] for details.
+#' @param par_trans Named list of transformations for parameter distribution
+#'   plots (when `type = "parameters"`). Names are parameter names (e.g.,
+#'   `"alpha"`), values are transformation names (e.g., `"log10"`). Default
+#'   applies `log10` to alpha.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A ggplot2 object.
@@ -1000,6 +1195,7 @@ plot.beezdemand_hurdle <- function(
   ind_line_size = 0.7,
   marginal = TRUE,
   marginal_method = c("kde", "normal", "empirical"),
+  par_trans = NULL,
   ...
 ) {
   y_trans_missing <- is.null(y_trans)
@@ -1275,6 +1471,13 @@ plot.beezdemand_hurdle <- function(
     valid_params <- c("Q0", "alpha", "breakpoint", "Pmax", "Omax")
     parameters <- match.arg(parameters, valid_params, several.ok = TRUE)
 
+    # Default transforms: log10 for alpha (always extremely right-skewed)
+    default_par_trans <- list(alpha = "log10")
+    if (!is.null(par_trans)) {
+      default_par_trans[names(par_trans)] <- par_trans
+    }
+    par_trans_resolved <- default_par_trans
+
     # Build mapping from parameter names to display names
     param_map <- list(
       Q0 = "Q0 (Intensity)",
@@ -1287,9 +1490,28 @@ plot.beezdemand_hurdle <- function(
     # Create long format data for selected parameters
     values_list <- lapply(parameters, function(p) {
       vals <- pars[[p]]
-      vals[is.finite(vals)] # Remove Inf/NA
+      vals <- vals[is.finite(vals)] # Remove Inf/NA
+      # Apply per-parameter transform if specified
+      tfun_name <- par_trans_resolved[[p]]
+      if (!is.null(tfun_name) && !identical(tfun_name, "identity")) {
+        tfun <- switch(tfun_name,
+          log10 = log10, log = log, sqrt = sqrt,
+          stop("Unknown transform: ", tfun_name, call. = FALSE)
+        )
+        vals <- vals[vals > 0]
+        vals <- tfun(vals)
+      }
+      vals
     })
-    labels_list <- lapply(parameters, function(p) param_map[[p]])
+    labels_list <- lapply(parameters, function(p) {
+      base_label <- param_map[[p]]
+      tfun_name <- par_trans_resolved[[p]]
+      if (!is.null(tfun_name) && !identical(tfun_name, "identity")) {
+        paste0(tfun_name, "(", base_label, ")")
+      } else {
+        base_label
+      }
+    })
 
     pars_long <- data.frame(
       parameter = factor(
@@ -1879,22 +2101,45 @@ confint.beezdemand_hurdle <- function(
 #'   uses the original data from the model.
 #' @param ... Additional arguments (currently unused).
 #'
+#' @param component Character. Which residuals to compute:
+#'   \describe{
+#'     \item{`"combined"`}{(Default) Randomized quantile residuals (Dunn &
+#'       Smyth, 1996) that assess both the binary and continuous components
+#'       simultaneously. If the model is correctly specified, these are exactly
+#'       N(0,1).}
+#'     \item{`"continuous"`}{Log-scale residuals `log(y) - mu` for positive
+#'       observations only (zeros are NA). Assesses Part II specification.}
+#'     \item{`"binary"`}{Not returned as residuals; use the `.fitted_prob`
+#'       column and observed binary indicators for calibration diagnostics.}
+#'   }
+#'
 #' @return A tibble containing the original data plus:
 #'   \describe{
 #'     \item{.fitted}{Fitted demand values (natural scale)}
 #'     \item{.fitted_link}{Fitted values on log scale (Part II mean)}
 #'     \item{.fitted_prob}{Predicted probability of consumption (1 - P(zero))}
-#'     \item{.resid}{Residuals on log scale for positive observations, NA for zeros}
+#'     \item{.resid}{Residuals (type depends on `component`; see above)}
 #'     \item{.resid_response}{Residuals on response scale (y - .fitted)}
 #'   }
 #'
 #' @details
-#' For two-part hurdle models:
-#' - `.fitted` gives predicted demand on the natural consumption scale
-#' - `.fitted_prob` gives the predicted probability of positive consumption
-#' - `.resid` is defined only for positive observations as log(y) - .fitted_link
-#' - Observations with zero consumption have `.resid = NA` since they are
-#'   explained by Part I (the zero-probability component), not Part II
+#' ## Residual types for hurdle models
+#'
+#' The hurdle model has two components, each requiring different diagnostic
+#' approaches:
+#'
+#' - **Continuous residuals** (`component = "continuous"`): Standard log-scale
+#'   residuals `log(y) - mu` for observations where y > 0. Zeros are excluded
+#'   (NA). Assesses whether the lognormal conditional distribution is well-
+#'   specified.
+#'
+#' - **Randomized quantile residuals** (`component = "combined"`, default):
+#'   Following Dunn & Smyth (1996), maps each observation through the fitted
+#'   hurdle CDF and then the standard normal quantile function. If the model is
+#'   correctly specified, these residuals are exactly N(0,1) regardless of which
+#'   component generated the observation. For zeros, a uniform random variate
+#'   within `[0, P(zero)]` breaks ties that would otherwise create a spike in
+#'   the QQ plot.
 #'
 #' @examples
 #' \donttest{
@@ -1911,7 +2156,11 @@ confint.beezdemand_hurdle <- function(
 #'
 #' @importFrom tibble as_tibble
 #' @export
-augment.beezdemand_hurdle <- function(x, newdata = NULL, ...) {
+augment.beezdemand_hurdle <- function(x, newdata = NULL,
+                                      component = c("combined", "continuous"),
+                                      ...) {
+  component <- match.arg(component)
+
   if (is.null(newdata)) {
     data <- x$data
   } else {
@@ -1941,14 +2190,69 @@ augment.beezdemand_hurdle <- function(x, newdata = NULL, ...) {
   # Log-scale fitted values (for Part II residuals)
   out$.fitted_link <- fitted_demand$predicted_log_consumption
 
-  # Residuals: log(y) - fitted_link for positive y, NA for zeros
   y_obs <- data[[y_var]]
-  out$.resid <- ifelse(
-    y_obs > 0,
-    log(y_obs) - out$.fitted_link,
-    NA_real_
-  )
+
+  if (component == "continuous") {
+    # Part II only: log(y) - fitted_link for positive y, NA for zeros
+    out$.resid <- ifelse(
+      y_obs > 0,
+      log(y_obs) - out$.fitted_link,
+      NA_real_
+    )
+  } else {
+    # Randomized quantile residuals (Dunn & Smyth, 1996)
+    # Maps each obs through the hurdle CDF, then Phi^{-1}
+    sigma_e <- exp(x$model$coefficients[["logsigma_e"]])
+    prob_zero <- fitted_demand$prob_zero
+    mu <- fitted_demand$predicted_log_consumption
+
+    out$.resid <- .hurdle_quantile_residuals(
+      y_obs, prob_zero, mu, sigma_e
+    )
+  }
+
   out$.resid_response <- y_obs - out$.fitted
 
   out
+}
+
+
+#' Randomized quantile residuals for hurdle models
+#'
+#' @param y Observed consumption values.
+#' @param prob_zero Predicted P(zero) for each observation.
+#' @param mu Predicted log-consumption mean (Part II) for each observation.
+#' @param sigma_e Residual SD on log scale.
+#'
+#' @return Numeric vector of quantile residuals ~ N(0,1) under correct model.
+#' @noRd
+.hurdle_quantile_residuals <- function(y, prob_zero, mu, sigma_e) {
+  n <- length(y)
+  qresid <- numeric(n)
+
+  for (i in seq_len(n)) {
+    if (is.na(y[i])) {
+      qresid[i] <- NA_real_
+    } else if (y[i] == 0) {
+      # Zero observation: CDF value is P(zero)
+      # Randomize within [0, P(zero)] to break discrete mass
+      u <- stats::runif(1, min = 0, max = prob_zero[i])
+      # Clamp to avoid Inf from qnorm(0) or qnorm(1)
+      u <- max(u, .Machine$double.eps)
+      u <- min(u, 1 - .Machine$double.eps)
+      qresid[i] <- stats::qnorm(u)
+    } else {
+      # Positive observation: CDF = P(zero) + P(positive) * F_lognormal(y)
+      # F_lognormal(y) = Phi((log(y) - mu) / sigma_e)
+      z <- (log(y[i]) - mu[i]) / sigma_e
+      F_cond <- stats::pnorm(z)  # CDF of lognormal for the continuous part
+      F_hurdle <- prob_zero[i] + (1 - prob_zero[i]) * F_cond
+      # Clamp to avoid Inf
+      F_hurdle <- max(F_hurdle, .Machine$double.eps)
+      F_hurdle <- min(F_hurdle, 1 - .Machine$double.eps)
+      qresid[i] <- stats::qnorm(F_hurdle)
+    }
+  }
+
+  qresid
 }

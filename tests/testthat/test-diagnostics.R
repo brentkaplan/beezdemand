@@ -237,3 +237,140 @@ test_that("plot_residuals works for fixed models", {
   p <- plot_residuals(fit, type = "fitted")
   expect_s3_class(p, "ggplot")
 })
+
+# --- Strengthen existing tier tests: residuals$sd > 0 ---
+
+test_that("check_demand_model.beezdemand_hurdle residuals sd > 0", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  diag <- check_demand_model(fit)
+  expect_gt(diag$residuals$sd, 0)
+})
+
+test_that("check_demand_model.beezdemand_nlme residuals sd > 0", {
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_mixed(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation_form = "zben"
+  )
+  skip_if(is.null(fit$model), "Model fitting failed")
+  diag <- check_demand_model(fit)
+  expect_gt(diag$residuals$sd, 0)
+})
+
+test_that("check_demand_model.beezdemand_fixed residuals sd > 0", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_fixed(
+    apt, y_var = "y", x_var = "x", id_var = "id"
+  )
+  diag <- check_demand_model(fit)
+  expect_gt(diag$residuals$sd, 0)
+})
+
+# --- TMB diagnostics tests ---
+
+test_that("check_demand_model.beezdemand_tmb returns expected structure", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+
+  expect_s3_class(diag, "beezdemand_diagnostics")
+  expect_equal(diag$model_class, "beezdemand_tmb")
+  expect_true("convergence" %in% names(diag))
+  expect_true("boundary" %in% names(diag))
+  expect_true("residuals" %in% names(diag))
+  expect_true("random_effects" %in% names(diag))
+  expect_true("issues" %in% names(diag))
+  expect_true("recommendations" %in% names(diag))
+  expect_true(diag$convergence$converged)
+})
+
+test_that("check_demand_model.beezdemand_tmb residuals have all fields with sd > 0", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+
+  expect_true(!is.na(diag$residuals$mean))
+  expect_true(!is.na(diag$residuals$sd))
+  expect_true(!is.na(diag$residuals$min))
+  expect_true(!is.na(diag$residuals$max))
+  expect_gt(diag$residuals$sd, 0)
+  expect_true(is.numeric(diag$residuals$n_outliers))
+})
+
+test_that("print.beezdemand_diagnostics works for TMB without error", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+
+  expect_output(print(diag), "Model Diagnostics")
+  expect_output(print(diag), "Convergence")
+  expect_output(print(diag), "Residuals")
+  expect_output(print(diag), "Random Effects")
+})
+
+test_that("plot_residuals works for TMB models", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  p_fitted <- plot_residuals(fit, type = "fitted")
+  expect_s3_class(p_fitted, "ggplot")
+
+  p_hist <- plot_residuals(fit, type = "histogram")
+  expect_s3_class(p_hist, "ggplot")
+
+  p_qq <- plot_residuals(fit, type = "qq")
+  expect_s3_class(p_qq, "ggplot")
+})
+
+test_that("plot_qq.beezdemand_tmb works", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  p <- plot_qq(fit)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_qq.beezdemand_tmb with specific effect", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  p <- plot_qq(fit, which = "Q0")
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_qq.beezdemand_tmb errors on invalid effect", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  expect_error(plot_qq(fit, which = "nonexistent"),
+               "Specified random effects not found")
+})

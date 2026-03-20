@@ -27,7 +27,15 @@ demand curve).}
 \item{scale}{Character. Output scale for predictions: \code{"model"} returns values
 on the model's native scale (e.g., LL4-transformed for zben, log for
 exponential), while \code{"natural"} automatically back-transforms to the
-natural consumption scale. Default is \code{"model"} for backward compatibility.}
+natural consumption scale. Default is \code{"model"} for backward compatibility.
+
+When \code{scale = "natural"} and \code{equation = "exponential"}, the lognormal
+retransformation correction \code{exp(sigma_e^2/2)} is applied to produce
+the conditional mean (not median). For \code{"exponentiated"} and \code{"simplified"}
+equations, predictions are already on the natural scale and no correction
+is needed. For \code{"zben"}, \code{ll4_inv()} is applied; because ll4_inv is
+nonlinear, this gives the value corresponding to the conditional mean on
+the LL4 scale (approximately the median on the natural scale).}
 
 \item{...}{Additional arguments.}
 }
