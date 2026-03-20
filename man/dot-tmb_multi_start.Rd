@@ -11,7 +11,8 @@
   n_re,
   tmb_control,
   user_specified,
-  verbose
+  verbose,
+  prepared = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@
 \item{user_specified}{Character vector of user-specified tmb_control fields.}
 
 \item{verbose}{Integer verbosity level.}
+
+\item{prepared}{Output from .tmb_prepare_data() for data-driven start offsets.}
 }
 \value{
 List with obj, opt, start_used.

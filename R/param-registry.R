@@ -332,7 +332,8 @@ NULL
     name = "Simplified Exponential (Rzeszutek et al., 2025)",
     future_id = "simplified_exponential_demand",
     params_estimated = c("q0", "alpha"),
-    params_fixed = character(0),
+    params_default_fixed = character(0),
+    k_modes = NULL,
     default_param_space = "natural",
     response_scale = "natural",
     zero_handling = "keep"
@@ -344,7 +345,8 @@ NULL
     name = "Linear Demand",
     future_id = "linear_demand",
     params_estimated = c("L", "b", "a"),
-    params_fixed = character(0),
+    params_default_fixed = character(0),
+    k_modes = NULL,
     default_param_space = "natural",
     response_scale = "natural",
     zero_handling = "keep"

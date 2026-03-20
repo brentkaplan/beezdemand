@@ -74,23 +74,22 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
 
     runs <- seq_len(nruns)
     manysims <- lapply(runs, RunOneSim, setparams, sdindex, x)
-    simvalues <- sapply(manysims, "[[", 1)
-    simparams <- sapply(manysims, "[[", 2)
-    seeds <- sapply(manysims, "[", 3:4)
 
-    simvaluesraw <- simvalues[-2, , drop = FALSE]
-    simvalues <- simvalues[-1, , drop = FALSE]
-    simvaluesraw <- do.call("cbind", simvaluesraw)
-    simvalues <- do.call("cbind", simvalues)
+    # Use lapply to avoid sapply dimension-dropping when nruns = 1
+    simvalues_list <- lapply(manysims, "[[", 1)
+    simvaluesraw <- do.call("cbind", lapply(simvalues_list, "[[", "y"))
+    simvalues <- do.call("cbind", lapply(simvalues_list, "[[", "yr"))
     simvaluesraw <- cbind(x, simvaluesraw)
     simvalues <- cbind(x, simvalues)
     colnames(simvaluesraw) <- c("x", runs)
     colnames(simvalues) <- c("x", runs)
 
+    simparams <- do.call("cbind", lapply(manysims, "[[", 2))
     rownames(simparams) <- c("alphalr", "q0lr", "alphar", "q0r")
     colnames(simparams) <- runs
     simparams <- t(simparams)
 
+    seeds <- do.call("cbind", lapply(manysims, "[", 3:4))
     colnames(seeds) <- runs
     seeds <- t(seeds)
 

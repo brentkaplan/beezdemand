@@ -40,8 +40,9 @@ Imports:
     tidyr,
     nlme,
     rlang,
+    cli,
     utils,
-    TMB
+    TMB (>= 1.9.0)
 Suggests:
     broom.mixed,
     GGally,

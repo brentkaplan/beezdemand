@@ -82,19 +82,64 @@ missing_package_error <- function(pkg, reason = NULL, call = rlang::caller_env()
 
 #' Normalize Equation Name to Legacy Convention
 #'
-#' Maps modern equation names to their legacy equivalents used internally
-#' by the fitting engine. Pass-through for names that are already in legacy
-#' form or unrecognised.
+#' Normalize equation name across modeling tiers
 #'
-#' @param equation Character scalar.
-#' @return Character scalar (legacy name).
+#' Maps equation aliases to canonical names for a given tier. Accepts
+#' cross-tier aliases (e.g., "hs" in the TMB tier maps to "exponential")
+#' and emits a deprecation-style message for non-canonical names.
+#'
+#' @param equation Character scalar. The equation name to normalize.
+#' @param tier Character scalar. One of "fixed", "tmb", "nlme", "hurdle".
+#'   Defaults to "fixed" for backwards compatibility.
+#' @return Character scalar (canonical name for the tier).
 #' @noRd
-normalize_equation <- function(equation) {
-  switch(equation,
-    exponential   = "hs",
-    exponentiated = "koff",
-    equation
+normalize_equation <- function(equation, tier = "fixed") {
+  # Pass through if equation is still a multi-value default (pre-match.arg)
+  if (length(equation) != 1) return(equation)
+
+  # Canonical names per tier
+  canonical <- list(
+    fixed  = c("hs", "koff", "simplified", "linear"),
+    tmb    = c("exponentiated", "exponential", "simplified", "zben"),
+    nlme   = c("exponentiated", "zben", "simplified"),
+    hurdle = c("zhao_exponential", "exponential", "simplified_exponential")
   )
+
+  # Cross-tier alias map: alias -> list(tier = canonical_name)
+  aliases <- list(
+    # Legacy -> modern
+    hs   = list(tmb = "exponential", nlme = NULL, hurdle = "exponential"),
+    koff = list(tmb = "exponentiated", nlme = "exponentiated", hurdle = NULL),
+    # Modern -> legacy
+    exponential   = list(fixed = "hs"),
+    exponentiated = list(fixed = "koff")
+  )
+
+  tier_canon <- canonical[[tier]]
+  if (is.null(tier_canon)) {
+    return(equation)
+  }
+
+  # Already canonical for this tier
+ if (equation %in% tier_canon) {
+    return(equation)
+  }
+
+  # Check aliases
+  alias_entry <- aliases[[equation]]
+  if (!is.null(alias_entry) && !is.null(alias_entry[[tier]])) {
+    mapped <- alias_entry[[tier]]
+    lifecycle::deprecate_warn(
+      when = "0.3.0",
+      what = I(paste0("equation = \"", equation, "\"")),
+      with = I(paste0("equation = \"", mapped, "\"")),
+      details = paste0("Alias accepted for the ", tier, " tier.")
+    )
+    return(mapped)
+  }
+
+  # Pass through (let match.arg in calling function handle invalid names)
+  equation
 }
 
 ##' Pull vector from data frame
@@ -407,37 +452,6 @@ validate_cp_data <- function(
   return(data)
 }
 
-
-# #' @keywords internal
-# validate_demand_data <- function(
-#   data,
-#   required_cols = c("x", "y"),
-#   require_id = FALSE,
-#   drop_unused_factors = TRUE
-# ) {
-#   if (!is.data.frame(data)) {
-#     stop("Data must be a data frame.")
-#   }
-
-#   missing_cols <- setdiff(required_cols, names(data))
-#   if (length(missing_cols) > 0) {
-#     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
-#   }
-
-#   if (require_id && !("id" %in% names(data))) {
-#     stop("Data must contain an 'id' column for this operation.")
-#   }
-
-#   # Drop unused factor levels if requested
-#   if (drop_unused_factors) {
-#     factor_cols <- which(vapply(data, is.factor, logical(1)))
-#     if (length(factor_cols) > 0) {
-#       data[factor_cols] <- lapply(data[factor_cols], droplevels)
-#     }
-#   }
-
-#   return(data)
-# }
 
 #' Validate and Prepare Demand Data
 #'

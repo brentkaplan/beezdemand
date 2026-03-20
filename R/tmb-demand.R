@@ -397,39 +397,90 @@ NULL
 #' @param tmb_control Control parameters.
 #' @param user_specified Character vector of user-specified tmb_control fields.
 #' @param verbose Integer verbosity level.
+#' @param prepared Output from .tmb_prepare_data() for data-driven start offsets.
 #'
 #' @return List with obj, opt, start_used.
 #' @keywords internal
 .tmb_multi_start <- function(tmb_data, start_values, map, n_re,
-                              tmb_control, user_specified, verbose) {
+                              tmb_control, user_specified, verbose,
+                              prepared = NULL) {
+  # Derive data-adaptive offset scales
+  q0_offset <- 1
+  sigma_b_high <- log(1)
+  sigma_b_low <- log(0.3)
+  sigma_e_high <- log(0.5)
+  sigma_e_low <- log(2)
+  alpha_aggressive <- log(0.0001)
+  alpha_conservative <- log(0.01)
+
+  if (!is.null(prepared)) {
+    y <- prepared$y
+    price <- prepared$price
+    sid <- prepared$subject_id
+
+    # Between-subject SD of y at lowest price (for Q0 offset)
+    min_p <- min(price, na.rm = TRUE)
+    y_at_min <- y[price == min_p]
+    if (length(y_at_min) > 2) {
+      q0_offset <- max(sd(y_at_min, na.rm = TRUE), 0.5)
+    }
+
+    # Between/within subject variance (for sigma_b/sigma_e)
+    subj_means <- tapply(y, sid, mean, na.rm = TRUE)
+    if (length(subj_means) > 1) {
+      sigma_b_high <- log(max(sd(subj_means, na.rm = TRUE), 0.1))
+      sigma_b_low <- log(max(sd(subj_means, na.rm = TRUE) * 0.3, 0.05))
+    }
+    resids <- y - subj_means[as.character(sid)]
+    within_sd <- sd(resids, na.rm = TRUE)
+    if (!is.na(within_sd) && within_sd > 0) {
+      sigma_e_high <- log(max(within_sd * 0.5, 0.1))
+      sigma_e_low <- log(max(within_sd * 2, 0.5))
+    }
+
+    # Data-driven alpha from half-life price
+    q_max <- median(y_at_min, na.rm = TRUE)
+    if (!is.na(q_max) && q_max > 0) {
+      half_idx <- y < (q_max / 2) & price > min_p
+      if (any(half_idx, na.rm = TRUE)) {
+        p_half <- min(price[half_idx], na.rm = TRUE)
+        if (is.finite(p_half) && p_half > 0) {
+          alpha_est <- log(2) / (exp(start_values$beta_q0[1]) * p_half)
+          alpha_aggressive <- log(max(alpha_est * 0.1, 1e-8))
+          alpha_conservative <- log(max(alpha_est * 10, 1e-6))
+        }
+      }
+    }
+  }
+
   # Generate 3 starting value sets
   start_sets <- list()
   start_sets[[1]] <- start_values  # Data-driven
 
-  # Heuristic starts
+  # Aggressive starts (higher Q0, lower alpha)
   s2 <- start_values
-  s2$beta_q0[1] <- start_values$beta_q0[1] + 1
-  s2$beta_alpha[1] <- log(0.0001)
+  s2$beta_q0[1] <- start_values$beta_q0[1] + q0_offset
+  s2$beta_alpha[1] <- alpha_aggressive
   if (!is.null(map$log_k) && is.na(map$log_k)) {
     # k is fixed, don't change
   } else {
     s2$log_k <- log(3)
   }
-  s2$logsigma_b <- log(1)
-  s2$logsigma_e <- log(0.5)
+  s2$logsigma_b <- sigma_b_high
+  s2$logsigma_e <- sigma_e_high
   start_sets[[2]] <- s2
 
-  # Conservative starts
+  # Conservative starts (lower Q0, higher alpha)
   s3 <- start_values
-  s3$beta_q0[1] <- start_values$beta_q0[1] - 0.5
-  s3$beta_alpha[1] <- log(0.01)
+  s3$beta_q0[1] <- start_values$beta_q0[1] - q0_offset * 0.5
+  s3$beta_alpha[1] <- alpha_conservative
   if (!is.null(map$log_k) && is.na(map$log_k)) {
     # k is fixed
   } else {
     s3$log_k <- log(1.5)
   }
-  s3$logsigma_b <- log(0.3)
-  s3$logsigma_e <- log(2)
+  s3$logsigma_b <- sigma_b_low
+  s3$logsigma_e <- sigma_e_low
   start_sets[[3]] <- s3
 
   best_nll <- Inf
@@ -898,6 +949,10 @@ fit_demand_tmb <- function(
   ...
 ) {
   cl <- match.call()
+  # Normalize aliases before match.arg (only when user passed a scalar value)
+  if (length(equation) == 1) {
+    equation <- normalize_equation(equation, tier = "tmb")
+  }
   equation <- match.arg(equation)
 
   # Validate random_effects
@@ -1103,7 +1158,8 @@ fit_demand_tmb <- function(
 
   if (isTRUE(multi_start)) {
     result <- .tmb_multi_start(
-      tmb_data, default_starts, map, n_re, tmb_control, user_specified, verbose
+      tmb_data, default_starts, map, n_re, tmb_control, user_specified, verbose,
+      prepared = prepared
     )
     obj <- result$obj
     opt <- result$opt
@@ -1248,6 +1304,22 @@ fit_demand_tmb <- function(
     ),
     class = "beezdemand_tmb"
   )
+
+  # Warn if zben Q0 estimates are near the clamping boundary
+ if (equation == "zben" && !is.null(subject_pars)) {
+    q0_col <- intersect(c("Q0", "q0"), names(subject_pars))
+    if (length(q0_col) > 0) {
+      q0_vals <- subject_pars[[q0_col[1]]]
+      n_near_boundary <- sum(q0_vals < 1.01, na.rm = TRUE)
+      if (n_near_boundary > 0) {
+        cli::cli_warn(c(
+          "Estimated Q0 for {n_near_boundary} subject{?s} is near 1.0, where the zben equation has a mathematical singularity.",
+          "i" = "When Q0 < 1, the zben decay rate flips sign (demand increases with price). Values are clamped to Q0 >= ~1.002.",
+          "i" = "Consider using {.arg equation = \"exponential\"} or {.arg equation = \"exponentiated\"} for low-intensity demand."
+        ))
+      }
+    }
+  }
 
   if (verbose >= 1) message("Done.")
 

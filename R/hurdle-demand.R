@@ -1343,7 +1343,37 @@ validate_hurdle_data <- function(data, y_var, x_var, id_var) {
   # Check we have multiple subjects
   n_subjects <- length(unique(data_complete[[id_var]]))
   if (n_subjects < 2) {
-    stop("Need at least 2 subjects for mixed effects model")
+    stop(
+      "Need at least 2 subjects for hurdle mixed-effects model (found ",
+      n_subjects, "). Random effects require between-subject variation."
+    )
+  }
+
+  # Check for sufficient price variation
+  n_prices <- length(unique(data_complete[[x_var]]))
+  if (n_prices < 2) {
+    stop(
+      "Need at least 2 distinct price levels (found ", n_prices, "). ",
+      "Cannot estimate price sensitivity from a single price."
+    )
+  }
+
+  # Check that response has both zeros and positives (required for two-part model)
+  has_zeros <- any(data_complete[[y_var]] == 0, na.rm = TRUE)
+  has_pos <- any(data_complete[[y_var]] > 0, na.rm = TRUE)
+  if (!has_zeros) {
+    stop(
+      "All consumption values are positive (no zeros). ",
+      "Hurdle models require zeros in the response to identify the binary component. ",
+      "Use fit_demand_tmb() instead for all-positive data."
+    )
+  }
+  if (!has_pos) {
+    stop(
+      "All consumption values are zero (no positive values). ",
+      "Hurdle models require positive responses to identify the consumption component. ",
+      "Check data quality or consider whether this sample is appropriate."
+    )
   }
 
   return(data_complete)

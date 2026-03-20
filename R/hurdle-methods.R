@@ -87,16 +87,28 @@ summary.beezdemand_hurdle <- function(
     names(se_vec)[names(se_vec) == "logQ0"] <- "log_q0"
   }
 
+  # Guard against SE = 0 (boundary parameters, e.g. collapsed variance)
+  boundary_mask <- se_vec == 0 & !is.na(se_vec)
+  if (any(boundary_mask)) {
+    boundary_params <- names(se_vec)[boundary_mask]
+    cli::cli_warn(c(
+      "Standard error is zero for {length(boundary_params)} parameter{?s}: {.val {boundary_params}}.",
+      "i" = "This typically indicates a parameter estimated at its boundary (e.g., variance collapsed to zero).",
+      "i" = "Consider simplifying the model or checking data quality."
+    ))
+  }
+  t_val <- ifelse(se_vec > 0, coefs / se_vec, NA_real_)
+
   # Build coefficient table (matrix form for printing)
   coef_matrix <- cbind(
     Estimate = coefs,
     `Std. Error` = se_vec,
-    `t value` = coefs / se_vec
+    `t value` = t_val
   )
 
   # Build coefficient tibble (for contract compliance)
   coef_names <- names(coefs)
-  z_val <- coefs / se_vec
+  z_val <- t_val
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine component for each coefficient
@@ -137,7 +149,7 @@ summary.beezdemand_hurdle <- function(
 
   coefficients <- coefficients |>
     dplyr::mutate(
-      statistic = .data$estimate / .data$std.error,
+      statistic = ifelse(.data$std.error > 0, .data$estimate / .data$std.error, NA_real_),
       p.value = 2 * stats::pnorm(-abs(.data$statistic))
     )
 
@@ -566,11 +578,13 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #' @param type One of `"response"` or `"demand"`.
 #' @param correction Logical; apply lognormal retransformation correction.
 #' @param n_draws Number of MC draws from the RE distribution.
+#' @param seed Integer or NULL. RNG seed for reproducibility.
 #'
 #' @return A tibble with price, .fitted, and supporting columns.
 #' @noRd
 .compute_marginal_demand <- function(object, prices, type = "demand",
-                                     correction = TRUE, n_draws = 1000L) {
+                                     correction = TRUE, n_draws = 1000L,
+                                     seed = 42L) {
   coefs <- object$model$coefficients
   beta0 <- unname(coefs[["beta0"]])
   beta1 <- unname(coefs[["beta1"]])
@@ -590,11 +604,65 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 
   cf <- if (isTRUE(correction)) exp(sigma_e^2 / 2) else 1
 
-  # Draw random effects
-  set.seed(42L)
-  a_draws <- stats::rnorm(n_draws, 0, sigma_a)
-  b_draws <- stats::rnorm(n_draws, 0, sigma_b)
-  c_draws <- if (n_re == 3) stats::rnorm(n_draws, 0, sigma_c) else rep(0, n_draws)
+  # Build RE covariance matrix from estimated parameters
+  rho_ab <- tanh(coefs[["rho_ab_raw"]])
+
+  if (n_re == 3) {
+    rho_ac <- tanh(coefs[["rho_ac_raw"]])
+    rho_bc_partial <- tanh(coefs[["rho_bc_raw"]])
+    rho_bc <- rho_ab * rho_ac +
+      rho_bc_partial * sqrt((1 - rho_ab^2) * (1 - rho_ac^2))
+
+    Sigma <- matrix(
+      c(sigma_a^2, sigma_a * sigma_b * rho_ab, sigma_a * sigma_c * rho_ac,
+        sigma_a * sigma_b * rho_ab, sigma_b^2, sigma_b * sigma_c * rho_bc,
+        sigma_a * sigma_c * rho_ac, sigma_b * sigma_c * rho_bc, sigma_c^2),
+      nrow = 3
+    )
+  } else {
+    Sigma <- matrix(
+      c(sigma_a^2, sigma_a * sigma_b * rho_ab,
+        sigma_a * sigma_b * rho_ab, sigma_b^2),
+      nrow = 2
+    )
+  }
+
+  # Cholesky decomposition for correlated MVN draws
+  L <- tryCatch(
+    chol(Sigma),
+    error = function(e) {
+      # Fall back to diagonal if Sigma is not PD (shouldn't happen with
+      # partial-correlation parametrization, but guard defensively)
+      if (n_re == 3) {
+        chol(diag(c(sigma_a^2, sigma_b^2, sigma_c^2)))
+      } else {
+        chol(diag(c(sigma_a^2, sigma_b^2)))
+      }
+    }
+  )
+
+  # Draw correlated random effects via Z %*% L where Z ~ iid N(0,1)
+  draw_fn <- function() {
+    Z <- matrix(stats::rnorm(n_draws * nrow(Sigma)), nrow = n_draws, ncol = nrow(Sigma))
+    Z %*% L
+  }
+
+  if (!is.null(seed)) {
+    old_seed <- get0(".Random.seed", envir = globalenv(), ifnotfound = NULL)
+    on.exit({
+      if (is.null(old_seed)) {
+        rm(".Random.seed", envir = globalenv())
+      } else {
+        assign(".Random.seed", old_seed, envir = globalenv())
+      }
+    }, add = TRUE)
+    set.seed(seed)
+  }
+  draws <- draw_fn()
+
+  a_draws <- draws[, 1]
+  b_draws <- draws[, 2]
+  c_draws <- if (n_re == 3) draws[, 3] else rep(0, n_draws)
 
   # For each price, average over MC draws
   n_prices <- length(prices)
@@ -683,6 +751,9 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'   the **median** (geometric mean), which is useful for individual-level
 #'   "most likely" predictions. Only applies to `type = "response"` and
 #'   `type = "demand"`.
+#' @param seed Integer or `NULL`. Random seed for Monte Carlo marginal
+#'   predictions (default `42L`). Set to `NULL` to use current RNG state.
+#'   The global RNG state is preserved and restored after the call.
 #' @param se.fit Logical; if `TRUE`, includes a `.se.fit` column (delta-method via
 #'   `sdreport` when available).
 #' @param interval One of `"none"` (default) or `"confidence"`.
@@ -773,6 +844,7 @@ predict.beezdemand_hurdle <- function(
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
   correction = TRUE,
+  seed = 42L,
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -851,7 +923,7 @@ predict.beezdemand_hurdle <- function(
     # Monte Carlo integration over the random effects distribution
     out <- .compute_marginal_demand(
       object, price_vec, type = type, correction = correction,
-      n_draws = 1000L
+      n_draws = 1000L, seed = seed
     )
 
     attr(out, "marginal_method") <- "monte_carlo"
