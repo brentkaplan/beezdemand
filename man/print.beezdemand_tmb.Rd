@@ -17,3 +17,11 @@ Invisibly returns the input object \code{x}.
 \description{
 Print Method for TMB Mixed-Effects Demand Model
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+print(fit)
+}
+
+}

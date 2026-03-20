@@ -12,6 +12,7 @@ plot_demand_overlay(
   n_points = 200,
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   free_trans = 0.01,
+  y_min = 0.001,
   inv_fun = identity,
   x_lab = "Price",
   y_lab = "Consumption",
@@ -33,6 +34,11 @@ prices across all models.}
 \item{x_trans}{Character; x-axis transformation (default \code{"log10"}).}
 
 \item{free_trans}{Numeric; replacement for price = 0 on log scales.}
+
+\item{y_min}{Numeric; minimum consumption value to display. Values below
+this floor are dropped to prevent extreme predictions (e.g., 1e-16 from
+hurdle models) from compressing the y-axis. Set to \code{NULL} to disable.
+Default is \code{0.001}.}
 
 \item{inv_fun}{Function to back-transform consumption values (e.g.,
 \link{ll4_inv} for LL4-transformed models). Default is \link{identity}.}

@@ -69,6 +69,11 @@ NULL
 #' glance(fit_g)  # one row per group
 #' }
 #'
+#' @seealso [fit_demand_tmb()] for TMB mixed-effects models,
+#'   [fit_demand_mixed()] for NLME mixed-effects models,
+#'   [fit_demand_hurdle()] for hurdle models.
+#' @family demand-fitting
+#'
 #' @export
 fit_demand_fixed <- function(
   data,

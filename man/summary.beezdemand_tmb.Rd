@@ -21,3 +21,12 @@ from \code{beezdemand_summary}).
 \description{
 Summarize a TMB Mixed-Effects Demand Model Fit
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+summary(fit)
+summary(fit, report_space = "log10")
+}
+
+}

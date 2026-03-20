@@ -17,3 +17,11 @@ A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
 \description{
 Get Subject-Specific Parameters from TMB Model
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+head(get_subject_pars(fit))
+}
+
+}

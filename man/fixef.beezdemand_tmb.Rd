@@ -17,3 +17,11 @@ Named numeric vector of fixed effects.
 \description{
 Extract Fixed Effects from TMB Model
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+nlme::fixef(fit)
+}
+
+}

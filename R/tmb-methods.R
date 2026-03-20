@@ -67,6 +67,14 @@
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return Invisibly returns the input object \code{x}.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' print(fit)
+#' }
+#'
 #' @export
 print.beezdemand_tmb <- function(x, ...) {
   cat("\nTMB Mixed-Effects Demand Model\n\n")
@@ -132,6 +140,14 @@ print.beezdemand_tmb <- function(x, ...) {
 #'
 #' @return An object of class \code{summary.beezdemand_tmb} (also inherits
 #'   from \code{beezdemand_summary}).
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' summary(fit)
+#' summary(fit, report_space = "log10")
+#' }
 #'
 #' @export
 summary.beezdemand_tmb <- function(
@@ -398,6 +414,14 @@ print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return Named numeric vector of fixed effect coefficients.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' coef(fit)
+#' }
+#'
 #' @export
 coef.beezdemand_tmb <- function(object, ...) {
   object$model$coefficients
@@ -445,6 +469,14 @@ nobs.beezdemand_tmb <- function(object, ...) {
 #' @param ... Additional arguments.
 #'
 #' @return Named numeric vector of fixed effects.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' nlme::fixef(fit)
+#' }
+#'
 #' @export
 fixef.beezdemand_tmb <- function(object, ...) {
   coef(object)
@@ -461,6 +493,14 @@ fixef.beezdemand_tmb <- function(object, ...) {
 #' @param ... Additional arguments.
 #'
 #' @return Data frame with subject-level random effects.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' head(nlme::ranef(fit))
+#' }
+#'
 #' @export
 ranef.beezdemand_tmb <- function(object, ...) {
   spars <- object$subject_pars
@@ -486,18 +526,44 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #'   natural consumption scale. Default is `"model"` for backward compatibility.
 #'
 #'   When `scale = "natural"` and `equation = "exponential"`, the lognormal
-#'   retransformation correction `exp(sigma_e^2/2)` is applied to produce
-#'   the conditional mean (not median). For `"exponentiated"` and `"simplified"`
-#'   equations, predictions are already on the natural scale and no correction
-#'   is needed. For `"zben"`, `ll4_inv()` is applied; because ll4_inv is
-#'   nonlinear, this gives the value corresponding to the conditional mean on
-#'   the LL4 scale (approximately the median on the natural scale).
+#'   retransformation correction `exp(sigma_e^2/2)` is applied by default to
+#'   produce the conditional mean (not median). Set `correction = FALSE` to
+#'   obtain the median (geometric mean) instead. For `"exponentiated"` and
+#'   `"simplified"` equations, predictions are already on the natural scale
+#'   and no correction is needed. For `"zben"`, `ll4_inv()` is applied;
+#'   because ll4_inv is nonlinear, this gives the value corresponding to the
+#'   conditional mean on the LL4 scale (approximately the median on the
+#'   natural scale).
+#' @param correction Logical. If `TRUE` (default), applies the lognormal
+#'   retransformation correction when `scale = "natural"`. Set to `FALSE` to
+#'   obtain the median prediction. Only affects the `"exponential"` equation.
 #' @param ... Additional arguments.
 #'
 #' @return Depends on `type`:
 #'   - `"response"`: tibble with .fitted column
 #'   - `"parameters"`: tibble of subject-specific parameters
 #'   - `"demand"`: tibble with price and .fitted columns
+#'
+#' @note Population-averaged (marginal) predictions integrating over the
+#'   random effects distribution are not yet implemented for this model tier.
+#'   The `type = "demand"` prediction uses RE = 0 (population fixed effects
+#'   only). For marginal integration accounting for Jensen's inequality, use
+#'   [predict.beezdemand_hurdle()] with `marginal = TRUE`.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#'
+#' # Fitted values
+#' head(predict(fit, type = "response"))
+#'
+#' # Population demand curve at specific prices
+#' predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
+#'
+#' # Subject-level parameters
+#' head(predict(fit, type = "parameters"))
+#' }
 #'
 #' @export
 predict.beezdemand_tmb <- function(
@@ -506,6 +572,7 @@ predict.beezdemand_tmb <- function(
   type = c("response", "parameters", "demand"),
   prices = NULL,
   scale = c("model", "natural"),
+  correction = TRUE,
   ...
 ) {
   type <- match.arg(type)
@@ -555,7 +622,8 @@ predict.beezdemand_tmb <- function(
     ## Back-transform to natural scale if requested
     if (scale == "natural") {
       se <- exp(coefs[["logsigma_e"]])
-      fitted <- .tmb_backtransform(fitted, equation, sigma_e = se)
+      fitted <- .tmb_backtransform(fitted, equation, sigma_e = se,
+                                    correction = correction)
     }
 
     return(tibble::tibble(
@@ -603,7 +671,8 @@ predict.beezdemand_tmb <- function(
   ## Back-transform to natural scale if requested
   if (scale == "natural") {
     se <- exp(coefs[["logsigma_e"]])
-    fitted_vals <- .tmb_backtransform(fitted_vals, equation, sigma_e = se)
+    fitted_vals <- .tmb_backtransform(fitted_vals, equation, sigma_e = se,
+                                      correction = correction)
   }
 
   out <- tibble::as_tibble(newdata)
@@ -680,6 +749,14 @@ predict.beezdemand_tmb <- function(
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' head(get_subject_pars(fit))
+#' }
+#'
 #' @export
 get_subject_pars.beezdemand_tmb <- function(object, ...) {
   object$subject_pars
@@ -701,7 +778,8 @@ get_subject_pars.beezdemand_tmb <- function(object, ...) {
 #' @param show_pred Character. Which predictions to show: `"population"`,
 #'   `"individual"`, or `"both"`. If `NULL` (default), determined by `type`.
 #' @param x_trans Character. X-axis transformation.
-#' @param y_trans Character. Y-axis transformation.
+#' @param y_trans Character. Y-axis transformation. If `NULL` (default),
+#'   uses `"pseudo_log"` which handles zero values gracefully.
 #' @param inv_fun Optional function to back-transform y-axis. For `zben` and
 #'   `exponential` equations, the inverse link is applied automatically by
 #'   default so all demand plots are on the consumption scale.
@@ -716,6 +794,22 @@ get_subject_pars.beezdemand_tmb <- function(object, ...) {
 #' @param ... Additional arguments.
 #'
 #' @return A ggplot2 object.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#'
+#' # Population demand curve
+#' plot(fit, type = "demand")
+#'
+#' # Individual curves for selected subjects
+#' plot(fit, type = "individual", ids = c("19", "51"))
+#'
+#' # Parameter distributions
+#' plot(fit, type = "parameters")
+#' }
+#'
 #' @export
 plot.beezdemand_tmb <- function(
   x,
@@ -962,6 +1056,15 @@ plot.beezdemand_tmb <- function(
 #' @param ... Additional arguments.
 #'
 #' @return A tibble of model coefficients.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' tidy(fit)
+#' tidy(fit, report_space = "log10")
+#' }
+#'
 #' @export
 tidy.beezdemand_tmb <- function(
   x,
@@ -1024,6 +1127,14 @@ tidy.beezdemand_tmb <- function(
 #' @param ... Additional arguments.
 #'
 #' @return A one-row tibble of model-level statistics.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' glance(fit)
+#' }
+#'
 #' @export
 glance.beezdemand_tmb <- function(x, ...) {
   tibble::tibble(
@@ -1051,6 +1162,14 @@ glance.beezdemand_tmb <- function(x, ...) {
 #'   `.std_resid` columns. Residuals are computed on the model's native scale
 #'   (log scale for `"exponential"`, natural/LL4 scale for others) to match the
 #'   C++ likelihood.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' head(augment(fit))
+#' }
+#'
 #' @export
 augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
   pred <- predict(x, newdata = newdata, type = "response")
@@ -1062,8 +1181,11 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 
   # Compute residuals on model scale (matching C++ likelihood)
   if (equation == "exponential") {
-    # Model operates on log(Q); y_obs is natural consumption
-    pred$.resid <- log(y_obs) - pred$.fitted
+    # Model operates on log(Q); y_obs is natural consumption.
+    # Zero observations were dropped during fitting, so log(0) = -Inf.
+    # Set residuals to NA for these observations.
+    log_y <- ifelse(y_obs > 0, log(y_obs), NA_real_)
+    pred$.resid <- log_y - pred$.fitted
   } else {
     # exponentiated/simplified/zben: y and fitted on same scale
     pred$.resid <- y_obs - pred$.fitted
@@ -1086,12 +1208,25 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' @param level Confidence level (default 0.95).
 #' @param report_space Character. `"internal"` or `"natural"`. When
 #'   `"natural"`, `beta_q0`, `beta_alpha`, and `log_k` are exponentiated
-#'   to the natural scale. Variance parameters (`logsigma_*`, `rho_bc_raw`)
+#'   to the natural scale. For the intercept, this gives Q0 or alpha at the
+#'   reference level. For non-intercept terms, the exponentiated value
+#'   represents a **multiplicative fold-change** (ratio) relative to the
+#'   reference level, not the absolute parameter value for that group.
+#'   Variance parameters (`logsigma_*`, `rho_bc_raw`)
 #'   remain on their internal scales; use [summary()] or
 #'   `.tmb_format_variance_components()` for transformed variance components.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with term, estimate, conf.low, conf.high, level.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' confint(fit)
+#' confint(fit, report_space = "natural")
+#' }
+#'
 #' @export
 confint.beezdemand_tmb <- function(
   object,
@@ -1170,6 +1305,16 @@ confint.beezdemand_tmb <- function(
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with columns: level, estimate, std.error, conf.low, conf.high.
+#'
+#' @examples
+#' \donttest{
+#' data(apt_full)
+#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' fit <- fit_demand_tmb(dat, equation = "exponential",
+#'                       factors = "gender", verbose = 0)
+#' get_demand_param_emms(fit, param = "Q0")
+#' get_demand_param_emms(fit, param = "alpha")
+#' }
 #'
 #' @export
 get_demand_param_emms.beezdemand_tmb <- function(
@@ -1315,6 +1460,15 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #'
 #' @return A tibble with contrast results.
 #'
+#' @examples
+#' \donttest{
+#' data(apt_full)
+#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' fit <- fit_demand_tmb(dat, equation = "exponential",
+#'                       factors = "gender", verbose = 0)
+#' get_demand_comparisons(fit, param = "Q0")
+#' }
+#'
 #' @export
 get_demand_comparisons.beezdemand_tmb <- function(
   fit_obj,
@@ -1443,6 +1597,20 @@ get_demand_comparisons.beezdemand_tmb <- function(
 
 # --- calc_group_metrics ---
 
+#' Calculate Population-Level Demand Metrics for TMB Model
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A list with Pmax, Omax, Qmax, elasticity_at_pmax, and method.
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' calc_group_metrics(fit)
+#' }
+#'
 #' @export
 calc_group_metrics.beezdemand_tmb <- function(object, ...) {
   coefs <- object$model$coefficients

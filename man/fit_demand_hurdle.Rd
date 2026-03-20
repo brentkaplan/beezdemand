@@ -138,4 +138,14 @@ compare_hurdle_models(fit3, fit2)
 \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}},
 \code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
 \code{\link{simulate_hurdle_data}}
+
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}} for continuous mixed-effects models,
+\code{\link[=fit_demand_mixed]{fit_demand_mixed()}} for NLME-based fitting,
+\code{\link[=fit_demand_fixed]{fit_demand_fixed()}} for individual NLS curves.
+
+Other demand-fitting: 
+\code{\link{fit_demand_fixed}()},
+\code{\link{fit_demand_mixed}()},
+\code{\link{fit_demand_tmb}()}
 }
+\concept{demand-fitting}

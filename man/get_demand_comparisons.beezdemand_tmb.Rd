@@ -33,3 +33,13 @@ A tibble with contrast results.
 Computes pairwise contrasts between factor levels for demand parameters
 from a \code{beezdemand_tmb} model.
 }
+\examples{
+\donttest{
+data(apt_full)
+dat <- apt_full[apt_full$gender \%in\% c("Male", "Female"), ]
+fit <- fit_demand_tmb(dat, equation = "exponential",
+                      factors = "gender", verbose = 0)
+get_demand_comparisons(fit, param = "Q0")
+}
+
+}

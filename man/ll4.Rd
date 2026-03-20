@@ -26,13 +26,19 @@ magnitude while handling zero values gracefully (as \code{x=0} yields \code{0}).
 It's a variation related to the Box-Cox transformation or a generalized logarithm.
 }
 \examples{
+# Basic usage
 ll4(0)
 ll4(1)
 ll4(10)
-ll4(100)
 ll4(c(0, 1, 10, 100, 1000))
 
 # Using a different lambda or base
 ll4(10, lambda = 2)
 ll4(10, base = exp(1)) # Natural log base
+
+# Typical workflow: transform -> fit -> back-transform
+data(apt)
+apt$y_ll4 <- ll4(apt$y)
+# Verify round-trip: ll4_inv(ll4(x)) == x
+all.equal(apt$y, ll4_inv(apt$y_ll4))
 }

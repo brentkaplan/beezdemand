@@ -657,6 +657,11 @@ NULL
 #' compare_hurdle_models(fit3, fit2)
 #' }
 #'
+#' @seealso [fit_demand_tmb()] for continuous mixed-effects models,
+#'   [fit_demand_mixed()] for NLME-based fitting,
+#'   [fit_demand_fixed()] for individual NLS curves.
+#' @family demand-fitting
+#'
 #' @importFrom TMB MakeADFun sdreport
 #' @importFrom stats nlminb na.omit setNames
 #' @export

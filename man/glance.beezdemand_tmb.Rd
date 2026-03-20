@@ -17,3 +17,11 @@ A one-row tibble of model-level statistics.
 \description{
 Glance at a beezdemand_tmb Model
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+glance(fit)
+}
+
+}

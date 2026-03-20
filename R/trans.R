@@ -16,15 +16,21 @@
 #'
 #' @export
 #' @examples
+#' # Basic usage
 #' ll4(0)
 #' ll4(1)
 #' ll4(10)
-#' ll4(100)
 #' ll4(c(0, 1, 10, 100, 1000))
 #'
 #' # Using a different lambda or base
 #' ll4(10, lambda = 2)
 #' ll4(10, base = exp(1)) # Natural log base
+#'
+#' # Typical workflow: transform -> fit -> back-transform
+#' data(apt)
+#' apt$y_ll4 <- ll4(apt$y)
+#' # Verify round-trip: ll4_inv(ll4(x)) == x
+#' all.equal(apt$y, ll4_inv(apt$y_ll4))
 ll4 <- function(x, lambda = 4, base = 10) {
   # Ensure x is non-negative for the intended use of x^lambda
   if (any(x < 0, na.rm = TRUE)) {

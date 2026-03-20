@@ -96,7 +96,24 @@
 #' summary(fit)
 #' }
 #'
-#' @return An object of class `beezdemand_nlme`.
+#' @return An object of class `beezdemand_nlme` containing:
+#'   \describe{
+#'     \item{model}{The fitted `nlme` model object}
+#'     \item{data}{Data frame used for fitting}
+#'     \item{call}{The original function call}
+#'     \item{equation_form}{Equation form used}
+#'     \item{param_space}{Parameterization space}
+#'     \item{factors}{Factor variables in the model}
+#'     \item{y_var, x_var, id_var}{Variable name strings}
+#'     \item{start_values}{Starting values used}
+#'   }
+#'
+#' @seealso [fit_demand_tmb()] for TMB-based mixed-effects (preferred for new work),
+#'   [fit_demand_fixed()] for individual NLS curves,
+#'   [fit_demand_hurdle()] for hurdle models,
+#'   [get_demand_param_emms()] for estimated marginal means,
+#'   [get_demand_comparisons()] for pairwise comparisons.
+#' @family demand-fitting
 #'
 #' @importFrom nlme nlme pdDiag nlmeControl fixef
 #' @importFrom stats as.formula median update model.matrix quantile coef

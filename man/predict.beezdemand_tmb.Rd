@@ -10,6 +10,7 @@
   type = c("response", "parameters", "demand"),
   prices = NULL,
   scale = c("model", "natural"),
+  correction = TRUE,
   ...
 )
 }
@@ -30,12 +31,18 @@ exponential), while \code{"natural"} automatically back-transforms to the
 natural consumption scale. Default is \code{"model"} for backward compatibility.
 
 When \code{scale = "natural"} and \code{equation = "exponential"}, the lognormal
-retransformation correction \code{exp(sigma_e^2/2)} is applied to produce
-the conditional mean (not median). For \code{"exponentiated"} and \code{"simplified"}
-equations, predictions are already on the natural scale and no correction
-is needed. For \code{"zben"}, \code{ll4_inv()} is applied; because ll4_inv is
-nonlinear, this gives the value corresponding to the conditional mean on
-the LL4 scale (approximately the median on the natural scale).}
+retransformation correction \code{exp(sigma_e^2/2)} is applied by default to
+produce the conditional mean (not median). Set \code{correction = FALSE} to
+obtain the median (geometric mean) instead. For \code{"exponentiated"} and
+\code{"simplified"} equations, predictions are already on the natural scale
+and no correction is needed. For \code{"zben"}, \code{ll4_inv()} is applied;
+because ll4_inv is nonlinear, this gives the value corresponding to the
+conditional mean on the LL4 scale (approximately the median on the
+natural scale).}
+
+\item{correction}{Logical. If \code{TRUE} (default), applies the lognormal
+retransformation correction when \code{scale = "natural"}. Set to \code{FALSE} to
+obtain the median prediction. Only affects the \code{"exponential"} equation.}
 
 \item{...}{Additional arguments.}
 }
@@ -49,4 +56,27 @@ Depends on \code{type}:
 }
 \description{
 Predict from TMB Mixed-Effects Demand Model
+}
+\note{
+Population-averaged (marginal) predictions integrating over the
+random effects distribution are not yet implemented for this model tier.
+The \code{type = "demand"} prediction uses RE = 0 (population fixed effects
+only). For marginal integration accounting for Jensen's inequality, use
+\code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}} with \code{marginal = TRUE}.
+}
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+
+# Fitted values
+head(predict(fit, type = "response"))
+
+# Population demand curve at specific prices
+predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
+
+# Subject-level parameters
+head(predict(fit, type = "parameters"))
+}
+
 }

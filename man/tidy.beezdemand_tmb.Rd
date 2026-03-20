@@ -19,3 +19,12 @@ A tibble of model coefficients.
 \description{
 Tidy a beezdemand_tmb Model
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+tidy(fit)
+tidy(fit, report_space = "log10")
+}
+
+}

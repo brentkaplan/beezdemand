@@ -320,6 +320,37 @@ plot(fit_2re, type = "individual")
 plot(fit_2re, type = "parameters")
 ```
 
+## Diagnostics
+
+After fitting, assess model health with the built-in diagnostic tools.
+
+```{r diagnostics-check}
+# Model health check
+check_demand_model(fit_2re)
+```
+
+```{r diagnostics-augment}
+# Augment with fitted values and residuals
+aug <- augment(fit_2re)
+head(aug[, c("id", "x", "y", ".fitted", ".resid", ".std_resid")])
+```
+
+```{r diagnostics-qq, fig.cap = "Q-Q plots of subject-level random effects."}
+# Q-Q plot of random effects
+plot_qq(fit_2re)
+```
+
+```{r diagnostics-re, fig.cap = "Random effects diagnostic panels."}
+# Random effects diagnostic panels
+plot_re_diagnostics(fit_2re)
+```
+
+These diagnostics help identify:
+
+- **Q-Q plots**: Non-normality of random effects (heavy tails, outliers)
+- **`check_demand_model()`**: Convergence issues, boundary estimates, residual patterns
+- **Augmented data**: Observation-level residuals for identifying poorly fitting subjects
+
 ## Group Comparisons
 
 To test whether demand parameters differ by group, pass factor variables via

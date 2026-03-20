@@ -20,3 +20,11 @@ These are the Cholesky-transformed deviations (\code{b_i} for Q0, \code{c_i} for
 alpha), not standardized scores. To obtain the standardized random effects
 (\code{u} matrix), access \code{object$tmb_obj} directly.
 }
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+head(nlme::ranef(fit))
+}
+
+}

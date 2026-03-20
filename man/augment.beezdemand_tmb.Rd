@@ -14,8 +14,19 @@
 \item{...}{Additional arguments.}
 }
 \value{
-A tibble with original data plus .fitted and .resid columns.
+A tibble with original data plus \code{.fitted}, \code{.resid}, and
+\code{.std_resid} columns. Residuals are computed on the model's native scale
+(log scale for \code{"exponential"}, natural/LL4 scale for others) to match the
+C++ likelihood.
 }
 \description{
 Augment a beezdemand_tmb Model
+}
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+head(augment(fit))
+}
+
 }

@@ -12,6 +12,7 @@
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
   correction = TRUE,
+  seed = 42L,
   se.fit = FALSE,
   interval = c("none", "confidence"),
   level = 0.95,
@@ -58,6 +59,10 @@ the \strong{arithmetic mean} (conditional on Q > 0). Set to \code{FALSE} to obta
 the \strong{median} (geometric mean), which is useful for individual-level
 "most likely" predictions. Only applies to \code{type = "response"} and
 \code{type = "demand"}.}
+
+\item{seed}{Integer or \code{NULL}. Random seed for Monte Carlo marginal
+predictions (default \code{42L}). Set to \code{NULL} to use current RNG state.
+The global RNG state is preserved and restored after the call.}
 
 \item{se.fit}{Logical; if \code{TRUE}, includes a \code{.se.fit} column (delta-method via
 \code{sdreport} when available).}

@@ -36,3 +36,14 @@ Computes estimated marginal means (EMMs) for demand parameters from a
 \code{beezdemand_tmb} model. Uses design matrices and beta vectors with vcov
 from \code{TMB::sdreport()}.
 }
+\examples{
+\donttest{
+data(apt_full)
+dat <- apt_full[apt_full$gender \%in\% c("Male", "Female"), ]
+fit <- fit_demand_tmb(dat, equation = "exponential",
+                      factors = "gender", verbose = 0)
+get_demand_param_emms(fit, param = "Q0")
+get_demand_param_emms(fit, param = "alpha")
+}
+
+}

@@ -21,7 +21,11 @@
 
 \item{report_space}{Character. \code{"internal"} or \code{"natural"}. When
 \code{"natural"}, \code{beta_q0}, \code{beta_alpha}, and \code{log_k} are exponentiated
-to the natural scale. Variance parameters (\verb{logsigma_*}, \code{rho_bc_raw})
+to the natural scale. For the intercept, this gives Q0 or alpha at the
+reference level. For non-intercept terms, the exponentiated value
+represents a \strong{multiplicative fold-change} (ratio) relative to the
+reference level, not the absolute parameter value for that group.
+Variance parameters (\verb{logsigma_*}, \code{rho_bc_raw})
 remain on their internal scales; use \code{\link[=summary]{summary()}} or
 \code{.tmb_format_variance_components()} for transformed variance components.}
 
@@ -32,4 +36,13 @@ A tibble with term, estimate, conf.low, conf.high, level.
 }
 \description{
 Confidence Intervals for TMB Model Parameters
+}
+\examples{
+\donttest{
+data(apt)
+fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+confint(fit)
+confint(fit, report_space = "natural")
+}
+
 }

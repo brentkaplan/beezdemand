@@ -761,7 +761,11 @@ NULL
 #'     \item{`"simplified"`}{Simplified exponential (no k). Gaussian on raw Q.
 #'       Zeros allowed.}
 #'     \item{`"zben"`}{Zero-bounded exponential (no k). Gaussian on LL4-
-#'       transformed Q. User must pass LL4-transformed y_var.}
+#'       transformed Q. User must pass LL4-transformed y_var. Note: Q0 on
+#'       the log10 scale is clamped to a minimum of 0.001 to avoid a
+#'       singularity at Q0 = 1 (where log10(Q0) = 0 causes division by zero
+#'       in the decay rate). Subjects with estimated Q0 near 1 may have
+#'       biased parameter estimates.}
 #'   }
 #' @param estimate_k Logical. If `TRUE` (default), estimate k as a free
 #'   parameter. If `FALSE`, fix k at the value given in `k`. Only relevant for
@@ -869,7 +873,9 @@ NULL
 #' }
 #'
 #' @seealso [fit_demand_mixed()] for NLME-based fitting,
-#'   [fit_demand_hurdle()] for two-part hurdle models.
+#'   [fit_demand_hurdle()] for two-part hurdle models,
+#'   [fit_demand_fixed()] for individual NLS curves.
+#' @family demand-fitting
 #'
 #' @export
 fit_demand_tmb <- function(

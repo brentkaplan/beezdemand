@@ -95,3 +95,14 @@ glance(fit_g)  # one row per group
 }
 
 }
+\seealso{
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}} for TMB mixed-effects models,
+\code{\link[=fit_demand_mixed]{fit_demand_mixed()}} for NLME mixed-effects models,
+\code{\link[=fit_demand_hurdle]{fit_demand_hurdle()}} for hurdle models.
+
+Other demand-fitting: 
+\code{\link{fit_demand_hurdle}()},
+\code{\link{fit_demand_mixed}()},
+\code{\link{fit_demand_tmb}()}
+}
+\concept{demand-fitting}
