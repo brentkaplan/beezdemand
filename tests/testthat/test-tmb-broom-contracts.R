@@ -98,3 +98,90 @@ test_that("broom methods work for zben equation", {
   expect_s3_class(glance(fit), "tbl_df")
   expect_s3_class(augment(fit), "tbl_df")
 })
+
+# --- Augment residual correctness (regression tests for Bug 1) ---
+
+test_that("augment exponential residuals are on log scale", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  aug <- augment(fit)
+
+  # .resid should be log(y) - .fitted (both on log scale)
+  # So residuals should be moderate in magnitude, not huge cross-scale values
+  resids <- aug$.resid[!is.na(aug$.resid)]
+  expect_true(all(is.finite(resids)))
+  # Log-scale residuals should typically be < 5 in magnitude
+  expect_true(all(abs(resids) < 10),
+              info = "Residuals appear cross-scale; expected log-scale values")
+})
+
+test_that("augment includes .std_resid (Pearson residuals)", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  aug <- augment(fit)
+  expect_true(".std_resid" %in% names(aug))
+  std_resids <- aug$.std_resid[!is.na(aug$.std_resid)]
+  expect_true(length(std_resids) > 0)
+  expect_true(all(is.finite(std_resids)))
+})
+
+test_that("augment residuals are correct for simplified equation", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "simplified", verbose = 0
+  )
+
+  aug <- augment(fit)
+  # simplified: y and fitted on same (natural) scale
+  resids <- aug$.resid[!is.na(aug$.resid)]
+  expect_true(all(is.finite(resids)))
+  expect_true(".std_resid" %in% names(aug))
+})
+
+test_that("augment residuals are correct for zben equation", {
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  aug <- augment(fit)
+  # zben: y_ll4 and fitted on same (LL4) scale
+  resids <- aug$.resid[!is.na(aug$.resid)]
+  expect_true(all(is.finite(resids)))
+  expect_true(".std_resid" %in% names(aug))
+})
+
+test_that("augment exponential handles data with zeros without -Inf", {
+  data(apt, package = "beezdemand")
+  # Ensure data contains zeros (apt typically does)
+  has_zeros <- any(apt$y == 0)
+
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  # augment with original data (which may retain zeros in stored data)
+  aug <- augment(fit)
+
+  # No -Inf residuals should be present
+  expect_true(all(aug$.resid[!is.na(aug$.resid)] > -Inf),
+              info = "Residuals should not be -Inf for zero observations")
+  # Zero-consumption observations should have NA residuals
+  y_obs <- fit$data[[fit$param_info$y_var]]
+  if (any(y_obs == 0)) {
+    expect_true(all(is.na(aug$.resid[y_obs == 0])),
+                info = "Zero observations should have NA residuals for exponential")
+  }
+})

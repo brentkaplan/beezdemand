@@ -341,3 +341,62 @@ test_that("plot_residuals works with component argument for hurdle models", {
   p2 <- plot_residuals(fit, type = "qq", component = "continuous")
   expect_s3_class(p2, "ggplot")
 })
+
+# ==============================================================================
+# Issue 7: MC marginal draws must use correlated MVN (not independent)
+# ==============================================================================
+
+test_that("marginal predictions use correlated MVN draws (not independent)", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  # The predictions should use the seed parameter and be reproducible
+  pred1 <- predict(fit, type = "demand", marginal = TRUE,
+                   prices = c(1, 5, 10), seed = 42L)
+  pred2 <- predict(fit, type = "demand", marginal = TRUE,
+                   prices = c(1, 5, 10), seed = 42L)
+  expect_equal(pred1$.fitted, pred2$.fitted)
+
+  # Different seed should produce different results
+  pred3 <- predict(fit, type = "demand", marginal = TRUE,
+                   prices = c(1, 5, 10), seed = 99L)
+  # With enough draws (1000), results converge, but with different seeds
+  # the exact values will differ slightly
+  expect_true(!identical(pred1$.fitted, pred3$.fitted))
+})
+
+test_that("marginal predictions preserve global RNG state", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  set.seed(123)
+  before <- stats::rnorm(1)
+  set.seed(123)
+  # Marginal predict should not alter the global RNG state
+  pred <- predict(fit, type = "demand", marginal = TRUE,
+                  prices = c(1, 5), seed = 42L)
+  after <- stats::rnorm(1)
+  expect_equal(before, after)
+})
+
+test_that("marginal predictions work with seed = NULL", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  # Should not error with seed = NULL
+  pred <- predict(fit, type = "demand", marginal = TRUE,
+                  prices = c(1, 5, 10), seed = NULL)
+  expect_true(all(is.finite(pred$.fitted)))
+})

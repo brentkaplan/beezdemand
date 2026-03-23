@@ -537,8 +537,8 @@ plot_loss_surface.beezdemand_hurdle <- function(
     p <- p + ggplot2::geom_contour(
       ggplot2::aes(z = .data$ssr),
       color = "white",
-      alpha = 0.4,
-      linewidth = 0.3
+      alpha = 0.6,
+      linewidth = 0.4
     )
   }
 
@@ -662,8 +662,8 @@ plot_loss_surface.beezdemand_tmb <- function(
     p <- p + ggplot2::geom_contour(
       ggplot2::aes(z = .data$ssr),
       color = "white",
-      alpha = 0.4,
-      linewidth = 0.3
+      alpha = 0.6,
+      linewidth = 0.4
     )
   }
 
@@ -764,6 +764,24 @@ plot_loss_profile.beezdemand_hurdle <- function(
     df <- data.frame(log10_val = log10_vals, ssr = ssr)
     df <- df[is.finite(df$ssr), ]
 
+    # Smooth out numerical instability spikes by replacing values that deviate
+    # more than 5x MAD from the median with interpolated values
+    if (nrow(df) > 5) {
+      med_ssr <- stats::median(df$ssr, na.rm = TRUE)
+      mad_ssr <- stats::mad(df$ssr, na.rm = TRUE)
+      if (mad_ssr > 0) {
+        spike <- abs(df$ssr - med_ssr) > 5 * mad_ssr
+        if (any(spike) && sum(!spike) >= 2) {
+          df$ssr[spike] <- stats::approx(
+            x = df$log10_val[!spike],
+            y = df$ssr[!spike],
+            xout = df$log10_val[spike]
+          )$y
+        }
+        df <- df[is.finite(df$ssr), ]
+      }
+    }
+
     x_lab <- if (param_name == "q0") {
       expression(log[10](Q[0]))
     } else {
@@ -855,6 +873,24 @@ plot_loss_profile.beezdemand_tmb <- function(
     df <- data.frame(log10_val = log10_vals, ssr = ssr)
     df <- df[is.finite(df$ssr), ]
 
+    # Smooth out numerical instability spikes by replacing values that deviate
+    # more than 5x MAD from the median with interpolated values
+    if (nrow(df) > 5) {
+      med_ssr <- stats::median(df$ssr, na.rm = TRUE)
+      mad_ssr <- stats::mad(df$ssr, na.rm = TRUE)
+      if (mad_ssr > 0) {
+        spike <- abs(df$ssr - med_ssr) > 5 * mad_ssr
+        if (any(spike) && sum(!spike) >= 2) {
+          df$ssr[spike] <- stats::approx(
+            x = df$log10_val[!spike],
+            y = df$ssr[!spike],
+            xout = df$log10_val[spike]
+          )$y
+        }
+        df <- df[is.finite(df$ssr), ]
+      }
+    }
+
     x_lab <- if (param_name == "q0") {
       expression(log[10](Q[0]))
     } else {
@@ -918,6 +954,10 @@ plot_loss_profile.beezdemand_tmb <- function(
 #' @param n_points Integer; number of points for smooth curves (default 200).
 #' @param x_trans Character; x-axis transformation (default `"log10"`).
 #' @param free_trans Numeric; replacement for price = 0 on log scales.
+#' @param y_min Numeric; minimum consumption value to display. Values below
+#'   this floor are dropped to prevent extreme predictions (e.g., 1e-16 from
+#'   hurdle models) from compressing the y-axis. Set to `NULL` to disable.
+#'   Default is `0.001`.
 #' @param inv_fun Function to back-transform consumption values (e.g.,
 #'   [ll4_inv] for LL4-transformed models). Default is [identity].
 #' @param x_lab,y_lab Axis labels.
@@ -945,6 +985,7 @@ plot_demand_overlay <- function(
     n_points = 200,
     x_trans = c("log10", "log", "linear", "pseudo_log"),
     free_trans = 0.01,
+    y_min = 0.001,
     inv_fun = identity,
     x_lab = "Price",
     y_lab = "Consumption",
@@ -1020,24 +1061,60 @@ plot_demand_overlay <- function(
   }
   pred_all <- pred_all[pred_all$consumption > 0 & is.finite(pred_all$consumption), ]
 
+  # Floor consumption to y_min to prevent extreme values (e.g., 1e-16 from
+  # hurdle models) from crushing the log-scale axis
+  if (!is.null(y_min) && y_min > 0) {
+    pred_all <- pred_all[pred_all$consumption >= y_min, ]
+  }
+
   pred_all$model <- factor(pred_all$model, levels = labels)
 
-  p <- ggplot2::ggplot(
-    pred_all,
-    ggplot2::aes(
-      x = .data$price,
-      y = .data$consumption,
-      color = .data$model
-    )
-  ) +
-    ggplot2::geom_line(linewidth = 0.9) +
-    ggplot2::scale_x_continuous(trans = beezdemand_get_trans(x_trans)) +
-    ggplot2::scale_y_continuous(trans = beezdemand_get_trans("log10")) +
-    ggplot2::labs(
-      x = x_lab,
-      y = y_lab,
-      color = "Model",
-      title = "Demand Curve Comparison"
+  # In APA mode, use linetypes in addition to greyscale so overlapping
+  # curves remain distinguishable at print resolution
+  if (identical(style, "apa") && length(labels) > 1) {
+    p <- ggplot2::ggplot(
+      pred_all,
+      ggplot2::aes(
+        x = .data$price,
+        y = .data$consumption,
+        color = .data$model,
+        linetype = .data$model
+      )
+    ) +
+      ggplot2::geom_line(linewidth = 0.9) +
+      ggplot2::labs(
+        x = x_lab,
+        y = y_lab,
+        color = "Model",
+        linetype = "Model",
+        title = "Demand Curve Comparison"
+      )
+  } else {
+    p <- ggplot2::ggplot(
+      pred_all,
+      ggplot2::aes(
+        x = .data$price,
+        y = .data$consumption,
+        color = .data$model
+      )
+    ) +
+      ggplot2::geom_line(linewidth = 0.9) +
+      ggplot2::labs(
+        x = x_lab,
+        y = y_lab,
+        color = "Model",
+        title = "Demand Curve Comparison"
+      )
+  }
+
+  p <- p +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      labels = beezdemand_axis_labels()
+    ) +
+    ggplot2::scale_y_continuous(
+      trans = beezdemand_get_trans("log10"),
+      labels = beezdemand_axis_labels()
     ) +
     theme_beezdemand(style = style)
 
@@ -1164,6 +1241,10 @@ plot_model_comparison <- function(
   tidy_all$upper <- tidy_all$estimate + z_val * tidy_all$std.error
   term_col <- if ("term_display" %in% names(tidy_all)) "term_display" else "term"
   tidy_all$param <- tidy_all[[term_col]]
+  # Normalize parameter names: strip ":(Intercept)" suffix so TMB and hurdle
+
+  # models share the same facet panels for intercept-only comparisons
+  tidy_all$param <- sub(":\\(Intercept\\)$", "", tidy_all$param)
   tidy_all$model <- factor(tidy_all$model, levels = labels)
 
   p <- ggplot2::ggplot(
@@ -1321,7 +1402,10 @@ plot_re_diagnostics.beezdemand_hurdle <- function(
   }
 
   if (requireNamespace("patchwork", quietly = TRUE)) {
-    ncol <- min(2, length(plots))
+    # Use wider layout for "all" panels to prevent cramping (M1 fix);
+    # individual RE views (which="zeros"/"q0"/"alpha") are preferred for
+    # publication quality
+    ncol <- if (which == "all" && length(plots) > 4) 3 else min(2, length(plots))
     return(patchwork::wrap_plots(plots, ncol = ncol))
   }
 
@@ -1581,7 +1665,10 @@ plot_expenditure.beezdemand_hurdle <- function(
       color = beezdemand_style_color(style, "primary"),
       linewidth = 1
     ) +
-    ggplot2::scale_x_continuous(trans = beezdemand_get_trans(x_trans)) +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      labels = beezdemand_axis_labels()
+    ) +
     ggplot2::labs(x = x_lab, y = y_lab, title = "Expenditure Curve") +
     theme_beezdemand(style = style)
 
@@ -1661,6 +1748,19 @@ plot_expenditure.beezdemand_tmb <- function(
   pred$expenditure <- pred$price * pred$consumption
   pred <- pred[pred$price > 0 & is.finite(pred$expenditure), ]
 
+  # Enforce monotonic decline after peak expenditure to prevent rebound
+  # artifacts from model extrapolation (TICKET-003 related)
+  if (nrow(pred) > 0) {
+    peak_idx <- which.max(pred$expenditure)
+    if (peak_idx < nrow(pred)) {
+      running_min <- pred$expenditure[peak_idx]
+      for (i in (peak_idx + 1):nrow(pred)) {
+        running_min <- min(running_min, pred$expenditure[i])
+        pred$expenditure[i] <- running_min
+      }
+    }
+  }
+
   if (beezdemand_is_log_scale(x_trans) && !is.null(free_trans)) {
     pred$price[pred$price == 0] <- free_trans
   }
@@ -1673,7 +1773,10 @@ plot_expenditure.beezdemand_tmb <- function(
       color = beezdemand_style_color(style, "primary"),
       linewidth = 1
     ) +
-    ggplot2::scale_x_continuous(trans = beezdemand_get_trans(x_trans)) +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      labels = beezdemand_axis_labels()
+    ) +
     ggplot2::labs(x = x_lab, y = y_lab, title = "Expenditure Curve") +
     theme_beezdemand(style = style)
 
@@ -1799,15 +1902,23 @@ plot_elasticity.beezdemand_hurdle <- function(
   Q_plus <- .pred_at(prices + h)
   Q_minus <- .pred_at(prices - h)
 
-  dQdP <- (Q_plus - Q_minus) / (2 * h)
+  # Clamp predictions to a meaningful floor before computing derivatives
+  # to prevent numerical instability when consumption approaches machine epsilon
+  q_floor <- 1e-6
+  Q_clamped <- pmax(Q, q_floor)
+  Q_plus_clamped <- pmax(Q_plus, q_floor)
+  Q_minus_clamped <- pmax(Q_minus, q_floor)
 
-  # Floor Q to avoid division-by-near-zero blowup at high prices
-  Q_safe <- pmax(Q, 1e-10)
-  elasticity <- dQdP * prices / Q_safe
+  dQdP <- (Q_plus_clamped - Q_minus_clamped) / (2 * h)
+  elasticity <- dQdP * prices / Q_clamped
 
-  # Drop non-finite values and extreme outliers from numerical noise
+  # Truncate at prices where consumption has dropped below the floor
+  # (elasticity values beyond this point are numerical artifacts)
+  meaningful <- Q > q_floor
+
   df <- data.frame(price = prices, elasticity = elasticity)
-  df <- df[is.finite(df$elasticity), ]
+  df <- df[meaningful & is.finite(df$elasticity), ]
+
   if (nrow(df) > 0) {
     # Trim elasticity values beyond 3x the interquartile range
     eq <- stats::quantile(df$elasticity, c(0.25, 0.75), na.rm = TRUE)
@@ -1829,7 +1940,10 @@ plot_elasticity.beezdemand_hurdle <- function(
       color = beezdemand_style_color(style, "primary"),
       linewidth = 0.9
     ) +
-    ggplot2::scale_x_continuous(trans = beezdemand_get_trans(x_trans)) +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      labels = beezdemand_axis_labels()
+    ) +
     ggplot2::labs(
       x = x_lab,
       y = y_lab,
@@ -1896,12 +2010,21 @@ plot_elasticity.beezdemand_tmb <- function(
   Q_plus <- .pred_at(prices + h)
   Q_minus <- .pred_at(prices - h)
 
-  dQdP <- (Q_plus - Q_minus) / (2 * h)
-  Q_safe <- pmax(Q, 1e-10)
-  elasticity <- dQdP * prices / Q_safe
+  # Clamp predictions to a meaningful floor before computing derivatives
+  q_floor <- 1e-6
+  Q_clamped <- pmax(Q, q_floor)
+  Q_plus_clamped <- pmax(Q_plus, q_floor)
+  Q_minus_clamped <- pmax(Q_minus, q_floor)
+
+  dQdP <- (Q_plus_clamped - Q_minus_clamped) / (2 * h)
+  elasticity <- dQdP * prices / Q_clamped
+
+  # Truncate at prices where consumption has dropped below the floor
+  meaningful <- Q > q_floor
 
   df <- data.frame(price = prices, elasticity = elasticity)
-  df <- df[is.finite(df$elasticity), ]
+  df <- df[meaningful & is.finite(df$elasticity), ]
+
   if (nrow(df) > 0) {
     eq <- stats::quantile(df$elasticity, c(0.25, 0.75), na.rm = TRUE)
     iqr <- diff(eq)
@@ -1921,7 +2044,10 @@ plot_elasticity.beezdemand_tmb <- function(
       color = beezdemand_style_color(style, "primary"),
       linewidth = 0.9
     ) +
-    ggplot2::scale_x_continuous(trans = beezdemand_get_trans(x_trans)) +
+    ggplot2::scale_x_continuous(
+      trans = beezdemand_get_trans(x_trans),
+      labels = beezdemand_axis_labels()
+    ) +
     ggplot2::labs(
       x = x_lab,
       y = y_lab,
