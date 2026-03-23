@@ -241,6 +241,36 @@ fit_demand_mixed <- function(
   data <- ensure_factors(factors_Q0, data)
   data <- ensure_factors(factors_alpha, data)
 
+  # --- Remove incomplete cases from modeling columns ---
+  model_cols <- unique(c(
+    id_var, x_var, y_var, factors_Q0, factors_alpha, continuous_covariates
+  ))
+  model_cols <- intersect(model_cols, names(data))
+  complete_mask <- stats::complete.cases(data[, model_cols, drop = FALSE])
+  n_dropped <- sum(!complete_mask)
+
+  if (n_dropped > 0) {
+    ids_affected <- length(unique(data[[id_var]][!complete_mask]))
+    message(
+      "Removed ", n_dropped, " row(s) with missing values in modeling columns ",
+      "(affecting ", ids_affected, " subject(s))."
+    )
+    data <- data[complete_mask, , drop = FALSE]
+    data[[id_var]] <- droplevels(data[[id_var]])
+    for (f in c(factors_Q0, factors_alpha)) {
+      if (f %in% names(data) && is.factor(data[[f]])) {
+        data[[f]] <- droplevels(data[[f]])
+      }
+    }
+  }
+
+  if (nrow(data) == 0) {
+    stop(
+      "No complete cases remain after removing rows with missing values.",
+      call. = FALSE
+    )
+  }
+
   # Determine the effective fixed-effects RHS strings for Q0 and alpha
   # These may differ if collapse_levels specifies different collapsing
   if (!is.null(fixed_rhs)) {
@@ -573,6 +603,10 @@ fit_demand_mixed <- function(
       ))
     }
   }
+
+  # Ensure start_values$fixed is an unnamed numeric vector
+  # (pooled NLS can leak names like "Q0_modelp" via coef())
+  start_values$fixed <- unname(as.numeric(start_values$fixed))
 
   groups_formula <- stats::as.formula(paste("~", id_var))
   control_obj <- nlme_control

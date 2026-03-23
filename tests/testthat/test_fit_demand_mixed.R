@@ -897,3 +897,69 @@ test_that(".check_nlme_convergence detects apVar character (singular Hessian)", 
   expect_false(result$converged)
   expect_match(result$message, "Hessian")
 })
+
+# =============================================================================
+# Regression tests: NA handling and start-value naming
+# =============================================================================
+
+test_that("fit_demand_mixed succeeds when some y values are NA", {
+  d <- create_test_demand_data(n_subjects = 10, n_prices = 8, seed = 42)
+  # Inject ~10% NAs into y
+  set.seed(123)
+  na_idx <- sample(nrow(d), size = ceiling(nrow(d) * 0.1))
+  d$y[na_idx] <- NA
+
+  result <- suppressMessages(
+    fit_demand_mixed(
+      data = d, id_var = "id", x_var = "x", y_var = "y",
+      factors = "factor1", equation_form = "simplified"
+    )
+  )
+  expect_s3_class(result, "beezdemand_nlme")
+  expect_false(is.null(result$model))
+})
+
+test_that("fit_demand_mixed emits message about dropped NA rows", {
+  d <- create_test_demand_data(n_subjects = 10, n_prices = 8, seed = 42)
+  set.seed(123)
+  na_idx <- sample(nrow(d), size = 5)
+  d$y[na_idx] <- NA
+
+  expect_message(
+    fit_demand_mixed(
+      data = d, id_var = "id", x_var = "x", y_var = "y",
+      factors = "factor1", equation_form = "simplified"
+    ),
+    "Removed 5 row.*missing values"
+  )
+})
+
+test_that("fit_demand_mixed errors when all rows have NA", {
+  d <- create_test_demand_data(n_subjects = 10, n_prices = 8, seed = 42)
+  d$y <- NA_real_
+
+  expect_error(
+    suppressMessages(
+      fit_demand_mixed(
+        data = d, id_var = "id", x_var = "x", y_var = "y",
+        factors = "factor1", equation_form = "simplified"
+      )
+    ),
+    "No complete cases remain"
+  )
+})
+
+test_that("start_values_used is an unnamed numeric vector", {
+  d <- create_test_demand_data(n_subjects = 10, n_prices = 8, seed = 42)
+
+  result <- suppressMessages(
+    fit_demand_mixed(
+      data = d, id_var = "id", x_var = "x", y_var = "y",
+      factors = "factor1", equation_form = "simplified",
+      start_value_method = "pooled_nls"
+    )
+  )
+  expect_s3_class(result, "beezdemand_nlme")
+  expect_null(names(result$start_values_used))
+  expect_type(result$start_values_used, "double")
+})
