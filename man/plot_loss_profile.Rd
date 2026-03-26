@@ -4,6 +4,7 @@
 \alias{plot_loss_profile}
 \alias{plot_loss_profile.beezdemand_hurdle}
 \alias{plot_loss_profile.beezdemand_tmb}
+\alias{plot_loss_profile.beezdemand_nlme}
 \title{Plot Loss Profile for a Single Parameter}
 \usage{
 plot_loss_profile(object, ...)
@@ -18,6 +19,15 @@ plot_loss_profile(object, ...)
 )
 
 \method{plot_loss_profile}{beezdemand_tmb}(
+  object,
+  parameter = c("both", "q0", "alpha"),
+  resolution = 200,
+  range = c(-3, 3),
+  style = c("modern", "apa"),
+  ...
+)
+
+\method{plot_loss_profile}{beezdemand_nlme}(
   object,
   parameter = c("both", "q0", "alpha"),
   resolution = 200,

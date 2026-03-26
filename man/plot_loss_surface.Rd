@@ -4,6 +4,7 @@
 \alias{plot_loss_surface}
 \alias{plot_loss_surface.beezdemand_hurdle}
 \alias{plot_loss_surface.beezdemand_tmb}
+\alias{plot_loss_surface.beezdemand_nlme}
 \title{Plot Loss Surface for Demand Model Parameters}
 \usage{
 plot_loss_surface(object, ...)
@@ -21,6 +22,18 @@ plot_loss_surface(object, ...)
 )
 
 \method{plot_loss_surface}{beezdemand_tmb}(
+  object,
+  resolution = 80,
+  q0_range = NULL,
+  alpha_range = NULL,
+  fill_palette = "D",
+  show_mle = TRUE,
+  show_contours = FALSE,
+  style = c("modern", "apa"),
+  ...
+)
+
+\method{plot_loss_surface}{beezdemand_nlme}(
   object,
   resolution = 80,
   q0_range = NULL,
@@ -69,8 +82,9 @@ true profile likelihood. The resulting surface shows how well different
 for individual variation. For models with large random effects, the surface
 may appear sharper than the full-data objective.
 
-Currently supports \code{beezdemand_hurdle} models only (v1). Models with
-factor covariates on Q0 or alpha are not yet supported.
+Supported model classes: \code{beezdemand_hurdle}, \code{beezdemand_tmb}, and
+\code{beezdemand_nlme}. Models with factor covariates on Q0 or alpha are not
+supported; use \code{\link[=get_demand_param_emms]{get_demand_param_emms()}} instead.
 }
 \examples{
 \donttest{

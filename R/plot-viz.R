@@ -156,6 +156,116 @@
 }
 
 
+#' Map NLME equation form to SSR computation form
+#' @noRd
+.map_nlme_equation <- function(equation_form) {
+  mapping <- c(
+    zben          = "tmb_zben",
+    simplified    = "tmb_simplified",
+    exponentiated = "tmb_exponentiated"
+  )
+  eq <- unname(mapping[equation_form])
+  if (is.na(eq)) {
+    stop(
+      "Unrecognized NLME equation form: '", equation_form,
+      "'. Expected one of: ",
+      paste(names(mapping), collapse = ", "),
+      call. = FALSE
+    )
+  }
+  eq
+}
+
+
+#' Extract population MLE from NLME model
+#' @noRd
+.extract_nlme_mle <- function(object) {
+  fe <- nlme::fixef(object$model)
+  param_space <- object$param_info$param_space %||% "log10"
+
+  num_q0 <- object$param_info$num_params_Q0
+  Q0_internal <- unname(fe[1])
+  alpha_internal <- unname(fe[num_q0 + 1])
+
+  if (param_space == "log10") {
+    Q0_nat    <- 10^Q0_internal
+    alpha_nat <- 10^alpha_internal
+  } else {
+    Q0_nat    <- Q0_internal
+    alpha_nat <- alpha_internal
+  }
+
+  list(
+    Q0       = Q0_nat,
+    alpha    = alpha_nat,
+    k        = object$param_info$k,
+    ln_q0    = log(Q0_nat),
+    ln_alpha = log(alpha_nat)
+  )
+}
+
+
+#' Check that NLME model is intercept-only (no covariates)
+#' @noRd
+.check_nlme_intercept_only <- function(object) {
+  n_q0 <- object$param_info$num_params_Q0
+  n_alpha <- object$param_info$num_params_alpha
+  if (n_q0 > 1 || n_alpha > 1) {
+    stop(
+      "Loss surface requires intercept-only models. ",
+      "Use get_demand_param_emms() for covariate models.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+
+#' Aggregate NLME response data by price
+#' @noRd
+.aggregate_nlme_means <- function(object) {
+  data <- object$data
+  x_var <- object$param_info$x_var
+  y_var <- object$param_info$y_var
+
+  work <- data
+  work$.response <- work[[y_var]]
+
+  agg <- stats::aggregate(
+    work[".response"],
+    by = list(price = work[[x_var]]),
+    FUN = mean,
+    na.rm = TRUE
+  )
+  names(agg) <- c("price", "mean_response")
+
+  n_agg <- stats::aggregate(
+    work[".response"],
+    by = list(price = work[[x_var]]),
+    FUN = length
+  )
+  agg$n <- n_agg[[2]]
+  agg[order(agg$price), ]
+}
+
+
+#' Check NLME convergence for loss surface plotting
+#' @noRd
+.check_nlme_convergence_for_plot <- function(object) {
+  if (is.null(object$model)) {
+    stop("Model fitting failed; cannot compute loss surface.", call. = FALSE)
+  }
+  if (is.character(object$model$apVar)) {
+    warning(
+      "Model Hessian is not positive definite. The loss surface may help ",
+      "diagnose convergence issues, but parameter estimates may be unreliable.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+
 #' Validate loss surface input
 #' @noRd
 .check_loss_surface_input <- function(object) {
@@ -292,6 +402,240 @@
 }
 
 
+# =============================================================================
+# Linearized Marginal NLL for NLME Models
+# =============================================================================
+
+#' Evaluate NLME demand equation at given parameters
+#'
+#' Computes the demand curve prediction for the equation forms used by
+#' \code{fit_demand_mixed()} with \code{param_space = "log10"}.
+#'
+#' @param x Numeric vector of prices.
+#' @param Q0_log10 Numeric scalar, Q0 in log10 space.
+#' @param alpha_log10 Numeric scalar, alpha in log10 space.
+#' @param k Numeric scalar or NULL. Scaling constant (exponentiated only).
+#' @param equation_form One of "exponentiated", "simplified", "zben".
+#' @return Numeric vector of predicted consumption (same length as x).
+#' @noRd
+.nlme_eval_demand <- function(x, Q0_log10, alpha_log10, k, equation_form) {
+  switch(equation_form,
+    exponentiated = {
+      # y = (10^Q0) * 10^(k * (exp(-(10^alpha) * (10^Q0) * x) - 1))
+      Q0_nat <- 10^Q0_log10
+      alpha_nat <- 10^alpha_log10
+      Q0_nat * 10^(k * (exp(-alpha_nat * Q0_nat * x) - 1))
+    },
+    simplified = {
+      # y = (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
+      Q0_nat <- 10^Q0_log10
+      alpha_nat <- 10^alpha_log10
+      Q0_nat * exp(-alpha_nat * Q0_nat * x)
+    },
+    zben = {
+      # y = Q0_log10 * exp(-((10^alpha) / Q0_log10) * (10^Q0) * x)
+      Q0_nat <- 10^Q0_log10
+      alpha_nat <- 10^alpha_log10
+      Q0_log10 * exp(-(alpha_nat / Q0_log10) * Q0_nat * x)
+    },
+    stop("Unknown NLME equation form: ", equation_form, call. = FALSE)
+  )
+}
+
+
+#' Compute Jacobian of demand equation via central finite differences
+#'
+#' Returns a matrix of partial derivatives df/dQ0_log10 and df/dalpha_log10
+#' evaluated at the given parameters.
+#'
+#' @param x Numeric vector of prices.
+#' @param Q0_log10 Numeric scalar.
+#' @param alpha_log10 Numeric scalar.
+#' @param k Numeric or NULL.
+#' @param equation_form Character string.
+#' @param h Numeric scalar, step size for finite differences.
+#' @return Matrix (length(x) x 2), columns = (dQ0, dalpha).
+#' @noRd
+.nlme_compute_jacobian <- function(x, Q0_log10, alpha_log10, k,
+                                   equation_form, h = 1e-6) {
+  f_q0_plus <- .nlme_eval_demand(x, Q0_log10 + h, alpha_log10, k,
+                                 equation_form)
+  f_q0_minus <- .nlme_eval_demand(x, Q0_log10 - h, alpha_log10, k,
+                                  equation_form)
+  f_alpha_plus <- .nlme_eval_demand(x, Q0_log10, alpha_log10 + h, k,
+                                    equation_form)
+  f_alpha_minus <- .nlme_eval_demand(x, Q0_log10, alpha_log10 - h, k,
+                                     equation_form)
+
+  cbind(
+    dQ0 = (f_q0_plus - f_q0_minus) / (2 * h),
+    dalpha = (f_alpha_plus - f_alpha_minus) / (2 * h)
+  )
+}
+
+
+#' Precompute linearized marginal NLL components from fitted NLME model
+#'
+#' Extracts fixed effects, random effects, and variance components from a
+#' \code{beezdemand_nlme} object, then computes per-subject Jacobians,
+#' pseudo-responses, and marginal covariance inverses. All components that
+#' do not depend on the grid of fixed-effect values are computed once.
+#'
+#' @param object A fitted \code{beezdemand_nlme} object.
+#' @return List with components:
+#' \describe{
+#'   \item{subjects}{List of per-subject structs (F_i, y_star_i, V_inv_i,
+#'     log_det_V_i)}
+#'   \item{beta_hat}{Named numeric vector of fixed effects in log10 space}
+#'   \item{N}{Total number of observations}
+#'   \item{log_2pi_term}{(N/2)*log(2*pi) constant}
+#' }
+#' @noRd
+.nlme_precompute_marginal <- function(object) {
+  model <- object$model
+  data <- object$data
+  equation_form <- object$formula_details$equation_form_selected
+  x_var <- object$param_info$x_var
+  y_var <- object$param_info$y_var
+  id_var <- object$param_info$id_var
+  k <- object$param_info$k  # NULL for simplified/zben
+
+  # Fixed effects (log10 space)
+  fe <- nlme::fixef(model)
+  num_q0 <- object$param_info$num_params_Q0
+  beta_hat <- c(Q0 = unname(fe[1]), alpha = unname(fe[num_q0 + 1]))
+
+  # Random effects per subject
+  re <- nlme::ranef(model)
+  subject_ids <- rownames(re)
+
+  # Variance components
+  vc <- nlme::VarCorr(model)
+  sigma <- as.numeric(vc[nrow(vc), "StdDev"])  # residual SD
+
+  # RE variance-covariance matrix D
+  re_names <- colnames(re)
+  n_re <- ncol(re)
+  if (n_re == 1) {
+    D <- matrix(as.numeric(vc[1, "Variance"]), 1, 1)
+  } else {
+    # Extract D from VarCorr — diagonal variances + off-diagonal correlations
+    D <- matrix(0, n_re, n_re)
+    for (j in seq_len(n_re)) {
+      D[j, j] <- as.numeric(vc[j, "Variance"])
+    }
+    # Off-diagonal: VarCorr stores correlation in the Corr column
+    if (n_re == 2 && "Corr" %in% colnames(vc)) {
+      corr_val <- suppressWarnings(as.numeric(vc[2, "Corr"]))
+      if (!is.na(corr_val)) {
+        sd1 <- sqrt(D[1, 1])
+        sd2 <- sqrt(D[2, 2])
+        D[1, 2] <- D[2, 1] <- corr_val * sd1 * sd2
+      }
+    }
+  }
+
+  # Determine which fixed-effect indices have random effects
+  # For beezdemand NLME: Q0 is always RE; alpha is RE if n_re == 2
+  re_col_map <- seq_len(n_re)  # maps RE columns to beta columns
+  # Q0 RE → beta column 1; alpha RE → beta column 2
+  # This works because for intercept-only models:
+  #   fe[1] = Q0, fe[2] = alpha
+  #   re columns = Q0 (and optionally alpha)
+
+  # Process each subject
+  N <- 0L
+  subjects <- vector("list", length(subject_ids))
+  names(subjects) <- subject_ids
+
+  for (s in seq_along(subject_ids)) {
+    sid <- subject_ids[s]
+    idx <- which(data[[id_var]] == sid)
+    x_i <- data[[x_var]][idx]
+    y_i <- data[[y_var]][idx]
+    n_i <- length(x_i)
+    N <- N + n_i
+
+    # Subject-specific parameters: beta_hat + b_hat_i (in log10 space)
+    b_hat_i <- as.numeric(re[sid, ])
+    theta_Q0 <- beta_hat["Q0"] + b_hat_i[1]
+    theta_alpha <- if (n_re >= 2) {
+      beta_hat["alpha"] + b_hat_i[2]
+    } else {
+      beta_hat["alpha"]
+    }
+
+    # Evaluate f at subject-specific parameters
+    f_i <- .nlme_eval_demand(x_i, theta_Q0, theta_alpha, k, equation_form)
+
+    # Compute Jacobian F_i (n_i x 2) w.r.t. Q0_log10, alpha_log10
+    F_i <- .nlme_compute_jacobian(x_i, theta_Q0, theta_alpha, k,
+                                  equation_form)
+
+    # Z_i: columns of F_i corresponding to random effects
+    Z_i <- F_i[, re_col_map, drop = FALSE]
+
+    # Pseudo-response: y* = y - f(theta) + F * beta + Z * b
+    y_star_i <- y_i - f_i + F_i %*% beta_hat + Z_i %*% b_hat_i
+
+    # Marginal covariance: V_i = Z_i D Z_i' + sigma^2 I
+    V_i <- Z_i %*% D %*% t(Z_i) + sigma^2 * diag(n_i)
+
+    # Invert V_i and compute log-determinant
+    V_chol <- chol(V_i)
+    V_inv_i <- chol2inv(V_chol)
+    log_det_V_i <- 2 * sum(log(diag(V_chol)))
+
+    subjects[[s]] <- list(
+      F_i = F_i,
+      y_star_i = as.numeric(y_star_i),
+      V_inv_i = V_inv_i,
+      log_det_V_i = log_det_V_i
+    )
+  }
+
+  list(
+    subjects = subjects,
+    beta_hat = beta_hat,
+    N = N,
+    log_2pi_term = (N / 2) * log(2 * pi)
+  )
+}
+
+
+#' Evaluate linearized marginal NLL on a grid of (Q0, alpha) values
+#'
+#' @param precomputed List from \code{.nlme_precompute_marginal()}.
+#' @param beta_grid Data frame with columns \code{log10_q0} and
+#'   \code{log10_alpha}.
+#' @return Numeric vector of NLL values (same length as \code{nrow(beta_grid)}).
+#' @noRd
+.nlme_marginal_nll_grid <- function(precomputed, beta_grid) {
+  subjects <- precomputed$subjects
+  log_2pi <- precomputed$log_2pi_term
+  n_grid <- nrow(beta_grid)
+
+  # Precompute constant part: log_2pi + (1/2) * sum log|V_i|
+  sum_log_det <- sum(vapply(subjects, function(s) s$log_det_V_i, numeric(1)))
+  const <- log_2pi + 0.5 * sum_log_det
+
+  nll <- vapply(seq_len(n_grid), function(g) {
+    beta <- c(beta_grid$log10_q0[g], beta_grid$log10_alpha[g])
+
+    # Sum quadratic forms across subjects
+    quad_sum <- 0
+    for (s in subjects) {
+      r_i <- s$y_star_i - s$F_i %*% beta
+      quad_sum <- quad_sum + as.numeric(t(r_i) %*% s$V_inv_i %*% r_i)
+    }
+
+    const + 0.5 * quad_sum
+  }, numeric(1))
+
+  nll
+}
+
+
 #' Get population-level demand predictions from a fitted model
 #'
 #' @param object A fitted demand model.
@@ -404,8 +748,9 @@
 #' for individual variation. For models with large random effects, the surface
 #' may appear sharper than the full-data objective.
 #'
-#' Currently supports `beezdemand_hurdle` models only (v1). Models with
-#' factor covariates on Q0 or alpha are not yet supported.
+#' Supported model classes: `beezdemand_hurdle`, `beezdemand_tmb`, and
+#' `beezdemand_nlme`. Models with factor covariates on Q0 or alpha are not
+#' supported; use [get_demand_param_emms()] instead.
 #'
 #' @seealso [plot_loss_profile()] for 1D profile slices
 #'
@@ -684,6 +1029,156 @@ plot_loss_surface.beezdemand_tmb <- function(
 }
 
 
+#' @rdname plot_loss_surface
+#' @export
+plot_loss_surface.beezdemand_nlme <- function(
+    object,
+    resolution = 80,
+    q0_range = NULL,
+    alpha_range = NULL,
+    fill_palette = "D",
+    show_mle = TRUE,
+    show_contours = FALSE,
+    style = c("modern", "apa"),
+    type = c("ssr", "marginal"),
+    ...) {
+  style <- match.arg(style)
+  type <- match.arg(type)
+
+  .check_nlme_intercept_only(object)
+  .check_nlme_convergence_for_plot(object)
+
+  mle <- .extract_nlme_mle(object)
+  equation_form <- object$formula_details$equation_form_selected
+
+  if (is.null(q0_range)) {
+    q0_range <- 10^(log10(mle$Q0) + c(-3, 3))
+  }
+  if (is.null(alpha_range)) {
+    alpha_range <- 10^(log10(mle$alpha) + c(-3, 3))
+  }
+
+  log10_q0_seq <- seq(
+    log10(q0_range[1]), log10(q0_range[2]),
+    length.out = resolution
+  )
+  log10_alpha_seq <- seq(
+    log10(alpha_range[1]), log10(alpha_range[2]),
+    length.out = resolution
+  )
+  grid <- expand.grid(
+    log10_q0 = log10_q0_seq,
+    log10_alpha = log10_alpha_seq
+  )
+
+  if (type == "marginal") {
+    # Linearized marginal NLL: integrate random effects via pseudo-LME
+    pre <- .nlme_precompute_marginal(object)
+    grid$value <- .nlme_marginal_nll_grid(pre, grid)
+    fill_name <- "NLL"
+    title_text <- "Loss Surface (Marginal NLL)"
+    k_label <- if (!is.null(mle$k)) {
+      paste0(" | k = ", round(mle$k, 3))
+    } else {
+      ""
+    }
+    subtitle_text <- paste0(
+      "Equation: ", equation_form,
+      " (NLME) | Linearized marginal NLL (accurate near MLE)", k_label
+    )
+  } else {
+    # SSR on aggregated means (original behavior)
+    equation <- .map_nlme_equation(equation_form)
+    agg <- .aggregate_nlme_means(object)
+    ln_q0_vec <- grid$log10_q0 * log(10)
+    alpha_vec <- 10^grid$log10_alpha
+    grid$value <- .compute_ssr_grid(
+      ln_q0_vec = ln_q0_vec,
+      alpha_vec = alpha_vec,
+      k = mle$k,
+      prices = agg$price,
+      observed = agg$mean_response,
+      equation = equation
+    )
+    fill_name <- "SSR"
+    title_text <- "Loss Surface (SSR)"
+    k_label <- if (!is.null(mle$k)) {
+      paste0(" | k = ", round(mle$k, 3))
+    } else {
+      ""
+    }
+    subtitle_text <- paste0("Equation: ", equation_form, " (NLME)", k_label)
+  }
+
+  # Cap outliers for visualization
+  val_finite <- grid$value[is.finite(grid$value)]
+  if (length(val_finite) > 0) {
+    val_cap <- stats::quantile(val_finite, 0.99)
+    grid$value[!is.finite(grid$value) | grid$value > val_cap] <- val_cap
+  }
+
+  mle_log10_q0 <- log10(mle$Q0)
+  mle_log10_alpha <- log10(mle$alpha)
+  margin <- 0.05 * diff(range(log10_q0_seq))
+  if (mle_log10_q0 < min(log10_q0_seq) + margin ||
+    mle_log10_q0 > max(log10_q0_seq) - margin ||
+    mle_log10_alpha < min(log10_alpha_seq) + margin ||
+    mle_log10_alpha > max(log10_alpha_seq) - margin) {
+    warning(
+      "MLE is near the grid boundary. Consider increasing the range ",
+      "for a more complete view of the surface.",
+      call. = FALSE
+    )
+  }
+
+  p <- ggplot2::ggplot(
+    grid,
+    ggplot2::aes(
+      x = .data$log10_q0,
+      y = .data$log10_alpha,
+      fill = .data$value
+    )
+  ) +
+    ggplot2::geom_raster(interpolate = TRUE) +
+    ggplot2::scale_fill_viridis_c(
+      option = fill_palette,
+      direction = -1,
+      name = fill_name
+    ) +
+    ggplot2::labs(
+      x = expression(log[10](Q[0])),
+      y = expression(log[10](alpha)),
+      title = title_text,
+      subtitle = subtitle_text
+    ) +
+    theme_beezdemand(style = style)
+
+  if (show_contours) {
+    p <- p + ggplot2::geom_contour(
+      ggplot2::aes(z = .data$value),
+      color = "white",
+      alpha = 0.6,
+      linewidth = 0.4
+    )
+  }
+
+  if (show_mle) {
+    mle_df <- data.frame(
+      log10_q0 = mle_log10_q0,
+      log10_alpha = mle_log10_alpha
+    )
+    p <- p + ggplot2::geom_point(
+      data = mle_df,
+      ggplot2::aes(x = .data$log10_q0, y = .data$log10_alpha),
+      inherit.aes = FALSE,
+      shape = 4, size = 4, color = "white", stroke = 1.5
+    )
+  }
+
+  p
+}
+
+
 # =============================================================================
 # plot_loss_profile() — 1D Profile Slices
 # =============================================================================
@@ -919,6 +1414,151 @@ plot_loss_profile.beezdemand_tmb <- function(
       ggplot2::ggtitle("Q0 Profile (alpha fixed at MLE)")
     p_alpha <- .make_profile("alpha") +
       ggplot2::ggtitle("Alpha Profile (Q0 fixed at MLE)")
+
+    if (requireNamespace("patchwork", quietly = TRUE)) {
+      return(p_q0 + p_alpha + patchwork::plot_layout(ncol = 2))
+    }
+    message(
+      "Install 'patchwork' to combine profile plots. ",
+      "Returning list of individual plots."
+    )
+    plots <- list(q0 = p_q0, alpha = p_alpha)
+    class(plots) <- c("beezdemand_diagnostic_plots", "list")
+    return(plots)
+  }
+
+  .make_profile(parameter)
+}
+
+
+#' @rdname plot_loss_profile
+#' @export
+plot_loss_profile.beezdemand_nlme <- function(
+    object,
+    parameter = c("both", "q0", "alpha"),
+    resolution = 200,
+    range = c(-3, 3),
+    style = c("modern", "apa"),
+    type = c("ssr", "marginal"),
+    ...) {
+  parameter <- match.arg(parameter)
+  style <- match.arg(style)
+  type <- match.arg(type)
+
+  .check_nlme_intercept_only(object)
+  .check_nlme_convergence_for_plot(object)
+
+  mle <- .extract_nlme_mle(object)
+  equation_form <- object$formula_details$equation_form_selected
+
+  # Precompute marginal NLL components if needed (once, shared across profiles)
+  pre <- if (type == "marginal") .nlme_precompute_marginal(object) else NULL
+
+  # SSR components (only needed for type == "ssr")
+  equation <- if (type == "ssr") .map_nlme_equation(equation_form) else NULL
+  agg <- if (type == "ssr") .aggregate_nlme_means(object) else NULL
+
+  y_label <- if (type == "marginal") "Marginal NLL" else "SSR"
+
+  .make_profile <- function(param_name) {
+    log10_seq <- seq(range[1], range[2], length.out = resolution)
+
+    if (param_name == "q0") {
+      log10_vals <- log10(mle$Q0) + log10_seq
+    } else {
+      log10_vals <- log10(mle$alpha) + log10_seq
+    }
+
+    if (type == "marginal") {
+      # Marginal NLL: vary one parameter, fix the other at MLE
+      if (param_name == "q0") {
+        beta_grid <- data.frame(
+          log10_q0 = log10_vals,
+          log10_alpha = rep(pre$beta_hat["alpha"], resolution)
+        )
+      } else {
+        beta_grid <- data.frame(
+          log10_q0 = rep(pre$beta_hat["Q0"], resolution),
+          log10_alpha = log10_vals
+        )
+      }
+      values <- .nlme_marginal_nll_grid(pre, beta_grid)
+    } else {
+      # SSR on aggregated means (original behavior)
+      if (param_name == "q0") {
+        ln_q0_vec <- log10_vals * log(10)
+        alpha_vec <- rep(mle$alpha, resolution)
+      } else {
+        ln_q0_vec <- rep(mle$ln_q0, resolution)
+        alpha_vec <- 10^log10_vals
+      }
+      values <- .compute_ssr_grid(
+        ln_q0_vec = ln_q0_vec,
+        alpha_vec = alpha_vec,
+        k = mle$k,
+        prices = agg$price,
+        observed = agg$mean_response,
+        equation = equation
+      )
+    }
+
+    mle_val <- if (param_name == "q0") log10(mle$Q0) else log10(mle$alpha)
+
+    df <- data.frame(log10_val = log10_vals, value = values)
+    df <- df[is.finite(df$value), ]
+
+    # Smooth out numerical instability spikes
+    if (nrow(df) > 5) {
+      med_val <- stats::median(df$value, na.rm = TRUE)
+      mad_val <- stats::mad(df$value, na.rm = TRUE)
+      if (mad_val > 0) {
+        spike <- abs(df$value - med_val) > 5 * mad_val
+        if (any(spike) && sum(!spike) >= 2) {
+          df$value[spike] <- stats::approx(
+            x = df$log10_val[!spike],
+            y = df$value[!spike],
+            xout = df$log10_val[spike]
+          )$y
+        }
+        df <- df[is.finite(df$value), ]
+      }
+    }
+
+    x_lab <- if (param_name == "q0") {
+      expression(log[10](Q[0]))
+    } else {
+      expression(log[10](alpha))
+    }
+
+    p <- ggplot2::ggplot(df, ggplot2::aes(
+      x = .data$log10_val,
+      y = .data$value
+    )) +
+      ggplot2::geom_line(
+        color = beezdemand_style_color(style, "primary"),
+        linewidth = 0.8
+      ) +
+      ggplot2::geom_vline(
+        xintercept = mle_val,
+        linetype = "dashed",
+        color = beezdemand_style_color(style, "secondary"),
+        linewidth = 0.6
+      ) +
+      ggplot2::labs(x = x_lab, y = y_label) +
+      theme_beezdemand(style = style)
+
+    p
+  }
+
+  type_label <- if (type == "marginal") " (Marginal NLL)" else ""
+
+  if (parameter == "both") {
+    p_q0 <- .make_profile("q0") +
+      ggplot2::ggtitle(paste0("Q0 Profile", type_label,
+                              " (alpha fixed at MLE)"))
+    p_alpha <- .make_profile("alpha") +
+      ggplot2::ggtitle(paste0("Alpha Profile", type_label,
+                              " (Q0 fixed at MLE)"))
 
     if (requireNamespace("patchwork", quietly = TRUE)) {
       return(p_q0 + p_alpha + patchwork::plot_layout(ncol = 2))

@@ -42,6 +42,7 @@ AGENTS.md
 .agents/
 .claude/
 engineering/
+scripts/
 
 # Git worktrees #
 #################
