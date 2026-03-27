@@ -674,7 +674,12 @@
       }
     }
     pred <- predict(object, newdata = nd, level = 0)
-    return(data.frame(price = prices, consumption = as.numeric(pred)))
+    y <- if (is.data.frame(pred) && ".fitted" %in% names(pred)) {
+      pred$.fitted
+    } else {
+      pred
+    }
+    return(data.frame(price = prices, consumption = as.numeric(y)))
   }
 
   if (inherits(object, "beezdemand_fixed")) {

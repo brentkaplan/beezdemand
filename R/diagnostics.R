@@ -253,8 +253,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     near_zero = near_zero
   )
 
-  if (any(near_zero)) {
-    near_zero_re <- names(re_variances)[near_zero]
+  if (any(near_zero, na.rm = TRUE)) {
+    near_zero_re <- names(re_variances)[near_zero & !is.na(near_zero)]
     issues <- c(issues, paste("Random effect variance near zero:",
                               paste(near_zero_re, collapse = ", ")))
     recommendations <- c(recommendations, "Consider removing these random effects")
@@ -337,7 +337,7 @@ print.beezdemand_diagnostics <- function(x, ...) {
     vars <- x$random_effects$variances
     if (!is.null(vars) && length(vars) > 0) {
       for (nm in names(vars)) {
-        status <- if (x$random_effects$near_zero[nm]) " [NEAR ZERO]" else ""
+        status <- if (isTRUE(x$random_effects$near_zero[nm])) " [NEAR ZERO]" else ""
         cat(sprintf("  %s variance: %.4g%s\n", nm, vars[nm], status))
       }
     }

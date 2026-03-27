@@ -78,6 +78,8 @@ Topics covered here include:
 - **Complex random effects structures**
 - **Continuous covariates** and `fixed_rhs`
 - **Trends** with `emtrends`
+- **Model comparison and overlay** with `compare_models()`, `anova()`, and
+  `plot_demand_overlay()`
 
 ```{r shared-setup}
 quick_nlme_control <- nlme::nlmeControl(
@@ -92,6 +94,17 @@ quick_nlme_control <- nlme::nlmeControl(
 
 # Prepare data subsets used throughout
 ko_alf <- ko[ko$drug == "Alfentanil", ]
+
+# Fit the no-factor (intercept-only) model for comparison
+fit_no_factors_alf <- fit_demand_mixed(
+  data = ko_alf,
+  y_var = "y_ll4",
+  x_var = "x",
+  id_var = "monkey",
+  equation_form = "zben",
+  nlme_control = quick_nlme_control,
+  start_value_method = "heuristic"
+)
 
 # Fit the one-factor model used as a baseline/fallback in later sections
 fit_one_factor_dose <- fit_demand_mixed(
@@ -1048,6 +1061,49 @@ if (!is.null(fit_for_trends)) {
     "\nNo suitable fitted model available for computing trends in the vignette.\n"
   )
 }
+```
+
+## Model Comparison and Overlay
+
+### Comparing Nested Models
+
+Use `anova()` to formally compare nested NLME models via likelihood ratio test.
+For example, compare a one-factor model against a no-factor (intercept-only)
+baseline:
+
+```{r model-comparison-anova}
+# Compare one-factor dose model vs intercept-only
+anova(fit_no_factors_alf, fit_one_factor_dose)
+```
+
+The cross-tier `compare_models()` function also works with NLME objects and
+provides a unified output format:
+
+```{r model-comparison-compare}
+compare_models(fit_no_factors_alf, fit_one_factor_dose)
+```
+
+### Overlaying Demand Curves
+
+`plot_demand_overlay()` superimposes population demand curves from multiple
+models, making it easy to see how different specifications shift the predicted
+curve:
+
+```{r viz-overlay-nlme, fig.cap = "Demand curves from intercept-only and dose-factor models overlaid."}
+plot_demand_overlay(
+  fit_no_factors_alf, fit_one_factor_dose,
+  labels = c("No factors", "Dose factor"),
+  inv_fun = ll4_inv
+)
+```
+
+`plot_model_comparison()` compares parameter distributions side by side:
+
+```{r viz-model-comparison-nlme, fig.cap = "Side-by-side parameter estimates from two NLME models."}
+plot_model_comparison(
+  fit_no_factors_alf, fit_one_factor_dose,
+  labels = c("No factors", "Dose factor")
+)
 ```
 
 # See Also

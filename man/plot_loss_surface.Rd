@@ -42,6 +42,7 @@ plot_loss_surface(object, ...)
   show_mle = TRUE,
   show_contours = FALSE,
   style = c("modern", "apa"),
+  type = c("ssr", "marginal"),
   ...
 )
 }

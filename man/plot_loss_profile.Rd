@@ -33,6 +33,7 @@ plot_loss_profile(object, ...)
   resolution = 200,
   range = c(-3, 3),
   style = c("modern", "apa"),
+  type = c("ssr", "marginal"),
   ...
 )
 }

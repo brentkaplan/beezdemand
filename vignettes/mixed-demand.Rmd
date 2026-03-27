@@ -206,6 +206,35 @@ check_demand_model(fit_apt_zben)
 plot_residuals(fit_apt_zben)$fitted
 ```
 
+### Loss Surface and Profile
+
+The loss surface and profile plots visualize the optimization landscape. The
+NLME versions support two modes:
+
+- `type = "ssr"` (default): sum-of-squared residuals on aggregated price-level
+  means — a quick visual check of the fixed-effects landscape
+- `type = "marginal"`: linearized marginal negative log-likelihood that
+  integrates over random-effects variance — more statistically appropriate for
+  mixed models and preferred for assessing identifiability near the MLE
+
+```{r loss-ssr, fig.cap = "SSR loss surface on aggregated means."}
+plot_loss_surface(fit_apt_zben)
+```
+
+```{r loss-marginal, fig.cap = "Marginal NLL surface accounting for random-effects variance."}
+plot_loss_surface(fit_apt_zben, type = "marginal")
+```
+
+Profile plots show 1D slices (one parameter varied, the other fixed at the MLE):
+
+```{r profile-ssr, fig.cap = "SSR profile plots for Q0 and alpha."}
+plot_loss_profile(fit_apt_zben)
+```
+
+```{r profile-marginal, fig.cap = "Marginal NLL profile plots for Q0 and alpha."}
+plot_loss_profile(fit_apt_zben, type = "marginal")
+```
+
 ### Basic Model (No Factors)
 
 This model estimates global $Q_{0}$ and $\alpha$ parameters with random effects for subjects.

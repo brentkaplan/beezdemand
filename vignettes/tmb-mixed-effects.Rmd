@@ -345,11 +345,80 @@ plot_qq(fit_2re)
 plot_re_diagnostics(fit_2re)
 ```
 
+```{r diagnostics-resid, fig.cap = "Residuals vs fitted values for the 2-RE exponential model."}
+# Residual plot — standard in every modeling workflow
+plot_residuals(fit_2re, type = "fitted")
+```
+
 These diagnostics help identify:
 
 - **Q-Q plots**: Non-normality of random effects (heavy tails, outliers)
 - **`check_demand_model()`**: Convergence issues, boundary estimates, residual patterns
 - **Augmented data**: Observation-level residuals for identifying poorly fitting subjects
+- **Residual plots**: Heteroscedasticity, non-linearity, or outliers in the fitted vs residual pattern
+
+## Advanced Visualization
+
+`beezdemand` provides several specialized plots beyond the standard `plot()` method.
+These work with any `beezdemand_tmb` object.
+
+### Expenditure and Elasticity
+
+The expenditure curve shows total spending ($P \times Q$) as a function of price,
+with vertical and horizontal reference lines at $P_{max}$ and $O_{max}$:
+
+```{r viz-expenditure, fig.cap = "Expenditure curve with Pmax and Omax reference lines."}
+plot_expenditure(fit_2re)
+```
+
+The elasticity curve shows how responsive demand is to price changes. The dashed
+line at $-1$ marks unit elasticity — prices above this threshold produce elastic
+demand:
+
+```{r viz-elasticity, fig.cap = "Own-price elasticity curve with unit elasticity reference."}
+plot_elasticity(fit_2re)
+```
+
+### Loss Surface and Profile
+
+The loss surface visualizes the sum-of-squared-residuals landscape over a grid
+of $(Q_0, \alpha)$ values, with the MLE marked. This helps assess
+identifiability — a sharp, well-defined minimum indicates good identification:
+
+```{r viz-loss-surface, fig.cap = "2D loss surface (SSR) over the Q0-alpha parameter space."}
+plot_loss_surface(fit_2re)
+```
+
+Profile plots show 1D slices through the loss surface, fixing one parameter at
+its MLE and varying the other:
+
+```{r viz-loss-profile, fig.cap = "1D loss profiles for Q0 and alpha."}
+plot_loss_profile(fit_2re)
+```
+
+### Subject Heterogeneity
+
+Visualize the distribution of subject-level $\alpha$ estimates to assess
+heterogeneity in price sensitivity:
+
+```{r viz-alpha-dist, fig.cap = "Distribution of subject-level alpha (elasticity) estimates."}
+plot_alpha_distribution(fit_2re)
+```
+
+### Multi-Model Comparison
+
+Overlay demand curves from multiple models to visualize how different
+specifications affect the predicted demand function:
+
+```{r viz-overlay, fig.cap = "Demand curves from 1-RE and 2-RE models overlaid."}
+plot_demand_overlay(fit_1re, fit_2re, labels = c("1-RE", "2-RE"))
+```
+
+Compare parameter distributions side by side:
+
+```{r viz-model-comparison, fig.cap = "Side-by-side parameter estimates from 1-RE and 2-RE models."}
+plot_model_comparison(fit_1re, fit_2re, labels = c("1-RE", "2-RE"))
+```
 
 ## Group Comparisons
 
