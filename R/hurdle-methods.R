@@ -97,18 +97,21 @@ summary.beezdemand_hurdle <- function(
       "i" = "Consider simplifying the model or checking data quality."
     ))
   }
-  t_val <- ifelse(se_vec > 0, coefs / se_vec, NA_real_)
+  # TMB uses Laplace approximation, so asymptotic z-tests are the right inference
+  # (matches glmmTMB convention). The column is labelled "z value" (not the
+  # historical "t value") to keep the label consistent with the pnorm-based
+  # p-value computation below (TICKET-006).
+  z_val <- ifelse(se_vec > 0, coefs / se_vec, NA_real_)
 
   # Build coefficient table (matrix form for printing)
   coef_matrix <- cbind(
     Estimate = coefs,
     `Std. Error` = se_vec,
-    `t value` = t_val
+    `z value` = z_val
   )
 
   # Build coefficient tibble (for contract compliance)
   coef_names <- names(coefs)
-  z_val <- t_val
   p_val <- 2 * stats::pnorm(-abs(z_val))
 
   # Determine component for each coefficient
@@ -175,6 +178,11 @@ summary.beezdemand_hurdle <- function(
 
   # Strategy B alpha* (normalized alpha; depends on alpha and k)
   notes <- character(0)
+  if (isFALSE(object$hessian_pd)) {
+    notes <- c(notes,
+      "Warning: Hessian not positive definite \u2014 standard errors may be unreliable."
+    )
+  }
   part2 <- object$param_info$part2 %||% "zhao_exponential"
   if (!identical(part2, "simplified_exponential") &&
     all(c("log_alpha", "log_k") %in% names(coefs))) {
@@ -1969,11 +1977,20 @@ tidy.beezdemand_hurdle <- function(
     internal_space = "natural"
   )
 
-  out |>
+  out <- out |>
     dplyr::mutate(
       statistic = .data$estimate / .data$std.error,
       p.value = 2 * stats::pnorm(-abs(.data$statistic))
     )
+
+  if (isFALSE(x$hessian_pd)) {
+    attr(out, "hessian_warning") <- paste0(
+      "Hessian is not positive definite (pdHess = FALSE). ",
+      "Standard errors, p-values, and confidence intervals may be unreliable."
+    )
+  }
+
+  out
 }
 
 

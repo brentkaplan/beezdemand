@@ -250,6 +250,11 @@ summary.beezdemand_tmb <- function(
   if (isFALSE(object$se_available)) {
     notes <- c(notes, "Standard errors unavailable (sdreport failed); CIs will be NA.")
   }
+  if (isFALSE(object$hessian_pd)) {
+    notes <- c(notes,
+      "Warning: Hessian not positive definite \u2014 standard errors may be unreliable."
+    )
+  }
   if (length(object$opt_warnings %||% character(0)) > 0) {
     notes <- c(notes, sprintf(
       "Optimizer produced %d warning(s) during fitting.",
@@ -1113,11 +1118,20 @@ tidy.beezdemand_tmb <- function(
     internal_space = "natural"
   )
 
-  out |>
+  out <- out |>
     dplyr::mutate(
       statistic = .data$estimate / .data$std.error,
       p.value = 2 * stats::pnorm(-abs(.data$statistic))
     )
+
+  if (isFALSE(x$hessian_pd)) {
+    attr(out, "hessian_warning") <- paste0(
+      "Hessian is not positive definite (pdHess = FALSE). ",
+      "Standard errors, p-values, and confidence intervals may be unreliable."
+    )
+  }
+
+  out
 }
 
 

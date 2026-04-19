@@ -325,6 +325,52 @@ test_that("print.beezdemand_diagnostics works for TMB without error", {
   expect_output(print(diag), "Random Effects")
 })
 
+test_that("check_demand_model.beezdemand_tmb 1-RE: named near_zero, full residual fields, print works", {
+  # Regression for TICKET-002. The 1-RE path produced a single-element near_zero
+  # vector and a residuals_info list missing mean/sd/min/max, which crashed the
+  # print method. Both were fixed in 719c0ed; this test guards against return.
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential",
+    random_effects = "q0",
+    verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+
+  expect_s3_class(diag, "beezdemand_diagnostics")
+  expect_true(is.logical(diag$random_effects$near_zero))
+  expect_named(diag$random_effects$near_zero, "sigma_b")
+  expect_false(any(is.na(diag$random_effects$near_zero)))
+
+  expect_true(!is.na(diag$residuals$mean))
+  expect_true(!is.na(diag$residuals$sd))
+  expect_true(!is.na(diag$residuals$min))
+  expect_true(!is.na(diag$residuals$max))
+
+  expect_output(print(diag), "Model Diagnostics")
+})
+
+test_that("check_demand_model.beezdemand_tmb 2-RE: named near_zero contains both REs", {
+  # Regression for TICKET-002. Confirms the 2-RE branch produces a named two-
+  # element near_zero vector indexable by sigma_b and sigma_c (the print method
+  # accesses entries by name).
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential",
+    random_effects = c("q0", "alpha"),
+    verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+
+  expect_named(diag$random_effects$near_zero, c("sigma_b", "sigma_c"))
+  expect_false(any(is.na(diag$random_effects$near_zero)))
+  expect_output(print(diag), "Model Diagnostics")
+})
+
 test_that("plot_residuals works for TMB models", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(

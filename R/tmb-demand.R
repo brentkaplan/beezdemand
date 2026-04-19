@@ -567,6 +567,24 @@ NULL
     }
   )
 
+  # Hessian positive-definiteness gate (TICKET-008). When TMB reports
+  # pdHess = FALSE the inverse Hessian is unstable, so any standard errors,
+  # z-statistics, p-values, and Wald CIs derived from it are unreliable. We
+  # surface this immediately at fit time (matching glmmTMB's convention) and
+  # propagate the status to the fit object so summary()/tidy() can flag it.
+  hessian_pd <- NA
+  if (!is.null(sdr)) {
+    hessian_pd <- isTRUE(sdr$pdHess)
+    if (!hessian_pd && verbose >= 1) {
+      cli::cli_warn(c(
+        "!" = "Hessian is not positive definite ({.code pdHess = FALSE}).",
+        "i" = "Standard errors, p-values, and confidence intervals may be unreliable.",
+        "i" = "Run {.fn check_demand_model} for detailed diagnostics.",
+        "i" = "Consider simplifying the model (fewer random effects) or checking data quality."
+      ))
+    }
+  }
+
   # Extract fixed effects
   par_full <- opt$par
   par_names <- names(par_full)
@@ -623,7 +641,8 @@ NULL
     se = se_vec,
     sdr = sdr,
     variance_components = variance_components,
-    u_hat = u_hat
+    u_hat = u_hat,
+    hessian_pd = hessian_pd
   )
 }
 
@@ -1267,6 +1286,7 @@ fit_demand_tmb <- function(
       tmb_obj = obj,
       opt = opt,
       sdr = estimates$sdr,
+      hessian_pd = estimates$hessian_pd,
       converged = converged,
       loglik = loglik,
       AIC = aic,

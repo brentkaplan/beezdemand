@@ -1742,6 +1742,11 @@ summary.beezdemand_nlme <- function(
   # Extract fixed effects table
   ttable <- nlme_summary$tTable
   internal_space <- object$param_space %||% object$param_info$param_space %||% "log10"
+  # Preserve nlme's containment-based degrees of freedom for use after parameter
+  # transformation. The delta method changes estimate/SE but not the underlying
+  # t-distribution, so reusing these df keeps inference correctly t-based for
+  # small N (TICKET-006).
+  df_residual <- if ("DF" %in% colnames(ttable)) ttable[, "DF"] else NA_real_
   coefficients <- tibble::tibble(
     term = rownames(ttable),
     estimate = ttable[, "Value"],
@@ -1760,7 +1765,11 @@ summary.beezdemand_nlme <- function(
       internal_space = internal_space
     )
     coefficients$statistic <- coefficients$estimate / coefficients$std.error
-    coefficients$p.value <- 2 * stats::pnorm(-abs(coefficients$statistic))
+    coefficients$p.value <- if (all(is.na(df_residual))) {
+      2 * stats::pnorm(-abs(coefficients$statistic))
+    } else {
+      2 * stats::pt(-abs(coefficients$statistic), df = df_residual)
+    }
   }
 
   # Random effects structure

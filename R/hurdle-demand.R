@@ -882,6 +882,23 @@ fit_demand_hurdle <- function(
     }
   )
 
+  # Hessian positive-definiteness gate (TICKET-008). When TMB reports
+  # pdHess = FALSE the resulting standard errors, p-values, and Wald CIs are
+  # unreliable. Surface immediately at fit time (matches glmmTMB behavior) and
+  # propagate the status to the fit object so summary()/tidy() can flag it.
+  hessian_pd <- NA
+  if (!is.null(sdr)) {
+    hessian_pd <- isTRUE(sdr$pdHess)
+    if (!hessian_pd && verbose >= 1) {
+      cli::cli_warn(c(
+        "!" = "Hessian is not positive definite ({.code pdHess = FALSE}).",
+        "i" = "Standard errors, p-values, and confidence intervals may be unreliable.",
+        "i" = "Run {.fn check_demand_model} for detailed diagnostics.",
+        "i" = "Consider simplifying the model (fewer random effects) or checking data quality."
+      ))
+    }
+  }
+
   # Extract fixed effects (different for 2 vs 3 RE; some Part II forms omit k)
   if (n_re == 3) {
     fixed_names <- c(
@@ -1204,6 +1221,7 @@ fit_demand_hurdle <- function(
     tmb_obj = obj,
     opt = opt,
     sdr = sdr,
+    hessian_pd = hessian_pd,
     call = cl,
     data = data,
     param_info = list(
