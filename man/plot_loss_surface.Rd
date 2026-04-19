@@ -66,6 +66,10 @@ Default: MLE +/- 3 orders of magnitude.}
 \item{show_contours}{Logical; add contour lines (default \code{FALSE}).}
 
 \item{style}{Character; plot style, \code{"modern"} or \code{"apa"}.}
+
+\item{type}{Character; loss surface to plot for NLME models. \code{"ssr"}
+(default) uses sum-of-squared-residuals on price-aggregated means;
+\code{"marginal"} uses a linearized marginal negative log-likelihood.}
 }
 \value{
 A ggplot2 object.

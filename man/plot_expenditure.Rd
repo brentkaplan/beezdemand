@@ -51,6 +51,14 @@ spanning the observed price range.}
 
 \item{show_omax}{Logical; show Omax horizontal line (default \code{TRUE}).}
 
+\item{demand_type}{Character; for \code{beezdemand_hurdle} only. \code{"unconditional"}
+(default) plots \code{p * (1 - P0(p)) * Q(p)} and overlays the unconditional
+Pmax/Omax reference lines. \code{"conditional"} plots the Part-II demand
+\code{p * Q(p)} (consumption given positive purchase) and overlays the
+Part-II-only Pmax/Omax reference lines. Either way the displayed curve
+and the Pmax/Omax lines are guaranteed to come from the same metric
+set, so they always align.}
+
 \item{x_trans}{Character; x-axis transformation (default \code{"log10"}).}
 
 \item{free_trans}{Numeric; replacement for price = 0 on log scales.}

@@ -1035,6 +1035,9 @@ plot_loss_surface.beezdemand_tmb <- function(
 
 
 #' @rdname plot_loss_surface
+#' @param type Character; loss surface to plot for NLME models. `"ssr"`
+#'   (default) uses sum-of-squared-residuals on price-aggregated means;
+#'   `"marginal"` uses a linearized marginal negative log-likelihood.
 #' @export
 plot_loss_surface.beezdemand_nlme <- function(
     object,
@@ -1437,6 +1440,9 @@ plot_loss_profile.beezdemand_tmb <- function(
 
 
 #' @rdname plot_loss_profile
+#' @param type Character; loss profile to plot for NLME models. `"ssr"`
+#'   (default) profiles sum-of-squared-residuals on price-aggregated means;
+#'   `"marginal"` profiles a linearized marginal negative log-likelihood.
 #' @export
 plot_loss_profile.beezdemand_nlme <- function(
     object,
@@ -2267,6 +2273,13 @@ plot_expenditure <- function(object, ...) {
 
 
 #' @rdname plot_expenditure
+#' @param demand_type Character; for `beezdemand_hurdle` only. `"unconditional"`
+#'   (default) plots `p * (1 - P0(p)) * Q(p)` and overlays the unconditional
+#'   Pmax/Omax reference lines. `"conditional"` plots the Part-II demand
+#'   `p * Q(p)` (consumption given positive purchase) and overlays the
+#'   Part-II-only Pmax/Omax reference lines. Either way the displayed curve
+#'   and the Pmax/Omax lines are guaranteed to come from the same metric
+#'   set, so they always align.
 #' @export
 plot_expenditure.beezdemand_hurdle <- function(
     object,

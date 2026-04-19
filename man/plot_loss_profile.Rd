@@ -51,6 +51,10 @@ or \code{"both"} (default).}
 MLE (default \code{c(-3, 3)}).}
 
 \item{style}{Character; plot style, \code{"modern"} or \code{"apa"}.}
+
+\item{type}{Character; loss profile to plot for NLME models. \code{"ssr"}
+(default) profiles sum-of-squared-residuals on price-aggregated means;
+\code{"marginal"} profiles a linearized marginal negative log-likelihood.}
 }
 \value{
 A ggplot2 object. If \code{parameter = "both"} and patchwork is
