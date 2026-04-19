@@ -2274,6 +2274,7 @@ plot_expenditure.beezdemand_hurdle <- function(
     n_points = 200,
     show_pmax = TRUE,
     show_omax = TRUE,
+    demand_type = c("unconditional", "conditional"),
     x_trans = c("log10", "log", "linear", "pseudo_log"),
     free_trans = 0.01,
     x_lab = "Price",
@@ -2282,6 +2283,7 @@ plot_expenditure.beezdemand_hurdle <- function(
     ...) {
   x_trans <- match.arg(x_trans)
   style <- match.arg(style)
+  demand_type <- match.arg(demand_type)
 
   if (is.null(prices)) {
     x_var <- object$param_info$x_var %||% "x"
@@ -2293,7 +2295,27 @@ plot_expenditure.beezdemand_hurdle <- function(
     )
   }
 
-  pred <- .get_demand_predictions(object, prices)
+  # Build the demand curve via predict() so the consumption series matches
+  # the demand_type the user selected. predict.beezdemand_hurdle returns
+  # `predicted_consumption` (Part-II demand, conditional on positive purchase)
+  # and `expected_consumption` ((1 - P0) * Part-II demand, unconditional)
+  # in the same call (TICKET-003).
+  x_var <- object$param_info$x_var %||% "x"
+  nd <- stats::setNames(data.frame(x = prices), x_var)
+  pred_full <- predict(object, newdata = nd, type = "demand")
+  consumption <- if (demand_type == "unconditional") {
+    if ("expected_consumption" %in% names(pred_full)) {
+      pred_full$expected_consumption
+    } else {
+      pred_full$.fitted
+    }
+  } else {
+    pred_full$predicted_consumption
+  }
+  pred <- data.frame(
+    price = prices,
+    consumption = as.numeric(consumption)
+  )
   pred$expenditure <- pred$price * pred$consumption
   pred <- pred[pred$price > 0 & is.finite(pred$expenditure), ]
 
@@ -2317,30 +2339,40 @@ plot_expenditure.beezdemand_hurdle <- function(
     ggplot2::labs(x = x_lab, y = y_lab, title = "Expenditure Curve") +
     theme_beezdemand(style = style)
 
-  # Add Pmax/Omax
+  # Add Pmax/Omax — pull the metric set that matches the displayed curve.
   if (show_pmax || show_omax) {
     metrics <- tryCatch(calc_group_metrics(object), error = function(e) NULL)
     if (!is.null(metrics)) {
-      if (show_pmax && !is.null(metrics$Pmax) && is.finite(metrics$Pmax)) {
+      pmax_val <- if (demand_type == "unconditional") {
+        metrics$Pmax_unconditional %||% metrics$Pmax
+      } else {
+        metrics$Pmax
+      }
+      omax_val <- if (demand_type == "unconditional") {
+        metrics$Omax_unconditional %||% metrics$Omax
+      } else {
+        metrics$Omax
+      }
+      if (show_pmax && !is.null(pmax_val) && is.finite(pmax_val)) {
         p <- p + ggplot2::geom_vline(
-          xintercept = metrics$Pmax,
+          xintercept = pmax_val,
           linetype = "dashed",
           color = beezdemand_style_color(style, "secondary"),
           linewidth = 0.6
         ) +
           ggplot2::annotate(
             "text",
-            x = metrics$Pmax,
+            x = pmax_val,
             y = max(pred$expenditure, na.rm = TRUE) * 0.95,
-            label = paste0("Pmax = ", round(metrics$Pmax, 2)),
+            label = paste0("Pmax = ", round(pmax_val, 2)),
             hjust = -0.1,
             color = beezdemand_style_color(style, "secondary"),
             size = 3
           )
       }
-      if (show_omax && !is.null(metrics$Omax) && is.finite(metrics$Omax)) {
+      if (show_omax && !is.null(omax_val) && is.finite(omax_val)) {
         p <- p + ggplot2::geom_hline(
-          yintercept = metrics$Omax,
+          yintercept = omax_val,
           linetype = "dashed",
           color = beezdemand_style_color(style, "accent"),
           linewidth = 0.6
@@ -2348,8 +2380,8 @@ plot_expenditure.beezdemand_hurdle <- function(
           ggplot2::annotate(
             "text",
             x = max(pred$price) * 0.8,
-            y = metrics$Omax,
-            label = paste0("Omax = ", round(metrics$Omax, 2)),
+            y = omax_val,
+            label = paste0("Omax = ", round(omax_val, 2)),
             vjust = -0.5,
             color = beezdemand_style_color(style, "accent"),
             size = 3

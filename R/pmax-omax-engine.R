@@ -683,6 +683,7 @@ beezdemand_calc_pmax_omax <- function(
   param_scales = NULL,
   expenditure_fn = NULL,
   demand_fn = NULL,
+  p_zero_fn = NULL,
   price_obs = NULL,
   consumption_obs = NULL,
   tol = 0.1,
@@ -690,7 +691,7 @@ beezdemand_calc_pmax_omax <- function(
 ) {
   # Initialize result structure
   result <- list(
-    # Model-based metrics
+    # Model-based metrics (conditional / Part-II only for hurdle)
     pmax_model = NA_real_,
     omax_model = NA_real_,
     q_at_pmax_model = NA_real_,
@@ -700,7 +701,19 @@ beezdemand_calc_pmax_omax <- function(
     elasticity_at_pmax_model = NA_real_,
     unit_elasticity_pass_model = NA,
     note_model = NULL,
-    
+
+    # Unconditional metrics (only populated when p_zero_fn is provided).
+    # Unconditional Pmax/Omax integrate the zero-inflation logistic into the
+    # expenditure curve: E_uncond(p) = p * (1 - P0(p)) * Q(p). Used by hurdle
+    # models so plot_expenditure curves and reference lines align (TICKET-003).
+    pmax_unconditional = NA_real_,
+    omax_unconditional = NA_real_,
+    q_at_pmax_unconditional = NA_real_,
+    p_zero_at_pmax = NA_real_,
+    method_unconditional = NA_character_,
+    is_boundary_unconditional = NA,
+    note_unconditional = NULL,
+
     # Observed metrics
     pmax_obs = NA_real_,
     omax_obs = NA_real_,
@@ -711,7 +724,7 @@ beezdemand_calc_pmax_omax <- function(
     has_duplicate_prices = NA,
     n_max_ties = NA_integer_,
     note_obs = NULL,
-    
+
     # Parameter space diagnostics
     alpha_scale_in = NA_character_,
     q0_scale_in = NA_character_,
@@ -955,7 +968,46 @@ beezdemand_calc_pmax_omax <- function(
       result$elasticity_at_pmax_model, tol
     )
   }
-  
+
+  # Unconditional Pmax/Omax (TICKET-003). Only computed when p_zero_fn is
+  # supplied. The unconditional expenditure curve is
+  #   E_uncond(p) = p * (1 - P0(p)) * Q(p)
+  # where P0(p) is the population (or per-subject) probability of zero
+  # consumption from the Part I logistic. There is no closed-form solution
+  # because the product of logistic and exponential terms admits no Lambert W
+  # analogue, so we fall back to numerical optimization on the observed price
+  # domain — matching the .pmax_numerical helper used elsewhere.
+  if (!is.null(p_zero_fn) && is.function(p_zero_fn) &&
+      !is.null(demand_fn) && !is.null(price_range)) {
+    uncond_expenditure <- function(p) {
+      pz <- tryCatch(p_zero_fn(p), error = function(e) NA_real_)
+      q  <- tryCatch(demand_fn(p), error = function(e) NA_real_)
+      if (any(!is.finite(c(pz, q)))) return(rep(NA_real_, length(p)))
+      p * (1 - pz) * q
+    }
+    uncond_result <- .pmax_numerical(uncond_expenditure, price_range)
+    if (uncond_result$success) {
+      result$pmax_unconditional <- uncond_result$pmax
+      result$omax_unconditional <- uncond_result$omax
+      result$method_unconditional <- uncond_result$method
+      result$is_boundary_unconditional <- uncond_result$is_boundary
+      result$q_at_pmax_unconditional <- tryCatch(
+        demand_fn(uncond_result$pmax),
+        error = function(e) NA_real_
+      )
+      result$p_zero_at_pmax <- tryCatch(
+        p_zero_fn(uncond_result$pmax),
+        error = function(e) NA_real_
+      )
+      if (!is.null(uncond_result$note)) {
+        result$note_unconditional <- uncond_result$note
+      }
+    } else {
+      result$method_unconditional <- uncond_result$method
+      result$note_unconditional <- uncond_result$note
+    }
+  }
+
   result
 }
 
@@ -990,26 +1042,29 @@ beezdemand_calc_pmax_omax_vec <- function(
   param_scales = NULL,
   price_list = NULL,
   consumption_list = NULL,
+  p_zero_fn_list = NULL,
   ...
 ) {
   n <- nrow(params_df)
-  
+
   results <- lapply(seq_len(n), function(i) {
     params_i <- as.list(params_df[i, , drop = FALSE])
-    
+
     price_i <- if (!is.null(price_list)) price_list[[i]] else NULL
     cons_i <- if (!is.null(consumption_list)) consumption_list[[i]] else NULL
-    
+    pz_i <- if (!is.null(p_zero_fn_list)) p_zero_fn_list[[i]] else NULL
+
     beezdemand_calc_pmax_omax(
       model_type = model_type,
       params = params_i,
       param_scales = param_scales,
       price_obs = price_i,
       consumption_obs = cons_i,
+      p_zero_fn = pz_i,
       ...
     )
   })
-  
+
   # Convert list to data frame
   do.call(rbind, lapply(results, function(x) {
     data.frame(
@@ -1020,6 +1075,12 @@ beezdemand_calc_pmax_omax_vec <- function(
       is_boundary_model = x$is_boundary_model,
       elasticity_at_pmax_model = x$elasticity_at_pmax_model,
       unit_elasticity_pass_model = x$unit_elasticity_pass_model,
+      pmax_unconditional = x$pmax_unconditional,
+      omax_unconditional = x$omax_unconditional,
+      q_at_pmax_unconditional = x$q_at_pmax_unconditional,
+      p_zero_at_pmax = x$p_zero_at_pmax,
+      method_unconditional = x$method_unconditional,
+      is_boundary_unconditional = x$is_boundary_unconditional,
       pmax_obs = x$pmax_obs,
       omax_obs = x$omax_obs,
       has_duplicate_prices = x$has_duplicate_prices,

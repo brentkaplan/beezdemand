@@ -451,14 +451,34 @@ NULL
     subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
   }
 
-  # Calculate Omax and Pmax for each subject
-  if (identical(part2, "zhao_exponential")) {
-    price_split <- split(price, subject_id)
-    price_list <- lapply(seq_len(n_subjects), function(i) {
-      price_split[[as.character(i - 1L)]]
-    })
+  # Per-subject logistic P(zero | price) functions for unconditional
+  # Pmax/Omax. Each subject's Part-I intercept is beta0 + a_i (a_i is the
+  # subject's random intercept on the zero process). beta1 governs the price
+  # slope; if absent, we use 0 (no price dependence). Captured via lapply()
+  # so each closure references its own subject's a_i.
+  beta0_pop <- as.numeric(coefficients[["beta0"]])
+  beta1_pop <- if ("beta1" %in% names(coefficients)) {
+    as.numeric(coefficients[["beta1"]])
+  } else {
+    0
+  }
+  a_i_vec <- as.numeric(random_effects_mat[, "a_i"])
+  p_zero_fn_list <- lapply(seq_len(n_subjects), function(i) {
+    a_i_local <- a_i_vec[i]
+    function(p) {
+      stats::plogis(beta0_pop + a_i_local + beta1_pop * log(p + epsilon))
+    }
+  })
 
-    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+  price_split <- split(price, subject_id)
+  price_list <- lapply(seq_len(n_subjects), function(i) {
+    price_split[[as.character(i - 1L)]]
+  })
+
+  # Calculate Omax and Pmax for each subject (both conditional and
+  # unconditional via the unified engine)
+  vec_result <- if (identical(part2, "zhao_exponential")) {
+    beezdemand_calc_pmax_omax_vec(
       params_df = data.frame(
         alpha = subj_alpha,
         q0 = subj_Q0,
@@ -467,16 +487,11 @@ NULL
       model_type = "hurdle",
       param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
       price_list = price_list,
+      p_zero_fn_list = p_zero_fn_list,
       compute_observed = FALSE
     )
-    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
   } else if (identical(part2, "exponential")) {
-    price_split <- split(price, subject_id)
-    price_list <- lapply(seq_len(n_subjects), function(i) {
-      price_split[[as.character(i - 1L)]]
-    })
-
-    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+    beezdemand_calc_pmax_omax_vec(
       params_df = data.frame(
         alpha = subj_alpha,
         q0 = subj_Q0,
@@ -485,16 +500,11 @@ NULL
       model_type = "hurdle_hs_stdq0",
       param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
       price_list = price_list,
+      p_zero_fn_list = p_zero_fn_list,
       compute_observed = FALSE
     )
-    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
   } else if (identical(part2, "simplified_exponential")) {
-    price_split <- split(price, subject_id)
-    price_list <- lapply(seq_len(n_subjects), function(i) {
-      price_split[[as.character(i - 1L)]]
-    })
-
-    omax_pmax <- beezdemand_calc_pmax_omax_vec(
+    beezdemand_calc_pmax_omax_vec(
       params_df = data.frame(
         alpha = subj_alpha,
         q0 = subj_Q0
@@ -502,12 +512,19 @@ NULL
       model_type = "snd",
       param_scales = list(alpha = "natural", q0 = "natural"),
       price_list = price_list,
+      p_zero_fn_list = p_zero_fn_list,
       compute_observed = FALSE
     )
-    omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
   } else {
     stop("Internal error: unsupported part2: ", part2)
   }
+
+  omax_pmax <- list(
+    Pmax = vec_result$pmax_model,
+    Omax = vec_result$omax_model,
+    Pmax_unconditional = vec_result$pmax_unconditional,
+    Omax_unconditional = vec_result$omax_unconditional
+  )
 
   # Build subject parameters data frame
   if (n_re == 3) {
@@ -524,6 +541,8 @@ NULL
       ) - epsilon,
       Pmax = omax_pmax$Pmax,
       Omax = omax_pmax$Omax,
+      Pmax_unconditional = omax_pmax$Pmax_unconditional,
+      Omax_unconditional = omax_pmax$Omax_unconditional,
       stringsAsFactors = FALSE
     )
   } else {
@@ -539,6 +558,8 @@ NULL
       ) - epsilon,
       Pmax = omax_pmax$Pmax,
       Omax = omax_pmax$Omax,
+      Pmax_unconditional = omax_pmax$Pmax_unconditional,
+      Omax_unconditional = omax_pmax$Omax_unconditional,
       stringsAsFactors = FALSE
     )
   }
@@ -1023,14 +1044,30 @@ fit_demand_hurdle <- function(
     subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- exp(coefficients["log_alpha"] + random_effects_mat[, "c_i"])
 
-    # Calculate Omax and Pmax for each subject (Part II mean)
-    if (identical(part2, "zhao_exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
+    # Per-subject Part-I logistic for unconditional Pmax/Omax (TICKET-003)
+    beta0_pop <- as.numeric(coefficients[["beta0"]])
+    beta1_pop <- if ("beta1" %in% names(coefficients)) {
+      as.numeric(coefficients[["beta1"]])
+    } else {
+      0
+    }
+    a_i_vec <- as.numeric(random_effects_mat[, "a_i"])
+    p_zero_fn_list <- lapply(seq_len(n_subjects), function(i) {
+      a_i_local <- a_i_vec[i]
+      function(p) {
+        stats::plogis(beta0_pop + a_i_local + beta1_pop * log(p + epsilon))
+      }
+    })
 
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+    price_split <- split(price, subject_id)
+    price_list <- lapply(seq_len(n_subjects), function(i) {
+      price_split[[as.character(i - 1L)]]
+    })
+
+    # Calculate Omax and Pmax for each subject (Part II mean) — both
+    # conditional and unconditional in a single engine call.
+    vec_result <- if (identical(part2, "zhao_exponential")) {
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0,
@@ -1039,16 +1076,11 @@ fit_demand_hurdle <- function(
         model_type = "hurdle",
         param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
-
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0,
@@ -1057,16 +1089,11 @@ fit_demand_hurdle <- function(
         model_type = "hurdle_hs_stdq0",
         param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "simplified_exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
-
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0
@@ -1074,9 +1101,9 @@ fit_demand_hurdle <- function(
         model_type = "snd",
         param_scales = list(alpha = "natural", q0 = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else {
       stop("Internal error: unsupported part2: ", part2)
     }
@@ -1093,8 +1120,10 @@ fit_demand_hurdle <- function(
           coefficients["beta1"]
       ) -
         epsilon,
-      Pmax = omax_pmax$Pmax,
-      Omax = omax_pmax$Omax,
+      Pmax = vec_result$pmax_model,
+      Omax = vec_result$omax_model,
+      Pmax_unconditional = vec_result$pmax_unconditional,
+      Omax_unconditional = vec_result$omax_unconditional,
       stringsAsFactors = FALSE
     )
   } else {
@@ -1124,14 +1153,30 @@ fit_demand_hurdle <- function(
     subj_Q0 <- exp(coefficients["log_q0"] + random_effects_mat[, "b_i"])
     subj_alpha <- rep(exp(coefficients["log_alpha"]), n_subjects)
 
-    # Calculate Omax and Pmax for each subject (Part II mean)
-    if (identical(part2, "zhao_exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
+    # Per-subject Part-I logistic for unconditional Pmax/Omax (TICKET-003)
+    beta0_pop <- as.numeric(coefficients[["beta0"]])
+    beta1_pop <- if ("beta1" %in% names(coefficients)) {
+      as.numeric(coefficients[["beta1"]])
+    } else {
+      0
+    }
+    a_i_vec <- as.numeric(random_effects_mat[, "a_i"])
+    p_zero_fn_list <- lapply(seq_len(n_subjects), function(i) {
+      a_i_local <- a_i_vec[i]
+      function(p) {
+        stats::plogis(beta0_pop + a_i_local + beta1_pop * log(p + epsilon))
+      }
+    })
 
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+    price_split <- split(price, subject_id)
+    price_list <- lapply(seq_len(n_subjects), function(i) {
+      price_split[[as.character(i - 1L)]]
+    })
+
+    # Calculate Omax and Pmax for each subject (Part II mean) — both
+    # conditional and unconditional in a single engine call.
+    vec_result <- if (identical(part2, "zhao_exponential")) {
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0,
@@ -1140,16 +1185,11 @@ fit_demand_hurdle <- function(
         model_type = "hurdle",
         param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
-
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0,
@@ -1158,16 +1198,11 @@ fit_demand_hurdle <- function(
         model_type = "hurdle_hs_stdq0",
         param_scales = list(alpha = "natural", q0 = "natural", k = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else if (identical(part2, "simplified_exponential")) {
-      price_split <- split(price, subject_id)
-      price_list <- lapply(seq_len(n_subjects), function(i) {
-        price_split[[as.character(i - 1L)]]
-      })
-
-      omax_pmax <- beezdemand_calc_pmax_omax_vec(
+      beezdemand_calc_pmax_omax_vec(
         params_df = data.frame(
           alpha = subj_alpha,
           q0 = subj_Q0
@@ -1175,9 +1210,9 @@ fit_demand_hurdle <- function(
         model_type = "snd",
         param_scales = list(alpha = "natural", q0 = "natural"),
         price_list = price_list,
+        p_zero_fn_list = p_zero_fn_list,
         compute_observed = FALSE
       )
-      omax_pmax <- list(Pmax = omax_pmax$pmax_model, Omax = omax_pmax$omax_model)
     } else {
       stop("Internal error: unsupported part2: ", part2)
     }
@@ -1193,8 +1228,10 @@ fit_demand_hurdle <- function(
           coefficients["beta1"]
       ) -
         epsilon,
-      Pmax = omax_pmax$Pmax,
-      Omax = omax_pmax$Omax,
+      Pmax = vec_result$pmax_model,
+      Omax = vec_result$omax_model,
+      Pmax_unconditional = vec_result$pmax_unconditional,
+      Omax_unconditional = vec_result$omax_unconditional,
       stringsAsFactors = FALSE
     )
   }

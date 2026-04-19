@@ -159,21 +159,42 @@ summary.beezdemand_hurdle <- function(
   # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)
 
+  # Conditional (Part-II only) metrics — long-standing meaning of $Pmax/$Omax.
+  conditional_metrics <- tibble::tibble(
+    metric = c("pmax_model", "omax_model", "q_at_pmax_model",
+               "elasticity_at_pmax_model"),
+    estimate = c(group_metrics$Pmax, group_metrics$Omax,
+                 group_metrics$Qmax, group_metrics$elasticity_at_pmax),
+    std.error = NA_real_,
+    conf.low = NA_real_,
+    conf.high = NA_real_,
+    method = group_metrics$method %||% "unknown",
+    component = "consumption",
+    level = "population",
+    id = NA_character_
+  )
+
+  # Unconditional metrics, integrating the Part-I zero-inflation logistic
+  # into the expenditure curve (TICKET-003). Reported alongside conditional
+  # metrics so users can see both at a glance.
+  unconditional_metrics <- tibble::tibble(
+    metric = c("pmax_unconditional", "omax_unconditional", "p_zero_at_pmax"),
+    estimate = c(group_metrics$Pmax_unconditional,
+                 group_metrics$Omax_unconditional,
+                 group_metrics$p_zero_at_pmax),
+    std.error = NA_real_,
+    conf.low = NA_real_,
+    conf.high = NA_real_,
+    method = group_metrics$method_unconditional %||% "unknown",
+    component = "unconditional",
+    level = "population",
+    id = NA_character_
+  )
+
   derived_metrics <- dplyr::bind_rows(
     beezdemand_empty_derived_metrics(),
-    tibble::tibble(
-      metric = c("pmax_model", "omax_model", "q_at_pmax_model", 
-                 "elasticity_at_pmax_model"),
-      estimate = c(group_metrics$Pmax, group_metrics$Omax, 
-                   group_metrics$Qmax, group_metrics$elasticity_at_pmax),
-      std.error = NA_real_,
-      conf.low = NA_real_,
-      conf.high = NA_real_,
-      method = group_metrics$method %||% "unknown",
-      component = "consumption",
-      level = "population",
-      id = NA_character_
-    )
+    conditional_metrics,
+    unconditional_metrics
   )
 
   # Strategy B alpha* (normalized alpha; depends on alpha and k)
