@@ -1942,3 +1942,331 @@ print.cp_posthoc <- function(x, ...) {
   # Return invisibly
   invisible(x)
 }
+
+
+#-------------------------------------------------------------------------------
+# TICKET-005: print / augment / confint (lm, lmer) / nobs methods for the
+# three cross-price model classes. These bring the cp_model_* classes to the
+# same S3 surface as beezdemand_tmb / beezdemand_hurdle / beezdemand_fixed.
+
+# --- print methods ----------------------------------------------------------
+
+#' Print a Cross-Price Demand Model (Nonlinear)
+#'
+#' @param x A `cp_model_nls` object.
+#' @param ... Additional arguments (unused).
+#' @return Invisibly returns `x`.
+#' @export
+print.cp_model_nls <- function(x, ...) {
+  cat("Cross-Price Demand Model (NLS)\n")
+  if (is.null(x$model)) {
+    cat("  Model failed to converge or is NULL.\n")
+    return(invisible(x))
+  }
+  cat(sprintf("  Equation:     %s\n", x$equation %||% "<unknown>"))
+  cat(sprintf("  Method:       %s\n", x$method %||% "<unknown>"))
+  n <- tryCatch(stats::nobs(x$model), error = function(e) NA_integer_)
+  if (length(n) && !is.na(n)) cat(sprintf("  Observations: %d\n", as.integer(n)))
+  coefs <- tryCatch(stats::coef(x$model), error = function(e) NULL)
+  if (!is.null(coefs) && length(coefs) > 0) {
+    cat("\nCoefficients:\n")
+    print.default(coefs)
+  }
+  invisible(x)
+}
+
+#' Print a Cross-Price Demand Model (Linear)
+#'
+#' @param x A `cp_model_lm` object.
+#' @param ... Additional arguments (unused).
+#' @return Invisibly returns `x`.
+#' @export
+print.cp_model_lm <- function(x, ...) {
+  cat("Cross-Price Demand Model (LM)\n")
+  if (is.null(x$model)) {
+    cat("  Model failed to fit or is NULL.\n")
+    return(invisible(x))
+  }
+  cat(sprintf("  Equation:     %s\n", x$equation %||% "<unknown>"))
+  if (!is.null(x$formula)) {
+    cat(sprintf("  Formula:      %s\n", deparse(x$formula, width.cutoff = 500L)))
+  }
+  n <- tryCatch(stats::nobs(x$model), error = function(e) NA_integer_)
+  if (length(n) && !is.na(n)) cat(sprintf("  Observations: %d\n", as.integer(n)))
+  coefs <- tryCatch(stats::coef(x$model), error = function(e) NULL)
+  if (!is.null(coefs) && length(coefs) > 0) {
+    cat("\nCoefficients:\n")
+    print.default(coefs)
+  }
+  invisible(x)
+}
+
+#' Print a Cross-Price Demand Model (Mixed-Effects)
+#'
+#' @param x A `cp_model_lmer` object.
+#' @param ... Additional arguments (unused).
+#' @return Invisibly returns `x`.
+#' @export
+print.cp_model_lmer <- function(x, ...) {
+  cat("Cross-Price Demand Model (LMER)\n")
+  if (is.null(x$model)) {
+    cat("  Model failed to fit or is NULL.\n")
+    return(invisible(x))
+  }
+  cat(sprintf("  Equation:     %s\n", x$equation %||% "<unknown>"))
+  if (!is.null(x$formula)) {
+    cat(sprintf("  Formula:      %s\n", deparse(x$formula, width.cutoff = 500L)))
+  }
+  n <- tryCatch(stats::nobs(x$model), error = function(e) NA_integer_)
+  if (length(n) && !is.na(n)) cat(sprintf("  Observations: %d\n", as.integer(n)))
+  if (requireNamespace("lme4", quietly = TRUE)) {
+    fe <- tryCatch(lme4::fixef(x$model), error = function(e) NULL)
+    if (!is.null(fe) && length(fe) > 0) {
+      cat("\nFixed effects:\n")
+      print.default(fe)
+    }
+    re <- tryCatch(lme4::ranef(x$model), error = function(e) NULL)
+    if (!is.null(re) && length(re) > 0) {
+      cat(sprintf("\nRandom effects: %d grouping factor(s)\n", length(re)))
+    }
+  }
+  invisible(x)
+}
+
+
+# --- augment methods --------------------------------------------------------
+# Each returns a tibble with the original modelling data plus .fitted and
+# .resid. cp_model_lmer additionally returns .fixed (population-level
+# predictions ignoring random effects).
+
+#' Augment a Cross-Price Demand Model (Nonlinear)
+#'
+#' @param x A `cp_model_nls` object.
+#' @param ... Additional arguments (unused).
+#' @return A tibble with the original modelling data and added `.fitted` and
+#'   `.resid` columns.
+#' @export
+augment.cp_model_nls <- function(x, ...) {
+  if (is.null(x$model) || is.null(x$data)) {
+    return(tibble::as_tibble(data.frame()))
+  }
+  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
+  if (is.null(fitted_vals)) {
+    return(tibble::as_tibble(x$data))
+  }
+  out <- tibble::as_tibble(x$data)
+  if (nrow(out) == length(fitted_vals)) {
+    out$.fitted <- as.numeric(fitted_vals)
+    out$.resid <- if ("y" %in% names(out)) out$y - out$.fitted else NA_real_
+  }
+  out
+}
+
+#' Augment a Cross-Price Demand Model (Linear)
+#'
+#' @param x A `cp_model_lm` object.
+#' @param ... Additional arguments (unused).
+#' @return A tibble with the original modelling data and added `.fitted` and
+#'   `.resid` columns.
+#' @export
+augment.cp_model_lm <- function(x, ...) {
+  if (is.null(x$model) || is.null(x$data)) {
+    return(tibble::as_tibble(data.frame()))
+  }
+  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
+  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  out <- tibble::as_tibble(x$data)
+  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
+    out$.fitted <- as.numeric(fitted_vals)
+  }
+  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
+    out$.resid <- as.numeric(resid_vals)
+  }
+  out
+}
+
+#' Augment a Cross-Price Demand Model (Mixed-Effects)
+#'
+#' @param x A `cp_model_lmer` object.
+#' @param ... Additional arguments (unused).
+#' @return A tibble with the original modelling data and added `.fitted`,
+#'   `.resid`, and `.fixed` (population-level prediction with random effects
+#'   set to zero) columns.
+#' @export
+augment.cp_model_lmer <- function(x, ...) {
+  if (is.null(x$model) || is.null(x$data)) {
+    return(tibble::as_tibble(data.frame()))
+  }
+  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
+  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  out <- tibble::as_tibble(x$data)
+  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
+    out$.fitted <- as.numeric(fitted_vals)
+  }
+  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
+    out$.resid <- as.numeric(resid_vals)
+  }
+  fixed_vals <- tryCatch(
+    stats::predict(x$model, newdata = x$data, re.form = NA),
+    error = function(e) NULL
+  )
+  if (!is.null(fixed_vals) && nrow(out) == length(fixed_vals)) {
+    out$.fixed <- as.numeric(fixed_vals)
+  }
+  out
+}
+
+
+# --- confint methods (lm + lmer; cp_model_nls already implemented) ----------
+
+#' Confidence Intervals for a Cross-Price Demand Model (Linear)
+#'
+#' Wald confidence intervals via [stats::confint.default()].
+#'
+#' @param object A `cp_model_lm` object.
+#' @param parm Optional character vector of parameter names. `NULL` returns
+#'   intervals for all parameters.
+#' @param level Confidence level (default `0.95`).
+#' @param ... Additional arguments (unused).
+#' @return A tibble with columns `term`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `method`.
+#' @export
+confint.cp_model_lm <- function(object, parm = NULL, level = 0.95, ...) {
+  if (!is.numeric(level) || length(level) != 1L || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  empty <- tibble::tibble(
+    term = character(), estimate = numeric(),
+    conf.low = numeric(), conf.high = numeric(),
+    level = numeric(), method = character()
+  )
+  if (is.null(object$model)) {
+    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    return(empty)
+  }
+
+  # confint.default() returns a 0-row matrix when parm = NULL is passed
+  # explicitly (it expects parm to be missing, not NULL). Branch accordingly.
+  ci <- tryCatch(
+    if (is.null(parm)) {
+      stats::confint.default(object$model, level = level)
+    } else {
+      stats::confint.default(object$model, parm = parm, level = level)
+    },
+    error = function(e) NULL
+  )
+  if (is.null(ci)) return(empty)
+
+  ci_df <- as.data.frame(ci)
+  coefs <- stats::coef(object$model)
+  terms <- rownames(ci_df)
+
+  tibble::tibble(
+    term = terms,
+    estimate = unname(coefs[terms]),
+    conf.low = ci_df[, 1],
+    conf.high = ci_df[, 2],
+    level = level,
+    method = "Wald"
+  )
+}
+
+#' Confidence Intervals for a Cross-Price Demand Model (Mixed-Effects)
+#'
+#' Wraps [lme4::confint.merMod()]. Defaults to Wald intervals; `method = "profile"`
+#' or `method = "boot"` use the corresponding lme4 backends and are slower.
+#'
+#' @param object A `cp_model_lmer` object.
+#' @param parm Optional character vector of parameter names. `NULL` returns
+#'   intervals for all parameters.
+#' @param level Confidence level (default `0.95`).
+#' @param method One of `"Wald"` (default), `"profile"`, or `"boot"`.
+#' @param ... Additional arguments passed to `lme4::confint.merMod()`.
+#' @return A tibble with columns `term`, `estimate`, `conf.low`, `conf.high`,
+#'   `level`, `method`.
+#' @export
+confint.cp_model_lmer <- function(object, parm = NULL, level = 0.95,
+                                  method = c("Wald", "profile", "boot"),
+                                  ...) {
+  method <- match.arg(method)
+  if (!is.numeric(level) || length(level) != 1L || level <= 0 || level >= 1) {
+    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  empty <- tibble::tibble(
+    term = character(), estimate = numeric(),
+    conf.low = numeric(), conf.high = numeric(),
+    level = numeric(), method = character()
+  )
+  if (is.null(object$model)) {
+    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    return(empty)
+  }
+
+  if (!requireNamespace("lme4", quietly = TRUE)) {
+    missing_package_error("lme4", reason = "for confidence intervals on cp_model_lmer objects")
+  }
+
+  ci <- tryCatch(
+    suppressMessages(stats::confint(object$model, parm = parm, level = level,
+                                    method = method, ...)),
+    error = function(e) {
+      warning("Confidence interval computation failed: ", conditionMessage(e),
+              call. = FALSE)
+      NULL
+    }
+  )
+  if (is.null(ci)) return(empty)
+
+  ci_df <- as.data.frame(ci)
+  fe <- lme4::fixef(object$model)
+
+  tibble::tibble(
+    term = rownames(ci_df),
+    estimate = unname(fe[rownames(ci_df)]),
+    conf.low = ci_df[, 1],
+    conf.high = ci_df[, 2],
+    level = level,
+    method = method
+  )
+}
+
+
+# --- nobs methods -----------------------------------------------------------
+
+#' Number of Observations in a Cross-Price Demand Model (Nonlinear)
+#'
+#' @param object A `cp_model_nls` object.
+#' @param ... Additional arguments (unused).
+#' @return Integer; observation count or `NA_integer_` if unavailable.
+#' @export
+nobs.cp_model_nls <- function(object, ...) {
+  if (is.null(object$model)) return(NA_integer_)
+  n <- tryCatch(stats::nobs(object$model), error = function(e) NA_integer_)
+  if (is.null(n) || length(n) == 0L) NA_integer_ else as.integer(n)
+}
+
+#' Number of Observations in a Cross-Price Demand Model (Linear)
+#'
+#' @param object A `cp_model_lm` object.
+#' @param ... Additional arguments (unused).
+#' @return Integer; observation count or `NA_integer_` if unavailable.
+#' @export
+nobs.cp_model_lm <- function(object, ...) {
+  if (is.null(object$model)) return(NA_integer_)
+  n <- tryCatch(stats::nobs(object$model), error = function(e) NA_integer_)
+  if (is.null(n) || length(n) == 0L) NA_integer_ else as.integer(n)
+}
+
+#' Number of Observations in a Cross-Price Demand Model (Mixed-Effects)
+#'
+#' @param object A `cp_model_lmer` object.
+#' @param ... Additional arguments (unused).
+#' @return Integer; observation count or `NA_integer_` if unavailable.
+#' @export
+nobs.cp_model_lmer <- function(object, ...) {
+  if (is.null(object$model)) return(NA_integer_)
+  n <- tryCatch(stats::nobs(object$model), error = function(e) NA_integer_)
+  if (is.null(n) || length(n) == 0L) NA_integer_ else as.integer(n)
+}
