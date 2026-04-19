@@ -72,6 +72,15 @@ beezdemand_*.tar.gz
 tests/testthat/Rplots.pdf
 .env
 
+# Browser-automation working dir (chrome-devtools / playwright MCP) #
+#####################################################################
+.playwright-mcp/
+
+# Vignette-development PNG artifacts at repo root (regenerated, not assets) #
+#############################################################################
+/tmb-*.png
+/nlme-*.png
+
 # Arg-matrix (development only, not ready for merge) #
 #######################################################
 R/arg-matrix.R
