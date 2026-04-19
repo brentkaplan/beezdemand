@@ -104,17 +104,17 @@ check_unsystematic_cp <- function(
 
   # Input validation
   if (!is.data.frame(data)) {
-    stop("Input 'data' must be a data frame")
+    validation_error("{.arg data} must be a data frame.", arg = "data")
   }
   if (!all(c("x", "y") %in% colnames(data))) {
-    stop("Input data frame must contain 'x' and 'y' columns")
+    validation_error("{.arg data} must contain {.field x} and {.field y} columns.", arg = "data")
   }
   if (any(is.na(data$x)) || any(is.na(data$y))) {
-    warning("Input data contains NA values which will be removed")
+    cli::cli_warn("Input data contains {.code NA} values which will be removed.")
     data <- data[!is.na(data$x) & !is.na(data$y), ]
   }
   if (nrow(data) < 3) {
-    stop("Input data must contain at least 3 rows for meaningful analysis")
+    validation_error("{.arg data} must contain at least 3 rows for meaningful analysis.", arg = "data")
   }
 
   # Order data by x values
@@ -161,7 +161,7 @@ check_unsystematic_cp <- function(
 
   if (verbose) {
     bounce_proportion <- bounce_above / (data_length - 1)
-    message(paste("Bounce up proportion (expected_down=TRUE):", round(bounce_proportion, 4)))
+    cli::cli_inform("Bounce up proportion (expected_down=TRUE): {round(bounce_proportion, 4)}")
   }
 
 } else {
@@ -171,7 +171,7 @@ check_unsystematic_cp <- function(
 
     if (verbose) {
       bounce_proportion <- bounce_above / (data_length - 1)
-      message(paste("Bounce up proportion:", round(bounce_proportion, 4)))
+      cli::cli_inform("Bounce up proportion: {round(bounce_proportion, 4)}")
     }
   }
 
@@ -181,7 +181,7 @@ check_unsystematic_cp <- function(
 
     if (verbose) {
       bounce_proportion <- bounce_below / (data_length - 1)
-      message(paste("Bounce down proportion:", round(bounce_proportion, 4)))
+      cli::cli_inform("Bounce down proportion: {round(bounce_proportion, 4)}")
     }
   }
 
@@ -200,8 +200,8 @@ check_unsystematic_cp <- function(
     bounce_none <- min(proportion_above, proportion_below) > bounce_none_threshold
 
     if (verbose) {
-      message(paste("Bounce above proportion (no trend):", round(proportion_above, 4)))
-      message(paste("Bounce below proportion (no trend):", round(proportion_below, 4)))
+      cli::cli_inform("Bounce above proportion (no trend): {round(proportion_above, 4)}")
+      cli::cli_inform("Bounce below proportion (no trend): {round(proportion_below, 4)}")
     }
   }
 }

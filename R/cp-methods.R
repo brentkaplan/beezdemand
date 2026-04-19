@@ -337,10 +337,10 @@ plot.cp_model_nls <- function(
     inv_fun <- inverse_fun
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required.")
+    cli::cli_abort("Package 'ggplot2' is required.")
   }
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop("Package 'scales' is required.")
+    cli::cli_abort("Package 'scales' is required.")
   }
 
   # Use provided data or fallback
@@ -348,7 +348,7 @@ plot.cp_model_nls <- function(
     if (!is.null(x$data)) {
       data <- x$data
     } else {
-      stop(
+      cli::cli_abort(
         "No data provided and no data found in model object. Please provide data."
       )
     }
@@ -356,12 +356,12 @@ plot.cp_model_nls <- function(
 
   # Defensive: ensure data has x and y
   if (!all(c("x", "y") %in% names(data))) {
-    stop("Data must contain columns 'x' and 'y'")
+    cli::cli_abort("Data must contain columns 'x' and 'y'")
   }
 
   # If model is NULL, plot only the data points and warn
   if (is.null(x$model)) {
-    warning("Model fitting failed; plotting data points only.")
+    cli::cli_warn("Model fitting failed; plotting data points only.")
     p <- ggplot2::ggplot(data, ggplot2::aes(x = x, y = y)) +
       ggplot2::geom_point(
         shape = 21,
@@ -381,7 +381,7 @@ plot.cp_model_nls <- function(
   if ("target" %in% names(data)) {
     data <- data[data$target == "alt", ]
     if (nrow(data) == 0) {
-      stop("No data with target = 'alt' found in provided data")
+      cli::cli_abort("No data with target = 'alt' found in provided data")
     }
   }
 
@@ -402,15 +402,15 @@ plot.cp_model_nls <- function(
 
   if (x_trans == "log10" && any(data$x <= 0, na.rm = TRUE)) {
     data <- data[data$x > 0, ]
-    warning("Filtered out non-positive x values for log10 transformation")
+    cli::cli_warn("Filtered out non-positive x values for log10 transformation")
     if (nrow(data) == 0) {
-      stop("No positive x values left after filtering for log10 transformation")
+      cli::cli_abort("No positive x values left after filtering for log10 transformation")
     }
   }
 
   x_range <- range(data$x, na.rm = TRUE)
   if (!all(is.finite(x_range))) {
-    stop("Cannot determine a valid x range from the provided data")
+    cli::cli_abort("Cannot determine a valid x range from the provided data")
   }
 
   if (x_trans == "log10") {
@@ -488,23 +488,23 @@ predict.cp_model_nls <- function(
     inv_fun <- inverse_fun
   }
   if (!inherits(object, "cp_model_nls")) {
-    stop("Object must be of class 'cp_model_nls'")
+    cli::cli_abort("Object must be of class 'cp_model_nls'")
   }
   if (is.null(newdata)) {
-    stop("'newdata' must be provided as a data frame with an 'x' column")
+    cli::cli_abort("'newdata' must be provided as a data frame with an 'x' column")
   }
   if (!("x" %in% names(newdata))) {
-    stop("'newdata' must contain a column named 'x'")
+    cli::cli_abort("'newdata' must contain a column named 'x'")
   }
 
   equation <- object$equation
   model <- object$model
   coefs <- tryCatch(coef(model), error = function(e) {
-    stop("Could not extract coefficients from model: ", e$message)
+    cli::cli_abort("Could not extract coefficients from model: {e$message}")
   })
 
   if (!all(c("log10_qalone", "I", "log10_beta") %in% names(coefs))) {
-    stop("Missing required coefficients: log10_qalone, I, or log10_beta")
+    cli::cli_abort("Missing required coefficients: log10_qalone, I, or log10_beta")
   }
 
   # Extract log10-parameterized coefficients
@@ -527,7 +527,7 @@ predict.cp_model_nls <- function(
     exponentiated = qalone * 10^(I_param * exp(-beta * x_vals)),
     exponential = log10_qalone + I_param * exp(-beta * x_vals),  # Returns log10(y)
     additive = qalone + I_param * exp(-beta * x_vals),
-    stop("Unsupported equation type: ", equation)
+    cli::cli_abort("Unsupported equation type: {.val {equation}}.")
   )
 
   if (equation == "exponential") {
@@ -544,7 +544,7 @@ predict.cp_model_nls <- function(
         result$y_pred_untransformed <- inv_fun(result$y_pred)
       },
       error = function(e) {
-        warning("Failed to apply inverse transformation: ", e$message)
+        cli::cli_warn("Failed to apply inverse transformation: {e$message}")
       }
     )
   }
@@ -562,7 +562,7 @@ predict.cp_model_nls <- function(
 #' @export
 predict.cp_model_lm <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
-    stop("newdata must be provided")
+    cli::cli_abort("newdata must be provided")
   }
   predictions <- predict(object$model, newdata = newdata, ...)
   tibble::tibble(x = newdata$x, y_pred = predictions)
@@ -607,10 +607,10 @@ predict.cp_model_lmer <- function(
   ...
 ) {
   if (is.null(newdata)) {
-    stop("newdata must be provided")
+    cli::cli_abort("newdata must be provided")
   }
   if (!("x" %in% names(newdata))) {
-    stop("newdata must contain a column named 'x'")
+    cli::cli_abort("newdata must contain a column named 'x'")
   }
 
   pred_type <- match.arg(pred_type)
@@ -622,7 +622,7 @@ predict.cp_model_lmer <- function(
       # Expand grid: for every x value, create a row for each id.
       newdata <- expand.grid(x = newdata$x, id = ids)
     } else {
-      warning(
+      cli::cli_warn(
         "newdata does not contain 'id' and object$data does not provide ids; assigning default id = 1"
       )
       newdata$id <- 1
@@ -675,7 +675,7 @@ summary.cp_model_lm <- function(object, ...) {
 #' @export
 summary.cp_model_lmer <- function(object, ...) {
   if (!requireNamespace("lme4", quietly = TRUE)) {
-    stop("Package 'lme4' is required")
+    cli::cli_abort("Package 'lme4' is required")
   }
   model_summary <- summary(object$model)
   fixed_effects <- model_summary$coefficients
@@ -857,11 +857,11 @@ confint.cp_model_nls <- function(
   method <- match.arg(method)
 
   if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
-    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+    cli::cli_abort("`level` must be a single number between 0 and 1.")
   }
 
   if (is.null(object$model)) {
-    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    cli::cli_warn("No model found in object. Model fitting may have failed.")
     return(tibble::tibble(
       term = character(),
       estimate = numeric(),
@@ -880,7 +880,7 @@ confint.cp_model_nls <- function(
   if (!is.null(parm)) {
     keep <- terms %in% parm
     if (!any(keep)) {
-      warning("No requested parameters found in model.", call. = FALSE)
+      cli::cli_warn("No requested parameters found in model.")
       return(tibble::tibble(
         term = character(),
         estimate = numeric(),
@@ -896,7 +896,7 @@ confint.cp_model_nls <- function(
   ci_result <- tryCatch(
     nlstools::confint2(object$model, level = level, method = method, ...),
     error = function(e) {
-      warning(
+      cli::cli_warn(
         "Confidence interval computation failed: ", conditionMessage(e),
         call. = FALSE
       )
@@ -1130,7 +1130,7 @@ plot.cp_model_lm <- function(
     if (!is.null(object$data)) {
       data <- object$data
     } else {
-      stop(
+      cli::cli_abort(
         "No data provided and no data found in model object. Please supply a data frame."
       )
     }
@@ -1141,7 +1141,7 @@ plot.cp_model_lm <- function(
     data <- data[data$target == "alt", ]
   }
   if (!all(c("x", "y") %in% names(data))) {
-    stop("Data must contain columns 'x' and 'y'.")
+    cli::cli_abort("Data must contain columns 'x' and 'y'.")
   }
 
   # Determine if the model has group effects
@@ -1151,7 +1151,7 @@ plot.cp_model_lm <- function(
 
   # Get the group variable if present in the model formula
   if (has_group_effects && !("group" %in% names(data))) {
-    stop("Model includes group effects but 'group' variable not found in data.")
+    cli::cli_abort("Model includes group effects but 'group' variable not found in data.")
   }
 
   # Determine the x-range and create a prediction grid.
@@ -1159,7 +1159,7 @@ plot.cp_model_lm <- function(
   if (x_trans == "log10") {
     if (any(data$x <= 0, na.rm = TRUE)) {
       data <- data[data$x > 0, ]
-      warning("Filtered out non-positive x values for log10 transformation")
+      cli::cli_warn("Filtered out non-positive x values for log10 transformation")
       x_range <- range(data$x, na.rm = TRUE)
     }
     min_x <- max(0.001, x_range[1])
@@ -1319,7 +1319,7 @@ plot.cp_model_lmer <- function(
     if (!is.null(object$data)) {
       data <- object$data
     } else {
-      stop(
+      cli::cli_abort(
         "No data provided and no data found in model object. Please supply a data frame."
       )
     }
@@ -1330,7 +1330,7 @@ plot.cp_model_lmer <- function(
     data <- data[data$target == "alt", ]
   }
   if (!all(c("x", "y") %in% names(data))) {
-    stop("Data must contain columns 'x' and 'y'.")
+    cli::cli_abort("Data must contain columns 'x' and 'y'.")
   }
 
   # Determine if the model has group effects
@@ -1340,7 +1340,7 @@ plot.cp_model_lmer <- function(
 
   # Check for group column when needed
   if (has_group_effects && !("group" %in% names(data))) {
-    stop("Model includes group effects but 'group' variable not found in data.")
+    cli::cli_abort("Model includes group effects but 'group' variable not found in data.")
   }
 
   # If x_trans is "log10", filter out non-positive x values.
@@ -1348,7 +1348,7 @@ plot.cp_model_lmer <- function(
   if (x_trans == "log10") {
     if (any(data$x <= 0, na.rm = TRUE)) {
       data <- data[data$x > 0, ]
-      warning("Filtered out non-positive x values for log10 transformation")
+      cli::cli_warn("Filtered out non-positive x values for log10 transformation")
       x_range <- range(data$x, na.rm = TRUE)
     }
   }
@@ -1481,7 +1481,7 @@ plot.cp_model_lmer <- function(
           )
       }
     } else {
-      warning(
+      cli::cli_warn(
         "No 'id' column found in data. Cannot plot subject-specific predictions."
       )
     }
@@ -1527,7 +1527,7 @@ NULL
 #' @export
 coef.cp_model_nls <- function(object, ...) {
   if (!inherits(object, "cp_model_nls")) {
-    stop("Object must be of class 'cp_model_nls'")
+    cli::cli_abort("Object must be of class 'cp_model_nls'")
   }
 
   # Simply extract the coefficients from the underlying model
@@ -1541,7 +1541,7 @@ coef.cp_model_nls <- function(object, ...) {
 #' @export
 coef.cp_model_lm <- function(object, ...) {
   if (!inherits(object, "cp_model_lm")) {
-    stop("Object must be of class 'cp_model_lm'")
+    cli::cli_abort("Object must be of class 'cp_model_lm'")
   }
 
   # Simply extract the coefficients from the underlying model
@@ -1560,11 +1560,11 @@ coef.cp_model_lmer <- function(
   ...
 ) {
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be of class 'cp_model_lmer'")
+    cli::cli_abort("Object must be of class 'cp_model_lmer'")
   }
 
   if (!requireNamespace("lme4", quietly = TRUE)) {
-    stop(
+    cli::cli_abort(
       "Package 'lme4' is required for extracting coefficients from mixed-effects models"
     )
   }
@@ -1597,11 +1597,11 @@ coef.cp_model_lmer <- function(
 #' @export
 ranef.cp_model_lmer <- function(object, ...) {
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be of class 'cp_model_lmer'")
+    cli::cli_abort("Object must be of class 'cp_model_lmer'")
   }
 
   if (!requireNamespace("lme4", quietly = TRUE)) {
-    stop("Package 'lme4' is required for extracting random effects")
+    cli::cli_abort("Package 'lme4' is required for extracting random effects")
   }
 
   lme4::ranef(object$model, ...)
@@ -1616,11 +1616,11 @@ ranef.cp_model_lmer <- function(object, ...) {
 #' @export
 fixef.cp_model_lmer <- function(object, ...) {
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be of class 'cp_model_lmer'")
+    cli::cli_abort("Object must be of class 'cp_model_lmer'")
   }
 
   if (!requireNamespace("lme4", quietly = TRUE)) {
-    stop("Package 'lme4' is required for extracting fixed effects")
+    cli::cli_abort("Package 'lme4' is required for extracting fixed effects")
   }
 
   lme4::fixef(object$model, ...)
@@ -1655,7 +1655,7 @@ extract_coefficients <- function(object, ...) {
       combined = coef(object, fixed_only = FALSE, combine = TRUE, ...)
     ))
   } else {
-    stop(
+    cli::cli_abort(
       "Unsupported model class. Must be one of: cp_model_nls, cp_model_lm, cp_model_lmer"
     )
   }
@@ -1671,7 +1671,7 @@ extract_coefficients <- function(object, ...) {
 #' @keywords internal
 has_significant_interaction <- function(object, alpha = 0.05) {
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be a cp_model_lmer object")
+    cli::cli_abort("Object must be a cp_model_lmer object")
   }
 
   # Get coefficient summary
@@ -1728,11 +1728,11 @@ has_significant_interaction <- function(object, alpha = 0.05) {
 #' @export
 cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
   if (!requireNamespace("emmeans", quietly = TRUE)) {
-    stop("Package 'emmeans' is required for pairwise comparisons")
+    cli::cli_abort("Package 'emmeans' is required for pairwise comparisons")
   }
 
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be a cp_model_lmer object")
+    cli::cli_abort("Object must be a cp_model_lmer object")
   }
 
   # Check if there's a significant interaction
@@ -1818,11 +1818,11 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 #' @export
 cp_posthoc_intercepts <- function(object, alpha = 0.05, adjust = "tukey", ...) {
   if (!requireNamespace("emmeans", quietly = TRUE)) {
-    stop("Package 'emmeans' is required for pairwise comparisons")
+    cli::cli_abort("Package 'emmeans' is required for pairwise comparisons")
   }
 
   if (!inherits(object, "cp_model_lmer")) {
-    stop("Object must be a cp_model_lmer object")
+    cli::cli_abort("Object must be a cp_model_lmer object")
   }
 
   # Check if there's a significant interaction
@@ -2133,7 +2133,7 @@ augment.cp_model_lmer <- function(x, ...) {
 #' @export
 confint.cp_model_lm <- function(object, parm = NULL, level = 0.95, ...) {
   if (!is.numeric(level) || length(level) != 1L || level <= 0 || level >= 1) {
-    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+    cli::cli_abort("`level` must be a single number between 0 and 1.")
   }
 
   empty <- tibble::tibble(
@@ -2142,7 +2142,7 @@ confint.cp_model_lm <- function(object, parm = NULL, level = 0.95, ...) {
     level = numeric(), method = character()
   )
   if (is.null(object$model)) {
-    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    cli::cli_warn("No model found in object. Model fitting may have failed.")
     return(empty)
   }
 
@@ -2191,7 +2191,7 @@ confint.cp_model_lmer <- function(object, parm = NULL, level = 0.95,
                                   ...) {
   method <- match.arg(method)
   if (!is.numeric(level) || length(level) != 1L || level <= 0 || level >= 1) {
-    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+    cli::cli_abort("`level` must be a single number between 0 and 1.")
   }
 
   empty <- tibble::tibble(
@@ -2200,7 +2200,7 @@ confint.cp_model_lmer <- function(object, parm = NULL, level = 0.95,
     level = numeric(), method = character()
   )
   if (is.null(object$model)) {
-    warning("No model found in object. Model fitting may have failed.", call. = FALSE)
+    cli::cli_warn("No model found in object. Model fitting may have failed.")
     return(empty)
   }
 
@@ -2212,8 +2212,7 @@ confint.cp_model_lmer <- function(object, parm = NULL, level = 0.95,
     suppressMessages(stats::confint(object$model, parm = parm, level = level,
                                     method = method, ...)),
     error = function(e) {
-      warning("Confidence interval computation failed: ", conditionMessage(e),
-              call. = FALSE)
+      cli::cli_warn("Confidence interval computation failed: {conditionMessage(e)}")
       NULL
     }
   )

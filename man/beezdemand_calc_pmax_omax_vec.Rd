@@ -10,6 +10,7 @@ beezdemand_calc_pmax_omax_vec(
   param_scales = NULL,
   price_list = NULL,
   consumption_list = NULL,
+  p_zero_fn_list = NULL,
   ...
 )
 }

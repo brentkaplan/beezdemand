@@ -34,8 +34,8 @@
 ll4 <- function(x, lambda = 4, base = 10) {
   # Ensure x is non-negative for the intended use of x^lambda
   if (any(x < 0, na.rm = TRUE)) {
-    warning(
-      "Input 'x' contains negative values; LL4 is typically for non-negative inputs. Result may be NaN."
+    cli::cli_warn(
+      "Input {.arg x} contains negative values; LL4 is typically for non-negative inputs. Result may be NaN."
     )
   }
   # LL4(x) = log(x^lambda + 1) / lambda
@@ -126,16 +126,10 @@ ll4_inv <- function(y, lambda = 4, base = 10) {
 scale_ll4 <- function(..., lambda = 4) {
   # Ensure scales package is available for trans_new
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop(
-      "Package 'scales' is required for scale_ll4(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("scales", reason = "for scale_ll4()")
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(
-      "Package 'ggplot2' is required for scale_ll4(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("ggplot2", reason = "for scale_ll4()")
   }
 
   # Base for the ll4 transformation (default is 10)
@@ -194,10 +188,7 @@ scale_ll4 <- function(..., lambda = 4) {
 pseudo_ll4_trans <- function(lambda = 4) {
   # Ensure scales package is available for trans_new
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop(
-      "Package 'scales' is required for pseudo_ll4_trans(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("scales", reason = "for pseudo_ll4_trans()")
   }
 
   # Base for the ll4 transformation (default is 10)

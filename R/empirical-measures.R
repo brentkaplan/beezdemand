@@ -90,7 +90,7 @@ get_empirical_measures <- function(data,
                                    id_var = "id") {
   # Validate inputs
   if (!is.data.frame(data)) {
-    stop("'data' must be a data frame", call. = FALSE)
+    validation_error("{.arg data} must be a data frame.", arg = "data")
   }
 
   # Use CheckCols for backward compatibility with column name handling
@@ -116,8 +116,10 @@ get_empirical_measures <- function(data,
 
     # Check for duplicates
     if (any(duplicated(adf$x))) {
-      stop(paste0("Duplicates found where id = ", ps[i], ". Check data and rerun."),
-           call. = FALSE)
+      validation_error(
+        "Duplicates found where {.field id} = {.val {ps[i]}}. Check data and rerun.",
+        arg = "data"
+      )
     }
 
     # Calculate expenditure

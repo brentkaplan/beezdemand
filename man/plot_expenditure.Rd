@@ -14,6 +14,7 @@ plot_expenditure(object, ...)
   n_points = 200,
   show_pmax = TRUE,
   show_omax = TRUE,
+  demand_type = c("unconditional", "conditional"),
   x_trans = c("log10", "log", "linear", "pseudo_log"),
   free_trans = 0.01,
   x_lab = "Price",

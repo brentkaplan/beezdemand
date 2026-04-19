@@ -549,7 +549,7 @@ BIC.beezdemand_hurdle <- function(object, ...) {
   sigma_a <- exp(logsigma_a)
 
   if (method == "kde" && length(unique(a_i)) < 3) {
-    warning(
+    cli::cli_warn(
       "Fewer than 3 unique random intercepts; falling back to 'normal' method.",
       call. = FALSE
     )
@@ -884,7 +884,7 @@ predict.beezdemand_hurdle <- function(
   interval <- match.arg(interval)
   if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||
     level <= 0 || level >= 1)) {
-    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+    cli::cli_abort("'level' must be a single number between 0 and 1.")
   }
   id_var <- object$param_info$id_var
   x_var <- object$param_info$x_var
@@ -899,7 +899,7 @@ predict.beezdemand_hurdle <- function(
   marginal_method <- match.arg(marginal_method)
 
   if (isTRUE(marginal) && !type %in% c("probability", "response", "demand")) {
-    warning("'marginal' only applies to type = 'probability', 'response', or 'demand'; ignoring.",
+    cli::cli_warn("'marginal' only applies to type = 'probability', 'response', or 'demand'; ignoring.",
             call. = FALSE)
     marginal <- FALSE
   }
@@ -909,12 +909,12 @@ predict.beezdemand_hurdle <- function(
     if (!is.null(newdata)) {
       if (!is.data.frame(newdata)) newdata <- as.data.frame(newdata)
       if (!(x_var %in% names(newdata))) {
-        stop("`newdata` must include the price column `", x_var, "`.",
-             call. = FALSE)
+        cli::cli_abort("{.arg newdata} must include the price column {.field {x_var}}.")
       }
       if (id_var %in% names(newdata)) {
-        warning("'marginal = TRUE' produces population-level predictions; ignoring '",
-                id_var, "' column.", call. = FALSE)
+        cli::cli_warn(
+          "{.code marginal = TRUE} produces population-level predictions; ignoring {.field {id_var}} column."
+        )
       }
       price_vec <- newdata[[x_var]]
     } else if (!is.null(prices)) {
@@ -937,7 +937,7 @@ predict.beezdemand_hurdle <- function(
       attr(out, "marginal_method") <- marginal_method
 
       if (isTRUE(se.fit) || interval != "none") {
-        warning("Standard errors not yet supported for marginal predictions; returning NA.",
+        cli::cli_warn("Standard errors not yet supported for marginal predictions; returning NA.",
                 call. = FALSE)
         out$.se.fit <- NA_real_
         if (interval != "none") {
@@ -958,7 +958,7 @@ predict.beezdemand_hurdle <- function(
     attr(out, "marginal_method") <- "monte_carlo"
 
     if (isTRUE(se.fit) || interval != "none") {
-      warning("Standard errors not yet supported for marginal predictions; returning NA.",
+      cli::cli_warn("Standard errors not yet supported for marginal predictions; returning NA.",
               call. = FALSE)
       out$.se.fit <- NA_real_
       if (interval != "none") {
@@ -972,7 +972,7 @@ predict.beezdemand_hurdle <- function(
   if (!is.null(newdata)) {
     if (!is.data.frame(newdata)) newdata <- as.data.frame(newdata)
     if (!(x_var %in% names(newdata))) {
-      stop("`newdata` must include the price column `", x_var, "`.", call. = FALSE)
+      cli::cli_abort("{.arg newdata} must include the price column {.field {x_var}}.")
     }
   } else {
     if (!is.null(prices)) {
@@ -1024,7 +1024,7 @@ predict.beezdemand_hurdle <- function(
     id_match <- match(newdata[[id_var]], subjects)
     if (anyNA(id_match)) {
       missing_ids <- unique(newdata[[id_var]][is.na(id_match)])
-      stop(
+      cli::cli_abort(
         "Unknown id values in `newdata`: ",
         paste(missing_ids, collapse = ", "),
         ".",
@@ -1087,7 +1087,7 @@ predict.beezdemand_hurdle <- function(
   want_se <- isTRUE(se.fit) || interval != "none"
   if (want_se) {
     if (is.null(object$sdr) || is.null(object$sdr$cov.fixed)) {
-      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      cli::cli_warn("vcov is unavailable; returning NA for uncertainty columns.")
       out$.se.fit <- NA_real_
       if (interval != "none") {
         out$.lower <- NA_real_
@@ -1098,7 +1098,7 @@ predict.beezdemand_hurdle <- function(
 
     vcov_full <- tryCatch(as.matrix(object$sdr$cov.fixed), error = function(e) NULL)
     if (is.null(vcov_full)) {
-      warning("vcov is unavailable; returning NA for uncertainty columns.", call. = FALSE)
+      cli::cli_warn("vcov is unavailable; returning NA for uncertainty columns.")
       out$.se.fit <- NA_real_
       if (interval != "none") {
         out$.lower <- NA_real_
@@ -1597,7 +1597,7 @@ plot.beezdemand_hurdle <- function(
       if (!is.null(tfun_name) && !identical(tfun_name, "identity")) {
         tfun <- switch(tfun_name,
           log10 = log10, log = log, sqrt = sqrt,
-          stop("Unknown transform: ", tfun_name, call. = FALSE)
+          cli::cli_abort("Unknown transform: {.val {tfun_name}}.")
         )
         vals <- vals[vals > 0]
         vals <- tfun(vals)
@@ -1839,7 +1839,7 @@ plot_subject <- function(
   style = c("modern", "apa")
 ) {
   if (!inherits(object, "beezdemand_hurdle")) {
-    stop("object must be of class 'beezdemand_hurdle'")
+    cli::cli_abort("object must be of class 'beezdemand_hurdle'")
   }
   style <- match.arg(style)
 
@@ -1848,7 +1848,7 @@ plot_subject <- function(
   y_var <- object$param_info$y_var
 
   if (!subject_id %in% object$param_info$subject_levels) {
-    stop("subject_id not found in model")
+    cli::cli_abort("subject_id not found in model")
   }
 
   # Set up prices
@@ -2096,7 +2096,7 @@ confint.beezdemand_hurdle <- function(
   report_space <- match.arg(report_space)
 
   if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
-    stop("`level` must be a single number between 0 and 1.", call. = FALSE)
+    cli::cli_abort("`level` must be a single number between 0 and 1.")
   }
 
   coefs <- object$model$coefficients
@@ -2130,7 +2130,7 @@ confint.beezdemand_hurdle <- function(
   }
 
   if (length(coefs) == 0) {
-    warning("No requested parameters found in model.", call. = FALSE)
+    cli::cli_warn("No requested parameters found in model.")
     return(tibble::tibble(
       term = character(),
       estimate = numeric(),
@@ -2278,7 +2278,7 @@ augment.beezdemand_hurdle <- function(x, newdata = NULL,
   }
 
   if (is.null(data)) {
-    stop("No data available. Provide 'newdata' or ensure model contains data.",
+    cli::cli_abort("No data available. Provide 'newdata' or ensure model contains data.",
          call. = FALSE)
   }
 

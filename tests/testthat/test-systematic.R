@@ -274,22 +274,25 @@ test_that("check_unsystematic_cp detects returns to zeros", {
 test_that("check_unsystematic_cp validates input", {
   # Not a data frame
   expect_error(check_unsystematic_cp(list(x = 1:5, y = 1:5)),
-               "must be a data frame")
+               "must be a data frame",
+               class = "beezdemand_validation_error")
 
   # Missing columns
   expect_error(check_unsystematic_cp(data.frame(a = 1:5, b = 1:5)),
-               "must contain 'x' and 'y' columns")
+               "must contain",
+               class = "beezdemand_validation_error")
 
   # Too few rows
   expect_error(check_unsystematic_cp(data.frame(x = 1:2, y = 1:2)),
-               "at least 3 rows")
+               "at least 3 rows",
+               class = "beezdemand_validation_error")
 })
 
 test_that("check_unsystematic_cp warns about NA values", {
   x_seq <- 10^(seq(-2, 2, length.out = 10))
   test_data <- data.frame(x = x_seq, y = c(10, 8, NA, 5, 4, 3, 2, 1, 0.5, 0.1))
 
-  expect_warning(check_unsystematic_cp(test_data), "NA values")
+  expect_warning(check_unsystematic_cp(test_data), "NA")
 })
 
 test_that("check_unsystematic_cp expected_down suppresses reversals", {
