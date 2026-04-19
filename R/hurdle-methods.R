@@ -1025,10 +1025,7 @@ predict.beezdemand_hurdle <- function(
     if (anyNA(id_match)) {
       missing_ids <- unique(newdata[[id_var]][is.na(id_match)])
       cli::cli_abort(
-        "Unknown id values in `newdata`: ",
-        paste(missing_ids, collapse = ", "),
-        ".",
-        call. = FALSE
+        "Unknown id values in {.arg newdata}: {.val {missing_ids}}."
       )
     }
     re <- object$random_effects

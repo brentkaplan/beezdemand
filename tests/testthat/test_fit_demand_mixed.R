@@ -223,7 +223,7 @@ test_that("collapse_factor_levels warns for unknown factors", {
       factors = "dose",
       suffix = "Q0"
     ),
-    "not in the 'factors' list"
+    "not in the .factors. list"
   )
 })
 

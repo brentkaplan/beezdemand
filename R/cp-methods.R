@@ -897,8 +897,7 @@ confint.cp_model_nls <- function(
     nlstools::confint2(object$model, level = level, method = method, ...),
     error = function(e) {
       cli::cli_warn(
-        "Confidence interval computation failed: ", conditionMessage(e),
-        call. = FALSE
+        "Confidence interval computation failed: {conditionMessage(e)}"
       )
       return(NULL)
     }

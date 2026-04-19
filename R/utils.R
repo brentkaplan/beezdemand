@@ -426,16 +426,16 @@ validate_cp_data <- function(
     if (user_name != canonical) {
       # Check collision: canonical name already exists as a different column
       if (canonical %in% names(data)) {
-        cli::cli_abort(
+        cli::cli_abort(c(
           sprintf(
-            "%s_var = %s but data already contains a column named %s.\n",
+            "%s_var = %s but data already contains a column named %s.",
             canonical, shQuote(user_name), shQuote(canonical)
           ),
-          sprintf(
+          "i" = sprintf(
             "Rename or drop the existing %s column before calling the fitting function.",
             shQuote(canonical)
           )
-        )
+        ))
       }
       # Rename if the user-specified column exists
       if (user_name %in% names(data)) {
@@ -504,8 +504,7 @@ validate_demand_data <- function(
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
     cli::cli_abort(
-      "Missing required columns in data: ",
-      paste(missing_cols, collapse = ", ")
+      "Missing required columns in data: {.field {missing_cols}}."
     )
   }
 
@@ -559,9 +558,7 @@ validate_demand_data <- function(
 collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
   if (!is.list(collapse_spec) || is.null(names(collapse_spec))) {
     cli::cli_abort(
-      "Collapse specification for '",
-      suffix,
-      "' must be a named list of factor mappings."
+      "Collapse specification for {.val {suffix}} must be a named list of factor mappings."
     )
   }
 
@@ -572,11 +569,7 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     # Validate factor is in the model
     if (!factor_col %in% factors) {
       cli::cli_warn(
-        "Factor '",
-        factor_col,
-        "' in collapse_levels$",
-        suffix,
-        " is not in the 'factors' list. Skipping."
+        "Factor {.field {factor_col}} in {.code collapse_levels${suffix}} is not in the {.arg factors} list. Skipping."
       )
       next
     }
@@ -584,9 +577,7 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     # Validate factor is in the data
     if (!factor_col %in% names(data)) {
       cli::cli_warn(
-        "Factor '",
-        factor_col,
-        "' not found in data. Skipping."
+        "Factor {.field {factor_col}} not found in data. Skipping."
       )
       next
     }
@@ -595,9 +586,7 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
 
     if (!is.list(level_map) || is.null(names(level_map))) {
       cli::cli_abort(
-        "Collapse mapping for factor '",
-        factor_col,
-        "' must be a named list (new_level = c(old_levels))."
+        "Collapse mapping for factor {.field {factor_col}} must be a named list ({.code new_level = c(old_levels)})."
       )
     }
 
@@ -605,13 +594,10 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     all_old_levels <- unlist(level_map, use.names = FALSE)
     if (length(all_old_levels) != length(unique(all_old_levels))) {
       duplicates <- all_old_levels[duplicated(all_old_levels)]
-      cli::cli_abort(
-        "Overlapping old levels detected in collapse mapping for '",
-        factor_col,
-        "': ",
-        paste(unique(duplicates), collapse = ", "),
-        ". Each old level can only map to one new level."
-      )
+      cli::cli_abort(c(
+        "Overlapping old levels detected in collapse mapping for {.field {factor_col}}: {.val {unique(duplicates)}}.",
+        "i" = "Each old level can only map to one new level."
+      ))
     }
 
     # Store original levels
@@ -690,8 +676,7 @@ build_fixed_rhs <- function(
     dropped <- setdiff(factors, valid_factors)
     if (length(dropped) > 0) {
       cli::cli_inform(
-        "Note: Factor(s) with only 1 level removed from formula: ",
-        paste(dropped, collapse = ", ")
+        "Note: Factor(s) with only 1 level removed from formula: {.field {dropped}}."
       )
     }
   }
@@ -748,20 +733,18 @@ validate_collapse_levels <- function(collapse_levels) {
   provided_keys <- names(collapse_levels)
 
   if (is.null(provided_keys) || length(provided_keys) == 0) {
-    cli::cli_abort(
-      "'collapse_levels' must have named elements. ",
-      "Expected keys: 'Q0' and/or 'alpha'."
-    )
+    cli::cli_abort(c(
+      "{.arg collapse_levels} must have named elements.",
+      "i" = "Expected keys: {.val Q0} and/or {.val alpha}."
+    ))
   }
 
   invalid_keys <- setdiff(provided_keys, valid_keys)
   if (length(invalid_keys) > 0) {
-    cli::cli_abort(
-      "Invalid keys in 'collapse_levels': ",
-      paste(invalid_keys, collapse = ", "),
-      ". ",
-      "Only 'Q0' and 'alpha' are allowed."
-    )
+    cli::cli_abort(c(
+      "Invalid keys in {.arg collapse_levels}: {.val {invalid_keys}}.",
+      "i" = "Only {.val Q0} and {.val alpha} are allowed."
+    ))
   }
 
   TRUE
