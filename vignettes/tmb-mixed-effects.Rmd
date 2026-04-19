@@ -266,6 +266,35 @@ spars |>
   mutate(across(where(is.numeric), \(x) round(x, 4)))
 ```
 
+### Amplitude–Persistence Decomposition
+
+`calculate_amplitude_persistence()` collapses the per-subject parameters into
+two latent factors used in behavioral economic indices: **Amplitude**
+(intensity of demand, primarily $Q_0$) and **Persistence** (sensitivity to
+price, drawn from $P_{max}$, $O_{max}$, and $1/\alpha$). The TMB method
+extracts subject parameters from `fit$subject_pars` and delegates to the
+default Z-score implementation, so the result is comparable across model
+tiers.
+
+```{r results-amplitude-persistence}
+ap <- calculate_amplitude_persistence(fit_2re)
+head(ap)
+```
+
+```{r results-amplitude-persistence-summary}
+ap |>
+  summarise(
+    Amplitude_mean = mean(Amplitude, na.rm = TRUE),
+    Persistence_mean = mean(Persistence, na.rm = TRUE),
+    Amplitude_sd = sd(Amplitude, na.rm = TRUE),
+    Persistence_sd = sd(Persistence, na.rm = TRUE)
+  )
+```
+
+By construction, both factors are sample-standardized (mean 0, SD 1 within the
+fitted dataset). For cross-sample comparisons, supply external `basis_means`
+and `basis_sds` so the standardization uses a fixed reference.
+
 ### Confidence Intervals
 
 ```{r results-confint}
@@ -324,8 +353,19 @@ plot(fit_2re, type = "parameters")
 
 After fitting, assess model health with the built-in diagnostic tools.
 
+The fit object exposes a `hessian_pd` field that flags whether the Hessian
+returned by `TMB::sdreport()` is positive definite. When `FALSE`, standard
+errors, p-values, and Wald confidence intervals derived from the Hessian
+should be treated as unreliable; the warning is also surfaced as a note in
+`summary()` output and as a `hessian_warning` attribute on `tidy()` output.
+
+```{r diagnostics-hessian}
+fit_2re$hessian_pd
+```
+
 ```{r diagnostics-check}
-# Model health check
+# Model health check — convergence, variance components, residual stats,
+# and (since 0.3.0) Hessian positive-definiteness.
 check_demand_model(fit_2re)
 ```
 

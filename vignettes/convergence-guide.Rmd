@@ -310,19 +310,21 @@ well-behaved near the solution.
 # Check if standard errors were successfully computed
 fit_tmb$se_available
 
-# View SEs in summary output
-summary(fit_tmb)
+# Hessian positive-definiteness gate (since 0.3.0): TRUE means the inverse
+# Hessian is well-conditioned, so SEs / p-values / Wald CIs are trustworthy.
+# FALSE means they are not — and `fit_demand_tmb()` / `fit_demand_hurdle()`
+# also emit a cli warning at fit time when verbose >= 1.
+fit_tmb$hessian_pd
 
-# For hurdle models: check the sdreport directly
-if (!is.null(fit_hurdle$sdr)) {
-  # pdHess = TRUE means the Hessian is positive definite
-  fit_hurdle$sdr$pdHess
-}
+# View SEs in summary output (notes section flags pdHess = FALSE)
+summary(fit_tmb)
 ```
 
 Warning signs:
 
-- `se_available = FALSE`: the Hessian was not positive definite
+- `hessian_pd = FALSE`: standard errors and p-values may be unreliable
+  (saddle point, near-singular Hessian, or boundary solution)
+- `se_available = FALSE`: `TMB::sdreport()` failed entirely; SEs are missing
 - Very large SEs (orders of magnitude larger than the estimates): flat likelihood
 - `NA` or `NaN` SEs: numerical problems in the Hessian computation
 
@@ -379,14 +381,31 @@ at a local minimum (not a saddle point or maximum).
 #### TMB Models
 
 ```{r hess-tmb, eval = FALSE}
-# Check Hessian positive-definiteness via sdreport
+# Preferred (since 0.3.0): the dedicated `hessian_pd` accessor on the fit
+# object. TRUE = positive definite; FALSE = not; NA = sdreport failed.
+fit_tmb$hessian_pd
+
+# Equivalent low-level path through the sdreport object:
 if (!is.null(fit_tmb$sdr)) {
-  cat("Hessian positive definite:", fit_tmb$sdr$pdHess, "\n")
+  isTRUE(fit_tmb$sdr$pdHess)
 }
 ```
 
-If `pdHess` is `FALSE`, the solution may be at a saddle point. Try refitting with
-different starting values.
+If `hessian_pd` is `FALSE`, the solution may be at a saddle point or on the
+boundary of the feasible region. The fitting function emits a cli warning at
+fit time when `verbose >= 1`, and `summary()` adds a corresponding note.
+`tidy()` returns its data unchanged but tags the result with a
+`hessian_warning` attribute for downstream pipelines:
+
+```{r hess-tmb-tidy, eval = FALSE}
+out <- tidy(fit_tmb)
+attr(out, "hessian_warning")
+```
+
+When triggered, try refitting with different starting values, switching
+optimizers (`tmb_control$optimizer = "L-BFGS-B"`), or warm-starting from the
+flagged fit (`tmb_control$warm_start = fit_tmb$opt$par`). The same
+`hessian_pd` field exists on `beezdemand_hurdle` objects.
 
 #### NLME Models
 
