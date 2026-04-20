@@ -1408,21 +1408,41 @@ get_demand_param_emms.beezdemand_tmb <- function(
   data_used <- fit_obj$data
   level_combos <- unique(data_used[, use_factors, drop = FALSE])
 
+  # Continuous covariates: hold at training mean unless overridden via `at`.
+  cov_names <- fit_obj$param_info$continuous_covariates
+  if (!is.null(cov_names) && length(cov_names) > 0) {
+    for (cv in cov_names) {
+      cv_value <- mean(data_used[[cv]], na.rm = TRUE)
+      if (!is.null(at) && cv %in% names(at)) {
+        if (length(at[[cv]]) > 1) {
+          cli::cli_warn(c(
+            "Multiple values supplied for continuous covariate {.field {cv}} in {.arg at}; using the first only.",
+            "i" = "Call {.fun get_demand_param_emms} separately for each value to compare."
+          ))
+        }
+        cv_value <- as.numeric(at[[cv]][1])
+      }
+      level_combos[[cv]] <- cv_value
+    }
+  }
+
   # Build reference design matrix rows
   ref_X <- stats::model.matrix(
     stats::as.formula(build_fixed_rhs(
       factors = use_factors,
       factor_interaction = fit_obj$param_info$factor_interaction,
+      continuous_covariates = cov_names,
       data = data_used
     )),
     data = level_combos
   )
 
-  # Apply 'at' filter
+  # Apply 'at' filter for factor levels only (continuous covariates already
+  # substituted above).
   if (!is.null(at)) {
     keep <- rep(TRUE, nrow(level_combos))
     for (nm in names(at)) {
-      if (nm %in% names(level_combos)) {
+      if (nm %in% use_factors) {
         keep <- keep & (level_combos[[nm]] %in% at[[nm]])
       }
     }
@@ -1542,10 +1562,21 @@ get_demand_comparisons.beezdemand_tmb <- function(
   # Build reference grid
   data_used <- fit_obj$data
   level_combos <- unique(data_used[, use_factors, drop = FALSE])
+
+  # Continuous covariates: hold at training mean so the reference grid design
+  # matrix matches the fitted coefficient basis.
+  cov_names <- fit_obj$param_info$continuous_covariates
+  if (!is.null(cov_names) && length(cov_names) > 0) {
+    for (cv in cov_names) {
+      level_combos[[cv]] <- mean(data_used[[cv]], na.rm = TRUE)
+    }
+  }
+
   ref_X <- stats::model.matrix(
     stats::as.formula(build_fixed_rhs(
       factors = use_factors,
       factor_interaction = fit_obj$param_info$factor_interaction,
+      continuous_covariates = cov_names,
       data = data_used
     )),
     data = level_combos
