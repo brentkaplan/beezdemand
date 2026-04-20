@@ -95,6 +95,35 @@ branch. See the "TMB tier" section under New Features for orientation.
 
 ## Bug Fixes
 
+* `fit_demand_tmb()` now drops rows with `NA` values in any modeling
+  column (`id`, price, response, factors, continuous covariates) before
+  entering the TMB pipeline, matching the `fit_demand_mixed()` behavior.
+  Previously a single `NA` in the response crashed `.tmb_prepare_data()`
+  with `"missing value where TRUE/FALSE needed"`, and `NA` in factors or
+  covariates could propagate into `model.matrix()` and trigger a TMB
+  segfault during `MakeADFun()`.
+
+* `predict.beezdemand_tmb()` now rebuilds the fixed-effect linear
+  predictor from `newdata` instead of reusing training-time
+  `subject_pars$Q0` / `alpha`. Predictions for any model with factors or
+  continuous covariates now correctly reflect the values supplied in
+  `newdata`; unknown subjects fall back to the newdata fixed effects
+  with random effects = 0 (with a warning). Previously the function
+  silently used cached subject parameters for known subjects and the
+  reference-level intercepts for unknown ones, producing systematically
+  biased `.fitted` values. `augment.beezdemand_tmb()` inherits the fix.
+  Predict now also errors clearly when `newdata` is missing a required
+  modeling column or contains factor levels not seen in training.
+
+* `get_demand_param_emms.beezdemand_tmb()` and
+  `get_demand_comparisons.beezdemand_tmb()` now include continuous
+  covariates in the reference grid, matching the dimensionality of the
+  fitted `beta` coefficients. Covariates default to their training-data
+  mean (matching `emmeans::ref_grid`) and can be overridden via
+  `at = list(covname = value)`. Previously, TMB fits that mixed factors
+  and continuous covariates produced `non-conformable arguments` in the
+  Wald variance calculation or silently used the wrong model basis.
+
 * `get_demand_comparisons()` now restricts pairwise contrasts to observed
   factor combinations. Previously, with unbalanced designs (e.g.,
   different dose levels per drug), the function computed contrasts on the
