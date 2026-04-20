@@ -30,8 +30,9 @@ NULL
   n_dropped <- 0L
 
   if (equation == "exponential") {
-    # Filter to Q > 0, compute log(Q)
-    pos_idx <- consumption > 0
+    # Filter to Q > 0, compute log(Q). Defensive na-handling: NA in consumption
+    # would otherwise make `sum(!pos_idx)` return NA and crash the `if` below.
+    pos_idx <- !is.na(consumption) & consumption > 0
     n_dropped <- sum(!pos_idx)
     if (n_dropped > 0) {
       message(sprintf(
@@ -1037,6 +1038,31 @@ fit_demand_tmb <- function(
       stop("Continuous covariates not found in data: ",
            paste(missing_cov, collapse = ", "), call. = FALSE)
     }
+  }
+
+  # Drop rows with NAs in any modeling column (mirrors fit_demand_mixed)
+  model_cols <- unique(c(id_var, x_var, y_var,
+                         factors_q0, factors_alpha, continuous_covariates))
+  model_cols <- intersect(model_cols, names(data))
+  complete_mask <- stats::complete.cases(data[, model_cols, drop = FALSE])
+  n_dropped_na <- sum(!complete_mask)
+  if (n_dropped_na > 0) {
+    ids_affected <- length(unique(data[[id_var]][!complete_mask]))
+    if (verbose >= 1) {
+      cli::cli_inform(c(
+        "i" = "Removed {n_dropped_na} row{?s} with missing values in modeling columns ({ids_affected} subject{?s} affected)."
+      ))
+    }
+    data <- data[complete_mask, , drop = FALSE]
+    if (is.factor(data[[id_var]])) data[[id_var]] <- droplevels(data[[id_var]])
+    for (f in unique(c(factors_q0, factors_alpha))) {
+      if (!is.null(f) && nzchar(f) && f %in% names(data) && is.factor(data[[f]])) {
+        data[[f]] <- droplevels(data[[f]])
+      }
+    }
+  }
+  if (nrow(data) == 0) {
+    cli::cli_abort("No complete cases remain after removing rows with missing values.")
   }
 
   # Prepare data

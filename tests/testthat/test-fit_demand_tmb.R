@@ -1089,3 +1089,40 @@ test_that("predict(type='demand') does NOT warn without factors", {
     predict(fit, type = "demand", prices = c(0, 1, 5))
   )
 })
+
+# ------------------------------------------------------------------------------
+# Missing-data handling (codex review Bug 1)
+# ------------------------------------------------------------------------------
+
+test_that("fit_demand_tmb tolerates NAs in y_var by dropping rows", {
+  data(apt, package = "beezdemand")
+  d <- apt
+  d$y[c(3, 17, 42)] <- NA
+  expect_message(
+    fit <- fit_demand_tmb(d, equation = "exponential", verbose = 1),
+    "Removed 3 row"
+  )
+  expect_s3_class(fit, "beezdemand_tmb")
+  expect_true(fit$converged)
+})
+
+test_that("fit_demand_tmb errors cleanly when no rows remain after NA drop", {
+  data(apt, package = "beezdemand")
+  d <- apt
+  d$y <- NA_real_
+  expect_error(
+    fit_demand_tmb(d, equation = "exponential", verbose = 0),
+    "No complete cases"
+  )
+})
+
+test_that("fit_demand_tmb drops NAs in continuous_covariates", {
+  data(apt_full, package = "beezdemand")
+  d <- apt_full
+  d$age[1:5] <- NA
+  expect_message(
+    fit_demand_tmb(d, equation = "exponential",
+                   continuous_covariates = "age", verbose = 1),
+    "Removed"
+  )
+})
