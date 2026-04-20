@@ -637,39 +637,21 @@ predict.beezdemand_tmb <- function(
     ))
   }
 
-  # type == "response": subject-specific fitted values (vectorized)
+  # type == "response": subject-specific fitted values (vectorized).
+  # Rebuild fixed-effect linear predictors from newdata so that factor and
+  # continuous-covariate values in newdata propagate into Q0 and alpha
+  # (codex Bug 3 fix).
   if (is.null(newdata)) {
     newdata <- object$data
   }
 
-  spars <- object$subject_pars
-
-  # Map each observation to its subject's parameters
-  subj_ids <- as.character(newdata[[id_var]])
-  subj_match <- match(subj_ids, spars$id)
-
-  # For unknown subjects, fall back to population reference-level parameters
-  beta_q0_idx <- which(names(coefs) == "beta_q0")
-  beta_alpha_idx <- which(names(coefs) == "beta_alpha")
-  pop_Q0 <- exp(coefs[beta_q0_idx[1]])
-  pop_alpha <- exp(coefs[beta_alpha_idx[1]])
-
-  n_unknown <- sum(is.na(subj_match))
-  if (n_unknown > 0) {
-    warning(
-      sprintf("%d observation(s) from unknown subject(s); using population reference-level parameters.", n_unknown),
-      call. = FALSE
-    )
-  }
-
-  Q0_vec <- ifelse(is.na(subj_match), pop_Q0, spars$Q0[subj_match])
-  alpha_vec <- ifelse(is.na(subj_match), pop_alpha, spars$alpha[subj_match])
+  bp <- .tmb_build_predicted_pars(object, newdata)
   price_vec <- newdata[[x_var]]
   k_val <- if (has_k) .tmb_get_k(object) else NA
 
   fitted_vals <- .tmb_predict_equation(
-    price_vec, Q0_vec, alpha_vec,
-    k = k_val, log_q0 = log(Q0_vec),
+    price_vec, bp$Q0, bp$alpha,
+    k = k_val, log_q0 = bp$log_q0,
     equation = equation
   )
 
@@ -714,6 +696,110 @@ predict.beezdemand_tmb <- function(
       rate <- (alpha / Q0_log10) * Q0
       Q0_log10 * exp(-rate * price)
     }
+  )
+}
+
+
+#' Rebuild per-row Q0 and alpha from newdata for predict.beezdemand_tmb
+#'
+#' For each row of `newdata`, reconstruct the fixed-effect linear predictor
+#' from the stored formula RHS and beta coefficients, add the subject's
+#' random-effect deviate (or zero for unknown subjects), and return
+#' `Q0 = exp(eta_q0)` and `alpha = exp(eta_alpha)`. This is what makes
+#' `predict()` respect factor and continuous-covariate values in `newdata`.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @param newdata A data frame with the modeling columns used at fit time
+#'   (`id_var`, `x_var`, factor columns, continuous covariate columns).
+#' @return A list with elements `Q0`, `alpha`, and `log_q0` (each of length
+#'   `nrow(newdata)`).
+#' @keywords internal
+.tmb_build_predicted_pars <- function(object, newdata) {
+  pinfo <- object$param_info
+  spars <- object$subject_pars
+  coefs <- object$model$coefficients
+
+  beta_q0    <- unname(coefs[names(coefs) == "beta_q0"])
+  beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
+  n_re       <- pinfo$n_random_effects
+
+  # 1. Validate required columns are present.
+  needed <- unique(c(pinfo$id_var, pinfo$x_var,
+                     pinfo$factors_q0, pinfo$factors_alpha,
+                     pinfo$continuous_covariates))
+  needed <- needed[!is.null(needed) & nzchar(needed)]
+  missing_cols <- setdiff(needed, names(newdata))
+  if (length(missing_cols) > 0) {
+    cli::cli_abort(
+      "{.arg newdata} is missing required column{?s}: {.field {missing_cols}}"
+    )
+  }
+
+  # 2. Coerce newdata factor columns to the training-time level sets so
+  #    model.matrix builds the same columns (and errors loudly on unseen
+  #    levels).
+  train <- object$data
+  for (f in unique(c(pinfo$factors_q0, pinfo$factors_alpha))) {
+    if (is.null(f) || !nzchar(f)) next
+    if (!is.factor(train[[f]])) next
+    train_levels <- levels(train[[f]])
+    new_vals <- as.character(newdata[[f]])
+    bad <- setdiff(unique(new_vals[!is.na(new_vals)]), train_levels)
+    if (length(bad) > 0) {
+      cli::cli_abort(c(
+        "Factor {.field {f}} in {.arg newdata} contains levels not seen in training: {.val {bad}}",
+        "i" = "Refit with these levels in the data, or recode {.arg newdata}."
+      ))
+    }
+    newdata[[f]] <- factor(new_vals, levels = train_levels)
+  }
+
+  # 3. Rebuild per-row design matrices using the stored RHS.
+  X_q0_new <- stats::model.matrix(
+    stats::as.formula(object$formula_details$rhs_q0),
+    data = newdata
+  )
+  X_alpha_new <- stats::model.matrix(
+    stats::as.formula(object$formula_details$rhs_alpha),
+    data = newdata
+  )
+
+  if (ncol(X_q0_new) != length(beta_q0)) {
+    cli::cli_abort(
+      "Rebuilt X_q0 has {ncol(X_q0_new)} column{?s} but beta_q0 has {length(beta_q0)}."
+    )
+  }
+  if (ncol(X_alpha_new) != length(beta_alpha)) {
+    cli::cli_abort(
+      "Rebuilt X_alpha has {ncol(X_alpha_new)} column{?s} but beta_alpha has {length(beta_alpha)}."
+    )
+  }
+
+  log_q0_fix    <- as.numeric(X_q0_new    %*% beta_q0)
+  log_alpha_fix <- as.numeric(X_alpha_new %*% beta_alpha)
+
+  # 4. Add per-subject random-effect deviates (or zero for unknowns).
+  subj_ids <- as.character(newdata[[pinfo$id_var]])
+  subj_match <- match(subj_ids, spars$id)
+  n_unknown <- sum(is.na(subj_match))
+  if (n_unknown > 0) {
+    cli::cli_warn(
+      "{n_unknown} observation{?s} from unknown subject{?s}; using {.arg newdata} fixed effects with random effects = 0."
+    )
+  }
+  b_i_vec <- ifelse(is.na(subj_match), 0, spars$b_i[subj_match])
+  if (n_re == 2 && "c_i" %in% names(spars)) {
+    c_i_vec <- ifelse(is.na(subj_match), 0, spars$c_i[subj_match])
+  } else {
+    c_i_vec <- rep(0, length(subj_ids))
+  }
+
+  log_q0_total    <- log_q0_fix    + b_i_vec
+  log_alpha_total <- log_alpha_fix + c_i_vec
+  list(
+    Q0     = exp(log_q0_total),
+    alpha  = exp(log_alpha_total),
+    log_q0 = log_q0_total
   )
 }
 
