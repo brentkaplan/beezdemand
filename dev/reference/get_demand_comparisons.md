@@ -9,6 +9,12 @@ natural scale by applying 10^difference).
 ## Usage
 
 ``` r
+get_demand_comparisons(fit_obj, ...)
+
+# Default S3 method
+get_demand_comparisons(fit_obj, ...)
+
+# S3 method for class 'beezdemand_nlme'
 get_demand_comparisons(
   fit_obj,
   params_to_compare = c("Q0", "alpha"),
@@ -28,6 +34,13 @@ get_demand_comparisons(
 - fit_obj:
 
   A `beezdemand_nlme` object.
+
+- ...:
+
+  Additional arguments passed to
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
+  or
+  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
 
 - params_to_compare:
 
@@ -83,13 +96,6 @@ get_demand_comparisons(
 - report_ratios:
 
   Logical. If TRUE, reports contrasts as ratios. Default `TRUE`.
-
-- ...:
-
-  Additional arguments passed to
-  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
-  or
-  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
 
 ## Value
 

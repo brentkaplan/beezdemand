@@ -334,9 +334,8 @@ check_demand_model(fit)
 #> Issues Detected (1):
 #>   1. Detected 3 potential outliers across subjects
 plot_residuals(fit)$fitted
+#> NULL
 ```
-
-![](migration-guide_files/figure-html/post-fit-workflow-1.png)
 
 ### New in 0.2.0: Unified Systematicity Wrappers
 
@@ -483,9 +482,9 @@ If you encounter issues during migration:
 
 ``` r
 sessionInfo()
-#> R version 4.5.2 (2025-10-31)
+#> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -504,32 +503,32 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.0           beezdemand_0.2.0.9000
+#> [1] dplyr_1.2.1      beezdemand_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.19         
-#>  [4] xfun_0.56           bslib_0.10.0        ggplot2_4.0.2      
-#>  [7] htmlwidgets_1.6.4   insight_1.4.6       lattice_0.22-7     
-#> [10] vctrs_0.7.1         tools_4.5.2         Rdpack_2.6.6       
+#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
+#>  [4] xfun_0.57           bslib_0.10.0        ggplot2_4.0.2      
+#>  [7] htmlwidgets_1.6.4   insight_1.5.0       lattice_0.22-9     
+#> [10] vctrs_0.7.3         tools_4.5.3         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
-#> [16] Matrix_1.7-4        RColorBrewer_1.1-3  S7_0.2.1           
-#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.5.2     
-#> [22] farver_2.1.2        textshaping_1.0.4   minpack.lm_1.2-4   
+#> [16] Matrix_1.7-4        RColorBrewer_1.1-3  S7_0.2.1-1         
+#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.5.3     
+#> [22] farver_2.1.2        textshaping_1.0.5   minpack.lm_1.2-4   
 #> [25] nlstools_2.1-0      htmltools_0.5.9     sass_0.4.10        
 #> [28] yaml_2.3.12         pillar_1.11.1       pkgdown_2.2.0      
 #> [31] nloptr_2.2.1        jquerylib_0.1.4     tidyr_1.3.2        
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
 #> [37] boot_1.3-32         nlme_3.1-168        tidyselect_1.2.1   
-#> [40] digest_0.6.39       performance_0.16.0  mvtnorm_1.3-3      
-#> [43] purrr_1.2.1         labeling_0.4.3      splines_4.5.2      
-#> [46] fastmap_1.2.0       grid_4.5.2          cli_3.6.5          
-#> [49] magrittr_2.0.4      utf8_1.2.6          broom_1.0.12       
-#> [52] withr_3.0.2         scales_1.4.0        backports_1.5.0    
-#> [55] estimability_1.5.1  rmarkdown_2.30      emmeans_2.0.1      
-#> [58] otel_0.2.0          lme4_1.1-38         ragg_1.5.0         
+#> [40] digest_0.6.39       performance_0.16.0  mvtnorm_1.3-7      
+#> [43] purrr_1.2.2         splines_4.5.3       fastmap_1.2.0      
+#> [46] grid_4.5.3          cli_3.6.6           magrittr_2.0.5     
+#> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.12       
+#> [52] withr_3.0.2         scales_1.4.0        backports_1.5.1    
+#> [55] estimability_1.5.1  rmarkdown_2.31      emmeans_2.0.3      
+#> [58] otel_0.2.0          lme4_2.0-1          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         
-#> [64] rbibutils_2.4.1     mgcv_1.9-3          rlang_1.1.7        
-#> [67] Rcpp_1.1.1          xtable_1.8-8        glue_1.8.0         
-#> [70] nlsr_2023.8.31      minqa_1.2.8         jsonlite_2.0.0     
-#> [73] R6_2.6.1            systemfonts_1.3.1   fs_1.6.6
+#> [64] rbibutils_2.4.1     rlang_1.2.0         Rcpp_1.1.1-1       
+#> [67] xtable_1.8-8        glue_1.8.1          nlsr_2023.8.31     
+#> [70] minqa_1.2.8         jsonlite_2.0.0      R6_2.6.1           
+#> [73] systemfonts_1.3.2   fs_2.1.0
 ```

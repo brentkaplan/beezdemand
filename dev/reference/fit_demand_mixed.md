@@ -189,7 +189,57 @@ fit_demand_mixed(
 
 ## Value
 
-An object of class `beezdemand_nlme`.
+An object of class `beezdemand_nlme` containing:
+
+- model:
+
+  The fitted `nlme` model object
+
+- data:
+
+  Data frame used for fitting
+
+- call:
+
+  The original function call
+
+- equation_form:
+
+  Equation form used
+
+- param_space:
+
+  Parameterization space
+
+- factors:
+
+  Factor variables in the model
+
+- y_var, x_var, id_var:
+
+  Variable name strings
+
+- start_values:
+
+  Starting values used
+
+## See also
+
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+for TMB-based mixed-effects (preferred for new work),
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+for individual NLS curves,
+[`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+for hurdle models,
+[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+for estimated marginal means,
+[`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+for pairwise comparisons.
+
+Other demand-fitting:
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
+[`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md),
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 
 ## Examples
 
@@ -225,7 +275,7 @@ print(fit)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x5614c36868a0>
+#> <environment: 0x55cbfd9daf50>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -273,8 +323,8 @@ summary(fit)
 #> 
 #> Fixed Effects:
 #>           Value Std.Error        DF t-value  p-value    
-#> Q0      7.21552   0.91936 149.00000   7.848 4.21e-15 ***
-#> alpha   0.01060   0.00182 149.00000   5.827 5.65e-09 ***
+#> Q0      7.21552   0.91936 149.00000   7.848 7.58e-13 ***
+#> alpha   0.01060   0.00182 149.00000   5.827 3.36e-08 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

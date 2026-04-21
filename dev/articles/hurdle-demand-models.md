@@ -144,25 +144,25 @@ summary(fit2)
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error t value
-#> beta0      -392.08424  146.77064  -2.671
-#> beta1       135.79403   50.43489   2.692
+#>              Estimate Std. Error z value
+#> beta0      -392.08389  146.77189  -2.671
+#> beta1       135.79393   50.43534   2.692
 #> log_q0        1.93813    0.11712  16.548
 #> log_k         0.55505    0.09013   6.158
 #> log_alpha    -2.31478    0.16822 -13.760
-#> logsigma_a    5.76791    1.48287   3.890
-#> logsigma_b   -1.04114    0.22836  -4.559
+#> logsigma_a    5.76791    1.48290   3.890
+#> logsigma_b   -1.04114    0.22837  -4.559
 #> logsigma_e   -1.63184    0.06063 -26.914
-#> rho_ab_raw   -0.19191    0.23754  -0.808
+#> rho_ab_raw   -0.19191    0.23755  -0.808
 #> 
 #> Variance Components:
 #> --------------------
 #>           Estimate  Std. Error
 #> alpha       0.0988      0.0166
 #> k           1.7420      0.1570
-#> var_a  102316.4496 303443.2535
+#> var_a  102315.9811 303448.4197
 #> var_b       0.1246      0.0569
-#> cov_ab    -21.4106     12.6866
+#> cov_ab    -21.4106     12.6867
 #> var_e       0.0382      0.0046
 #> 
 #> Correlations:
@@ -205,9 +205,9 @@ summary(fit2)
 # Extract coefficients
 coef(fit2)
 #>         beta0         beta1    logsigma_a    logsigma_b    logsigma_e 
-#> -392.08424414  135.79402761    5.76791287   -1.04113716   -1.63183781 
+#> -392.08388527  135.79392969    5.76791058   -1.04113709   -1.63183780 
 #>    rho_ab_raw            Q0         alpha             k 
-#>   -0.19191230    6.94572447    0.09878809    1.74202549
+#>   -0.19191270    6.94572117    0.09878808    1.74202555
 
 # Standardized tidy summaries
 tidy(fit2) |> head()
@@ -225,18 +225,25 @@ glance(fit2)
 #> # A tibble: 1 × 9
 #>   model_class   backend  nobs n_subjects n_random_effects converged logLik   AIC
 #>   <chr>         <chr>   <int>      <int>            <int> <lgl>      <dbl> <dbl>
-#> 1 beezdemand_h… TMB       160         10                2 TRUE        2.31  13.4
+#> 1 beezdemand_h… TMB_hu…   160         10                2 TRUE        2.31  13.4
 #> # ℹ 1 more variable: BIC <dbl>
 
 # Get subject-specific parameters
 head(get_subject_pars(fit2))
 #>    id       a_i        b_i        Q0      alpha breakpoint Pmax     Omax
-#> 1  19 -88.44328  0.5148913 11.623368 0.09878809  34.419417   20 51.84539
-#> 2  30 -21.33116 -0.6512299  3.621529 0.09878809  20.997058   20 16.15363
-#> 3  38  40.35748 -0.2348862  5.491712 0.09878809  13.330758   20 24.49548
-#> 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504   20 36.58857
-#> 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495   20 47.28877
-#> 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564   20 24.57311
+#> 1  19 -88.44332  0.5148917 11.623368 0.09878808  34.419425   20 51.84539
+#> 2  30 -21.33122 -0.6512294  3.621529 0.09878808  20.997058   20 16.15363
+#> 3  38  40.35739 -0.2348858  5.491712 0.09878808  13.330756   20 24.49548
+#> 4  60  31.73711  0.1663618  8.202899 0.09878808  14.204504   20 36.58857
+#> 5  68  31.19341  0.4228985 10.601806 0.09878808  14.261494   20 47.28877
+#> 6 106 116.82448 -0.2317217  5.509116 0.09878808   7.590564   20 24.57311
+#>   Pmax_unconditional Omax_unconditional
+#> 1          19.999999           51.84539
+#> 2          19.999999           16.13182
+#> 3          12.765576           20.06101
+#> 4          13.605392           30.70281
+#> 5          13.660199           39.74372
+#> 6           7.270465           16.35863
 ```
 
 ## Diagnostics
@@ -258,9 +265,9 @@ check_demand_model(fit2)
 #> Random Effects:
 #> 
 #> Residuals:
-#>   Mean: 5.392e-05
-#>   SD: 0.1896
-#>   Range: [-0.6119, 0.4986]
+#>   Mean: -0.0308
+#>   SD: 0.9809
+#>   Range: [-3.129, 2.549]
 #>   Outliers: 2 observations
 #> 
 #> --------------------------------------------------
@@ -270,15 +277,11 @@ check_demand_model(fit2)
 #> Recommendations:
 #>   - Investigate outlying observations
 plot_residuals(fit2)$fitted
-```
-
-![](hurdle-demand-models_files/figure-html/diagnostics-1.png)
-
-``` r
+#> NULL
 plot_qq(fit2)
 ```
 
-![](hurdle-demand-models_files/figure-html/diagnostics-2.png)
+![](hurdle-demand-models_files/figure-html/diagnostics-1.png)
 
 ## Understanding Results
 
@@ -556,6 +559,8 @@ value. *Psychological Review*, 115(1), 186-198.
   – Mixed-effects nonlinear demand models
 - [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
   – Advanced mixed-effects topics
+- [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
+  – TMB mixed-effects demand models (continuous-only)
 - [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
   – Cross-price demand analysis
 - [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)

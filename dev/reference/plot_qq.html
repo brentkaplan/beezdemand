@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -67,6 +68,9 @@
 <span><span class="fu">plot_qq</span><span class="op">(</span><span class="va">object</span>, which <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'beezdemand_nlme'</span></span>
+<span><span class="fu">plot_qq</span><span class="op">(</span><span class="va">object</span>, which <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
 <span><span class="fu">plot_qq</span><span class="op">(</span><span class="va">object</span>, which <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -75,8 +79,8 @@
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>A fitted model object with random effects (<code>beezdemand_hurdle</code>
-or <code>beezdemand_nlme</code>).</p></dd>
+<dd><p>A fitted model object with random effects (<code>beezdemand_hurdle</code>,
+<code>beezdemand_nlme</code>, or <code>beezdemand_tmb</code>).</p></dd>
 
 
 <dt id="arg-which">which<a class="anchor" aria-label="anchor" href="#arg-which"></a></dt>
@@ -90,6 +94,16 @@ or <code>beezdemand_nlme</code>).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A ggplot2 object.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>For <code>beezdemand_tmb</code> models, Q-Q plots display empirical Bayes predictions
+(BLUPs) of the random effects (<code>b_i</code> for Q0, <code>c_i</code> for alpha). These
+exhibit shrinkage toward the population mean: subjects with fewer
+observations or higher variability are pulled toward zero. Consequently,
+Q-Q plots may appear more normal than the true random effect distribution
+(Verbeke &amp; Molenberghs, 2000). Useful for detecting gross departures
+(bimodality, heavy tails) but not a definitive normality test.</p>
     </div>
 
     <div class="section level2">

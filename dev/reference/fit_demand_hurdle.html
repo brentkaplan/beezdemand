@@ -13,7 +13,7 @@ mixed effects model."><meta property="og:image" content="https://brentkaplan.git
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@ mixed effects model."><meta property="og:image" content="https://brentkaplan.git
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -229,7 +230,14 @@ $$\log_{10}(\alpha) = \log(\alpha) / \log(10).$$</p>
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="summary.beezdemand_hurdle.html">summary.beezdemand_hurdle</a></code>, <code><a href="predict.beezdemand_hurdle.html">predict.beezdemand_hurdle</a></code>,
 <code><a href="plot.beezdemand_hurdle.html">plot.beezdemand_hurdle</a></code>, <code><a href="compare_hurdle_models.html">compare_hurdle_models</a></code>,
-<code><a href="simulate_hurdle_data.html">simulate_hurdle_data</a></code></p></div>
+<code><a href="simulate_hurdle_data.html">simulate_hurdle_data</a></code></p>
+<p><code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code> for continuous mixed-effects models,
+<code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> for NLME-based fitting,
+<code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code> for individual NLS curves.</p>
+<p>Other demand-fitting:
+<code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code>,
+<code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code>,
+<code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -264,7 +272,7 @@ $$\log_{10}(\alpha) = \log(\alpha) / \log(10).$$</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 9, Random effects per subject: 2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 95 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 93 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: 2.31</span>
 <span class="r-in"><span></span></span>
@@ -285,8 +293,8 @@ $$\log_{10}(\alpha) = \log(\alpha) / \log(10).$$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error t value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta0      -293.94893  160.41399  -1.832</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Std. Error z value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> beta0      -293.94893  160.41398  -1.832</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta1       104.07743   61.07262   1.704</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> log_q0        1.87220    0.12435  15.056</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> log_k         1.83359    0.56794   3.228</span>
@@ -304,7 +312,7 @@ $$\log_{10}(\alpha) = \log(\alpha) / \log(10).$$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          Estimate Std. Error</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha      0.0176     0.0115</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> k          6.2563     3.5532</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> var_a  17607.7218 47451.7806</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> var_a  17607.7199 47451.7741</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> var_b      0.1488     0.0682</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> var_c      0.2050     0.0977</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> cov_ab     9.2703     7.6244</span>

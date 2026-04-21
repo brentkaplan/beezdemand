@@ -30,12 +30,12 @@ Behavior Science*, **42**(1), 163–180.
     }
 
 Kaplan B (2026). *beezdemand: Behavioral Economic Easy Demand*. R
-package version 0.2.0.9000, <https://brentkaplan.github.io/beezdemand/>.
+package version 0.3.0, <https://brentkaplan.github.io/beezdemand/>.
 
     @Manual{,
       title = {beezdemand: Behavioral Economic Easy Demand},
       author = {Brent Kaplan},
       year = {2026},
-      note = {R package version 0.2.0.9000},
+      note = {R package version 0.3.0},
       url = {https://brentkaplan.github.io/beezdemand/},
     }

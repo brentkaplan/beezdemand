@@ -28,9 +28,25 @@ ll4_inv(y, lambda = 4, base = 10)
 
 ## Value
 
-A numeric vector or scalar of the original, untransformed values. May
-return `NaN` if `(base^(y * lambda) - 1)` is negative and `1/lambda`
-implies an even root (e.g., if `lambda` is 2 or 4).
+A numeric vector or scalar of the original, untransformed values.
+Returns `0` when the intermediate quantity `base^(y * lambda) - 1` is
+negative (i.e., when `y < 0` for `base = 10` and even `lambda`), since
+consumption cannot be negative.
+
+## Details
+
+**Domain and boundary behavior.** The inverse LL4 transformation is
+defined for `y >= 0` (when `base = 10` and `lambda = 4`). For `y < 0`,
+the intermediate quantity `base^(y * lambda) - 1` becomes negative, and
+raising a negative number to the fractional power `1/lambda` is
+undefined in real arithmetic. In this case, the function returns `0`
+(consumption cannot be negative).
+
+This boundary condition arises in practice when a model predicts fitted
+values below zero on the LL4 scale — typically for extrapolation to very
+high prices. The mapping to zero is the natural floor because
+`ll4(0) = 0` and the LL4 transformation is monotonically increasing on
+`[0, Inf)`.
 
 ## Examples
 
@@ -48,10 +64,7 @@ print(data.frame(original_values, transformed_values, back_transformed_values))
 all.equal(original_values, back_transformed_values) # Should be TRUE or very close
 #> [1] TRUE
 
-# Example with negative y (log-transformed value)
-# If y_ll4 = -0.5 (meaning original value was between 0 and 1 for log10)
-ll4_inv(-0.5, lambda = 4, base = 10) # (10^(-0.5*4) - 1)^(1/4) = (0.01 - 1)^(1/4) -> NaN
-#> [1] NaN
-# The ll4_inv function as provided will return NaN here.
-# A more robust version for demand might floor at 0 if NaN occurs.
+# Negative y values are mapped to 0 (consumption floor)
+ll4_inv(-0.5, lambda = 4, base = 10) # Returns 0
+#> [1] 0
 ```

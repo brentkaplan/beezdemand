@@ -11,7 +11,7 @@ visualization with the tidyverse."><meta property="og:image" content="https://br
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ visualization with the tidyverse."><meta property="og:image" content="https://br
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -68,7 +69,7 @@ visualization with the tidyverse.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_hurdle'</span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, component <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"combined"</span>, <span class="st">"continuous"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -82,6 +83,25 @@ visualization with the tidyverse.</p>
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p>Optional data frame of new data for prediction. If NULL,
 uses the original data from the model.</p></dd>
+
+
+<dt id="arg-component">component<a class="anchor" aria-label="anchor" href="#arg-component"></a></dt>
+<dd><p>Character. Which residuals to compute:</p><dl><dt><code>"combined"</code></dt>
+<dd><p>(Default) Randomized quantile residuals (Dunn &amp;
+Smyth, 1996) that assess both the binary and continuous components
+simultaneously. If the model is correctly specified, these are exactly
+N(0,1).</p></dd>
+
+<dt><code>"continuous"</code></dt>
+<dd><p>Log-scale residuals <code>log(y) - mu</code> for positive
+observations only (zeros are NA). Assesses Part II specification.</p></dd>
+
+<dt><code>"binary"</code></dt>
+<dd><p>Not returned as residuals; use the <code>.fitted_prob</code>
+column and observed binary indicators for calibration diagnostics.</p></dd>
+
+
+</dl></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -100,7 +120,7 @@ uses the original data from the model.</p></dd>
 <dd><p>Predicted probability of consumption (1 - P(zero))</p></dd>
 
 <dt>.resid</dt>
-<dd><p>Residuals on log scale for positive observations, NA for zeros</p></dd>
+<dd><p>Residuals (type depends on <code>component</code>; see above)</p></dd>
 
 <dt>.resid_response</dt>
 <dd><p>Residuals on response scale (y - .fitted)</p></dd>
@@ -109,12 +129,26 @@ uses the original data from the model.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>For two-part hurdle models:</p><ul><li><p><code>.fitted</code> gives predicted demand on the natural consumption scale</p></li>
-<li><p><code>.fitted_prob</code> gives the predicted probability of positive consumption</p></li>
-<li><p><code>.resid</code> is defined only for positive observations as log(y) - .fitted_link</p></li>
-<li><p>Observations with zero consumption have <code>.resid = NA</code> since they are
-explained by Part I (the zero-probability component), not Part II</p></li>
+
+<div class="section">
+<h3 id="residual-types-for-hurdle-models">Residual types for hurdle models<a class="anchor" aria-label="anchor" href="#residual-types-for-hurdle-models"></a></h3>
+
+
+<p>The hurdle model has two components, each requiring different diagnostic
+approaches:</p><ul><li><p><strong>Continuous residuals</strong> (<code>component = "continuous"</code>): Standard log-scale
+residuals <code>log(y) - mu</code> for observations where y &gt; 0. Zeros are excluded
+(NA). Assesses whether the lognormal conditional distribution is well-
+specified.</p></li>
+<li><p><strong>Randomized quantile residuals</strong> (<code>component = "combined"</code>, default):
+Following Dunn &amp; Smyth (1996), maps each observation through the fitted
+hurdle CDF and then the standard normal quantile function. If the model is
+correctly specified, these residuals are exactly N(0,1) regardless of which
+component generated the observation. For zeros, a uniform random variate
+within <code>[0, P(zero)]</code> breaks ties that would otherwise create a spike in
+the QQ plot.</p></li>
 </ul></div>
+
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -139,8 +173,6 @@ explained by Part I (the zero-probability component), not Part II</p></li>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">augmented</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">.fitted</span>, y <span class="op">=</span> <span class="va">.resid</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 14 rows containing missing values or values outside the scale range</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> (`geom_point()`).</span>
 <span class="r-plt img"><img src="augment.beezdemand_hurdle-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

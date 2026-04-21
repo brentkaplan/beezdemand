@@ -11,7 +11,7 @@ nlme fit if successful."><meta property="og:image" content="https://brentkaplan.
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ nlme fit if successful."><meta property="og:image" content="https://brentkaplan.
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -117,7 +118,7 @@ displaying the call, model specifications, and key results from the
 <span class="r-out co"><span class="r-pr">#&gt;</span> Equation Form Selected:  zben </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NLME Model Formula:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x5614cec20388&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55cc08ab28a0&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: None</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ID Variable for Random Effects:  monkey </span>
@@ -139,8 +140,8 @@ displaying the call, model specifications, and key results from the
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Formula: list(Q0 ~ 1, alpha ~ 1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Level: monkey</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure: Diagonal</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   Q0      alpha  Residual</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> StdDev: 8.924541e-06 5.4422e-06 0.2933331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   Q0        alpha  Residual</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> StdDev: 8.922439e-06 5.443637e-06 0.2933331</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of Observations: 135</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Number of Groups: 3 </span>

@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -88,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-03-04</h4>
+            <h4 data-toc-skip class="date">2026-04-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/model-selection.Rmd" class="external-link"><code>vignettes/model-selection.Rmd</code></a></small>
       <div class="d-none name"><code>model-selection.Rmd</code></div>
@@ -133,16 +134,21 @@ expenditure)</p>
 <td><code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code></td>
 </tr>
 <tr class="even">
-<td>Group comparisons, repeated measures</td>
-<td>Mixed-effects</td>
-<td><code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
+<td>Group comparisons, modern backend</td>
+<td>TMB mixed-effects</td>
+<td><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code></td>
 </tr>
 <tr class="odd">
+<td>Group comparisons, legacy pipeline</td>
+<td>NLME mixed-effects</td>
+<td><code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
+</tr>
+<tr class="even">
 <td>Many zeros, two-part modeling</td>
 <td>Hurdle model</td>
 <td><code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Cross-commodity substitution</td>
 <td>Cross-price models</td>
 <td><code>fit_cp_*()</code></td>
@@ -199,7 +205,45 @@ consumption</li>
 <strong>Reversals</strong>: No consumption after sustained
 zeros</li>
 </ul>
+<div class="section level4">
+<h4 id="grouped-checks-with-by">Grouped Checks with <code>by</code><a class="anchor" aria-label="anchor" href="#grouped-checks-with-by"></a>
+</h4>
+<p>When your data includes grouping variables (gender, condition, etc.),
+use <code>by</code> to run checks and summaries within each group:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Systematicity check by gender</span></span>
+<span><span class="va">sys_by_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_systematic_demand.html">check_systematic_demand</a></span><span class="op">(</span><span class="va">apt_full</span>, by <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="va">sys_by_gender</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Systematicity Check (demand)</span></span>
+<span><span class="co">#&gt; ------------------------------ </span></span>
+<span><span class="co">#&gt; Grouped by: gender </span></span>
+<span><span class="co">#&gt; Total patterns: 1100 </span></span>
+<span><span class="co">#&gt; Systematic: 946 ( 86 %)</span></span>
+<span><span class="co">#&gt; Unsystematic: 154 ( 14 %)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Use summary() for details, tidy() for per-subject results.</span></span>
+<span></span>
+<span><span class="co"># Descriptive summary by gender</span></span>
+<span><span class="va">desc_by_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_descriptive_summary.html">get_descriptive_summary</a></span><span class="op">(</span><span class="va">apt_full</span>, by <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="va">desc_by_gender</span><span class="op">$</span><span class="va">statistics</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
+<span><span class="co">#&gt;   gender Price  Mean Median    SD PropZeros   NAs   Min   Max</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Female 0      5.08      5  4.11      0.09     0     0    50</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Female 0.25   4.77      4  3.97      0.15     0     0    40</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Female 0.5    4.59      4  3.77      0.16     0     0    30</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Female 1      4.41      4  3.58      0.16     0     0    20</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Female 1.5    4.14      4  3.41      0.2      0     0    20</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Female 2      3.86      4  3.09      0.2      0     0    20</span></span></code></pre></div>
+<p>The <code>by</code> parameter also works with
+<code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> — see
+<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code> for a full grouped analysis
+example.</p>
 <hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="tier-1-fixed-effects-nls">Tier 1: Fixed-Effects NLS<a class="anchor" aria-label="anchor" href="#tier-1-fixed-effects-nls"></a>
@@ -218,7 +262,7 @@ zeros</li>
 <div class="section level3">
 <h3 id="complete-example">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example"></a>
 </h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit individual demand curves using the Hursh &amp; Silberberg equation</span></span>
 <span><span class="va">fit_fixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
@@ -261,7 +305,7 @@ zeros</li>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot individual curves</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_fixed</span>, type <span class="op">=</span> <span class="st">"individual"</span>, ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"19"</span>, <span class="st">"51"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -269,7 +313,7 @@ zeros</li>
 Individual demand curves for two example participants.
 </p>
 </div>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Basic diagnostics</span></span>
 <span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -312,7 +356,7 @@ Individual demand curves for two example participants.
 <p>For the mixed-effects approach with the <code>zben</code> equation
 form, transform your consumption data using the LL4 (log-log with
 4-parameter adjustment):</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Transform consumption using LL4</span></span>
 <span><span class="va">apt_ll4</span> <span class="op">&lt;-</span> <span class="va">apt</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>y_ll4 <span class="op">=</span> <span class="fu"><a href="../reference/ll4.html">ll4</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
@@ -325,7 +369,7 @@ form, transform your consumption data using the LL4 (log-log with
 <div class="section level3">
 <h3 id="complete-example-1">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-1"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit mixed-effects model</span></span>
 <span><span class="va">fit_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt_ll4</span>,</span>
@@ -348,7 +392,7 @@ form, transform your consumption data using the LL4 (log-log with
 </h3>
 <p>For experimental designs with factors, you can use
 <code>emmeans</code> for post-hoc comparisons:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For a model with factors (example with ko dataset):</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ko</span><span class="op">)</span></span>
 <span></span>
@@ -376,10 +420,117 @@ form, transform your consumption data using the LL4 (log-log with
 </div>
 </div>
 <div class="section level2">
-<h2 id="tier-3-hurdle-models">Tier 3: Hurdle Models<a class="anchor" aria-label="anchor" href="#tier-3-hurdle-models"></a>
+<h2 id="tier-2b-tmb-mixed-effects-models">Tier 2b: TMB Mixed-Effects Models<a class="anchor" aria-label="anchor" href="#tier-2b-tmb-mixed-effects-models"></a>
 </h2>
 <div class="section level3">
 <h3 id="when-to-use-2">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-2"></a>
+</h3>
+<p>Use <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> when you want:</p>
+<ul>
+<li>Group comparisons with modern estimation (automatic
+differentiation)</li>
+<li>More equation choices than <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code>
+(exponential, exponentiated, simplified, zben)</li>
+<li>Estimated or fixed k parameter</li>
+<li>Robust convergence via multi-start optimization and Laplace
+approximation</li>
+<li>The preferred approach for new mixed-effects analyses</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="advantages-over-nlme">Advantages Over NLME<a class="anchor" aria-label="anchor" href="#advantages-over-nlme"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="18%">
+<col width="38%">
+<col width="42%">
+</colgroup>
+<thead><tr class="header">
+<th>Feature</th>
+<th><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code></th>
+<th><code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Backend</td>
+<td>TMB (C++, automatic differentiation)</td>
+<td>nlme (R, numerical gradients)</td>
+</tr>
+<tr class="even">
+<td>Equations</td>
+<td>exponential, exponentiated, simplified, zben</td>
+<td>zben, simplified, exponentiated</td>
+</tr>
+<tr class="odd">
+<td>k parameter</td>
+<td>Estimated or fixed</td>
+<td>Not available</td>
+</tr>
+<tr class="even">
+<td>Convergence</td>
+<td>Robust (AD + Laplace + multi-start)</td>
+<td>Can struggle with nonlinear equations</td>
+</tr>
+<tr class="odd">
+<td>Speed</td>
+<td>Fast (compiled C++)</td>
+<td>Variable</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="complete-example-2">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-2"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Fit TMB mixed-effects model</span></span>
+<span><span class="va">fit_tmb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
+<span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
+<span>  x_var <span class="op">=</span> <span class="st">"x"</span>,</span>
+<span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  equation <span class="op">=</span> <span class="st">"exponential"</span>,</span>
+<span>  random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"q0"</span>, <span class="st">"alpha"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Summary and plot</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_tmb</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_tmb</span>, type <span class="op">=</span> <span class="st">"demand"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Subject-level parameters</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_tmb</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="group-comparisons-with-tmb">Group Comparisons with TMB<a class="anchor" aria-label="anchor" href="#group-comparisons-with-tmb"></a>
+</h3>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span>
+<span><span class="va">dat_mf</span> <span class="op">&lt;-</span> <span class="va">apt_full</span><span class="op">[</span><span class="va">apt_full</span><span class="op">$</span><span class="va">gender</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Male"</span>, <span class="st">"Female"</span><span class="op">)</span>, <span class="op">]</span></span>
+<span></span>
+<span><span class="va">fit_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
+<span>  <span class="va">dat_mf</span>,</span>
+<span>  y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  equation <span class="op">=</span> <span class="st">"exponential"</span>,</span>
+<span>  factors <span class="op">=</span> <span class="st">"gender"</span>,</span>
+<span>  random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"q0"</span>, <span class="st">"alpha"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Estimated marginal means</span></span>
+<span><span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Pairwise comparisons</span></span>
+<span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span></code></pre></div>
+<p>For comprehensive TMB documentation, see
+<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code>.</p>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="tier-3-hurdle-models">Tier 3: Hurdle Models<a class="anchor" aria-label="anchor" href="#tier-3-hurdle-models"></a>
+</h2>
+<div class="section level3">
+<h3 id="when-to-use-3">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-3"></a>
 </h3>
 <p>Use <code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code> when you have:</p>
 <ul>
@@ -403,9 +554,9 @@ regression)</li>
 </ol>
 </div>
 <div class="section level3">
-<h3 id="complete-example-2">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-2"></a>
+<h3 id="complete-example-3">Complete Example<a class="anchor" aria-label="anchor" href="#complete-example-3"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit hurdle model with 3 random effects</span></span>
 <span><span class="va">fit_hurdle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
@@ -433,7 +584,7 @@ regression)</li>
 <h3 id="comparing-hurdle-models">Comparing Hurdle Models<a class="anchor" aria-label="anchor" href="#comparing-hurdle-models"></a>
 </h3>
 <p>Compare nested models using likelihood ratio tests:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit full model (3 random effects)</span></span>
 <span><span class="va">fit_hurdle3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">apt</span>,</span>
@@ -479,32 +630,55 @@ zero handling, and comparability across studies.</p>
 <th>Function</th>
 <th align="center">Handles Zeros</th>
 <th align="center">k Required</th>
-<th>Best For</th>
+<th>Available In</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>"hs"</code></td>
+<td>
+<code>"hs"</code> / <code>"exponential"</code>
+</td>
 <td>Hursh &amp; Silberberg (2008)</td>
 <td align="center">No</td>
 <td align="center">Yes</td>
-<td>Traditional analyses, compatibility with older literature</td>
+<td>Fixed, TMB, Hurdle</td>
 </tr>
 <tr class="even">
-<td><code>"koff"</code></td>
+<td>
+<code>"koff"</code> / <code>"exponentiated"</code>
+</td>
 <td>Koffarnus et al. (2015)</td>
 <td align="center">No</td>
 <td align="center">Yes</td>
-<td>Modified exponential, widely used in applied research</td>
+<td>Fixed, NLME, TMB</td>
 </tr>
 <tr class="odd">
+<td><code>"zben"</code></td>
+<td>Zero-bounded exponential</td>
+<td align="center">Yes (via LL4)</td>
+<td align="center">No</td>
+<td>NLME, TMB</td>
+</tr>
+<tr class="even">
 <td><code>"simplified"</code></td>
 <td>Rzeszutek et al. (2025)</td>
 <td align="center">Yes</td>
 <td align="center">No</td>
-<td>Modern analyses; avoids k-dependency and zero issues</td>
+<td>Fixed, NLME, TMB, Hurdle</td>
+</tr>
+<tr class="odd">
+<td><code>"zhao_exponential"</code></td>
+<td>Zhao et al.</td>
+<td align="center">No</td>
+<td align="center">Yes</td>
+<td>Hurdle (default)</td>
 </tr>
 </tbody>
 </table>
+<p>Note: <code>"exponential"</code> and <code>"hs"</code> refer to the
+same equation; <code>"exponentiated"</code> and <code>"koff"</code> are
+also equivalent. The modern names are used by
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> and <code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code>; the
+legacy names by <code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>.</p>
 <p><strong>Recommendations:</strong></p>
 <ul>
 <li>For <strong>new analyses</strong>, consider using
@@ -542,7 +716,7 @@ parameter</li>
 <strong><code>k = "share"</code></strong>: Fit a single k shared
 across all participants</li>
 </ul>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Different k specifications</span></span>
 <span><span class="va">fit_k2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>          <span class="co"># Fixed at 2</span></span>
 <span><span class="va">fit_kind</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, k <span class="op">=</span> <span class="st">"ind"</span><span class="op">)</span>    <span class="co"># Individual</span></span>
@@ -662,12 +836,18 @@ output</li>
 <td>Excludes</td>
 </tr>
 <tr class="even">
-<td><code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
-<td>Group comparisons, repeated measures</td>
-<td>Random effects, emmeans integration</td>
-<td>LL4 transform</td>
+<td><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code></td>
+<td>Group comparisons (new work)</td>
+<td>TMB backend, AD, multi-start, 4 equations</td>
+<td>Depends on equation</td>
 </tr>
 <tr class="odd">
+<td><code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
+<td>Group comparisons (legacy)</td>
+<td>nlme backend, emmeans integration</td>
+<td>LL4 transform</td>
+</tr>
+<tr class="even">
 <td><code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code></td>
 <td>Data with many zeros</td>
 <td>Two-part model, TMB backend</td>
@@ -691,8 +871,13 @@ fitting</li>
 <code><a href="../articles/group-comparisons.html">vignette("group-comparisons")</a></code> for extra sum-of-squares
 F-test</li>
 <li>
-<strong>Mixed Models</strong>: See
-<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code> for mixed-effects examples</li>
+<strong>TMB Mixed-Effects</strong>: See
+<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code> for modern TMB-based mixed
+models</li>
+<li>
+<strong>NLME Mixed Models</strong>: See
+<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code> for NLME-based mixed-effects
+examples</li>
 <li>
 <strong>Advanced Mixed Models</strong>: See
 <code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code> for factors, EMMs,
@@ -705,6 +890,10 @@ details</li>
 <strong>Cross-Price</strong>: See
 <code><a href="../articles/cross-price-models.html">vignette("cross-price-models")</a></code> for substitution
 analyses</li>
+<li>
+<strong>Convergence</strong>: See
+<code><a href="../articles/convergence-guide.html">vignette("convergence-guide")</a></code> for convergence
+troubleshooting</li>
 <li>
 <strong>Migration Guide</strong>: See
 <code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code> for migrating from
@@ -732,6 +921,9 @@ and Clinical Psychopharmacology, 23</em>(5), 377-386.</li>
 Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
 economic demand: An introduction. <em>Perspectives on Behavior Science,
 44</em>(2), 333-358.</li>
+<li>Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., &amp; Bell, B.
+M. (2016). TMB: Automatic differentiation and Laplace approximation.
+<em>Journal of Statistical Software, 70</em>(5), 1-21.</li>
 <li>Rzeszutek, M. J., Regnier, S. D., Franck, C. T., &amp; Koffarnus, M.
 N. (2025). Overviewing the exponential model of demand and introducing a
 simplification that solves issues of span, scale, and zeros.

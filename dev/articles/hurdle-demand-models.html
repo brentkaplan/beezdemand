@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -88,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-03-04</h4>
+            <h4 data-toc-skip class="date">2026-04-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/hurdle-demand-models.Rmd" class="external-link"><code>vignettes/hurdle-demand-models.Rmd</code></a></small>
       <div class="d-none name"><code>hurdle-demand-models.Rmd</code></div>
@@ -346,25 +347,25 @@ for:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed Effects:</span></span>
 <span><span class="co">#&gt; --------------</span></span>
-<span><span class="co">#&gt;              Estimate Std. Error t value</span></span>
-<span><span class="co">#&gt; beta0      -392.08424  146.77064  -2.671</span></span>
-<span><span class="co">#&gt; beta1       135.79403   50.43489   2.692</span></span>
+<span><span class="co">#&gt;              Estimate Std. Error z value</span></span>
+<span><span class="co">#&gt; beta0      -392.08389  146.77189  -2.671</span></span>
+<span><span class="co">#&gt; beta1       135.79393   50.43534   2.692</span></span>
 <span><span class="co">#&gt; log_q0        1.93813    0.11712  16.548</span></span>
 <span><span class="co">#&gt; log_k         0.55505    0.09013   6.158</span></span>
 <span><span class="co">#&gt; log_alpha    -2.31478    0.16822 -13.760</span></span>
-<span><span class="co">#&gt; logsigma_a    5.76791    1.48287   3.890</span></span>
-<span><span class="co">#&gt; logsigma_b   -1.04114    0.22836  -4.559</span></span>
+<span><span class="co">#&gt; logsigma_a    5.76791    1.48290   3.890</span></span>
+<span><span class="co">#&gt; logsigma_b   -1.04114    0.22837  -4.559</span></span>
 <span><span class="co">#&gt; logsigma_e   -1.63184    0.06063 -26.914</span></span>
-<span><span class="co">#&gt; rho_ab_raw   -0.19191    0.23754  -0.808</span></span>
+<span><span class="co">#&gt; rho_ab_raw   -0.19191    0.23755  -0.808</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variance Components:</span></span>
 <span><span class="co">#&gt; --------------------</span></span>
 <span><span class="co">#&gt;           Estimate  Std. Error</span></span>
 <span><span class="co">#&gt; alpha       0.0988      0.0166</span></span>
 <span><span class="co">#&gt; k           1.7420      0.1570</span></span>
-<span><span class="co">#&gt; var_a  102316.4496 303443.2535</span></span>
+<span><span class="co">#&gt; var_a  102315.9811 303448.4197</span></span>
 <span><span class="co">#&gt; var_b       0.1246      0.0569</span></span>
-<span><span class="co">#&gt; cov_ab    -21.4106     12.6866</span></span>
+<span><span class="co">#&gt; cov_ab    -21.4106     12.6867</span></span>
 <span><span class="co">#&gt; var_e       0.0382      0.0046</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Correlations:</span></span>
@@ -407,9 +408,9 @@ for:</p>
 <span><span class="co"># Extract coefficients</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         beta0         beta1    logsigma_a    logsigma_b    logsigma_e </span></span>
-<span><span class="co">#&gt; -392.08424414  135.79402761    5.76791287   -1.04113716   -1.63183781 </span></span>
+<span><span class="co">#&gt; -392.08388527  135.79392969    5.76791058   -1.04113709   -1.63183780 </span></span>
 <span><span class="co">#&gt;    rho_ab_raw            Q0         alpha             k </span></span>
-<span><span class="co">#&gt;   -0.19191230    6.94572447    0.09878809    1.74202549</span></span>
+<span><span class="co">#&gt;   -0.19191270    6.94572117    0.09878808    1.74202555</span></span>
 <span></span>
 <span><span class="co"># Standardized tidy summaries</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -427,18 +428,25 @@ for:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
 <span><span class="co">#&gt;   model_class   backend  nobs n_subjects n_random_effects converged logLik   AIC</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_h… TMB       160         10                2 TRUE        2.31  13.4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beezdemand_h… TMB_hu…   160         10                2 TRUE        2.31  13.4</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: BIC &lt;dbl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Get subject-specific parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    id       a_i        b_i        Q0      alpha breakpoint Pmax     Omax</span></span>
-<span><span class="co">#&gt; 1  19 -88.44328  0.5148913 11.623368 0.09878809  34.419417   20 51.84539</span></span>
-<span><span class="co">#&gt; 2  30 -21.33116 -0.6512299  3.621529 0.09878809  20.997058   20 16.15363</span></span>
-<span><span class="co">#&gt; 3  38  40.35748 -0.2348862  5.491712 0.09878809  13.330758   20 24.49548</span></span>
-<span><span class="co">#&gt; 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504   20 36.58857</span></span>
-<span><span class="co">#&gt; 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495   20 47.28877</span></span>
-<span><span class="co">#&gt; 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564   20 24.57311</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  19 -88.44332  0.5148917 11.623368 0.09878808  34.419425   20 51.84539</span></span>
+<span><span class="co">#&gt; 2  30 -21.33122 -0.6512294  3.621529 0.09878808  20.997058   20 16.15363</span></span>
+<span><span class="co">#&gt; 3  38  40.35739 -0.2348858  5.491712 0.09878808  13.330756   20 24.49548</span></span>
+<span><span class="co">#&gt; 4  60  31.73711  0.1663618  8.202899 0.09878808  14.204504   20 36.58857</span></span>
+<span><span class="co">#&gt; 5  68  31.19341  0.4228985 10.601806 0.09878808  14.261494   20 47.28877</span></span>
+<span><span class="co">#&gt; 6 106 116.82448 -0.2317217  5.509116 0.09878808   7.590564   20 24.57311</span></span>
+<span><span class="co">#&gt;   Pmax_unconditional Omax_unconditional</span></span>
+<span><span class="co">#&gt; 1          19.999999           51.84539</span></span>
+<span><span class="co">#&gt; 2          19.999999           16.13182</span></span>
+<span><span class="co">#&gt; 3          12.765576           20.06101</span></span>
+<span><span class="co">#&gt; 4          13.605392           30.70281</span></span>
+<span><span class="co">#&gt; 5          13.660199           39.74372</span></span>
+<span><span class="co">#&gt; 6           7.270465           16.35863</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -459,9 +467,9 @@ quick post-fit checks.</p>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residuals:</span></span>
-<span><span class="co">#&gt;   Mean: 5.392e-05</span></span>
-<span><span class="co">#&gt;   SD: 0.1896</span></span>
-<span><span class="co">#&gt;   Range: [-0.6119, 0.4986]</span></span>
+<span><span class="co">#&gt;   Mean: -0.0308</span></span>
+<span><span class="co">#&gt;   SD: 0.9809</span></span>
+<span><span class="co">#&gt;   Range: [-3.129, 2.549]</span></span>
 <span><span class="co">#&gt;   Outliers: 2 observations</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --------------------------------------------------</span></span>
@@ -470,11 +478,10 @@ quick post-fit checks.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Recommendations:</span></span>
 <span><span class="co">#&gt;   - Investigate outlying observations</span></span>
-<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span>
+<span><span class="co">#&gt; NULL</span></span>
+<span><span class="fu"><a href="../reference/plot_qq.html">plot_qq</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="hurdle-demand-models_files/figure-html/diagnostics-1.png" class="r-plt" alt="" width="1008"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_qq.html">plot_qq</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="hurdle-demand-models_files/figure-html/diagnostics-2.png" class="r-plt" alt="" width="1008"></p>
 </div>
 <div class="section level2">
 <h2 id="understanding-results">Understanding Results<a class="anchor" aria-label="anchor" href="#understanding-results"></a>
@@ -590,7 +597,7 @@ meaningfully between subjects</li>
 <div class="section level3">
 <h3 id="likelihood-ratio-test">Likelihood Ratio Test<a class="anchor" aria-label="anchor" href="#likelihood-ratio-test"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Compare nested models</span></span>
 <span><span class="fu"><a href="../reference/compare_hurdle_models.html">compare_hurdle_models</a></span><span class="op">(</span><span class="va">fit3</span>, <span class="va">fit2</span><span class="op">)</span></span>
 <span></span>
@@ -614,7 +621,7 @@ fit.</p>
 <div class="section level2">
 <h2 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Population demand curve</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"demand"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -622,7 +629,7 @@ fit.</p>
 Population demand curve from 2-RE hurdle model.
 </p>
 </div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Probability of zero consumption</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"probability"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -630,7 +637,7 @@ Population demand curve from 2-RE hurdle model.
 Probability of zero consumption as a function of price.
 </p>
 </div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Distribution of individual parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit2</span>, type <span class="op">=</span> <span class="st">"parameters"</span>, parameters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q0"</span>, <span class="st">"alpha"</span>, <span class="st">"Pmax"</span><span class="op">)</span><span class="op">)</span></span>
@@ -649,7 +656,7 @@ Probability of zero consumption as a function of price.
 </h3>
 <p>The <code><a href="../reference/simulate_hurdle_data.html">simulate_hurdle_data()</a></code> function generates data from
 the hurdle model:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulate with default parameters</span></span>
 <span><span class="va">sim_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simulate_hurdle_data.html">simulate_hurdle_data</a></span><span class="op">(</span></span>
 <span>    n_subjects <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -680,7 +687,7 @@ performance through simulation.</p>
 <p><strong>Note</strong>: Monte Carlo simulations are computationally
 intensive and not run during vignette building. The example below shows
 typical usage and expected output format.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run Monte Carlo study</span></span>
 <span><span class="va">mc_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_hurdle_monte_carlo.html">run_hurdle_monte_carlo</a></span><span class="op">(</span></span>
 <span>    n_sim <span class="op">=</span> <span class="fl">100</span>, <span class="co"># Number of simulations</span></span>
@@ -746,7 +753,7 @@ typical usage and expected output format.</p>
 <div class="section level3">
 <h3 id="combining-with-other-analyses">Combining with Other Analyses<a class="anchor" aria-label="anchor" href="#combining-with-other-analyses"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit hurdle model</span></span>
 <span><span class="va">hurdle_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">data</span>,</span>
 <span>    y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
@@ -764,7 +771,7 @@ typical usage and expected output format.</p>
 <div class="section level3">
 <h3 id="exporting-results">Exporting Results<a class="anchor" aria-label="anchor" href="#exporting-results"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Subject parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">hurdle_fit</span><span class="op">)</span>, <span class="st">"hurdle_subject_parameters.csv"</span><span class="op">)</span></span>
 <span></span>
@@ -790,7 +797,7 @@ which provides:</p>
 <div class="section level3">
 <h3 id="control-parameters">Control Parameters<a class="anchor" aria-label="anchor" href="#control-parameters"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>    <span class="va">data</span>,</span>
 <span>    y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -809,7 +816,7 @@ which provides:</p>
 <h3 id="custom-starting-values">Custom Starting Values<a class="anchor" aria-label="anchor" href="#custom-starting-values"></a>
 </h3>
 <p>For difficult optimization problems:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">custom_starts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    beta0 <span class="op">=</span> <span class="op">-</span><span class="fl">3.0</span>,</span>
 <span>    beta1 <span class="op">=</span> <span class="fl">1.5</span>,</span>
@@ -856,6 +863,9 @@ demand models</li>
 <li>
 <code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code> – Advanced
 mixed-effects topics</li>
+<li>
+<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code> – TMB mixed-effects
+demand models (continuous-only)</li>
 <li>
 <code><a href="../articles/cross-price-models.html">vignette("cross-price-models")</a></code> – Cross-price demand
 analysis</li>

@@ -8,7 +8,7 @@ visualization with the tidyverse.
 
 ``` r
 # S3 method for class 'beezdemand_hurdle'
-augment(x, newdata = NULL, ...)
+augment(x, newdata = NULL, component = c("combined", "continuous"), ...)
 ```
 
 ## Arguments
@@ -21,6 +21,26 @@ augment(x, newdata = NULL, ...)
 
   Optional data frame of new data for prediction. If NULL, uses the
   original data from the model.
+
+- component:
+
+  Character. Which residuals to compute:
+
+  `"combined"`
+
+  :   (Default) Randomized quantile residuals (Dunn & Smyth, 1996) that
+      assess both the binary and continuous components simultaneously.
+      If the model is correctly specified, these are exactly N(0,1).
+
+  `"continuous"`
+
+  :   Log-scale residuals `log(y) - mu` for positive observations only
+      (zeros are NA). Assesses Part II specification.
+
+  `"binary"`
+
+  :   Not returned as residuals; use the `.fitted_prob` column and
+      observed binary indicators for calibration diagnostics.
 
 - ...:
 
@@ -44,7 +64,7 @@ A tibble containing the original data plus:
 
 - .resid:
 
-  Residuals on log scale for positive observations, NA for zeros
+  Residuals (type depends on `component`; see above)
 
 - .resid_response:
 
@@ -52,17 +72,23 @@ A tibble containing the original data plus:
 
 ## Details
 
-For two-part hurdle models:
+### Residual types for hurdle models
 
-- `.fitted` gives predicted demand on the natural consumption scale
+The hurdle model has two components, each requiring different diagnostic
+approaches:
 
-- `.fitted_prob` gives the predicted probability of positive consumption
+- **Continuous residuals** (`component = "continuous"`): Standard
+  log-scale residuals `log(y) - mu` for observations where y \> 0. Zeros
+  are excluded (NA). Assesses whether the lognormal conditional
+  distribution is well- specified.
 
-- `.resid` is defined only for positive observations as log(y) -
-  .fitted_link
-
-- Observations with zero consumption have `.resid = NA` since they are
-  explained by Part I (the zero-probability component), not Part II
+- **Randomized quantile residuals** (`component = "combined"`, default):
+  Following Dunn & Smyth (1996), maps each observation through the
+  fitted hurdle CDF and then the standard normal quantile function. If
+  the model is correctly specified, these residuals are exactly N(0,1)
+  regardless of which component generated the observation. For zeros, a
+  uniform random variate within `[0, P(zero)]` breaks ties that would
+  otherwise create a spike in the QQ plot.
 
 ## Examples
 
@@ -88,8 +114,6 @@ library(ggplot2)
 ggplot(augmented, aes(x = .fitted, y = .resid)) +
   geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed")
-#> Warning: Removed 14 rows containing missing values or values outside the scale range
-#> (`geom_point()`).
 
 # }
 ```

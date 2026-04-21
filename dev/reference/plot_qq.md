@@ -12,14 +12,17 @@ plot_qq(object, which = NULL, ...)
 
 # S3 method for class 'beezdemand_nlme'
 plot_qq(object, which = NULL, ...)
+
+# S3 method for class 'beezdemand_tmb'
+plot_qq(object, which = NULL, ...)
 ```
 
 ## Arguments
 
 - object:
 
-  A fitted model object with random effects (`beezdemand_hurdle` or
-  `beezdemand_nlme`).
+  A fitted model object with random effects (`beezdemand_hurdle`,
+  `beezdemand_nlme`, or `beezdemand_tmb`).
 
 - which:
 
@@ -32,6 +35,17 @@ plot_qq(object, which = NULL, ...)
 ## Value
 
 A ggplot2 object.
+
+## Details
+
+For `beezdemand_tmb` models, Q-Q plots display empirical Bayes
+predictions (BLUPs) of the random effects (`b_i` for Q0, `c_i` for
+alpha). These exhibit shrinkage toward the population mean: subjects
+with fewer observations or higher variability are pulled toward zero.
+Consequently, Q-Q plots may appear more normal than the true random
+effect distribution (Verbeke & Molenberghs, 2000). Useful for detecting
+gross departures (bimodality, heavy tails) but not a definitive
+normality test.
 
 ## Examples
 

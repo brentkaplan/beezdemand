@@ -6,7 +6,12 @@ fitted, scale-location, and histogram of residuals.
 ## Usage
 
 ``` r
-plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
+plot_residuals(
+  object,
+  type = c("all", "fitted", "histogram", "qq"),
+  component = c("combined", "continuous"),
+  ...
+)
 ```
 
 ## Arguments
@@ -27,6 +32,14 @@ plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
 
   - `"all"`: All plots combined (default)
 
+- component:
+
+  Character; for hurdle models, which residuals to plot: `"combined"`
+  (default) uses randomized quantile residuals that assess both binary
+  and continuous components simultaneously; `"continuous"` uses
+  log-scale Part II residuals only (zeros excluded). Ignored for
+  non-hurdle models.
+
 - ...:
 
   Additional arguments passed to plotting functions.
@@ -34,6 +47,13 @@ plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
 ## Value
 
 A ggplot2 object or list of ggplot2 objects.
+
+## Details
+
+For hurdle models, diagnostic plots default to randomized quantile
+residuals that assess both the binary and continuous components
+simultaneously. Set `component = "continuous"` to see only Part II
+(log-scale) residuals.
 
 ## Examples
 
@@ -53,17 +73,7 @@ fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 #>   Computing standard errors...
 #> Done. Log-likelihood: 32.81
 plot_residuals(fit)
-#> $fitted
 #> `geom_smooth()` using formula = 'y ~ x'
 
-#> 
-#> $histogram
-
-#> 
-#> $qq
-
-#> 
-#> attr(,"class")
-#> [1] "beezdemand_diagnostic_plots" "list"                       
 # }
 ```

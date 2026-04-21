@@ -11,7 +11,7 @@ and supports different demand equation forms."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ and supports different demand equation forms."><meta property="og:image" content
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -226,7 +227,43 @@ Ignored if <code>fixed_rhs</code> is provided.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>beezdemand_nlme</code>.</p>
+    <p>An object of class <code>beezdemand_nlme</code> containing:</p><dl><dt>model</dt>
+<dd><p>The fitted <code>nlme</code> model object</p></dd>
+
+<dt>data</dt>
+<dd><p>Data frame used for fitting</p></dd>
+
+<dt>call</dt>
+<dd><p>The original function call</p></dd>
+
+<dt>equation_form</dt>
+<dd><p>Equation form used</p></dd>
+
+<dt>param_space</dt>
+<dd><p>Parameterization space</p></dd>
+
+<dt>factors</dt>
+<dd><p>Factor variables in the model</p></dd>
+
+<dt>y_var, x_var, id_var</dt>
+<dd><p>Variable name strings</p></dd>
+
+<dt>start_values</dt>
+<dd><p>Starting values used</p></dd>
+
+
+</dl></div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code> for TMB-based mixed-effects (preferred for new work),
+<code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code> for individual NLS curves,
+<code><a href="fit_demand_hurdle.html">fit_demand_hurdle()</a></code> for hurdle models,
+<code><a href="get_demand_param_emms.html">get_demand_param_emms()</a></code> for estimated marginal means,
+<code><a href="get_demand_comparisons.html">get_demand_comparisons()</a></code> for pairwise comparisons.</p>
+<p>Other demand-fitting:
+<code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code>,
+<code><a href="fit_demand_hurdle.html">fit_demand_hurdle()</a></code>,
+<code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -262,7 +299,7 @@ Ignored if <code>fixed_rhs</code> is provided.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Equation Form Selected:  zben </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NLME Model Formula:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x5614c36868a0&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55cbfd9daf50&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: None</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ID Variable for Random Effects:  id </span>
@@ -310,8 +347,8 @@ Ignored if <code>fixed_rhs</code> is provided.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           Value Std.Error        DF t-value  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Q0      7.21552   0.91936 149.00000   7.848 4.21e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha   0.01060   0.00182 149.00000   5.827 5.65e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Q0      7.21552   0.91936 149.00000   7.848 7.58e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha   0.01060   0.00182 149.00000   5.827 3.36e-08 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

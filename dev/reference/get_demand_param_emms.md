@@ -9,6 +9,12 @@ Value (EV).
 ## Usage
 
 ``` r
+get_demand_param_emms(fit_obj, ...)
+
+# Default S3 method
+get_demand_param_emms(fit_obj, ...)
+
+# S3 method for class 'beezdemand_nlme'
 get_demand_param_emms(
   fit_obj,
   factors_in_emm = NULL,
@@ -24,6 +30,11 @@ get_demand_param_emms(
 - fit_obj:
 
   A `beezdemand_nlme` object.
+
+- ...:
+
+  Additional arguments passed to
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
 
 - factors_in_emm:
 
@@ -44,11 +55,6 @@ get_demand_param_emms(
   Logical. If TRUE, calculates and includes Essential Value (EV) derived
   from alpha, along with its confidence interval (calculated by
   back-transforming the CI of alpha_param_log10). Default `FALSE`.
-
-- ...:
-
-  Additional arguments passed to
-  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
 
 ## Value
 

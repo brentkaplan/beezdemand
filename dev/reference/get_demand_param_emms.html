@@ -13,7 +13,7 @@ natural, back-transformed scale. Optionally includes Essential Value (EV)."><met
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@ natural, back-transformed scale. Optionally includes Essential Value (EV)."><met
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -70,7 +71,13 @@ natural, back-transformed scale. Optionally includes Essential Value (EV).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_demand_param_emms</span><span class="op">(</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_demand_param_emms</span><span class="op">(</span><span class="va">fit_obj</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Default S3 method</span></span>
+<span><span class="fu">get_demand_param_emms</span><span class="op">(</span><span class="va">fit_obj</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'beezdemand_nlme'</span></span>
+<span><span class="fu">get_demand_param_emms</span><span class="op">(</span></span>
 <span>  <span class="va">fit_obj</span>,</span>
 <span>  factors_in_emm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  at <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -86,6 +93,10 @@ natural, back-transformed scale. Optionally includes Essential Value (EV).</p>
 
 <dl><dt id="arg-fit-obj">fit_obj<a class="anchor" aria-label="anchor" href="#arg-fit-obj"></a></dt>
 <dd><p>A <code>beezdemand_nlme</code> object.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Additional arguments passed to <code><a href="https://rvlenth.github.io/emmeans/reference/emmeans.html" class="external-link">emmeans::emmeans()</a></code>.</p></dd>
 
 
 <dt id="arg-factors-in-emm">factors_in_emm<a class="anchor" aria-label="anchor" href="#arg-factors-in-emm"></a></dt>
@@ -105,10 +116,6 @@ Defaults to all factors present in the <code>fit_obj</code>.</p></dd>
 <dd><p>Logical. If TRUE, calculates and includes Essential Value (EV)
 derived from alpha, along with its confidence interval (calculated by
 back-transforming the CI of alpha_param_log10). Default <code>FALSE</code>.</p></dd>
-
-
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="https://rvlenth.github.io/emmeans/reference/emmeans.html" class="external-link">emmeans::emmeans()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

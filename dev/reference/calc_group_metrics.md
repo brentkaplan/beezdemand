@@ -67,5 +67,27 @@ calc_group_metrics(fit)
 #> $note
 #> NULL
 #> 
+#> $Pmax_unconditional
+#> [1] 11.04851
+#> 
+#> $Omax_unconditional
+#> [1] 23.82811
+#> 
+#> $Qmax_unconditional
+#>   log_q0 
+#> 2.156681 
+#> 
+#> $p_zero_at_pmax
+#> [1] 8.473536e-20
+#> 
+#> $method_unconditional
+#> [1] "numerical_optimize_observed_domain"
+#> 
+#> $is_boundary_unconditional
+#> [1] FALSE
+#> 
+#> $note_unconditional
+#> NULL
+#> 
 # }
 ```

@@ -90,7 +90,7 @@ apt$group[is.na(apt$group)] <- "b"
 ExtraF(apt, "koff", k = 2, groupcol = "group")
 #> Null hypothesis: alpha same for all data sets
 #> Alternative hypothesis: alpha different for each data set
-#> Conclusion: reject the null hypothesis
-#> F(1,156) = 7.4511, p = 0.0071
+#> Conclusion: fail to reject the null hypothesis
+#> F(1,156) = 0.7532, p = 0.3868
 # }
 ```

@@ -130,7 +130,7 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Subjects: 10, Observations: 160
 #>   Fixed parameters: 9, Random effects per subject: 2
 #>   Optimizing...
-#>   Converged in 95 iterations
+#>   Converged in 93 iterations
 #>   Computing standard errors...
 #> Done. Log-likelihood: 2.31
 fit3 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
@@ -152,12 +152,12 @@ compare_models(fit2, fit3)
 #> Model Comparison
 #> ================================================== 
 #> 
-#>    Model             Class Backend nobs df  logLik      AIC     BIC delta_AIC
-#>  Model_1 beezdemand_hurdle     TMB  160  9  2.3093  13.3813 41.0579   55.0104
-#>  Model_2 beezdemand_hurdle     TMB  160 12 32.8145 -41.6291 -4.7270    0.0000
-#>  delta_BIC
-#>    45.7848
-#>     0.0000
+#>    Model             Class    Backend nobs df  logLik      AIC     BIC
+#>  Model_1 beezdemand_hurdle TMB_hurdle  160  9  2.3093  13.3813 41.0579
+#>  Model_2 beezdemand_hurdle TMB_hurdle  160 12 32.8145 -41.6291 -4.7270
+#>  delta_AIC delta_BIC
+#>    55.0104   45.7848
+#>     0.0000    0.0000
 #> 
 #> Best model by BIC: Model_2 
 #> 

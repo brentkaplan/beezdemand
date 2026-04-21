@@ -16,7 +16,8 @@ check_systematic_demand(
   consecutive_zeros = 2,
   x_var = "x",
   y_var = "y",
-  id_var = "id"
+  id_var = "id",
+  by = NULL
 )
 ```
 
@@ -56,6 +57,13 @@ check_systematic_demand(
 - id_var:
 
   Character. Name of the subject identifier column. Default `"id"`.
+
+- by:
+
+  Optional character vector of column names to group by. When supplied,
+  the check is run separately within each unique combination of the `by`
+  columns. Group columns are prepended to `$results`. Default `NULL` (no
+  grouping).
 
 ## Value
 
@@ -200,5 +208,27 @@ tidy(check)
 #> # ℹ 8 more variables: bounce_threshold <dbl>, bounce_direction <chr>,
 #> #   bounce_pass <lgl>, reversals <int>, reversals_pass <lgl>, returns <int>,
 #> #   n_positive <int>, systematic <lgl>
+
+# Grouped check — results include group column
+data(apt_full)
+check_g <- check_systematic_demand(apt_full, by = "gender")
+check_g$results
+#> # A tibble: 1,100 × 16
+#>    gender id    type   trend_stat trend_threshold trend_direction trend_pass
+#>    <chr>  <chr> <chr>       <dbl>           <dbl> <chr>           <lgl>     
+#>  1 Female 475   demand     0.909            0.025 down            TRUE      
+#>  2 Female 476   demand     0.0905           0.025 down            TRUE      
+#>  3 Female 477   demand     0.818            0.025 down            TRUE      
+#>  4 Female 478   demand     0.842            0.025 down            TRUE      
+#>  5 Female 479   demand     0.788            0.025 down            TRUE      
+#>  6 Female 480   demand     0.818            0.025 down            TRUE      
+#>  7 Female 481   demand     0.751            0.025 down            TRUE      
+#>  8 Female 482   demand     0.144            0.025 down            TRUE      
+#>  9 Female 483   demand     0.818            0.025 down            TRUE      
+#> 10 Female 484   demand     0.818            0.025 down            TRUE      
+#> # ℹ 1,090 more rows
+#> # ℹ 9 more variables: bounce_stat <dbl>, bounce_threshold <dbl>,
+#> #   bounce_direction <chr>, bounce_pass <lgl>, reversals <int>,
+#> #   reversals_pass <lgl>, returns <int>, n_positive <int>, systematic <lgl>
 # }
 ```

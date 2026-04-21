@@ -4,6 +4,8 @@
 
 - [Using
   beezdemand](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+- [Understanding Convergence in Demand
+  Models](https://brentkaplan.github.io/beezdemand/articles/convergence-guide.md):
 - [How to Use Cross-Price Demand Model
   Functions](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
 - [Fixed-Effect Demand Modeling with
@@ -20,3 +22,5 @@
   \`beezdemand\`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
 - [Choosing the Right Demand
   Model](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+- [TMB Mixed-Effects Demand
+  Models](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md):

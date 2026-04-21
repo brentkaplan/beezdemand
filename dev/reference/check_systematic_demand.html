@@ -11,7 +11,7 @@ that is consistent with check_systematic_cp()."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ that is consistent with check_systematic_cp()."><meta property="og:image" conten
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -75,7 +76,8 @@ that is consistent with <code><a href="check_systematic_cp.html">check_systemati
 <span>  consecutive_zeros <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  x_var <span class="op">=</span> <span class="st">"x"</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
-<span>  id_var <span class="op">=</span> <span class="st">"id"</span></span>
+<span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -115,6 +117,13 @@ Default <code>2</code> (per Stein et al. 2015).</p></dd>
 
 <dt id="arg-id-var">id_var<a class="anchor" aria-label="anchor" href="#arg-id-var"></a></dt>
 <dd><p>Character. Name of the subject identifier column. Default <code>"id"</code>.</p></dd>
+
+
+<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
+<dd><p>Optional character vector of column names to group by.
+When supplied, the check is run separately within each unique
+combination of the <code>by</code> columns. Group columns are prepended to
+<code>$results</code>. Default <code>NULL</code> (no grouping).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -239,6 +248,28 @@ cross-price systematicity checks:</p><dl><dt>id</dt>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 8 more variables: bounce_threshold &lt;dbl&gt;, bounce_direction &lt;chr&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   bounce_pass &lt;lgl&gt;, reversals &lt;int&gt;, reversals_pass &lt;lgl&gt;, returns &lt;int&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   n_positive &lt;int&gt;, systematic &lt;lgl&gt;</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Grouped check — results include group column</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">check_g</span> <span class="op">&lt;-</span> <span class="fu">check_systematic_demand</span><span class="op">(</span><span class="va">apt_full</span>, by <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">check_g</span><span class="op">$</span><span class="va">results</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1,100 × 16</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    gender id    type   trend_stat trend_threshold trend_direction trend_pass</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Female 475   demand     0.909            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Female 476   demand     0.090<span style="text-decoration: underline;">5</span>           0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Female 477   demand     0.818            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Female 478   demand     0.842            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Female 479   demand     0.788            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Female 480   demand     0.818            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Female 481   demand     0.751            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Female 482   demand     0.144            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Female 483   demand     0.818            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Female 484   demand     0.818            0.025 down            TRUE      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1,090 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 9 more variables: bounce_stat &lt;dbl&gt;, bounce_threshold &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   bounce_direction &lt;chr&gt;, bounce_pass &lt;lgl&gt;, reversals &lt;int&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   reversals_pass &lt;lgl&gt;, returns &lt;int&gt;, n_positive &lt;int&gt;, systematic &lt;lgl&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

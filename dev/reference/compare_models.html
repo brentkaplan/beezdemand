@@ -9,7 +9,7 @@ ratio tests (when applicable). Works with all beezdemand model classes."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,7 @@ ratio tests (when applicable). Works with all beezdemand model classes."><meta p
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -163,7 +164,7 @@ longitudinal mixed effects model. <em>Biometrics</em>, 50(4), 1171-1177.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Fixed parameters: 9, Random effects per subject: 2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 95 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged in 93 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Log-likelihood: 2.31</span>
 <span class="r-in"><span><span class="va">fit3</span> <span class="op">&lt;-</span> <span class="fu"><a href="fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
@@ -185,12 +186,12 @@ longitudinal mixed effects model. <em>Biometrics</em>, 50(4), 1171-1177.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model Comparison</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ================================================== </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Model             Class Backend nobs df  logLik      AIC     BIC delta_AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Model_1 beezdemand_hurdle     TMB  160  9  2.3093  13.3813 41.0579   55.0104</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Model_2 beezdemand_hurdle     TMB  160 12 32.8145 -41.6291 -4.7270    0.0000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  delta_BIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    45.7848</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     0.0000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Model             Class    Backend nobs df  logLik      AIC     BIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Model_1 beezdemand_hurdle TMB_hurdle  160  9  2.3093  13.3813 41.0579</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Model_2 beezdemand_hurdle TMB_hurdle  160 12 32.8145 -41.6291 -4.7270</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  delta_AIC delta_BIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    55.0104   45.7848</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     0.0000    0.0000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Best model by BIC: Model_2 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

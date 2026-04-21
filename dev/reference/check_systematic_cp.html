@@ -9,7 +9,7 @@ vocabulary aligned with check_systematic_demand()."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,7 @@ vocabulary aligned with check_systematic_demand()."><meta property="og:image" co
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -75,7 +76,8 @@ vocabulary aligned with <code><a href="check_systematic_demand.html">check_syste
 <span>  expected_down <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  x_var <span class="op">=</span> <span class="st">"x"</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
-<span>  id_var <span class="op">=</span> <span class="st">"id"</span></span>
+<span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -125,6 +127,13 @@ vocabulary aligned with <code><a href="check_systematic_demand.html">check_syste
 
 <dt id="arg-id-var">id_var<a class="anchor" aria-label="anchor" href="#arg-id-var"></a></dt>
 <dd><p>Character. Name of the subject identifier column. Default <code>"id"</code>.</p></dd>
+
+
+<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
+<dd><p>Optional character vector of column names to group by.
+When supplied, the check is run separately within each unique
+combination of the <code>by</code> columns. Group columns are prepended to
+<code>$results</code>. Default <code>NULL</code> (no grouping).</p></dd>
 
 </dl></div>
     <div class="section level2">

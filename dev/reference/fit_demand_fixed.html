@@ -11,7 +11,7 @@ including summary(), tidy(), and glance()."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ including summary(), tidy(), and glance()."><meta property="og:image" content="h
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -76,6 +77,7 @@ including <code><a href="https://rdrr.io/r/base/summary.html" class="external-li
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  param_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"log10"</span><span class="op">)</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -124,6 +126,14 @@ for individual fits. Default <code>NULL</code>.</p></dd>
 </ul></dd>
 
 
+<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
+<dd><p>Optional character vector of column names to group by.
+When supplied, fits are run separately within each unique
+combination of the <code>by</code> columns. Returns a
+<code>beezdemand_fixed_grouped</code> object with per-group child fits.
+Default <code>NULL</code> (no grouping).</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to the underlying <code><a href="FitCurves.html">FitCurves()</a></code> engine.</p></dd>
 
@@ -170,6 +180,16 @@ for individual fits. Default <code>NULL</code>.</p></dd>
     <p>This function is a modern wrapper around the legacy <code><a href="FitCurves.html">FitCurves()</a></code> function.
 It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code> for TMB mixed-effects models,
+<code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> for NLME mixed-effects models,
+<code><a href="fit_demand_hurdle.html">fit_demand_hurdle()</a></code> for hurdle models.</p>
+<p>Other demand-fitting:
+<code><a href="fit_demand_hurdle.html">fit_demand_hurdle()</a></code>,
+<code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code>,
+<code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -250,6 +270,296 @@ with standardized methods for model interrogation.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   model_class      backend equation k_spec     nobs n_subjects n_success n_fail</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Grouped analysis — fit separately by gender</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit_g</span> <span class="op">&lt;-</span> <span class="fu">fit_demand_fixed</span><span class="op">(</span><span class="va">apt_full</span>, equation <span class="op">=</span> <span class="st">"hs"</span>, k <span class="op">=</span> <span class="fl">2</span>, by <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Data casted as data.frame</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Data casted as data.frame</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   number of iterations exceeded maximum of 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Missing value or an infinity produced when evaluating the model</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Data casted as data.frame</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-in"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_g</span><span class="op">)</span>   <span class="co"># group column prepended</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4,360 × 11</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    gender id    term  estimate std.error statistic p.value component</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Female 475   Q0       11.0      1.19         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Female 476   Q0        1.86     0.162        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Female 477   Q0        3.93     0.903        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Female 478   Q0        8.18     1.21         <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Female 479   Q0        4.89     0.461        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Female 480   Q0        5.02     0.542        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Female 481   Q0        3.57     0.297        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Female 482   Q0        3.11     0.302        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Female 483   Q0        5.89     0.428        <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Female 484   Q0        5.00    <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span> fixed    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4,350 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 3 more variables: estimate_scale &lt;chr&gt;, term_display &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   estimate_internal &lt;dbl&gt;</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_g</span><span class="op">)</span>  <span class="co"># one row per group</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 13</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   gender   model_class backend equation k_spec  nobs n_subjects n_success n_fail</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Female   beezdemand… legacy  hs       fixed…  <span style="text-decoration: underline;">7</span>097        617       501    116</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Male     beezdemand… legacy  hs       fixed…  <span style="text-decoration: underline;">5</span>730        471       401     70</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Would r… beezdemand… legacy  hs       fixed…    12          2         1      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

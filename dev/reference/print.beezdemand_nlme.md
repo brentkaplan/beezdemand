@@ -55,7 +55,7 @@ print(fit)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x5614cec20388>
+#> <environment: 0x55cc08ab28a0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -77,8 +77,8 @@ print(fit)
 #>  Formula: list(Q0 ~ 1, alpha ~ 1)
 #>  Level: monkey
 #>  Structure: Diagonal
-#>                   Q0      alpha  Residual
-#> StdDev: 8.924541e-06 5.4422e-06 0.2933331
+#>                   Q0        alpha  Residual
+#> StdDev: 8.922439e-06 5.443637e-06 0.2933331
 #> 
 #> Number of Observations: 135
 #> Number of Groups: 3 

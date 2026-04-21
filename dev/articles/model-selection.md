@@ -19,7 +19,8 @@ Pmax (price at maximum expenditure) and Omax (maximum expenditure)
 | Your Situation                       | Recommended Approach | Function                                                                                         |
 |--------------------------------------|----------------------|--------------------------------------------------------------------------------------------------|
 | Individual curves, quick exploration | Fixed-effects NLS    | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   |
-| Group comparisons, repeated measures | Mixed-effects        | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   |
+| Group comparisons, modern backend    | TMB mixed-effects    | [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)       |
+| Group comparisons, legacy pipeline   | NLME mixed-effects   | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   |
 | Many zeros, two-part modeling        | Hurdle model         | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
 | Cross-commodity substitution         | Cross-price models   | `fit_cp_*()`                                                                                     |
 
@@ -68,6 +69,47 @@ nonsystematic responding patterns including:
 - **Trend (DeltaQ)**: Consumption should decrease as price increases
 - **Bounce**: Limited price-to-price increases in consumption
 - **Reversals**: No consumption after sustained zeros
+
+#### Grouped Checks with `by`
+
+When your data includes grouping variables (gender, condition, etc.),
+use `by` to run checks and summaries within each group:
+
+``` r
+data(apt_full)
+
+# Systematicity check by gender
+sys_by_gender <- check_systematic_demand(apt_full, by = "gender")
+sys_by_gender
+#> 
+#> Systematicity Check (demand)
+#> ------------------------------ 
+#> Grouped by: gender 
+#> Total patterns: 1100 
+#> Systematic: 946 ( 86 %)
+#> Unsystematic: 154 ( 14 %)
+#> 
+#> Use summary() for details, tidy() for per-subject results.
+
+# Descriptive summary by gender
+desc_by_gender <- get_descriptive_summary(apt_full, by = "gender")
+desc_by_gender$statistics |> head()
+#> # A tibble: 6 × 9
+#>   gender Price  Mean Median    SD PropZeros   NAs   Min   Max
+#>   <chr>  <chr> <dbl>  <dbl> <dbl>     <dbl> <int> <dbl> <dbl>
+#> 1 Female 0      5.08      5  4.11      0.09     0     0    50
+#> 2 Female 0.25   4.77      4  3.97      0.15     0     0    40
+#> 3 Female 0.5    4.59      4  3.77      0.16     0     0    30
+#> 4 Female 1      4.41      4  3.58      0.16     0     0    20
+#> 5 Female 1.5    4.14      4  3.41      0.2      0     0    20
+#> 6 Female 2      3.86      4  3.09      0.2      0     0    20
+```
+
+The `by` parameter also works with
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+— see
+[`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
+for a full grouped analysis example.
 
 ------------------------------------------------------------------------
 
@@ -249,6 +291,80 @@ comps <- get_demand_comparisons(fit, compare_specs = ~drug, contrast_type = "pai
 
 ------------------------------------------------------------------------
 
+## Tier 2b: TMB Mixed-Effects Models
+
+### When to Use
+
+Use
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+when you want:
+
+- Group comparisons with modern estimation (automatic differentiation)
+- More equation choices than
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  (exponential, exponentiated, simplified, zben)
+- Estimated or fixed k parameter
+- Robust convergence via multi-start optimization and Laplace
+  approximation
+- The preferred approach for new mixed-effects analyses
+
+### Advantages Over NLME
+
+| Feature     | [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md) | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) |
+|-------------|--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| Backend     | TMB (C++, automatic differentiation)                                                       | nlme (R, numerical gradients)                                                                  |
+| Equations   | exponential, exponentiated, simplified, zben                                               | zben, simplified, exponentiated                                                                |
+| k parameter | Estimated or fixed                                                                         | Not available                                                                                  |
+| Convergence | Robust (AD + Laplace + multi-start)                                                        | Can struggle with nonlinear equations                                                          |
+| Speed       | Fast (compiled C++)                                                                        | Variable                                                                                       |
+
+### Complete Example
+
+``` r
+# Fit TMB mixed-effects model
+fit_tmb <- fit_demand_tmb(
+  data = apt,
+  y_var = "y",
+  x_var = "x",
+  id_var = "id",
+  equation = "exponential",
+  random_effects = c("q0", "alpha")
+)
+
+# Summary and plot
+summary(fit_tmb)
+plot(fit_tmb, type = "demand")
+
+# Subject-level parameters
+head(get_subject_pars(fit_tmb))
+```
+
+### Group Comparisons with TMB
+
+``` r
+data(apt_full)
+dat_mf <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+
+fit_gender <- fit_demand_tmb(
+  dat_mf,
+  y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  factors = "gender",
+  random_effects = c("q0", "alpha")
+)
+
+# Estimated marginal means
+get_demand_param_emms(fit_gender, param = "Q0")
+
+# Pairwise comparisons
+get_demand_comparisons(fit_gender, param = "alpha")
+```
+
+For comprehensive TMB documentation, see
+[`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md).
+
+------------------------------------------------------------------------
+
 ## Tier 3: Hurdle Models
 
 ### When to Use
@@ -335,11 +451,22 @@ The `equation` argument determines the functional form of the demand
 curve. Each equation has trade-offs in terms of flexibility, zero
 handling, and comparability across studies.
 
-| Equation       | Function                  | Handles Zeros | k Required | Best For                                                  |
-|----------------|---------------------------|:-------------:|:----------:|-----------------------------------------------------------|
-| `"hs"`         | Hursh & Silberberg (2008) |      No       |    Yes     | Traditional analyses, compatibility with older literature |
-| `"koff"`       | Koffarnus et al. (2015)   |      No       |    Yes     | Modified exponential, widely used in applied research     |
-| `"simplified"` | Rzeszutek et al. (2025)   |      Yes      |     No     | Modern analyses; avoids k-dependency and zero issues      |
+| Equation                     | Function                  | Handles Zeros | k Required | Available In             |
+|------------------------------|---------------------------|:-------------:|:----------:|--------------------------|
+| `"hs"` / `"exponential"`     | Hursh & Silberberg (2008) |      No       |    Yes     | Fixed, TMB, Hurdle       |
+| `"koff"` / `"exponentiated"` | Koffarnus et al. (2015)   |      No       |    Yes     | Fixed, NLME, TMB         |
+| `"zben"`                     | Zero-bounded exponential  | Yes (via LL4) |     No     | NLME, TMB                |
+| `"simplified"`               | Rzeszutek et al. (2025)   |      Yes      |     No     | Fixed, NLME, TMB, Hurdle |
+| `"zhao_exponential"`         | Zhao et al.               |      No       |    Yes     | Hurdle (default)         |
+
+Note: `"exponential"` and `"hs"` refer to the same equation;
+`"exponentiated"` and `"koff"` are also equivalent. The modern names are
+used by
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+and
+[`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md);
+the legacy names by
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
 
 **Recommendations:**
 
@@ -429,11 +556,12 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 
 ## Summary
 
-| Approach                                                                                         | Best For                             | Key Features                        | Handles Zeros     |
-|--------------------------------------------------------------------------------------------------|--------------------------------------|-------------------------------------|-------------------|
-| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   | Individual curves, quick analysis    | Simple, per-subject estimates       | Excludes          |
-| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   | Group comparisons, repeated measures | Random effects, emmeans integration | LL4 transform     |
-| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Data with many zeros                 | Two-part model, TMB backend         | Explicitly models |
+| Approach                                                                                         | Best For                          | Key Features                              | Handles Zeros       |
+|--------------------------------------------------------------------------------------------------|-----------------------------------|-------------------------------------------|---------------------|
+| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   | Individual curves, quick analysis | Simple, per-subject estimates             | Excludes            |
+| [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)       | Group comparisons (new work)      | TMB backend, AD, multi-start, 4 equations | Depends on equation |
+| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   | Group comparisons (legacy)        | nlme backend, emmeans integration         | LL4 transform       |
+| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Data with many zeros              | Two-part model, TMB backend               | Explicitly models   |
 
 ### Next Steps
 
@@ -446,9 +574,12 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 - **Group Comparisons**: See
   [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
   for extra sum-of-squares F-test
-- **Mixed Models**: See
+- **TMB Mixed-Effects**: See
+  [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
+  for modern TMB-based mixed models
+- **NLME Mixed Models**: See
   [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  for mixed-effects examples
+  for NLME-based mixed-effects examples
 - **Advanced Mixed Models**: See
   [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
   for factors, EMMs, covariates
@@ -458,6 +589,9 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 - **Cross-Price**: See
   [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
   for substitution analyses
+- **Convergence**: See
+  [`vignette("convergence-guide")`](https://brentkaplan.github.io/beezdemand/articles/convergence-guide.md)
+  for convergence troubleshooting
 - **Migration Guide**: See
   [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
   for migrating from
@@ -481,6 +615,9 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
   Koffarnus, M. N. (2021). Applying mixed-effects modeling to behavioral
   economic demand: An introduction. *Perspectives on Behavior Science,
   44*(2), 333-358.
+- Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M.
+  (2016). TMB: Automatic differentiation and Laplace approximation.
+  *Journal of Statistical Software, 70*(5), 1-21.
 - Rzeszutek, M. J., Regnier, S. D., Franck, C. T., & Koffarnus, M. N.
   (2025). Overviewing the exponential model of demand and introducing a
   simplification that solves issues of span, scale, and zeros.

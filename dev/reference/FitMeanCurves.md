@@ -120,12 +120,10 @@ FitMeanCurves(apt[sample(apt$id, 5), ], "hs", k = 2, method = "Mean")
 #>   'Pooled')
 #>   for the modern interface with summary(), tidy(), glance(), and predict().
 #> ℹ See vignette('migration-guide') for migration instructions.
-#>     id Intensity BP0 BP1 Omaxe Pmaxe Equation      Q0d K          R2
-#> 1 Mean         3  NA 2.5  13.5   1.5       hs 4.414472 2 0.003999712
-#>          Alpha     Q0se   Alphase N     AbsSS     SdRes     Q0Low   Q0High
-#> 1 -0.002217055 5.765368 0.0380843 3 0.1219393 0.3491981 -68.84148 77.67042
-#>    AlphaLow AlphaHigh        EV     Omaxd     Pmaxd     Omaxa     Pmaxa
-#> 1 -0.486124 0.4816899 -1.594699 -41.03392 -29.47746 -41.03448 -29.65978
-#>       Notes
-#> 1 converged
+#>     id Intensity BP0 BP1 Omaxe Pmaxe Equation      Q0d K         R2
+#> 1 Mean         3  NA   8    24     8       hs 3.484307 2 0.09703333
+#>          Alpha      Q0se     Alphase N       AbsSS     SdRes     Q0Low   Q0High
+#> 1 0.0008824051 0.7316715 0.002603445 3 0.009396685 0.0969365 -5.812461 12.78107
+#>      AlphaLow  AlphaHigh       EV    Omaxd    Pmaxd    Omaxa    Pmaxa     Notes
+#> 1 -0.03219751 0.03396232 4.006702 103.0983 93.83412 103.0997 94.41449 converged
 ```

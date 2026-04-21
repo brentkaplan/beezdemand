@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -88,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-03-04</h4>
+            <h4 data-toc-skip class="date">2026-04-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/beezdemand.Rmd" class="external-link"><code>vignettes/beezdemand.Rmd</code></a></small>
       <div class="d-none name"><code>beezdemand.Rmd</code></div>
@@ -141,7 +142,7 @@ should use the following instructions:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"brentkaplan/beezdemand"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"brentkaplan/beezdemand"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://brentkaplan.github.io/beezdemand/">beezdemand</a></span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -151,7 +152,7 @@ should use the following instructions:</p>
 <p>To install the development version of the package, specify the
 development branch in <code>install_github</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"brentkaplan/beezdemand@develop"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"brentkaplan/beezdemand@develop"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level3">
@@ -1214,7 +1215,7 @@ rows)</caption>
 <td align="left">60</td>
 <td align="left">Q0</td>
 <td align="right">9.924274</td>
-<td align="right">9.024320</td>
+<td align="right">9.024321</td>
 <td align="right">10.824227</td>
 <td align="right">0.95</td>
 </tr>
@@ -1385,8 +1386,8 @@ rows)</caption>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span></span></code></pre></div>
 <p><img src="beezdemand_files/figure-html/hs-plot-1.png" class="r-plt" alt="" width="1008"></p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span></code></pre></div>
-<p><img src="beezdemand_files/figure-html/hs-residuals-1.png" class="r-plt" alt="" width="1008"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_hs</span><span class="op">)</span><span class="op">$</span><span class="va">fitted</span></span>
+<span><span class="co">#&gt; NULL</span></span></code></pre></div>
 </div>
 <div class="section level5">
 <h5 id="normalized-alpha-alpha">Normalized Alpha (<span class="math inline">\alpha^*</span>)<a class="anchor" aria-label="anchor" href="#normalized-alpha-alpha"></a>
@@ -1518,7 +1519,7 @@ rows)</caption>
 <td align="left">60</td>
 <td align="left">Q0</td>
 <td align="right">9.721379</td>
-<td align="right">0.4371060</td>
+<td align="right">0.4371061</td>
 <td align="right">NA</td>
 <td align="right">NA</td>
 <td align="left">fixed</td>

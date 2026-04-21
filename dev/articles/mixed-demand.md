@@ -94,7 +94,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55eb5446def8>
+#> <environment: 0x55d6e16f0580>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -168,7 +168,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x55eb480d8898>
+#> <environment: 0x55d6f1f95ec0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -246,7 +246,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x55eb42de5858>
+#> <environment: 0x55d6ef29a860>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -352,9 +352,60 @@ check_demand_model(fit_apt_zben)
 #> Recommendations:
 #>   - Investigate outlying observations
 plot_residuals(fit_apt_zben)$fitted
+#> NULL
 ```
 
-![](mixed-demand_files/figure-html/diagnostics-1.png)
+#### Loss Surface and Profile
+
+The loss surface and profile plots visualize the optimization landscape.
+The NLME versions support two modes:
+
+- `type = "ssr"` (default): sum-of-squared residuals on aggregated
+  price-level means — a quick visual check of the fixed-effects
+  landscape
+- `type = "marginal"`: linearized marginal negative log-likelihood that
+  integrates over random-effects variance — more statistically
+  appropriate for mixed models and preferred for assessing
+  identifiability near the MLE
+
+``` r
+plot_loss_surface(fit_apt_zben)
+```
+
+![SSR loss surface on aggregated
+means.](mixed-demand_files/figure-html/loss-ssr-1.png)
+
+SSR loss surface on aggregated means.
+
+``` r
+plot_loss_surface(fit_apt_zben, type = "marginal")
+```
+
+![Marginal NLL surface accounting for random-effects
+variance.](mixed-demand_files/figure-html/loss-marginal-1.png)
+
+Marginal NLL surface accounting for random-effects variance.
+
+Profile plots show 1D slices (one parameter varied, the other fixed at
+the MLE):
+
+``` r
+plot_loss_profile(fit_apt_zben)
+```
+
+![SSR profile plots for Q0 and
+alpha.](mixed-demand_files/figure-html/profile-ssr-1.png)
+
+SSR profile plots for Q0 and alpha.
+
+``` r
+plot_loss_profile(fit_apt_zben, type = "marginal")
+```
+
+![Marginal NLL profile plots for Q0 and
+alpha.](mixed-demand_files/figure-html/profile-marginal-1.png)
+
+Marginal NLL profile plots for Q0 and alpha.
 
 #### Basic Model (No Factors)
 
@@ -388,7 +439,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55eb47611360>
+#> <environment: 0x55d6ebbddff0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -411,7 +462,7 @@ print(fit_no_factors_vignette)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>                   Q0        alpha  Residual
-#> StdDev: 5.264342e-06 3.217971e-06 0.2275573
+#> StdDev: 5.262806e-06 3.217697e-06 0.2275573
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -453,7 +504,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55eb45905a70>
+#> <environment: 0x55d6e578c1c8>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 
@@ -472,14 +523,14 @@ print(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734048 
+#>      -0.084081282       0.009734047 
 #> 
 #> Random effects:
 #>  Formula: list(Q0 ~ 1, alpha ~ 1)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>         Q0.(Intercept) alpha.(Intercept)  Residual
-#> StdDev:   3.760034e-06      2.301156e-06 0.1625574
+#> StdDev:   3.762036e-06      2.300115e-06 0.1625574
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -514,20 +565,20 @@ summary(fit_one_factor_dose)
 #> 
 #> Fixed Effects:
 #>                       Value Std.Error        DF t-value  p-value    
-#> Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01   5.817 5.99e-09 ***
-#> Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01   4.370 1.24e-05 ***
-#> Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01   4.429 9.46e-06 ***
-#> alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01   8.289  < 2e-16 ***
-#> alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01   5.941 2.84e-09 ***
-#> alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   5.707 1.15e-08 ***
+#> Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01   5.817 1.11e-06 ***
+#> Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01   4.370 9.68e-05 ***
+#> Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01   4.429 8.10e-05 ***
+#> alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01   8.289 5.86e-10 ***
+#> alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01   5.941 7.56e-07 ***
+#> alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   5.707 1.57e-06 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Random Effects:
 #> monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) 
 #>                   Variance     StdDev      
-#> Q0.(Intercept)    1.413786e-11 3.760034e-06
-#> alpha.(Intercept) 5.295319e-12 2.301156e-06
+#> Q0.(Intercept)    1.415292e-11 3.762036e-06
+#> alpha.(Intercept) 5.290530e-12 2.300115e-06
 #> Residual          2.642491e-02 1.625574e-01
 #> 
 #> Residual standard error: 0.1626 
@@ -542,14 +593,14 @@ coef(fit_one_factor_dose, type = "fixed")
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734048
+#>      -0.084081282       0.009734047
 
 # Random effects (deviations from fixed)
 head(coef(fit_one_factor_dose, type = "random"))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.830297e-11     -3.424853e-10
-#> B   1.246265e-10      3.352306e-11
-#> C  -2.129295e-10      3.089622e-10
+#> A   8.839712e-11     -3.421765e-10
+#> B   1.247594e-10      3.349284e-11
+#> C  -2.131565e-10      3.086837e-10
 
 # Subject-specific coefficients (fixed + random)
 head(coef(fit_one_factor_dose, type = "combined"))
@@ -558,21 +609,21 @@ head(coef(fit_one_factor_dose, type = "combined"))
 #> B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #> C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #>   alpha.dose0.003
-#> A     0.009734048
-#> B     0.009734048
-#> C     0.009734048
+#> A     0.009734047
+#> B     0.009734047
+#> C     0.009734047
 
 # Access nlme fixef/ranef directly
 nlme::fixef(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734048
+#>      -0.084081282       0.009734047
 utils::head(nlme::ranef(fit_one_factor_dose))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.830297e-11     -3.424853e-10
-#> B   1.246265e-10      3.352306e-11
-#> C  -2.129295e-10      3.089622e-10
+#> A   8.839712e-11     -3.421765e-10
+#> B   1.247594e-10      3.349284e-11
+#> C  -2.131565e-10      3.086837e-10
 
 # Start values that were used for the NLME fit
 fit_one_factor_dose$start_values_used

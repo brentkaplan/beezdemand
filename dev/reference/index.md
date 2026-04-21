@@ -9,6 +9,8 @@ S3 objects with consistent methods for inspection and inference.
   : Fit Fixed-Effect Demand Curves
 - [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
   : Fit Nonlinear Mixed-Effects Demand Model
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  : Fit Mixed-Effects Demand Models via TMB
 - [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
   : Fit Two-Part Mixed Effects Hurdle Demand Model
 - [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
@@ -62,12 +64,16 @@ S3 methods for extracting information from fitted models.
 
 - [`tidy(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_fixed.md)
   : Tidy Method for beezdemand_fixed
+- [`tidy(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_fixed_grouped.md)
+  : Tidy Method for beezdemand_fixed_grouped
 - [`tidy(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_hurdle.md)
   : Tidy a beezdemand_hurdle Model
 - [`tidy(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_nlme.md)
   : Tidy method for beezdemand_nlme
 - [`tidy(`*`<beezdemand_systematicity>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_systematicity.md)
   : Tidy Method for beezdemand_systematicity
+- [`tidy(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_tmb.md)
+  : Tidy a beezdemand_tmb Model
 - [`tidy(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.cp_model_lm.md)
   : Extract coefficients from a linear cross-price model in tidy format
 - [`tidy(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.cp_model_lmer.md)
@@ -77,12 +83,16 @@ S3 methods for extracting information from fitted models.
   : Convert a cross-price model to a tidy data frame of coefficients
 - [`glance(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_fixed.md)
   : Glance Method for beezdemand_fixed
+- [`glance(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_fixed_grouped.md)
+  : Glance Method for beezdemand_fixed_grouped
 - [`glance(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_hurdle.md)
   : Glance at a beezdemand_hurdle Model
 - [`glance(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_nlme.md)
   : Glance method for beezdemand_nlme
 - [`glance(`*`<beezdemand_systematicity>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_systematicity.md)
   : Glance Method for beezdemand_systematicity
+- [`glance(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.beezdemand_tmb.md)
+  : Glance at a beezdemand_tmb Model
 - [`glance(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.cp_model_lm.md)
   : Get model summaries from a linear cross-price model
 - [`glance(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/glance.cp_model_lmer.md)
@@ -95,12 +105,26 @@ S3 methods for extracting information from fitted models.
   : Augment a beezdemand_hurdle Model with Fitted Values and Residuals
 - [`augment(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_nlme.md)
   : Augment a beezdemand_nlme Model with Fitted Values and Residuals
+- [`augment(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_tmb.md)
+  : Augment a beezdemand_tmb Model
+- [`augment(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_lm.md)
+  : Augment a Cross-Price Demand Model (Linear)
+- [`augment(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_lmer.md)
+  : Augment a Cross-Price Demand Model (Mixed-Effects)
+- [`augment(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_nls.md)
+  : Augment a Cross-Price Demand Model (Nonlinear)
 - [`confint(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.beezdemand_fixed.md)
   : Confidence Intervals for Fixed-Effect Demand Model Parameters
 - [`confint(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.beezdemand_hurdle.md)
   : Confidence Intervals for Hurdle Demand Model Parameters
 - [`confint(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.beezdemand_nlme.md)
   : Confidence Intervals for Mixed-Effects Demand Model Parameters
+- [`confint(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.beezdemand_tmb.md)
+  : Confidence Intervals for TMB Model Parameters
+- [`confint(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.cp_model_lm.md)
+  : Confidence Intervals for a Cross-Price Demand Model (Linear)
+- [`confint(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.cp_model_lmer.md)
+  : Confidence Intervals for a Cross-Price Demand Model (Mixed-Effects)
 - [`confint(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/confint.cp_model_nls.md)
   : Confidence Intervals for Cross-Price NLS Model Parameters
 - [`coef(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef-methods.md)
@@ -109,16 +133,24 @@ S3 methods for extracting information from fitted models.
   : Extract Coefficients from Cross-Price Demand Models
 - [`coef(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_fixed.md)
   : Extract Coefficients from Fixed-Effect Demand Fit
+- [`coef(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_fixed_grouped.md)
+  : Extract Coefficients from Grouped Fixed-Effect Demand Fit
 - [`coef(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_hurdle.md)
   : Extract Coefficients from Hurdle Demand Model
 - [`coef(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_nlme.md)
   : Extract Coefficients from a beezdemand_nlme Model
+- [`coef(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_tmb.md)
+  : Extract Coefficients from TMB Model
 - [`fixef(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_nlme.md)
   : Extract Fixed Effects from a beezdemand_nlme Model
+- [`fixef(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_tmb.md)
+  : Extract Fixed Effects from TMB Model
 - [`fixef(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fixef.cp_model_lmer.md)
   : Extract Fixed Effects from Mixed-Effects Cross-Price Model
 - [`ranef(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/ranef.beezdemand_nlme.md)
   : Extract Random Effects from a beezdemand_nlme Model
+- [`ranef(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/ranef.beezdemand_tmb.md)
+  : Extract Random Effects from TMB Model
 - [`ranef(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/ranef.cp_model_lmer.md)
   : Extract Random Effects from Mixed-Effects Cross-Price Model
 - [`AIC(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/AIC.beezdemand_hurdle.md)
@@ -127,8 +159,16 @@ S3 methods for extracting information from fitted models.
   : BIC for Hurdle Demand Model
 - [`logLik(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/logLik.beezdemand_hurdle.md)
   : Extract Log-Likelihood from Hurdle Demand Model
+- [`nobs(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lm.md)
+  : Number of Observations in a Cross-Price Demand Model (Linear)
+- [`nobs(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lmer.md)
+  : Number of Observations in a Cross-Price Demand Model (Mixed-Effects)
+- [`nobs(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_nls.md)
+  : Number of Observations in a Cross-Price Demand Model (Nonlinear)
 - [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
   : Get Subject-Specific Parameters
+- [`get_subject_pars(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md)
+  : Get Subject-Specific Parameters from TMB Model
 - [`extract_coefficients()`](https://brentkaplan.github.io/beezdemand/reference/extract_coefficients.md)
   : Extract All Coefficient Types from Cross-Price Demand Models
 
@@ -142,6 +182,8 @@ Methods for generating predictions from fitted models.
   : Predict Method for Hurdle Demand Models
 - [`predict(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_nlme.md)
   : Predict Method for beezdemand_nlme Objects
+- [`predict(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_tmb.md)
+  : Predict from TMB Mixed-Effects Demand Model
 - [`predict(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/predict.cp_model_lm.md)
   : Predict method for cp_model_lm objects.
 - [`predict(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/predict.cp_model_lmer.md)
@@ -155,8 +197,12 @@ Functions for post-hoc comparisons and inference.
 
 - [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
   : Get Estimated Marginal Means for Demand Parameters
+- [`get_demand_param_emms(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.beezdemand_tmb.md)
+  : Get Demand Parameter Estimated Marginal Means for TMB Model
 - [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
   : Get Pairwise Comparisons for Demand Parameters
+- [`get_demand_comparisons(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md)
+  : Get Demand Parameter Comparisons for TMB Model
 - [`get_demand_param_trends()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_trends.md)
   : Get Trends (Slopes) of Demand Parameters with respect to Continuous
   Covariates
@@ -180,6 +226,8 @@ Functions for computing demand-derived metrics like Pmax and Omax.
   : Calculate Observed Pmax/Omax Grouped by ID
 - [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
   : Calculate Group-Level Demand Metrics
+- [`calc_group_metrics(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.md)
+  : Calculate Population-Level Demand Metrics for TMB Model
 - [`beezdemand_calc_pmax_omax()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_calc_pmax_omax.md)
   : Calculate Pmax and Omax with Method Reporting and Parameter-Space
   Safety
@@ -239,18 +287,38 @@ Plotting functions and themes.
   : beezdemand Plot Theme and Color Palette
 - [`plot(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_fixed.md)
   : Plot Method for beezdemand_fixed
+- [`plot(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_fixed_grouped.md)
+  : Plot Method for beezdemand_fixed_grouped
 - [`plot(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_hurdle.md)
   : Plot Demand Curves from Hurdle Demand Model
 - [`plot(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_nlme.md)
   : Plot Method for beezdemand_nlme Objects
+- [`plot(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_tmb.md)
+  : Plot TMB Mixed-Effects Demand Model
 - [`plot(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.cp_model_lm.md)
   : Plot Method for Linear Cross-Price Demand Models
 - [`plot(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.cp_model_lmer.md)
   : Plot Method for Mixed-Effects Cross-Price Demand Models
 - [`plot(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/plot.cp_model_nls.md)
   : Plot a Cross-Price Demand Model (Nonlinear)
+- [`plot_alpha_distribution()`](https://brentkaplan.github.io/beezdemand/reference/plot_alpha_distribution.md)
+  : Plot Distribution of Subject-Level Alpha Estimates
+- [`plot_demand_overlay()`](https://brentkaplan.github.io/beezdemand/reference/plot_demand_overlay.md)
+  : Overlay Demand Curves from Multiple Models
+- [`plot_elasticity()`](https://brentkaplan.github.io/beezdemand/reference/plot_elasticity.md)
+  : Plot Own-Price Elasticity Curve
+- [`plot_expenditure()`](https://brentkaplan.github.io/beezdemand/reference/plot_expenditure.md)
+  : Plot Expenditure Curves
+- [`plot_loss_profile()`](https://brentkaplan.github.io/beezdemand/reference/plot_loss_profile.md)
+  : Plot Loss Profile for a Single Parameter
+- [`plot_loss_surface()`](https://brentkaplan.github.io/beezdemand/reference/plot_loss_surface.md)
+  : Plot Loss Surface for Demand Model Parameters
+- [`plot_model_comparison()`](https://brentkaplan.github.io/beezdemand/reference/plot_model_comparison.md)
+  : Compare Parameter Estimates Across Models
 - [`plot_qq()`](https://brentkaplan.github.io/beezdemand/reference/plot_qq.md)
   : Plot Random Effects Q-Q
+- [`plot_re_diagnostics()`](https://brentkaplan.github.io/beezdemand/reference/plot_re_diagnostics.md)
+  : Diagnostic Plots for Random Effects
 - [`plot_residuals()`](https://brentkaplan.github.io/beezdemand/reference/plot_residuals.md)
   : Plot Residual Diagnostics
 - [`plot_subject()`](https://brentkaplan.github.io/beezdemand/reference/plot_subject.md)
@@ -316,12 +384,16 @@ Summary functions for parameter exploration.
   : S3 Methods for beezdemand_empirical Objects
 - [`summary(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_fixed.md)
   : Summary Method for beezdemand_fixed
+- [`summary(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_fixed_grouped.md)
+  : Summary Method for beezdemand_fixed_grouped
 - [`summary(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_hurdle.md)
   : Summarize a Hurdle Demand Model Fit
 - [`summary(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_nlme.md)
   : Summary method for beezdemand_nlme
 - [`summary(`*`<beezdemand_systematicity>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_systematicity.md)
   : Summary Method for beezdemand_systematicity
+- [`summary(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
+  : Summarize a TMB Mixed-Effects Demand Model Fit
 - [`summary(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.cp_model_lm.md)
   : Summary method for cp_model_lm objects.
 - [`summary(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/summary.cp_model_lmer.md)
@@ -334,10 +406,14 @@ Summary functions for parameter exploration.
   : Print Method for ANOVA Comparisons
 - [`print(`*`<beezdemand_comparison>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_comparison.md)
   : Print method for beezdemand_comparison objects
+- [`print(`*`<beezdemand_diagnostic_plots>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_diagnostic_plots.md)
+  : Print Method for Diagnostic Plots
 - [`print(`*`<beezdemand_diagnostics>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_diagnostics.md)
   : Print Method for Model Diagnostics
 - [`print(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_fixed.md)
   : Print Method for beezdemand_fixed
+- [`print(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_fixed_grouped.md)
+  : Print Method for beezdemand_fixed_grouped
 - [`print(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_hurdle.md)
   : Print Method for Hurdle Demand Model
 - [`print(`*`<beezdemand_model_comparison>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_model_comparison.md)
@@ -348,6 +424,14 @@ Summary functions for parameter exploration.
   : Print Method for beezdemand Summary Objects
 - [`print(`*`<beezdemand_systematicity>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_systematicity.md)
   : Print Method for beezdemand_systematicity
+- [`print(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.beezdemand_tmb.md)
+  : Print Method for TMB Mixed-Effects Demand Model
+- [`print(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.cp_model_lm.md)
+  : Print a Cross-Price Demand Model (Linear)
+- [`print(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.cp_model_lmer.md)
+  : Print a Cross-Price Demand Model (Mixed-Effects)
+- [`print(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.cp_model_nls.md)
+  : Print a Cross-Price Demand Model (Nonlinear)
 - [`print(`*`<cp_posthoc>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.cp_posthoc.md)
   : Print method for cp_posthoc objects
 - [`print(`*`<summary.beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.beezdemand_fixed.md)
@@ -358,6 +442,8 @@ Summary functions for parameter exploration.
   : Print method for summary.beezdemand_nlme
 - [`print(`*`<summary.beezdemand_systematicity>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.beezdemand_systematicity.md)
   : Print Method for summary.beezdemand_systematicity
+- [`print(`*`<summary.beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.beezdemand_tmb.md)
+  : Print Method for TMB Model Summary
 - [`print(`*`<summary.cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.cp_model_lm.md)
   : Print method for summary.cp_model_lm objects.
 - [`print(`*`<summary.cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/print.summary.cp_model_lmer.md)

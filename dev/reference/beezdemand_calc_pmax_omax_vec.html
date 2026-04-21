@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -67,6 +68,7 @@
 <span>  param_scales <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  price_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  consumption_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  p_zero_fn_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -116,9 +118,15 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span>   pmax_model omax_model q_at_pmax_model       method_model is_boundary_model</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  17.192027   57.73857        3.358450 analytic_lambert_w             FALSE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   5.730676   28.86928        5.037675 analytic_lambert_w             FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   elasticity_at_pmax_model unit_elasticity_pass_model pmax_obs omax_obs</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                       -1                       TRUE       NA       NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                       -1                       TRUE       NA       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   elasticity_at_pmax_model unit_elasticity_pass_model pmax_unconditional</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                       -1                       TRUE                 NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                       -1                       TRUE                 NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   omax_unconditional q_at_pmax_unconditional p_zero_at_pmax</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                 NA                      NA             NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 NA                      NA             NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   method_unconditional is_boundary_unconditional pmax_obs omax_obs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                 &lt;NA&gt;                        NA       NA       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 &lt;NA&gt;                        NA       NA       NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   has_duplicate_prices n_max_ties</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                   NA         NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                   NA         NA</span>

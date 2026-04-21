@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -76,6 +77,13 @@
 
         </dt>
         <dd>Fit Nonlinear Mixed-Effects Demand Model</dd>
+
+        <dt>
+
+          <code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code>
+
+        </dt>
+        <dd>Fit Mixed-Effects Demand Models via TMB</dd>
 
         <dt>
 
@@ -220,6 +228,13 @@
 
         <dt>
 
+          <code><a href="tidy.beezdemand_fixed_grouped.html">tidy(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Tidy Method for beezdemand_fixed_grouped</dd>
+
+        <dt>
+
           <code><a href="tidy.beezdemand_hurdle.html">tidy(<i>&lt;beezdemand_hurdle&gt;</i>)</a></code>
 
         </dt>
@@ -238,6 +253,13 @@
 
         </dt>
         <dd>Tidy Method for beezdemand_systematicity</dd>
+
+        <dt>
+
+          <code><a href="tidy.beezdemand_tmb.html">tidy(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Tidy a beezdemand_tmb Model</dd>
 
         <dt>
 
@@ -269,6 +291,13 @@
 
         <dt>
 
+          <code><a href="glance.beezdemand_fixed_grouped.html">glance(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Glance Method for beezdemand_fixed_grouped</dd>
+
+        <dt>
+
           <code><a href="glance.beezdemand_hurdle.html">glance(<i>&lt;beezdemand_hurdle&gt;</i>)</a></code>
 
         </dt>
@@ -287,6 +316,13 @@
 
         </dt>
         <dd>Glance Method for beezdemand_systematicity</dd>
+
+        <dt>
+
+          <code><a href="glance.beezdemand_tmb.html">glance(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Glance at a beezdemand_tmb Model</dd>
 
         <dt>
 
@@ -332,6 +368,34 @@
 
         <dt>
 
+          <code><a href="augment.beezdemand_tmb.html">augment(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Augment a beezdemand_tmb Model</dd>
+
+        <dt>
+
+          <code><a href="augment.cp_model_lm.html">augment(<i>&lt;cp_model_lm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Augment a Cross-Price Demand Model (Linear)</dd>
+
+        <dt>
+
+          <code><a href="augment.cp_model_lmer.html">augment(<i>&lt;cp_model_lmer&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Augment a Cross-Price Demand Model (Mixed-Effects)</dd>
+
+        <dt>
+
+          <code><a href="augment.cp_model_nls.html">augment(<i>&lt;cp_model_nls&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Augment a Cross-Price Demand Model (Nonlinear)</dd>
+
+        <dt>
+
           <code><a href="confint.beezdemand_fixed.html">confint(<i>&lt;beezdemand_fixed&gt;</i>)</a></code>
 
         </dt>
@@ -350,6 +414,27 @@
 
         </dt>
         <dd>Confidence Intervals for Mixed-Effects Demand Model Parameters</dd>
+
+        <dt>
+
+          <code><a href="confint.beezdemand_tmb.html">confint(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Confidence Intervals for TMB Model Parameters</dd>
+
+        <dt>
+
+          <code><a href="confint.cp_model_lm.html">confint(<i>&lt;cp_model_lm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Confidence Intervals for a Cross-Price Demand Model (Linear)</dd>
+
+        <dt>
+
+          <code><a href="confint.cp_model_lmer.html">confint(<i>&lt;cp_model_lmer&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Confidence Intervals for a Cross-Price Demand Model (Mixed-Effects)</dd>
 
         <dt>
 
@@ -374,6 +459,13 @@
 
         <dt>
 
+          <code><a href="coef.beezdemand_fixed_grouped.html">coef(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract Coefficients from Grouped Fixed-Effect Demand Fit</dd>
+
+        <dt>
+
           <code><a href="coef.beezdemand_hurdle.html">coef(<i>&lt;beezdemand_hurdle&gt;</i>)</a></code>
 
         </dt>
@@ -388,10 +480,24 @@
 
         <dt>
 
+          <code><a href="coef.beezdemand_tmb.html">coef(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract Coefficients from TMB Model</dd>
+
+        <dt>
+
           <code><a href="fixef.beezdemand_nlme.html">fixef(<i>&lt;beezdemand_nlme&gt;</i>)</a></code>
 
         </dt>
         <dd>Extract Fixed Effects from a beezdemand_nlme Model</dd>
+
+        <dt>
+
+          <code><a href="fixef.beezdemand_tmb.html">fixef(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract Fixed Effects from TMB Model</dd>
 
         <dt>
 
@@ -406,6 +512,13 @@
 
         </dt>
         <dd>Extract Random Effects from a beezdemand_nlme Model</dd>
+
+        <dt>
+
+          <code><a href="ranef.beezdemand_tmb.html">ranef(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract Random Effects from TMB Model</dd>
 
         <dt>
 
@@ -437,10 +550,38 @@
 
         <dt>
 
+          <code><a href="nobs.cp_model_lm.html">nobs(<i>&lt;cp_model_lm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Number of Observations in a Cross-Price Demand Model (Linear)</dd>
+
+        <dt>
+
+          <code><a href="nobs.cp_model_lmer.html">nobs(<i>&lt;cp_model_lmer&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Number of Observations in a Cross-Price Demand Model (Mixed-Effects)</dd>
+
+        <dt>
+
+          <code><a href="nobs.cp_model_nls.html">nobs(<i>&lt;cp_model_nls&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Number of Observations in a Cross-Price Demand Model (Nonlinear)</dd>
+
+        <dt>
+
           <code><a href="get_subject_pars.html">get_subject_pars()</a></code>
 
         </dt>
         <dd>Get Subject-Specific Parameters</dd>
+
+        <dt>
+
+          <code><a href="get_subject_pars.beezdemand_tmb.html">get_subject_pars(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Get Subject-Specific Parameters from TMB Model</dd>
 
         <dt>
 
@@ -481,6 +622,13 @@
 
         <dt>
 
+          <code><a href="predict.beezdemand_tmb.html">predict(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Predict from TMB Mixed-Effects Demand Model</dd>
+
+        <dt>
+
           <code><a href="predict.cp_model_lm.html">predict(<i>&lt;cp_model_lm&gt;</i>)</a></code>
 
         </dt>
@@ -518,10 +666,24 @@
 
         <dt>
 
+          <code><a href="get_demand_param_emms.beezdemand_tmb.html">get_demand_param_emms(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Get Demand Parameter Estimated Marginal Means for TMB Model</dd>
+
+        <dt>
+
           <code><a href="get_demand_comparisons.html">get_demand_comparisons()</a></code>
 
         </dt>
         <dd>Get Pairwise Comparisons for Demand Parameters</dd>
+
+        <dt>
+
+          <code><a href="get_demand_comparisons.beezdemand_tmb.html">get_demand_comparisons(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Get Demand Parameter Comparisons for TMB Model</dd>
 
         <dt>
 
@@ -587,6 +749,13 @@
 
         </dt>
         <dd>Calculate Group-Level Demand Metrics</dd>
+
+        <dt>
+
+          <code><a href="calc_group_metrics.beezdemand_tmb.html">calc_group_metrics(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Calculate Population-Level Demand Metrics for TMB Model</dd>
 
         <dt>
 
@@ -762,6 +931,13 @@
 
         <dt>
 
+          <code><a href="plot.beezdemand_fixed_grouped.html">plot(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot Method for beezdemand_fixed_grouped</dd>
+
+        <dt>
+
           <code><a href="plot.beezdemand_hurdle.html">plot(<i>&lt;beezdemand_hurdle&gt;</i>)</a></code>
 
         </dt>
@@ -773,6 +949,13 @@
 
         </dt>
         <dd>Plot Method for beezdemand_nlme Objects</dd>
+
+        <dt>
+
+          <code><a href="plot.beezdemand_tmb.html">plot(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot TMB Mixed-Effects Demand Model</dd>
 
         <dt>
 
@@ -797,10 +980,66 @@
 
         <dt>
 
+          <code><a href="plot_alpha_distribution.html">plot_alpha_distribution()</a></code>
+
+        </dt>
+        <dd>Plot Distribution of Subject-Level Alpha Estimates</dd>
+
+        <dt>
+
+          <code><a href="plot_demand_overlay.html">plot_demand_overlay()</a></code>
+
+        </dt>
+        <dd>Overlay Demand Curves from Multiple Models</dd>
+
+        <dt>
+
+          <code><a href="plot_elasticity.html">plot_elasticity()</a></code>
+
+        </dt>
+        <dd>Plot Own-Price Elasticity Curve</dd>
+
+        <dt>
+
+          <code><a href="plot_expenditure.html">plot_expenditure()</a></code>
+
+        </dt>
+        <dd>Plot Expenditure Curves</dd>
+
+        <dt>
+
+          <code><a href="plot_loss_profile.html">plot_loss_profile()</a></code>
+
+        </dt>
+        <dd>Plot Loss Profile for a Single Parameter</dd>
+
+        <dt>
+
+          <code><a href="plot_loss_surface.html">plot_loss_surface()</a></code>
+
+        </dt>
+        <dd>Plot Loss Surface for Demand Model Parameters</dd>
+
+        <dt>
+
+          <code><a href="plot_model_comparison.html">plot_model_comparison()</a></code>
+
+        </dt>
+        <dd>Compare Parameter Estimates Across Models</dd>
+
+        <dt>
+
           <code><a href="plot_qq.html">plot_qq()</a></code>
 
         </dt>
         <dd>Plot Random Effects Q-Q</dd>
+
+        <dt>
+
+          <code><a href="plot_re_diagnostics.html">plot_re_diagnostics()</a></code>
+
+        </dt>
+        <dd>Diagnostic Plots for Random Effects</dd>
 
         <dt>
 
@@ -992,6 +1231,13 @@
 
         <dt>
 
+          <code><a href="summary.beezdemand_fixed_grouped.html">summary(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summary Method for beezdemand_fixed_grouped</dd>
+
+        <dt>
+
           <code><a href="summary.beezdemand_hurdle.html">summary(<i>&lt;beezdemand_hurdle&gt;</i>)</a></code>
 
         </dt>
@@ -1010,6 +1256,13 @@
 
         </dt>
         <dd>Summary Method for beezdemand_systematicity</dd>
+
+        <dt>
+
+          <code><a href="summary.beezdemand_tmb.html">summary(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a TMB Mixed-Effects Demand Model Fit</dd>
 
         <dt>
 
@@ -1055,6 +1308,13 @@
 
         <dt>
 
+          <code><a href="print.beezdemand_diagnostic_plots.html">print(<i>&lt;beezdemand_diagnostic_plots&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print Method for Diagnostic Plots</dd>
+
+        <dt>
+
           <code><a href="print.beezdemand_diagnostics.html">print(<i>&lt;beezdemand_diagnostics&gt;</i>)</a></code>
 
         </dt>
@@ -1066,6 +1326,13 @@
 
         </dt>
         <dd>Print Method for beezdemand_fixed</dd>
+
+        <dt>
+
+          <code><a href="print.beezdemand_fixed_grouped.html">print(<i>&lt;beezdemand_fixed_grouped&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print Method for beezdemand_fixed_grouped</dd>
 
         <dt>
 
@@ -1104,6 +1371,34 @@
 
         <dt>
 
+          <code><a href="print.beezdemand_tmb.html">print(<i>&lt;beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print Method for TMB Mixed-Effects Demand Model</dd>
+
+        <dt>
+
+          <code><a href="print.cp_model_lm.html">print(<i>&lt;cp_model_lm&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a Cross-Price Demand Model (Linear)</dd>
+
+        <dt>
+
+          <code><a href="print.cp_model_lmer.html">print(<i>&lt;cp_model_lmer&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a Cross-Price Demand Model (Mixed-Effects)</dd>
+
+        <dt>
+
+          <code><a href="print.cp_model_nls.html">print(<i>&lt;cp_model_nls&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a Cross-Price Demand Model (Nonlinear)</dd>
+
+        <dt>
+
           <code><a href="print.cp_posthoc.html">print(<i>&lt;cp_posthoc&gt;</i>)</a></code>
 
         </dt>
@@ -1136,6 +1431,13 @@
 
         </dt>
         <dd>Print Method for summary.beezdemand_systematicity</dd>
+
+        <dt>
+
+          <code><a href="print.summary.beezdemand_tmb.html">print(<i>&lt;summary.beezdemand_tmb&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print Method for TMB Model Summary</dd>
 
         <dt>
 

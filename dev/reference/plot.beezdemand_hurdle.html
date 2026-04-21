@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -89,6 +90,9 @@
 <span>  pop_line_size <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ind_line_alpha <span class="op">=</span> <span class="fl">0.35</span>,</span>
 <span>  ind_line_size <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  marginal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  marginal_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"kde"</span>, <span class="st">"normal"</span>, <span class="st">"empirical"</span><span class="op">)</span>,</span>
+<span>  par_trans <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -222,6 +226,26 @@ to drop x &lt;= 0 values instead.</p></dd>
 
 <dt id="arg-ind-line-size">ind_line_size<a class="anchor" aria-label="anchor" href="#arg-ind-line-size"></a></dt>
 <dd><p>Line size for individual curves.</p></dd>
+
+
+<dt id="arg-marginal">marginal<a class="anchor" aria-label="anchor" href="#arg-marginal"></a></dt>
+<dd><p>Logical; if <code>TRUE</code> (default) and <code>type = "probability"</code>,
+the population curve shows the marginal (population-averaged) P(zero)
+instead of the conditional (RE = 0) curve. Set to <code>FALSE</code> for the old
+conditional behavior.</p></dd>
+
+
+<dt id="arg-marginal-method">marginal_method<a class="anchor" aria-label="anchor" href="#arg-marginal-method"></a></dt>
+<dd><p>Character. Method for marginal integration when
+<code>marginal = TRUE</code>. One of <code>"kde"</code> (default), <code>"normal"</code>, or
+<code>"empirical"</code>. See <code><a href="predict.beezdemand_hurdle.html">predict.beezdemand_hurdle()</a></code> for details.</p></dd>
+
+
+<dt id="arg-par-trans">par_trans<a class="anchor" aria-label="anchor" href="#arg-par-trans"></a></dt>
+<dd><p>Named list of transformations for parameter distribution
+plots (when <code>type = "parameters"</code>). Names are parameter names (e.g.,
+<code>"alpha"</code>), values are transformation names (e.g., <code>"log10"</code>). Default
+applies <code>log10</code> to alpha.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

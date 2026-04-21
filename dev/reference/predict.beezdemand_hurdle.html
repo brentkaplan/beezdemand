@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -67,6 +68,10 @@
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"link"</span>, <span class="st">"parameters"</span>, <span class="st">"probability"</span>, <span class="st">"demand"</span><span class="op">)</span>,</span>
 <span>  prices <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  marginal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  marginal_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"kde"</span>, <span class="st">"normal"</span>, <span class="st">"empirical"</span><span class="op">)</span>,</span>
+<span>  correction <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  se.fit <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  interval <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"confidence"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
@@ -113,6 +118,40 @@ If <code>newdata</code> is <code>NULL</code>, returns predictions for all subjec
 <dd><p>Optional numeric vector of prices used only when <code>newdata = NULL</code>.</p></dd>
 
 
+<dt id="arg-marginal">marginal<a class="anchor" aria-label="anchor" href="#arg-marginal"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, computes population-averaged (marginal)
+predictions by integrating over the random effects distribution.
+For <code>type = "probability"</code>, uses KDE/Normal/Empirical integration of the
+binary component. For <code>type = "response"</code> and <code>type = "demand"</code>, uses
+Monte Carlo integration over all random effects, producing the
+<strong>population-average</strong> demand curve (accounting for Jensen's inequality).
+Default is <code>FALSE</code>, which gives conditional (RE = 0) predictions
+representing a "typical" subject at the center of the RE distribution.</p></dd>
+
+
+<dt id="arg-marginal-method">marginal_method<a class="anchor" aria-label="anchor" href="#arg-marginal-method"></a></dt>
+<dd><p>Character. Method for marginal integration; one of
+<code>"kde"</code> (default, kernel density estimate of BLUPs), <code>"normal"</code> (integrate
+over the model-assumed N(0, sigma_a) distribution), or <code>"empirical"</code>
+(simple average over BLUPs). Ignored when <code>marginal = FALSE</code>.</p></dd>
+
+
+<dt id="arg-correction">correction<a class="anchor" aria-label="anchor" href="#arg-correction"></a></dt>
+<dd><p>Logical; if <code>TRUE</code> (default), applies the lognormal
+retransformation correction <code>exp(sigma_e^2 / 2)</code> when back-transforming
+from the log scale to the natural consumption scale. This produces
+the <strong>arithmetic mean</strong> (conditional on Q &gt; 0). Set to <code>FALSE</code> to obtain
+the <strong>median</strong> (geometric mean), which is useful for individual-level
+"most likely" predictions. Only applies to <code>type = "response"</code> and
+<code>type = "demand"</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Integer or <code>NULL</code>. Random seed for Monte Carlo marginal
+predictions (default <code>42L</code>). Set to <code>NULL</code> to use current RNG state.
+The global RNG state is preserved and restored after the call.</p></dd>
+
+
 <dt id="arg-se-fit">se.fit<a class="anchor" aria-label="anchor" href="#arg-se-fit"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, includes a <code>.se.fit</code> column (delta-method via
 <code>sdreport</code> when available).</p></dd>
@@ -133,10 +172,73 @@ If <code>newdata</code> is <code>NULL</code>, returns predictions for all subjec
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>For <code>type = "parameters"</code>, a tibble of subject-level parameters.
+For <code>type = "probability"</code> with <code>marginal = TRUE</code>, a tibble with columns
+for price, <code>prob_zero</code>, and <code>.fitted</code> (no subject column).
 Otherwise, a tibble containing the <code>newdata</code> columns plus <code>.fitted</code> and
 helper columns <code>predicted_log_consumption</code>, <code>predicted_consumption</code>,
 <code>prob_zero</code>, and <code>expected_consumption</code>. When requested, <code>.se.fit</code> and
 <code>.lower</code>/<code>.upper</code> are included.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+
+<div class="section">
+<h3 id="retransformation-correction">Retransformation correction<a class="anchor" aria-label="anchor" href="#retransformation-correction"></a></h3>
+
+
+<p>The hurdle model specifies Gaussian errors on log-consumption (Part II):
+<code>log(Q) ~ N(mu, sigma_e^2)</code>. The conditional distribution of Q given
+Q &gt; 0 is therefore lognormal. The arithmetic mean of a lognormal is
+<code>exp(mu + sigma_e^2/2)</code>, not <code>exp(mu)</code>. Using <code>exp(mu)</code> returns the
+<strong>median</strong> (geometric mean), which systematically underestimates the
+arithmetic mean by a factor of <code>exp(sigma_e^2/2)</code>. This correction is
+applied by default when <code>type = "response"</code> or <code>type = "demand"</code>. Set
+<code>correction = FALSE</code> to obtain the median instead.</p>
+<p>This is a parametric correction assuming normality of log-scale residuals
+(Duan, 1983). Under the model's normality assumption, this is equivalent to
+Duan's nonparametric smearing estimator.</p>
+</div>
+
+<div class="section">
+<h3 id="marginal-p-zero-">Marginal P(zero)<a class="anchor" aria-label="anchor" href="#marginal-p-zero-"></a></h3>
+
+
+<p>The conditional P(zero) curve (when <code>marginal = FALSE</code>) sets the random
+intercept to zero, which produces a near step-function that misrepresents
+the observed fraction of zero responses. The marginal curve integrates over
+the random effect distribution, answering "what fraction of the population
+has stopped buying at this price?"</p>
+<p>The <code>"kde"</code> and <code>"empirical"</code> methods integrate over empirical Bayes
+estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
+compared to the true random effects, so these methods slightly
+underestimate the RE variance. In practice, this shrinkage bias is often
+smaller than the bias from assuming normality when the true RE distribution
+is non-normal. The <code>"normal"</code> method integrates over the model-assumed
+N(0, sigma_a) distribution, which is correct under the model but may be
+wrong if the normality assumption is violated. Use <code><a href="plot_qq.html">plot_qq()</a></code> to assess
+RE normality.</p>
+</div>
+
+<div class="section">
+<h3 id="conditional-vs-marginal-demand-predictions">Conditional vs. marginal demand predictions<a class="anchor" aria-label="anchor" href="#conditional-vs-marginal-demand-predictions"></a></h3>
+
+
+<p>Population-level demand predictions (when no subject ID is provided) can be
+computed in two ways:</p><ul><li><p><strong>Conditional (default, <code>marginal = FALSE</code>):</strong> Sets all random effects to
+zero and evaluates the demand function at the fixed-effect (population)
+parameters. For nonlinear models, this corresponds to the <strong>conditional
+mode</strong>, not the population-average mean.</p></li>
+<li><p><strong>Marginal (<code>marginal = TRUE</code>):</strong> Integrates the prediction over the
+estimated random-effects distribution via Monte Carlo sampling. This gives
+the <strong>population-average</strong> demand curve. Due to Jensen's inequality, this
+curve lies above the conditional curve when the demand function is convex
+in the random effects (which it is for exponential demand with log-normal
+Q0 and alpha).</p></li>
+</ul><p>The conditional prediction is appropriate for characterizing a "typical"
+subject. The marginal prediction is appropriate for predicting aggregate
+consumption in a population.</p>
+</div>
+
     </div>
 
     <div class="section level2">

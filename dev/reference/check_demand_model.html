@@ -9,7 +9,7 @@ about convergence, boundary conditions, and residual patterns."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,7 @@ about convergence, boundary conditions, and residual patterns."><meta property="
     <li><a class="dropdown-item" href="../articles/fixed-demand.html">Fixed-Effect Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -73,6 +74,9 @@ about convergence, boundary conditions, and residual patterns.</p>
 <span><span class="fu">check_demand_model</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'beezdemand_fixed'</span></span>
+<span><span class="fu">check_demand_model</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
 <span><span class="fu">check_demand_model</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -158,14 +162,14 @@ with <code><a href="https://easystats.github.io/performance/reference/check_mode
 <span class="r-out co"><span class="r-pr">#&gt;</span> Random Effects:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Residuals:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Mean: -2.962e-05</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   SD: 0.133</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Range: [-0.4069, 0.4708]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Outliers: 2 observations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Mean: 0.01173</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   SD: 0.9277</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Range: [-2.862, 3.312]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Outliers: 3 observations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --------------------------------------------------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Issues Detected (1):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Detected 2 potential outliers (|resid| &gt; 3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1. Detected 3 potential outliers (|resid| &gt; 3)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Recommendations:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   - Investigate outlying observations</span>

@@ -17,6 +17,9 @@ check_demand_model(object, ...)
 
 # S3 method for class 'beezdemand_fixed'
 check_demand_model(object, ...)
+
+# S3 method for class 'beezdemand_tmb'
+check_demand_model(object, ...)
 ```
 
 ## Arguments
@@ -114,14 +117,14 @@ print(diagnostics)
 #> Random Effects:
 #> 
 #> Residuals:
-#>   Mean: -2.962e-05
-#>   SD: 0.133
-#>   Range: [-0.4069, 0.4708]
-#>   Outliers: 2 observations
+#>   Mean: 0.01173
+#>   SD: 0.9277
+#>   Range: [-2.862, 3.312]
+#>   Outliers: 3 observations
 #> 
 #> --------------------------------------------------
 #> Issues Detected (1):
-#>   1. Detected 2 potential outliers (|resid| > 3)
+#>   1. Detected 3 potential outliers (|resid| > 3)
 #> 
 #> Recommendations:
 #>   - Investigate outlying observations
