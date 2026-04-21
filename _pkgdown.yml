@@ -69,6 +69,7 @@ reference:
     contents:
       - fit_demand_fixed
       - fit_demand_mixed
+      - fit_demand_tmb
       - fit_demand_hurdle
       - fit_cp_nls
       - fit_cp_linear
@@ -111,7 +112,8 @@ reference:
       - starts_with("AIC.")
       - starts_with("BIC.")
       - starts_with("logLik.")
-      - get_subject_pars
+      - starts_with("nobs.")
+      - starts_with("get_subject_pars")
       - extract_coefficients
 
   - title: Prediction
@@ -122,8 +124,8 @@ reference:
   - title: Post-Hoc Analysis
     desc: Functions for post-hoc comparisons and inference.
     contents:
-      - get_demand_param_emms
-      - get_demand_comparisons
+      - starts_with("get_demand_param_emms")
+      - starts_with("get_demand_comparisons")
       - get_demand_param_trends
       - get_observed_demand_param_emms
       - get_individual_coefficients
@@ -135,7 +137,7 @@ reference:
     contents:
       - calc_omax_pmax
       - calc_observed_pmax_omax
-      - calc_group_metrics
+      - starts_with("calc_group_metrics")
       - beezdemand_calc_pmax_omax
       - beezdemand_calc_pmax_omax_vec
       - get_empirical_measures
