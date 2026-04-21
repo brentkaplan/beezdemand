@@ -129,7 +129,17 @@ Ignored if \code{fixed_rhs} is provided.}
 \item{...}{Additional arguments passed to \code{nlme::nlme()}.}
 }
 \value{
-An object of class \code{beezdemand_nlme}.
+An object of class \code{beezdemand_nlme} containing:
+\describe{
+\item{model}{The fitted \code{nlme} model object}
+\item{data}{Data frame used for fitting}
+\item{call}{The original function call}
+\item{equation_form}{Equation form used}
+\item{param_space}{Parameterization space}
+\item{factors}{Factor variables in the model}
+\item{y_var, x_var, id_var}{Variable name strings}
+\item{start_values}{Starting values used}
+}
 }
 \description{
 Fits a nonlinear mixed-effects model for behavioral economic demand data.
@@ -154,3 +164,16 @@ summary(fit)
 }
 
 }
+\seealso{
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}} for TMB-based mixed-effects (preferred for new work),
+\code{\link[=fit_demand_fixed]{fit_demand_fixed()}} for individual NLS curves,
+\code{\link[=fit_demand_hurdle]{fit_demand_hurdle()}} for hurdle models,
+\code{\link[=get_demand_param_emms]{get_demand_param_emms()}} for estimated marginal means,
+\code{\link[=get_demand_comparisons]{get_demand_comparisons()}} for pairwise comparisons.
+
+Other demand-fitting: 
+\code{\link{fit_demand_fixed}()},
+\code{\link{fit_demand_hurdle}()},
+\code{\link{fit_demand_tmb}()}
+}
+\concept{demand-fitting}

@@ -578,3 +578,19 @@ test_that("simplified equation works with log10 param_space", {
     expect_true(any(res$Alpha[converged] > 0, na.rm = TRUE))
   }
 })
+
+
+describe("predictions preserve original participant IDs", {
+  it("uses participant IDs not loop indices in prediction id column", {
+    dat <- data.frame(
+      id = rep(c("s1", "s2", "s3"), each = 5),
+      x = rep(c(0.01, 0.1, 1, 10, 100), 3),
+      y = c(10, 8, 5, 2, 0, 12, 9, 6, 3, 1, 8, 7, 4, 1, 0)
+    )
+    result <- fit_demand_fixed(data = dat, equation = "koff", agg = NULL, k = 2)
+    # Each prediction df should have the participant's actual ID, not an integer
+    for (pid in c("s1", "s2", "s3")) {
+      expect_true(all(result$predictions[[pid]]$id == pid))
+    }
+  })
+})

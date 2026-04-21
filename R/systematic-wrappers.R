@@ -8,13 +8,15 @@ NULL
 #' @param results Tibble with standardized columns
 #' @param type Character: "demand" or "cp"
 #' @param call Original function call
+#' @param by_var Character vector of grouping column names (NULL if ungrouped)
 #' @keywords internal
-new_beezdemand_systematicity <- function(results, type, call) {
+new_beezdemand_systematicity <- function(results, type, call, by_var = NULL) {
   structure(
     list(
       results = results,
       type = type,
       call = call,
+      by_var = by_var,
       n_total = nrow(results),
       n_systematic = sum(results$systematic, na.rm = TRUE),
       n_unsystematic = sum(!results$systematic, na.rm = TRUE)
@@ -40,6 +42,10 @@ new_beezdemand_systematicity <- function(results, type, call) {
 #' @param x_var Character. Name of the price column. Default `"x"`.
 #' @param y_var Character. Name of the consumption column. Default `"y"`.
 #' @param id_var Character. Name of the subject identifier column. Default `"id"`.
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, the check is run separately within each unique
+#'   combination of the `by` columns. Group columns are prepended to
+#'   `$results`. Default `NULL` (no grouping).
 #'
 #' @return An object of class `beezdemand_systematicity` with components:
 #'   \describe{
@@ -79,6 +85,11 @@ new_beezdemand_systematicity <- function(results, type, call) {
 #' print(check)
 #' summary(check)
 #' tidy(check)
+#'
+#' # Grouped check — results include group column
+#' data(apt_full)
+#' check_g <- check_systematic_demand(apt_full, by = "gender")
+#' check_g$results
 #' }
 #'
 #' @export
@@ -89,8 +100,40 @@ check_systematic_demand <- function(data,
                                     consecutive_zeros = 2,
                                     x_var = "x",
                                     y_var = "y",
-                                    id_var = "id") {
+                                    id_var = "id",
+                                    by = NULL) {
   call <- match.call()
+
+
+  # --- grouped dispatch ---
+  if (!is.null(by)) {
+    split_out <- beezdemand_split_by(data, by, function(slice, key_row) {
+      # Recursive call without `by`
+      obj <- check_systematic_demand(
+        data = slice,
+        trend_threshold = trend_threshold,
+        bounce_threshold = bounce_threshold,
+        max_reversals = max_reversals,
+        consecutive_zeros = consecutive_zeros,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        by = NULL
+      )
+      # Prepend group columns to results
+      for (col in rev(by)) {
+        obj$results <- tibble::add_column(obj$results, !!col := key_row[[col]], .before = 1)
+      }
+      obj$results
+    })
+
+    combined <- dplyr::bind_rows(split_out$results)
+    return(new_beezdemand_systematicity(
+      results = combined, type = "demand", call = call, by_var = by
+    ))
+  }
+
+  # --- ungrouped (original logic) ---
 
   # Rename columns if needed
   if (x_var != "x" || y_var != "y" || id_var != "id") {
@@ -157,6 +200,10 @@ check_systematic_demand <- function(data,
 #' @param x_var Character. Name of the price column. Default `"x"`.
 #' @param y_var Character. Name of the consumption column. Default `"y"`.
 #' @param id_var Character. Name of the subject identifier column. Default `"id"`.
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, the check is run separately within each unique
+#'   combination of the `by` columns. Group columns are prepended to
+#'   `$results`. Default `NULL` (no grouping).
 #'
 #' @return An object of class `beezdemand_systematicity` with the same structure
 #'   as `check_systematic_demand()`, with `type = "cp"`.
@@ -193,8 +240,38 @@ check_systematic_cp <- function(data,
                                 expected_down = FALSE,
                                 x_var = "x",
                                 y_var = "y",
-                                id_var = "id") {
+                                id_var = "id",
+                                by = NULL) {
   call <- match.call()
+
+  # --- grouped dispatch ---
+  if (!is.null(by)) {
+    split_out <- beezdemand_split_by(data, by, function(slice, key_row) {
+      obj <- check_systematic_cp(
+        data = slice,
+        trend_threshold = trend_threshold,
+        bounce_threshold_down = bounce_threshold_down,
+        bounce_threshold_up = bounce_threshold_up,
+        bounce_threshold_none = bounce_threshold_none,
+        consecutive_zeros = consecutive_zeros,
+        consecutive_nonzeros = consecutive_nonzeros,
+        expected_down = expected_down,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        by = NULL
+      )
+      for (col in rev(by)) {
+        obj$results <- tibble::add_column(obj$results, !!col := key_row[[col]], .before = 1)
+      }
+      obj$results
+    })
+
+    combined <- dplyr::bind_rows(split_out$results)
+    return(new_beezdemand_systematicity(
+      results = combined, type = "cp", call = call, by_var = by
+    ))
+  }
 
   # Rename columns if needed
   if (x_var != "x" || y_var != "y") {
@@ -340,6 +417,9 @@ print.beezdemand_systematicity <- function(x, ...) {
   cat("\n")
   cat("Systematicity Check (", x$type, ")\n", sep = "")
   cat(strrep("-", 30), "\n")
+  if (!is.null(x$by_var)) {
+    cat("Grouped by:", paste(x$by_var, collapse = ", "), "\n")
+  }
   cat("Total patterns:", x$n_total, "\n")
   cat("Systematic:", x$n_systematic,
       "(", round(x$n_systematic / x$n_total * 100, 1), "%)\n")

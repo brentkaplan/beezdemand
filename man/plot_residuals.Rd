@@ -4,7 +4,12 @@
 \alias{plot_residuals}
 \title{Plot Residual Diagnostics}
 \usage{
-plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
+plot_residuals(
+  object,
+  type = c("all", "fitted", "histogram", "qq"),
+  component = c("combined", "continuous"),
+  ...
+)
 }
 \arguments{
 \item{object}{A fitted model object.}
@@ -17,6 +22,12 @@ plot_residuals(object, type = c("all", "fitted", "histogram", "qq"), ...)
 \item \code{"all"}: All plots combined (default)
 }}
 
+\item{component}{Character; for hurdle models, which residuals to plot:
+\code{"combined"} (default) uses randomized quantile residuals that assess both
+binary and continuous components simultaneously; \code{"continuous"} uses
+log-scale Part II residuals only (zeros excluded). Ignored for non-hurdle
+models.}
+
 \item{...}{Additional arguments passed to plotting functions.}
 }
 \value{
@@ -25,6 +36,11 @@ A ggplot2 object or list of ggplot2 objects.
 \description{
 Creates diagnostic plots for model residuals including residuals vs fitted,
 scale-location, and histogram of residuals.
+}
+\details{
+For hurdle models, diagnostic plots default to randomized quantile residuals
+that assess both the binary and continuous components simultaneously. Set
+\code{component = "continuous"} to see only Part II (log-scale) residuals.
 }
 \examples{
 \donttest{

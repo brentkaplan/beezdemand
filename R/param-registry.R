@@ -332,7 +332,8 @@ NULL
     name = "Simplified Exponential (Rzeszutek et al., 2025)",
     future_id = "simplified_exponential_demand",
     params_estimated = c("q0", "alpha"),
-    params_fixed = character(0),
+    params_default_fixed = character(0),
+    k_modes = NULL,
     default_param_space = "natural",
     response_scale = "natural",
     zero_handling = "keep"
@@ -344,7 +345,8 @@ NULL
     name = "Linear Demand",
     future_id = "linear_demand",
     params_estimated = c("L", "b", "a"),
-    params_fixed = character(0),
+    params_default_fixed = character(0),
+    k_modes = NULL,
     default_param_space = "natural",
     response_scale = "natural",
     zero_handling = "keep"
@@ -473,6 +475,62 @@ NULL
       "rho_ac_raw",
       "rho_bc_raw"
     )
+  ),
+
+  # ---------------------------------------------------------------------------
+  # TMB mixed-effects equations (fit_demand_tmb)
+  # ---------------------------------------------------------------------------
+
+  tmb_exponential = list(
+    id = "tmb_exponential",
+    name = "TMB Exponential (Hursh & Silberberg, 2008)",
+    future_id = "tmb_exponential_demand",
+    params_estimated = c("beta_q0", "beta_alpha", "log_k"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "log",
+    zero_handling = "drop",
+    variance_params_1re = c("logsigma_b", "logsigma_e"),
+    variance_params_2re = c("logsigma_b", "logsigma_c", "logsigma_e", "rho_bc_raw")
+  ),
+
+  tmb_exponentiated = list(
+    id = "tmb_exponentiated",
+    name = "TMB Exponentiated (Koffarnus et al., 2015)",
+    future_id = "tmb_exponentiated_demand",
+    params_estimated = c("beta_q0", "beta_alpha", "log_k"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "natural",
+    zero_handling = "keep",
+    variance_params_1re = c("logsigma_b", "logsigma_e"),
+    variance_params_2re = c("logsigma_b", "logsigma_c", "logsigma_e", "rho_bc_raw")
+  ),
+
+  tmb_simplified = list(
+    id = "tmb_simplified",
+    name = "TMB Simplified Exponential",
+    future_id = "tmb_simplified_demand",
+    params_estimated = c("beta_q0", "beta_alpha"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "natural",
+    zero_handling = "keep",
+    variance_params_1re = c("logsigma_b", "logsigma_e"),
+    variance_params_2re = c("logsigma_b", "logsigma_c", "logsigma_e", "rho_bc_raw")
+  ),
+
+  tmb_zben = list(
+    id = "tmb_zben",
+    name = "TMB Zero-Bounded Exponential (LL4)",
+    future_id = "tmb_zben_demand",
+    params_estimated = c("beta_q0", "beta_alpha"),
+    params_fixed = character(0),
+    default_param_space = "log",
+    response_scale = "ll4",
+    zero_handling = "transform",
+    variance_params_1re = c("logsigma_b", "logsigma_e"),
+    variance_params_2re = c("logsigma_b", "logsigma_c", "logsigma_e", "rho_bc_raw")
   ),
 
   # ---------------------------------------------------------------------------

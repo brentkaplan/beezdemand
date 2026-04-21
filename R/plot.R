@@ -112,7 +112,10 @@ annotation_logticks2 <- function(base = 10, sides = "bl", scaled = TRUE, short =
 PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = TRUE, ...) {
   
   if (!all(c("dfres", "newdats", "adfs") %in% names(dat))) {
-    stop("Object should be from FitCurves. Try rerunning FitCurves with detailed = TRUE")
+    cli::cli_abort(c(
+      "{.arg dat} should be a {.fn FitCurves} result.",
+      "i" = "Re-run {.fn FitCurves} with {.code detailed = TRUE}."
+    ))
   }
   
   if (!ask) {
@@ -149,7 +152,7 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
       next()
     }
   }
-  message(ending, " plots saved in ", outdir)
+  cli::cli_inform("{ending} plots saved in {.path {outdir}}")
 }
 
 ##' Creates a single plot object
@@ -174,8 +177,8 @@ PlotCurves <- function(dat, outdir = NULL, device = "png", ending = NULL, ask = 
 PlotCurve <- function(adf, dfrow, newdats, yscale = "log", style = c("modern", "apa")) {
   style <- match.arg(style)
   if (!any(adf$y > 0)) {
-   warning("No positive consumption values!")
-   return(invisible(NULL))
+    cli::cli_warn("No positive consumption values.")
+    return(invisible(NULL))
   }
   
   if (!all(is.na(newdats$y))) {

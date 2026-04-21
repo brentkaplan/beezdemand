@@ -49,7 +49,7 @@ test_that("glance.beezdemand_hurdle meets contract", {
   expect_true(all(c("model_class", "backend", "nobs", "n_subjects",
                     "converged", "logLik", "AIC", "BIC") %in% names(g)))
   expect_equal(g$model_class, "beezdemand_hurdle")
-  expect_equal(g$backend, "TMB")
+  expect_equal(g$backend, "TMB_hurdle")
 })
 
 
@@ -135,6 +135,45 @@ test_that("glance.beezdemand_fixed meets contract", {
   expect_equal(g$backend, "legacy")
 })
 
+
+test_that("glance methods share common columns across all model classes", {
+  common_cols <- c("model_class", "backend", "nobs", "n_subjects",
+                   "converged", "logLik", "AIC", "BIC")
+
+  # Fixed model
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+  fit_fixed <- fit_demand_fixed(apt_small)
+  g_fixed <- glance(fit_fixed)
+  expect_true(all(common_cols %in% names(g_fixed)),
+    info = paste("Fixed missing:", paste(setdiff(common_cols, names(g_fixed)), collapse = ", ")))
+
+  # Hurdle model
+  skip_if_not_installed("TMB")
+  skip_on_cran()
+  fit_hurdle <- tryCatch(
+    fit_demand_hurdle(apt_small, y_var = "y", x_var = "x", id_var = "id"),
+    error = function(e) NULL
+  )
+  if (!is.null(fit_hurdle)) {
+    g_hurdle <- glance(fit_hurdle)
+    expect_true(all(common_cols %in% names(g_hurdle)),
+      info = paste("Hurdle missing:", paste(setdiff(common_cols, names(g_hurdle)), collapse = ", ")))
+  }
+
+  # NLME model
+  skip_if_not_installed("nlme")
+  apt_small$y_ll4 <- ll4(apt_small$y)
+  fit_nlme <- tryCatch(
+    fit_demand_mixed(apt_small, y_var = "y_ll4", x_var = "x", id_var = "id"),
+    error = function(e) NULL
+  )
+  if (!is.null(fit_nlme) && !is.null(fit_nlme$model)) {
+    g_nlme <- glance(fit_nlme)
+    expect_true(all(common_cols %in% names(g_nlme)),
+      info = paste("NLME missing:", paste(setdiff(common_cols, names(g_nlme)), collapse = ", ")))
+  }
+})
 
 test_that("tidy.beezdemand_systematicity meets contract", {
   data(apt, package = "beezdemand")

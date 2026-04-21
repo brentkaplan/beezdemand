@@ -385,7 +385,7 @@ test_that("get_demand_comparisons EMMs have correct factor levels", {
 test_that("get_demand_param_emms errors on invalid fit object", {
   expect_error(
     get_demand_param_emms(list(a = 1)),
-    "must be a 'beezdemand_nlme' object"
+    "must be a 'beezdemand_nlme' or 'beezdemand_tmb' object"
   )
 })
 
@@ -405,7 +405,7 @@ test_that("get_demand_param_emms errors on NULL model", {
 test_that("get_demand_comparisons errors on invalid fit object", {
   expect_error(
     get_demand_comparisons(list(a = 1)),
-    "must be a 'beezdemand_nlme' object"
+    "must be a 'beezdemand_nlme' or 'beezdemand_tmb' object"
   )
 })
 
@@ -579,4 +579,72 @@ test_that("get_demand_comparisons does not filter balanced designs", {
   expect_equal(nrow(drug_a_rows), 3)
   expect_equal(nrow(drug_b_rows), 3)
   expect_equal(nrow(contrasts_df), 6)
+})
+
+
+# =============================================================================
+# TMB fits with continuous covariates in EMMs/comparisons (codex Bug 3)
+# =============================================================================
+
+test_that("get_demand_param_emms.beezdemand_tmb handles continuous covariates", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  # Subsample for fast CI runs (keep ~50 subjects, balanced by gender)
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ids_g <- unique(d$id[d$gender == g])
+    head(ids_g[order(ids_g)], 25)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential",
+                        factors = "gender",
+                        continuous_covariates = "age", verbose = 0)
+  emms <- get_demand_param_emms(fit, param = "Q0")
+  expect_s3_class(emms, "tbl_df")
+  expect_equal(nrow(emms), 2)
+  expect_true(all(is.finite(emms$std.error)))
+  expect_true(all(emms$std.error > 0))
+})
+
+test_that("get_demand_comparisons.beezdemand_tmb handles continuous covariates", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  # Subsample for fast CI runs (keep ~50 subjects, balanced by gender)
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ids_g <- unique(d$id[d$gender == g])
+    head(ids_g[order(ids_g)], 25)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential",
+                        factors = "gender",
+                        continuous_covariates = "age", verbose = 0)
+  cmp <- get_demand_comparisons(fit, param = "Q0")
+  expect_s3_class(cmp, "tbl_df")
+  expect_true("estimate_log" %in% names(cmp))
+  expect_true(is.finite(cmp$estimate_log[1]))
+})
+
+test_that("EMM `at` overrides continuous covariate value for TMB fits", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  # Subsample for fast CI runs (keep ~50 subjects, balanced by gender)
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ids_g <- unique(d$id[d$gender == g])
+    head(ids_g[order(ids_g)], 25)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential",
+                        factors = "gender",
+                        continuous_covariates = "age", verbose = 0)
+  emm_low  <- get_demand_param_emms(fit, param = "Q0", at = list(age = 25))
+  emm_high <- get_demand_param_emms(fit, param = "Q0", at = list(age = 35))
+  expect_false(isTRUE(all.equal(emm_low$estimate, emm_high$estimate)))
 })

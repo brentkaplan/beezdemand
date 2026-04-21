@@ -171,7 +171,8 @@ test_that("get_empirical_measures errors with duplicate prices", {
 
   expect_error(
     get_empirical_measures(test_data),
-    "Duplicates found where id = S1"
+    "Duplicates found where",
+    class = "beezdemand_validation_error"
   )
 })
 
@@ -214,7 +215,8 @@ test_that("get_empirical_measures errors with missing columns", {
 test_that("get_empirical_measures errors with non-data.frame input", {
   expect_error(
     get_empirical_measures(c(1, 2, 3)),
-    "'data' must be a data frame"
+    "must be a data frame",
+    class = "beezdemand_validation_error"
   )
 })
 

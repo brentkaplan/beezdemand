@@ -96,7 +96,24 @@
 #' summary(fit)
 #' }
 #'
-#' @return An object of class `beezdemand_nlme`.
+#' @return An object of class `beezdemand_nlme` containing:
+#'   \describe{
+#'     \item{model}{The fitted `nlme` model object}
+#'     \item{data}{Data frame used for fitting}
+#'     \item{call}{The original function call}
+#'     \item{equation_form}{Equation form used}
+#'     \item{param_space}{Parameterization space}
+#'     \item{factors}{Factor variables in the model}
+#'     \item{y_var, x_var, id_var}{Variable name strings}
+#'     \item{start_values}{Starting values used}
+#'   }
+#'
+#' @seealso [fit_demand_tmb()] for TMB-based mixed-effects (preferred for new work),
+#'   [fit_demand_fixed()] for individual NLS curves,
+#'   [fit_demand_hurdle()] for hurdle models,
+#'   [get_demand_param_emms()] for estimated marginal means,
+#'   [get_demand_comparisons()] for pairwise comparisons.
+#' @family demand-fitting
 #'
 #' @importFrom nlme nlme pdDiag nlmeControl fixef
 #' @importFrom stats as.formula median update model.matrix quantile coef
@@ -223,6 +240,36 @@ fit_demand_mixed <- function(
   # This is needed before build_fixed_rhs to correctly filter single-level factors
   data <- ensure_factors(factors_Q0, data)
   data <- ensure_factors(factors_alpha, data)
+
+  # --- Remove incomplete cases from modeling columns ---
+  model_cols <- unique(c(
+    id_var, x_var, y_var, factors_Q0, factors_alpha, continuous_covariates
+  ))
+  model_cols <- intersect(model_cols, names(data))
+  complete_mask <- stats::complete.cases(data[, model_cols, drop = FALSE])
+  n_dropped <- sum(!complete_mask)
+
+  if (n_dropped > 0) {
+    ids_affected <- length(unique(data[[id_var]][!complete_mask]))
+    message(
+      "Removed ", n_dropped, " row(s) with missing values in modeling columns ",
+      "(affecting ", ids_affected, " subject(s))."
+    )
+    data <- data[complete_mask, , drop = FALSE]
+    data[[id_var]] <- droplevels(data[[id_var]])
+    for (f in c(factors_Q0, factors_alpha)) {
+      if (f %in% names(data) && is.factor(data[[f]])) {
+        data[[f]] <- droplevels(data[[f]])
+      }
+    }
+  }
+
+  if (nrow(data) == 0) {
+    stop(
+      "No complete cases remain after removing rows with missing values.",
+      call. = FALSE
+    )
+  }
 
   # Determine the effective fixed-effects RHS strings for Q0 and alpha
   # These may differ if collapse_levels specifies different collapsing
@@ -557,6 +604,10 @@ fit_demand_mixed <- function(
     }
   }
 
+  # Ensure start_values$fixed is an unnamed numeric vector
+  # (pooled NLS can leak names like "Q0_modelp" via coef())
+  start_values$fixed <- unname(as.numeric(start_values$fixed))
+
   groups_formula <- stats::as.formula(paste("~", id_var))
   control_obj <- nlme_control
 
@@ -580,8 +631,9 @@ fit_demand_mixed <- function(
     ")"
   )
 
+  nlme_fit_warnings <- character(0)
   fitted_nlme_model <- tryCatch(
-    {
+    withCallingHandlers(
       nlme::nlme(
         model = nlme_model_formula_obj,
         data = data,
@@ -592,8 +644,12 @@ fit_demand_mixed <- function(
         control = control_obj,
         method = method,
         ...
-      )
-    },
+      ),
+      warning = function(w) {
+        nlme_fit_warnings <<- c(nlme_fit_warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    ),
     error = function(e) {
       num_p_val <- if (!is.na(num_params_Q0) && !is.na(num_params_alpha)) {
         paste0(
@@ -666,6 +722,7 @@ fit_demand_mixed <- function(
       )
     ),
     start_values_used = start_values$fixed,
+    fit_warnings = nlme_fit_warnings,
     collapse_info = if (
       length(collapse_info$Q0) > 0 || length(collapse_info$alpha) > 0
     ) {

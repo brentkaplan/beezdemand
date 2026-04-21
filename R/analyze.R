@@ -484,7 +484,7 @@ FitCurves <- function(
 
     newdat <- NULL
     newdat <- data.frame(
-      "id" = rep(i, length.out = 10000),
+      "id" = rep(ps[i], length.out = 10000),
       "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
       "y" = NA
     )
@@ -645,7 +645,7 @@ FitCurves.linear <- function(
 
     newdat <- NULL
     newdat <- data.frame(
-      "id" = rep(i, length.out = 10000),
+      "id" = rep(ps[i], length.out = 10000),
       "x" = seq(min(adf$x), max(adf$x), length.out = 10000),
       "y" = NA
     )

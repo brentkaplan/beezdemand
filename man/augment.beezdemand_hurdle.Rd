@@ -4,13 +4,25 @@
 \alias{augment.beezdemand_hurdle}
 \title{Augment a beezdemand_hurdle Model with Fitted Values and Residuals}
 \usage{
-\method{augment}{beezdemand_hurdle}(x, newdata = NULL, ...)
+\method{augment}{beezdemand_hurdle}(x, newdata = NULL, component = c("combined", "continuous"), ...)
 }
 \arguments{
 \item{x}{An object of class \code{beezdemand_hurdle}.}
 
 \item{newdata}{Optional data frame of new data for prediction. If NULL,
 uses the original data from the model.}
+
+\item{component}{Character. Which residuals to compute:
+\describe{
+\item{\code{"combined"}}{(Default) Randomized quantile residuals (Dunn &
+Smyth, 1996) that assess both the binary and continuous components
+simultaneously. If the model is correctly specified, these are exactly
+N(0,1).}
+\item{\code{"continuous"}}{Log-scale residuals \code{log(y) - mu} for positive
+observations only (zeros are NA). Assesses Part II specification.}
+\item{\code{"binary"}}{Not returned as residuals; use the \code{.fitted_prob}
+column and observed binary indicators for calibration diagnostics.}
+}}
 
 \item{...}{Additional arguments (currently unused).}
 }
@@ -20,7 +32,7 @@ A tibble containing the original data plus:
 \item{.fitted}{Fitted demand values (natural scale)}
 \item{.fitted_link}{Fitted values on log scale (Part II mean)}
 \item{.fitted_prob}{Predicted probability of consumption (1 - P(zero))}
-\item{.resid}{Residuals on log scale for positive observations, NA for zeros}
+\item{.resid}{Residuals (type depends on \code{component}; see above)}
 \item{.resid_response}{Residuals on response scale (y - .fitted)}
 }
 }
@@ -30,13 +42,23 @@ from a hurdle demand model. This enables easy model diagnostics and
 visualization with the tidyverse.
 }
 \details{
-For two-part hurdle models:
+\subsection{Residual types for hurdle models}{
+
+The hurdle model has two components, each requiring different diagnostic
+approaches:
 \itemize{
-\item \code{.fitted} gives predicted demand on the natural consumption scale
-\item \code{.fitted_prob} gives the predicted probability of positive consumption
-\item \code{.resid} is defined only for positive observations as log(y) - .fitted_link
-\item Observations with zero consumption have \code{.resid = NA} since they are
-explained by Part I (the zero-probability component), not Part II
+\item \strong{Continuous residuals} (\code{component = "continuous"}): Standard log-scale
+residuals \code{log(y) - mu} for observations where y > 0. Zeros are excluded
+(NA). Assesses whether the lognormal conditional distribution is well-
+specified.
+\item \strong{Randomized quantile residuals} (\code{component = "combined"}, default):
+Following Dunn & Smyth (1996), maps each observation through the fitted
+hurdle CDF and then the standard normal quantile function. If the model is
+correctly specified, these residuals are exactly N(0,1) regardless of which
+component generated the observation. For zeros, a uniform random variate
+within \verb{[0, P(zero)]} breaks ties that would otherwise create a spike in
+the QQ plot.
+}
 }
 }
 \examples{

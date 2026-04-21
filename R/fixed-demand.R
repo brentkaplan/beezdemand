@@ -26,6 +26,11 @@ NULL
 #' @param param_space Character. Parameterization used for fitting. One of:
 #'   - `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
 #'   - `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, fits are run separately within each unique
+#'   combination of the `by` columns. Returns a
+#'   `beezdemand_fixed_grouped` object with per-group child fits.
+#'   Default `NULL` (no grouping).
 #' @param ... Additional arguments passed to the underlying `FitCurves()` engine.
 #'
 #' @return An object of class `beezdemand_fixed` with components:
@@ -56,7 +61,18 @@ NULL
 #' summary(fit)
 #' tidy(fit)
 #' glance(fit)
+#'
+#' # Grouped analysis — fit separately by gender
+#' data(apt_full)
+#' fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
+#' tidy(fit_g)   # group column prepended
+#' glance(fit_g)  # one row per group
 #' }
+#'
+#' @seealso [fit_demand_tmb()] for TMB mixed-effects models,
+#'   [fit_demand_mixed()] for NLME mixed-effects models,
+#'   [fit_demand_hurdle()] for hurdle models.
+#' @family demand-fitting
 #'
 #' @export
 fit_demand_fixed <- function(
@@ -75,6 +91,7 @@ fit_demand_fixed <- function(
   y_var = "y",
   id_var = "id",
   param_space = c("natural", "log10"),
+  by = NULL,
   ...
 ) {
   equation <- match.arg(equation)
@@ -88,6 +105,51 @@ fit_demand_fixed <- function(
       "k parameter is not used with equation = 'simplified'; ignoring k.",
       call. = FALSE
     )
+  }
+
+  # --- grouped dispatch ---
+  if (!is.null(by)) {
+    split_out <- beezdemand_split_by(data, by, function(slice, key_row) {
+      fit_demand_fixed(
+        data = slice,
+        equation = equation,
+        k = k,
+        agg = agg,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        param_space = param_space,
+        by = NULL,
+        ...
+      )
+    })
+
+    # Determine k_spec for metadata
+    k_spec <- if (equation == "simplified") {
+      "none (simplified equation)"
+    } else if (is.numeric(k)) {
+      paste0("fixed (", k, ")")
+    } else {
+      k
+    }
+
+    return(structure(
+      list(
+        groups = split_out$results,
+        group_keys = split_out$group_keys,
+        by_var = by,
+        call = call,
+        equation = equation,
+        k_spec = k_spec,
+        k_value = if (equation == "simplified") NA_real_ else if (is.numeric(k)) k else NA_real_,
+        agg = agg,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        param_space = param_space
+      ),
+      class = c("beezdemand_fixed_grouped", "list")
+    ))
   }
 
   # Call legacy engine with detailed = TRUE to get all outputs

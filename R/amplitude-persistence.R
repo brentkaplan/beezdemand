@@ -378,14 +378,47 @@ calculate_amplitude_persistence.beezdemand_hurdle <- function(fit,
                                                               ...) {
   # fit$subject_pars contains metrics
   pars <- fit$subject_pars
-  
+
   # Map names to standard expectations if they differ significantly
   # subject_pars: id, Q0, alpha, breakpoint, Pmax, Omax
-  
+
   # Note: Hurdle Q0 and alpha are already linear scale in subject_pars
-  
-  calculate_amplitude_persistence.default(pars, 
-                                          amplitude = amplitude, 
+
+  calculate_amplitude_persistence.default(pars,
+                                          amplitude = amplitude,
+                                          persistence = persistence,
+                                          use_inv_alpha = use_inv_alpha,
+                                          strict = strict,
+                                          min_persistence_components = min_persistence_components,
+                                          empirical_y_var = empirical_y_var,
+                                          basis_means = basis_means,
+                                          basis_sds = basis_sds,
+                                          ...)
+}
+
+#' @export
+calculate_amplitude_persistence.beezdemand_tmb <- function(fit,
+                                                           amplitude = c("Q0"),
+                                                           persistence = c("Pmax", "Omax", "alpha"),
+                                                           use_inv_alpha = TRUE,
+                                                           strict = TRUE,
+                                                           min_persistence_components = 2L,
+                                                           empirical_y_var = NULL,
+                                                           basis_means = NULL,
+                                                           basis_sds = NULL,
+                                                           ...) {
+  # TMB subject_pars columns: id, b_i, c_i, Q0, alpha, Pmax, Omax (no breakpoint)
+  pars <- fit$subject_pars
+
+  if (is.null(pars) || !is.data.frame(pars) || nrow(pars) == 0L) {
+    cli::cli_abort(c(
+      "TMB fit has no subject-level parameters.",
+      "i" = "Ensure the model converged before calling {.fn calculate_amplitude_persistence}."
+    ))
+  }
+
+  calculate_amplitude_persistence.default(pars,
+                                          amplitude = amplitude,
                                           persistence = persistence,
                                           use_inv_alpha = use_inv_alpha,
                                           strict = strict,

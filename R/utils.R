@@ -37,15 +37,22 @@ utils::globalVariables(c(
 #' @param call The calling environment for error reporting.
 #' @param class Additional error classes to add (will be prefixed with "beezdemand_").
 #' @noRd
-validation_error <- function(message, arg = NULL, call = rlang::caller_env(), class = NULL) {
+validation_error <- function(message, arg = NULL, call = rlang::caller_env(),
+                             class = NULL, .envir = parent.frame()) {
+  # Use cli::cli_abort so callers can pass inline markup ({.arg}, {.field},
+  # {.val}, {.fn}, etc.) and per-bullet messages. .envir threads the original
+  # caller's frame through so glue can resolve interpolations like {x[i]}.
   if (!is.null(arg)) {
-    message <- paste0("Problem with argument `", arg, "`: ", message)
+    message <- c(
+      paste0("Problem with argument {.arg ", arg, "}:"),
+      message
+    )
   }
   error_class <- c(
     if (!is.null(class)) paste0("beezdemand_", class),
     "beezdemand_validation_error"
   )
-  rlang::abort(message, class = error_class, call = call)
+  cli::cli_abort(message, class = error_class, call = call, .envir = .envir)
 }
 
 #' Signal a model fitting error
@@ -56,11 +63,17 @@ validation_error <- function(message, arg = NULL, call = rlang::caller_env(), cl
 #' @param model_type Type of model that failed (e.g., "nls", "nlme", "tmb").
 #' @param call The calling environment.
 #' @noRd
-fitting_error <- function(message, model_type = NULL, call = rlang::caller_env()) {
+fitting_error <- function(message, model_type = NULL, call = rlang::caller_env(),
+                          .envir = parent.frame()) {
   if (!is.null(model_type)) {
-    message <- paste0("[", model_type, "] ", message)
+    message <- c(
+      paste0("[", model_type, "] ", if (length(message) > 0) message[[1]] else ""),
+      if (length(message) > 1) message[-1]
+    )
   }
-  rlang::abort(message, class = c("beezdemand_fitting_error", "beezdemand_error"), call = call)
+  cli::cli_abort(message,
+                 class = c("beezdemand_fitting_error", "beezdemand_error"),
+                 call = call, .envir = .envir)
 }
 
 #' Signal a missing package error
@@ -72,29 +85,77 @@ fitting_error <- function(message, model_type = NULL, call = rlang::caller_env()
 #' @param call The calling environment.
 #' @noRd
 missing_package_error <- function(pkg, reason = NULL, call = rlang::caller_env()) {
-  message <- paste0("Package '", pkg, "' is required")
-  if (!is.null(reason)) {
-    message <- paste0(message, " ", reason)
-  }
-  message <- paste0(message, ". Please install it with: install.packages('", pkg, "')")
-  rlang::abort(message, class = c("beezdemand_missing_package", "beezdemand_error"), call = call)
+  msg_main <- paste0("Package {.pkg ", pkg, "} is required",
+                     if (!is.null(reason)) paste0(" ", reason),
+                     ".")
+  cli::cli_abort(
+    c(msg_main,
+      "i" = paste0("Install it with {.code install.packages(\"", pkg, "\")}.")),
+    class = c("beezdemand_missing_package", "beezdemand_error"),
+    call = call
+  )
 }
 
 #' Normalize Equation Name to Legacy Convention
 #'
-#' Maps modern equation names to their legacy equivalents used internally
-#' by the fitting engine. Pass-through for names that are already in legacy
-#' form or unrecognised.
+#' Normalize equation name across modeling tiers
 #'
-#' @param equation Character scalar.
-#' @return Character scalar (legacy name).
+#' Maps equation aliases to canonical names for a given tier. Accepts
+#' cross-tier aliases (e.g., "hs" in the TMB tier maps to "exponential")
+#' and emits a deprecation-style message for non-canonical names.
+#'
+#' @param equation Character scalar. The equation name to normalize.
+#' @param tier Character scalar. One of "fixed", "tmb", "nlme", "hurdle".
+#'   Defaults to "fixed" for backwards compatibility.
+#' @return Character scalar (canonical name for the tier).
 #' @noRd
-normalize_equation <- function(equation) {
-  switch(equation,
-    exponential   = "hs",
-    exponentiated = "koff",
-    equation
+normalize_equation <- function(equation, tier = "fixed") {
+  # Pass through if equation is still a multi-value default (pre-match.arg)
+  if (length(equation) != 1) return(equation)
+
+  # Canonical names per tier
+  canonical <- list(
+    fixed  = c("hs", "koff", "simplified", "linear"),
+    tmb    = c("exponentiated", "exponential", "simplified", "zben"),
+    nlme   = c("exponentiated", "zben", "simplified"),
+    hurdle = c("zhao_exponential", "exponential", "simplified_exponential")
   )
+
+  # Cross-tier alias map: alias -> list(tier = canonical_name)
+  aliases <- list(
+    # Legacy -> modern
+    hs   = list(tmb = "exponential", nlme = NULL, hurdle = "exponential"),
+    koff = list(tmb = "exponentiated", nlme = "exponentiated", hurdle = NULL),
+    # Modern -> legacy
+    exponential   = list(fixed = "hs"),
+    exponentiated = list(fixed = "koff")
+  )
+
+  tier_canon <- canonical[[tier]]
+  if (is.null(tier_canon)) {
+    return(equation)
+  }
+
+  # Already canonical for this tier
+ if (equation %in% tier_canon) {
+    return(equation)
+  }
+
+  # Check aliases
+  alias_entry <- aliases[[equation]]
+  if (!is.null(alias_entry) && !is.null(alias_entry[[tier]])) {
+    mapped <- alias_entry[[tier]]
+    lifecycle::deprecate_warn(
+      when = "0.3.0",
+      what = I(paste0("equation = \"", equation, "\"")),
+      with = I(paste0("equation = \"", mapped, "\"")),
+      details = paste0("Alias accepted for the ", tier, " tier.")
+    )
+    return(mapped)
+  }
+
+  # Pass through (let match.arg in calling function handle invalid names)
+  equation
 }
 
 ##' Pull vector from data frame
@@ -151,7 +212,7 @@ trim.leading <- function(x) sub("^\\s+", "", x)
 ##' @export
 CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
   dat <- if (dplyr::is.tbl(dat)) {
-    message("Data casted as data.frame")
+    cli::cli_inform("Data casted as data.frame")
     dat <- as.data.frame(dat)
   } else {
     dat
@@ -169,7 +230,7 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
   }
 
   if (any(is.na(dat[, ycol]))) {
-    warning("NA values found in ", ycol, " column. Dropping NAs and continuing")
+    cli::cli_warn("{.code NA} values found in {.field {ycol}} column. Dropping NAs and continuing.")
     dat <- dat[!is.na(dat[, ycol]), ]
   }
 
@@ -192,19 +253,19 @@ CheckCols <- function(dat, xcol, ycol, idcol, groupcol = NULL) {
       colnames(dat) <- gsub(idcol, "id", colnames(dat))
     }
   } else {
-    stop("Can't find x, y, and id column names in data!", call. = FALSE)
+    cli::cli_abort("Can't find x, y, and id column names in data!")
   }
 
   if (!is.null(groupcol) && any(colnames(dat) %in% groupcol)) {
     colnames(dat) <- gsub(groupcol, "group", colnames(dat))
   } else if (!is.null(groupcol) && !any(colnames(dat) %in% "group")) {
-    stop("Can't find groupcol column name in data!", call. = FALSE)
+    cli::cli_abort("Can't find groupcol column name in data!")
   } else if (
     !is.null(groupcol) &&
       any(colnames(dat) %in% "group") &&
       !any(colnames(dat) %in% groupcol)
   ) {
-    stop(
+    cli::cli_abort(
       "Groupcol does not match column names. Column name 'group' was found and will be used.",
       call. = FALSE
     )
@@ -240,7 +301,7 @@ lambertW = function(
   min.imag = 1e-9
 ) {
   if (any(round(Re(b)) != b)) {
-    stop("branch number for W must be an integer")
+    cli::cli_abort("branch number for W must be an integer")
   }
   if (!is.complex(z) && any(z < 0)) {
     z = as.complex(z)
@@ -281,7 +342,7 @@ lambertW = function(
     }
   }
   if (n == maxiter) {
-    warning(paste(
+    cli::cli_warn(paste(
       "iteration limit (",
       maxiter,
       ") reached, result of W may be inaccurate",
@@ -348,7 +409,7 @@ validate_cp_data <- function(
   require_id = FALSE
 ) {
   if (!is.data.frame(data)) {
-    stop("Data must be a data frame.")
+    cli::cli_abort("Data must be a data frame.")
   }
 
   # Build mapping of non-default *_var -> canonical name
@@ -365,16 +426,16 @@ validate_cp_data <- function(
     if (user_name != canonical) {
       # Check collision: canonical name already exists as a different column
       if (canonical %in% names(data)) {
-        stop(
+        cli::cli_abort(c(
           sprintf(
-            "%s_var = %s but data already contains a column named %s.\n",
+            "%s_var = %s but data already contains a column named %s.",
             canonical, shQuote(user_name), shQuote(canonical)
           ),
-          sprintf(
+          "i" = sprintf(
             "Rename or drop the existing %s column before calling the fitting function.",
             shQuote(canonical)
           )
-        )
+        ))
       }
       # Rename if the user-specified column exists
       if (user_name %in% names(data)) {
@@ -385,13 +446,13 @@ validate_cp_data <- function(
 
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
-    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+    cli::cli_abort("Missing required columns: {.field {missing_cols}}.")
   }
 
   if (filter_target && "target" %in% names(data)) {
     data <- data[data$target == target_level, , drop = FALSE]
     if (nrow(data) == 0) {
-      stop(
+      cli::cli_abort(
         sprintf(
           "No data with target = %s found in the provided data.",
           shQuote(target_level)
@@ -401,43 +462,12 @@ validate_cp_data <- function(
   }
 
   if (require_id && !("id" %in% names(data))) {
-    stop("Data must contain an 'id' column for this operation.")
+    cli::cli_abort("Data must contain an 'id' column for this operation.")
   }
 
   return(data)
 }
 
-
-# #' @keywords internal
-# validate_demand_data <- function(
-#   data,
-#   required_cols = c("x", "y"),
-#   require_id = FALSE,
-#   drop_unused_factors = TRUE
-# ) {
-#   if (!is.data.frame(data)) {
-#     stop("Data must be a data frame.")
-#   }
-
-#   missing_cols <- setdiff(required_cols, names(data))
-#   if (length(missing_cols) > 0) {
-#     stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
-#   }
-
-#   if (require_id && !("id" %in% names(data))) {
-#     stop("Data must contain an 'id' column for this operation.")
-#   }
-
-#   # Drop unused factor levels if requested
-#   if (drop_unused_factors) {
-#     factor_cols <- which(vapply(data, is.factor, logical(1)))
-#     if (length(factor_cols) > 0) {
-#       data[factor_cols] <- lapply(data[factor_cols], droplevels)
-#     }
-#   }
-
-#   return(data)
-# }
 
 #' Validate and Prepare Demand Data
 #'
@@ -461,7 +491,7 @@ validate_demand_data <- function(
   factors = NULL
 ) {
   if (!is.data.frame(data)) {
-    stop("Input 'data' must be a data frame.")
+    cli::cli_abort("Input 'data' must be a data frame.")
   }
 
   # Construct required columns list
@@ -473,18 +503,17 @@ validate_demand_data <- function(
   # Check for missing columns
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
-    stop(
-      "Missing required columns in data: ",
-      paste(missing_cols, collapse = ", ")
+    cli::cli_abort(
+      "Missing required columns in data: {.field {missing_cols}}."
     )
   }
 
   # Basic type validation for core variables (fail fast with clear errors)
   if (!is.numeric(data[[x_var]])) {
-    stop("`x_var` column `", x_var, "` must be numeric.", call. = FALSE)
+    cli::cli_abort("{.arg x_var} column {.field {x_var}} must be numeric.")
   }
   if (!is.numeric(data[[y_var]])) {
-    stop("`y_var` column `", y_var, "` must be numeric.", call. = FALSE)
+    cli::cli_abort("{.arg y_var} column {.field {y_var}} must be numeric.")
   }
 
   # Ensure id_var is a factor and drop unused levels
@@ -528,10 +557,8 @@ validate_demand_data <- function(
 #' @keywords internal
 collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
   if (!is.list(collapse_spec) || is.null(names(collapse_spec))) {
-    stop(
-      "Collapse specification for '",
-      suffix,
-      "' must be a named list of factor mappings."
+    cli::cli_abort(
+      "Collapse specification for {.val {suffix}} must be a named list of factor mappings."
     )
   }
 
@@ -541,22 +568,16 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
   for (factor_col in names(collapse_spec)) {
     # Validate factor is in the model
     if (!factor_col %in% factors) {
-      warning(
-        "Factor '",
-        factor_col,
-        "' in collapse_levels$",
-        suffix,
-        " is not in the 'factors' list. Skipping."
+      cli::cli_warn(
+        "Factor {.field {factor_col}} in {.code collapse_levels${suffix}} is not in the {.arg factors} list. Skipping."
       )
       next
     }
 
     # Validate factor is in the data
     if (!factor_col %in% names(data)) {
-      warning(
-        "Factor '",
-        factor_col,
-        "' not found in data. Skipping."
+      cli::cli_warn(
+        "Factor {.field {factor_col}} not found in data. Skipping."
       )
       next
     }
@@ -564,10 +585,8 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     level_map <- collapse_spec[[factor_col]]
 
     if (!is.list(level_map) || is.null(names(level_map))) {
-      stop(
-        "Collapse mapping for factor '",
-        factor_col,
-        "' must be a named list (new_level = c(old_levels))."
+      cli::cli_abort(
+        "Collapse mapping for factor {.field {factor_col}} must be a named list ({.code new_level = c(old_levels)})."
       )
     }
 
@@ -575,13 +594,10 @@ collapse_factor_levels <- function(data, collapse_spec, factors, suffix) {
     all_old_levels <- unlist(level_map, use.names = FALSE)
     if (length(all_old_levels) != length(unique(all_old_levels))) {
       duplicates <- all_old_levels[duplicated(all_old_levels)]
-      stop(
-        "Overlapping old levels detected in collapse mapping for '",
-        factor_col,
-        "': ",
-        paste(unique(duplicates), collapse = ", "),
-        ". Each old level can only map to one new level."
-      )
+      cli::cli_abort(c(
+        "Overlapping old levels detected in collapse mapping for {.field {factor_col}}: {.val {unique(duplicates)}}.",
+        "i" = "Each old level can only map to one new level."
+      ))
     }
 
     # Store original levels
@@ -659,9 +675,8 @@ build_fixed_rhs <- function(
     # Warn about dropped single-level factors
     dropped <- setdiff(factors, valid_factors)
     if (length(dropped) > 0) {
-      message(
-        "Note: Factor(s) with only 1 level removed from formula: ",
-        paste(dropped, collapse = ", ")
+      cli::cli_inform(
+        "Note: Factor(s) with only 1 level removed from formula: {.field {dropped}}."
       )
     }
   }
@@ -708,7 +723,7 @@ validate_collapse_levels <- function(collapse_levels) {
   }
 
   if (!is.list(collapse_levels)) {
-    stop(
+    cli::cli_abort(
       "'collapse_levels' must be a named list with keys 'Q0' and/or
 'alpha'."
     )
@@ -718,20 +733,18 @@ validate_collapse_levels <- function(collapse_levels) {
   provided_keys <- names(collapse_levels)
 
   if (is.null(provided_keys) || length(provided_keys) == 0) {
-    stop(
-      "'collapse_levels' must have named elements. ",
-      "Expected keys: 'Q0' and/or 'alpha'."
-    )
+    cli::cli_abort(c(
+      "{.arg collapse_levels} must have named elements.",
+      "i" = "Expected keys: {.val Q0} and/or {.val alpha}."
+    ))
   }
 
   invalid_keys <- setdiff(provided_keys, valid_keys)
   if (length(invalid_keys) > 0) {
-    stop(
-      "Invalid keys in 'collapse_levels': ",
-      paste(invalid_keys, collapse = ", "),
-      ". ",
-      "Only 'Q0' and 'alpha' are allowed."
-    )
+    cli::cli_abort(c(
+      "Invalid keys in {.arg collapse_levels}: {.val {invalid_keys}}.",
+      "i" = "Only {.val Q0} and {.val alpha} are allowed."
+    ))
   }
 
   TRUE
@@ -768,6 +781,83 @@ beezdemand_empty_derived_metrics <- function() {
     id = character()
   )
 }
+
+#' Split Data by Grouping Variables and Apply Function
+#'
+#' Internal helper that splits a data frame by the columns in `by`,
+#' applies `FUN(slice, key_row)` to each group, and returns a named list
+#' of results.
+#'
+#' @param data A data frame.
+#' @param by Character vector of column names to split by.
+#' @param FUN Function taking two arguments: the data subset and a one-row
+#'   data frame of group key values. Must return the per-group result.
+#' @param call Caller environment for error reporting.
+#'
+#' @return A list with:
+#'   \describe{
+#'     \item{results}{Named list of per-group FUN outputs}
+#'     \item{group_keys}{Data frame of unique group combinations}
+#'   }
+#'
+#' @keywords internal
+beezdemand_split_by <- function(data, by, FUN, call = rlang::caller_env()) {
+  # Validate by columns exist
+
+  missing <- setdiff(by, names(data))
+  if (length(missing) > 0) {
+    validation_error(
+      paste0(
+        "`by` column(s) not found in data: ",
+        paste(missing, collapse = ", ")
+      ),
+      arg = "by",
+      call = call
+    )
+  }
+
+  # Drop rows with NA in grouping columns
+
+  na_mask <- rowSums(is.na(data[, by, drop = FALSE])) > 0
+  if (any(na_mask)) {
+    n_na <- sum(na_mask)
+    cli::cli_warn(sprintf(
+      "%d row(s) with NA in grouping column(s) (%s) removed before splitting.",
+      n_na, paste(by, collapse = ", ")
+    ))
+    data <- data[!na_mask, , drop = FALSE]
+  }
+
+  # Build unique group keys (sorted)
+  group_keys <- unique(data[, by, drop = FALSE])
+  group_keys <- group_keys[do.call(order, group_keys), , drop = FALSE]
+  rownames(group_keys) <- NULL
+
+  # Build group labels for naming
+  group_labels <- apply(group_keys, 1, function(row) {
+    paste(by, row, sep = "=", collapse = ", ")
+  })
+
+  # Split and apply
+  results <- vector("list", nrow(group_keys))
+  names(results) <- group_labels
+
+  for (i in seq_len(nrow(group_keys))) {
+    key_row <- group_keys[i, , drop = FALSE]
+
+    # Build logical mask for this group
+    mask <- rep(TRUE, nrow(data))
+    for (col in by) {
+      mask <- mask & (data[[col]] == key_row[[col]])
+    }
+    slice <- data[mask, , drop = FALSE]
+
+    results[[i]] <- FUN(slice, key_row)
+  }
+
+  list(results = results, group_keys = group_keys)
+}
+
 
 #' Print Method for beezdemand Summary Objects
 #'

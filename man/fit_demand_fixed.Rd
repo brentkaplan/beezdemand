@@ -13,6 +13,7 @@ fit_demand_fixed(
   y_var = "y",
   id_var = "id",
   param_space = c("natural", "log10"),
+  by = NULL,
   ...
 )
 }
@@ -42,6 +43,12 @@ for individual fits. Default \code{NULL}.}
 \item \code{"natural"}: fit \code{Q0}, \code{alpha} (and \code{k} if \code{k = "fit"}) on their natural scale
 \item \code{"log10"}: fit \code{log10(Q0)}, \code{log10(alpha)} (and \code{log10(k)} if \code{k = "fit"})
 }}
+
+\item{by}{Optional character vector of column names to group by.
+When supplied, fits are run separately within each unique
+combination of the \code{by} columns. Returns a
+\code{beezdemand_fixed_grouped} object with per-group child fits.
+Default \code{NULL} (no grouping).}
 
 \item{...}{Additional arguments passed to the underlying \code{FitCurves()} engine.}
 }
@@ -79,6 +86,23 @@ print(fit)
 summary(fit)
 tidy(fit)
 glance(fit)
+
+# Grouped analysis — fit separately by gender
+data(apt_full)
+fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
+tidy(fit_g)   # group column prepended
+glance(fit_g)  # one row per group
 }
 
 }
+\seealso{
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}} for TMB mixed-effects models,
+\code{\link[=fit_demand_mixed]{fit_demand_mixed()}} for NLME mixed-effects models,
+\code{\link[=fit_demand_hurdle]{fit_demand_hurdle()}} for hurdle models.
+
+Other demand-fitting: 
+\code{\link{fit_demand_hurdle}()},
+\code{\link{fit_demand_mixed}()},
+\code{\link{fit_demand_tmb}()}
+}
+\concept{demand-fitting}

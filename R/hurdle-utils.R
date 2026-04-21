@@ -294,6 +294,18 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
     }
   }
   
+  # Build the population-level Part-I zero probability as a function of price
+  # (TICKET-003). This is logit(P0) = beta0 + beta1 * log(price + epsilon),
+  # evaluated at the population mean of the random intercept (a_i = 0). When
+  # passed to the engine it produces the unconditional Pmax/Omax pair used by
+  # plot_expenditure() so the curve and reference lines align.
+  beta0 <- coefs[["beta0"]]
+  beta1 <- if ("beta1" %in% names(coefs)) coefs[["beta1"]] else 0
+  epsilon <- object$param_info$epsilon %||% 1e-3
+  p_zero_fn <- function(p) {
+    stats::plogis(as.numeric(beta0) + as.numeric(beta1) * log(p + epsilon))
+  }
+
   # Use new engine with explicit parameter scales (hurdle uses ln)
   engine_result <- if (identical(model_type, "snd")) {
     beezdemand_calc_pmax_omax(
@@ -307,6 +319,7 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
         log_q0 = "log"
       ),
       price_obs = price_obs,
+      p_zero_fn = p_zero_fn,
       compute_observed = FALSE
     )
   } else {
@@ -323,15 +336,16 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
         log_k = "log"
       ),
       price_obs = price_obs,
+      p_zero_fn = p_zero_fn,
       compute_observed = FALSE
     )
   }
-  
+
   # Return in legacy format for backwards compatibility
   Q0 <- exp(log_q0)
   k <- if (is.finite(log_k)) exp(log_k) else NA_real_
   alpha <- exp(log_alpha)
-  
+
   # Build demand function for Qmax
   demand_fn <- if (identical(model_type, "snd")) {
     function(p) Q0 * exp(-alpha * Q0 * p)
@@ -345,7 +359,12 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
   } else {
     NA_real_
   }
-  
+  Qmax_unconditional <- if (!is.na(engine_result$pmax_unconditional)) {
+    demand_fn(engine_result$pmax_unconditional)
+  } else {
+    NA_real_
+  }
+
   list(
     Pmax = engine_result$pmax_model,
     Omax = engine_result$omax_model,
@@ -354,7 +373,14 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
     is_boundary = engine_result$is_boundary_model,
     elasticity_at_pmax = engine_result$elasticity_at_pmax_model,
     unit_elasticity_pass = engine_result$unit_elasticity_pass_model,
-    note = engine_result$note_model
+    note = engine_result$note_model,
+    Pmax_unconditional = engine_result$pmax_unconditional,
+    Omax_unconditional = engine_result$omax_unconditional,
+    Qmax_unconditional = Qmax_unconditional,
+    p_zero_at_pmax = engine_result$p_zero_at_pmax,
+    method_unconditional = engine_result$method_unconditional,
+    is_boundary_unconditional = engine_result$is_boundary_unconditional,
+    note_unconditional = engine_result$note_unconditional
   )
 }
 

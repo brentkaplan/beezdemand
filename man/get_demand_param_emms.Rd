@@ -2,9 +2,15 @@
 % Please edit documentation in R/mixed-methods.R
 \name{get_demand_param_emms}
 \alias{get_demand_param_emms}
+\alias{get_demand_param_emms.default}
+\alias{get_demand_param_emms.beezdemand_nlme}
 \title{Get Estimated Marginal Means for Demand Parameters}
 \usage{
-get_demand_param_emms(
+get_demand_param_emms(fit_obj, ...)
+
+\method{get_demand_param_emms}{default}(fit_obj, ...)
+
+\method{get_demand_param_emms}{beezdemand_nlme}(
   fit_obj,
   factors_in_emm = NULL,
   at = NULL,
@@ -16,6 +22,8 @@ get_demand_param_emms(
 \arguments{
 \item{fit_obj}{A \code{beezdemand_nlme} object.}
 
+\item{...}{Additional arguments passed to \code{emmeans::emmeans()}.}
+
 \item{factors_in_emm}{Character vector of factor names to compute EMMs over.
 Defaults to all factors present in the \code{fit_obj}.}
 
@@ -26,8 +34,6 @@ Defaults to all factors present in the \code{fit_obj}.}
 \item{include_ev}{Logical. If TRUE, calculates and includes Essential Value (EV)
 derived from alpha, along with its confidence interval (calculated by
 back-transforming the CI of alpha_param_log10). Default \code{FALSE}.}
-
-\item{...}{Additional arguments passed to \code{emmeans::emmeans()}.}
 }
 \value{
 A tibble containing:

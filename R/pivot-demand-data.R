@@ -170,8 +170,21 @@ if (!(id_var %in% names(data))) {
     values_to = "y"
   )
 
-  # Map column names to numeric prices
-  long$x <- unname(price_map[long$.price_name])
+  # Map column names to numeric prices (trim whitespace defensively)
+  trimmed_names <- trimws(long$.price_name)
+  names(price_map) <- trimws(names(price_map))
+  long$x <- unname(price_map[trimmed_names])
+
+  # Check for unmapped price columns (NA after lookup)
+  na_prices <- is.na(long$x)
+  if (any(na_prices)) {
+    failed_names <- unique(long$.price_name[na_prices])
+    stop(
+      "Price column name(s) could not be mapped to numeric values: ",
+      paste0("'", failed_names, "'", collapse = ", "),
+      ". Check that column names are valid numbers or supply explicit x_values."
+    )
+  }
   long$.price_name <- NULL
 
   # Rename id_var to "id" (if not already)

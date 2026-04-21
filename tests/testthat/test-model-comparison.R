@@ -303,6 +303,65 @@ test_that("compare_models computes delta IC columns", {
   expect_equal(min(result$comparison$delta_BIC), 0)
 })
 
+test_that(".get_model_info handles NULL nlme model gracefully", {
+  # Simulate a failed nlme fit (model = NULL)
+  fake_nlme <- structure(list(
+    model = NULL,
+    data = data.frame(id = 1:10, x = 1:10, y = 1:10)
+  ), class = "beezdemand_nlme")
+
+  info <- beezdemand:::.get_model_info(fake_nlme, name = "test")
+
+  expect_equal(info$backend, "nlme")
+  expect_equal(info$nobs, 10L)  # Falls back to model$data
+  expect_true(is.na(info$df))
+  expect_true(is.na(info$logLik))
+  expect_true(is.na(info$AIC))
+  expect_true(is.na(info$BIC))
+})
+
+test_that("compare_models cross-backend returns descriptive comparison", {
+  data(apt, package = "beezdemand")
+
+  fit_fixed <- fit_demand_fixed(
+    apt, y_var = "y", x_var = "x", id_var = "id"
+  )
+  fit_hurdle <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  result <- compare_models(fit_fixed, fit_hurdle)
+
+  expect_s3_class(result, "beezdemand_model_comparison")
+  expect_true(is.na(result$best_model))
+  expect_true(all(is.na(result$comparison$delta_AIC)))
+  expect_true(all(is.na(result$comparison$delta_BIC)))
+  expect_true(any(grepl("not comparable across modeling frameworks", result$notes)))
+})
+
+test_that("compare_models same-backend still works with delta columns", {
+  data(apt, package = "beezdemand")
+
+  fit2 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+
+  fit3 <- fit_demand_hurdle(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0", "alpha"),
+    verbose = 0
+  )
+
+  result <- compare_models(fit2, fit3)
+
+  expect_true(!is.na(result$best_model))
+  expect_equal(min(result$comparison$delta_BIC), 0)
+})
+
 test_that("compare_models works with legacy fixed models (IC unavailable)", {
   data(apt, package = "beezdemand")
 

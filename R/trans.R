@@ -16,20 +16,26 @@
 #'
 #' @export
 #' @examples
+#' # Basic usage
 #' ll4(0)
 #' ll4(1)
 #' ll4(10)
-#' ll4(100)
 #' ll4(c(0, 1, 10, 100, 1000))
 #'
 #' # Using a different lambda or base
 #' ll4(10, lambda = 2)
 #' ll4(10, base = exp(1)) # Natural log base
+#'
+#' # Typical workflow: transform -> fit -> back-transform
+#' data(apt)
+#' apt$y_ll4 <- ll4(apt$y)
+#' # Verify round-trip: ll4_inv(ll4(x)) == x
+#' all.equal(apt$y, ll4_inv(apt$y_ll4))
 ll4 <- function(x, lambda = 4, base = 10) {
   # Ensure x is non-negative for the intended use of x^lambda
   if (any(x < 0, na.rm = TRUE)) {
-    warning(
-      "Input 'x' contains negative values; LL4 is typically for non-negative inputs. Result may be NaN."
+    cli::cli_warn(
+      "Input {.arg x} contains negative values; LL4 is typically for non-negative inputs. Result may be NaN."
     )
   }
   # LL4(x) = log(x^lambda + 1) / lambda
@@ -48,8 +54,22 @@ ll4 <- function(x, lambda = 4, base = 10) {
 #'   original `ll4` transformation. Must match. Default is `10`.
 #'
 #' @return A numeric vector or scalar of the original, untransformed values.
-#'   May return `NaN` if `(base^(y * lambda) - 1)` is negative and `1/lambda` implies
-#'   an even root (e.g., if `lambda` is 2 or 4).
+#'   Returns `0` when the intermediate quantity `base^(y * lambda) - 1` is
+#'   negative (i.e., when `y < 0` for `base = 10` and even `lambda`), since
+#'   consumption cannot be negative.
+#'
+#' @details
+#' **Domain and boundary behavior.** The inverse LL4 transformation is defined
+#' for `y >= 0` (when `base = 10` and `lambda = 4`). For `y < 0`, the
+#' intermediate quantity `base^(y * lambda) - 1` becomes negative, and raising
+#' a negative number to the fractional power `1/lambda` is undefined in real
+#' arithmetic. In this case, the function returns `0` (consumption cannot be
+#' negative).
+#'
+#' This boundary condition arises in practice when a model predicts fitted values
+#' below zero on the LL4 scale --- typically for extrapolation to very high
+#' prices. The mapping to zero is the natural floor because `ll4(0) = 0` and
+#' the LL4 transformation is monotonically increasing on `[0, Inf)`.
 #'
 #' @export
 #' @examples
@@ -59,22 +79,15 @@ ll4 <- function(x, lambda = 4, base = 10) {
 #' print(data.frame(original_values, transformed_values, back_transformed_values))
 #' all.equal(original_values, back_transformed_values) # Should be TRUE or very close
 #'
-#' # Example with negative y (log-transformed value)
-#' # If y_ll4 = -0.5 (meaning original value was between 0 and 1 for log10)
-#' ll4_inv(-0.5, lambda = 4, base = 10) # (10^(-0.5*4) - 1)^(1/4) = (0.01 - 1)^(1/4) -> NaN
-#' # The ll4_inv function as provided will return NaN here.
-#' # A more robust version for demand might floor at 0 if NaN occurs.
+#' # Negative y values are mapped to 0 (consumption floor)
+#' ll4_inv(-0.5, lambda = 4, base = 10) # Returns 0
 ll4_inv <- function(y, lambda = 4, base = 10) {
-  # Inverse: y -> x = (base^(y * lambda) - 1)^(1/lambda)
   val_inside_root <- (base^(y * lambda) - 1)
-
-  # Vectorized approach to handle potential NaNs from negative base for even root
-  result <- suppressWarnings(val_inside_root^(1 / lambda)) # Suppress warnings for NaN from x^(even_root_denom) where x < 0
-
-  # If you want to explicitly set NaNs to 0 (e.g., if x represents consumption)
-  # result[is.nan(result) | val_inside_root < 0] <- 0 # Uncomment if 0 is preferred over NaN
-
-  return(result)
+  result <- ifelse(
+    is.na(val_inside_root), NA_real_,
+    ifelse(val_inside_root >= 0, val_inside_root^(1 / lambda), 0)
+  )
+  result
 }
 
 #' Create an LL4-like Scale for ggplot2 Axes
@@ -113,16 +126,10 @@ ll4_inv <- function(y, lambda = 4, base = 10) {
 scale_ll4 <- function(..., lambda = 4) {
   # Ensure scales package is available for trans_new
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop(
-      "Package 'scales' is required for scale_ll4(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("scales", reason = "for scale_ll4()")
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(
-      "Package 'ggplot2' is required for scale_ll4(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("ggplot2", reason = "for scale_ll4()")
   }
 
   # Base for the ll4 transformation (default is 10)
@@ -181,10 +188,7 @@ scale_ll4 <- function(..., lambda = 4) {
 pseudo_ll4_trans <- function(lambda = 4) {
   # Ensure scales package is available for trans_new
   if (!requireNamespace("scales", quietly = TRUE)) {
-    stop(
-      "Package 'scales' is required for pseudo_ll4_trans(). Please install it.",
-      call. = FALSE
-    )
+    missing_package_error("scales", reason = "for pseudo_ll4_trans()")
   }
 
   # Base for the ll4 transformation (default is 10)

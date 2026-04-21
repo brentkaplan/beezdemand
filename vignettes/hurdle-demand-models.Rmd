@@ -401,6 +401,7 @@ Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psy
 - `vignette("fixed-demand")` -- Fixed-effect demand modeling
 - `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
 - `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
+- `vignette("tmb-mixed-effects")` -- TMB mixed-effects demand models (continuous-only)
 - `vignette("cross-price-models")` -- Cross-price demand analysis
 - `vignette("group-comparisons")` -- Group comparisons
 - `vignette("migration-guide")` -- Migrating from `FitCurves()`

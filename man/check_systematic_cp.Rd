@@ -15,7 +15,8 @@ check_systematic_cp(
   expected_down = FALSE,
   x_var = "x",
   y_var = "y",
-  id_var = "id"
+  id_var = "id",
+  by = NULL
 )
 }
 \arguments{
@@ -40,6 +41,11 @@ check_systematic_cp(
 \item{y_var}{Character. Name of the consumption column. Default \code{"y"}.}
 
 \item{id_var}{Character. Name of the subject identifier column. Default \code{"id"}.}
+
+\item{by}{Optional character vector of column names to group by.
+When supplied, the check is run separately within each unique
+combination of the \code{by} columns. Group columns are prepended to
+\verb{$results}. Default \code{NULL} (no grouping).}
 }
 \value{
 An object of class \code{beezdemand_systematicity} with the same structure

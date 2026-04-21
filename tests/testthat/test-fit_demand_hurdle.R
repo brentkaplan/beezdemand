@@ -297,11 +297,11 @@ test_that("validate_hurdle_data catches invalid data", {
     "must be numeric"
   )
 
-  # Negative consumption
+  # Real negative consumption (beyond tolerance)
   df <- data.frame(id = 1, x = 1:10, y = c(-1, 1:9))
   expect_error(
     validate_hurdle_data(df, "y", "x", "id"),
-    "cannot be negative"
+    "negative value"
   )
 
   # Insufficient observations (< 10)
@@ -316,5 +316,68 @@ test_that("validate_hurdle_data catches invalid data", {
   expect_error(
     validate_hurdle_data(df, "y", "x", "id"),
     "at least 2 subjects"
+  )
+})
+
+test_that("validate_hurdle_data clamps near-zero negatives with message", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  # Set some zero values to near-zero negatives
+  zero_idx <- which(apt_mod$y == 0)
+  if (length(zero_idx) >= 3) {
+    apt_mod$y[zero_idx[1:3]] <- c(-1e-15, -5e-12, -1e-11)
+  }
+
+  expect_message(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id",
+                      random_effects = c("zeros", "q0"), verbose = 0),
+    "clamped to 0"
+  )
+})
+
+test_that("validate_hurdle_data rejects real negatives with informative error", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$y[1:3] <- c(-5, -10, -2)
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "3 negative value"
+  )
+})
+
+test_that("validate_hurdle_data rejects NaN values", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$y[1] <- NaN
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "NaN"
+  )
+})
+
+test_that("validate_hurdle_data rejects Inf in consumption", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$y[1] <- Inf
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "Inf/-Inf"
+  )
+})
+
+test_that("validate_hurdle_data rejects Inf in price", {
+  data(apt, package = "beezdemand")
+  apt_mod <- apt
+  apt_mod$x[1] <- Inf
+
+  expect_error(
+    fit_demand_hurdle(apt_mod, y_var = "y", x_var = "x", id_var = "id"),
+    "Inf/-Inf"
   )
 })

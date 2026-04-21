@@ -9,6 +9,7 @@
 #include "HurdleDemand3RE_StdQ0.h"
 #include "HurdleDemand2RE_SND.h"
 #include "HurdleDemand3RE_SND.h"
+#include "MixedDemand.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -26,6 +27,8 @@ Type objective_function<Type>::operator() ()
     return HurdleDemand2RE_SND(this);
   } else if (model == "HurdleDemand3RE_SND") {
     return HurdleDemand3RE_SND(this);
+  } else if (model == "MixedDemand") {
+    return MixedDemand(this);
   } else {
     error("Unknown model");
   }

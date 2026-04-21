@@ -4,6 +4,7 @@
 \alias{plot_qq}
 \alias{plot_qq.beezdemand_hurdle}
 \alias{plot_qq.beezdemand_nlme}
+\alias{plot_qq.beezdemand_tmb}
 \title{Plot Random Effects Q-Q}
 \usage{
 plot_qq(object, which = NULL, ...)
@@ -11,10 +12,12 @@ plot_qq(object, which = NULL, ...)
 \method{plot_qq}{beezdemand_hurdle}(object, which = NULL, ...)
 
 \method{plot_qq}{beezdemand_nlme}(object, which = NULL, ...)
+
+\method{plot_qq}{beezdemand_tmb}(object, which = NULL, ...)
 }
 \arguments{
-\item{object}{A fitted model object with random effects (\code{beezdemand_hurdle}
-or \code{beezdemand_nlme}).}
+\item{object}{A fitted model object with random effects (\code{beezdemand_hurdle},
+\code{beezdemand_nlme}, or \code{beezdemand_tmb}).}
 
 \item{which}{Character vector; which random effects to plot. Default is all.}
 
@@ -25,6 +28,15 @@ A ggplot2 object.
 }
 \description{
 Creates Q-Q plots for random effects to assess normality assumptions.
+}
+\details{
+For \code{beezdemand_tmb} models, Q-Q plots display empirical Bayes predictions
+(BLUPs) of the random effects (\code{b_i} for Q0, \code{c_i} for alpha). These
+exhibit shrinkage toward the population mean: subjects with fewer
+observations or higher variability are pulled toward zero. Consequently,
+Q-Q plots may appear more normal than the true random effect distribution
+(Verbeke & Molenberghs, 2000). Useful for detecting gross departures
+(bimodality, heavy tails) but not a definitive normality test.
 }
 \examples{
 \donttest{

@@ -201,6 +201,114 @@ check_demand_model.beezdemand_fixed <- function(object, ...) {
 }
 
 
+#' @rdname check_demand_model
+#' @export
+check_demand_model.beezdemand_tmb <- function(object, ...) {
+  issues <- character(0)
+  recommendations <- character(0)
+
+  # 1. Check convergence
+  converged <- object$converged
+  convergence <- list(
+    converged = converged,
+    code = object$opt$convergence,
+    message = object$opt$message
+  )
+  if (!converged) {
+    issues <- c(issues, sprintf("Model did not converge (code %d: %s)",
+                                object$opt$convergence, object$opt$message))
+    recommendations <- c(recommendations,
+                         "Try different starting values, increase iterations, or simplify model")
+  }
+
+  # 2. Check Hessian positive definiteness
+  hessian_pd <- TRUE
+  if (!is.null(object$sdr)) {
+    pdHess <- tryCatch(object$sdr$pdHess, error = function(e) NA)
+    if (!is.na(pdHess) && !pdHess) {
+      hessian_pd <- FALSE
+      issues <- c(issues, "Hessian is not positive definite")
+      recommendations <- c(recommendations,
+                           "Model may be at a saddle point; try different starting values")
+    }
+  }
+
+  # 3. Check variance components near zero
+  coefs <- object$model$coefficients
+  re_variances <- c(sigma_b = NA_real_)
+  near_zero <- c(sigma_b = FALSE)
+
+  sigma_b <- exp(coefs[["logsigma_b"]])
+  re_variances[["sigma_b"]] <- sigma_b
+  near_zero[["sigma_b"]] <- sigma_b < 1e-4
+
+  if (object$param_info$n_random_effects == 2) {
+    sigma_c <- exp(coefs[["logsigma_c"]])
+    re_variances[["sigma_c"]] <- sigma_c
+    near_zero[["sigma_c"]] <- sigma_c < 1e-4
+  }
+
+  random_effects <- list(
+    variances = re_variances,
+    near_zero = near_zero
+  )
+
+  if (any(near_zero, na.rm = TRUE)) {
+    near_zero_re <- names(re_variances)[near_zero & !is.na(near_zero)]
+    issues <- c(issues, paste("Random effect variance near zero:",
+                              paste(near_zero_re, collapse = ", ")))
+    recommendations <- c(recommendations, "Consider removing these random effects")
+  }
+
+  # 4. Check residuals
+  residuals_info <- list(mean = NA_real_, sd = NA_real_,
+                         min = NA_real_, max = NA_real_,
+                         has_outliers = FALSE, n_outliers = 0,
+                         computation_failed = FALSE)
+  tryCatch({
+    aug <- augment(object)
+    resids <- aug$.resid[!is.na(aug$.resid)]
+    if (length(resids) > 0) {
+      sd_resid <- stats::sd(resids)
+      residuals_info$mean <- mean(resids)
+      residuals_info$sd <- sd_resid
+      residuals_info$min <- min(resids)
+      residuals_info$max <- max(resids)
+      n_outliers <- sum(abs(resids) > 3 * sd_resid)
+      residuals_info$has_outliers <- n_outliers > 0
+      residuals_info$n_outliers <- n_outliers
+    }
+  }, error = function(e) {
+    warning("Residual computation failed: ", e$message, call. = FALSE)
+    residuals_info$computation_failed <<- TRUE
+  })
+
+  if (residuals_info$computation_failed) {
+    issues <- c(issues, "Residual computation failed; outlier check skipped")
+    recommendations <- c(recommendations, "Check augment() output manually")
+  } else if (residuals_info$has_outliers) {
+    issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)",
+                                residuals_info$n_outliers))
+    recommendations <- c(recommendations, "Investigate outlying observations")
+  }
+
+  structure(
+    list(
+      model_class = "beezdemand_tmb",
+      convergence = convergence,
+      hessian_pd = hessian_pd,
+      boundary = list(at_boundary = character(0)),
+      residuals = residuals_info,
+      random_effects = random_effects,
+      issues = issues,
+      recommendations = recommendations,
+      n_issues = length(issues)
+    ),
+    class = "beezdemand_diagnostics"
+  )
+}
+
+
 #' Print Method for Model Diagnostics
 #'
 #' @param x A `beezdemand_diagnostics` object.
@@ -229,7 +337,7 @@ print.beezdemand_diagnostics <- function(x, ...) {
     vars <- x$random_effects$variances
     if (!is.null(vars) && length(vars) > 0) {
       for (nm in names(vars)) {
-        status <- if (x$random_effects$near_zero[nm]) " [NEAR ZERO]" else ""
+        status <- if (isTRUE(x$random_effects$near_zero[nm])) " [NEAR ZERO]" else ""
         cat(sprintf("  %s variance: %.4g%s\n", nm, vars[nm], status))
       }
     }
@@ -279,9 +387,19 @@ print.beezdemand_diagnostics <- function(x, ...) {
 #'   - `"histogram"`: Histogram of residuals
 #'   - `"qq"`: Q-Q plot of residuals
 #'   - `"all"`: All plots combined (default)
+#' @param component Character; for hurdle models, which residuals to plot:
+#'   `"combined"` (default) uses randomized quantile residuals that assess both
+#'   binary and continuous components simultaneously; `"continuous"` uses
+#'   log-scale Part II residuals only (zeros excluded). Ignored for non-hurdle
+#'   models.
 #' @param ... Additional arguments passed to plotting functions.
 #'
 #' @return A ggplot2 object or list of ggplot2 objects.
+#'
+#' @details
+#' For hurdle models, diagnostic plots default to randomized quantile residuals
+#' that assess both the binary and continuous components simultaneously. Set
+#' `component = "continuous"` to see only Part II (log-scale) residuals.
 #'
 #' @examples
 #' \donttest{
@@ -293,12 +411,19 @@ print.beezdemand_diagnostics <- function(x, ...) {
 #' @importFrom ggplot2 ggplot aes geom_point geom_hline geom_histogram geom_qq
 #'   geom_qq_line labs theme_minimal
 #' @export
-plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"), ...) {
+plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
+                           component = c("combined", "continuous"), ...) {
   type <- match.arg(type)
+  component <- match.arg(component)
 
   # Get augmented data with residuals
-  aug <- tryCatch(
-    augment(object),
+  aug <- tryCatch({
+    if (inherits(object, "beezdemand_hurdle")) {
+      augment(object, component = component)
+    } else {
+      augment(object)
+    }
+  },
     error = function(e) {
       stop("Cannot compute residuals for this model: ", e$message, call. = FALSE)
     }
@@ -308,8 +433,20 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
     stop("Model does not provide residuals.", call. = FALSE)
   }
 
-  # Filter out NA residuals (e.g., zeros in hurdle models)
+  # Filter out NA residuals (e.g., zeros in hurdle models with component = "continuous")
   aug <- aug[!is.na(aug$.resid), ]
+
+  # For quantile residuals (hurdle combined), they are already ~ N(0,1)
+  # so standardization should still be applied for other model types
+  is_quantile_resid <- inherits(object, "beezdemand_hurdle") && component == "combined"
+
+  if (!is_quantile_resid) {
+    # Standardize residuals for consistent scale across model types
+    resid_sd <- stats::sd(aug$.resid, na.rm = TRUE)
+    if (!is.na(resid_sd) && resid_sd > 0) {
+      aug$.resid <- aug$.resid / resid_sd
+    }
+  }
 
   plots <- list()
 
@@ -318,11 +455,11 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
     p_fitted <- ggplot2::ggplot(aug, ggplot2::aes(x = .data$.fitted, y = .data$.resid)) +
       ggplot2::geom_point(alpha = 0.5) +
       ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-      ggplot2::geom_smooth(method = "loess", se = FALSE, color = "blue", linewidth = 0.8) +
+      ggplot2::geom_smooth(method = "loess", se = FALSE, color = "#2B4560", linewidth = 0.8) +
       ggplot2::labs(
         title = "Residuals vs Fitted",
         x = "Fitted values",
-        y = "Residuals"
+        y = "Standardized Residuals"
       ) +
       ggplot2::theme_minimal()
     plots$fitted <- p_fitted
@@ -331,10 +468,10 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
   # Histogram
   if (type %in% c("all", "histogram")) {
     p_hist <- ggplot2::ggplot(aug, ggplot2::aes(x = .data$.resid)) +
-      ggplot2::geom_histogram(bins = 30, fill = "steelblue", color = "white", alpha = 0.7) +
+      ggplot2::geom_histogram(bins = 30, fill = "#5D8AA8", color = "white", alpha = 0.7) +
       ggplot2::labs(
-        title = "Distribution of Residuals",
-        x = "Residuals",
+        title = "Distribution of Standardized Residuals",
+        x = "Standardized Residuals",
         y = "Count"
       ) +
       ggplot2::theme_minimal()
@@ -347,7 +484,7 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
       ggplot2::geom_qq(alpha = 0.5) +
       ggplot2::geom_qq_line(color = "red", linetype = "dashed") +
       ggplot2::labs(
-        title = "Normal Q-Q Plot",
+        title = "Normal Q-Q Plot of Standardized Residuals",
         x = "Theoretical Quantiles",
         y = "Sample Quantiles"
       ) +
@@ -356,12 +493,32 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
   }
 
   if (type == "all") {
-    # Return list of plots
-    class(plots) <- c("beezdemand_diagnostic_plots", "list")
-    return(plots)
+    if (requireNamespace("patchwork", quietly = TRUE)) {
+      return(patchwork::wrap_plots(plots, ncol = 2))
+    } else {
+      message("Install 'patchwork' for combined diagnostic plots. Returning list of individual plots.")
+      class(plots) <- c("beezdemand_diagnostic_plots", "list")
+      return(plots)
+    }
   } else {
     return(plots[[1]])
   }
+}
+
+
+#' Print Method for Diagnostic Plots
+#'
+#' @param x A `beezdemand_diagnostic_plots` object (list of ggplot objects).
+#' @param ... Additional arguments (ignored).
+#' @return Invisibly returns the input object \code{x}.
+#' @export
+print.beezdemand_diagnostic_plots <- function(x, ...) {
+  if (requireNamespace("patchwork", quietly = TRUE)) {
+    print(patchwork::wrap_plots(x, ncol = 2))
+  } else {
+    for (nm in names(x)) print(x[[nm]])
+  }
+  invisible(x)
 }
 
 
@@ -370,8 +527,8 @@ plot_residuals <- function(object, type = c("all", "fitted", "histogram", "qq"),
 #' @description
 #' Creates Q-Q plots for random effects to assess normality assumptions.
 #'
-#' @param object A fitted model object with random effects (`beezdemand_hurdle`
-#'   or `beezdemand_nlme`).
+#' @param object A fitted model object with random effects (`beezdemand_hurdle`,
+#'   `beezdemand_nlme`, or `beezdemand_tmb`).
 #' @param which Character vector; which random effects to plot. Default is all.
 #' @param ... Additional arguments (ignored).
 #'
@@ -429,7 +586,7 @@ plot_qq.beezdemand_hurdle <- function(object, which = NULL, ...) {
   # Reshape for plotting
   re_data <- tidyr::pivot_longer(
     subj_pars[, c("id", available_cols), drop = FALSE],
-    cols = tidyr::all_of(available_cols),
+    cols = dplyr::all_of(available_cols),
     names_to = "effect",
     values_to = "value"
   )
@@ -484,7 +641,7 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
   # Reshape for plotting
   re_data <- tidyr::pivot_longer(
     re[, c("id", re_cols), drop = FALSE],
-    cols = all_of(re_cols),
+    cols = dplyr::all_of(re_cols),
     names_to = "effect",
     values_to = "value"
   )
@@ -495,6 +652,71 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
     ggplot2::facet_wrap(~effect, scales = "free") +
     ggplot2::labs(
       title = "Q-Q Plot of Random Effects",
+      x = "Theoretical Quantiles",
+      y = "Sample Quantiles"
+    ) +
+    ggplot2::theme_minimal()
+
+  p
+}
+
+
+#' @rdname plot_qq
+#' @details
+#' For `beezdemand_tmb` models, Q-Q plots display empirical Bayes predictions
+#' (BLUPs) of the random effects (`b_i` for Q0, `c_i` for alpha). These
+#' exhibit shrinkage toward the population mean: subjects with fewer
+#' observations or higher variability are pulled toward zero. Consequently,
+#' Q-Q plots may appear more normal than the true random effect distribution
+#' (Verbeke & Molenberghs, 2000). Useful for detecting gross departures
+#' (bimodality, heavy tails) but not a definitive normality test.
+#' @export
+plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
+  subj_pars <- object$subject_pars
+
+  if (is.null(subj_pars)) {
+    stop("No subject-level parameters available.", call. = FALSE)
+  }
+
+  # TMB models use b_i (Q0) and optionally c_i (alpha)
+  re_col_map <- c(
+    b_i = "Q0",
+    c_i = "alpha"
+  )
+  available_cols <- names(re_col_map)[names(re_col_map) %in% names(subj_pars)]
+
+  if (length(available_cols) == 0) {
+    stop("No random effects found in model.", call. = FALSE)
+  }
+
+  if (!is.null(which)) {
+    re_col_map_rev <- stats::setNames(names(re_col_map), re_col_map)
+    which_cols <- re_col_map_rev[which]
+    which_cols <- which_cols[!is.na(which_cols)]
+    available_cols <- intersect(available_cols, which_cols)
+  }
+
+  if (length(available_cols) == 0) {
+    stop("Specified random effects not found in model.", call. = FALSE)
+  }
+
+  # Reshape for plotting
+  re_data <- tidyr::pivot_longer(
+    subj_pars[, c("id", available_cols), drop = FALSE],
+    cols = dplyr::all_of(available_cols),
+    names_to = "effect",
+    values_to = "value"
+  )
+
+  # Clean up names for display
+  re_data$effect <- re_col_map[re_data$effect]
+
+  p <- ggplot2::ggplot(re_data, ggplot2::aes(sample = .data$value)) +
+    ggplot2::geom_qq(alpha = 0.6) +
+    ggplot2::geom_qq_line(color = "red", linetype = "dashed") +
+    ggplot2::facet_wrap(~effect, scales = "free") +
+    ggplot2::labs(
+      title = "Q-Q Plot of Random Effects (BLUPs)",
       x = "Theoretical Quantiles",
       y = "Sample Quantiles"
     ) +
@@ -608,25 +830,43 @@ plot_qq.beezdemand_nlme <- function(object, which = NULL, ...) {
 
 .check_nlme_convergence <- function(object) {
   converged <- TRUE
-  message <- NULL
+  messages <- character(0)
 
   if (is.null(object$model)) {
     return(list(converged = FALSE, message = "Model fitting failed"))
   }
 
-  # Check if model converged based on nlme diagnostics
-  # nlme doesn't have a simple convergence flag, but we can check for warnings
   model <- object$model
 
-  # Check apVar for convergence issues
+  # Check apVar for Hessian issues (existing check)
   if (is.character(model$apVar)) {
     converged <- FALSE
-    message <- "Hessian is not positive definite; variance estimates may be unreliable"
+    messages <- c(messages, "Hessian is not positive definite; variance estimates may be unreliable")
+  }
+
+  # Check stored fit warnings for convergence failure patterns
+  # NOTE: object$fit_warnings is NULL for pre-fix saved objects; length(NULL) == 0 is safe
+  fit_warnings <- object$fit_warnings
+  if (length(fit_warnings) > 0) {
+    convergence_patterns <- c(
+      "false convergence",
+      "singular",
+      "step halving factor reduced below minimum",
+      "maximum number of iterations",
+      "did not converge",
+      "iteration limit reached"
+    )
+    pattern_regex <- paste(convergence_patterns, collapse = "|")
+    bad_warnings <- fit_warnings[grepl(pattern_regex, fit_warnings, ignore.case = TRUE)]
+    if (length(bad_warnings) > 0) {
+      converged <- FALSE
+      messages <- c(messages, paste("Fit warning:", bad_warnings))
+    }
   }
 
   list(
     converged = converged,
-    message = message
+    message = if (length(messages) > 0) paste(messages, collapse = "; ") else NULL
   )
 }
 

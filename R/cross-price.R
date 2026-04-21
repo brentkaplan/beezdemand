@@ -161,16 +161,16 @@ fit_cp_nls <- function(
   if (equation == "exponential") {
     n_zero_or_neg <- sum(data$y <= 0, na.rm = TRUE)
     if (n_zero_or_neg > 0) {
-      warning(
-        sprintf(
-          "Removing %d observation(s) with y <= 0 for 'exponential' equation (log10 transform required).",
-          n_zero_or_neg
-        )
+      cli::cli_warn(
+        "Removing {.val {n_zero_or_neg}} observation{?s} with {.code y <= 0} for {.val exponential} equation (log10 transform required)."
       )
       data <- data[data$y > 0, , drop = FALSE]
     }
     if (nrow(data) < 3) {
-      stop("Insufficient data remaining after removing y <= 0 observations.")
+      fitting_error(
+        "Insufficient data remaining after removing {.code y <= 0} observations.",
+        model_type = "cp_nls"
+      )
     }
   }
 
@@ -260,7 +260,7 @@ fit_cp_nls <- function(
         return(nls_multi_fit)
       }
     } else {
-      message("nls.multstart failed, falling back to nlsLM...")
+      cli::cli_inform("{.fn nls.multstart} failed, falling back to {.fn nlsLM}.")
     }
   }
 
@@ -270,7 +270,7 @@ fit_cp_nls <- function(
       (exists("nls_multi_fit") && inherits(nls_multi_fit, "error"))
   ) {
     if (is.null(start_values)) {
-      warning("nls.multstart failed; using estimated start values with nlsLM.")
+      cli::cli_warn("{.fn nls.multstart} failed; using estimated start values with {.fn nlsLM}.")
       start_values <- list(
         log10_qalone = log10_qalone_mid,
         I = 0,
@@ -309,7 +309,7 @@ fit_cp_nls <- function(
 
     # Final fallback: try using nlsr (if enabled)
     if (fallback_to_nlsr) {
-      message("nlsLM failed; attempting to use wrapnlsr as a final fallback...")
+      cli::cli_inform("{.fn nlsLM} failed; attempting {.fn wrapnlsr} as a final fallback.")
       formula_nlsr <- switch(
         equation,
         exponentiated = as.formula(
@@ -429,11 +429,10 @@ fit_cp_linear <- function(
     !identical(id_var, "id") || !identical(group_var, "group") ||
     !identical(target_var, "target")
   if (!is.null(formula) && non_default_vars) {
-    stop(
-      "Custom formulas must use canonical column names (x, y, id, group, target).\n",
-      "When supplying a formula, rename your columns before calling fit_cp_linear() ",
-      "or omit the formula argument and let fit_cp_linear() build it automatically."
-    )
+    validation_error(c(
+      "Custom formulas must use canonical column names ({.field x}, {.field y}, {.field id}, {.field group}, {.field target}).",
+      "i" = "When supplying a formula, rename your columns before calling {.fn fit_cp_linear} or omit the formula argument and let {.fn fit_cp_linear} build it automatically."
+    ), arg = "formula")
   }
 
   # Determine required columns based on parameters
@@ -463,7 +462,7 @@ fit_cp_linear <- function(
 
     if (log10x && any(data$x <= 0)) {
       data <- data[data$x > 0, ]
-      warning("Filtered out non-positive x values for log10 transformation")
+      cli::cli_warn("Filtered out non-positive {.field x} values for log10 transformation.")
     }
 
     # Create formula based on parameters if not provided
@@ -523,7 +522,7 @@ fit_cp_linear <- function(
 
     if (log10x && any(data$x <= 0)) {
       data <- data[data$x > 0, ]
-      warning("Filtered out non-positive x values for log10 transformation")
+      cli::cli_warn("Filtered out non-positive {.field x} values for log10 transformation.")
     }
 
     # Create formula based on parameters if not provided

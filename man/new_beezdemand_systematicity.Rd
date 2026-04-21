@@ -4,7 +4,7 @@
 \alias{new_beezdemand_systematicity}
 \title{Create a beezdemand_systematicity Object}
 \usage{
-new_beezdemand_systematicity(results, type, call)
+new_beezdemand_systematicity(results, type, call, by_var = NULL)
 }
 \arguments{
 \item{results}{Tibble with standardized columns}
@@ -12,6 +12,8 @@ new_beezdemand_systematicity(results, type, call)
 \item{type}{Character: "demand" or "cp"}
 
 \item{call}{Original function call}
+
+\item{by_var}{Character vector of grouping column names (NULL if ungrouped)}
 }
 \description{
 Create a beezdemand_systematicity Object

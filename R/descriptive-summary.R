@@ -12,6 +12,10 @@
 #' @param x_var Character string specifying the column name for price (default: "x")
 #' @param y_var Character string specifying the column name for consumption (default: "y")
 #' @param id_var Character string specifying the column name for subject ID (default: "id")
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, statistics are computed separately within each unique
+#'   combination of the `by` columns. Group columns are prepended to
+#'   `$statistics` and `$data`. Default `NULL` (no grouping).
 #'
 #' @return An S3 object of class `beezdemand_descriptive` containing:
 #' \itemize{
@@ -56,13 +60,22 @@
 #'
 #' # Extended summary with distribution info
 #' summary(desc)
+#'
+#' # Grouped summary — statistics and plots faceted by group
+#' data(apt_full)
+#' desc_g <- get_descriptive_summary(apt_full, by = "gender")
+#' desc_g$statistics
+#' plot(desc_g)
 #' }
 #'
 #' @export
 get_descriptive_summary <- function(data,
                                     x_var = "x",
                                     y_var = "y",
-                                    id_var = "id") {
+                                    id_var = "id",
+                                    by = NULL) {
+  call <- match.call()
+
   # Validate inputs
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame", call. = FALSE)
@@ -73,6 +86,64 @@ get_descriptive_summary <- function(data,
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "), call. = FALSE)
   }
+
+  # --- grouped dispatch ---
+  if (!is.null(by)) {
+    split_out <- beezdemand_split_by(data, by, function(slice, key_row) {
+      obj <- get_descriptive_summary(
+        data = slice,
+        x_var = x_var,
+        y_var = y_var,
+        id_var = id_var,
+        by = NULL
+      )
+      # Prepend group columns to statistics
+      for (col in rev(by)) {
+        obj$statistics <- tibble::add_column(
+          tibble::as_tibble(obj$statistics), !!col := key_row[[col]], .before = 1
+        )
+      }
+      # For data: group cols may already exist (from the slice); add only if missing
+      obj$data <- tibble::as_tibble(obj$data)
+      for (col in rev(by)) {
+        if (!col %in% names(obj$data)) {
+          obj$data <- tibble::add_column(obj$data, !!col := key_row[[col]], .before = 1)
+        }
+      }
+      obj
+    })
+
+    # Combine statistics and data across groups
+    combined_stats <- dplyr::bind_rows(
+      lapply(split_out$results, function(obj) obj$statistics)
+    )
+    combined_data <- dplyr::bind_rows(
+      lapply(split_out$results, function(obj) obj$data)
+    )
+    total_subjects <- sum(vapply(
+      split_out$results,
+      function(obj) obj$data_summary$n_subjects,
+      integer(1)
+    ))
+
+    result <- structure(
+      list(
+        statistics = combined_stats,
+        call = call,
+        data_summary = list(
+          n_subjects = total_subjects,
+          n_prices = length(unique(combined_stats$Price)),
+          prices = unique(combined_data$x)
+        ),
+        data = combined_data,
+        by_var = by
+      ),
+      class = "beezdemand_descriptive"
+    )
+    return(result)
+  }
+
+  # --- ungrouped (original logic) ---
 
   # Rename columns for internal processing
   df <- data
@@ -110,13 +181,13 @@ get_descriptive_summary <- function(data,
   result <- structure(
     list(
       statistics = dfres,
-      call = match.call(),
+      call = call,
       data_summary = list(
         n_subjects = n_subjects,
         n_prices = np,
         prices = prices
       ),
-      data = df  # Store for plot method
+      data = tibble::as_tibble(df)  # Store for plot method
     ),
     class = "beezdemand_descriptive"
   )

@@ -156,7 +156,20 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #' @importFrom tidyr crossing
 #' @importFrom rlang .data `:=`
 #' @export
-get_demand_param_emms <- function(
+get_demand_param_emms <- function(fit_obj, ...) {
+  UseMethod("get_demand_param_emms")
+}
+
+#' @rdname get_demand_param_emms
+#' @export
+get_demand_param_emms.default <- function(fit_obj, ...) {
+  stop("Input 'fit_obj' must be a 'beezdemand_nlme' or 'beezdemand_tmb' object.",
+       call. = FALSE)
+}
+
+#' @rdname get_demand_param_emms
+#' @export
+get_demand_param_emms.beezdemand_nlme <- function(
   fit_obj,
   factors_in_emm = NULL,
   at = NULL,
@@ -164,9 +177,6 @@ get_demand_param_emms <- function(
   include_ev = FALSE, # New argument
   ...
 ) {
-  if (!inherits(fit_obj, "beezdemand_nlme")) {
-    stop("Input 'fit_obj' must be a 'beezdemand_nlme' object.")
-  }
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -854,7 +864,20 @@ get_observed_demand_param_emms <- function(
 #' @importFrom rlang `:=` .data
 #' @importFrom dplyr select rename all_of any_of everything mutate
 #' @export
-get_demand_comparisons <- function(
+get_demand_comparisons <- function(fit_obj, ...) {
+  UseMethod("get_demand_comparisons")
+}
+
+#' @rdname get_demand_comparisons
+#' @export
+get_demand_comparisons.default <- function(fit_obj, ...) {
+  stop("Input 'fit_obj' must be a 'beezdemand_nlme' or 'beezdemand_tmb' object.",
+       call. = FALSE)
+}
+
+#' @rdname get_demand_comparisons
+#' @export
+get_demand_comparisons.beezdemand_nlme <- function(
   fit_obj,
   params_to_compare = c("Q0", "alpha"),
   compare_specs = NULL,
@@ -866,9 +889,6 @@ get_demand_comparisons <- function(
   report_ratios = TRUE,
   ...
 ) {
-  if (!inherits(fit_obj, "beezdemand_nlme")) {
-    stop("Input 'fit_obj' must be a 'beezdemand_nlme' object.")
-  }
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -1722,6 +1742,11 @@ summary.beezdemand_nlme <- function(
   # Extract fixed effects table
   ttable <- nlme_summary$tTable
   internal_space <- object$param_space %||% object$param_info$param_space %||% "log10"
+  # Preserve nlme's containment-based degrees of freedom for use after parameter
+  # transformation. The delta method changes estimate/SE but not the underlying
+  # t-distribution, so reusing these df keeps inference correctly t-based for
+  # small N (TICKET-006).
+  df_residual <- if ("DF" %in% colnames(ttable)) ttable[, "DF"] else NA_real_
   coefficients <- tibble::tibble(
     term = rownames(ttable),
     estimate = ttable[, "Value"],
@@ -1740,7 +1765,11 @@ summary.beezdemand_nlme <- function(
       internal_space = internal_space
     )
     coefficients$statistic <- coefficients$estimate / coefficients$std.error
-    coefficients$p.value <- 2 * stats::pnorm(-abs(coefficients$statistic))
+    coefficients$p.value <- if (all(is.na(df_residual))) {
+      2 * stats::pnorm(-abs(coefficients$statistic))
+    } else {
+      2 * stats::pt(-abs(coefficients$statistic), df = df_residual)
+    }
   }
 
   # Random effects structure
@@ -2021,7 +2050,7 @@ glance.beezdemand_nlme <- function(x, ...) {
       x$formula_details$equation_form_selected,
     nobs = n_obs,
     n_subjects = n_subjects,
-    converged = TRUE,
+    converged = .check_nlme_convergence(x)$converged,
     logLik = as.numeric(stats::logLik(x$model)),
     AIC = stats::AIC(x$model),
     BIC = stats::BIC(x$model),

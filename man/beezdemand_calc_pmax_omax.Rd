@@ -10,6 +10,7 @@ beezdemand_calc_pmax_omax(
   param_scales = NULL,
   expenditure_fn = NULL,
   demand_fn = NULL,
+  p_zero_fn = NULL,
   price_obs = NULL,
   consumption_obs = NULL,
   tol = 0.1,

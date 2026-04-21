@@ -50,6 +50,8 @@ navbar:
           href: articles/mixed-demand.html
         - text: "Advanced Mixed-Effects Models"
           href: articles/mixed-demand-advanced.html
+        - text: TMB Mixed-Effects Models
+          href: articles/tmb-mixed-effects.html
         - text: Hurdle Demand Models
           href: articles/hurdle-demand-models.html
         - text: Cross-Price Models
