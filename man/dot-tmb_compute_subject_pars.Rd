@@ -15,7 +15,8 @@
   subject_id,
   k_fixed = NULL,
   X_q0 = NULL,
-  X_alpha = NULL
+  X_alpha = NULL,
+  validate_subject_pars = TRUE
 )
 }
 \arguments{

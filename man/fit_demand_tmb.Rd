@@ -20,6 +20,7 @@ fit_demand_tmb(
   start_values = NULL,
   tmb_control = list(iter_max = 1000, eval_max = 2000),
   multi_start = TRUE,
+  validate_subject_pars = TRUE,
   verbose = 1,
   ...
 )
