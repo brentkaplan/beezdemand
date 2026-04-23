@@ -759,3 +759,39 @@ test_that("EMM `at` overrides continuous covariate value for TMB fits", {
   emm_high <- get_demand_param_emms(fit, param = "Q0", at = list(age = 35))
   expect_false(isTRUE(all.equal(emm_low$estimate, emm_high$estimate)))
 })
+
+# TICKET-011 Phase 0.2: covariate-only TMB EMMs must honor `at`.
+# Adversarial review flagged an early return at
+# get_demand_param_emms.beezdemand_tmb() that fired whenever factors was
+# empty — even when continuous_covariates was non-empty — so every EMM
+# collapsed to the intercept, ignoring the requested covariate value.
+test_that("TMB EMMs honor `at` for covariate-only fits (no factors)", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full
+  ids_keep <- head(sort(unique(d$id)), 40)
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential",
+                        continuous_covariates = "age", verbose = 0)
+
+  emm_low  <- get_demand_param_emms(fit, param = "Q0", at = list(age = 20))
+  emm_high <- get_demand_param_emms(fit, param = "Q0", at = list(age = 60))
+
+  expect_s3_class(emm_low, "tbl_df")
+  expect_s3_class(emm_high, "tbl_df")
+  expect_false(isTRUE(all.equal(emm_low$estimate, emm_high$estimate)))
+
+  # Verify the at-values flow through the design: exp(beta_q0 %*% [1, age]).
+  coefs <- fit$model$coefficients
+  beta_q0 <- unname(coefs[names(coefs) == "beta_q0"])
+  x_cols <- colnames(fit$formula_details$X_q0)
+  age_idx <- which(x_cols == "age")
+  int_idx <- which(x_cols == "(Intercept)")
+  expect_equal(length(age_idx), 1L)
+  expect_equal(length(int_idx), 1L)
+  expected_low  <- exp(beta_q0[int_idx] + beta_q0[age_idx] * 20)
+  expected_high <- exp(beta_q0[int_idx] + beta_q0[age_idx] * 60)
+  expect_equal(emm_low$estimate,  expected_low,  tolerance = 1e-6)
+  expect_equal(emm_high$estimate, expected_high, tolerance = 1e-6)
+})

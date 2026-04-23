@@ -1464,8 +1464,12 @@ get_demand_param_emms.beezdemand_tmb <- function(
   # Build reference grid
   # For each factor level combination, create a design vector
   factors <- fit_obj$param_info$factors
-  if (is.null(factors) || length(factors) == 0) {
-    # No factors: just return the intercept
+  cov_names <- fit_obj$param_info$continuous_covariates
+  no_factors <- is.null(factors) || length(factors) == 0L
+  no_covariates <- is.null(cov_names) || length(cov_names) == 0L
+
+  if (no_factors && no_covariates) {
+    # Truly intercept-only model: short-circuit to beta[1].
     est <- beta[1]
     se <- sqrt(vcov_mat[1, 1])
     z <- stats::qnorm((1 + ci_level) / 2)
@@ -1486,16 +1490,22 @@ get_demand_param_emms.beezdemand_tmb <- function(
   } else {
     use_factors <- fit_obj$param_info$factors_alpha
   }
+  if (is.null(use_factors)) use_factors <- character(0)
   if (!is.null(factors_in_emm)) {
     use_factors <- intersect(use_factors, factors_in_emm)
   }
 
-  # Get unique levels from the data
+  # Get unique levels from the data. When factors are absent but covariates
+  # are present, level_combos is a single-row, zero-column frame so the
+  # covariate loop below can populate it with one reference row.
   data_used <- fit_obj$data
-  level_combos <- unique(data_used[, use_factors, drop = FALSE])
+  if (length(use_factors) > 0L) {
+    level_combos <- unique(data_used[, use_factors, drop = FALSE])
+  } else {
+    level_combos <- data_used[1L, integer(0), drop = FALSE]
+  }
 
   # Continuous covariates: hold at training mean unless overridden via `at`.
-  cov_names <- fit_obj$param_info$continuous_covariates
   if (!is.null(cov_names) && length(cov_names) > 0) {
     for (cv in cov_names) {
       cv_value <- mean(data_used[[cv]], na.rm = TRUE)
@@ -1544,12 +1554,23 @@ get_demand_param_emms.beezdemand_tmb <- function(
     est <- sum(x_ref * beta)
     se <- sqrt(as.numeric(t(x_ref) %*% vcov_mat %*% x_ref))
 
-    level_label <- paste(
-      vapply(use_factors, function(f) {
-        paste0(f, "=", level_combos[[f]][i])
-      }, character(1)),
-      collapse = ", "
-    )
+    if (length(use_factors) > 0L) {
+      level_label <- paste(
+        vapply(use_factors, function(f) {
+          paste0(f, "=", level_combos[[f]][i])
+        }, character(1)),
+        collapse = ", "
+      )
+    } else if (!is.null(cov_names) && length(cov_names) > 0L) {
+      level_label <- paste(
+        vapply(cov_names, function(cv) {
+          paste0(cv, "=", level_combos[[cv]][i])
+        }, character(1)),
+        collapse = ", "
+      )
+    } else {
+      level_label <- "(Intercept)"
+    }
 
     tibble::tibble(
       level = level_label,
