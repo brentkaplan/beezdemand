@@ -664,9 +664,57 @@ NULL
 .tmb_compute_subject_pars <- function(
   coefficients, u_hat, subject_levels, n_re, has_k,
   equation, price, subject_id, k_fixed = NULL,
-  X_q0 = NULL, X_alpha = NULL
+  X_q0 = NULL, X_alpha = NULL,
+  validate_subject_pars = TRUE
 ) {
   n_subjects <- length(subject_levels)
+
+  # Per-subject check: does any column of X_q0 or X_alpha vary within an id?
+  # When it does, a single row-wise collapse (first_obs_per_subject below) has
+  # no well-defined meaning, and subject-level Q0/alpha/Pmax/Omax would be
+  # silently wrong. Flag the affected subjects so we can NA their derived
+  # parameters at the end. Phase 2/3 of TICKET-011 replaces this with per-cell
+  # rows once the template has RE slopes on within-subject factors.
+  affected_subjects <- logical(n_subjects)
+  offending_cols <- character(0)
+  if (isTRUE(validate_subject_pars)) {
+    .check_within_id <- function(mat, mat_name) {
+      if (is.null(mat) || ncol(mat) == 0L) {
+        return(list(affected = logical(n_subjects), cols = character(0)))
+      }
+      aff <- logical(n_subjects)
+      cols <- character(0)
+      col_names <- colnames(mat)
+      if (is.null(col_names)) {
+        col_names <- paste0(mat_name, "[,", seq_len(ncol(mat)), "]")
+      }
+      for (j in seq_len(ncol(mat))) {
+        subj_split <- split(mat[, j], subject_id)
+        varies <- vapply(
+          subj_split,
+          function(v) length(unique(v)) > 1L,
+          logical(1)
+        )
+        if (any(varies)) {
+          cols <- c(cols, col_names[j])
+          aff[as.integer(names(varies)[varies]) + 1L] <- TRUE
+        }
+      }
+      list(affected = aff, cols = cols)
+    }
+    q0_check <- .check_within_id(X_q0, "X_q0")
+    alpha_check <- .check_within_id(X_alpha, "X_alpha")
+    affected_subjects <- q0_check$affected | alpha_check$affected
+    offending_cols <- unique(c(q0_check$cols, alpha_check$cols))
+    if (length(offending_cols) > 0L) {
+      cli::cli_warn(c(
+        "Design matrix column{?s} {.val {offending_cols}} var{?ies/y} within {.field id}.",
+        "i" = "Subject-level {.field Q0}, {.field alpha}, {.field Pmax}, and {.field Omax} in {.field subject_pars} are set to {.val NA} for affected subjects because a row-wise collapse has no well-defined meaning here.",
+        "i" = "Use {.code validate_subject_pars = FALSE} to force row-order-dependent values (not recommended).",
+        "i" = "Factor-expanded random-effects support is planned in TICKET-011 Phases 2–3."
+      ))
+    }
+  }
 
   # Get beta vectors
   beta_q0_idx <- which(names(coefficients) == "beta_q0")
@@ -784,6 +832,16 @@ NULL
       price_list = price_list,
       compute_observed = FALSE
     )
+  }
+
+  # NA out derived parameters for subjects flagged by the within-id check;
+  # b_i / c_i remain populated because they are well-defined per subject
+  # regardless of fixed-effect design-column variation within id.
+  if (any(affected_subjects)) {
+    subj_Q0[affected_subjects] <- NA_real_
+    subj_alpha[affected_subjects] <- NA_real_
+    omax_pmax$pmax_model[affected_subjects] <- NA_real_
+    omax_pmax$omax_model[affected_subjects] <- NA_real_
   }
 
   # Build output
@@ -965,6 +1023,7 @@ fit_demand_tmb <- function(
   start_values = NULL,
   tmb_control = list(iter_max = 1000, eval_max = 2000),
   multi_start = TRUE,
+  validate_subject_pars = TRUE,
   verbose = 1,
   ...
 ) {
@@ -1285,7 +1344,8 @@ fit_demand_tmb <- function(
     subject_id = prepared$subject_id,
     k_fixed = if (has_k && !estimate_k) k else NULL,
     X_q0 = design$X_q0,
-    X_alpha = design$X_alpha
+    X_alpha = design$X_alpha,
+    validate_subject_pars = validate_subject_pars
   )
 
   # Compute log-likelihood, AIC, BIC
