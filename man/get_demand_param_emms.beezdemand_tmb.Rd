@@ -19,10 +19,16 @@
 \item{param}{Character. Which parameter to compute EMMs for: \code{"Q0"} or
 \code{"alpha"}.}
 
-\item{factors_in_emm}{Character vector of factors to marginalize over.
-If NULL, uses all factors in the model.}
+\item{factors_in_emm}{Character vector of factors to include in the EMM
+reference grid. Must include \emph{every} factor the model was fit on; any
+subset that drops a fitted factor is rejected with a clear error.
+Proper marginalization over omitted factors is planned for TICKET-011
+Phase 5. If \code{NULL} (default), all fitted factors are used.}
 
-\item{at}{Named list specifying factor levels for conditional EMMs.}
+\item{at}{Named list specifying factor levels and continuous-covariate
+values for conditional EMMs. For continuous covariates, a single
+numeric value per covariate; multiple values produce a warning and
+only the first is used.}
 
 \item{ci_level}{Numeric. Confidence level for intervals.}
 
@@ -35,6 +41,11 @@ A tibble with columns: level, estimate, std.error, conf.low, conf.high.
 Computes estimated marginal means (EMMs) for demand parameters from a
 \code{beezdemand_tmb} model. Uses design matrices and beta vectors with vcov
 from \code{TMB::sdreport()}.
+}
+\note{
+TMB EMMs require \code{factors_in_emm} to include every fitted factor.
+Use \code{fit_demand_mixed()} (NLME backend) if you need to marginalize over
+a subset of factors while this gap is closed (see TICKET-011 Phase 5).
 }
 \examples{
 \donttest{

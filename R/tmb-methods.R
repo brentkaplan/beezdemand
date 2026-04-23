@@ -1398,13 +1398,23 @@ confint.beezdemand_tmb <- function(
 #' @param fit_obj A \code{beezdemand_tmb} object.
 #' @param param Character. Which parameter to compute EMMs for: `"Q0"` or
 #'   `"alpha"`.
-#' @param factors_in_emm Character vector of factors to marginalize over.
-#'   If NULL, uses all factors in the model.
-#' @param at Named list specifying factor levels for conditional EMMs.
+#' @param factors_in_emm Character vector of factors to include in the EMM
+#'   reference grid. Must include *every* factor the model was fit on; any
+#'   subset that drops a fitted factor is rejected with a clear error.
+#'   Proper marginalization over omitted factors is planned for TICKET-011
+#'   Phase 5. If `NULL` (default), all fitted factors are used.
+#' @param at Named list specifying factor levels and continuous-covariate
+#'   values for conditional EMMs. For continuous covariates, a single
+#'   numeric value per covariate; multiple values produce a warning and
+#'   only the first is used.
 #' @param ci_level Numeric. Confidence level for intervals.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with columns: level, estimate, std.error, conf.low, conf.high.
+#'
+#' @note TMB EMMs require `factors_in_emm` to include every fitted factor.
+#'   Use `fit_demand_mixed()` (NLME backend) if you need to marginalize over
+#'   a subset of factors while this gap is closed (see TICKET-011 Phase 5).
 #'
 #' @examples
 #' \donttest{
@@ -1544,6 +1554,27 @@ get_demand_param_emms.beezdemand_tmb <- function(
     }
     level_combos <- level_combos[keep, , drop = FALSE]
     ref_X <- ref_X[keep, , drop = FALSE]
+  }
+
+  # Dimension guard: the fitted beta spans the full design from `factors` +
+  # `continuous_covariates`, so the reference grid must share that basis.
+  # When `factors_in_emm` drops any fitted factor, `ref_X` has fewer columns
+  # than `beta`, and downstream `sum(x_ref * beta)` would silently recycle
+  # the shorter vector. Reject explicitly; proper marginalization over
+  # omitted factors is planned for TICKET-011 Phase 5.
+  if (ncol(ref_X) != length(beta)) {
+    fitted_for_param <- if (param == "Q0") {
+      fit_obj$param_info$factors_q0
+    } else {
+      fit_obj$param_info$factors_alpha
+    }
+    if (is.null(fitted_for_param)) fitted_for_param <- character(0)
+    cli::cli_abort(c(
+      "{.arg factors_in_emm} must include every fitted factor for {.field {param}}.",
+      "i" = "Fitted factors: {.val {fitted_for_param}}.",
+      "i" = "Requested: {.val {factors_in_emm}}.",
+      "x" = "Marginalization over omitted factors is not yet supported for TMB fits (planned in TICKET-011 Phase 5)."
+    ))
   }
 
   z <- stats::qnorm((1 + ci_level) / 2)

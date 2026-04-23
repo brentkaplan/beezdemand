@@ -760,6 +760,36 @@ test_that("EMM `at` overrides continuous covariate value for TMB fits", {
   expect_false(isTRUE(all.equal(emm_low$estimate, emm_high$estimate)))
 })
 
+# TICKET-011 Phase 0.3: factors_in_emm that omits any fitted factor must
+# error cleanly rather than silently recycling a shorter x_ref vector
+# against the full beta vector. Proper marginalization over omitted
+# factors is planned for TICKET-011 Phase 5.
+test_that("TMB EMMs error when factors_in_emm drops a fitted factor", {
+  skip_on_cran()
+  dat <- create_emm_test_data(
+    n_subjects = 10,
+    n_levels_factor1 = 2,
+    n_levels_factor2 = 2,
+    seed = 99
+  )
+  fit <- suppressWarnings(fit_demand_tmb(
+    dat,
+    equation = "simplified",
+    factors = c("factor1", "factor2"),
+    verbose = 0
+  ))
+  skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
+
+  expect_error(
+    get_demand_param_emms(fit, param = "Q0", factors_in_emm = "factor1"),
+    regexp = "factors_in_emm.*must include every fitted factor"
+  )
+  expect_error(
+    get_demand_param_emms(fit, param = "alpha", factors_in_emm = "factor2"),
+    regexp = "factors_in_emm.*must include every fitted factor"
+  )
+})
+
 # TICKET-011 Phase 0.2: covariate-only TMB EMMs must honor `at`.
 # Adversarial review flagged an early return at
 # get_demand_param_emms.beezdemand_tmb() that fired whenever factors was
