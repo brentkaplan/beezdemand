@@ -187,6 +187,117 @@ test_that("get_demand_param_emms includes EV when requested", {
 })
 
 
+# -----------------------------------------------------------------------------
+# TICKET-012: `param` argument for NLME EMMs (parity with TMB tier)
+# -----------------------------------------------------------------------------
+
+test_that("get_demand_param_emms.beezdemand_nlme default preserves back-compat", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "simplified"
+  )
+
+  emms_default <- get_demand_param_emms(fit, factors_in_emm = "factor1")
+  emms_both <- get_demand_param_emms(
+    fit,
+    factors_in_emm = "factor1",
+    param = "both"
+  )
+
+  expect_identical(emms_default, emms_both)
+  expect_true(all(
+    c("Q0_param_log10", "alpha_param_log10", "Q0_natural", "alpha_natural") %in%
+      names(emms_default)
+  ))
+})
+
+
+test_that("param = 'Q0' returns only Q0 columns (NLME)", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "simplified"
+  )
+
+  emms <- get_demand_param_emms(
+    fit,
+    factors_in_emm = "factor1",
+    param = "Q0"
+  )
+
+  expect_true(all(c("Q0_param_log10", "Q0_natural") %in% names(emms)))
+  expect_false(any(grepl("alpha", names(emms))))
+  expect_false(any(names(emms) %in% c("EV", "LCL_EV", "UCL_EV")))
+})
+
+
+test_that("param = 'alpha' with include_ev returns alpha + EV (NLME)", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "simplified"
+  )
+
+  emms <- get_demand_param_emms(
+    fit,
+    factors_in_emm = "factor1",
+    param = "alpha",
+    include_ev = TRUE
+  )
+
+  expect_true(all(
+    c("alpha_param_log10", "alpha_natural", "EV", "LCL_EV", "UCL_EV") %in%
+      names(emms)
+  ))
+  expect_false(any(grepl("^Q0_|^LCL_Q0_|^UCL_Q0_", names(emms))))
+})
+
+
+test_that("param = 'Q0' with include_ev warns and drops EV (NLME)", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "simplified"
+  )
+
+  expect_warning(
+    emms <- get_demand_param_emms(
+      fit,
+      factors_in_emm = "factor1",
+      param = "Q0",
+      include_ev = TRUE
+    ),
+    "EV"
+  )
+  expect_false(any(names(emms) %in% c("EV", "LCL_EV", "UCL_EV")))
+})
+
+
 # =============================================================================
 # Tests for get_observed_demand_param_emms
 # =============================================================================

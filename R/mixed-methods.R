@@ -132,6 +132,14 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #' @param include_ev Logical. If TRUE, calculates and includes Essential Value (EV)
 #'   derived from alpha, along with its confidence interval (calculated by
 #'   back-transforming the CI of alpha_param_log10). Default `FALSE`.
+#' @param param Character, one of `"both"` (default), `"Q0"`, or `"alpha"`.
+#'   Controls which demand parameter's EMM columns are returned. `"both"`
+#'   preserves the historical four-column-block structure (Q0 and alpha
+#'   together). `"Q0"` returns only Q0 columns (and drops EV, since EV is a
+#'   function of alpha); a warning is emitted if `include_ev = TRUE` is
+#'   requested alongside `param = "Q0"`. `"alpha"` returns only alpha columns
+#'   plus the EV block when `include_ev = TRUE`. Mirrors the `param` argument
+#'   on the `beezdemand_tmb` method.
 #' @param ... Additional arguments passed to `emmeans::emmeans()`.
 #'
 #' @return A tibble containing:
@@ -141,6 +149,9 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #'   \item{Q0_natural, alpha_natural}{EMMs back-transformed to the natural scale (10^param)
 #'     with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.).}
 #'   \item{EV, LCL_EV, UCL_EV}{(If `include_ev=TRUE`) Essential Value and its CI.}
+#'   When `param = "Q0"` or `param = "alpha"`, only the columns associated with
+#'   the requested parameter (plus factor columns and, for `"alpha"`, the EV
+#'   block) are returned.
 #'
 #' @examples
 #' \donttest{
@@ -149,6 +160,9 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #' fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #'   id_var = "monkey", factors = "dose", equation_form = "zben")
 #' get_demand_param_emms(fit)
+#'
+#' # Request only Q0 columns — convenient for pivoting and plotting
+#' get_demand_param_emms(fit, param = "Q0")
 #' }
 #' @importFrom emmeans ref_grid emmeans
 #' @importFrom dplyr full_join select rename mutate across all_of left_join
@@ -174,9 +188,12 @@ get_demand_param_emms.beezdemand_nlme <- function(
   factors_in_emm = NULL,
   at = NULL,
   ci_level = 0.95,
-  include_ev = FALSE, # New argument
+  include_ev = FALSE,
+  param = c("both", "Q0", "alpha"),
   ...
 ) {
+  param <- match.arg(param)
+
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -575,6 +592,15 @@ get_demand_param_emms.beezdemand_nlme <- function(
   }
 
   # --- Calculate Essential Value (EV) if requested ---
+  # EV requires alpha; if the caller asked for Q0-only but also include_ev,
+  # warn and drop the include_ev request before computation.
+  if (include_ev && param == "Q0") {
+    cli::cli_warn(
+      "EV is a function of alpha; ignored when {.code param = \"Q0\"}."
+    )
+    include_ev <- FALSE
+  }
+
   if (include_ev) {
     if (
       !is.null(emm_alpha) &&
@@ -608,6 +634,21 @@ get_demand_param_emms.beezdemand_nlme <- function(
         "Cannot calculate EV because alpha EMMs ('alpha_param_log10' or 'alpha_natural') are not available in the results."
       )
     }
+  }
+
+  # --- Filter columns based on `param` argument ---
+  # `param = "both"` preserves the full combined_estimates tibble (default).
+  # `param = "Q0"` drops all alpha_* and EV columns.
+  # `param = "alpha"` drops all Q0_* columns; EV (if present) stays because
+  #   EV is derived from alpha.
+  if (param != "both") {
+    drop_pattern <- switch(
+      param,
+      "Q0" = "^(alpha_|LCL_alpha_|UCL_alpha_|EV$|LCL_EV$|UCL_EV$)",
+      "alpha" = "^(Q0_|LCL_Q0_|UCL_Q0_)"
+    )
+    keep_cols <- !grepl(drop_pattern, names(combined_estimates))
+    combined_estimates <- combined_estimates[, keep_cols, drop = FALSE]
   }
 
   return(tibble::as_tibble(combined_estimates))

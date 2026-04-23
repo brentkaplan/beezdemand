@@ -93,6 +93,12 @@ branch. See the "TMB tier" section under New Features for orientation.
 * Visualization helpers added to TMB and NLME vignettes (commit
   `75a202a`).
 
+* `get_demand_param_emms.beezdemand_nlme()` gains a `param` argument
+  (`"both"`, `"Q0"`, `"alpha"`) for API parity with the
+  `beezdemand_tmb` method (TICKET-012). Default `"both"` preserves the
+  historical return shape; `"Q0"` and `"alpha"` narrow the output to a
+  single parameter's columns for easier pivoting and plotting.
+
 ## Bug Fixes
 
 * `fit_demand_tmb()` now drops rows with `NA` values in any modeling

@@ -16,6 +16,7 @@ get_demand_param_emms(fit_obj, ...)
   at = NULL,
   ci_level = 0.95,
   include_ev = FALSE,
+  param = c("both", "Q0", "alpha"),
   ...
 )
 }
@@ -34,6 +35,15 @@ Defaults to all factors present in the \code{fit_obj}.}
 \item{include_ev}{Logical. If TRUE, calculates and includes Essential Value (EV)
 derived from alpha, along with its confidence interval (calculated by
 back-transforming the CI of alpha_param_log10). Default \code{FALSE}.}
+
+\item{param}{Character, one of \code{"both"} (default), \code{"Q0"}, or \code{"alpha"}.
+Controls which demand parameter's EMM columns are returned. \code{"both"}
+preserves the historical four-column-block structure (Q0 and alpha
+together). \code{"Q0"} returns only Q0 columns (and drops EV, since EV is a
+function of alpha); a warning is emitted if \code{include_ev = TRUE} is
+requested alongside \code{param = "Q0"}. \code{"alpha"} returns only alpha columns
+plus the EV block when \code{include_ev = TRUE}. Mirrors the \code{param} argument
+on the \code{beezdemand_tmb} method.}
 }
 \value{
 A tibble containing:
@@ -43,6 +53,9 @@ with their respective confidence intervals (LCL_Q0_param, UCL_Q0_param, etc.).}
 \item{Q0_natural, alpha_natural}{EMMs back-transformed to the natural scale (10^param)
 with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.).}
 \item{EV, LCL_EV, UCL_EV}{(If \code{include_ev=TRUE}) Essential Value and its CI.}
+When \code{param = "Q0"} or \code{param = "alpha"}, only the columns associated with
+the requested parameter (plus factor columns and, for \code{"alpha"}, the EV
+block) are returned.
 }
 \description{
 Calculates Estimated Marginal Means (EMMs) for Q0 and alpha parameters
@@ -57,5 +70,8 @@ ko$y_ll4 <- ll4(ko$y, lambda = 4)
 fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
   id_var = "monkey", factors = "dose", equation_form = "zben")
 get_demand_param_emms(fit)
+
+# Request only Q0 columns — convenient for pivoting and plotting
+get_demand_param_emms(fit, param = "Q0")
 }
 }
