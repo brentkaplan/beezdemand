@@ -156,7 +156,7 @@ test_that(".normalize_re_input: list-of-pdMat treated like pdBlocked", {
 test_that(".normalize_re_input rejects invalid character", {
   expect_error(
     .normalize_re_input(c("foo"), covariance_structure = "pdSymm"),
-    "must be a subset of"
+    "must be a subset"
   )
 })
 

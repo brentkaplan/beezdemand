@@ -81,15 +81,15 @@
   bad <- setdiff(chr, valid_re)
   if (length(bad) > 0L) {
     stop(
-      "`random_effects` must be a subset of c('q0','alpha'); got ",
-      paste(shQuote(bad), collapse = ", "),
+      "random_effects must be a subset of: q0, alpha (got ",
+      paste(shQuote(bad), collapse = ", "), ").",
       call. = FALSE
     )
   }
   chr <- intersect(valid_re, chr)  # canonical order
   if (!("q0" %in% chr)) {
     stop(
-      "`random_effects` must include 'q0' (alpha-only REs are not supported).",
+      "random_effects must include at least 'q0' (alpha-only REs are not supported).",
       call. = FALSE
     )
   }
