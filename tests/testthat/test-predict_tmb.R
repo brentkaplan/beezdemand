@@ -86,3 +86,46 @@ test_that("predict.beezdemand_tmb errors on missing required columns", {
   expect_error(predict(fit, newdata = bad),
                "missing required column")
 })
+
+# Codex review P2: predict(type='demand') builds the population curve
+# from beta_q0[1] and beta_alpha[1] (the intercepts), which corresponds
+# to all covariates = 0 rather than the training means. A warning already
+# fires when factors are present; this extends the same guard to
+# continuous_covariates so covariate-only fits do not silently render
+# a curve at covariate = 0. Proper mean-centered population curves land
+# in TICKET-011 Phase 5.
+test_that("predict(type='demand') warns for covariate-only TMB fits", {
+  skip_on_cran()
+  d <- .predict_tmb_subset(n_per_gender = 15)
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    continuous_covariates = "age",
+    verbose = 0
+  )
+  expect_warning(
+    predict(fit, type = "demand"),
+    regexp = "covariate|reference"
+  )
+})
+
+test_that("predict(type='demand') still warns for factor-only TMB fits", {
+  skip_on_cran()
+  d <- .predict_tmb_subset(n_per_gender = 15)
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    factors = "gender",
+    verbose = 0
+  )
+  expect_warning(
+    predict(fit, type = "demand"),
+    regexp = "reference level"
+  )
+})
+
+test_that("predict(type='demand') does not warn for intercept-only TMB fits", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_warning(predict(fit, type = "demand"), regexp = NA)
+})

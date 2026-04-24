@@ -608,11 +608,34 @@ predict.beezdemand_tmb <- function(
     Q0 <- exp(log_q0)
     alpha_val <- exp(log_alpha)
 
-    if (!is.null(object$param_info$factors) &&
-        length(object$param_info$factors) > 0) {
+    # The population curve is drawn at beta_q0[1] and beta_alpha[1],
+    # which correspond to the reference level of every factor AND all
+    # continuous covariates equal to zero. Warn in either case so users
+    # know the curve is not mean-centered. Proper population-average
+    # curves (covariates at training means, factors integrated over
+    # observed frequencies) land in TICKET-011 Phase 5.
+    has_factors <- !is.null(object$param_info$factors) &&
+      length(object$param_info$factors) > 0L
+    has_covariates <- !is.null(object$param_info$continuous_covariates) &&
+      length(object$param_info$continuous_covariates) > 0L
+    if (has_factors && has_covariates) {
+      warning(
+        "Demand curve reflects reference level for factors and ",
+        "covariates = 0. Use get_demand_param_emms() for conditional ",
+        "curves at specific factor levels / covariate values.",
+        call. = FALSE
+      )
+    } else if (has_factors) {
       warning(
         "Demand curve reflects reference level only. ",
         "Use get_demand_param_emms() for per-group curves.",
+        call. = FALSE
+      )
+    } else if (has_covariates) {
+      warning(
+        "Demand curve reflects covariates = 0, not the training mean. ",
+        "Use get_demand_param_emms() for curves at specific covariate ",
+        "values.",
         call. = FALSE
       )
     }
