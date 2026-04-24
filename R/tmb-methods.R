@@ -1653,7 +1653,15 @@ get_demand_comparisons.beezdemand_tmb <- function(
   param <- match.arg(param)
   contrast_type <- match.arg(contrast_type)
 
-  emms <- get_demand_param_emms(fit_obj, param = param, ci_level = ci_level)
+  # Forward `...` (notably `at` and `factors_in_emm`) so callers can
+  # condition the contrast reference grid on specific factor levels or
+  # covariate values. Before this, these args were silently dropped.
+  emms <- get_demand_param_emms(
+    fit_obj,
+    param = param,
+    ci_level = ci_level,
+    ...
+  )
 
   if (nrow(emms) < 2) {
     message("Fewer than 2 levels; no contrasts to compute.")

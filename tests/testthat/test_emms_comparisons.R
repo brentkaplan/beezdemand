@@ -825,3 +825,37 @@ test_that("TMB EMMs honor `at` for covariate-only fits (no factors)", {
   expect_equal(emm_low$estimate,  expected_low,  tolerance = 1e-6)
   expect_equal(emm_high$estimate, expected_high, tolerance = 1e-6)
 })
+
+# Codex review P2: get_demand_comparisons.beezdemand_tmb() accepts `...`
+# but never forwards it to the internal get_demand_param_emms() call, so
+# caller-supplied `at` and `factors_in_emm` were silently ignored.
+test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_emm`", {
+  skip_on_cran()
+  dat <- create_emm_test_data(
+    n_subjects = 10,
+    n_levels_factor1 = 2,
+    n_levels_factor2 = 2,
+    seed = 99
+  )
+  fit <- suppressWarnings(fit_demand_tmb(
+    dat,
+    equation = "simplified",
+    factors = c("factor1", "factor2"),
+    verbose = 0
+  ))
+  skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
+
+  # Phase 0.3 landed a hard error in get_demand_param_emms() when
+  # factors_in_emm drops any fitted factor. If the wrapper forwards
+  # `...` correctly, the same error surfaces through get_demand_comparisons().
+  # Before this fix, factors_in_emm was silently dropped and the call
+  # returned a (wrong) tibble instead of erroring.
+  expect_error(
+    get_demand_comparisons(
+      fit,
+      param = "Q0",
+      factors_in_emm = "factor1"
+    ),
+    regexp = "factors_in_emm.*must include every fitted factor"
+  )
+})
