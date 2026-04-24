@@ -302,3 +302,60 @@ test_that("fit object carries parsed RE metadata", {
     "pdSymm"
   )
 })
+
+# Phase 1 regression fix: covariance_structure = "pdDiag" must actually
+# produce a diagonal 2x2 covariance for 2-RE fits. Before this fix the
+# downstream path keyed only on n_re and left rho_bc_raw free regardless
+# of the requested covariance class.
+test_that("pdDiag covariance_structure pins rho at 0 for 2-RE fits", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+
+  fit_symm <- fit_demand_tmb(
+    apt,
+    equation = "simplified",
+    random_effects = Q0 + alpha ~ 1,
+    covariance_structure = "pdSymm",
+    verbose = 0
+  )
+  fit_diag <- fit_demand_tmb(
+    apt,
+    equation = "simplified",
+    random_effects = Q0 + alpha ~ 1,
+    covariance_structure = "pdDiag",
+    verbose = 0
+  )
+
+  # pdDiag maps rho_bc_raw out of the optimizer's free parameters, pinning
+  # it at the default start (0 -> tanh(0) = 0 correlation). pdSymm leaves
+  # it free to find any value in (-1, 1).
+  expect_false("rho_bc_raw" %in% names(fit_diag$opt$par))
+  expect_true("rho_bc_raw" %in% names(fit_symm$opt$par))
+
+  # pdDiag fits one fewer free parameter (no rho) than pdSymm.
+  expect_equal(length(fit_symm$opt$par) - length(fit_diag$opt$par), 1L)
+
+  expect_match(fit_diag$param_info$random_effects_shape, "pdDiag")
+  expect_match(fit_symm$param_info$random_effects_shape, "pdSymm")
+
+  # The subject_pars machinery should still compute finite Q0/alpha under
+  # pdDiag (the compute path uses rho = 0 when rho_bc_raw is absent).
+  expect_true(all(is.finite(fit_diag$subject_pars$Q0)))
+  expect_true(all(is.finite(fit_diag$subject_pars$alpha)))
+})
+
+test_that("nlme::pdDiag() object routes to the same pinned-rho path", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt,
+    equation = "simplified",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ 1),
+    verbose = 0
+  )
+  expect_false("rho_bc_raw" %in% names(fit$opt$par))
+  expect_equal(
+    fit$param_info$random_effects_parsed$blocks[[1]]$pdmat_class,
+    "pdDiag"
+  )
+})

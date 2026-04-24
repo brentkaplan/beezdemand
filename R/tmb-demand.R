@@ -217,10 +217,13 @@ NULL
 #'
 #' @param has_k Logical, whether k is estimated.
 #' @param n_re Integer, number of random effects.
+#' @param covariance_class Character, one of `"pdSymm"` (default; free rho)
+#'   or `"pdDiag"` (rho pinned at 0, i.e. independent Q0 and alpha REs).
+#'   Only consulted when `n_re == 2`.
 #'
 #' @return Named list for TMB map argument.
 #' @keywords internal
-.tmb_build_map <- function(has_k, n_re) {
+.tmb_build_map <- function(has_k, n_re, covariance_class = "pdSymm") {
   map <- list()
 
   # Map out k for simplified/zben
@@ -232,6 +235,10 @@ NULL
   # Map out alpha RE variance/correlation if n_re == 1
   if (n_re == 1) {
     map$logsigma_c <- factor(NA)
+    map$rho_bc_raw <- factor(NA)
+  } else if (n_re == 2 && identical(covariance_class, "pdDiag")) {
+    # 2-RE with diagonal covariance: pin the correlation at 0 (rho_bc_raw
+    # defaults to 0 in .tmb_default_starts()), leaving both sigmas free.
     map$rho_bc_raw <- factor(NA)
   }
 
@@ -727,7 +734,14 @@ NULL
 
   if (n_re == 2) {
     sigma_c <- exp(coefficients[["logsigma_c"]])
-    rho_bc <- tanh(coefficients[["rho_bc_raw"]])
+    # When pdDiag pins rho_bc_raw via TMB's map, the parameter is absent
+    # from `coefficients` (opt$par). Its fixed value is the default start
+    # (0), which corresponds to rho = tanh(0) = 0 — diagonal covariance.
+    rho_bc <- if ("rho_bc_raw" %in% names(coefficients)) {
+      tanh(coefficients[["rho_bc_raw"]])
+    } else {
+      0
+    }
 
     Sigma <- matrix(
       c(sigma_b^2, sigma_b * sigma_c * rho_bc,
@@ -1218,8 +1232,13 @@ fit_demand_tmb <- function(
   # Build TMB data
   tmb_data <- .tmb_build_tmb_data(prepared, design, equation, n_re)
 
-  # Build map
-  map <- .tmb_build_map(has_k = has_k && estimate_k, n_re = n_re)
+  # Build map. The parsed block's pdmat_class decides whether the 2x2
+  # random-effect covariance is pdSymm (free rho) or pdDiag (rho pinned).
+  map <- .tmb_build_map(
+    has_k = has_k && estimate_k,
+    n_re = n_re,
+    covariance_class = re_parsed$blocks[[1]]$pdmat_class
+  )
 
   # Default starting values
   default_starts <- .tmb_default_starts(

@@ -4,12 +4,16 @@
 \alias{.tmb_build_map}
 \title{Build TMB Map List}
 \usage{
-.tmb_build_map(has_k, n_re)
+.tmb_build_map(has_k, n_re, covariance_class = "pdSymm")
 }
 \arguments{
 \item{has_k}{Logical, whether k is estimated.}
 
 \item{n_re}{Integer, number of random effects.}
+
+\item{covariance_class}{Character, one of \code{"pdSymm"} (default; free rho)
+or \code{"pdDiag"} (rho pinned at 0, i.e. independent Q0 and alpha REs).
+Only consulted when \code{n_re == 2}.}
 }
 \value{
 Named list for TMB map argument.
