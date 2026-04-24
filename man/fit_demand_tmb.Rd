@@ -12,7 +12,8 @@ fit_demand_tmb(
   equation = c("exponentiated", "exponential", "simplified", "zben"),
   estimate_k = TRUE,
   k = NULL,
-  random_effects = c("q0", "alpha"),
+  random_effects = Q0 + alpha ~ 1,
+  covariance_structure = c("pdSymm", "pdDiag"),
   factors = NULL,
   factor_interaction = FALSE,
   continuous_covariates = NULL,
@@ -58,11 +59,30 @@ parameter. If \code{FALSE}, fix k at the value given in \code{k}. Only relevant 
 \item{k}{Numeric or \code{NULL}. Fixed value of k when \code{estimate_k = FALSE}.
 If \code{NULL} and \code{estimate_k = FALSE}, k defaults to 2.}
 
-\item{random_effects}{Character vector specifying random effects. One of:
+\item{random_effects}{Specification of subject-level random effects.
+Accepts any of the following, in order of generality:
 \describe{
-\item{\code{c("q0", "alpha")}}{Random effects on both Q0 and alpha (default).}
-\item{\code{"q0"}}{Random effect on Q0 only.}
+\item{formula (default)}{\code{Q0 + alpha ~ 1} — random intercepts on
+both parameters (equivalent to the legacy \code{c("q0", "alpha")}
+shortcut). \code{Q0 ~ 1} limits REs to Q0. Formulas with non-intercept
+RHS terms (e.g., \code{Q0 + alpha ~ condition}) are parsed but
+currently rejected by the Phase-1 template — those shapes land
+in Phase 2/3 of TICKET-011.}
+\item{\code{nlme::pdMat}}{e.g., \code{nlme::pdDiag(Q0 + alpha ~ 1)}.
+Pre-constructed pdMat objects are accepted and their covariance
+class is honored (overrides \code{covariance_structure}).}
+\item{list of \code{pdMat} / \code{nlme::pdBlocked}}{Multi-block covariance
+structures like \code{list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))}.
+Parsed, but fitting is deferred to Phase 3 of TICKET-011.}
+\item{character vector (deprecated)}{\code{c("q0", "alpha")} or \code{"q0"}.
+Soft-deprecated in 0.4.0; emits a \code{lifecycle::deprecate_soft()}
+message. Translated internally to the formula \code{Q0 + alpha ~ 1}
+or \code{Q0 ~ 1}.}
 }}
+
+\item{covariance_structure}{\code{"pdSymm"} (default; unstructured) or
+\code{"pdDiag"} (diagonal). Applies only when \code{random_effects} is a
+formula; ignored for pre-constructed pdMat / list / pdBlocked inputs.}
 
 \item{factors}{Character vector of factor variable names for group comparisons.}
 

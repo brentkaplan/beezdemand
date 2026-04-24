@@ -1,3 +1,58 @@
+# beezdemand 0.4.0 (development)
+
+This development release opens TICKET-011 (factor-expanded random effects
+for `fit_demand_tmb()` and `fit_demand_hurdle()`) and fixes three
+pre-existing TMB post-fit correctness bugs surfaced while scoping the
+ticket.
+
+## TMB post-fit fixes (TICKET-011 Phase 0)
+
+* `fit_demand_tmb()` now validates that every column of the fixed-effect
+  design matrix is constant within each `id`. When a factor or continuous
+  covariate varies within subject, `subject_pars$Q0`, `$alpha`, `$Pmax`,
+  and `$Omax` are set to `NA_real_` for affected subjects and a
+  `cli::cli_warn()` names the offending columns. Previously the function
+  silently returned row-order-dependent values. New
+  `validate_subject_pars = TRUE` argument provides an escape hatch for
+  users who have reasoned about the behavior. Factor-expanded random
+  slopes (the proper replacement for the NA fallback) land in Phase 2/3.
+* `get_demand_param_emms()` on a `beezdemand_tmb` fit now honors
+  `continuous_covariates` even when no factors are present. Previously,
+  the early-return for factor-less models ignored the `at` argument and
+  always returned the intercept.
+* `get_demand_param_emms()` on a `beezdemand_tmb` fit now raises a clear
+  error when `factors_in_emm` drops any fitted factor. Previously, the
+  shorter reference row was silently recycled against the full
+  coefficient vector, either producing wrong numbers or crashing
+  downstream with a generic "non-conformable arguments" error. Proper
+  marginalization over omitted factors lands in TICKET-011 Phase 5.
+
+## TMB random-effects API (TICKET-011 Phase 1)
+
+* `fit_demand_tmb()` now accepts formula-based `random_effects`
+  arguments. The default signature is `random_effects = Q0 + alpha ~ 1`,
+  equivalent to the previous `c("q0", "alpha")` default. Single-parameter
+  `Q0 ~ 1`, `pdMat` objects, lists of `pdMat`, and `nlme::pdBlocked` are
+  all parsed and attached to the fit object's
+  `$param_info$random_effects_parsed` as a canonical block representation.
+* `fit_demand_tmb()` gains `covariance_structure = c("pdSymm", "pdDiag")`
+  matching the `fit_demand_mixed()` argument of the same name.
+* Character-vector inputs to `random_effects` (e.g. `c("q0", "alpha")`)
+  are soft-deprecated via `lifecycle::deprecate_soft()` and internally
+  translated to the equivalent formula. A hard deprecation follows in
+  0.5.0.
+* Formula shapes richer than intercept-only (e.g.
+  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are accepted by the
+  parser but currently error with a clear "Phase 2 not yet shipped"
+  message. Template generalization to a Z-matrix-driven covariance
+  lands in subsequent 0.4.0 patches.
+* New internal helpers in `R/random-effects-utils.R`
+  (`.classify_re_input`, `.normalize_re_input`, `.validate_re_input`,
+  `.re_is_phase1_fittable`, `.deprecate_character_re`,
+  `.re_shape_summary`, `.re_parsed_to_character`) factor out the
+  formula/pdMat parsing so both `fit_demand_mixed()` and
+  `fit_demand_tmb()` consume the same canonical representation.
+
 # beezdemand 0.3.0
 
 This release ships the TMB mixed-effects modeling tier (`fit_demand_tmb()`)

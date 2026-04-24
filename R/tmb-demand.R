@@ -901,11 +901,29 @@ NULL
 #'   "exponentiated" and "exponential" equations.
 #' @param k Numeric or `NULL`. Fixed value of k when `estimate_k = FALSE`.
 #'   If `NULL` and `estimate_k = FALSE`, k defaults to 2.
-#' @param random_effects Character vector specifying random effects. One of:
+#' @param random_effects Specification of subject-level random effects.
+#'   Accepts any of the following, in order of generality:
 #'   \describe{
-#'     \item{`c("q0", "alpha")`}{Random effects on both Q0 and alpha (default).}
-#'     \item{`"q0"`}{Random effect on Q0 only.}
+#'     \item{formula (default)}{`Q0 + alpha ~ 1` — random intercepts on
+#'       both parameters (equivalent to the legacy `c("q0", "alpha")`
+#'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with non-intercept
+#'       RHS terms (e.g., `Q0 + alpha ~ condition`) are parsed but
+#'       currently rejected by the Phase-1 template — those shapes land
+#'       in Phase 2/3 of TICKET-011.}
+#'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)`.
+#'       Pre-constructed pdMat objects are accepted and their covariance
+#'       class is honored (overrides `covariance_structure`).}
+#'     \item{list of `pdMat` / `nlme::pdBlocked`}{Multi-block covariance
+#'       structures like `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`.
+#'       Parsed, but fitting is deferred to Phase 3 of TICKET-011.}
+#'     \item{character vector (deprecated)}{`c("q0", "alpha")` or `"q0"`.
+#'       Soft-deprecated in 0.4.0; emits a `lifecycle::deprecate_soft()`
+#'       message. Translated internally to the formula `Q0 + alpha ~ 1`
+#'       or `Q0 ~ 1`.}
 #'   }
+#' @param covariance_structure `"pdSymm"` (default; unstructured) or
+#'   `"pdDiag"` (diagonal). Applies only when `random_effects` is a
+#'   formula; ignored for pre-constructed pdMat / list / pdBlocked inputs.
 #' @param factors Character vector of factor variable names for group comparisons.
 #' @param factor_interaction Logical. If `TRUE` and two factors provided, include
 #'   their interaction.
@@ -1015,7 +1033,8 @@ fit_demand_tmb <- function(
   equation = c("exponentiated", "exponential", "simplified", "zben"),
   estimate_k = TRUE,
   k = NULL,
-  random_effects = c("q0", "alpha"),
+  random_effects = Q0 + alpha ~ 1,
+  covariance_structure = c("pdSymm", "pdDiag"),
   factors = NULL,
   factor_interaction = FALSE,
   continuous_covariates = NULL,
@@ -1033,16 +1052,38 @@ fit_demand_tmb <- function(
     equation <- normalize_equation(equation, tier = "tmb")
   }
   equation <- match.arg(equation)
+  covariance_structure <- match.arg(covariance_structure)
 
-  # Validate random_effects
-  valid_re <- c("q0", "alpha")
-  if (!all(random_effects %in% valid_re)) {
-    stop("random_effects must be a subset of: ",
-         paste(valid_re, collapse = ", "), call. = FALSE)
+  # Normalize random_effects via the shared parser. Character input is
+  # translated to an equivalent formula block and a soft-deprecation
+  # message is emitted. Formula / pdMat / list / pdBlocked inputs are all
+  # accepted; shapes richer than intercept-only are gated by Phase 1 and
+  # will land in Phase 2 of TICKET-011.
+  re_parsed <- .normalize_re_input(
+    random_effects,
+    covariance_structure = covariance_structure,
+    data = data
+  )
+  if (re_parsed$source == "character") {
+    .deprecate_character_re()
   }
-  if (!("q0" %in% random_effects)) {
-    stop("random_effects must include at least 'q0'.", call. = FALSE)
+  .validate_re_input(re_parsed, data = data, id_var = id_var)
+
+  if (!.re_is_phase1_fittable(re_parsed)) {
+    stop(
+      "random_effects specification requires the generalized TMB template ",
+      "(TICKET-011 Phase 2, not yet shipped). Supported today: intercept-",
+      "only random effects on Q0 and/or alpha. Use `fit_demand_mixed()` for ",
+      "richer random-effects structures (random slopes on a factor, ",
+      "pdBlocked multi-block covariance) in the meantime.",
+      call. = FALSE
+    )
   }
+
+  # Collapse the Phase-1-fittable block back to the character shortcut so
+  # the existing n_re-branching body of this function (map builder,
+  # template dispatch, starts heuristic) continues to work unchanged.
+  random_effects <- .re_parsed_to_character(re_parsed)
   n_re <- length(random_effects)
 
   # Determine if k is used
@@ -1387,6 +1428,9 @@ fit_demand_tmb <- function(
         n_dropped = prepared$n_dropped,
         n_random_effects = n_re,
         random_effects_spec = random_effects,
+        random_effects_parsed = re_parsed,
+        random_effects_shape = .re_shape_summary(re_parsed),
+        covariance_structure = covariance_structure,
         has_k = has_k,
         estimate_k = estimate_k,
         k_fixed = if (has_k && !estimate_k) k else NULL,
