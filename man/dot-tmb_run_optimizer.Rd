@@ -22,7 +22,7 @@ provided in \code{tmb_control}.}
 A list with elements:
 \describe{
 \item{\code{opt}}{Named list with \verb{$par}, \verb{$objective}, \verb{$convergence},
-\verb{$message} — guaranteed non-NULL character for \verb{$message}.}
+\verb{$message} -- guaranteed non-NULL character for \verb{$message}.}
 \item{\code{warnings}}{Character vector of optimizer warnings captured during
 the run.}
 }

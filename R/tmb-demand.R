@@ -283,7 +283,7 @@ NULL
 #' @return A list with elements:
 #'   \describe{
 #'     \item{`opt`}{Named list with `$par`, `$objective`, `$convergence`,
-#'       `$message` — guaranteed non-NULL character for `$message`.}
+#'       `$message` -- guaranteed non-NULL character for `$message`.}
 #'     \item{`warnings`}{Character vector of optimizer warnings captured during
 #'       the run.}
 #'   }
@@ -711,7 +711,7 @@ NULL
         "Design matrix column{?s} {.val {offending_cols}} var{?ies/y} within {.field id}.",
         "i" = "Subject-level {.field Q0}, {.field alpha}, {.field Pmax}, and {.field Omax} in {.field subject_pars} are set to {.val NA} for affected subjects because a row-wise collapse has no well-defined meaning here.",
         "i" = "Use {.code validate_subject_pars = FALSE} to force row-order-dependent values (not recommended).",
-        "i" = "Factor-expanded random-effects support is planned in TICKET-011 Phases 2–3."
+        "i" = "Factor-expanded random-effects support is planned in TICKET-011 Phases 2-3."
       ))
     }
   }
@@ -904,11 +904,11 @@ NULL
 #' @param random_effects Specification of subject-level random effects.
 #'   Accepts any of the following, in order of generality:
 #'   \describe{
-#'     \item{formula (default)}{`Q0 + alpha ~ 1` — random intercepts on
+#'     \item{formula (default)}{`Q0 + alpha ~ 1` -- random intercepts on
 #'       both parameters (equivalent to the legacy `c("q0", "alpha")`
 #'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with non-intercept
 #'       RHS terms (e.g., `Q0 + alpha ~ condition`) are parsed but
-#'       currently rejected by the Phase-1 template — those shapes land
+#'       currently rejected by the Phase-1 template -- those shapes land
 #'       in Phase 2/3 of TICKET-011.}
 #'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)`.
 #'       Pre-constructed pdMat objects are accepted and their covariance
@@ -959,6 +959,14 @@ NULL
 #'   }
 #' @param multi_start Logical. If `TRUE` (default), try 3 starting value sets
 #'   and select the best.
+#' @param validate_subject_pars Logical. If `TRUE` (default), validate that
+#'   every column of the fixed-effect design matrices is constant within
+#'   each `id` before computing `subject_pars`. When a factor or continuous
+#'   covariate varies within subject, Q0/alpha/Pmax/Omax are set to
+#'   `NA_real_` for affected subjects and a warning names the offending
+#'   columns. Set to `FALSE` to force row-order-dependent values (not
+#'   recommended; proper factor-expanded RE support lands in TICKET-011
+#'   Phases 2-3).
 #' @param verbose Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.
 #' @param ... Additional arguments (currently unused).
 #'

@@ -62,11 +62,11 @@ If \code{NULL} and \code{estimate_k = FALSE}, k defaults to 2.}
 \item{random_effects}{Specification of subject-level random effects.
 Accepts any of the following, in order of generality:
 \describe{
-\item{formula (default)}{\code{Q0 + alpha ~ 1} — random intercepts on
+\item{formula (default)}{\code{Q0 + alpha ~ 1} -- random intercepts on
 both parameters (equivalent to the legacy \code{c("q0", "alpha")}
 shortcut). \code{Q0 ~ 1} limits REs to Q0. Formulas with non-intercept
 RHS terms (e.g., \code{Q0 + alpha ~ condition}) are parsed but
-currently rejected by the Phase-1 template — those shapes land
+currently rejected by the Phase-1 template -- those shapes land
 in Phase 2/3 of TICKET-011.}
 \item{\code{nlme::pdMat}}{e.g., \code{nlme::pdDiag(Q0 + alpha ~ 1)}.
 Pre-constructed pdMat objects are accepted and their covariance
@@ -125,6 +125,15 @@ optimizer space (e.g., from a previous \code{fit$opt$par}). When provided,
 
 \item{multi_start}{Logical. If \code{TRUE} (default), try 3 starting value sets
 and select the best.}
+
+\item{validate_subject_pars}{Logical. If \code{TRUE} (default), validate that
+every column of the fixed-effect design matrices is constant within
+each \code{id} before computing \code{subject_pars}. When a factor or continuous
+covariate varies within subject, Q0/alpha/Pmax/Omax are set to
+\code{NA_real_} for affected subjects and a warning names the offending
+columns. Set to \code{FALSE} to force row-order-dependent values (not
+recommended; proper factor-expanded RE support lands in TICKET-011
+Phases 2-3).}
 
 \item{verbose}{Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.}
 

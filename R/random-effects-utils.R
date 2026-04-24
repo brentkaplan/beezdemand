@@ -1,6 +1,6 @@
 # Internal helpers for the formula / pdMat / pdBlocked random-effects API
 # shared by fit_demand_mixed() (NLME backend) and fit_demand_tmb() (TMB
-# backend). Introduced in TICKET-011 Phase 1 — the canonical block
+# backend). Introduced in TICKET-011 Phase 1 -- the canonical block
 # representation returned by .normalize_re_input() is what Phase 2's
 # Z-matrix builder will consume.
 
@@ -102,7 +102,7 @@
       dim         = 1L
     ))
   } else {
-    # c("q0","alpha") — unstructured 2x2 for back-compat with the legacy
+    # c("q0","alpha") -- unstructured 2x2 for back-compat with the legacy
     # character API (matches MixedDemand.h n_re == 2 behavior).
     list(list(
       pdmat_class = "pdSymm",
@@ -150,7 +150,7 @@
   ))
 }
 
-# Single pdMat block (pdSymm or pdDiag) — passed either directly or as a
+# Single pdMat block (pdSymm or pdDiag) -- passed either directly or as a
 # component of pdBlocked / list-of-pdMat.
 .normalize_pdmat_block <- function(pd, data) {
   cls <- class(pd)[1]
@@ -188,7 +188,7 @@
 }
 
 # Expand an RHS formula (one-sided) into contrast column names.
-# For `~ 1` this is just `"(Intercept)"` — no data needed.
+# For `~ 1` this is just `"(Intercept)"` -- no data needed.
 .re_rhs_terms <- function(rhs_form, data) {
   tt <- stats::terms(rhs_form)
   vars <- all.vars(rhs_form)
@@ -273,7 +273,7 @@
   )
 }
 
-#' Short human-readable summary of the RE shape — attached to fit objects
+#' Short human-readable summary of the RE shape -- attached to fit objects
 #' for downstream S3 methods and `check_demand_model()`.
 #' @keywords internal
 #' @noRd
@@ -296,8 +296,8 @@
 #' Validate that the parsed RE spec makes sense against the provided data
 #'
 #' Phase-1-fittable shapes are trivially valid (intercept-only on a single
-#' grouping factor). For richer shapes — which the Phase-1 gate will reject
-#' before fitting anyway — verify that every RE formula variable exists in
+#' grouping factor). For richer shapes -- which the Phase-1 gate will reject
+#' before fitting anyway -- verify that every RE formula variable exists in
 #' the data and varies within `id_var`.
 #' @keywords internal
 #' @noRd
