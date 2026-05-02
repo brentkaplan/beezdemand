@@ -359,3 +359,112 @@ test_that("nlme::pdDiag() object routes to the same pinned-rho path", {
     "pdDiag"
   )
 })
+
+# ---------------------------------------------------------------------------
+# TICKET-011 Phase 2.2: parser handles factor-expanded RE terms; new
+# `.re_is_phase2_fittable()` gate accepts single-block pdDiag/pdSymm with
+# arbitrary terms. Phase 2.5 will swap fit_demand_tmb()'s consumer over
+# from .re_is_phase1_fittable() to this gate.
+# ---------------------------------------------------------------------------
+
+test_that("parser expands `~ condition` (treatment contrasts) into n_levels columns", {
+  dat <- data.frame(
+    id = rep(1:6, each = 3),
+    condition = factor(rep(c("A", "B", "C"), 6)),
+    x = 1:18,
+    y = runif(18)
+  )
+  out <- .normalize_re_input(
+    Q0 + alpha ~ condition,
+    covariance_structure = "pdDiag",
+    data = dat
+  )
+  expect_length(out$blocks, 1L)
+  b <- out$blocks[[1]]
+  # `~ condition` under treatment contrasts -> (Intercept), conditionB, conditionC
+  expect_equal(b$terms_q0, c("(Intercept)", "conditionB", "conditionC"))
+  expect_equal(b$terms_alpha, c("(Intercept)", "conditionB", "conditionC"))
+  expect_equal(b$dim, 6L)
+})
+
+test_that("parser expands `~ condition - 1` into one indicator per level", {
+  dat <- data.frame(
+    id = rep(1:6, each = 3),
+    condition = factor(rep(c("A", "B", "C"), 6)),
+    x = 1:18,
+    y = runif(18)
+  )
+  out <- .normalize_re_input(
+    Q0 + alpha ~ condition - 1,
+    covariance_structure = "pdDiag",
+    data = dat
+  )
+  b <- out$blocks[[1]]
+  expect_equal(b$terms_q0, c("conditionA", "conditionB", "conditionC"))
+  expect_equal(b$terms_alpha, c("conditionA", "conditionB", "conditionC"))
+  expect_equal(b$dim, 6L)
+})
+
+test_that("parser errors on non-intercept formula with no `data`", {
+  expect_error(
+    .normalize_re_input(
+      Q0 + alpha ~ condition,
+      covariance_structure = "pdDiag",
+      data = NULL
+    ),
+    regexp = "supply `data`"
+  )
+})
+
+test_that(".re_is_phase2_fittable accepts single-block pdDiag/pdSymm with any terms", {
+  dat <- data.frame(
+    id = rep(1:6, each = 3),
+    condition = factor(rep(c("A", "B", "C"), 6)),
+    x = 1:18,
+    y = runif(18)
+  )
+
+  # Phase-1-fittable cases must remain Phase-2-fittable too.
+  expect_true(.re_is_phase2_fittable(
+    .normalize_re_input(c("q0", "alpha"), covariance_structure = "pdSymm")
+  ))
+  expect_true(.re_is_phase2_fittable(
+    .normalize_re_input(c("q0"), covariance_structure = "pdSymm")
+  ))
+  expect_true(.re_is_phase2_fittable(
+    .normalize_re_input(Q0 + alpha ~ 1, covariance_structure = "pdSymm")
+  ))
+
+  # Factor-expanded single block is the new acceptance: the Phase-1 gate
+  # rejected this; Phase-2 gate accepts it.
+  expect_true(.re_is_phase2_fittable(
+    .normalize_re_input(
+      Q0 + alpha ~ condition,
+      covariance_structure = "pdDiag",
+      data = dat
+    )
+  ))
+  expect_true(.re_is_phase2_fittable(
+    .normalize_re_input(
+      Q0 + alpha ~ condition - 1,
+      covariance_structure = "pdSymm",
+      data = dat
+    )
+  ))
+})
+
+test_that(".re_is_phase2_fittable still rejects multi-block pdBlocked / list", {
+  blocked <- nlme::pdBlocked(list(
+    nlme::pdSymm(Q0 + alpha ~ 1),
+    nlme::pdDiag(Q0 + alpha ~ 1)
+  ))
+  out_multi <- .normalize_re_input(blocked, covariance_structure = "pdDiag")
+  expect_false(.re_is_phase2_fittable(out_multi))
+
+  list_in <- list(
+    nlme::pdSymm(Q0 + alpha ~ 1),
+    nlme::pdDiag(Q0 + alpha ~ 1)
+  )
+  out_list <- .normalize_re_input(list_in, covariance_structure = "pdDiag")
+  expect_false(.re_is_phase2_fittable(out_list))
+})

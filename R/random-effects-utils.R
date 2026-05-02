@@ -235,6 +235,25 @@
   ok_q0 && ok_al
 }
 
+#' Is this RE spec fittable by the Phase-2 (Z-matrix) TMB template?
+#'
+#' Phase 2 generalizes the template to accept arbitrary RE design matrices
+#' Z_q0, Z_alpha for a single pdDiag or pdSymm block. Multi-block
+#' `pdBlocked(list(...))` and explicit `list(...)` of pdMats are still
+#' rejected (Phase 3). Phase-1 cases (intercept-only) remain fittable.
+#'
+#' Phase 2.5 swaps `fit_demand_tmb()`'s consumer over from
+#' `.re_is_phase1_fittable()` to this gate; until then both functions
+#' coexist.
+#' @keywords internal
+#' @noRd
+.re_is_phase2_fittable <- function(re_parsed) {
+  if (length(re_parsed$blocks) != 1L) return(FALSE)
+  b <- re_parsed$blocks[[1]]
+  if (!(b$pdmat_class %in% c("pdDiag", "pdSymm"))) return(FALSE)
+  TRUE
+}
+
 #' Collapse a Phase-1-fittable re_parsed back to the character shortcut
 #' `c("q0")` / `c("q0","alpha")` so the existing fit_demand_tmb() body
 #' (map builder, template dispatch) can continue to consume it unchanged.
