@@ -859,3 +859,92 @@ test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_e
     regexp = "factors_in_emm.*must include every fitted factor"
   )
 })
+
+# =============================================================================
+# TICKET-011 Phase 0.4: get_demand_comparisons.beezdemand_tmb() must build
+# its contrast reference grid from the SAME conditioned grid that
+# get_demand_param_emms() uses. Codex adversarial review (rounds 2 + 3 + 4)
+# confirmed the wrapper forwards `...` to emms but rebuilds level_combos /
+# ref_X from the unfiltered training data, so `at` filtering produces
+# off-grid contrasts (silent statistical corruption) and NA labels when
+# the filtered EMM has fewer rows than the unfiltered grid.
+#
+# Note on continuous-covariate `at` testing: fit_demand_tmb() does not
+# currently support factor:covariate interactions, so the contrast estimate
+# is invariant to the covariate choice in any main-effects-only model
+# (the covariate column cancels in ref_X[i,] - ref_X[j,]). The bug Codex
+# flagged for the covariate path is therefore unobservable in the estimate
+# until interaction support lands. Phase 5 should add the missing covariate
+# `at` regression test once factor:covariate interactions are supported.
+# =============================================================================
+
+test_that("get_demand_comparisons honors factor-level `at` (no NA labels, correct row count)", {
+  skip_on_cran()
+  dat <- create_emm_test_data(
+    n_subjects = 10,
+    n_levels_factor1 = 2,
+    n_levels_factor2 = 2,
+    seed = 99
+  )
+  fit <- suppressWarnings(fit_demand_tmb(
+    dat,
+    equation = "simplified",
+    factors = c("factor1", "factor2"),
+    verbose = 0
+  ))
+  skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
+
+  # Unconditional baseline: 4 cells (2 levels x 2 levels) -> 6 pairwise.
+  cmp_unconditional <- get_demand_comparisons(fit, param = "Q0")
+  expect_equal(nrow(cmp_unconditional), 6L)
+  expect_false(any(is.na(cmp_unconditional$contrast)))
+
+  # Conditioned on factor2 = "group1": only factor1 contrasts at that
+  # level remain. With 2 levels of factor1, that is 1 pairwise contrast.
+  cmp_at <- get_demand_comparisons(
+    fit, param = "Q0",
+    at = list(factor2 = "group1")
+  )
+  expect_equal(nrow(cmp_at), 1L)
+  # Catch both NA values and the "NA" literal string that paste(NA, "-", NA)
+  # would emit when emms$level[i] is NA for indices past the filtered grid.
+  expect_false(any(is.na(cmp_at$contrast)))
+  expect_false(any(grepl("\\bNA\\b", cmp_at$contrast)))
+})
+
+test_that("get_demand_comparisons agrees with EMM differences under `at`", {
+  skip_on_cran()
+  dat <- create_emm_test_data(
+    n_subjects = 10,
+    n_levels_factor1 = 2,
+    n_levels_factor2 = 2,
+    seed = 99
+  )
+  fit <- suppressWarnings(fit_demand_tmb(
+    dat,
+    equation = "simplified",
+    factors = c("factor1", "factor2"),
+    verbose = 0
+  ))
+  skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
+
+  # Under the same `at`, the comparison estimate must equal the difference
+  # of the corresponding EMM rows. This invariant fails today because the
+  # comparison function rebuilds ref_X from the unfiltered grid, so its
+  # diff_x can correspond to factor2=group2 cells while emms reports
+  # factor2=group1 estimates -> labels say one thing, math does another.
+  emms_at <- get_demand_param_emms(
+    fit, param = "Q0",
+    at = list(factor2 = "group1")
+  )
+  cmp_at <- get_demand_comparisons(
+    fit, param = "Q0",
+    at = list(factor2 = "group1")
+  )
+  expect_equal(nrow(emms_at), 2L)
+  expect_equal(nrow(cmp_at), 1L)
+
+  # Pairwise contrast with two levels: emms[1] - emms[2] (i=1, j=2).
+  expected_diff <- emms_at$estimate_log[1] - emms_at$estimate_log[2]
+  expect_equal(cmp_at$estimate_log, expected_diff, tolerance = 1e-10)
+})

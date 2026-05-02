@@ -1411,6 +1411,120 @@ confint.beezdemand_tmb <- function(
 
 # --- EMMs and comparisons ---
 
+#' Build the conditioned reference grid for TMB EMMs and comparisons
+#'
+#' Shared helper that constructs `level_combos` (the factor-level grid,
+#' optionally filtered by `at`) and `ref_X` (the corresponding design matrix)
+#' for a TMB demand fit. Both `get_demand_param_emms.beezdemand_tmb()` and
+#' `get_demand_comparisons.beezdemand_tmb()` consume this helper so they
+#' cannot drift apart on which cells the user requested.
+#'
+#' Continuous covariates are held at the training mean unless overridden via
+#' `at`. Factor levels are filtered down to the requested values when `at`
+#' names a factor.
+#'
+#' @param fit_obj A `beezdemand_tmb` object.
+#' @param param Character. `"Q0"` or `"alpha"`.
+#' @param at Named list of factor-level filters or covariate-value overrides.
+#' @param factors_in_emm Character subset of fitted factors to include.
+#'
+#' @return A list with components:
+#'   \describe{
+#'     \item{level_combos}{Filtered grid as a data.frame.}
+#'     \item{ref_X}{Filtered design matrix.}
+#'     \item{use_factors}{Character vector of factors driving the grid.}
+#'     \item{cov_names}{Character vector of continuous covariates.}
+#'     \item{is_intercept_only}{Logical; `TRUE` when the fit has neither
+#'       factors nor covariates.}
+#'   }
+#'
+#' @keywords internal
+.tmb_build_emm_ref_grid <- function(
+  fit_obj,
+  param = c("Q0", "alpha"),
+  at = NULL,
+  factors_in_emm = NULL
+) {
+  param <- match.arg(param)
+
+  cov_names <- fit_obj$param_info$continuous_covariates
+  if (is.null(cov_names)) cov_names <- character(0)
+
+  if (param == "Q0") {
+    use_factors <- fit_obj$param_info$factors_q0
+  } else {
+    use_factors <- fit_obj$param_info$factors_alpha
+  }
+  if (is.null(use_factors)) use_factors <- character(0)
+  if (!is.null(factors_in_emm)) {
+    use_factors <- intersect(use_factors, factors_in_emm)
+  }
+
+  is_intercept_only <- length(use_factors) == 0L && length(cov_names) == 0L
+
+  if (is_intercept_only) {
+    return(list(
+      level_combos = NULL,
+      ref_X = NULL,
+      use_factors = character(0),
+      cov_names = character(0),
+      is_intercept_only = TRUE
+    ))
+  }
+
+  data_used <- fit_obj$data
+  if (length(use_factors) > 0L) {
+    level_combos <- unique(data_used[, use_factors, drop = FALSE])
+  } else {
+    level_combos <- data_used[1L, integer(0), drop = FALSE]
+  }
+
+  # Continuous covariates: hold at training mean unless overridden via `at`.
+  # The helper silently uses the first value for multi-value `at`; the
+  # caller is expected to warn (kept at the EMM call site so a single
+  # comparisons call -> emms -> helper chain warns exactly once).
+  if (length(cov_names) > 0L) {
+    for (cv in cov_names) {
+      cv_value <- mean(data_used[[cv]], na.rm = TRUE)
+      if (!is.null(at) && cv %in% names(at)) {
+        cv_value <- as.numeric(at[[cv]][1])
+      }
+      level_combos[[cv]] <- cv_value
+    }
+  }
+
+  ref_X <- stats::model.matrix(
+    stats::as.formula(build_fixed_rhs(
+      factors = use_factors,
+      factor_interaction = fit_obj$param_info$factor_interaction,
+      continuous_covariates = cov_names,
+      data = data_used
+    )),
+    data = level_combos
+  )
+
+  # Apply factor-level `at` filter; covariate values were substituted above.
+  if (!is.null(at) && length(use_factors) > 0L) {
+    keep <- rep(TRUE, nrow(level_combos))
+    for (nm in names(at)) {
+      if (nm %in% use_factors) {
+        keep <- keep & (level_combos[[nm]] %in% at[[nm]])
+      }
+    }
+    level_combos <- level_combos[keep, , drop = FALSE]
+    ref_X <- ref_X[keep, , drop = FALSE]
+  }
+
+  list(
+    level_combos = level_combos,
+    ref_X = ref_X,
+    use_factors = use_factors,
+    cov_names = cov_names,
+    is_intercept_only = FALSE
+  )
+}
+
+
 #' Get Demand Parameter Estimated Marginal Means for TMB Model
 #'
 #' @description
@@ -1494,14 +1608,31 @@ get_demand_param_emms.beezdemand_tmb <- function(
     vcov_mat <- diag(se_vals^2, nrow = length(se_vals))
   }
 
-  # Build reference grid
-  # For each factor level combination, create a design vector
-  factors <- fit_obj$param_info$factors
-  cov_names <- fit_obj$param_info$continuous_covariates
-  no_factors <- is.null(factors) || length(factors) == 0L
-  no_covariates <- is.null(cov_names) || length(cov_names) == 0L
+  # Surface the multi-value `at` warning at the public API boundary so a
+  # comparisons -> emms -> helper call chain warns exactly once (the
+  # helper itself is silent on this; see .tmb_build_emm_ref_grid()).
+  cov_names_for_warn <- fit_obj$param_info$continuous_covariates
+  if (!is.null(at) && !is.null(cov_names_for_warn)) {
+    for (cv in intersect(names(at), cov_names_for_warn)) {
+      if (length(at[[cv]]) > 1) {
+        cli::cli_warn(c(
+          "Multiple values supplied for continuous covariate {.field {cv}} in {.arg at}; using the first only.",
+          "i" = "Call {.fun get_demand_param_emms} separately for each value to compare."
+        ))
+      }
+    }
+  }
 
-  if (no_factors && no_covariates) {
+  # Build reference grid via the shared helper so EMMs and comparisons
+  # always consume the same conditioned grid (TICKET-011 Phase 0.4).
+  grid <- .tmb_build_emm_ref_grid(
+    fit_obj,
+    param = param,
+    at = at,
+    factors_in_emm = factors_in_emm
+  )
+
+  if (grid$is_intercept_only) {
     # Truly intercept-only model: short-circuit to beta[1].
     est <- beta[1]
     se <- sqrt(vcov_mat[1, 1])
@@ -1517,67 +1648,10 @@ get_demand_param_emms.beezdemand_tmb <- function(
     ))
   }
 
-  # Use the appropriate factors for this param
-  if (param == "Q0") {
-    use_factors <- fit_obj$param_info$factors_q0
-  } else {
-    use_factors <- fit_obj$param_info$factors_alpha
-  }
-  if (is.null(use_factors)) use_factors <- character(0)
-  if (!is.null(factors_in_emm)) {
-    use_factors <- intersect(use_factors, factors_in_emm)
-  }
-
-  # Get unique levels from the data. When factors are absent but covariates
-  # are present, level_combos is a single-row, zero-column frame so the
-  # covariate loop below can populate it with one reference row.
-  data_used <- fit_obj$data
-  if (length(use_factors) > 0L) {
-    level_combos <- unique(data_used[, use_factors, drop = FALSE])
-  } else {
-    level_combos <- data_used[1L, integer(0), drop = FALSE]
-  }
-
-  # Continuous covariates: hold at training mean unless overridden via `at`.
-  if (!is.null(cov_names) && length(cov_names) > 0) {
-    for (cv in cov_names) {
-      cv_value <- mean(data_used[[cv]], na.rm = TRUE)
-      if (!is.null(at) && cv %in% names(at)) {
-        if (length(at[[cv]]) > 1) {
-          cli::cli_warn(c(
-            "Multiple values supplied for continuous covariate {.field {cv}} in {.arg at}; using the first only.",
-            "i" = "Call {.fun get_demand_param_emms} separately for each value to compare."
-          ))
-        }
-        cv_value <- as.numeric(at[[cv]][1])
-      }
-      level_combos[[cv]] <- cv_value
-    }
-  }
-
-  # Build reference design matrix rows
-  ref_X <- stats::model.matrix(
-    stats::as.formula(build_fixed_rhs(
-      factors = use_factors,
-      factor_interaction = fit_obj$param_info$factor_interaction,
-      continuous_covariates = cov_names,
-      data = data_used
-    )),
-    data = level_combos
-  )
-
-  # Apply 'at' filter for factor levels only (continuous covariates already
-  # substituted above).
-  if (!is.null(at)) {
-    keep <- rep(TRUE, nrow(level_combos))
-    for (nm in names(at)) {
-      if (nm %in% use_factors) {
-        keep <- keep & (level_combos[[nm]] %in% at[[nm]])
-      }
-    }
-    level_combos <- level_combos[keep, , drop = FALSE]
-    ref_X <- ref_X[keep, , drop = FALSE]
-  }
+  use_factors <- grid$use_factors
+  cov_names <- grid$cov_names
+  level_combos <- grid$level_combos
+  ref_X <- grid$ref_X
 
   # Dimension guard: the fitted beta spans the full design from `factors` +
   # `continuous_covariates`, so the reference grid must share that basis.
@@ -1728,28 +1802,34 @@ get_demand_comparisons.beezdemand_tmb <- function(
     vcov_mat <- diag(se_vals^2, nrow = length(se_vals))
   }
 
-  # Build reference grid
-  data_used <- fit_obj$data
-  level_combos <- unique(data_used[, use_factors, drop = FALSE])
+  # Build the same conditioned reference grid the EMM call above used.
+  # Re-extract `at` and `factors_in_emm` from `...` so the helper sees the
+  # same conditioning that produced `emms` (TICKET-011 Phase 0.4 — Codex
+  # rounds 2-4 flagged this drift as silent statistical corruption when
+  # `at` filters factor levels: ref_X had more rows than emms, so the
+  # pairwise loop produced off-grid contrasts and "NA" labels).
+  dots <- list(...)
+  grid <- .tmb_build_emm_ref_grid(
+    fit_obj,
+    param = param,
+    at = dots$at,
+    factors_in_emm = dots$factors_in_emm
+  )
 
-  # Continuous covariates: hold at training mean so the reference grid design
-  # matrix matches the fitted coefficient basis.
-  cov_names <- fit_obj$param_info$continuous_covariates
-  if (!is.null(cov_names) && length(cov_names) > 0) {
-    for (cv in cov_names) {
-      level_combos[[cv]] <- mean(data_used[[cv]], na.rm = TRUE)
-    }
+  if (grid$is_intercept_only) {
+    # Intercept-only fit: no factor levels to contrast.
+    return(tibble::tibble(
+      contrast = character(),
+      estimate = numeric(),
+      std.error = numeric(),
+      statistic = numeric(),
+      p.value = numeric()
+    ))
   }
 
-  ref_X <- stats::model.matrix(
-    stats::as.formula(build_fixed_rhs(
-      factors = use_factors,
-      factor_interaction = fit_obj$param_info$factor_interaction,
-      continuous_covariates = cov_names,
-      data = data_used
-    )),
-    data = level_combos
-  )
+  level_combos <- grid$level_combos
+  ref_X <- grid$ref_X
+  cov_names <- grid$cov_names
 
   n_levels <- nrow(ref_X)
   z <- stats::qnorm((1 + ci_level) / 2)
