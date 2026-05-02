@@ -119,6 +119,153 @@ NULL
 }
 
 
+#' Build subject-level random-effects design matrices from a parsed RE spec
+#'
+#' Consumes the canonical block representation produced by
+#' `.normalize_re_input()` (Phase 1) and emits the per-observation design
+#' matrices `Z_q0` and `Z_alpha` that the Phase-2 generalized
+#' `src/MixedDemand.h` template will consume.
+#'
+#' For each block, the helper extracts the `model.matrix()` columns
+#' corresponding to that block's `terms_q0` / `terms_alpha` from `data`
+#' and stacks them column-wise. Order: block 1 q0 cols, block 2 q0
+#' cols, ..., then block 1 alpha cols, etc.
+#'
+#' Intercept-only blocks (`terms_*` is `"(Intercept)"`) produce a column
+#' of 1s; factor-expanded blocks reproduce the model.matrix expansion.
+#'
+#' @param re_parsed Output of `.normalize_re_input()`.
+#' @param data Long-format data frame the model is fit on.
+#' @param id_var Subject id column (currently unused — reserved for
+#'   future per-subject reductions).
+#'
+#' @return A list with components:
+#'   \describe{
+#'     \item{Z_q0}{Numeric matrix, `n_obs` rows by `re_dim_q0` columns.}
+#'     \item{Z_alpha}{Numeric matrix, `n_obs` rows by `re_dim_alpha` columns.}
+#'     \item{re_dim_q0}{Integer; total Q0 RE columns.}
+#'     \item{re_dim_alpha}{Integer; total alpha RE columns.}
+#'   }
+#'
+#' @keywords internal
+.tmb_build_z_matrices <- function(re_parsed, data, id_var = "id") {
+  n_obs <- nrow(data)
+  z_q0_cols <- list()
+  z_alpha_cols <- list()
+
+  for (b in re_parsed$blocks) {
+    if (length(b$terms_q0) > 0L) {
+      z_q0_cols[[length(z_q0_cols) + 1L]] <-
+        .tmb_block_design_columns(b, data, parameter = "q0")
+    }
+    if (length(b$terms_alpha) > 0L) {
+      z_alpha_cols[[length(z_alpha_cols) + 1L]] <-
+        .tmb_block_design_columns(b, data, parameter = "alpha")
+    }
+  }
+
+  Z_q0 <- if (length(z_q0_cols) > 0L) {
+    do.call(cbind, z_q0_cols)
+  } else {
+    matrix(numeric(0), nrow = n_obs, ncol = 0L)
+  }
+  Z_alpha <- if (length(z_alpha_cols) > 0L) {
+    do.call(cbind, z_alpha_cols)
+  } else {
+    matrix(numeric(0), nrow = n_obs, ncol = 0L)
+  }
+
+  list(
+    Z_q0 = Z_q0,
+    Z_alpha = Z_alpha,
+    re_dim_q0 = ncol(Z_q0),
+    re_dim_alpha = ncol(Z_alpha)
+  )
+}
+
+# Build the design columns for one (block, parameter) pair. The block's
+# `terms_*` field already names the model-matrix columns the parser
+# produced; we re-derive them here from the block's RHS formula so the
+# column order is canonical.
+.tmb_block_design_columns <- function(block, data, parameter = c("q0", "alpha")) {
+  parameter <- match.arg(parameter)
+  terms_target <- if (parameter == "q0") block$terms_q0 else block$terms_alpha
+  if (length(terms_target) == 0L) {
+    return(matrix(numeric(0), nrow = nrow(data), ncol = 0L))
+  }
+
+  # Strip the LHS so we can build a one-sided RHS formula.
+  rhs_form <- stats::as.formula(
+    paste("~", deparse1(block$formula[[3]]))
+  )
+  X <- stats::model.matrix(rhs_form, data = data)
+
+  # Reorder to match the parser's `terms_*` ordering (defensive — they
+  # should already match).
+  X[, terms_target, drop = FALSE]
+}
+
+
+#' Build the block-structure metadata vectors for the Phase-2 TMB template
+#'
+#' Emits the integer vectors that tell the C++ template how to slice the
+#' parameter vector into per-block covariance components and how to map
+#' subject-level random effects through each block's Cholesky.
+#'
+#' Conventions:
+#'   * `block_types[b] = 0` for pdDiag, `1` for pdSymm.
+#'   * `block_q0_offset[b]` / `block_alpha_offset[b]` are 0-indexed
+#'     starting columns within `Z_q0` / `Z_alpha` respectively.
+#'   * `n_logsigma` is `sum(block_q0_dim + block_alpha_dim)` -- one
+#'     standard-deviation parameter per RE column across all blocks.
+#'   * `n_rho` is `sum(over pdSymm blocks: block_dim*(block_dim-1)/2)`
+#'     where `block_dim = block_q0_dim + block_alpha_dim`. pdDiag
+#'     blocks contribute 0 free correlations.
+#'
+#' @param re_parsed Output of `.normalize_re_input()`.
+#'
+#' @return A list of integer scalars and integer vectors describing the
+#'   block structure (see Conventions above).
+#'
+#' @keywords internal
+.tmb_build_block_map <- function(re_parsed) {
+  blocks <- re_parsed$blocks
+  n_blocks <- length(blocks)
+
+  block_q0_dim <- vapply(blocks, function(b) length(b$terms_q0), integer(1))
+  block_alpha_dim <- vapply(blocks, function(b) length(b$terms_alpha), integer(1))
+  block_types <- vapply(
+    blocks,
+    function(b) if (b$pdmat_class == "pdSymm") 1L else 0L,
+    integer(1)
+  )
+
+  block_q0_offset <- if (n_blocks == 0L) integer(0) else
+    c(0L, cumsum(block_q0_dim)[-n_blocks])
+  block_alpha_offset <- if (n_blocks == 0L) integer(0) else
+    c(0L, cumsum(block_alpha_dim)[-n_blocks])
+
+  n_logsigma <- sum(block_q0_dim + block_alpha_dim)
+  block_dims <- block_q0_dim + block_alpha_dim
+  n_rho <- sum(ifelse(
+    block_types == 1L,
+    block_dims * (block_dims - 1L) / 2L,
+    0L
+  ))
+
+  list(
+    n_blocks = as.integer(n_blocks),
+    block_q0_dim = as.integer(block_q0_dim),
+    block_alpha_dim = as.integer(block_alpha_dim),
+    block_types = as.integer(block_types),
+    block_q0_offset = as.integer(block_q0_offset),
+    block_alpha_offset = as.integer(block_alpha_offset),
+    n_logsigma = as.integer(n_logsigma),
+    n_rho = as.integer(n_rho)
+  )
+}
+
+
 #' Build TMB Data List
 #'
 #' @param prepared Output from .tmb_prepare_data().
