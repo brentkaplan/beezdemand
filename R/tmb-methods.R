@@ -1896,7 +1896,19 @@ get_demand_comparisons.beezdemand_tmb <- function(
 #' @param object A \code{beezdemand_tmb} object.
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return A list with Pmax, Omax, Qmax, elasticity_at_pmax, and method.
+#' @return A list with `Pmax`, `Omax`, `Qmax`, `elasticity_at_pmax`,
+#'   `method`, and (for covariate-adjusted fits) `conditioned_on`
+#'   describing the reference point used.
+#'
+#' @note For fits that include `continuous_covariates`, the returned
+#'   metrics are computed from the intercept-only coefficients --
+#'   i.e., the curve at every covariate set to 0 -- not at the training
+#'   mean or any other defensible population reference. A warning is
+#'   emitted and the conditioning point is reported in
+#'   `conditioned_on`. Marginalization (or explicit `at` conditioning)
+#'   is planned for TICKET-011 Phase 5; the warn-and-label behavior
+#'   here mirrors the warning convention used by
+#'   `predict(type = "demand")`.
 #'
 #' @examples
 #' \donttest{
@@ -1911,12 +1923,31 @@ calc_group_metrics.beezdemand_tmb <- function(object, ...) {
   equation <- object$param_info$equation
   has_k <- object$param_info$has_k
 
-  # Population-level parameters (intercepts only)
+  # Population-level parameters (intercepts only): exp(beta_q0[1]) and
+  # exp(beta_alpha[1]). For a fit with continuous covariates this is the
+  # covariate=0 reference subject, not a population mean. TICKET-011
+  # Phase 0.5: warn + label so summary.beezdemand_tmb() (which calls this
+  # path unconditionally) cannot silently misreport Pmax/Omax/Qmax for
+  # covariate-adjusted fits. Phase 5 will replace this with proper
+  # marginalization or explicit `at` conditioning.
   beta_q0_idx <- which(names(coefs) == "beta_q0")
   beta_alpha_idx <- which(names(coefs) == "beta_alpha")
 
   Q0 <- exp(coefs[beta_q0_idx[1]])
   alpha_val <- exp(coefs[beta_alpha_idx[1]])
+
+  cov_names <- object$param_info$continuous_covariates
+  conditioned_on <- NULL
+  if (!is.null(cov_names) && length(cov_names) > 0L) {
+    cov_at_zero <- stats::setNames(rep(0, length(cov_names)), cov_names)
+    conditioned_on <- list(covariates = cov_at_zero)
+    cli::cli_warn(c(
+      "{.fun calc_group_metrics} reports population metrics with continuous covariates held at 0.",
+      "i" = "Affected covariate{?s}: {.field {cov_names}}.",
+      "i" = "These are reference-intercept metrics, not training-mean or marginalized metrics.",
+      "i" = "Defensible covariate conditioning lands in TICKET-011 Phase 5; until then, set covariates explicitly when fitting if 0 is off-manifold."
+    ))
+  }
 
   if (has_k) {
     k_val <- .tmb_get_k(object)
@@ -1940,6 +1971,7 @@ calc_group_metrics.beezdemand_tmb <- function(object, ...) {
     Omax = result$omax_model,
     Qmax = result$q_at_pmax_model,
     elasticity_at_pmax = result$elasticity_at_pmax_model,
-    method = result$method_model
+    method = result$method_model,
+    conditioned_on = conditioned_on
   )
 }

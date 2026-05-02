@@ -12,10 +12,23 @@
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-A list with Pmax, Omax, Qmax, elasticity_at_pmax, and method.
+A list with \code{Pmax}, \code{Omax}, \code{Qmax}, \code{elasticity_at_pmax},
+\code{method}, and (for covariate-adjusted fits) \code{conditioned_on}
+describing the reference point used.
 }
 \description{
 Calculate Population-Level Demand Metrics for TMB Model
+}
+\note{
+For fits that include \code{continuous_covariates}, the returned
+metrics are computed from the intercept-only coefficients --
+i.e., the curve at every covariate set to 0 -- not at the training
+mean or any other defensible population reference. A warning is
+emitted and the conditioning point is reported in
+\code{conditioned_on}. Marginalization (or explicit \code{at} conditioning)
+is planned for TICKET-011 Phase 5; the warn-and-label behavior
+here mirrors the warning convention used by
+\code{predict(type = "demand")}.
 }
 \examples{
 \donttest{
