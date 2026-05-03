@@ -823,16 +823,42 @@ predict.beezdemand_tmb <- function(
   beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
   n_re       <- pinfo$n_random_effects
 
-  # 1. Validate required columns are present.
+  # 1. Validate required columns are present. Phase 2 also requires
+  # variables that appear only in the RE formula RHS (not in `factors`):
+  # without them, .tmb_build_z_matrices() in step 4 below crashes with
+  # cryptic `model.matrix()` errors. Codex round 6.
+  re_parsed_pre <- pinfo$random_effects_parsed
+  re_rhs_vars_pre <- character(0)
+  if (!is.null(re_parsed_pre)) {
+    for (b in re_parsed_pre$blocks) {
+      rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))
+      re_rhs_vars_pre <- c(re_rhs_vars_pre, all.vars(rhs_form))
+    }
+    re_rhs_vars_pre <- unique(re_rhs_vars_pre)
+  }
   needed <- unique(c(pinfo$id_var, pinfo$x_var,
                      pinfo$factors_q0, pinfo$factors_alpha,
-                     pinfo$continuous_covariates))
+                     pinfo$continuous_covariates, re_rhs_vars_pre))
   needed <- needed[!is.null(needed) & nzchar(needed)]
   missing_cols <- setdiff(needed, names(newdata))
   if (length(missing_cols) > 0) {
     cli::cli_abort(
       "{.arg newdata} is missing required column{?s}: {.field {missing_cols}}"
     )
+  }
+
+  # NAs in any model-matrix column propagate into mismatched-shape Z /
+  # X arrays downstream. Reject them up front with a clear error so
+  # the user can clean their newdata. Phase 2 / Codex round 6.
+  na_cols <- needed[vapply(needed, function(c) any(is.na(newdata[[c]])),
+                            logical(1))]
+  na_cols <- setdiff(na_cols, c(pinfo$x_var))  # x_var allowed to be NA? no, but skip out of caution
+  na_cols <- na_cols[na_cols %in% needed]  # re-narrow
+  if (length(na_cols) > 0) {
+    cli::cli_abort(c(
+      "{.arg newdata} has missing values in column{?s}: {.field {na_cols}}",
+      "i" = "Drop NA rows or impute before calling {.fun predict}."
+    ))
   }
 
   # 2. Coerce newdata factor columns to the training-time level sets so

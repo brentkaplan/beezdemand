@@ -1366,6 +1366,31 @@ fit_demand_tmb <- function(
     factors = factors
   )
 
+  # Coerce RE-only RHS variables to factor at fit time so the training
+  # data carries explicit factor levels for predict() to reuse. Without
+  # this, a character `condition` in random_effects = Q0+alpha~condition
+  # is stored as character, and predict() on a subset of newdata that
+  # only contains one level fails with "contrasts can be applied only
+  # to factors with 2 or more levels". Codex round 6.
+  re_rhs_vars_for_coerce <- character(0)
+  for (b in re_parsed$blocks) {
+    rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))
+    re_rhs_vars_for_coerce <- c(re_rhs_vars_for_coerce, all.vars(rhs_form))
+  }
+  re_rhs_vars_for_coerce <- unique(re_rhs_vars_for_coerce)
+  for (v in re_rhs_vars_for_coerce) {
+    if (!(v %in% names(data))) next
+    if (is.factor(data[[v]])) next
+    if (is.character(data[[v]]) || is.logical(data[[v]])) {
+      data[[v]] <- factor(data[[v]])
+      if (verbose >= 1) {
+        cli::cli_inform(c(
+          "i" = "Coerced random-effect RHS variable {.field {v}} to factor with levels {.val {levels(data[[v]])}}."
+        ))
+      }
+    }
+  }
+
   # Handle collapse_levels
   collapse_info <- NULL
   factors_q0 <- factors

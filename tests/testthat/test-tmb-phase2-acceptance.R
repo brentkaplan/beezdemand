@@ -217,6 +217,76 @@ test_that("tidy() classifies bare logsigma as variance component", {
   expect_true(all(ls_rows$component == "variance"))
 })
 
+test_that("predict() rejects newdata missing RE-only RHS column (Codex round 6)", {
+  skip_on_cran()
+  sim <- helper_within_subject_data(seed = 731)
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    sim, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben",  # condition NOT in factors
+    random_effects = nlme::pdDiag(Q0 + alpha ~ condition),
+    verbose = 0
+  )))
+  skip_if_not(isTRUE(fit$converged))
+
+  # Prior to the fix this fell through to model.matrix() with
+  # "object 'condition' not found".
+  nd_missing <- sim[, c("id", "x", "y_ll4")]
+  expect_error(
+    predict(fit, newdata = nd_missing),
+    regexp = "missing required column"
+  )
+})
+
+test_that("predict() rejects newdata with NA in RE-only RHS (Codex round 6)", {
+  skip_on_cran()
+  sim <- helper_within_subject_data(seed = 732)
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    sim, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ condition),
+    verbose = 0
+  )))
+  skip_if_not(isTRUE(fit$converged))
+
+  # Prior to the fix an NA in `condition` flowed into model.matrix(),
+  # producing a Z with fewer rows than newdata and a downstream
+  # subscript-out-of-bounds error.
+  nd_na <- sim
+  nd_na$condition[1] <- NA
+  expect_error(
+    predict(fit, newdata = nd_na),
+    regexp = "missing values in column"
+  )
+})
+
+test_that("character RE-only RHS variables are coerced to factor at fit time (Codex round 6)", {
+  skip_on_cran()
+  sim <- helper_within_subject_data(seed = 733)
+  # Pass `condition` as a CHARACTER, not a factor. Prior to the fix this
+  # was stored as character in fit$data, and predict() on a one-level
+  # subset failed with "contrasts can be applied only to factors with
+  # 2 or more levels".
+  sim$condition <- as.character(sim$condition)
+  expect_true(is.character(sim$condition))
+
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    sim, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ condition),
+    verbose = 0
+  )))
+  # After fit-time coercion, fit$data$condition is a factor with the
+  # full level set frozen for predict().
+  expect_true(is.factor(fit$data$condition))
+  expect_equal(sort(levels(fit$data$condition)), c("C1", "C2", "C3"))
+
+  # Predict on a one-condition subset should now work cleanly.
+  nd_subset <- sim[sim$condition == "C1", ]
+  expect_no_error(p <- predict(fit, newdata = nd_subset))
+  expect_true(is.data.frame(p))
+  expect_true(".fitted" %in% names(p))
+})
+
 test_that("predict() uses full re_q0_mat / re_alpha_mat for factor-expanded fits", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 612)
