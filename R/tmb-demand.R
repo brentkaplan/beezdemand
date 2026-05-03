@@ -1144,16 +1144,20 @@ NULL
 #'   \describe{
 #'     \item{formula (default)}{`Q0 + alpha ~ 1` -- random intercepts on
 #'       both parameters (equivalent to the legacy `c("q0", "alpha")`
-#'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with non-intercept
-#'       RHS terms (e.g., `Q0 + alpha ~ condition`) are parsed but
-#'       currently rejected by the Phase-1 template -- those shapes land
-#'       in Phase 2/3 of TICKET-011.}
-#'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)`.
-#'       Pre-constructed pdMat objects are accepted and their covariance
-#'       class is honored (overrides `covariance_structure`).}
+#'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with
+#'       factor-expanded RHS (e.g., `Q0 + alpha ~ condition` or
+#'       `Q0 + alpha ~ condition - 1`) are now supported in Phase 2 --
+#'       see TICKET-011 Phase 2 for details. The within-subject factor
+#'       must vary within each `id`; pure between-subject factors
+#'       belong in `factors`, not in the RE formula.}
+#'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)` or
+#'       `nlme::pdSymm(Q0 + alpha ~ condition)`. Pre-constructed pdMat
+#'       objects are accepted and their covariance class is honored
+#'       (overrides `covariance_structure`).}
 #'     \item{list of `pdMat` / `nlme::pdBlocked`}{Multi-block covariance
 #'       structures like `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`.
-#'       Parsed, but fitting is deferred to Phase 3 of TICKET-011.}
+#'       Parsed, but fitting is deferred to Phase 3 of TICKET-011 --
+#'       use `fit_demand_mixed()` for multi-block fits in the meantime.}
 #'     \item{character vector (deprecated)}{`c("q0", "alpha")` or `"q0"`.
 #'       Soft-deprecated in 0.4.0; emits a `lifecycle::deprecate_soft()`
 #'       message. Translated internally to the formula `Q0 + alpha ~ 1`
@@ -1263,6 +1267,15 @@ NULL
 #' fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
 #'                        equation = "exponential", factors = "gender")
 #' get_demand_param_emms(fit3, param = "alpha")
+#'
+#' # Factor-expanded random slopes on a within-subject factor (Phase 2):
+#' # each subject contributes a Q0 / alpha RE per condition level.
+#' # Replace `cond` below with your in-subject factor.
+#' \dontrun{
+#' fit4 <- fit_demand_tmb(within_data, y_var = "y_ll4", x_var = "x", id_var = "id",
+#'                        equation = "zben", factors = "cond",
+#'                        random_effects = nlme::pdDiag(Q0 + alpha ~ cond))
+#' }
 #' }
 #'
 #' @seealso [fit_demand_mixed()] for NLME-based fitting,

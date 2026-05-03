@@ -53,6 +53,56 @@ ticket.
   formula/pdMat parsing so both `fit_demand_mixed()` and
   `fit_demand_tmb()` consume the same canonical representation.
 
+## Additional TMB post-fit fixes (TICKET-011 Phase 0.4-0.5)
+
+Adversarial review surfaced two more silent wrong-answer paths in the
+TMB post-fit layer; both are sister bugs to Phase 0.2 / 0.3 fixes and
+land here as the foundation for the Phase 2 factor-RE work.
+
+* `get_demand_comparisons()` on a `beezdemand_tmb` fit now consumes the
+  same conditioned reference grid as `get_demand_param_emms()`. New
+  internal helper `.tmb_build_emm_ref_grid()` in `R/tmb-methods.R`
+  ensures both functions honor `at` (factor-level filters AND
+  continuous-covariate value overrides) and `factors_in_emm`. Before
+  this fix the wrapper forwarded `...` to `emms` but rebuilt its own
+  contrast grid from the unfiltered training data, producing off-grid
+  contrasts and `"NA"` labels when `at` filtered factor levels.
+* `calc_group_metrics()` on a `beezdemand_tmb` fit now warns and
+  returns a `conditioned_on` field when continuous covariates are
+  present. The numeric output is unchanged (intercept-only `Q0` /
+  `alpha`, i.e. covariates held at 0) but the warning matches the
+  convention from `predict(type = "demand")` so users cannot
+  silently misread reference-intercept metrics as population means.
+  `summary.beezdemand_tmb()` propagates the warning through the
+  standard summary path. Phase 5 will replace warn-and-label with
+  explicit conditioning via the `.tmb_build_emm_ref_grid()` helper.
+
+## Factor-expanded TMB random effects (TICKET-011 Phase 2)
+
+* `fit_demand_tmb()` now fits formula-based random effects with
+  factor-expanded slopes (e.g. `pdDiag(Q0 + alpha ~ condition)` or
+  `pdSymm(Q0 + alpha ~ condition)`). Single-block pdDiag and pdSymm
+  with arbitrary RHS terms are accepted; multi-block `pdBlocked` /
+  `list()` of pdMats remains gated until Phase 3.
+* `src/MixedDemand.h` rewritten with a block-aware DATA interface
+  (Z_q0, Z_alpha, block-structure metadata) and a generalized
+  per-block Cholesky loop. pdSymm blocks of size > 2 use the
+  Lewandowski-Kurowicka-Joe Cholesky construction; the d == 2 case
+  reduces exactly to the previous `tanh(rho_bc_raw)` parameterization,
+  so existing intercept-only fits produce bit-identical loglik /
+  coefficients (verified to 1e-10 on `apt`).
+* New internal helpers `.tmb_build_z_matrices()` and
+  `.tmb_build_block_map()` in `R/tmb-demand.R` consume the canonical
+  block representation and emit the design matrices and metadata the
+  template needs.
+* `.tmb_compute_subject_pars()` generalized into a per-block
+  reconstruction; subject-level `Q0` / `alpha` for factor-expanded
+  fits use the first observed row of `X` and `Z` per subject (Phase 2
+  deferral; per-(subject, condition) rows planned for Phase 5).
+* New simulator `.simulate_within_subject_demand()` and parity tests
+  confirm TMB Laplace approximation agrees with NLME's iterative
+  algorithm to within ~1% on the loglik across all four target specs.
+
 # beezdemand 0.3.0
 
 This release ships the TMB mixed-effects modeling tier (`fit_demand_tmb()`)
