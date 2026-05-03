@@ -5,7 +5,7 @@ Extract Estimates from TMB Fit
 ## Usage
 
 ``` r
-.tmb_extract_estimates(obj, opt, n_re, n_subjects, has_k, verbose)
+.tmb_extract_estimates(obj, opt, re_dim_total, n_subjects, has_k, verbose)
 ```
 
 ## Arguments
@@ -18,9 +18,9 @@ Extract Estimates from TMB Fit
 
   nlminb optimization result.
 
-- n_re:
+- re_dim_total:
 
-  Integer.
+  Integer; total RE columns per subject (`re_dim_q0 + re_dim_alpha`).
 
 - n_subjects:
 

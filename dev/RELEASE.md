@@ -17,8 +17,7 @@ passes (all tests green)
 
 `lintr::lint_package()` reports no critical issues
 
-Test coverage is adequate (check with
-[`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md))
+Test coverage is adequate (check with `covr::package_coverage()`)
 
 ### Documentation
 
@@ -97,6 +96,7 @@ beezdemand follows semantic versioning:
 ### 1. Preparation
 
 ``` r
+
 # Update version in DESCRIPTION
 # Update NEWS.md with release date
 devtools::document()
@@ -106,6 +106,7 @@ devtools::check()
 ### 2. Final Verification
 
 ``` r
+
 # Full check with CRAN settings
 devtools::check(remote = TRUE, manual = TRUE)
 
@@ -119,6 +120,7 @@ devtools::build_vignettes()
 ### 3. Submit to CRAN
 
 ``` r
+
 devtools::release()
 ```
 

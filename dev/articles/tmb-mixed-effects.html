@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-04-21</h4>
+            <h4 data-toc-skip class="date">2026-05-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -161,7 +161,7 @@ NLS curves</strong>, see <code><a href="../articles/fixed-demand.html">vignette(
 <span><span class="co">#&gt; AIC: 551.07 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed Effects:</span></span>
-<span><span class="co">#&gt;       Q0.0    alpha.0      log_k logsigma_b logsigma_c logsigma_e rho_bc_raw </span></span>
+<span><span class="co">#&gt;       Q0.0    alpha.0      log_k   logsigma   logsigma logsigma_e    rho_raw </span></span>
 <span><span class="co">#&gt;     1.6944    -4.5060     0.3399    -0.2940    -0.0952    -1.4906    -0.4812 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Use summary() for full results.</span></span></code></pre></div>
@@ -181,16 +181,16 @@ NLS curves</strong>, see <code><a href="../articles/fixed-demand.html">vignette(
 <span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   13.0512  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012    9.4171  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;              log_k   0.3399    0.0276   12.2980  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;         logsigma_b  -0.2940    0.0748   -3.9297  8.5e-05</span></span>
-<span><span class="co">#&gt;         logsigma_c  -0.0952    0.0807   -1.1796 0.238151</span></span>
-<span><span class="co">#&gt;         logsigma_e  -1.4906    0.0231  -64.4069  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;         rho_bc_raw  -0.4812    0.1310   -3.6743 0.000239</span></span>
+<span><span class="co">#&gt;           logsigma  -0.2940    0.0748   -3.9297 8.51e-05</span></span>
+<span><span class="co">#&gt;           logsigma  -0.0952    0.0807   -1.1796 0.238169</span></span>
+<span><span class="co">#&gt;         logsigma_e  -1.4906    0.0231  -64.4070  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;            rho_raw  -0.4812    0.1310   -3.6742 0.000239</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Variance Components ---</span></span>
 <span><span class="co">#&gt;              Component Estimate</span></span>
 <span><span class="co">#&gt;     sigma_b (Q0 RE SD)   0.7453</span></span>
+<span><span class="co">#&gt;  sigma_c (alpha RE SD)   0.9092</span></span>
 <span><span class="co">#&gt;  sigma_e (Residual SD)   0.2252</span></span>
-<span><span class="co">#&gt;  sigma_c (alpha RE SD)   0.9091</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- RE Correlations ---</span></span>
 <span><span class="co">#&gt;                      Component Estimate</span></span>
@@ -205,10 +205,10 @@ NLS curves</strong>, see <code><a href="../articles/fixed-demand.html">vignette(
 <span><span class="co">#&gt; Pmax: 8.6507  Omax: 12.6853  Method: analytic_lambert_w</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Individual Parameter Summaries ---</span></span>
-<span><span class="co">#&gt;   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2636</span></span>
+<span><span class="co">#&gt;   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2637</span></span>
 <span><span class="co">#&gt;   alpha: Min=0.0012  Med=0.0117  Mean=0.0180  Max=0.1803</span></span>
-<span><span class="co">#&gt;   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8220</span></span>
-<span><span class="co">#&gt;   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2685</span></span>
+<span><span class="co">#&gt;   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8223</span></span>
+<span><span class="co">#&gt;   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2688</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Notes:</span></span>
 <span><span class="co">#&gt;   * 569 zero-consumption observations dropped for equation='exponential'.</span></span></code></pre></div>
@@ -372,12 +372,12 @@ intercept on <span class="math inline">Q_0</span> only; <span class="math inline
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   id        b_i         c_i</span></span>
-<span><span class="co">#&gt; 1 16 -0.8553362  0.38606385</span></span>
-<span><span class="co">#&gt; 2 24  0.0892118 -0.04866941</span></span>
-<span><span class="co">#&gt; 3 33  0.6114902 -0.35231538</span></span>
-<span><span class="co">#&gt; 4 40  0.1527067  0.50020943</span></span>
-<span><span class="co">#&gt; 5 42  0.7378561 -0.89300299</span></span>
-<span><span class="co">#&gt; 6 49 -0.2956440  0.40087909</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 16 -0.8553425  0.38606925</span></span>
+<span><span class="co">#&gt; 2 24  0.0892061 -0.04866633</span></span>
+<span><span class="co">#&gt; 3 33  0.6114842 -0.35230990</span></span>
+<span><span class="co">#&gt; 4 40  0.1527007  0.50021504</span></span>
+<span><span class="co">#&gt; 5 42  0.7378500 -0.89299758</span></span>
+<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468</span></span></code></pre></div>
 <p>The <code>b_i</code> column is the random deviation on log(<span class="math inline">Q_0</span>) and <code>c_i</code> is the random
 deviation on log(<span class="math inline">\alpha</span>) for each
 subject.</p>
@@ -432,16 +432,16 @@ use a <span class="math inline">k</span> parameter.</p>
 <span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   13.0512  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012    9.4171  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;              log_k   0.3399    0.0276   12.2980  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;         logsigma_b  -0.2940    0.0748   -3.9297  8.5e-05</span></span>
-<span><span class="co">#&gt;         logsigma_c  -0.0952    0.0807   -1.1796 0.238151</span></span>
-<span><span class="co">#&gt;         logsigma_e  -1.4906    0.0231  -64.4069  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;         rho_bc_raw  -0.4812    0.1310   -3.6743 0.000239</span></span>
+<span><span class="co">#&gt;           logsigma  -0.2940    0.0748   -3.9297 8.51e-05</span></span>
+<span><span class="co">#&gt;           logsigma  -0.0952    0.0807   -1.1796 0.238169</span></span>
+<span><span class="co">#&gt;         logsigma_e  -1.4906    0.0231  -64.4070  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;            rho_raw  -0.4812    0.1310   -3.6742 0.000239</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Variance Components ---</span></span>
 <span><span class="co">#&gt;              Component Estimate</span></span>
 <span><span class="co">#&gt;     sigma_b (Q0 RE SD)   0.7453</span></span>
+<span><span class="co">#&gt;  sigma_c (alpha RE SD)   0.9092</span></span>
 <span><span class="co">#&gt;  sigma_e (Residual SD)   0.2252</span></span>
-<span><span class="co">#&gt;  sigma_c (alpha RE SD)   0.9091</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- RE Correlations ---</span></span>
 <span><span class="co">#&gt;                      Component Estimate</span></span>
@@ -456,10 +456,10 @@ use a <span class="math inline">k</span> parameter.</p>
 <span><span class="co">#&gt; Pmax: 8.6507  Omax: 12.6853  Method: analytic_lambert_w</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Individual Parameter Summaries ---</span></span>
-<span><span class="co">#&gt;   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2636</span></span>
+<span><span class="co">#&gt;   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2637</span></span>
 <span><span class="co">#&gt;   alpha: Min=0.0012  Med=0.0117  Mean=0.0180  Max=0.1803</span></span>
-<span><span class="co">#&gt;   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8220</span></span>
-<span><span class="co">#&gt;   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2685</span></span>
+<span><span class="co">#&gt;   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8223</span></span>
+<span><span class="co">#&gt;   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2688</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Notes:</span></span>
 <span><span class="co">#&gt;   * 569 zero-consumption observations dropped for equation='exponential'.</span></span></code></pre></div>
@@ -468,13 +468,13 @@ use a <span class="math inline">k</span> parameter.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 9</span></span></span>
 <span><span class="co">#&gt;   term            estimate std.error statistic  p.value component estimate_scale</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercept)    5.44     0.417       13.1  6.25<span style="color: #949494;">e</span><span style="color: #BB0000;">-39</span> consumpt… natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercept)    5.44     0.417       13.1  6.26<span style="color: #949494;">e</span><span style="color: #BB0000;">-39</span> consumpt… natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha:(Interce…   0.011<span style="text-decoration: underline;">0</span>   0.001<span style="text-decoration: underline;">17</span>      9.42 4.64<span style="color: #949494;">e</span><span style="color: #BB0000;">-21</span> consumpt… natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k             0.340    0.027<span style="text-decoration: underline;">6</span>      12.3  9.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-35</span> consumpt… log           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma_b       -<span style="color: #BB0000;">0.294</span>    0.074<span style="text-decoration: underline;">8</span>      -<span style="color: #BB0000;">3.93</span> 8.50<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span> variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma_c       -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span>   0.080<span style="text-decoration: underline;">7</span>      -<span style="color: #BB0000;">1.18</span> 2.38<span style="color: #949494;">e</span><span style="color: #BB0000;">- 1</span> variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k             0.340    0.027<span style="text-decoration: underline;">6</span>      12.3  9.28<span style="color: #949494;">e</span><span style="color: #BB0000;">-35</span> consumpt… log           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma         -<span style="color: #BB0000;">0.294</span>    0.074<span style="text-decoration: underline;">8</span>      -<span style="color: #BB0000;">3.93</span> 8.51<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span> variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma         -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span>   0.080<span style="text-decoration: underline;">7</span>      -<span style="color: #BB0000;">1.18</span> 2.38<span style="color: #949494;">e</span><span style="color: #BB0000;">- 1</span> variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> logsigma_e       -<span style="color: #BB0000;">1.49</span>     0.023<span style="text-decoration: underline;">1</span>     -<span style="color: #BB0000;">64.4</span>  0   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_bc_raw       -<span style="color: #BB0000;">0.481</span>    0.131       -<span style="color: #BB0000;">3.67</span> 2.39<span style="color: #949494;">e</span><span style="color: #BB0000;">- 4</span> variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_raw          -<span style="color: #BB0000;">0.481</span>    0.131       -<span style="color: #BB0000;">3.67</span> 2.39<span style="color: #949494;">e</span><span style="color: #BB0000;">- 4</span> variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre></div>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
@@ -493,12 +493,12 @@ use a <span class="math inline">k</span> parameter.</p>
 <code class="sourceCode R"><span><span class="va">spars</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   id        b_i         c_i        Q0       alpha      Pmax      Omax</span></span>
-<span><span class="co">#&gt; 1 16 -0.8553362  0.38606385  2.314197 0.016246308 13.830984  8.622529</span></span>
-<span><span class="co">#&gt; 2 24  0.0892118 -0.04866941  5.951307 0.010518467  8.306984 13.317936</span></span>
-<span><span class="co">#&gt; 3 33  0.6114902 -0.35231538 10.033096 0.007763913  6.675633 18.042997</span></span>
-<span><span class="co">#&gt; 4 40  0.1527067  0.50020943  6.341439 0.018210736  4.502905  7.692400</span></span>
-<span><span class="co">#&gt; 5 42  0.7378561 -0.89300299 11.384527 0.004521297 10.102529 30.983204</span></span>
-<span><span class="co">#&gt; 6 49 -0.2956440  0.40087909  4.050154 0.016488793  7.786597  8.495726</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 16 -0.8553425  0.38606925  2.314197 0.016246302 13.830982  8.622529</span></span>
+<span><span class="co">#&gt; 2 24  0.0892061 -0.04866633  5.951310 0.010518438  8.306997 13.317967</span></span>
+<span><span class="co">#&gt; 3 33  0.6114842 -0.35230990 10.033098 0.007763911  6.675631 18.042997</span></span>
+<span><span class="co">#&gt; 4 40  0.1527007  0.50021504  6.341441 0.018210732  4.502903  7.692399</span></span>
+<span><span class="co">#&gt; 5 42  0.7378500 -0.89299758 11.384528 0.004521295 10.102527 30.983205</span></span>
+<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468  4.050155 0.016488790  7.786593  8.495724</span></span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spars</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">summarise</span><span class="op">(</span></span>
@@ -532,13 +532,13 @@ tiers.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ap</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_amplitude_persistence.html">calculate_amplitude_persistence</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ap</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id       z_Q0     z_Pmax      z_Omax z_inv_alpha  Amplitude Persistence</span></span>
-<span><span class="co">#&gt; 1 16 -0.9332307  0.4415823 -0.49884179 -0.49884179 -0.9332307  -0.1853671</span></span>
-<span><span class="co">#&gt; 2 24 -0.2075585 -0.2915658 -0.22709601 -0.22709601 -0.2075585  -0.2485859</span></span>
-<span><span class="co">#&gt; 3 33  0.6068358 -0.5080794  0.04636602  0.04636602  0.6068358  -0.1384491</span></span>
-<span><span class="co">#&gt; 4 40 -0.1297197 -0.7964450 -0.55267282 -0.55267282 -0.1297197  -0.6339302</span></span>
-<span><span class="co">#&gt; 5 42  0.8764718 -0.0532601  0.79527804  0.79527804  0.8764718   0.5124320</span></span>
-<span><span class="co">#&gt; 6 49 -0.5868744 -0.3606318 -0.50618050 -0.50618050 -0.5868744  -0.4576643</span></span></code></pre></div>
+<span><span class="co">#&gt;   id       z_Q0      z_Pmax      z_Omax z_inv_alpha  Amplitude Persistence</span></span>
+<span><span class="co">#&gt; 1 16 -0.9332306  0.44158011 -0.49884140 -0.49884140 -0.9332306  -0.1853676</span></span>
+<span><span class="co">#&gt; 2 24 -0.2075582 -0.29156364 -0.22709436 -0.22709436 -0.2075582  -0.2485841</span></span>
+<span><span class="co">#&gt; 3 33  0.6068353 -0.50807870  0.04636527  0.04636527  0.6068353  -0.1384494</span></span>
+<span><span class="co">#&gt; 4 40 -0.1297198 -0.79644335 -0.55267242 -0.55267242 -0.1297198  -0.6339294</span></span>
+<span><span class="co">#&gt; 5 42  0.8764710 -0.05326084  0.79527589  0.79527589  0.8764710   0.5124303</span></span>
+<span><span class="co">#&gt; 6 49 -0.5868744 -0.36063167 -0.50618019 -0.50618019 -0.5868744  -0.4576640</span></span></code></pre></div>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ap</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">summarise</span><span class="op">(</span></span>
@@ -548,7 +548,7 @@ tiers.</p>
 <span>    Persistence_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">Persistence</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt;   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd</span></span>
-<span><span class="co">#&gt; 1   7.330959e-17    -6.519368e-17            1      0.8497967</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   7.050819e-17     -3.85976e-17            1      0.8497968</span></span></code></pre></div>
 <p>By construction, both factors are sample-standardized (mean 0, SD 1
 within the fitted dataset). For cross-sample comparisons, supply
 external <code>basis_means</code> and <code>basis_sds</code> so the
@@ -565,10 +565,10 @@ standardization uses a fixed reference.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercept)      1.69      1.54     1.84    0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha:(Intercept)  -<span style="color: #BB0000;">4.51</span>     -<span style="color: #BB0000;">4.71</span>    -<span style="color: #BB0000;">4.30</span>    0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k               0.340     0.286    0.394   0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma_b         -<span style="color: #BB0000;">0.294</span>    -<span style="color: #BB0000;">0.441</span>   -<span style="color: #BB0000;">0.147</span>   0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma_c         -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span>   -<span style="color: #BB0000;">0.254</span>    0.063<span style="text-decoration: underline;">0</span>  0.95</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma           -<span style="color: #BB0000;">0.294</span>    -<span style="color: #BB0000;">0.441</span>   -<span style="color: #BB0000;">0.147</span>   0.95</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma           -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span>   -<span style="color: #BB0000;">0.254</span>    0.063<span style="text-decoration: underline;">0</span>  0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> logsigma_e         -<span style="color: #BB0000;">1.49</span>     -<span style="color: #BB0000;">1.54</span>    -<span style="color: #BB0000;">1.45</span>    0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_bc_raw         -<span style="color: #BB0000;">0.481</span>    -<span style="color: #BB0000;">0.738</span>   -<span style="color: #BB0000;">0.225</span>   0.95</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_raw            -<span style="color: #BB0000;">0.481</span>    -<span style="color: #BB0000;">0.738</span>   -<span style="color: #BB0000;">0.225</span>   0.95</span></span></code></pre></div>
 <p>By default, confidence intervals are on the internal (log) scale. Use
 <code>report_space = "natural"</code> for back-transformed
 intervals:</p>
@@ -580,10 +580,10 @@ intervals:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercept)      5.44    4.68       6.33    0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha:(Intercept)   0.011<span style="text-decoration: underline;">0</span>  0.008<span style="text-decoration: underline;">97</span>    0.013<span style="text-decoration: underline;">6</span>  0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k               1.40    1.33       1.48    0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma_b         -<span style="color: #BB0000;">0.294</span>  -<span style="color: #BB0000;">0.441</span>     -<span style="color: #BB0000;">0.147</span>   0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma_c         -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span> -<span style="color: #BB0000;">0.254</span>      0.063<span style="text-decoration: underline;">0</span>  0.95</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> logsigma           -<span style="color: #BB0000;">0.294</span>  -<span style="color: #BB0000;">0.441</span>     -<span style="color: #BB0000;">0.147</span>   0.95</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> logsigma           -<span style="color: #BB0000;">0.095</span><span style="color: #BB0000; text-decoration: underline;">2</span> -<span style="color: #BB0000;">0.254</span>      0.063<span style="text-decoration: underline;">0</span>  0.95</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> logsigma_e         -<span style="color: #BB0000;">1.49</span>   -<span style="color: #BB0000;">1.54</span>      -<span style="color: #BB0000;">1.45</span>    0.95</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_bc_raw         -<span style="color: #BB0000;">0.481</span>  -<span style="color: #BB0000;">0.738</span>     -<span style="color: #BB0000;">0.225</span>   0.95</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_raw            -<span style="color: #BB0000;">0.481</span>  -<span style="color: #BB0000;">0.738</span>     -<span style="color: #BB0000;">0.225</span>   0.95</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
@@ -636,22 +636,25 @@ intervals:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $Pmax</span></span>
 <span><span class="co">#&gt; beta_alpha </span></span>
-<span><span class="co">#&gt;   8.650689 </span></span>
+<span><span class="co">#&gt;    8.65068 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $Omax</span></span>
 <span><span class="co">#&gt; beta_alpha </span></span>
-<span><span class="co">#&gt;   12.68528 </span></span>
+<span><span class="co">#&gt;   12.68535 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $Qmax</span></span>
-<span><span class="co">#&gt; beta_q0 </span></span>
-<span><span class="co">#&gt; 1.46639 </span></span>
+<span><span class="co">#&gt;  beta_q0 </span></span>
+<span><span class="co">#&gt; 1.466399 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $elasticity_at_pmax</span></span>
 <span><span class="co">#&gt; beta_alpha </span></span>
 <span><span class="co">#&gt;         -1 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $method</span></span>
-<span><span class="co">#&gt; [1] "analytic_lambert_w"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "analytic_lambert_w"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $conditioned_on</span></span>
+<span><span class="co">#&gt; NULL</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
@@ -708,7 +711,7 @@ attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" clas
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt;   sigma_b variance: 0.7453</span></span>
-<span><span class="co">#&gt;   sigma_c variance: 0.9091</span></span>
+<span><span class="co">#&gt;   sigma_c variance: 0.9092</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residuals:</span></span>
 <span><span class="co">#&gt;   Mean: -0.0001171</span></span>
@@ -901,9 +904,9 @@ to the design matrices for both <span class="math inline">Q_0</span> and
 <span><span class="co">#&gt; AIC: 552.76 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed Effects:</span></span>
-<span><span class="co">#&gt;       Q0.0       Q0.1    alpha.0    alpha.1      log_k logsigma_b logsigma_c </span></span>
+<span><span class="co">#&gt;       Q0.0       Q0.1    alpha.0    alpha.1      log_k   logsigma   logsigma </span></span>
 <span><span class="co">#&gt;     1.6093     0.1941    -4.4026    -0.2493     0.3404    -0.3021    -0.1074 </span></span>
-<span><span class="co">#&gt; logsigma_e rho_bc_raw </span></span>
+<span><span class="co">#&gt; logsigma_e    rho_raw </span></span>
 <span><span class="co">#&gt;    -1.4905    -0.4591 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Use summary() for full results.</span></span></code></pre></div>

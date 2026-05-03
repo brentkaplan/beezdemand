@@ -80,7 +80,21 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with Pmax, Omax, Qmax, elasticity_at_pmax, and method.</p>
+    <p>A list with <code>Pmax</code>, <code>Omax</code>, <code>Qmax</code>, <code>elasticity_at_pmax</code>,
+<code>method</code>, and (for covariate-adjusted fits) <code>conditioned_on</code>
+describing the reference point used.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+    <p>For fits that include <code>continuous_covariates</code>, the returned
+metrics are computed from the intercept-only coefficients –
+i.e., the curve at every covariate set to 0 – not at the training
+mean or any other defensible population reference. A warning is
+emitted and the conditioning point is reported in
+<code>conditioned_on</code>. Marginalization (or explicit <code>at</code> conditioning)
+is planned for TICKET-011 Phase 5; the warn-and-label behavior
+here mirrors the warning convention used by
+<code>predict(type = "demand")</code>.</p>
     </div>
 
     <div class="section level2">
@@ -92,15 +106,15 @@
 <span class="r-in"><span><span class="fu"><a href="calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   11.23767 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   11.23768 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Omax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   23.89413 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   23.89412 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Qmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  beta_q0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2.126252 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2.126251 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $elasticity_at_pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
@@ -108,6 +122,9 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "analytic_lambert_w"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $conditioned_on</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

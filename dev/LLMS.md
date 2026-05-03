@@ -7,13 +7,13 @@ Package version: 0.2.0 Docs: <https://brentkaplan.github.io/beezdemand/>
 
 ## Entry Points
 
-| Function                                                                                         | Purpose                               | Returns                         |
-|--------------------------------------------------------------------------------------------------|---------------------------------------|---------------------------------|
-| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   | Individual NLS demand curves          | `beezdemand_fixed`              |
-| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   | Hierarchical NLME with random effects | `beezdemand_nlme`               |
-| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Two-part hurdle model via TMB         | `beezdemand_hurdle`             |
-| [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)               | Nonlinear cross-price elasticity      | `cp_model_nls`                  |
-| [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)         | Linear or mixed cross-price           | `cp_model_lm` / `cp_model_lmer` |
+| Function | Purpose | Returns |
+|----|----|----|
+| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) | Individual NLS demand curves | `beezdemand_fixed` |
+| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) | Hierarchical NLME with random effects | `beezdemand_nlme` |
+| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Two-part hurdle model via TMB | `beezdemand_hurdle` |
+| [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md) | Nonlinear cross-price elasticity | `cp_model_nls` |
+| [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md) | Linear or mixed cross-price | `cp_model_lm` / `cp_model_lmer` |
 
 All model objects support:
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
@@ -47,26 +47,26 @@ defaults remain `x`/`y`/`id`/`group`/`target`.
 
 ### `tidy()` columns
 
-| Class               | Key columns                                                                                  |
-|---------------------|----------------------------------------------------------------------------------------------|
-| `beezdemand_fixed`  | `id`, `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
-| `beezdemand_nlme`   | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale`       |
-| `beezdemand_hurdle` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale`       |
+| Class | Key columns |
+|----|----|
+| `beezdemand_fixed` | `id`, `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
+| `beezdemand_nlme` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
+| `beezdemand_hurdle` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 
 ### `glance()` columns
 
-| Class               | Key columns                                                                                         |
-|---------------------|-----------------------------------------------------------------------------------------------------|
-| `beezdemand_fixed`  | `model_class`, `equation`, `k_spec`, `nobs`, `n_subjects`, `n_success`, `n_fail`                    |
-| `beezdemand_nlme`   | `model_class`, `equation`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC`                |
+| Class | Key columns |
+|----|----|
+| `beezdemand_fixed` | `model_class`, `equation`, `k_spec`, `nobs`, `n_subjects`, `n_success`, `n_fail` |
+| `beezdemand_nlme` | `model_class`, `equation`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC` |
 | `beezdemand_hurdle` | `model_class`, `part2`, `random_effects`, `n_subjects`, `nobs`, `converged`, `logLik`, `AIC`, `BIC` |
 
 ### `augment()` columns
 
-| Class               | Key columns                                                              |
-|---------------------|--------------------------------------------------------------------------|
-| `beezdemand_fixed`  | original data + `.fitted`, `.resid`                                      |
-| `beezdemand_nlme`   | original data + `.fitted`, `.resid`                                      |
+| Class | Key columns |
+|----|----|
+| `beezdemand_fixed` | original data + `.fitted`, `.resid` |
+| `beezdemand_nlme` | original data + `.fitted`, `.resid` |
 | `beezdemand_hurdle` | original data + `.fitted_prob_zero`, `.fitted_logQ`, `.fitted`, `.resid` |
 
 ## Common Pitfalls

@@ -76,7 +76,8 @@ reliable convergence where traditional NLME approaches fail.</p>
 <span>  equation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exponentiated"</span>, <span class="st">"exponential"</span>, <span class="st">"simplified"</span>, <span class="st">"zben"</span><span class="op">)</span>,</span>
 <span>  estimate_k <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  random_effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"q0"</span>, <span class="st">"alpha"</span><span class="op">)</span>,</span>
+<span>  random_effects <span class="op">=</span> <span class="va">Q0</span> <span class="op">+</span> <span class="va">alpha</span> <span class="op">~</span> <span class="fl">1</span>,</span>
+<span>  covariance_structure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pdSymm"</span>, <span class="st">"pdDiag"</span><span class="op">)</span>,</span>
 <span>  factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  factor_interaction <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  continuous_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -84,6 +85,7 @@ reliable convergence where traditional NLME approaches fail.</p>
 <span>  start_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tmb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iter_max <span class="op">=</span> <span class="fl">1000</span>, eval_max <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span>,</span>
 <span>  multi_start <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  validate_subject_pars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -147,14 +149,43 @@ If <code>NULL</code> and <code>estimate_k = FALSE</code>, k defaults to 2.</p></
 
 
 <dt id="arg-random-effects">random_effects<a class="anchor" aria-label="anchor" href="#arg-random-effects"></a></dt>
-<dd><p>Character vector specifying random effects. One of:</p><dl><dt><code>c("q0", "alpha")</code></dt>
-<dd><p>Random effects on both Q0 and alpha (default).</p></dd>
+<dd><p>Specification of subject-level random effects.
+Accepts any of the following, in order of generality:</p><dl><dt>formula (default)</dt>
+<dd><p><code>Q0 + alpha ~ 1</code> – random intercepts on
+both parameters (equivalent to the legacy <code>c("q0", "alpha")</code>
+shortcut). <code>Q0 ~ 1</code> limits REs to Q0. Formulas with
+factor-expanded RHS (e.g., <code>Q0 + alpha ~ condition</code> or
+<code>Q0 + alpha ~ condition - 1</code>) are now supported in Phase 2 –
+see TICKET-011 Phase 2 for details. The within-subject factor
+must vary within each <code>id</code>; pure between-subject factors
+belong in <code>factors</code>, not in the RE formula.</p></dd>
 
-<dt><code>"q0"</code></dt>
-<dd><p>Random effect on Q0 only.</p></dd>
+<dt><code><a href="https://rdrr.io/pkg/nlme/man/pdMat.html" class="external-link">nlme::pdMat</a></code></dt>
+<dd><p>e.g., <code>nlme::pdDiag(Q0 + alpha ~ 1)</code> or
+<code>nlme::pdSymm(Q0 + alpha ~ condition)</code>. Pre-constructed pdMat
+objects are accepted and their covariance class is honored
+(overrides <code>covariance_structure</code>).</p></dd>
+
+<dt>list of <code>pdMat</code> / <code><a href="https://rdrr.io/pkg/nlme/man/pdBlocked.html" class="external-link">nlme::pdBlocked</a></code></dt>
+<dd><p>Multi-block covariance
+structures like <code>list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))</code>.
+Parsed, but fitting is deferred to Phase 3 of TICKET-011 –
+use <code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> for multi-block fits in the meantime.</p></dd>
+
+<dt>character vector (deprecated)</dt>
+<dd><p><code>c("q0", "alpha")</code> or <code>"q0"</code>.
+Soft-deprecated in 0.4.0; emits a <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_soft()</a></code>
+message. Translated internally to the formula <code>Q0 + alpha ~ 1</code>
+or <code>Q0 ~ 1</code>.</p></dd>
 
 
 </dl></dd>
+
+
+<dt id="arg-covariance-structure">covariance_structure<a class="anchor" aria-label="anchor" href="#arg-covariance-structure"></a></dt>
+<dd><p><code>"pdSymm"</code> (default; unstructured) or
+<code>"pdDiag"</code> (diagonal). Applies only when <code>random_effects</code> is a
+formula; ignored for pre-constructed pdMat / list / pdBlocked inputs.</p></dd>
 
 
 <dt id="arg-factors">factors<a class="anchor" aria-label="anchor" href="#arg-factors"></a></dt>
@@ -226,6 +257,17 @@ optimizer space (e.g., from a previous <code>fit$opt$par</code>). When provided,
 <dt id="arg-multi-start">multi_start<a class="anchor" aria-label="anchor" href="#arg-multi-start"></a></dt>
 <dd><p>Logical. If <code>TRUE</code> (default), try 3 starting value sets
 and select the best.</p></dd>
+
+
+<dt id="arg-validate-subject-pars">validate_subject_pars<a class="anchor" aria-label="anchor" href="#arg-validate-subject-pars"></a></dt>
+<dd><p>Logical. If <code>TRUE</code> (default), validate that
+every column of the fixed-effect design matrices is constant within
+each <code>id</code> before computing <code>subject_pars</code>. When a factor or continuous
+covariate varies within subject, Q0/alpha/Pmax/Omax are set to
+<code>NA_real_</code> for affected subjects and a warning names the offending
+columns. Set to <code>FALSE</code> to force row-order-dependent values (not
+recommended; proper factor-expanded RE support lands in TICKET-011
+Phases 2-3).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -320,10 +362,10 @@ the transformation).</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Equation: exponential</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 146</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 (q0, alpha)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Design matrices: X_q0 [146 x 1], X_alpha [146 x 1]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = -40.65 (start set 2 of 3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = -40.65 (start set 3 of 3)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Converged (NLL = -40.65)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done.</span>
@@ -339,19 +381,19 @@ the transformation).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --- Fixed Effects ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               term estimate std.error statistic  p.value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5121    0.8097    8.0425 8.80e-16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074102</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              log_k   0.8954    0.4838    1.8509 0.064184</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         logsigma_b  -0.9528    0.2292   -4.1564 3.23e-05</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         logsigma_c  -0.7798    0.2302   -3.3879 0.000704</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              log_k   0.8955    0.4838    1.8509 0.064184</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.7798    0.2302   -3.3879 0.000704</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         logsigma_e  -1.9498    0.0631  -30.9183  &lt; 2e-16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         rho_bc_raw  -0.4675    0.3292   -1.4202 0.155548</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            rho_raw  -0.4675    0.3292   -1.4202 0.155547</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --- Variance Components ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Component Estimate</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     sigma_b (Q0 RE SD)   0.3857</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  sigma_e (Residual SD)   0.1423</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  sigma_c (alpha RE SD)   0.4585</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  sigma_e (Residual SD)   0.1423</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --- RE Correlations ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                      Component Estimate</span>
@@ -384,17 +426,19 @@ the transformation).</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Fitting TMB mixed-effects demand model...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Equation: exponentiated</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 10, Observations: 160</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 (q0, alpha)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 170.76 (start set 1 of 3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 171.12 (start set 2 of 3)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   WARNING: Did not converge (code 1: false convergence (8))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> Hessian is not positive definite (`pdHess = FALSE`).</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Standard errors, p-values, and confidence intervals may be unreliable.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Run `check_demand_model()` for detailed diagnostics.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Consider simplifying the model (fewer random effects) or checking data</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   quality.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With covariates</span></span></span>
@@ -405,7 +449,7 @@ the transformation).</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Equation: exponential</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   equation='exponential': Dropped 5861 zero-consumption observations (12839 remaining).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Subjects: 1090, Observations: 12839</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 (q0, alpha)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Design matrices: X_q0 [12839 x 3], X_alpha [12839 x 3]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 3301.57 (start set 1 of 3)</span>
@@ -419,6 +463,15 @@ the transformation).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Male                  0.006<span style="text-decoration: underline;">26</span>        -<span style="color: #BB0000;">5.07</span>    0.047<span style="text-decoration: underline;">5</span>  5.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.006<span style="text-decoration: underline;">87</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Female                0.007<span style="text-decoration: underline;">39</span>        -<span style="color: #BB0000;">4.91</span>    0.045<span style="text-decoration: underline;">6</span>  6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.008<span style="text-decoration: underline;">08</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> gender=Would rather not say  0.002<span style="text-decoration: underline;">90</span>        -<span style="color: #BB0000;">5.84</span>    2.92    9.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>   0.890  </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Factor-expanded random slopes on a within-subject factor (Phase 2):</span></span></span>
+<span class="r-in"><span><span class="co"># each subject contributes a Q0 / alpha RE per condition level.</span></span></span>
+<span class="r-in"><span><span class="co"># Replace `cond` below with your in-subject factor.</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="va">fit4</span> <span class="op">&lt;-</span> <span class="fu">fit_demand_tmb</span><span class="op">(</span><span class="va">within_data</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
+<span class="r-in"><span>                       equation <span class="op">=</span> <span class="st">"zben"</span>, factors <span class="op">=</span> <span class="st">"cond"</span>,</span></span>
+<span class="r-in"><span>                       random_effects <span class="op">=</span> <span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/pdDiag.html" class="external-link">pdDiag</a></span><span class="op">(</span><span class="va">Q0</span> <span class="op">+</span> <span class="va">alpha</span> <span class="op">~</span> <span class="va">cond</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -48,21 +48,22 @@ will only be added to
 
 ## Quick Migration Reference
 
-| FitCurves()        | fit_demand_fixed() | Notes                                                                                |
-|--------------------|--------------------|--------------------------------------------------------------------------------------|
-| `dat`              | `data`             | Renamed for consistency                                                              |
-| `xcol`             | `x_var`            | Renamed for consistency                                                              |
-| `ycol`             | `y_var`            | Renamed for consistency                                                              |
-| `idcol`            | `id_var`           | Renamed for consistency                                                              |
-| `detailed = TRUE`  | Always detailed    | fit_demand_fixed always returns full results                                         |
-| `groupcol`         | Not supported      | Use factor models instead                                                            |
-| Returns data.frame | Returns S3 object  | Use [`tidy()`](https://generics.r-lib.org/reference/tidy.html) for data frame output |
+| FitCurves() | fit_demand_fixed() | Notes |
+|----|----|----|
+| `dat` | `data` | Renamed for consistency |
+| `xcol` | `x_var` | Renamed for consistency |
+| `ycol` | `y_var` | Renamed for consistency |
+| `idcol` | `id_var` | Renamed for consistency |
+| `detailed = TRUE` | Always detailed | fit_demand_fixed always returns full results |
+| `groupcol` | Not supported | Use factor models instead |
+| Returns data.frame | Returns S3 object | Use [`tidy()`](https://generics.r-lib.org/reference/tidy.html) for data frame output |
 
 ## Basic Migration
 
 ### Before (FitCurves)
 
 ``` r
+
 # Old approach
 results <- FitCurves(
   dat = apt,
@@ -80,6 +81,7 @@ head(results)
 ### After (fit_demand_fixed)
 
 ``` r
+
 # New approach
 fit <- fit_demand_fixed(
   data = apt,
@@ -114,6 +116,7 @@ print(fit)
 #### Before (FitCurves)
 
 ``` r
+
 # FitCurves returns a data frame directly
 results <- FitCurves(apt, "hs", k = 2)
 q0_values <- results$Q0d
@@ -123,6 +126,7 @@ alpha_values <- results$Alpha
 #### After (fit_demand_fixed)
 
 ``` r
+
 # Use tidy() for a tibble of coefficients
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 coefs <- tidy(fit)
@@ -175,6 +179,7 @@ head(fit$results)
 #### Before (FitCurves)
 
 ``` r
+
 # Manual calculation required
 results <- FitCurves(apt, "hs", k = 2)
 n_converged <- sum(!is.na(results$Alpha))
@@ -184,6 +189,7 @@ mean_r2 <- mean(results$R2, na.rm = TRUE)
 #### After (fit_demand_fixed)
 
 ``` r
+
 # Use glance() for model-level statistics
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 glance(fit)
@@ -240,6 +246,7 @@ summary(fit)
 ### Before (FitCurves)
 
 ``` r
+
 # Required detailed = TRUE and manual extraction
 results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 # Predictions stored in list element
@@ -249,6 +256,7 @@ predictions <- results$newdats  # List of data frames
 ### After (fit_demand_fixed)
 
 ``` r
+
 # Use predict() method
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 
@@ -272,6 +280,7 @@ head(preds)
 ### Before (FitCurves)
 
 ``` r
+
 # Used separate PlotCurves() function
 results <- FitCurves(apt, "hs", k = 2, detailed = TRUE)
 PlotCurves(results)
@@ -280,6 +289,7 @@ PlotCurves(results)
 ### After (fit_demand_fixed)
 
 ``` r
+
 # Use plot() method directly on the fit object
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 
@@ -303,6 +313,7 @@ helpers:
   [`augment()`](https://generics.r-lib.org/reference/augment.html))
 
 ``` r
+
 fit <- fit_demand_fixed(apt, equation = "hs", k = 2)
 
 augment(fit) |> head()
@@ -351,6 +362,7 @@ These wrap legacy helpers (e.g.,
 but return a standardized `beezdemand_systematicity` object.
 
 ``` r
+
 sys <- check_systematic_demand(apt)
 head(sys$results)
 ```
@@ -362,6 +374,7 @@ head(sys$results)
 Both functions support aggregation, with identical syntax:
 
 ``` r
+
 # Fit to mean data
 fit_mean <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Mean")
 tidy(fit_mean)
@@ -380,6 +393,7 @@ tidy(fit_mean)
 Both functions support log10 parameterization:
 
 ``` r
+
 # Fit in log10 space
 fit_log <- fit_demand_fixed(
   apt,
@@ -415,20 +429,20 @@ tidy(fit_log, report_space = "natural") |> head()
 
 ## Feature Comparison
 
-| Feature                                                                 | FitCurves()                    | fit_demand_fixed()             |
-|-------------------------------------------------------------------------|--------------------------------|--------------------------------|
-| Equations                                                               | hs, koff, linear               | hs, koff, linear               |
-| k options                                                               | numeric, “ind”, “fit”, “share” | numeric, “ind”, “fit”, “share” |
-| Aggregation                                                             | “Mean”, “Pooled”               | “Mean”, “Pooled”               |
-| Parameter space                                                         | natural, log10                 | natural, log10                 |
-| [`summary()`](https://rdrr.io/r/base/summary.html) method               | No                             | Yes                            |
-| [`tidy()`](https://generics.r-lib.org/reference/tidy.html) method       | No                             | Yes                            |
-| [`glance()`](https://generics.r-lib.org/reference/glance.html) method   | No                             | Yes                            |
-| [`predict()`](https://rdrr.io/r/stats/predict.html) method              | No                             | Yes                            |
-| [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method         | No                             | Yes                            |
-| [`coef()`](https://rdrr.io/r/stats/coef.html) method                    | No                             | Yes                            |
-| [`augment()`](https://generics.r-lib.org/reference/augment.html) method | No                             | Yes                            |
-| [`confint()`](https://rdrr.io/r/stats/confint.html) method              | No                             | Yes                            |
+| Feature | FitCurves() | fit_demand_fixed() |
+|----|----|----|
+| Equations | hs, koff, linear | hs, koff, linear |
+| k options | numeric, “ind”, “fit”, “share” | numeric, “ind”, “fit”, “share” |
+| Aggregation | “Mean”, “Pooled” | “Mean”, “Pooled” |
+| Parameter space | natural, log10 | natural, log10 |
+| [`summary()`](https://rdrr.io/r/base/summary.html) method | No | Yes |
+| [`tidy()`](https://generics.r-lib.org/reference/tidy.html) method | No | Yes |
+| [`glance()`](https://generics.r-lib.org/reference/glance.html) method | No | Yes |
+| [`predict()`](https://rdrr.io/r/stats/predict.html) method | No | Yes |
+| [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method | No | Yes |
+| [`coef()`](https://rdrr.io/r/stats/coef.html) method | No | Yes |
+| [`augment()`](https://generics.r-lib.org/reference/augment.html) method | No | Yes |
+| [`confint()`](https://rdrr.io/r/stats/confint.html) method | No | Yes |
 
 ## Suppressing Deprecation Warnings
 
@@ -438,6 +452,7 @@ without warnings (e.g., in legacy code or during a gradual migration),
 you can suppress the deprecation message:
 
 ``` r
+
 # Suppress deprecation warning temporarily
 rlang::with_options(
   lifecycle_verbosity = "quiet",
@@ -481,8 +496,9 @@ If you encounter issues during migration:
 ## Session Information
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.0 (2026-04-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -507,28 +523,28 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
-#>  [4] xfun_0.57           bslib_0.10.0        ggplot2_4.0.2      
+#>  [4] xfun_0.57           bslib_0.10.0        ggplot2_4.0.3      
 #>  [7] htmlwidgets_1.6.4   insight_1.5.0       lattice_0.22-9     
-#> [10] vctrs_0.7.3         tools_4.5.3         Rdpack_2.6.6       
+#> [10] vctrs_0.7.3         tools_4.6.0         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
-#> [16] Matrix_1.7-4        RColorBrewer_1.1-3  S7_0.2.1-1         
-#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.5.3     
+#> [16] Matrix_1.7-5        RColorBrewer_1.1-3  S7_0.2.2           
+#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.6.0     
 #> [22] farver_2.1.2        textshaping_1.0.5   minpack.lm_1.2-4   
 #> [25] nlstools_2.1-0      htmltools_0.5.9     sass_0.4.10        
 #> [28] yaml_2.3.12         pillar_1.11.1       pkgdown_2.2.0      
 #> [31] nloptr_2.2.1        jquerylib_0.1.4     tidyr_1.3.2        
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
-#> [37] boot_1.3-32         nlme_3.1-168        tidyselect_1.2.1   
+#> [37] boot_1.3-32         nlme_3.1-169        tidyselect_1.2.1   
 #> [40] digest_0.6.39       performance_0.16.0  mvtnorm_1.3-7      
-#> [43] purrr_1.2.2         splines_4.5.3       fastmap_1.2.0      
-#> [46] grid_4.5.3          cli_3.6.6           magrittr_2.0.5     
+#> [43] purrr_1.2.2         splines_4.6.0       fastmap_1.2.0      
+#> [46] grid_4.6.0          cli_3.6.6           magrittr_2.0.5     
 #> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.12       
 #> [52] withr_3.0.2         scales_1.4.0        backports_1.5.1    
 #> [55] estimability_1.5.1  rmarkdown_2.31      emmeans_2.0.3      
 #> [58] otel_0.2.0          lme4_2.0-1          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         
-#> [64] rbibutils_2.4.1     rlang_1.2.0         Rcpp_1.1.1-1       
-#> [67] xtable_1.8-8        glue_1.8.1          nlsr_2023.8.31     
+#> [64] rbibutils_2.4.1     rlang_1.2.0         Rcpp_1.1.1-1.1     
+#> [67] xtable_1.8-8        glue_1.8.1          nlsr_2026.4.29     
 #> [70] minqa_1.2.8         jsonlite_2.0.0      R6_2.6.1           
 #> [73] systemfonts_1.3.2   fs_2.1.0
 ```

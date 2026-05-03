@@ -66,14 +66,17 @@
 <span>  <span class="va">coefficients</span>,</span>
 <span>  <span class="va">u_hat</span>,</span>
 <span>  <span class="va">subject_levels</span>,</span>
-<span>  <span class="va">n_re</span>,</span>
+<span>  <span class="va">re_parsed</span>,</span>
 <span>  <span class="va">has_k</span>,</span>
 <span>  <span class="va">equation</span>,</span>
 <span>  <span class="va">price</span>,</span>
 <span>  <span class="va">subject_id</span>,</span>
 <span>  k_fixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  X_q0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  X_alpha <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  X_alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Z_q0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Z_alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  validate_subject_pars <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,15 +89,16 @@
 
 
 <dt id="arg-u-hat">u_hat<a class="anchor" aria-label="anchor" href="#arg-u-hat"></a></dt>
-<dd><p>Random effects matrix.</p></dd>
+<dd><p>Random effects matrix; columns ordered
+[block1_q0, block1_alpha, block2_q0, ...].</p></dd>
 
 
 <dt id="arg-subject-levels">subject_levels<a class="anchor" aria-label="anchor" href="#arg-subject-levels"></a></dt>
 <dd><p>Character vector of subject IDs.</p></dd>
 
 
-<dt id="arg-n-re">n_re<a class="anchor" aria-label="anchor" href="#arg-n-re"></a></dt>
-<dd><p>Integer.</p></dd>
+<dt id="arg-re-parsed">re_parsed<a class="anchor" aria-label="anchor" href="#arg-re-parsed"></a></dt>
+<dd><p>Canonical RE block structure.</p></dd>
 
 
 <dt id="arg-has-k">has_k<a class="anchor" aria-label="anchor" href="#arg-has-k"></a></dt>
@@ -112,10 +116,34 @@
 <dt id="arg-subject-id">subject_id<a class="anchor" aria-label="anchor" href="#arg-subject-id"></a></dt>
 <dd><p>Integer vector of 0-indexed subject IDs.</p></dd>
 
+
+<dt id="arg-k-fixed">k_fixed<a class="anchor" aria-label="anchor" href="#arg-k-fixed"></a></dt>
+<dd><p>Numeric or NULL.</p></dd>
+
+
+<dt id="arg-x-q-x-alpha">X_q0, X_alpha<a class="anchor" aria-label="anchor" href="#arg-x-q-x-alpha"></a></dt>
+<dd><p>Fixed-effect design matrices.</p></dd>
+
+
+<dt id="arg-z-q-z-alpha">Z_q0, Z_alpha<a class="anchor" aria-label="anchor" href="#arg-z-q-z-alpha"></a></dt>
+<dd><p>Random-effect design matrices.</p></dd>
+
+
+<dt id="arg-validate-subject-pars">validate_subject_pars<a class="anchor" aria-label="anchor" href="#arg-validate-subject-pars"></a></dt>
+<dd><p>Logical (default <code>TRUE</code>); see Phase 0 NA fallback.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Data frame of subject-specific parameters.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+    <p>For factor-expanded RE specs (e.g. <code>pdDiag(Q0+alpha~condition)</code>),
+subject-level Q0 / alpha here use the first observed row of <code>Z_q0</code> /
+<code>Z_alpha</code> per subject – which encodes the subject's first observed
+condition only. Per-(subject, condition) rows are planned for Phase 5;
+meanwhile use <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> for cell-level values.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

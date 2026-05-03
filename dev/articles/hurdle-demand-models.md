@@ -15,12 +15,12 @@ This approach is particularly useful when:
 
 ### When to Use Hurdle Models vs. Standard Models
 
-| Scenario                                                      | Recommended Approach                                                                                                                                                                             |
-|---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Few zeros, zeros are measurement artifacts                    | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) or [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) |
-| Many zeros, zeros represent true non-consumption              | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)                                                                                                 |
-| Need to understand factors affecting whether someone consumes | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)                                                                                                 |
-| Need individual-level estimates of “quitting price”           | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)                                                                                                 |
+| Scenario | Recommended Approach |
+|----|----|
+| Few zeros, zeros are measurement artifacts | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) or [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) |
+| Many zeros, zeros represent true non-consumption | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
+| Need to understand factors affecting whether someone consumes | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
+| Need individual-level estimates of “quitting price” | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
 
 ## Model Specification
 
@@ -74,6 +74,7 @@ Your data should be in **long format** with columns for:
 - Consumption (including zeros)
 
 ``` r
+
 library(beezdemand)
 
 # Example data structure
@@ -96,11 +97,12 @@ knitr::kable(
 |  19 | 5.0 |   7 |
 |  19 | 6.0 |   6 |
 
-Example APT data structure (first 10 rows)
+Example APT data structure (first 10 rows) {.table}
 
 ### Basic Model Fitting
 
 ``` r
+
 # Fit 2-RE model (simpler, faster)
 fit2 <- fit_demand_hurdle(
     data = apt,
@@ -113,6 +115,7 @@ fit2 <- fit_demand_hurdle(
 ```
 
 ``` r
+
 # Fit 3-RE model (more flexible)
 fit3 <- fit_demand_hurdle(
     data = apt,
@@ -127,6 +130,7 @@ fit3 <- fit_demand_hurdle(
 ### Interpreting Output
 
 ``` r
+
 # View summary
 summary(fit2)
 #> 
@@ -253,6 +257,7 @@ Use
 and the plotting helpers for quick post-fit checks.
 
 ``` r
+
 check_demand_model(fit2)
 #> 
 #> Model Diagnostics
@@ -287,28 +292,28 @@ plot_qq(fit2)
 
 ### Fixed Effects
 
-| Parameter | Interpretation                                                    |
-|-----------|-------------------------------------------------------------------|
-| `beta0`   | Part I intercept: baseline log-odds of zero consumption           |
-| `beta1`   | Part I slope: change in log-odds per unit increase in log(price)  |
-| `logQ0`   | Log of intensity parameter (population average)                   |
-| `k`       | Scaling parameter for demand decay                                |
-| `alpha`   | Elasticity parameter (population average for 2-RE, mean for 3-RE) |
+| Parameter | Interpretation |
+|----|----|
+| `beta0` | Part I intercept: baseline log-odds of zero consumption |
+| `beta1` | Part I slope: change in log-odds per unit increase in log(price) |
+| `logQ0` | Log of intensity parameter (population average) |
+| `k` | Scaling parameter for demand decay |
+| `alpha` | Elasticity parameter (population average for 2-RE, mean for 3-RE) |
 
 ### Subject-Specific Parameters
 
 The `subject_pars` data frame contains:
 
-| Parameter    | Description                                                            |
-|--------------|------------------------------------------------------------------------|
-| `a_i`        | Random effect for Part I (zeros probability)                           |
-| `b_i`        | Random effect for Part II (intensity)                                  |
-| `c_i`        | Random effect for alpha (3-RE model only)                              |
-| `Q0`         | Individual intensity: \exp(\log Q_0 + b_i)                             |
-| `alpha`      | Individual elasticity: \alpha + c_i (or just \alpha for 2-RE)          |
+| Parameter | Description |
+|----|----|
+| `a_i` | Random effect for Part I (zeros probability) |
+| `b_i` | Random effect for Part II (intensity) |
+| `c_i` | Random effect for alpha (3-RE model only) |
+| `Q0` | Individual intensity: \exp(\log Q_0 + b_i) |
+| `alpha` | Individual elasticity: \alpha + c_i (or just \alpha for 2-RE) |
 | `breakpoint` | Price where P(zero) = 0.5: \exp(-(\beta_0 + a_i) / \beta_1) - \epsilon |
-| `Pmax`       | Price at maximum expenditure                                           |
-| `Omax`       | Maximum expenditure                                                    |
+| `Pmax` | Price at maximum expenditure |
+| `Omax` | Maximum expenditure |
 
 ## Model Selection: 2-RE vs 3-RE
 
@@ -322,6 +327,7 @@ The `subject_pars` data frame contains:
 ### Likelihood Ratio Test
 
 ``` r
+
 # Compare nested models
 compare_hurdle_models(fit3, fit2)
 
@@ -345,6 +351,7 @@ A significant p-value suggests the 3-RE model provides a better fit.
 ## Visualization
 
 ``` r
+
 # Population demand curve
 plot(fit2, type = "demand")
 ```
@@ -355,6 +362,7 @@ model.](hurdle-demand-models_files/figure-html/plotting-demand-1.png)
 Population demand curve from 2-RE hurdle model.
 
 ``` r
+
 # Probability of zero consumption
 plot(fit2, type = "probability")
 ```
@@ -365,6 +373,7 @@ price.](hurdle-demand-models_files/figure-html/plotting-probability-1.png)
 Probability of zero consumption as a function of price.
 
 ``` r
+
 # Distribution of individual parameters
 plot(fit2, type = "parameters")
 plot(fit2, type = "parameters", parameters = c("Q0", "alpha", "Pmax"))
@@ -385,6 +394,7 @@ The
 function generates data from the hurdle model:
 
 ``` r
+
 # Simulate with default parameters
 sim_data <- simulate_hurdle_data(
     n_subjects = 100,
@@ -419,6 +429,7 @@ run during vignette building. The example below shows typical usage and
 expected output format.
 
 ``` r
+
 # Run Monte Carlo study
 mc_results <- run_hurdle_monte_carlo(
     n_sim = 100, # Number of simulations
@@ -459,6 +470,7 @@ print_mc_summary(mc_results)
 ### Combining with Other Analyses
 
 ``` r
+
 # Fit hurdle model
 hurdle_fit <- fit_demand_hurdle(data,
     y_var = "y", x_var = "x", id_var = "id",
@@ -477,6 +489,7 @@ cor(hurdle_pars$breakpoint, subject_characteristics$dependence_score)
 ### Exporting Results
 
 ``` r
+
 # Subject parameters
 write.csv(get_subject_pars(hurdle_fit), "hurdle_subject_parameters.csv")
 
@@ -499,6 +512,7 @@ which provides:
 ### Control Parameters
 
 ``` r
+
 fit <- fit_demand_hurdle(
     data,
     y_var = "y",
@@ -519,6 +533,7 @@ fit <- fit_demand_hurdle(
 For difficult optimization problems:
 
 ``` r
+
 custom_starts <- list(
     beta0 = -3.0,
     beta1 = 1.5,

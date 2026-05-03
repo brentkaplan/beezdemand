@@ -38,6 +38,7 @@ The exponential model of demand (Hursh & Silberberg, 2008):
 x} - 1)
 
 ``` r
+
 fit_hs <- fit_demand_fixed(apt, equation = "hs", k = 2)
 fit_hs
 #> 
@@ -61,6 +62,7 @@ The exponentiated model (Koffarnus et al., 2015):
 Q = Q_0 \cdot 10^{k \cdot (e^{-\alpha \cdot Q_0 \cdot x} - 1)}
 
 ``` r
+
 fit_koff <- fit_demand_fixed(apt, equation = "koff", k = 2)
 fit_koff
 #> 
@@ -85,6 +87,7 @@ require a scaling constant k:
 Q = Q_0 \cdot e^{-\alpha \cdot Q_0 \cdot x}
 
 ``` r
+
 fit_simplified <- fit_demand_fixed(apt, equation = "simplified")
 fit_simplified
 #> 
@@ -106,14 +109,15 @@ fit_simplified
 The scaling constant k controls the range of the demand function. For
 the `"hs"` and `"koff"` equations, `k` can be specified in several ways:
 
-| `k` value           | Behavior                                                            |
-|---------------------|---------------------------------------------------------------------|
-| Numeric (e.g., `2`) | Fixed constant for all subjects (default)                           |
-| `"ind"`             | Individual k per subject, computed from each subject’s data range   |
-| `"share"`           | Single shared k estimated across all subjects via global regression |
-| `"fit"`             | k is a free parameter estimated jointly with Q_0 and \alpha         |
+| `k` value | Behavior |
+|----|----|
+| Numeric (e.g., `2`) | Fixed constant for all subjects (default) |
+| `"ind"` | Individual k per subject, computed from each subject’s data range |
+| `"share"` | Single shared k estimated across all subjects via global regression |
+| `"fit"` | k is a free parameter estimated jointly with Q_0 and \alpha |
 
 ``` r
+
 ## Fixed k (default)
 fit_demand_fixed(apt, equation = "hs", k = 2)
 
@@ -132,6 +136,7 @@ the natural scale (`"natural"`, the default) or log10 scale (`"log10"`).
 The log10 scale can improve convergence for some datasets:
 
 ``` r
+
 fit_demand_fixed(apt, equation = "hs", k = 2, param_space = "log10")
 ```
 
@@ -147,6 +152,7 @@ programmatic access to results.
 ### tidy(): Per-Subject Parameter Estimates
 
 ``` r
+
 tidy(fit_hs)
 #> # A tibble: 40 × 10
 #>    id    term  estimate std.error statistic p.value component estimate_scale
@@ -168,6 +174,7 @@ tidy(fit_hs)
 ### glance(): Model-Level Summary
 
 ``` r
+
 glance(fit_hs)
 #> # A tibble: 1 × 12
 #>   model_class      backend equation k_spec     nobs n_subjects n_success n_fail
@@ -179,6 +186,7 @@ glance(fit_hs)
 ### augment(): Fitted Values and Residuals
 
 ``` r
+
 augment(fit_hs)
 #> # A tibble: 146 × 6
 #>    id        x     y     k .fitted  .resid
@@ -199,6 +207,7 @@ augment(fit_hs)
 ### confint(): Confidence Intervals
 
 ``` r
+
 confint(fit_hs)
 #> # A tibble: 40 × 6
 #>    id    term  estimate conf.low conf.high level
@@ -222,6 +231,7 @@ The [`summary()`](https://rdrr.io/r/base/summary.html) method provides a
 formatted overview including parameter distributions across subjects:
 
 ``` r
+
 summary(fit_hs)
 #> 
 #> Fixed-Effect Demand Model Summary
@@ -280,6 +290,7 @@ errors are computed via the delta method. `alpha_star` requires k \cdot
 \ln(b) \> 1; otherwise `NA` is returned.
 
 ``` r
+
 tidy(fit_hs) |>
   filter(term == "alpha_star") |>
   select(id, term, estimate, std.error)
@@ -307,6 +318,7 @@ displays fitted demand curves with observed data points. The x-axis
 defaults to a log10 scale:
 
 ``` r
+
 plot(fit_hs)
 ```
 
@@ -317,6 +329,7 @@ plot(fit_hs)
 Use `facet = TRUE` to show each subject in a separate panel:
 
 ``` r
+
 plot(fit_hs, facet = TRUE)
 ```
 
@@ -327,6 +340,7 @@ plot(fit_hs, facet = TRUE)
 Control the x- and y-axis transformations with `x_trans` and `y_trans`:
 
 ``` r
+
 plot(fit_hs, x_trans = "pseudo_log", y_trans = "pseudo_log")
 ```
 
@@ -340,6 +354,7 @@ plot(fit_hs, x_trans = "pseudo_log", y_trans = "pseudo_log")
 summarizes convergence, residual properties, and potential issues:
 
 ``` r
+
 check_demand_model(fit_hs)
 #> 
 #> Model Diagnostics
@@ -366,6 +381,7 @@ check_demand_model(fit_hs)
 produces diagnostic plots. Use `$fitted` for a residuals-vs-fitted plot:
 
 ``` r
+
 plot_residuals(fit_hs)$fitted
 #> NULL
 ```
@@ -378,6 +394,7 @@ plot_residuals(fit_hs)$fitted
 returns fitted values at the observed prices:
 
 ``` r
+
 predict(fit_hs)
 #> # A tibble: 160 × 3
 #>        x id    .fitted
@@ -400,6 +417,7 @@ predict(fit_hs)
 Supply `newdata` to predict at specific prices:
 
 ``` r
+
 new_prices <- data.frame(x = c(0, 0.5, 1, 2, 5, 10, 20))
 predict(fit_hs, newdata = new_prices)
 #> # A tibble: 70 × 3
@@ -429,6 +447,7 @@ to aggregated data.
 subjects, then fits a single curve to those means:
 
 ``` r
+
 fit_mean <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Mean")
 fit_mean
 #> 
@@ -447,6 +466,7 @@ fit_mean
 ```
 
 ``` r
+
 plot(fit_mean)
 ```
 
@@ -459,6 +479,7 @@ retaining error around each observation but ignoring within-subject
 clustering:
 
 ``` r
+
 fit_pooled <- fit_demand_fixed(apt, equation = "hs", k = 2, agg = "Pooled")
 fit_pooled
 #> 
@@ -477,6 +498,7 @@ fit_pooled
 ```
 
 ``` r
+
 plot(fit_pooled)
 ```
 
@@ -494,12 +516,14 @@ We use the `apt_full` dataset, which includes demographic columns like
 `gender`:
 
 ``` r
+
 data("apt_full", package = "beezdemand", envir = environment())
 ```
 
 ### Fitting by Group
 
 ``` r
+
 fit_by_gender <- fit_demand_fixed(
   apt_full, equation = "hs", k = 2, by = "gender"
 )
@@ -549,8 +573,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -615,8 +637,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -687,8 +709,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -785,6 +807,7 @@ The result is a `beezdemand_fixed_grouped` object containing one child
 grouping column(s) automatically:
 
 ``` r
+
 tidy(fit_by_gender) |> head(10)
 #> # A tibble: 10 × 11
 #>    gender id    term  estimate std.error statistic p.value component
@@ -804,6 +827,7 @@ tidy(fit_by_gender) |> head(10)
 ```
 
 ``` r
+
 glance(fit_by_gender)
 #> # A tibble: 3 × 13
 #>   gender   model_class backend equation k_spec  nobs n_subjects n_success n_fail
@@ -820,6 +844,7 @@ glance(fit_by_gender)
 per-group panels:
 
 ``` r
+
 plot(fit_by_gender)
 ```
 
@@ -833,6 +858,7 @@ and
 [`get_descriptive_summary()`](https://brentkaplan.github.io/beezdemand/reference/get_descriptive_summary.md):
 
 ``` r
+
 sys <- check_systematic_demand(apt_full, by = "gender")
 sys
 #> 
@@ -847,6 +873,7 @@ sys
 ```
 
 ``` r
+
 desc <- get_descriptive_summary(apt_full, by = "gender")
 plot(desc)
 ```

@@ -9,7 +9,6 @@ Multi-Start TMB Optimization
   tmb_data,
   start_values,
   map,
-  n_re,
   tmb_control,
   user_specified,
   verbose,
@@ -30,10 +29,6 @@ Multi-Start TMB Optimization
 - map:
 
   TMB map list.
-
-- n_re:
-
-  Integer.
 
 - tmb_control:
 

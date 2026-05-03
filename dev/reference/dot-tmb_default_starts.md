@@ -5,7 +5,14 @@ Generate Default Starting Values
 ## Usage
 
 ``` r
-.tmb_default_starts(prepared, design, equation, n_re, has_k, k_fixed = NULL)
+.tmb_default_starts(
+  prepared,
+  design,
+  equation,
+  re_parsed,
+  has_k,
+  k_fixed = NULL
+)
 ```
 
 ## Arguments
@@ -22,9 +29,9 @@ Generate Default Starting Values
 
   Character string.
 
-- n_re:
+- re_parsed:
 
-  Integer.
+  Canonical RE block structure.
 
 - has_k:
 
@@ -36,4 +43,7 @@ Generate Default Starting Values
 
 ## Value
 
-Named list of starting values.
+Named list of starting values shaped for the Phase-2 template:
+`logsigma` is a vector of length `sum(block dims)`, `rho_raw` is a
+vector of length `sum(over pdSymm: d*(d-1)/2)`, and `u` has columns
+ordered \[block1_q0, block1_alpha, block2_q0, ...\].

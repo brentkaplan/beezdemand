@@ -56,6 +56,48 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="beezdemand-040-development">beezdemand 0.4.0 (development)<a class="anchor" aria-label="anchor" href="#beezdemand-040-development"></a></h2>
+<p>This development release opens TICKET-011 (factor-expanded random effects for <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> and <code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code>) and fixes three pre-existing TMB post-fit correctness bugs surfaced while scoping the ticket.</p>
+<div class="section level3">
+<h3 id="tmb-post-fit-fixes-ticket-phase-0-4-0">TMB post-fit fixes (TICKET-011 Phase 0)<a class="anchor" aria-label="anchor" href="#tmb-post-fit-fixes-ticket-phase-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> now validates that every column of the fixed-effect design matrix is constant within each <code>id</code>. When a factor or continuous covariate varies within subject, <code>subject_pars$Q0</code>, <code>$alpha</code>, <code>$Pmax</code>, and <code>$Omax</code> are set to <code>NA_real_</code> for affected subjects and a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn()</a></code> names the offending columns. Previously the function silently returned row-order-dependent values. New <code>validate_subject_pars = TRUE</code> argument provides an escape hatch for users who have reasoned about the behavior. Factor-expanded random slopes (the proper replacement for the NA fallback) land in Phase 2/3.</li>
+<li>
+<code><a href="../reference/get_demand_param_emms.html">get_demand_param_emms()</a></code> on a <code>beezdemand_tmb</code> fit now honors <code>continuous_covariates</code> even when no factors are present. Previously, the early-return for factor-less models ignored the <code>at</code> argument and always returned the intercept.</li>
+<li>
+<code><a href="../reference/get_demand_param_emms.html">get_demand_param_emms()</a></code> on a <code>beezdemand_tmb</code> fit now raises a clear error when <code>factors_in_emm</code> drops any fitted factor. Previously, the shorter reference row was silently recycled against the full coefficient vector, either producing wrong numbers or crashing downstream with a generic “non-conformable arguments” error. Proper marginalization over omitted factors lands in TICKET-011 Phase 5.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tmb-random-effects-api-ticket-phase-0-4-0">TMB random-effects API (TICKET-011 Phase 1)<a class="anchor" aria-label="anchor" href="#tmb-random-effects-api-ticket-phase-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> now accepts formula-based <code>random_effects</code> arguments. The default signature is <code>random_effects = Q0 + alpha ~ 1</code>, equivalent to the previous <code>c("q0", "alpha")</code> default. Single-parameter <code>Q0 ~ 1</code>, <code>pdMat</code> objects, lists of <code>pdMat</code>, and <code><a href="https://rdrr.io/pkg/nlme/man/pdBlocked.html" class="external-link">nlme::pdBlocked</a></code> are all parsed and attached to the fit object’s <code>$param_info$random_effects_parsed</code> as a canonical block representation.</li>
+<li>
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> gains <code>covariance_structure = c("pdSymm", "pdDiag")</code> matching the <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code> argument of the same name.</li>
+<li>Character-vector inputs to <code>random_effects</code> (e.g. <code>c("q0", "alpha")</code>) are soft-deprecated via <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_soft()</a></code> and internally translated to the equivalent formula. A hard deprecation follows in 0.5.0.</li>
+<li>Formula shapes richer than intercept-only (e.g. <code>Q0 + alpha ~ condition</code>, <code>pdBlocked(list(...))</code>) are accepted by the parser but currently error with a clear “Phase 2 not yet shipped” message. Template generalization to a Z-matrix-driven covariance lands in subsequent 0.4.0 patches.</li>
+<li>New internal helpers in <code>R/random-effects-utils.R</code> (<code>.classify_re_input</code>, <code>.normalize_re_input</code>, <code>.validate_re_input</code>, <code>.re_is_phase1_fittable</code>, <code>.deprecate_character_re</code>, <code>.re_shape_summary</code>, <code>.re_parsed_to_character</code>) factor out the formula/pdMat parsing so both <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code> and <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> consume the same canonical representation.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="additional-tmb-post-fit-fixes-ticket-phase-0-4-0">Additional TMB post-fit fixes (TICKET-011 Phase 0.4-0.5)<a class="anchor" aria-label="anchor" href="#additional-tmb-post-fit-fixes-ticket-phase-0-4-0"></a></h3>
+<p>Adversarial review surfaced two more silent wrong-answer paths in the TMB post-fit layer; both are sister bugs to Phase 0.2 / 0.3 fixes and land here as the foundation for the Phase 2 factor-RE work.</p>
+<ul><li>
+<code><a href="../reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> on a <code>beezdemand_tmb</code> fit now consumes the same conditioned reference grid as <code><a href="../reference/get_demand_param_emms.html">get_demand_param_emms()</a></code>. New internal helper <code><a href="../reference/dot-tmb_build_emm_ref_grid.html">.tmb_build_emm_ref_grid()</a></code> in <code>R/tmb-methods.R</code> ensures both functions honor <code>at</code> (factor-level filters AND continuous-covariate value overrides) and <code>factors_in_emm</code>. Before this fix the wrapper forwarded <code>...</code> to <code>emms</code> but rebuilt its own contrast grid from the unfiltered training data, producing off-grid contrasts and <code>"NA"</code> labels when <code>at</code> filtered factor levels.</li>
+<li>
+<code><a href="../reference/calc_group_metrics.html">calc_group_metrics()</a></code> on a <code>beezdemand_tmb</code> fit now warns and returns a <code>conditioned_on</code> field when continuous covariates are present. The numeric output is unchanged (intercept-only <code>Q0</code> / <code>alpha</code>, i.e. covariates held at 0) but the warning matches the convention from <code>predict(type = "demand")</code> so users cannot silently misread reference-intercept metrics as population means. <code><a href="../reference/summary.beezdemand_tmb.html">summary.beezdemand_tmb()</a></code> propagates the warning through the standard summary path. Phase 5 will replace warn-and-label with explicit conditioning via the <code><a href="../reference/dot-tmb_build_emm_ref_grid.html">.tmb_build_emm_ref_grid()</a></code> helper.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="factor-expanded-tmb-random-effects-ticket-phase-0-4-0">Factor-expanded TMB random effects (TICKET-011 Phase 2)<a class="anchor" aria-label="anchor" href="#factor-expanded-tmb-random-effects-ticket-phase-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> now fits formula-based random effects with factor-expanded slopes (e.g. <code>pdDiag(Q0 + alpha ~ condition)</code> or <code>pdSymm(Q0 + alpha ~ condition)</code>). Single-block pdDiag and pdSymm with arbitrary RHS terms are accepted; multi-block <code>pdBlocked</code> / <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> of pdMats remains gated until Phase 3.</li>
+<li>
+<code>src/MixedDemand.h</code> rewritten with a block-aware DATA interface (Z_q0, Z_alpha, block-structure metadata) and a generalized per-block Cholesky loop. pdSymm blocks of size &gt; 2 use the Lewandowski-Kurowicka-Joe Cholesky construction; the d == 2 case reduces exactly to the previous <code>tanh(rho_bc_raw)</code> parameterization, so existing intercept-only fits produce bit-identical loglik / coefficients (verified to 1e-10 on <code>apt</code>).</li>
+<li>New internal helpers <code><a href="../reference/dot-tmb_build_z_matrices.html">.tmb_build_z_matrices()</a></code> and <code><a href="../reference/dot-tmb_build_block_map.html">.tmb_build_block_map()</a></code> in <code>R/tmb-demand.R</code> consume the canonical block representation and emit the design matrices and metadata the template needs.</li>
+<li>
+<code><a href="../reference/dot-tmb_compute_subject_pars.html">.tmb_compute_subject_pars()</a></code> generalized into a per-block reconstruction; subject-level <code>Q0</code> / <code>alpha</code> for factor-expanded fits use the first observed row of <code>X</code> and <code>Z</code> per subject (Phase 2 deferral; per-(subject, condition) rows planned for Phase 5).</li>
+<li>New simulator <code><a href="../reference/dot-simulate_within_subject_demand.html">.simulate_within_subject_demand()</a></code> and parity tests confirm TMB Laplace approximation agrees with NLME’s iterative algorithm to within ~1% on the loglik across all four target specs.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="beezdemand-030">beezdemand 0.3.0<a class="anchor" aria-label="anchor" href="#beezdemand-030"></a></h2>
 <p>This release ships the TMB mixed-effects modeling tier (<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code>) and clears the outstanding ticket queue against the <code>feat/tmb-mixed-effects</code> branch. See the “TMB tier” section under New Features for orientation.</p>
 <div class="section level3">
@@ -93,6 +135,7 @@
 <li><p>New cross-price S3 methods (TICKET-005): <code>print</code>, <code>augment</code>, <code>confint</code> (lm + lmer), and <code>nobs</code> for <code>cp_model_nls</code>, <code>cp_model_lm</code>, and <code>cp_model_lmer</code>. Augment for lmer additionally includes a <code>.fixed</code> column (population-level prediction with random effects = 0). All methods handle a NULL underlying model gracefully.</p></li>
 <li><p>Linearized marginal NLL surface for <code><a href="../reference/plot_loss_surface.html">plot_loss_surface()</a></code> on NLME models (commit <code>2bedd29</code>).</p></li>
 <li><p>Visualization helpers added to TMB and NLME vignettes (commit <code>75a202a</code>).</p></li>
+<li><p><code><a href="../reference/get_demand_param_emms.html">get_demand_param_emms.beezdemand_nlme()</a></code> gains a <code>param</code> argument (<code>"both"</code>, <code>"Q0"</code>, <code>"alpha"</code>) for API parity with the <code>beezdemand_tmb</code> method (TICKET-012). Default <code>"both"</code> preserves the historical return shape; <code>"Q0"</code> and <code>"alpha"</code> narrow the output to a single parameter’s columns for easier pivoting and plotting.</p></li>
 </ul></div>
 </div>
 <div class="section level3">

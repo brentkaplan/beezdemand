@@ -83,6 +83,7 @@ natural, back-transformed scale. Optionally includes Essential Value (EV).</p>
 <span>  at <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ci_level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  include_ev <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"Q0"</span>, <span class="st">"alpha"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -117,6 +118,17 @@ Defaults to all factors present in the <code>fit_obj</code>.</p></dd>
 derived from alpha, along with its confidence interval (calculated by
 back-transforming the CI of alpha_param_log10). Default <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-param">param<a class="anchor" aria-label="anchor" href="#arg-param"></a></dt>
+<dd><p>Character, one of <code>"both"</code> (default), <code>"Q0"</code>, or <code>"alpha"</code>.
+Controls which demand parameter's EMM columns are returned. <code>"both"</code>
+preserves the historical four-column-block structure (Q0 and alpha
+together). <code>"Q0"</code> returns only Q0 columns (and drops EV, since EV is a
+function of alpha); a warning is emitted if <code>include_ev = TRUE</code> is
+requested alongside <code>param = "Q0"</code>. <code>"alpha"</code> returns only alpha columns
+plus the EV block when <code>include_ev = TRUE</code>. Mirrors the <code>param</code> argument
+on the <code>beezdemand_tmb</code> method.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -135,7 +147,10 @@ with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.
 <dt>EV, LCL_EV, UCL_EV</dt>
 <dd><p>(If <code>include_ev=TRUE</code>) Essential Value and its CI.</p></dd>
 
-</dl></div>
+</dl><p>When <code>param = "Q0"</code> or <code>param = "alpha"</code>, only the columns associated with
+the requested parameter (plus factor columns and, for <code>"alpha"</code>, the EV
+block) are returned.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -165,6 +180,18 @@ with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   alpha_param_log10 &lt;dbl&gt;, LCL_alpha_param_log10 &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   UCL_alpha_param_log10 &lt;dbl&gt;, alpha_natural &lt;dbl&gt;, LCL_alpha_natural &lt;dbl&gt;,</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   UCL_alpha_natural &lt;dbl&gt;</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Request only Q0 columns — convenient for pivoting and plotting</span></span></span>
+<span class="r-in"><span><span class="fu">get_demand_param_emms</span><span class="op">(</span><span class="va">fit</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 3e-05           2.58               2.35               2.80      377. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 1e-04           2.38               2.23               2.52      238. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 3e-04           2.21               2.10               2.32      163. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 0.001           1.91               1.78               2.03       80.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 0.003           1.90               1.73               2.07       79.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: LCL_Q0_natural &lt;dbl&gt;, UCL_Q0_natural &lt;dbl&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

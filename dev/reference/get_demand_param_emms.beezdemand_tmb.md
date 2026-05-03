@@ -30,12 +30,18 @@ get_demand_param_emms(
 
 - factors_in_emm:
 
-  Character vector of factors to marginalize over. If NULL, uses all
-  factors in the model.
+  Character vector of factors to include in the EMM reference grid. Must
+  include *every* factor the model was fit on; any subset that drops a
+  fitted factor is rejected with a clear error. Proper marginalization
+  over omitted factors is planned for TICKET-011 Phase 5. If `NULL`
+  (default), all fitted factors are used.
 
 - at:
 
-  Named list specifying factor levels for conditional EMMs.
+  Named list specifying factor levels and continuous-covariate values
+  for conditional EMMs. For continuous covariates, a single numeric
+  value per covariate; multiple values produce a warning and only the
+  first is used.
 
 - ci_level:
 
@@ -48,6 +54,13 @@ get_demand_param_emms(
 ## Value
 
 A tibble with columns: level, estimate, std.error, conf.low, conf.high.
+
+## Note
+
+TMB EMMs require `factors_in_emm` to include every fitted factor. Use
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+(NLME backend) if you need to marginalize over a subset of factors while
+this gap is closed (see TICKET-011 Phase 5).
 
 ## Examples
 

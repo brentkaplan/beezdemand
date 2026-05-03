@@ -93,12 +93,18 @@ from <code><a href="https://rdrr.io/pkg/TMB/man/sdreport.html" class="external-l
 
 
 <dt id="arg-factors-in-emm">factors_in_emm<a class="anchor" aria-label="anchor" href="#arg-factors-in-emm"></a></dt>
-<dd><p>Character vector of factors to marginalize over.
-If NULL, uses all factors in the model.</p></dd>
+<dd><p>Character vector of factors to include in the EMM
+reference grid. Must include <em>every</em> factor the model was fit on; any
+subset that drops a fitted factor is rejected with a clear error.
+Proper marginalization over omitted factors is planned for TICKET-011
+Phase 5. If <code>NULL</code> (default), all fitted factors are used.</p></dd>
 
 
 <dt id="arg-at">at<a class="anchor" aria-label="anchor" href="#arg-at"></a></dt>
-<dd><p>Named list specifying factor levels for conditional EMMs.</p></dd>
+<dd><p>Named list specifying factor levels and continuous-covariate
+values for conditional EMMs. For continuous covariates, a single
+numeric value per covariate; multiple values produce a warning and
+only the first is used.</p></dd>
 
 
 <dt id="arg-ci-level">ci_level<a class="anchor" aria-label="anchor" href="#arg-ci-level"></a></dt>
@@ -112,6 +118,12 @@ If NULL, uses all factors in the model.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with columns: level, estimate, std.error, conf.low, conf.high.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+    <p>TMB EMMs require <code>factors_in_emm</code> to include every fitted factor.
+Use <code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> (NLME backend) if you need to marginalize over
+a subset of factors while this gap is closed (see TICKET-011 Phase 5).</p>
     </div>
 
     <div class="section level2">

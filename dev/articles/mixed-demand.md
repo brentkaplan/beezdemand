@@ -49,6 +49,7 @@ The ko dataset should contain:
 - Factor columns like drug and dose.
 
 ``` r
+
 quick_nlme_control <- nlme::nlmeControl(
   msMaxIter = 100,
   niterEM = 20,
@@ -70,6 +71,7 @@ The core function for fitting nonlinear mixed-effects demand models is
 ##### LL4 transformation with ZBEn
 
 ``` r
+
 apt_ll4 <- apt |>
   mutate(y_ll4 = ll4(y))
 
@@ -94,7 +96,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55d6e16f0580>
+#> <environment: 0x561cce814568>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -130,6 +132,7 @@ print(fit_apt_zben)
 ```
 
 ``` r
+
 plot(
   fit_apt_zben,
   inv_fun = ll4_inv,
@@ -147,6 +150,7 @@ plot(
 ##### Simplified Exponential
 
 ``` r
+
 fit_apt_simplified <- fit_demand_mixed(
   data = apt_ll4,
   y_var = "y",
@@ -168,7 +172,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x55d6f1f95ec0>
+#> <environment: 0x561cda9d7e48>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -204,6 +208,7 @@ print(fit_apt_simplified)
 ```
 
 ``` r
+
 plot(
   fit_apt_simplified,
   x_trans = "pseudo_log",
@@ -224,6 +229,7 @@ also supports the Koffarnus et al. (2015) equation via
 will be computed from the data range (you can also specify it directly).
 
 ``` r
+
 fit_apt_exponentiated <- fit_demand_mixed(
   data = apt,
   y_var = "y",
@@ -246,7 +252,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x55d6ef29a860>
+#> <environment: 0x561cd6cbbda0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -291,6 +297,7 @@ standardize programmatic access to estimates, model summaries, and
 residuals.
 
 ``` r
+
 glance(fit_apt_zben)
 #> # A tibble: 1 × 10
 #>   model_class     backend equation_form  nobs n_subjects converged logLik   AIC
@@ -326,6 +333,7 @@ Use
 and the residual plotting helpers as standard post-fit checks.
 
 ``` r
+
 check_demand_model(fit_apt_zben)
 #> 
 #> Model Diagnostics
@@ -369,6 +377,7 @@ The NLME versions support two modes:
   identifiability near the MLE
 
 ``` r
+
 plot_loss_surface(fit_apt_zben)
 ```
 
@@ -378,6 +387,7 @@ means.](mixed-demand_files/figure-html/loss-ssr-1.png)
 SSR loss surface on aggregated means.
 
 ``` r
+
 plot_loss_surface(fit_apt_zben, type = "marginal")
 ```
 
@@ -390,6 +400,7 @@ Profile plots show 1D slices (one parameter varied, the other fixed at
 the MLE):
 
 ``` r
+
 plot_loss_profile(fit_apt_zben)
 ```
 
@@ -399,6 +410,7 @@ alpha.](mixed-demand_files/figure-html/profile-ssr-1.png)
 SSR profile plots for Q0 and alpha.
 
 ``` r
+
 plot_loss_profile(fit_apt_zben, type = "marginal")
 ```
 
@@ -413,6 +425,7 @@ This model estimates global Q\_{0} and \alpha parameters with random
 effects for subjects.
 
 ``` r
+
 # Make sure a similar 'fit_no_factors' was created successfully in your environment
 # For the vignette, let's create one that is more likely to converge quickly
 # by using only Alfentanil data, which is less complex than the full dataset.
@@ -439,7 +452,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55d6ebbddff0>
+#> <environment: 0x561cd49b3810>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -482,6 +495,7 @@ model converged, it prints the nlme model summary.
 Let’s model Q\_{0} and \alpha as varying by dose for Alfentanil.
 
 ``` r
+
 fit_one_factor_dose <- fit_demand_mixed(
   data = ko_alf,
   y_var = "y_ll4",
@@ -504,7 +518,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55d6e578c1c8>
+#> <environment: 0x561ccc854f20>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 
@@ -547,6 +561,7 @@ print(fit_one_factor_dose)
 Once a model is fit, you can inspect it using several S3 methods.
 
 ``` r
+
 # Summary
 summary(fit_one_factor_dose)
 #> 
@@ -636,6 +651,7 @@ The S3 [`predict()`](https://rdrr.io/r/stats/predict.html) method can
 generate population-level or group-level predictions.
 
 ``` r
+
 # Population-level predictions (log10 scale for 'zben')
 preds_pop_log <- predict(fit_one_factor_dose, level = 0)
 head(preds_pop_log)
@@ -713,6 +729,7 @@ Let’s use `fit_one_factor_dose` (modeling demand for Alfentanil by
 `dose`, with `y_ll4` as the dependent variable).
 
 ``` r
+
 plot(
   fit_one_factor_dose,
   inv_fun = ll4_inv,
@@ -739,6 +756,7 @@ We can also visualize the individual subject fits by setting
 `show_pred_lines = "individual"`.
 
 ``` r
+
 plot(
   fit_one_factor_dose,
   show_pred_lines = "individual",
@@ -763,6 +781,7 @@ subject (monkey), colored by dose.
 You can use `x_trans` and `y_trans` for axis transformations.
 
 ``` r
+
 plot(
   fit_one_factor_dose,
   inv_fun = ll4_inv,
@@ -780,6 +799,7 @@ layers or theme adjustments. For instance, to add custom axis limits or
 breaks:
 
 ``` r
+
 plot_object +
     ggplot2::scale_x_continuous(
         limits = c(0, 1000),

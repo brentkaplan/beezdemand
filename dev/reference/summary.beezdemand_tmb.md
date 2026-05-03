@@ -48,19 +48,19 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5121    0.8097    8.0425 8.80e-16
-#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074102
-#>              log_k   0.8954    0.4838    1.8509 0.064184
-#>         logsigma_b  -0.9528    0.2292   -4.1564 3.23e-05
-#>         logsigma_c  -0.7798    0.2302   -3.3879 0.000704
+#>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16
+#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103
+#>              log_k   0.8955    0.4838    1.8509 0.064184
+#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
+#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
 #>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>         rho_bc_raw  -0.4675    0.3292   -1.4202 0.155548
+#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
 #>              Component Estimate
 #>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_e (Residual SD)   0.1423
 #>  sigma_c (alpha RE SD)   0.4585
+#>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
@@ -96,17 +96,17 @@ summary(fit, report_space = "log10")
 #>               term estimate std.error statistic  p.value
 #>     Q0:(Intercept)   0.8137    0.0540   15.0689  < 2e-16
 #>  alpha:(Intercept)  -2.5194    0.2432  -10.3606  < 2e-16
-#>              log_k   0.8954    0.4838    1.8509 0.064184
-#>         logsigma_b  -0.9528    0.2292   -4.1564 3.23e-05
-#>         logsigma_c  -0.7798    0.2302   -3.3879 0.000704
+#>              log_k   0.8955    0.4838    1.8509 0.064184
+#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
+#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
 #>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>         rho_bc_raw  -0.4675    0.3292   -1.4202 0.155548
+#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
 #>              Component Estimate
 #>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_e (Residual SD)   0.1423
 #>  sigma_c (alpha RE SD)   0.4585
+#>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate

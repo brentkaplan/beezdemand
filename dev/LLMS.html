@@ -63,22 +63,22 @@
 <p>Package version: 0.2.0 Docs: <a href="https://brentkaplan.github.io/beezdemand/" class="uri">https://brentkaplan.github.io/beezdemand/</a></p>
 <div class="section level2">
 <h2 id="entry-points">Entry Points<a class="anchor" aria-label="anchor" href="#entry-points"></a></h2>
-<table class="table"><colgroup><col width="35%"><col width="32%"><col width="32%"></colgroup><thead><tr class="header"><th>Function</th>
+<table class="table"><colgroup><col width="35%"><col width="32%"><col width="32%"></colgroup><thead><tr><th>Function</th>
 <th>Purpose</th>
 <th>Returns</th>
-</tr></thead><tbody><tr class="odd"><td><code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code></td>
+</tr></thead><tbody><tr><td><code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code></td>
 <td>Individual NLS demand curves</td>
 <td><code>beezdemand_fixed</code></td>
-</tr><tr class="even"><td><code><a href="reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
+</tr><tr><td><code><a href="reference/fit_demand_mixed.html">fit_demand_mixed()</a></code></td>
 <td>Hierarchical NLME with random effects</td>
 <td><code>beezdemand_nlme</code></td>
-</tr><tr class="odd"><td><code><a href="reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code></td>
+</tr><tr><td><code><a href="reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code></td>
 <td>Two-part hurdle model via TMB</td>
 <td><code>beezdemand_hurdle</code></td>
-</tr><tr class="even"><td><code><a href="reference/fit_cp_nls.html">fit_cp_nls()</a></code></td>
+</tr><tr><td><code><a href="reference/fit_cp_nls.html">fit_cp_nls()</a></code></td>
 <td>Nonlinear cross-price elasticity</td>
 <td><code>cp_model_nls</code></td>
-</tr><tr class="odd"><td><code><a href="reference/fit_cp_linear.html">fit_cp_linear()</a></code></td>
+</tr><tr><td><code><a href="reference/fit_cp_linear.html">fit_cp_linear()</a></code></td>
 <td>Linear or mixed cross-price</td>
 <td>
 <code>cp_model_lm</code> / <code>cp_model_lmer</code>
@@ -88,16 +88,16 @@
 <div class="section level2">
 <h2 id="data-shape">Data Shape<a class="anchor" aria-label="anchor" href="#data-shape"></a></h2>
 <p>All demand functions expect <strong>long-format</strong> data:</p>
-<table class="table"><thead><tr class="header"><th>Column</th>
+<table class="table"><thead><tr><th>Column</th>
 <th>Description</th>
 <th>Customizable?</th>
-</tr></thead><tbody><tr class="odd"><td><code>id</code></td>
+</tr></thead><tbody><tr><td><code>id</code></td>
 <td>Subject identifier</td>
 <td>Yes — <code>id_var</code> param</td>
-</tr><tr class="even"><td><code>x</code></td>
+</tr><tr><td><code>x</code></td>
 <td>Price (&gt;= 0)</td>
 <td>Yes — <code>x_var</code> param</td>
-</tr><tr class="odd"><td><code>y</code></td>
+</tr><tr><td><code>y</code></td>
 <td>Consumption (&gt;= 0)</td>
 <td>Yes — <code>y_var</code> param</td>
 </tr></tbody></table><p>Cross-price fitters <code><a href="reference/fit_cp_nls.html">fit_cp_nls()</a></code> and <code><a href="reference/fit_cp_linear.html">fit_cp_linear()</a></code> now also accept <code>x_var</code>/<code>y_var</code> (and <code>id_var</code>/<code>group_var</code>/<code>target_var</code> for <code><a href="reference/fit_cp_linear.html">fit_cp_linear()</a></code>); defaults remain <code>x</code>/<code>y</code>/<code>id</code>/<code>group</code>/<code>target</code>.</p>
@@ -107,17 +107,17 @@
 <div class="section level3">
 <h3 id="tidy-columns">
 <code>tidy()</code> columns<a class="anchor" aria-label="anchor" href="#tidy-columns"></a></h3>
-<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr class="header"><th>Class</th>
+<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr><th>Class</th>
 <th>Key columns</th>
-</tr></thead><tbody><tr class="odd"><td><code>beezdemand_fixed</code></td>
+</tr></thead><tbody><tr><td><code>beezdemand_fixed</code></td>
 <td>
 <code>id</code>, <code>term</code>, <code>estimate</code>, <code>std.error</code>, <code>statistic</code>, <code>p.value</code>, <code>component</code>, <code>estimate_scale</code>
 </td>
-</tr><tr class="even"><td><code>beezdemand_nlme</code></td>
+</tr><tr><td><code>beezdemand_nlme</code></td>
 <td>
 <code>term</code>, <code>estimate</code>, <code>std.error</code>, <code>statistic</code>, <code>p.value</code>, <code>component</code>, <code>estimate_scale</code>
 </td>
-</tr><tr class="odd"><td><code>beezdemand_hurdle</code></td>
+</tr><tr><td><code>beezdemand_hurdle</code></td>
 <td>
 <code>term</code>, <code>estimate</code>, <code>std.error</code>, <code>statistic</code>, <code>p.value</code>, <code>component</code>, <code>estimate_scale</code>
 </td>
@@ -125,17 +125,17 @@
 <div class="section level3">
 <h3 id="glance-columns">
 <code>glance()</code> columns<a class="anchor" aria-label="anchor" href="#glance-columns"></a></h3>
-<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr class="header"><th>Class</th>
+<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr><th>Class</th>
 <th>Key columns</th>
-</tr></thead><tbody><tr class="odd"><td><code>beezdemand_fixed</code></td>
+</tr></thead><tbody><tr><td><code>beezdemand_fixed</code></td>
 <td>
 <code>model_class</code>, <code>equation</code>, <code>k_spec</code>, <code>nobs</code>, <code>n_subjects</code>, <code>n_success</code>, <code>n_fail</code>
 </td>
-</tr><tr class="even"><td><code>beezdemand_nlme</code></td>
+</tr><tr><td><code>beezdemand_nlme</code></td>
 <td>
 <code>model_class</code>, <code>equation</code>, <code>nobs</code>, <code>n_subjects</code>, <code>converged</code>, <code>logLik</code>, <code>AIC</code>, <code>BIC</code>
 </td>
-</tr><tr class="odd"><td><code>beezdemand_hurdle</code></td>
+</tr><tr><td><code>beezdemand_hurdle</code></td>
 <td>
 <code>model_class</code>, <code>part2</code>, <code>random_effects</code>, <code>n_subjects</code>, <code>nobs</code>, <code>converged</code>, <code>logLik</code>, <code>AIC</code>, <code>BIC</code>
 </td>
@@ -143,15 +143,15 @@
 <div class="section level3">
 <h3 id="augment-columns">
 <code>augment()</code> columns<a class="anchor" aria-label="anchor" href="#augment-columns"></a></h3>
-<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr class="header"><th>Class</th>
+<table class="table"><colgroup><col width="35%"><col width="65%"></colgroup><thead><tr><th>Class</th>
 <th>Key columns</th>
-</tr></thead><tbody><tr class="odd"><td><code>beezdemand_fixed</code></td>
+</tr></thead><tbody><tr><td><code>beezdemand_fixed</code></td>
 <td>original data + <code>.fitted</code>, <code>.resid</code>
 </td>
-</tr><tr class="even"><td><code>beezdemand_nlme</code></td>
+</tr><tr><td><code>beezdemand_nlme</code></td>
 <td>original data + <code>.fitted</code>, <code>.resid</code>
 </td>
-</tr><tr class="odd"><td><code>beezdemand_hurdle</code></td>
+</tr><tr><td><code>beezdemand_hurdle</code></td>
 <td>original data + <code>.fitted_prob_zero</code>, <code>.fitted_logQ</code>, <code>.fitted</code>, <code>.resid</code>
 </td>
 </tr></tbody></table></div>

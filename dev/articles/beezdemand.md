@@ -29,6 +29,7 @@ may be asked to select a CRAN mirror. Simply select the mirror
 geographically closest to you.
 
 ``` r
+
 install.packages("beezdemand")
 
 library(beezdemand)
@@ -44,6 +45,7 @@ directly from [GitHub](https://github.com/brentkaplan/beezdemand), as
 you should use the following instructions:
 
 ``` r
+
 install.packages("devtools")
 
 devtools::install_github("brentkaplan/beezdemand", build_vignettes = TRUE)
@@ -57,6 +59,7 @@ To install the development version of the package, specify the
 development branch in `install_github`:
 
 ``` r
+
 devtools::install_github("brentkaplan/beezdemand@develop")
 ```
 
@@ -98,7 +101,7 @@ the dataset `apt`, where I’ve subsetted rows 1 through 10 and 17 through
 | 25  |  30 | 5.0 |   2 |
 | 26  |  30 | 6.0 |   2 |
 
-Example APT (Alcohol Purchase Task) data in long format
+Example APT (Alcohol Purchase Task) data in long format {.table}
 
 The first column contains the row number. The second column contains the
 id number of the series within the dataset. The third column contains
@@ -114,6 +117,7 @@ a data collection software such as Qualtrics or SurveyMonkey or Google
 Forms:
 
 ``` r
+
 ## the following code takes the apt data, which are in long format, and converts
 ## to a wide format that might be seen from data collection software
 wide <- as.data.frame(tidyr::pivot_wider(apt, names_from = x, values_from = y))
@@ -133,6 +137,7 @@ knitr::kable(
 |  68 |      10 |      10 |       9 |       9 |       8 |       8 |       7 |       6 |       5 |
 
 Example data in wide format (first 5 participants, first 10 prices)
+{.table}
 
 A dataset such as this is referred to as “wide format” because each
 participant series contains a single row and multiple measurements
@@ -149,6 +154,7 @@ Since our column names (`price_1`, `price_2`, …) don’t encode the actual
 prices, we supply them via `x_values`:
 
 ``` r
+
 long <- pivot_demand_data(
   wide,
   format = "long",
@@ -169,7 +175,7 @@ knitr::kable(
 |  19 | 2.0 |   8 |
 |  19 | 2.5 |   8 |
 
-Wide to long conversion using pivot_demand_data()
+Wide to long conversion using pivot_demand_data() {.table}
 
 If your wide data already has numeric column names (e.g., `"0"`,
 `"0.5"`, `"1"`),
@@ -185,6 +191,7 @@ step-by-step approach using `tidyr` directly. First, rename columns to
 their actual prices:
 
 ``` r
+
 ## make a copy for the manual approach
 wide_manual <- wide
 newcolnames <- c("id", "0", "0.5", "1", "1.50", "2", "2.50", "3",
@@ -195,6 +202,7 @@ colnames(wide_manual) <- newcolnames
 Then pivot to long format, rename columns, and coerce to numeric:
 
 ``` r
+
 long_manual <- tidyr::pivot_longer(wide_manual, -id,
                                    names_to = "price", values_to = "consumption")
 long_manual <- dplyr::arrange(long_manual, id)
@@ -223,6 +231,7 @@ legacy
 is also available for backward compatibility.
 
 ``` r
+
 desc <- get_descriptive_summary(apt)
 knitr::kable(
     desc$statistics,
@@ -250,12 +259,13 @@ knitr::kable(
 | 15    |  1.1 |    0.5 | 1.37 |       0.5 |   0 |   0 |   3 |
 | 20    |  0.8 |    0.0 | 1.14 |       0.6 |   0 |   0 |   3 |
 
-Descriptive statistics by price point
+Descriptive statistics by price point {.table}
 
 The [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
 creates a box-and-whisker plot with mean values shown as red crosses:
 
 ``` r
+
 plot(desc)
 ```
 
@@ -282,6 +292,7 @@ data:
   number
 
 ``` r
+
 ChangeData(apt, nrepl = 1, replnum = 0.01, rem0 = FALSE, remq0e = FALSE, replfree = NULL)
 ```
 
@@ -294,6 +305,7 @@ to examine the consistency of purchase task data using Stein et al.’s
 are shown, but they can be customized.
 
 ``` r
+
 check_systematic_demand(
   data = apt,
   trend_threshold = 0.025,
@@ -303,15 +315,15 @@ check_systematic_demand(
 )
 ```
 
-| id  | type   | trend_stat | trend_threshold | trend_direction | trend_pass | bounce_stat | bounce_threshold | bounce_direction | bounce_pass | reversals | reversals_pass | returns | n_positive | systematic |
-|:----|:-------|-----------:|----------------:|:----------------|:-----------|------------:|-----------------:|:-----------------|:------------|----------:|:---------------|--------:|-----------:|:-----------|
-| 19  | demand |     0.2112 |           0.025 | down            | TRUE       |           0 |              0.1 | none             | TRUE        |         0 | TRUE           |      NA |         16 | TRUE       |
-| 30  | demand |     0.1437 |           0.025 | down            | TRUE       |           0 |              0.1 | none             | TRUE        |         0 | TRUE           |      NA |         16 | TRUE       |
-| 38  | demand |     0.7885 |           0.025 | down            | TRUE       |           0 |              0.1 | none             | TRUE        |         0 | TRUE           |      NA |         14 | TRUE       |
-| 60  | demand |     0.9089 |           0.025 | down            | TRUE       |           0 |              0.1 | none             | TRUE        |         0 | TRUE           |      NA |         14 | TRUE       |
-| 68  | demand |     0.9089 |           0.025 | down            | TRUE       |           0 |              0.1 | none             | TRUE        |         0 | TRUE           |      NA |         14 | TRUE       |
+| id | type | trend_stat | trend_threshold | trend_direction | trend_pass | bounce_stat | bounce_threshold | bounce_direction | bounce_pass | reversals | reversals_pass | returns | n_positive | systematic |
+|:---|:---|---:|---:|:---|:---|---:|---:|:---|:---|---:|:---|---:|---:|:---|
+| 19 | demand | 0.2112 | 0.025 | down | TRUE | 0 | 0.1 | none | TRUE | 0 | TRUE | NA | 16 | TRUE |
+| 30 | demand | 0.1437 | 0.025 | down | TRUE | 0 | 0.1 | none | TRUE | 0 | TRUE | NA | 16 | TRUE |
+| 38 | demand | 0.7885 | 0.025 | down | TRUE | 0 | 0.1 | none | TRUE | 0 | TRUE | NA | 14 | TRUE |
+| 60 | demand | 0.9089 | 0.025 | down | TRUE | 0 | 0.1 | none | TRUE | 0 | TRUE | NA | 14 | TRUE |
+| 68 | demand | 0.9089 | 0.025 | down | TRUE | 0 | 0.1 | none | TRUE | 0 | TRUE | NA | 14 | TRUE |
 
-Systematicity check results (first 5 participants)
+Systematicity check results (first 5 participants) {.table}
 
 #### Analyze Demand Data
 
@@ -331,6 +343,7 @@ returns a tibble with consistent column naming; the legacy
 is also available:
 
 ``` r
+
 get_empirical_measures(apt)
 ```
 
@@ -342,7 +355,7 @@ get_empirical_measures(apt)
 | 60  |        10 |  15 |  10 |    24 |     8 |
 | 68  |        10 |  15 |  10 |    36 |     9 |
 
-Empirical demand measures (first 5 participants)
+Empirical demand measures (first 5 participants) {.table}
 
 ##### Obtaining Derived Measures
 
@@ -393,32 +406,34 @@ is shown here. This example fits the exponential equation proposed by
 Hursh & Silberberg (2008):
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "hs", k = 2)
 ```
 
-| id  | term |  estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
-|:----|:-----|----------:|----------:|----------:|--------:|:----------|:---------------|:-------------|------------------:|
-| 19  | Q0   | 10.158665 | 0.2685323 |        NA |      NA | fixed     | natural        | Q0           |         10.158665 |
-| 30  | Q0   |  2.807366 | 0.2257764 |        NA |      NA | fixed     | natural        | Q0           |          2.807366 |
-| 38  | Q0   |  4.497456 | 0.2146862 |        NA |      NA | fixed     | natural        | Q0           |          4.497456 |
-| 60  | Q0   |  9.924274 | 0.4591683 |        NA |      NA | fixed     | natural        | Q0           |          9.924274 |
-| 68  | Q0   | 10.390384 | 0.3290277 |        NA |      NA | fixed     | natural        | Q0           |         10.390384 |
-| 106 | Q0   |  5.683566 | 0.3002817 |        NA |      NA | fixed     | natural        | Q0           |          5.683566 |
-| 113 | Q0   |  6.195949 | 0.1744096 |        NA |      NA | fixed     | natural        | Q0           |          6.195949 |
-| 142 | Q0   |  6.171990 | 0.6408575 |        NA |      NA | fixed     | natural        | Q0           |          6.171990 |
-| 156 | Q0   |  8.348973 | 0.4105617 |        NA |      NA | fixed     | natural        | Q0           |          8.348973 |
-| 188 | Q0   |  6.303639 | 0.5636959 |        NA |      NA | fixed     | natural        | Q0           |          6.303639 |
+| id | term | estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
+|:---|:---|---:|---:|---:|---:|:---|:---|:---|---:|
+| 19 | Q0 | 10.158665 | 0.2685323 | NA | NA | fixed | natural | Q0 | 10.158665 |
+| 30 | Q0 | 2.807366 | 0.2257764 | NA | NA | fixed | natural | Q0 | 2.807366 |
+| 38 | Q0 | 4.497456 | 0.2146862 | NA | NA | fixed | natural | Q0 | 4.497456 |
+| 60 | Q0 | 9.924274 | 0.4591683 | NA | NA | fixed | natural | Q0 | 9.924274 |
+| 68 | Q0 | 10.390384 | 0.3290277 | NA | NA | fixed | natural | Q0 | 10.390384 |
+| 106 | Q0 | 5.683566 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683566 |
+| 113 | Q0 | 6.195949 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195949 |
+| 142 | Q0 | 6.171990 | 0.6408575 | NA | NA | fixed | natural | Q0 | 6.171990 |
+| 156 | Q0 | 8.348973 | 0.4105617 | NA | NA | fixed | natural | Q0 | 8.348973 |
+| 188 | Q0 | 6.303639 | 0.5636959 | NA | NA | fixed | natural | Q0 | 6.303639 |
 
 Parameter estimates
 ([`tidy()`](https://generics.r-lib.org/reference/tidy.html), first 10
-rows)
+rows) {.table style="width:100%;"}
 
-| model_class      | backend | equation | k_spec    | nobs | n_subjects | n_success | n_fail | converged | logLik | AIC | BIC |
-|:-----------------|:--------|:---------|:----------|-----:|-----------:|----------:|-------:|:----------|-------:|----:|----:|
-| beezdemand_fixed | legacy  | hs       | fixed (2) |  146 |         10 |        10 |      0 | NA        |     NA |  NA |  NA |
+| model_class | backend | equation | k_spec | nobs | n_subjects | n_success | n_fail | converged | logLik | AIC | BIC |
+|:---|:---|:---|:---|---:|---:|---:|---:|:---|---:|---:|---:|
+| beezdemand_fixed | legacy | hs | fixed (2) | 146 | 10 | 10 | 0 | NA | NA | NA | NA |
 
 Model summary
-([`glance()`](https://generics.r-lib.org/reference/glance.html))
+([`glance()`](https://generics.r-lib.org/reference/glance.html)) {.table
+style="width:100%;"}
 
 | id  | term |  estimate | conf.low | conf.high | level |
 |:----|:-----|----------:|---------:|----------:|------:|
@@ -435,6 +450,7 @@ Model summary
 
 Confidence intervals
 ([`confint()`](https://rdrr.io/r/stats/confint.html), first 10 rows)
+{.table}
 
 | id  |   x |   y |   k |   .fitted |     .resid |
 |:----|----:|----:|----:|----------:|-----------:|
@@ -451,9 +467,10 @@ Confidence intervals
 
 Fitted values and residuals
 ([`augment()`](https://generics.r-lib.org/reference/augment.html), first
-10 rows)
+10 rows) {.table}
 
 ``` r
+
 hs_diag
 #> 
 #> Model Diagnostics
@@ -475,12 +492,14 @@ hs_diag
 ```
 
 ``` r
+
 plot(fit_hs)
 ```
 
 ![](beezdemand_files/figure-html/hs-plot-1.png)
 
 ``` r
+
 plot_residuals(fit_hs)$fitted
 #> NULL
 ```
@@ -501,6 +520,7 @@ errors are computed via the delta method. `alpha_star` requires k \cdot
 \ln(b) \> 1; otherwise `NA` is returned.
 
 ``` r
+
 ## alpha_star is included in tidy() output for HS and Koff equations
 hs_tidy[hs_tidy$term == "alpha_star", c("id", "term", "estimate", "std.error")]
 #> # A tibble: 10 × 4
@@ -522,6 +542,7 @@ Here is the same idea specifying the `"koff"` equation (Koffarnus et
 al., 2015):
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "koff", k = 2)
 ```
 
@@ -531,6 +552,7 @@ natively without requiring data transformation and does not require a
 `k` parameter:
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "simplified")
 ```
 
@@ -542,6 +564,7 @@ and a single curve is fit to the data (disregarding error around each
 averaged point):
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Mean")
 ```
 
@@ -550,6 +573,7 @@ and a single curve is fit to the data and error around each averaged
 point (but disregarding within-subject clustering):
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "hs", k = 2, agg = "Pooled")
 ```
 
@@ -562,32 +586,34 @@ datasets (globally) while estimating Q_0 and \alpha locally. While this
 works, it may take some time with larger sample sizes.
 
 ``` r
+
 fit_demand_fixed(data = apt, equation = "hs", k = "share")
 ```
 
-| id  | term |  estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
-|:----|:-----|----------:|----------:|----------:|--------:|:----------|:---------------|:-------------|------------------:|
-| 19  | Q0   | 10.014576 | 0.2429150 |        NA |      NA | fixed     | natural        | Q0           |         10.014576 |
-| 30  | Q0   |  2.766313 | 0.2192797 |        NA |      NA | fixed     | natural        | Q0           |          2.766313 |
-| 38  | Q0   |  4.485810 | 0.2074990 |        NA |      NA | fixed     | natural        | Q0           |          4.485810 |
-| 60  | Q0   |  9.721379 | 0.4371061 |        NA |      NA | fixed     | natural        | Q0           |          9.721379 |
-| 68  | Q0   | 10.293139 | 0.3179671 |        NA |      NA | fixed     | natural        | Q0           |         10.293139 |
-| 106 | Q0   |  5.654329 | 0.2826797 |        NA |      NA | fixed     | natural        | Q0           |          5.654329 |
-| 113 | Q0   |  6.169268 | 0.1640778 |        NA |      NA | fixed     | natural        | Q0           |          6.169268 |
-| 142 | Q0   |  6.052017 | 0.6238319 |        NA |      NA | fixed     | natural        | Q0           |          6.052017 |
-| 156 | Q0   |  8.136417 | 0.3523684 |        NA |      NA | fixed     | natural        | Q0           |          8.136417 |
-| 188 | Q0   |  6.208328 | 0.4920853 |        NA |      NA | fixed     | natural        | Q0           |          6.208328 |
+| id | term | estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
+|:---|:---|---:|---:|---:|---:|:---|:---|:---|---:|
+| 19 | Q0 | 10.014576 | 0.2429150 | NA | NA | fixed | natural | Q0 | 10.014576 |
+| 30 | Q0 | 2.766313 | 0.2192797 | NA | NA | fixed | natural | Q0 | 2.766313 |
+| 38 | Q0 | 4.485810 | 0.2074990 | NA | NA | fixed | natural | Q0 | 4.485810 |
+| 60 | Q0 | 9.721379 | 0.4371061 | NA | NA | fixed | natural | Q0 | 9.721379 |
+| 68 | Q0 | 10.293139 | 0.3179671 | NA | NA | fixed | natural | Q0 | 10.293139 |
+| 106 | Q0 | 5.654329 | 0.2826797 | NA | NA | fixed | natural | Q0 | 5.654329 |
+| 113 | Q0 | 6.169268 | 0.1640778 | NA | NA | fixed | natural | Q0 | 6.169268 |
+| 142 | Q0 | 6.052017 | 0.6238319 | NA | NA | fixed | natural | Q0 | 6.052017 |
+| 156 | Q0 | 8.136417 | 0.3523684 | NA | NA | fixed | natural | Q0 | 8.136417 |
+| 188 | Q0 | 6.208328 | 0.4920853 | NA | NA | fixed | natural | Q0 | 6.208328 |
 
 Parameter estimates
 ([`tidy()`](https://generics.r-lib.org/reference/tidy.html), first 10
-rows)
+rows) {.table style="width:100%;"}
 
-| model_class      | backend | equation | k_spec | nobs | n_subjects | n_success | n_fail | converged | logLik | AIC | BIC |
-|:-----------------|:--------|:---------|:-------|-----:|-----------:|----------:|-------:|:----------|-------:|----:|----:|
-| beezdemand_fixed | legacy  | hs       | share  |  146 |         10 |        10 |      0 | NA        |     NA |  NA |  NA |
+| model_class | backend | equation | k_spec | nobs | n_subjects | n_success | n_fail | converged | logLik | AIC | BIC |
+|:---|:---|:---|:---|---:|---:|---:|---:|:---|---:|---:|---:|
+| beezdemand_fixed | legacy | hs | share | 146 | 10 | 10 | 0 | NA | NA | NA | NA |
 
 Model summary
 ([`glance()`](https://generics.r-lib.org/reference/glance.html))
+{.table}
 
 #### Learn More About Functions
 
@@ -595,6 +621,7 @@ To learn more about a function and what arguments it takes, type “?” in
 front of the function name.
 
 ``` r
+
 ## Modern interface (recommended)
 ?check_systematic_demand
 

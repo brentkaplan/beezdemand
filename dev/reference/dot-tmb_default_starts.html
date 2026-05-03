@@ -62,7 +62,14 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.tmb_default_starts</span><span class="op">(</span><span class="va">prepared</span>, <span class="va">design</span>, <span class="va">equation</span>, <span class="va">n_re</span>, <span class="va">has_k</span>, k_fixed <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.tmb_default_starts</span><span class="op">(</span></span>
+<span>  <span class="va">prepared</span>,</span>
+<span>  <span class="va">design</span>,</span>
+<span>  <span class="va">equation</span>,</span>
+<span>  <span class="va">re_parsed</span>,</span>
+<span>  <span class="va">has_k</span>,</span>
+<span>  k_fixed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -81,8 +88,8 @@
 <dd><p>Character string.</p></dd>
 
 
-<dt id="arg-n-re">n_re<a class="anchor" aria-label="anchor" href="#arg-n-re"></a></dt>
-<dd><p>Integer.</p></dd>
+<dt id="arg-re-parsed">re_parsed<a class="anchor" aria-label="anchor" href="#arg-re-parsed"></a></dt>
+<dd><p>Canonical RE block structure.</p></dd>
 
 
 <dt id="arg-has-k">has_k<a class="anchor" aria-label="anchor" href="#arg-has-k"></a></dt>
@@ -95,7 +102,10 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Named list of starting values.</p>
+    <p>Named list of starting values shaped for the Phase-2 template:
+<code>logsigma</code> is a vector of length <code>sum(block dims)</code>, <code>rho_raw</code> is a
+vector of length <code>sum(over pdSymm: d*(d-1)/2)</code>, and <code>u</code> has columns
+ordered [block1_q0, block1_alpha, block2_q0, ...].</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

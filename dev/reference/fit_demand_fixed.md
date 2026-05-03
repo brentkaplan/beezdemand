@@ -284,8 +284,6 @@ fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -350,8 +348,8 @@ fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -423,8 +421,8 @@ fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 

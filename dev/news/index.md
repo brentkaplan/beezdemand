@@ -1,5 +1,139 @@
 # Changelog
 
+## beezdemand 0.4.0 (development)
+
+This development release opens TICKET-011 (factor-expanded random
+effects for
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+and
+[`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md))
+and fixes three pre-existing TMB post-fit correctness bugs surfaced
+while scoping the ticket.
+
+### TMB post-fit fixes (TICKET-011 Phase 0)
+
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  now validates that every column of the fixed-effect design matrix is
+  constant within each `id`. When a factor or continuous covariate
+  varies within subject, `subject_pars$Q0`, `$alpha`, `$Pmax`, and
+  `$Omax` are set to `NA_real_` for affected subjects and a
+  [`cli::cli_warn()`](https://cli.r-lib.org/reference/cli_abort.html)
+  names the offending columns. Previously the function silently returned
+  row-order-dependent values. New `validate_subject_pars = TRUE`
+  argument provides an escape hatch for users who have reasoned about
+  the behavior. Factor-expanded random slopes (the proper replacement
+  for the NA fallback) land in Phase 2/3.
+- [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  on a `beezdemand_tmb` fit now honors `continuous_covariates` even when
+  no factors are present. Previously, the early-return for factor-less
+  models ignored the `at` argument and always returned the intercept.
+- [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  on a `beezdemand_tmb` fit now raises a clear error when
+  `factors_in_emm` drops any fitted factor. Previously, the shorter
+  reference row was silently recycled against the full coefficient
+  vector, either producing wrong numbers or crashing downstream with a
+  generic “non-conformable arguments” error. Proper marginalization over
+  omitted factors lands in TICKET-011 Phase 5.
+
+### TMB random-effects API (TICKET-011 Phase 1)
+
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  now accepts formula-based `random_effects` arguments. The default
+  signature is `random_effects = Q0 + alpha ~ 1`, equivalent to the
+  previous `c("q0", "alpha")` default. Single-parameter `Q0 ~ 1`,
+  `pdMat` objects, lists of `pdMat`, and
+  [`nlme::pdBlocked`](https://rdrr.io/pkg/nlme/man/pdBlocked.html) are
+  all parsed and attached to the fit object’s
+  `$param_info$random_effects_parsed` as a canonical block
+  representation.
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  gains `covariance_structure = c("pdSymm", "pdDiag")` matching the
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  argument of the same name.
+- Character-vector inputs to `random_effects` (e.g. `c("q0", "alpha")`)
+  are soft-deprecated via
+  [`lifecycle::deprecate_soft()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
+  and internally translated to the equivalent formula. A hard
+  deprecation follows in 0.5.0.
+- Formula shapes richer than intercept-only (e.g.
+  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are accepted by the
+  parser but currently error with a clear “Phase 2 not yet shipped”
+  message. Template generalization to a Z-matrix-driven covariance lands
+  in subsequent 0.4.0 patches.
+- New internal helpers in `R/random-effects-utils.R`
+  (`.classify_re_input`, `.normalize_re_input`, `.validate_re_input`,
+  `.re_is_phase1_fittable`, `.deprecate_character_re`,
+  `.re_shape_summary`, `.re_parsed_to_character`) factor out the
+  formula/pdMat parsing so both
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  and
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  consume the same canonical representation.
+
+### Additional TMB post-fit fixes (TICKET-011 Phase 0.4-0.5)
+
+Adversarial review surfaced two more silent wrong-answer paths in the
+TMB post-fit layer; both are sister bugs to Phase 0.2 / 0.3 fixes and
+land here as the foundation for the Phase 2 factor-RE work.
+
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  on a `beezdemand_tmb` fit now consumes the same conditioned reference
+  grid as
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
+  New internal helper
+  [`.tmb_build_emm_ref_grid()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.md)
+  in `R/tmb-methods.R` ensures both functions honor `at` (factor-level
+  filters AND continuous-covariate value overrides) and
+  `factors_in_emm`. Before this fix the wrapper forwarded `...` to
+  `emms` but rebuilt its own contrast grid from the unfiltered training
+  data, producing off-grid contrasts and `"NA"` labels when `at`
+  filtered factor levels.
+- [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  on a `beezdemand_tmb` fit now warns and returns a `conditioned_on`
+  field when continuous covariates are present. The numeric output is
+  unchanged (intercept-only `Q0` / `alpha`, i.e. covariates held at 0)
+  but the warning matches the convention from `predict(type = "demand")`
+  so users cannot silently misread reference-intercept metrics as
+  population means.
+  [`summary.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
+  propagates the warning through the standard summary path. Phase 5 will
+  replace warn-and-label with explicit conditioning via the
+  [`.tmb_build_emm_ref_grid()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.md)
+  helper.
+
+### Factor-expanded TMB random effects (TICKET-011 Phase 2)
+
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  now fits formula-based random effects with factor-expanded slopes
+  (e.g. `pdDiag(Q0 + alpha ~ condition)` or
+  `pdSymm(Q0 + alpha ~ condition)`). Single-block pdDiag and pdSymm with
+  arbitrary RHS terms are accepted; multi-block `pdBlocked` /
+  [`list()`](https://rdrr.io/r/base/list.html) of pdMats remains gated
+  until Phase 3.
+- `src/MixedDemand.h` rewritten with a block-aware DATA interface (Z_q0,
+  Z_alpha, block-structure metadata) and a generalized per-block
+  Cholesky loop. pdSymm blocks of size \> 2 use the
+  Lewandowski-Kurowicka-Joe Cholesky construction; the d == 2 case
+  reduces exactly to the previous `tanh(rho_bc_raw)` parameterization,
+  so existing intercept-only fits produce bit-identical loglik /
+  coefficients (verified to 1e-10 on `apt`).
+- New internal helpers
+  [`.tmb_build_z_matrices()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_z_matrices.md)
+  and
+  [`.tmb_build_block_map()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_block_map.md)
+  in `R/tmb-demand.R` consume the canonical block representation and
+  emit the design matrices and metadata the template needs.
+- [`.tmb_compute_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_compute_subject_pars.md)
+  generalized into a per-block reconstruction; subject-level `Q0` /
+  `alpha` for factor-expanded fits use the first observed row of `X` and
+  `Z` per subject (Phase 2 deferral; per-(subject, condition) rows
+  planned for Phase 5).
+- New simulator
+  [`.simulate_within_subject_demand()`](https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.md)
+  and parity tests confirm TMB Laplace approximation agrees with NLME’s
+  iterative algorithm to within ~1% on the loglik across all four target
+  specs.
+
 ## beezdemand 0.3.0
 
 This release ships the TMB mixed-effects modeling tier
@@ -103,6 +237,13 @@ Features for orientation.
 
 - Visualization helpers added to TMB and NLME vignettes (commit
   `75a202a`).
+
+- [`get_demand_param_emms.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  gains a `param` argument (`"both"`, `"Q0"`, `"alpha"`) for API parity
+  with the `beezdemand_tmb` method (TICKET-012). Default `"both"`
+  preserves the historical return shape; `"Q0"` and `"alpha"` narrow the
+  output to a single parameter’s columns for easier pivoting and
+  plotting.
 
 ### Bug Fixes
 

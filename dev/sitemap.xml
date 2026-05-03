@@ -108,13 +108,17 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_hurdle_hs_stdq0.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_snd.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-standardize_params_to_natural.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_backtransform.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_block_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_design_matrices.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_predicted_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_term_names.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_tmb_data.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_z_matrices.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_compute_subject_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_default_starts.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_extract_estimates.html</loc></url>

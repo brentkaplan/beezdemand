@@ -5,7 +5,7 @@ Build TMB Data List
 ## Usage
 
 ``` r
-.tmb_build_tmb_data(prepared, design, equation, n_re)
+.tmb_build_tmb_data(prepared, design, equation, re_parsed, data, id_var = "id")
 ```
 
 ## Arguments
@@ -22,10 +22,20 @@ Build TMB Data List
 
   Character string, equation type.
 
-- n_re:
+- re_parsed:
 
-  Integer, number of random effects.
+  Canonical RE block structure from `.normalize_re_input()`.
+
+- data:
+
+  The (possibly cleaned) data frame the model is fit on.
+
+- id_var:
+
+  Subject id column name.
 
 ## Value
 
-A list suitable for TMB::MakeADFun data argument.
+A list suitable for TMB::MakeADFun data argument, including the
+per-observation RE design matrices (`Z_q0`, `Z_alpha`) and block-map
+metadata vectors consumed by the Phase-2 generalized template.

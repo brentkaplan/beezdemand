@@ -21,6 +21,7 @@ get_demand_param_emms(
   at = NULL,
   ci_level = 0.95,
   include_ev = FALSE,
+  param = c("both", "Q0", "alpha"),
   ...
 )
 ```
@@ -56,6 +57,17 @@ get_demand_param_emms(
   from alpha, along with its confidence interval (calculated by
   back-transforming the CI of alpha_param_log10). Default `FALSE`.
 
+- param:
+
+  Character, one of `"both"` (default), `"Q0"`, or `"alpha"`. Controls
+  which demand parameter's EMM columns are returned. `"both"` preserves
+  the historical four-column-block structure (Q0 and alpha together).
+  `"Q0"` returns only Q0 columns (and drops EV, since EV is a function
+  of alpha); a warning is emitted if `include_ev = TRUE` is requested
+  alongside `param = "Q0"`. `"alpha"` returns only alpha columns plus
+  the EV block when `include_ev = TRUE`. Mirrors the `param` argument on
+  the `beezdemand_tmb` method.
+
 ## Value
 
 A tibble containing:
@@ -78,6 +90,10 @@ A tibble containing:
 - EV, LCL_EV, UCL_EV:
 
   (If `include_ev=TRUE`) Essential Value and its CI.
+
+When `param = "Q0"` or `param = "alpha"`, only the columns associated
+with the requested parameter (plus factor columns and, for `"alpha"`,
+the EV block) are returned.
 
 ## Examples
 
@@ -108,5 +124,17 @@ get_demand_param_emms(fit)
 #> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
 #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
 #> #   UCL_alpha_natural <dbl>
+
+# Request only Q0 columns — convenient for pivoting and plotting
+get_demand_param_emms(fit, param = "Q0")
+#> # A tibble: 5 × 7
+#>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
+#>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
+#> 1 3e-05           2.58               2.35               2.80      377. 
+#> 2 1e-04           2.38               2.23               2.52      238. 
+#> 3 3e-04           2.21               2.10               2.32      163. 
+#> 4 0.001           1.91               1.78               2.03       80.5
+#> 5 0.003           1.90               1.73               2.07       79.7
+#> # ℹ 2 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>
 # }
 ```

@@ -16,7 +16,8 @@ fit_demand_tmb(
   equation = c("exponentiated", "exponential", "simplified", "zben"),
   estimate_k = TRUE,
   k = NULL,
-  random_effects = c("q0", "alpha"),
+  random_effects = Q0 + alpha ~ 1,
+  covariance_structure = c("pdSymm", "pdDiag"),
   factors = NULL,
   factor_interaction = FALSE,
   continuous_covariates = NULL,
@@ -24,6 +25,7 @@ fit_demand_tmb(
   start_values = NULL,
   tmb_control = list(iter_max = 1000, eval_max = 2000),
   multi_start = TRUE,
+  validate_subject_pars = TRUE,
   verbose = 1,
   ...
 )
@@ -88,15 +90,47 @@ fit_demand_tmb(
 
 - random_effects:
 
-  Character vector specifying random effects. One of:
+  Specification of subject-level random effects. Accepts any of the
+  following, in order of generality:
 
-  `c("q0", "alpha")`
+  formula (default)
 
-  :   Random effects on both Q0 and alpha (default).
+  :   `Q0 + alpha ~ 1` – random intercepts on both parameters
+      (equivalent to the legacy `c("q0", "alpha")` shortcut). `Q0 ~ 1`
+      limits REs to Q0. Formulas with factor-expanded RHS (e.g.,
+      `Q0 + alpha ~ condition` or `Q0 + alpha ~ condition - 1`) are now
+      supported in Phase 2 – see TICKET-011 Phase 2 for details. The
+      within-subject factor must vary within each `id`; pure
+      between-subject factors belong in `factors`, not in the RE
+      formula.
 
-  `"q0"`
+  [`nlme::pdMat`](https://rdrr.io/pkg/nlme/man/pdMat.html)
 
-  :   Random effect on Q0 only.
+  :   e.g., `nlme::pdDiag(Q0 + alpha ~ 1)` or
+      `nlme::pdSymm(Q0 + alpha ~ condition)`. Pre-constructed pdMat
+      objects are accepted and their covariance class is honored
+      (overrides `covariance_structure`).
+
+  list of `pdMat` / [`nlme::pdBlocked`](https://rdrr.io/pkg/nlme/man/pdBlocked.html)
+
+  :   Multi-block covariance structures like
+      `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`. Parsed, but
+      fitting is deferred to Phase 3 of TICKET-011 – use
+      [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+      for multi-block fits in the meantime.
+
+  character vector (deprecated)
+
+  :   `c("q0", "alpha")` or `"q0"`. Soft-deprecated in 0.4.0; emits a
+      [`lifecycle::deprecate_soft()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
+      message. Translated internally to the formula `Q0 + alpha ~ 1` or
+      `Q0 ~ 1`.
+
+- covariance_structure:
+
+  `"pdSymm"` (default; unstructured) or `"pdDiag"` (diagonal). Applies
+  only when `random_effects` is a formula; ignored for pre-constructed
+  pdMat / list / pdBlocked inputs.
 
 - factors:
 
@@ -176,6 +210,16 @@ fit_demand_tmb(
 
   Logical. If `TRUE` (default), try 3 starting value sets and select the
   best.
+
+- validate_subject_pars:
+
+  Logical. If `TRUE` (default), validate that every column of the
+  fixed-effect design matrices is constant within each `id` before
+  computing `subject_pars`. When a factor or continuous covariate varies
+  within subject, Q0/alpha/Pmax/Omax are set to `NA_real_` for affected
+  subjects and a warning names the offending columns. Set to `FALSE` to
+  force row-order-dependent values (not recommended; proper
+  factor-expanded RE support lands in TICKET-011 Phases 2-3).
 
 - verbose:
 
@@ -289,10 +333,10 @@ fit <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Equation: exponential
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 #>   Subjects: 10, Observations: 146
-#>   Random effects: 2 (q0, alpha)
+#>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [146 x 1], X_alpha [146 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = -40.65 (start set 2 of 3)
+#>   Multi-start: best NLL = -40.65 (start set 3 of 3)
 #>   Converged (NLL = -40.65)
 #>   Computing standard errors...
 #> Done.
@@ -308,19 +352,19 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5121    0.8097    8.0425 8.80e-16
-#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074102
-#>              log_k   0.8954    0.4838    1.8509 0.064184
-#>         logsigma_b  -0.9528    0.2292   -4.1564 3.23e-05
-#>         logsigma_c  -0.7798    0.2302   -3.3879 0.000704
+#>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16
+#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103
+#>              log_k   0.8955    0.4838    1.8509 0.064184
+#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
+#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
 #>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>         rho_bc_raw  -0.4675    0.3292   -1.4202 0.155548
+#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
 #>              Component Estimate
 #>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_e (Residual SD)   0.1423
 #>  sigma_c (alpha RE SD)   0.4585
+#>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
@@ -353,17 +397,19 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #> Fitting TMB mixed-effects demand model...
 #>   Equation: exponentiated
 #>   Subjects: 10, Observations: 160
-#>   Random effects: 2 (q0, alpha)
+#>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 170.76 (start set 1 of 3)
+#>   Multi-start: best NLL = 171.12 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
+#> Warning: NaNs produced
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
 #> ℹ Standard errors, p-values, and confidence intervals may be unreliable.
 #> ℹ Run `check_demand_model()` for detailed diagnostics.
 #> ℹ Consider simplifying the model (fewer random effects) or checking data
 #>   quality.
+#> Warning: NaNs produced
 #> Done.
 
 # With covariates
@@ -374,7 +420,7 @@ fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
 #>   Equation: exponential
 #>   equation='exponential': Dropped 5861 zero-consumption observations (12839 remaining).
 #>   Subjects: 1090, Observations: 12839
-#>   Random effects: 2 (q0, alpha)
+#>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [12839 x 3], X_alpha [12839 x 3]
 #>   Optimizing...
 #>   Multi-start: best NLL = 3301.57 (start set 1 of 3)
@@ -388,5 +434,14 @@ get_demand_param_emms(fit3, param = "alpha")
 #> 1 gender=Male                  0.00626        -5.07    0.0475  5.70e-3   0.00687
 #> 2 gender=Female                0.00739        -4.91    0.0456  6.76e-3   0.00808
 #> 3 gender=Would rather not say  0.00290        -5.84    2.92    9.43e-6   0.890  
+
+# Factor-expanded random slopes on a within-subject factor (Phase 2):
+# each subject contributes a Q0 / alpha RE per condition level.
+# Replace `cond` below with your in-subject factor.
+if (FALSE) { # \dontrun{
+fit4 <- fit_demand_tmb(within_data, y_var = "y_ll4", x_var = "x", id_var = "id",
+                       equation = "zben", factors = "cond",
+                       random_effects = nlme::pdDiag(Q0 + alpha ~ cond))
+} # }
 # }
 ```

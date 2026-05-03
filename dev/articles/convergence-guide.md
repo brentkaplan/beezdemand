@@ -78,11 +78,11 @@ and
 use the `nlminb` optimizer by default. It reports the following
 convergence codes:
 
-| Code | What Triggered It                                                     | What It Means                                                                                                                                                                                  |
-|:----:|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|  0   | Relative improvement in objective \< `rel.tol`                        | The optimizer is satisfied that it found a minimum. This is the “normal” exit.                                                                                                                 |
-|  1   | Number of iterations \>= `iter.max`                                   | The optimizer ran out of its iteration budget before satisfying its convergence criterion. The estimates may be fine — it just wasn’t given enough iterations to confirm.                      |
-|  8   | Step size shrinks to zero but tolerance not met (“false convergence”) | The optimizer cannot make further progress but hasn’t confirmed it reached a minimum. Often occurs when the solution is near a parameter boundary or when the likelihood surface is very flat. |
+| Code | What Triggered It | What It Means |
+|:--:|----|----|
+| 0 | Relative improvement in objective \< `rel.tol` | The optimizer is satisfied that it found a minimum. This is the “normal” exit. |
+| 1 | Number of iterations \>= `iter.max` | The optimizer ran out of its iteration budget before satisfying its convergence criterion. The estimates may be fine — it just wasn’t given enough iterations to confirm. |
+| 8 | Step size shrinks to zero but tolerance not met (“false convergence”) | The optimizer cannot make further progress but hasn’t confirmed it reached a minimum. Often occurs when the solution is near a parameter boundary or when the likelihood surface is very flat. |
 
 **Code 0** is what you want but doesn’t guarantee the solution is
 correct — the optimizer may have converged to a local minimum or a
@@ -138,14 +138,14 @@ package captures these during fitting and stores them in the
 `fit_warnings` field of the returned object. The following table
 summarizes the most common warnings:
 
-| Warning Pattern                               | What It Means                                            | Severity |
-|-----------------------------------------------|----------------------------------------------------------|----------|
-| `"false convergence"`                         | Step size shrank below minimum before gradient converged | Moderate |
-| `"step halving factor reduced below minimum"` | PNLS step-halving hit its floor                          | Moderate |
-| `"maximum number of iterations reached"`      | Hit `msMaxIter` or `maxIter` limit                       | Low      |
-| `"iteration limit reached"`                   | Same as above                                            | Low      |
-| `"singular"`                                  | Design or correlation matrix is rank-deficient           | High     |
-| Non-PD `apVar`                                | Hessian not positive definite at solution                | High     |
+| Warning Pattern | What It Means | Severity |
+|----|----|----|
+| `"false convergence"` | Step size shrank below minimum before gradient converged | Moderate |
+| `"step halving factor reduced below minimum"` | PNLS step-halving hit its floor | Moderate |
+| `"maximum number of iterations reached"` | Hit `msMaxIter` or `maxIter` limit | Low |
+| `"iteration limit reached"` | Same as above | Low |
+| `"singular"` | Design or correlation matrix is rank-deficient | High |
+| Non-PD `apVar` | Hessian not positive definite at solution | High |
 
 #### Understanding Severity
 
@@ -174,6 +174,7 @@ The `apVar` failure deserves special attention because it is common and
 often misunderstood. You can check for it programmatically:
 
 ``` r
+
 # After fitting an NLME model
 fit <- fit_demand_mixed(data, y_var = "y_ll4", equation_form = "zben")
 
@@ -215,6 +216,7 @@ occur. The returned object tracks per-subject success/failure in the
 to see the failure rate:
 
 ``` r
+
 fit <- fit_demand_fixed(apt, equation = "hs")
 diagnostics <- check_demand_model(fit)
 print(diagnostics)
@@ -252,6 +254,7 @@ data
 #### TMB Models
 
 ``` r
+
 fit_tmb <- fit_demand_tmb(data, y_var = "y", x_var = "x", id_var = "id")
 
 # Population-level (fixed) parameters
@@ -279,6 +282,7 @@ Look for:
 #### NLME Models
 
 ``` r
+
 fit_nlme <- fit_demand_mixed(data, y_var = "y_ll4", equation_form = "zben")
 
 # Population-level fixed effects
@@ -299,6 +303,7 @@ random effects suggest model misspecification or influential subjects.
 #### Hurdle Models
 
 ``` r
+
 fit_hurdle <- fit_demand_hurdle(data, y_var = "y", x_var = "x", id_var = "id")
 
 # Population parameters
@@ -317,6 +322,7 @@ is well-behaved near the solution.
 #### TMB Models
 
 ``` r
+
 # Check if standard errors were successfully computed
 fit_tmb$se_available
 
@@ -344,6 +350,7 @@ Warning signs:
 #### NLME Models
 
 ``` r
+
 # Check apVar status
 is_apvar_ok <- is.matrix(fit_nlme$model$apVar)
 cat("apVar OK:", is_apvar_ok, "\n")
@@ -373,6 +380,7 @@ small gradient confirms the optimizer stopped at (or very near) a
 stationary point.
 
 ``` r
+
 # Compute gradient at the solution
 grad <- fit_tmb$tmb_obj$gr(fit_tmb$opt$par)
 max_grad <- max(abs(grad))
@@ -397,6 +405,7 @@ maximum).
 #### TMB Models
 
 ``` r
+
 # Preferred (since 0.3.0): the dedicated `hessian_pd` accessor on the fit
 # object. TRUE = positive definite; FALSE = not; NA = sdreport failed.
 fit_tmb$hessian_pd
@@ -416,6 +425,7 @@ its data unchanged but tags the result with a `hessian_warning`
 attribute for downstream pipelines:
 
 ``` r
+
 out <- tidy(fit_tmb)
 attr(out, "hessian_warning")
 ```
@@ -428,6 +438,7 @@ the flagged fit (`tmb_control$warm_start = fit_tmb$opt$par`). The same
 #### NLME Models
 
 ``` r
+
 # Check apVar (NLME's version of the Hessian check)
 cat("apVar OK:", is.matrix(fit_nlme$model$apVar), "\n")
 
@@ -454,6 +465,7 @@ values, not on convergence status.
 #### TMB Models
 
 ``` r
+
 # Fit a simpler model (e.g., fewer random effects)
 fit_simple <- fit_demand_tmb(data, y_var = "y", x_var = "x", id_var = "id",
                              random_effects = "q0")
@@ -467,6 +479,7 @@ AIC(fit_simple, fit_complex)
 #### NLME Models
 
 ``` r
+
 # Fit with random effect on Q0 only vs. Q0 + alpha
 fit_q0 <- fit_demand_mixed(data, y_var = "y_ll4", equation_form = "zben",
                            random_effects = Q0 ~ 1)
@@ -494,6 +507,7 @@ stability by checking whether different starting configurations yield
 the same negative log-likelihood:
 
 ``` r
+
 # Fit with default multi-start
 fit1 <- fit_demand_tmb(data, y_var = "y", x_var = "x", id_var = "id")
 
@@ -509,6 +523,7 @@ cat("Fit 2 NLL:", fit2$opt$objective, "\n")
 #### NLME Models
 
 ``` r
+
 # Fit with pooled NLS starting values (data-driven)
 fit_pooled <- fit_demand_mixed(data, y_var = "y_ll4", equation_form = "zben",
                                start_values = "pooled_nls")
@@ -536,29 +551,29 @@ Use this table after running the diagnostic checklist on a TMB model
 or
 [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)):
 
-|  Code  | Gradient Small? | Hessian PD? | SEs Finite? | Params Plausible? | Verdict                                                                  |
-|:------:|:---------------:|:-----------:|:-----------:|:-----------------:|--------------------------------------------------------------------------|
-|   0    |       Yes       |     Yes     |     Yes     |        Yes        | **Trust the results**                                                    |
-|   0    |       Yes       |     No      |      —      |         —         | Saddle point: refit with different starts                                |
-|   0    |       Yes       |     Yes     |     Yes     |        No         | Converged to wrong minimum: check data, try different starts             |
-| 1 or 8 |       Yes       |     Yes     |     Yes     |        Yes        | **Likely trustworthy** — run diagnostics, increase iterations to confirm |
-| 1 or 8 |       No        |     No      |      —      |         —         | Simplify model (fewer random effects, fix k)                             |
-| 1 or 8 |        —        |      —      |      —      |        No         | Estimates unreliable: simplify or check data quality                     |
+| Code | Gradient Small? | Hessian PD? | SEs Finite? | Params Plausible? | Verdict |
+|:--:|:--:|:--:|:--:|:--:|----|
+| 0 | Yes | Yes | Yes | Yes | **Trust the results** |
+| 0 | Yes | No | — | — | Saddle point: refit with different starts |
+| 0 | Yes | Yes | Yes | No | Converged to wrong minimum: check data, try different starts |
+| 1 or 8 | Yes | Yes | Yes | Yes | **Likely trustworthy** — run diagnostics, increase iterations to confirm |
+| 1 or 8 | No | No | — | — | Simplify model (fewer random effects, fix k) |
+| 1 or 8 | — | — | — | No | Estimates unreliable: simplify or check data quality |
 
 ### NLME Decision Table
 
 Use this table after running the diagnostic checklist on an NLME model
 ([`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)):
 
-| Warning             | apVar OK? | RE Corr \< \|0.99\|? | RE Var \> 0? | Params Plausible? | Verdict                                                 |
-|---------------------|:---------:|:--------------------:|:------------:|:-----------------:|---------------------------------------------------------|
-| None                |    Yes    |         Yes          |     Yes      |        Yes        | **Trust the results**                                   |
-| “false convergence” |    Yes    |         Yes          |     Yes      |        Yes        | **Likely trustworthy** — consider increasing iterations |
-| “false convergence” |    No     |          —           |      —       |         —         | SEs unreliable: consider simplifying RE structure       |
-| “max iterations”    |     —     |          —           |      —       |        Yes        | Increase `msMaxIter`/`maxIter` and refit                |
-| “singular”          |     —     |          No          |      —       |         —         | Overparameterized: reduce RE structure                  |
-| Any                 |     —     |          —           |  Near zero   |         —         | Remove that random effect                               |
-| Any                 |     —     |          —           |      —       |        No         | Estimates unreliable: check data, simplify model        |
+| Warning | apVar OK? | RE Corr \< \|0.99\|? | RE Var \> 0? | Params Plausible? | Verdict |
+|----|:--:|:--:|:--:|:--:|----|
+| None | Yes | Yes | Yes | Yes | **Trust the results** |
+| “false convergence” | Yes | Yes | Yes | Yes | **Likely trustworthy** — consider increasing iterations |
+| “false convergence” | No | — | — | — | SEs unreliable: consider simplifying RE structure |
+| “max iterations” | — | — | — | Yes | Increase `msMaxIter`/`maxIter` and refit |
+| “singular” | — | No | — | — | Overparameterized: reduce RE structure |
+| Any | — | — | Near zero | — | Remove that random effect |
+| Any | — | — | — | No | Estimates unreliable: check data, simplify model |
 
 ## Remedies by Model Tier
 
@@ -567,14 +582,14 @@ Use this table after running the diagnostic checklist on an NLME model
 NLME convergence issues typically fall into a few categories. The table
 below maps symptoms to solutions:
 
-| Problem              | Symptom                                       | Remedy                                      |
-|----------------------|-----------------------------------------------|---------------------------------------------|
+| Problem | Symptom | Remedy |
+|----|----|----|
 | Overparameterized RE | Near-singular correlation, RE variance near 0 | Remove random effect on alpha; keep only Q0 |
-| Slow convergence     | “maximum number of iterations reached”        | Increase `msMaxIter` and `maxIter`          |
-| False convergence    | “false convergence” warning                   | Loosen `pnlsTol`, increase `niterEM`        |
-| Non-PD apVar         | `is.character(model$apVar)`                   | Switch to `pdDiag` covariance structure     |
-| Bad starting values  | Immediate failure or wild estimates           | Use pooled NLS starts or manually specify   |
-| LL4 transform issues | Extreme residuals, poor fit                   | Check lambda parameter; verify y_ll4 values |
+| Slow convergence | “maximum number of iterations reached” | Increase `msMaxIter` and `maxIter` |
+| False convergence | “false convergence” warning | Loosen `pnlsTol`, increase `niterEM` |
+| Non-PD apVar | `is.character(model$apVar)` | Switch to `pdDiag` covariance structure |
+| Bad starting values | Immediate failure or wild estimates | Use pooled NLS starts or manually specify |
+| LL4 transform issues | Extreme residuals, poor fit | Check lambda parameter; verify y_ll4 values |
 
 #### Increasing Iterations
 
@@ -582,6 +597,7 @@ The simplest remedy for iteration-limit warnings. The `nlme_control`
 argument accepts a named list of control parameters:
 
 ``` r
+
 fit <- fit_demand_mixed(
   data,
   y_var = "y_ll4",
@@ -601,6 +617,7 @@ shrank below the minimum tolerance before the gradient converged.
 Loosening the PNLS tolerance allows the optimizer more room to maneuver:
 
 ``` r
+
 fit <- fit_demand_mixed(
   data,
   y_var = "y_ll4",
@@ -621,6 +638,7 @@ correlation parameter entirely. This reduces the number of parameters
 and often resolves convergence issues:
 
 ``` r
+
 # Default uses pdDiag (diagonal); try pdSymm for unstructured if you have
 # enough data, or stay with pdDiag if convergence is problematic
 fit_diag <- fit_demand_mixed(
@@ -646,6 +664,7 @@ subject-level variation in that parameter. Removing it simplifies the
 model and often resolves convergence problems:
 
 ``` r
+
 # Random effects on both Q0 and alpha (more complex)
 fit_both <- fit_demand_mixed(
   data,
@@ -670,19 +689,20 @@ AIC(fit_both$model, fit_q0_only$model)
 
 TMB convergence issues have their own set of solutions:
 
-| Problem           | Symptom                            | Remedy                                   |
-|-------------------|------------------------------------|------------------------------------------|
-| Local minimum     | Multiple starts give different NLL | Increase multi-start sets                |
-| Flat likelihood   | Large SEs, code 1                  | Simplify model (fewer RE, fix k)         |
-| Boundary solution | Parameter at bound, code 1         | Widen or narrow bounds                   |
-| Iteration limit   | Code 1                             | Increase `iter_max`                      |
-| False convergence | Code 8                             | Try more iterations; try L-BFGS-B        |
-| Saddle point      | Hessian not PD                     | Different starts; try L-BFGS-B optimizer |
-| Zero RE variance  | sigma near 0                       | Remove that random effect                |
+| Problem | Symptom | Remedy |
+|----|----|----|
+| Local minimum | Multiple starts give different NLL | Increase multi-start sets |
+| Flat likelihood | Large SEs, code 1 | Simplify model (fewer RE, fix k) |
+| Boundary solution | Parameter at bound, code 1 | Widen or narrow bounds |
+| Iteration limit | Code 1 | Increase `iter_max` |
+| False convergence | Code 8 | Try more iterations; try L-BFGS-B |
+| Saddle point | Hessian not PD | Different starts; try L-BFGS-B optimizer |
+| Zero RE variance | sigma near 0 | Remove that random effect |
 
 #### Adjusting TMB Control
 
 ``` r
+
 fit <- fit_demand_tmb(
   data,
   y_var = "y", x_var = "x", id_var = "id",
@@ -700,6 +720,7 @@ If `nlminb` produces code 8 (false convergence), switching to L-BFGS-B
 sometimes helps because it uses a different line search strategy:
 
 ``` r
+
 fit_lbfgsb <- fit_demand_tmb(
   data,
   y_var = "y", x_var = "x", id_var = "id",
@@ -713,6 +734,7 @@ If you have a partially converged fit, you can use it as a starting
 point for a fresh optimization:
 
 ``` r
+
 # First fit (may not fully converge)
 fit1 <- fit_demand_tmb(data, y_var = "y", x_var = "x", id_var = "id")
 
@@ -726,6 +748,7 @@ fit2 <- fit_demand_tmb(data, y_var = "y", x_var = "x", id_var = "id",
 Hurdle models have additional options for controlling complexity:
 
 ``` r
+
 # Reduce random effects: 2-RE instead of 3-RE
 fit_2re <- fit_demand_hurdle(
   data,
@@ -759,6 +782,7 @@ rather than model specification:
   instead, which handles zeros explicitly
 
 ``` r
+
 # Check data quality first
 systematic <- CheckUnsystematic(data, deltaq = 0.025, bounce = 0.1, reversals = 0)
 table(systematic$TotalPass)
@@ -779,6 +803,7 @@ effect diagnostics.
 ### TMB Example
 
 ``` r
+
 fit_hurdle <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id")
 diagnostics <- check_demand_model(fit_hurdle)
 print(diagnostics)
@@ -794,6 +819,7 @@ The output shows:
 ### NLME Example
 
 ``` r
+
 fit_nlme <- fit_demand_mixed(data, y_var = "y_ll4", equation_form = "zben")
 diagnostics <- check_demand_model(fit_nlme)
 print(diagnostics)
@@ -810,6 +836,7 @@ For NLME models, the diagnostics additionally check for:
 Here is a live example using the built-in `apt` dataset:
 
 ``` r
+
 data(apt)
 fit <- fit_demand_fixed(apt, equation = "hs")
 diagnostics <- check_demand_model(fit)
@@ -838,6 +865,7 @@ print(diagnostics)
 For NLME models, you can also inspect the captured warnings directly:
 
 ``` r
+
 # Warnings captured during NLME fitting
 fit_nlme$fit_warnings
 

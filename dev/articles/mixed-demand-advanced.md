@@ -30,6 +30,7 @@ Topics covered here include:
   [`plot_demand_overlay()`](https://brentkaplan.github.io/beezdemand/reference/plot_demand_overlay.md)
 
 ``` r
+
 quick_nlme_control <- nlme::nlmeControl(
   msMaxIter = 100,
   niterEM = 20,
@@ -111,6 +112,7 @@ parameter.
 **Structure:**
 
 ``` r
+
 collapse_levels = list(
   Q0 = list(factor_name = list(new_level = c("old_level1", "old_level2"), ...)),
   alpha = list(factor_name = list(new_level = c("old_level1", ...), ...))
@@ -123,6 +125,7 @@ for that parameter.
 #### Example: Same collapsing for both parameters
 
 ``` r
+
 # Ensure levels to collapse are present in ko_alf$dose
 # levels(ko_alf$dose) are "0.001", "0.003", "3e-04"
 fit_collapsed_same <- try(
@@ -170,7 +173,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c2eba14450>
+#> <environment: 0x556c85b2c6f8>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ dose_alpha 
 #> Factors:  dose 
@@ -220,6 +223,7 @@ that maximum consumption (Q\_{0}) varies by dose, but sensitivity
 (\alpha) does not.
 
 ``` r
+
 # Q0: keep 2 collapsed levels (low vs high)
 # alpha: collapse all to 1 level (intercept only)
 fit_collapsed_asymmetric <- try(
@@ -279,7 +283,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c2ec94fb48>
+#> <environment: 0x556c87439488>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ 1 
 #> Factors:  dose 
@@ -353,6 +357,7 @@ levels and alpha levels. For example, if dose has 5 original levels and
 alpha collapses to 2 groups, the EMM table will have 10 rows (5 × 2).
 
 ``` r
+
 # Using the asymmetric collapsed model from above (if it converged)
 if (
   !is.null(fit_collapsed_asymmetric) &&
@@ -415,6 +420,7 @@ Let’s use fit_two_factors_add (if it converged: y_ll4 ~ drug + dose). We
 can facet by one factor and color by another.
 
 ``` r
+
 # Assuming fit_two_factors_add was successfully created earlier
 # If it failed, this chunk won't produce a plot.
 active_two_factor_fit <- if (
@@ -494,6 +500,7 @@ y), the inv_fun is typically identity because predictions are already on
 the natural scale.
 
 ``` r
+
 # Assuming fit_simplified_example converged earlier
 if (
   !is.null(fit_simplified_example) && !is.null(fit_simplified_example$model)
@@ -516,6 +523,7 @@ layers or theme adjustments. For instance, to add custom axis limits or
 breaks:
 
 ``` r
+
 plot_object +
     ggplot2::scale_x_continuous(
         limits = c(0, 1000),
@@ -538,6 +546,7 @@ collapsed levels. If a parameter has only one level (intercept-only),
 that parameter’s values will be the same across all rows.
 
 ``` r
+
 # We'll use a model with factors.
 # If fit_two_factors_add converged, use it. Otherwise, use fit_one_factor_dose.
 # For the vignette, let's ensure we use one that is likely available.
@@ -616,6 +625,7 @@ have multiple levels. If a parameter was collapsed to a single level
 (intercept-only), the comparisons for that parameter will be empty.
 
 ``` r
+
 # Using the same emm_model_to_use
 if (
   !is.null(emm_model_to_use) && length(emm_model_to_use$param_info$factors) > 0
@@ -737,6 +747,7 @@ nested NLME models via likelihood ratio test. For example, compare a
 one-factor model against a no-factor (intercept-only) baseline:
 
 ``` r
+
 # Compare one-factor dose model vs intercept-only
 anova(fit_no_factors_alf, fit_one_factor_dose)
 #>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Model
@@ -771,6 +782,7 @@ function also works with NLME objects and provides a unified output
 format:
 
 ``` r
+
 compare_models(fit_no_factors_alf, fit_one_factor_dose)
 #> 
 #> Model Comparison
@@ -801,6 +813,7 @@ superimposes population demand curves from multiple models, making it
 easy to see how different specifications shift the predicted curve:
 
 ``` r
+
 plot_demand_overlay(
   fit_no_factors_alf, fit_one_factor_dose,
   labels = c("No factors", "Dose factor"),
@@ -817,6 +830,7 @@ Demand curves from intercept-only and dose-factor models overlaid.
 compares parameter distributions side by side:
 
 ``` r
+
 plot_model_comparison(
   fit_no_factors_alf, fit_one_factor_dose,
   labels = c("No factors", "Dose factor")
