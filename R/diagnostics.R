@@ -233,19 +233,44 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     }
   }
 
-  # 3. Check variance components near zero
+  # 3. Check variance components near zero. Phase 2 generalized the RE
+  # parameterization to a `logsigma` vector spanning all blocks; iterate
+  # the full vector and label each entry by its (block, q0|alpha) slot.
   coefs <- object$model$coefficients
-  re_variances <- c(sigma_b = NA_real_)
-  near_zero <- c(sigma_b = FALSE)
+  re_parsed <- object$param_info$random_effects_parsed
+  re_variances <- numeric(0)
+  near_zero <- logical(0)
 
-  sigma_b <- exp(coefs[["logsigma_b"]])
-  re_variances[["sigma_b"]] <- sigma_b
-  near_zero[["sigma_b"]] <- sigma_b < 1e-4
-
-  if (object$param_info$n_random_effects == 2) {
-    sigma_c <- exp(coefs[["logsigma_c"]])
-    re_variances[["sigma_c"]] <- sigma_c
-    near_zero[["sigma_c"]] <- sigma_c < 1e-4
+  if (!is.null(re_parsed)) {
+    bmap <- .tmb_build_block_map(re_parsed)
+    logsigma_full <- unname(coefs[names(coefs) == "logsigma"])
+    sigma_offset <- 0L
+    for (b in seq_len(bmap$n_blocks)) {
+      d_q0 <- bmap$block_q0_dim[b]
+      d_alpha <- bmap$block_alpha_dim[b]
+      d <- d_q0 + d_alpha
+      if (d == 0L) next
+      block_label <- if (bmap$n_blocks > 1L) sprintf("block%d_", b) else ""
+      if (d_q0 > 0L) {
+        for (j in seq_len(d_q0)) {
+          nm <- if (d_q0 == 1L) paste0(block_label, "sigma_b") else
+                sprintf("%ssigma_b[%d]", block_label, j)
+          v <- exp(logsigma_full[sigma_offset + j])
+          re_variances[nm] <- v
+          near_zero[nm] <- v < 1e-4
+        }
+      }
+      if (d_alpha > 0L) {
+        for (j in seq_len(d_alpha)) {
+          nm <- if (d_alpha == 1L) paste0(block_label, "sigma_c") else
+                sprintf("%ssigma_c[%d]", block_label, j)
+          v <- exp(logsigma_full[sigma_offset + d_q0 + j])
+          re_variances[nm] <- v
+          near_zero[nm] <- v < 1e-4
+        }
+      }
+      sigma_offset <- sigma_offset + d
+    }
   }
 
   random_effects <- list(

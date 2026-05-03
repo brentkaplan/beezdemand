@@ -4,21 +4,18 @@
 \alias{.tmb_build_map}
 \title{Build TMB Map List}
 \usage{
-.tmb_build_map(has_k, n_re, covariance_class = "pdSymm")
+.tmb_build_map(has_k)
 }
 \arguments{
 \item{has_k}{Logical, whether k is estimated.}
-
-\item{n_re}{Integer, number of random effects.}
-
-\item{covariance_class}{Character, one of \code{"pdSymm"} (default; free rho)
-or \code{"pdDiag"} (rho pinned at 0, i.e. independent Q0 and alpha REs).
-Only consulted when \code{n_re == 2}.}
 }
 \value{
 Named list for TMB map argument.
 }
 \description{
-Build TMB Map List
+Phase 2 expresses pdDiag-vs-pdSymm via the dimensionality of \code{rho_raw}
+(zero-length for pdDiag blocks, length d*(d-1)/2 for pdSymm blocks of
+size d). The map argument therefore only needs to handle \code{log_k}
+(mapped out for simplified / zben).
 }
 \keyword{internal}

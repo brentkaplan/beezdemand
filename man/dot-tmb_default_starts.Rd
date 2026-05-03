@@ -4,7 +4,14 @@
 \alias{.tmb_default_starts}
 \title{Generate Default Starting Values}
 \usage{
-.tmb_default_starts(prepared, design, equation, n_re, has_k, k_fixed = NULL)
+.tmb_default_starts(
+  prepared,
+  design,
+  equation,
+  re_parsed,
+  has_k,
+  k_fixed = NULL
+)
 }
 \arguments{
 \item{prepared}{Output from .tmb_prepare_data().}
@@ -13,14 +20,17 @@
 
 \item{equation}{Character string.}
 
-\item{n_re}{Integer.}
+\item{re_parsed}{Canonical RE block structure.}
 
 \item{has_k}{Logical.}
 
 \item{k_fixed}{Numeric or NULL.}
 }
 \value{
-Named list of starting values.
+Named list of starting values shaped for the Phase-2 template:
+\code{logsigma} is a vector of length \verb{sum(block dims)}, \code{rho_raw} is a
+vector of length \verb{sum(over pdSymm: d*(d-1)/2)}, and \code{u} has columns
+ordered [block1_q0, block1_alpha, block2_q0, ...].
 }
 \description{
 Generate Default Starting Values

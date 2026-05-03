@@ -8,7 +8,6 @@
   tmb_data,
   start_values,
   map,
-  n_re,
   tmb_control,
   user_specified,
   verbose,
@@ -21,8 +20,6 @@
 \item{start_values}{Default starting values list.}
 
 \item{map}{TMB map list.}
-
-\item{n_re}{Integer.}
 
 \item{tmb_control}{Control parameters.}
 

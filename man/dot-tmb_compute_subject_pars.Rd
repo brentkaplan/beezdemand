@@ -8,7 +8,7 @@
   coefficients,
   u_hat,
   subject_levels,
-  n_re,
+  re_parsed,
   has_k,
   equation,
   price,
@@ -16,17 +16,20 @@
   k_fixed = NULL,
   X_q0 = NULL,
   X_alpha = NULL,
+  Z_q0 = NULL,
+  Z_alpha = NULL,
   validate_subject_pars = TRUE
 )
 }
 \arguments{
 \item{coefficients}{Named coefficient vector.}
 
-\item{u_hat}{Random effects matrix.}
+\item{u_hat}{Random effects matrix; columns ordered
+[block1_q0, block1_alpha, block2_q0, ...].}
 
 \item{subject_levels}{Character vector of subject IDs.}
 
-\item{n_re}{Integer.}
+\item{re_parsed}{Canonical RE block structure.}
 
 \item{has_k}{Logical.}
 
@@ -35,11 +38,26 @@
 \item{price}{Numeric vector of prices.}
 
 \item{subject_id}{Integer vector of 0-indexed subject IDs.}
+
+\item{k_fixed}{Numeric or NULL.}
+
+\item{X_q0, X_alpha}{Fixed-effect design matrices.}
+
+\item{Z_q0, Z_alpha}{Random-effect design matrices.}
+
+\item{validate_subject_pars}{Logical (default \code{TRUE}); see Phase 0 NA fallback.}
 }
 \value{
 Data frame of subject-specific parameters.
 }
 \description{
 Compute Subject-Specific Parameters
+}
+\note{
+For factor-expanded RE specs (e.g. \code{pdDiag(Q0+alpha~condition)}),
+subject-level Q0 / alpha here use the first observed row of \code{Z_q0} /
+\code{Z_alpha} per subject -- which encodes the subject's first observed
+condition only. Per-(subject, condition) rows are planned for Phase 5;
+meanwhile use \code{predict()} for cell-level values.
 }
 \keyword{internal}

@@ -4,7 +4,7 @@
 \alias{.tmb_build_tmb_data}
 \title{Build TMB Data List}
 \usage{
-.tmb_build_tmb_data(prepared, design, equation, n_re)
+.tmb_build_tmb_data(prepared, design, equation, re_parsed, data, id_var = "id")
 }
 \arguments{
 \item{prepared}{Output from .tmb_prepare_data().}
@@ -13,10 +13,16 @@
 
 \item{equation}{Character string, equation type.}
 
-\item{n_re}{Integer, number of random effects.}
+\item{re_parsed}{Canonical RE block structure from \code{.normalize_re_input()}.}
+
+\item{data}{The (possibly cleaned) data frame the model is fit on.}
+
+\item{id_var}{Subject id column name.}
 }
 \value{
-A list suitable for TMB::MakeADFun data argument.
+A list suitable for TMB::MakeADFun data argument, including the
+per-observation RE design matrices (\code{Z_q0}, \code{Z_alpha}) and block-map
+metadata vectors consumed by the Phase-2 generalized template.
 }
 \description{
 Build TMB Data List

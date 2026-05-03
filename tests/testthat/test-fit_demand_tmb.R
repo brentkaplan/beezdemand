@@ -423,11 +423,16 @@ test_that("subject_pars Q0 matches design-matrix computation for each subject", 
   u_hat <- matrix(re_summary[, "Estimate"],
                   nrow = fit$param_info$n_subjects, ncol = n_re)
 
-  # Reconstruct Cholesky-transformed RE for Q0
-  sigma_b <- exp(coefs[["logsigma_b"]])
+  # Reconstruct Cholesky-transformed RE for Q0. Phase 2 generalized the
+  # parameterization to vectors `logsigma` and `rho_raw`; for a single
+  # intercept-only block the LKJ-Cholesky construction reduces to the
+  # familiar 2x2 tanh(rho) case.
+  logsigma_full <- unname(coefs[names(coefs) == "logsigma"])
+  rho_raw_full <- unname(coefs[names(coefs) == "rho_raw"])
+  sigma_b <- exp(logsigma_full[1])
   if (n_re == 2) {
-    sigma_c <- exp(coefs[["logsigma_c"]])
-    rho_bc <- tanh(coefs[["rho_bc_raw"]])
+    sigma_c <- exp(logsigma_full[2])
+    rho_bc <- if (length(rho_raw_full) >= 1) tanh(rho_raw_full[1]) else 0
     Sigma <- matrix(c(sigma_b^2, sigma_b * sigma_c * rho_bc,
                       sigma_b * sigma_c * rho_bc, sigma_c^2), 2)
     L <- t(chol(Sigma))

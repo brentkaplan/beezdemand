@@ -255,23 +255,33 @@ test_that("fit_demand_tmb(random_effects = character) emits soft deprecation", {
   )
 })
 
-test_that("fit_demand_tmb errors for formula shapes the Phase-1 template cannot fit", {
+test_that("fit_demand_tmb accepts factor-expanded RE specs (Phase 2 acceptance)", {
   skip_on_cran()
   data(apt, package = "beezdemand")
-  # Add a within-subject factor (just to satisfy the formula parser; the
-  # gate fires before fitting)
+  # Add a within-subject factor so the formula parser can expand it.
   apt_cond <- apt
   apt_cond$cond <- factor(rep_len(c("A", "B"), nrow(apt_cond)))
 
-  expect_error(
-    fit_demand_tmb(
-      apt_cond,
-      equation = "simplified",
-      random_effects = Q0 + alpha ~ cond,
-      verbose = 0
-    ),
-    regexp = "Phase 2"
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    apt_cond,
+    equation = "simplified",
+    random_effects = Q0 + alpha ~ cond,
+    verbose = 0
+  )))
+  expect_s3_class(fit, "beezdemand_tmb")
+  # Q0 + alpha ~ cond under treatment contrasts -> 2 q0 cols + 2 alpha cols.
+  expect_equal(
+    fit$param_info$random_effects_parsed$blocks[[1]]$terms_q0,
+    c("(Intercept)", "condB")
   )
+})
+
+test_that("fit_demand_tmb still rejects multi-block pdBlocked (Phase 3 deferral)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  apt_cond <- apt
+  apt_cond$cond <- factor(rep_len(c("A", "B"), nrow(apt_cond)))
+
   expect_error(
     fit_demand_tmb(
       apt_cond,
@@ -282,7 +292,7 @@ test_that("fit_demand_tmb errors for formula shapes the Phase-1 template cannot 
       )),
       verbose = 0
     ),
-    regexp = "Phase 2"
+    regexp = "Phase 3"
   )
 })
 
@@ -326,11 +336,13 @@ test_that("pdDiag covariance_structure pins rho at 0 for 2-RE fits", {
     verbose = 0
   )
 
-  # pdDiag maps rho_bc_raw out of the optimizer's free parameters, pinning
-  # it at the default start (0 -> tanh(0) = 0 correlation). pdSymm leaves
-  # it free to find any value in (-1, 1).
-  expect_false("rho_bc_raw" %in% names(fit_diag$opt$par))
-  expect_true("rho_bc_raw" %in% names(fit_symm$opt$par))
+  # Phase 2: pdDiag emits a length-0 rho_raw vector (no off-diagonals);
+  # pdSymm emits a length-1 rho_raw for the 2x2 case. The free parameter
+  # accounting is therefore: one fewer rho param under pdDiag.
+  rho_diag <- fit_diag$opt$par[names(fit_diag$opt$par) == "rho_raw"]
+  rho_symm <- fit_symm$opt$par[names(fit_symm$opt$par) == "rho_raw"]
+  expect_equal(length(rho_diag), 0L)
+  expect_equal(length(rho_symm), 1L)
 
   # pdDiag fits one fewer free parameter (no rho) than pdSymm.
   expect_equal(length(fit_symm$opt$par) - length(fit_diag$opt$par), 1L)
@@ -353,7 +365,8 @@ test_that("nlme::pdDiag() object routes to the same pinned-rho path", {
     random_effects = nlme::pdDiag(Q0 + alpha ~ 1),
     verbose = 0
   )
-  expect_false("rho_bc_raw" %in% names(fit$opt$par))
+  rho_n <- length(fit$opt$par[names(fit$opt$par) == "rho_raw"])
+  expect_equal(rho_n, 0L)
   expect_equal(
     fit$param_info$random_effects_parsed$blocks[[1]]$pdmat_class,
     "pdDiag"

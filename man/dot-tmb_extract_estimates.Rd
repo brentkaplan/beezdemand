@@ -4,14 +4,15 @@
 \alias{.tmb_extract_estimates}
 \title{Extract Estimates from TMB Fit}
 \usage{
-.tmb_extract_estimates(obj, opt, n_re, n_subjects, has_k, verbose)
+.tmb_extract_estimates(obj, opt, re_dim_total, n_subjects, has_k, verbose)
 }
 \arguments{
 \item{obj}{TMB objective function object.}
 
 \item{opt}{nlminb optimization result.}
 
-\item{n_re}{Integer.}
+\item{re_dim_total}{Integer; total RE columns per subject
+(\code{re_dim_q0 + re_dim_alpha}).}
 
 \item{n_subjects}{Integer.}
 

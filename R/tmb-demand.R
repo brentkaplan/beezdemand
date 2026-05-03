@@ -271,11 +271,16 @@ NULL
 #' @param prepared Output from .tmb_prepare_data().
 #' @param design Output from .tmb_build_design_matrices().
 #' @param equation Character string, equation type.
-#' @param n_re Integer, number of random effects.
+#' @param re_parsed Canonical RE block structure from `.normalize_re_input()`.
+#' @param data The (possibly cleaned) data frame the model is fit on.
+#' @param id_var Subject id column name.
 #'
-#' @return A list suitable for TMB::MakeADFun data argument.
+#' @return A list suitable for TMB::MakeADFun data argument, including the
+#'   per-observation RE design matrices (`Z_q0`, `Z_alpha`) and block-map
+#'   metadata vectors consumed by the Phase-2 generalized template.
 #' @keywords internal
-.tmb_build_tmb_data <- function(prepared, design, equation, n_re) {
+.tmb_build_tmb_data <- function(prepared, design, equation, re_parsed,
+                                 data, id_var = "id") {
   eqn_type <- switch(equation,
     exponential = 0L,
     exponentiated = 1L,
@@ -283,6 +288,11 @@ NULL
     zben = 3L,
     stop("Unknown equation: ", equation)
   )
+
+  # Build Z matrices on the SAME row order as `prepared` -- the prepared
+  # data path may have dropped NA rows etc., so use the cleaned subset.
+  z <- .tmb_build_z_matrices(re_parsed, data, id_var = id_var)
+  bmap <- .tmb_build_block_map(re_parsed)
 
   list(
     model = "MixedDemand",
@@ -292,8 +302,15 @@ NULL
     n_subjects = prepared$n_subjects,
     X_q0 = design$X_q0,
     X_alpha = design$X_alpha,
+    Z_q0 = z$Z_q0,
+    Z_alpha = z$Z_alpha,
     eqn_type = eqn_type,
-    n_re = n_re
+    n_blocks = bmap$n_blocks,
+    block_q0_dim = bmap$block_q0_dim,
+    block_alpha_dim = bmap$block_alpha_dim,
+    block_types = bmap$block_types,
+    block_q0_offset = bmap$block_q0_offset,
+    block_alpha_offset = bmap$block_alpha_offset
   )
 }
 
@@ -303,13 +320,16 @@ NULL
 #' @param prepared Output from .tmb_prepare_data().
 #' @param design Output from .tmb_build_design_matrices().
 #' @param equation Character string.
-#' @param n_re Integer.
+#' @param re_parsed Canonical RE block structure.
 #' @param has_k Logical.
 #' @param k_fixed Numeric or NULL.
 #'
-#' @return Named list of starting values.
+#' @return Named list of starting values shaped for the Phase-2 template:
+#'   `logsigma` is a vector of length `sum(block dims)`, `rho_raw` is a
+#'   vector of length `sum(over pdSymm: d*(d-1)/2)`, and `u` has columns
+#'   ordered \[block1_q0, block1_alpha, block2_q0, ...\].
 #' @keywords internal
-.tmb_default_starts <- function(prepared, design, equation, n_re, has_k,
+.tmb_default_starts <- function(prepared, design, equation, re_parsed, has_k,
                                  k_fixed = NULL) {
   y <- prepared$y
   price <- prepared$price
@@ -345,15 +365,17 @@ NULL
   beta_alpha <- rep(0, p_alpha)
   beta_alpha[1] <- log(0.001)
 
+  bmap <- .tmb_build_block_map(re_parsed)
+  re_dim_total <- sum(bmap$block_q0_dim) + sum(bmap$block_alpha_dim)
+
   starts <- list(
     beta_q0 = beta_q0,
     beta_alpha = beta_alpha,
     log_k = if (has_k && !is.null(k_fixed)) log(k_fixed) else log(2),
-    logsigma_b = log(0.5),
-    logsigma_c = log(0.5),
+    logsigma = rep(log(0.5), bmap$n_logsigma),
     logsigma_e = log(1),
-    rho_bc_raw = 0,
-    u = matrix(0, nrow = n_subjects, ncol = n_re)
+    rho_raw = rep(0, bmap$n_rho),
+    u = matrix(0, nrow = n_subjects, ncol = re_dim_total)
   )
 
   starts
@@ -362,33 +384,20 @@ NULL
 
 #' Build TMB Map List
 #'
+#' Phase 2 expresses pdDiag-vs-pdSymm via the dimensionality of `rho_raw`
+#' (zero-length for pdDiag blocks, length d*(d-1)/2 for pdSymm blocks of
+#' size d). The map argument therefore only needs to handle `log_k`
+#' (mapped out for simplified / zben).
+#'
 #' @param has_k Logical, whether k is estimated.
-#' @param n_re Integer, number of random effects.
-#' @param covariance_class Character, one of `"pdSymm"` (default; free rho)
-#'   or `"pdDiag"` (rho pinned at 0, i.e. independent Q0 and alpha REs).
-#'   Only consulted when `n_re == 2`.
 #'
 #' @return Named list for TMB map argument.
 #' @keywords internal
-.tmb_build_map <- function(has_k, n_re, covariance_class = "pdSymm") {
+.tmb_build_map <- function(has_k) {
   map <- list()
-
-  # Map out k for simplified/zben
-
   if (!has_k) {
     map$log_k <- factor(NA)
   }
-
-  # Map out alpha RE variance/correlation if n_re == 1
-  if (n_re == 1) {
-    map$logsigma_c <- factor(NA)
-    map$rho_bc_raw <- factor(NA)
-  } else if (n_re == 2 && identical(covariance_class, "pdDiag")) {
-    # 2-RE with diagonal covariance: pin the correlation at 0 (rho_bc_raw
-    # defaults to 0 in .tmb_default_starts()), leaving both sigmas free.
-    map$rho_bc_raw <- factor(NA)
-  }
-
   map
 }
 
@@ -548,7 +557,6 @@ NULL
 #' @param tmb_data TMB data list.
 #' @param start_values Default starting values list.
 #' @param map TMB map list.
-#' @param n_re Integer.
 #' @param tmb_control Control parameters.
 #' @param user_specified Character vector of user-specified tmb_control fields.
 #' @param verbose Integer verbosity level.
@@ -556,7 +564,7 @@ NULL
 #'
 #' @return List with obj, opt, start_used.
 #' @keywords internal
-.tmb_multi_start <- function(tmb_data, start_values, map, n_re,
+.tmb_multi_start <- function(tmb_data, start_values, map,
                               tmb_control, user_specified, verbose,
                               prepared = NULL) {
   # Derive data-adaptive offset scales
@@ -621,7 +629,9 @@ NULL
   } else {
     s2$log_k <- log(3)
   }
-  s2$logsigma_b <- sigma_b_high
+  if (length(s2$logsigma) > 0L) {
+    s2$logsigma <- rep_len(sigma_b_high, length(s2$logsigma))
+  }
   s2$logsigma_e <- sigma_e_high
   start_sets[[2]] <- s2
 
@@ -634,7 +644,9 @@ NULL
   } else {
     s3$log_k <- log(1.5)
   }
-  s3$logsigma_b <- sigma_b_low
+  if (length(s3$logsigma) > 0L) {
+    s3$logsigma <- rep_len(sigma_b_low, length(s3$logsigma))
+  }
   s3$logsigma_e <- sigma_e_low
   start_sets[[3]] <- s3
 
@@ -699,14 +711,15 @@ NULL
 #'
 #' @param obj TMB objective function object.
 #' @param opt nlminb optimization result.
-#' @param n_re Integer.
+#' @param re_dim_total Integer; total RE columns per subject
+#'   (`re_dim_q0 + re_dim_alpha`).
 #' @param n_subjects Integer.
 #' @param has_k Logical.
 #' @param verbose Integer.
 #'
 #' @return List with coefficients, se, sdr, variance_components, u_hat.
 #' @keywords internal
-.tmb_extract_estimates <- function(obj, opt, n_re, n_subjects, has_k, verbose) {
+.tmb_extract_estimates <- function(obj, opt, re_dim_total, n_subjects, has_k, verbose) {
   # Compute sdreport
   sdr <- tryCatch(
     TMB::sdreport(obj),
@@ -777,9 +790,9 @@ NULL
 
     # Extract random effects
     re_summary <- summary(sdr, "random")
-    u_hat <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
+    u_hat <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = re_dim_total)
   } else {
-    u_hat <- matrix(0, nrow = n_subjects, ncol = n_re)
+    u_hat <- matrix(0, nrow = n_subjects, ncol = re_dim_total)
   }
 
   # Extract variance components from ADREPORT
@@ -805,20 +818,32 @@ NULL
 #' Compute Subject-Specific Parameters
 #'
 #' @param coefficients Named coefficient vector.
-#' @param u_hat Random effects matrix.
+#' @param u_hat Random effects matrix; columns ordered
+#'   \[block1_q0, block1_alpha, block2_q0, ...\].
 #' @param subject_levels Character vector of subject IDs.
-#' @param n_re Integer.
+#' @param re_parsed Canonical RE block structure.
 #' @param has_k Logical.
 #' @param equation Character.
 #' @param price Numeric vector of prices.
 #' @param subject_id Integer vector of 0-indexed subject IDs.
+#' @param k_fixed Numeric or NULL.
+#' @param X_q0,X_alpha Fixed-effect design matrices.
+#' @param Z_q0,Z_alpha Random-effect design matrices.
+#' @param validate_subject_pars Logical (default `TRUE`); see Phase 0 NA fallback.
+#'
+#' @note For factor-expanded RE specs (e.g. `pdDiag(Q0+alpha~condition)`),
+#'   subject-level Q0 / alpha here use the first observed row of `Z_q0` /
+#'   `Z_alpha` per subject -- which encodes the subject's first observed
+#'   condition only. Per-(subject, condition) rows are planned for Phase 5;
+#'   meanwhile use `predict()` for cell-level values.
 #'
 #' @return Data frame of subject-specific parameters.
 #' @keywords internal
 .tmb_compute_subject_pars <- function(
-  coefficients, u_hat, subject_levels, n_re, has_k,
+  coefficients, u_hat, subject_levels, re_parsed, has_k,
   equation, price, subject_id, k_fixed = NULL,
   X_q0 = NULL, X_alpha = NULL,
+  Z_q0 = NULL, Z_alpha = NULL,
   validate_subject_pars = TRUE
 ) {
   n_subjects <- length(subject_levels)
@@ -876,45 +901,78 @@ NULL
   beta_q0 <- unname(coefficients[beta_q0_idx])
   beta_alpha <- unname(coefficients[beta_alpha_idx])
 
-  # Build covariance matrix and transform u_hat
-  sigma_b <- exp(coefficients[["logsigma_b"]])
+  # Per-block Cholesky reconstruction. Mirrors the C++ template loop in
+  # src/MixedDemand.h: for each block, build L_b = diag(sigma) * L_corr
+  # via LKJ-Cholesky from rho_raw (or just diag(sigma) for pdDiag), then
+  # transform u_block to re_block per subject.
+  bmap <- .tmb_build_block_map(re_parsed)
+  re_dim_q0 <- sum(bmap$block_q0_dim)
+  re_dim_alpha <- sum(bmap$block_alpha_dim)
+  re_q0_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_q0)
+  re_alpha_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_alpha)
 
-  if (n_re == 2) {
-    sigma_c <- exp(coefficients[["logsigma_c"]])
-    # When pdDiag pins rho_bc_raw via TMB's map, the parameter is absent
-    # from `coefficients` (opt$par). Its fixed value is the default start
-    # (0), which corresponds to rho = tanh(0) = 0 — diagonal covariance.
-    rho_bc <- if ("rho_bc_raw" %in% names(coefficients)) {
-      tanh(coefficients[["rho_bc_raw"]])
-    } else {
-      0
-    }
+  if (re_dim_q0 + re_dim_alpha > 0L && bmap$n_blocks > 0L) {
+    logsigma_full <- unname(coefficients[names(coefficients) == "logsigma"])
+    rho_raw_full <- unname(coefficients[names(coefficients) == "rho_raw"])
 
-    Sigma <- matrix(
-      c(sigma_b^2, sigma_b * sigma_c * rho_bc,
-        sigma_b * sigma_c * rho_bc, sigma_c^2),
-      nrow = 2
-    )
-    L <- tryCatch(
-      t(chol(Sigma)),
-      error = function(e) {
-        warning(
-          "Covariance matrix not positive definite; dropping RE correlation. ",
-          "Subject-specific parameters assume independent random effects.",
-          call. = FALSE
-        )
-        diag(c(sigma_b, sigma_c))
+    sigma_offset <- 0L
+    rho_offset <- 0L
+    u_offset <- 0L
+
+    for (b in seq_len(bmap$n_blocks)) {
+      d_q0 <- bmap$block_q0_dim[b]
+      d_alpha <- bmap$block_alpha_dim[b]
+      d <- d_q0 + d_alpha
+      if (d == 0L) next
+
+      sigma_b <- exp(logsigma_full[(sigma_offset + 1L):(sigma_offset + d)])
+
+      L_b <- matrix(0, nrow = d, ncol = d)
+      L_b[1L, 1L] <- sigma_b[1L]
+
+      if (bmap$block_types[b] == 1L && d > 1L) {
+        L_corr <- matrix(0, nrow = d, ncol = d)
+        L_corr[1L, 1L] <- 1
+        for (j in 2L:d) {
+          sum_sq <- 0
+          for (k in seq_len(j - 1L)) {
+            r <- tanh(rho_raw_full[rho_offset + 1L])
+            rho_offset <- rho_offset + 1L
+            if (k == 1L) {
+              L_corr[j, k] <- r
+            } else {
+              L_corr[j, k] <- r * sqrt(max(0, 1 - sum_sq))
+            }
+            sum_sq <- sum_sq + L_corr[j, k]^2
+          }
+          L_corr[j, j] <- sqrt(max(0, 1 - sum_sq))
+        }
+        L_b <- diag(sigma_b, nrow = d) %*% L_corr
+      } else if (d > 1L) {
+        for (j in 2L:d) L_b[j, j] <- sigma_b[j]
       }
-    )
-    re_mat <- t(L %*% t(u_hat))
-    colnames(re_mat) <- c("b_i", "c_i")
-  } else {
-    re_mat <- matrix(sigma_b * u_hat[, 1], ncol = 1)
-    colnames(re_mat) <- "b_i"
+
+      for (i in seq_len(n_subjects)) {
+        u_block <- u_hat[i, (u_offset + 1L):(u_offset + d)]
+        re_block <- as.numeric(L_b %*% u_block)
+        if (d_q0 > 0L) {
+          re_q0_mat[i, (bmap$block_q0_offset[b] + 1L):(bmap$block_q0_offset[b] + d_q0)] <-
+            re_block[seq_len(d_q0)]
+        }
+        if (d_alpha > 0L) {
+          re_alpha_mat[i, (bmap$block_alpha_offset[b] + 1L):(bmap$block_alpha_offset[b] + d_alpha)] <-
+            re_block[(d_q0 + 1L):(d_q0 + d_alpha)]
+        }
+      }
+
+      sigma_offset <- sigma_offset + d
+      u_offset <- u_offset + d
+    }
   }
 
-  # Subject-specific Q0 and alpha using full design matrix rows
-  # Pre-compute first observation index per subject (O(n) vs O(n*m))
+  # Subject-specific Q0 and alpha using first-observation row of X and Z
+  # per subject (Phase 2 deferral; per-(subject, condition) rows are
+  # planned for Phase 5 -- see @note above).
   first_obs_per_subject <- match(seq_len(n_subjects) - 1L, subject_id)
 
   subj_log_q0 <- numeric(n_subjects)
@@ -924,21 +982,23 @@ NULL
     first_obs <- first_obs_per_subject[i]
 
     if (!is.null(X_q0)) {
-      subj_log_q0[i] <- sum(X_q0[first_obs, ] * beta_q0) + re_mat[i, "b_i"]
+      subj_log_q0[i] <- sum(X_q0[first_obs, ] * beta_q0)
     } else {
-      subj_log_q0[i] <- beta_q0[1] + re_mat[i, "b_i"]
+      subj_log_q0[i] <- beta_q0[1]
+    }
+    if (re_dim_q0 > 0L && !is.null(Z_q0)) {
+      subj_log_q0[i] <- subj_log_q0[i] +
+        sum(Z_q0[first_obs, ] * re_q0_mat[i, ])
     }
 
     if (!is.null(X_alpha)) {
-      log_alpha_i <- sum(X_alpha[first_obs, ] * beta_alpha)
+      subj_log_alpha[i] <- sum(X_alpha[first_obs, ] * beta_alpha)
     } else {
-      log_alpha_i <- beta_alpha[1]
+      subj_log_alpha[i] <- beta_alpha[1]
     }
-
-    if (n_re == 2) {
-      subj_log_alpha[i] <- log_alpha_i + re_mat[i, "c_i"]
-    } else {
-      subj_log_alpha[i] <- log_alpha_i
+    if (re_dim_alpha > 0L && !is.null(Z_alpha)) {
+      subj_log_alpha[i] <- subj_log_alpha[i] +
+        sum(Z_alpha[first_obs, ] * re_alpha_mat[i, ])
     }
   }
 
@@ -1005,10 +1065,15 @@ NULL
     omax_pmax$omax_model[affected_subjects] <- NA_real_
   }
 
-  # Build output
+  # Build output. For backward compat, populate `b_i` (and `c_i` if alpha
+  # has REs) from the first column of each per-block RE matrix. For
+  # intercept-only fits this matches the Phase-1 behavior bit-for-bit.
+  # For factor-expanded fits, b_i / c_i hold the FIRST RE coefficient
+  # per subject (typically the intercept under treatment contrasts) --
+  # downstream consumers that need the full per-condition RE vector
+  # should read fit$param_info$re_q0_mat / re_alpha_mat (Phase 5).
   out <- data.frame(
     id = subject_levels,
-    b_i = re_mat[, "b_i"],
     Q0 = subj_Q0,
     alpha = subj_alpha,
     Pmax = omax_pmax$pmax_model,
@@ -1016,11 +1081,23 @@ NULL
     stringsAsFactors = FALSE
   )
 
-  if (n_re == 2) {
-    out$c_i <- re_mat[, "c_i"]
-    # Reorder columns
-    out <- out[, c("id", "b_i", "c_i", "Q0", "alpha", "Pmax", "Omax")]
+  if (re_dim_q0 >= 1L) {
+    out$b_i <- re_q0_mat[, 1L]
   }
+  if (re_dim_alpha >= 1L) {
+    out$c_i <- re_alpha_mat[, 1L]
+  }
+
+  cols_order <- c("id")
+  if ("b_i" %in% names(out)) cols_order <- c(cols_order, "b_i")
+  if ("c_i" %in% names(out)) cols_order <- c(cols_order, "c_i")
+  cols_order <- c(cols_order, "Q0", "alpha", "Pmax", "Omax")
+  out <- out[, cols_order]
+
+  # Attach the full per-block RE matrices as attributes for downstream
+  # methods that need cell-level values (Phase 5 promotes to columns).
+  attr(out, "re_q0_mat") <- re_q0_mat
+  attr(out, "re_alpha_mat") <- re_alpha_mat
 
   out
 }
@@ -1238,22 +1315,21 @@ fit_demand_tmb <- function(
   }
   .validate_re_input(re_parsed, data = data, id_var = id_var)
 
-  if (!.re_is_phase1_fittable(re_parsed)) {
+  if (!.re_is_phase2_fittable(re_parsed)) {
     stop(
-      "random_effects specification requires the generalized TMB template ",
-      "(TICKET-011 Phase 2, not yet shipped). Supported today: intercept-",
-      "only random effects on Q0 and/or alpha. Use `fit_demand_mixed()` for ",
-      "richer random-effects structures (random slopes on a factor, ",
-      "pdBlocked multi-block covariance) in the meantime.",
+      "random_effects specification requires multi-block support ",
+      "(TICKET-011 Phase 3, not yet shipped). Supported today: a single ",
+      "pdDiag or pdSymm block on Q0 and/or alpha (intercept-only or ",
+      "factor-expanded). Use `fit_demand_mixed()` for `pdBlocked` / ",
+      "`list()` multi-block structures in the meantime.",
       call. = FALSE
     )
   }
 
-  # Collapse the Phase-1-fittable block back to the character shortcut so
-  # the existing n_re-branching body of this function (map builder,
-  # template dispatch, starts heuristic) continues to work unchanged.
-  random_effects <- .re_parsed_to_character(re_parsed)
-  n_re <- length(random_effects)
+  # Phase-2 RE dimensions derived from the canonical block representation.
+  bmap_preview <- .tmb_build_block_map(re_parsed)
+  re_dim_total <- sum(bmap_preview$block_q0_dim) +
+                  sum(bmap_preview$block_alpha_dim)
 
   # Determine if k is used
   has_k <- equation %in% c("exponentiated", "exponential")
@@ -1366,8 +1442,8 @@ fit_demand_tmb <- function(
       prepared$n_subjects, prepared$n_obs
     ))
     message(sprintf(
-      "  Random effects: %d (%s)",
-      n_re, paste(random_effects, collapse = ", ")
+      "  Random effects: %d total RE columns per subject (%s)",
+      re_dim_total, .re_shape_summary(re_parsed)
     ))
     message(sprintf(
       "  Design matrices: X_q0 [%d x %d], X_alpha [%d x %d]",
@@ -1376,20 +1452,22 @@ fit_demand_tmb <- function(
     ))
   }
 
-  # Build TMB data
-  tmb_data <- .tmb_build_tmb_data(prepared, design, equation, n_re)
-
-  # Build map. The parsed block's pdmat_class decides whether the 2x2
-  # random-effect covariance is pdSymm (free rho) or pdDiag (rho pinned).
-  map <- .tmb_build_map(
-    has_k = has_k && estimate_k,
-    n_re = n_re,
-    covariance_class = re_parsed$blocks[[1]]$pdmat_class
+  # Build TMB data (Phase-2 generalized: includes Z matrices and block
+  # metadata). Use data_for_design so Z's row order matches the prepared
+  # subset (e.g., zero rows dropped for the exponential equation).
+  tmb_data <- .tmb_build_tmb_data(
+    prepared, design, equation, re_parsed,
+    data = data_for_design, id_var = id_var
   )
+
+  # Build map. With the Phase-2 vectorized parameterization, pdDiag-vs-
+  # pdSymm is expressed via the dimensionality of `rho_raw` (zero-length
+  # for pdDiag), so the map only needs to handle log_k.
+  map <- .tmb_build_map(has_k = has_k && estimate_k)
 
   # Default starting values
   default_starts <- .tmb_default_starts(
-    prepared, design, equation, n_re,
+    prepared, design, equation, re_parsed,
     has_k = has_k && estimate_k,
     k_fixed = if (has_k && !estimate_k) k else NULL
   )
@@ -1477,7 +1555,7 @@ fit_demand_tmb <- function(
 
   if (isTRUE(multi_start)) {
     result <- .tmb_multi_start(
-      tmb_data, default_starts, map, n_re, tmb_control, user_specified, verbose,
+      tmb_data, default_starts, map, tmb_control, user_specified, verbose,
       prepared = prepared
     )
     obj <- result$obj
@@ -1543,7 +1621,7 @@ fit_demand_tmb <- function(
   # Extract estimates
   if (verbose >= 1) message("  Computing standard errors...")
   estimates <- .tmb_extract_estimates(
-    obj, opt, n_re, prepared$n_subjects,
+    obj, opt, re_dim_total, prepared$n_subjects,
     has_k = has_k && estimate_k, verbose = verbose
   )
 
@@ -1552,7 +1630,7 @@ fit_demand_tmb <- function(
     coefficients = estimates$coefficients,
     u_hat = estimates$u_hat,
     subject_levels = prepared$subject_levels,
-    n_re = n_re,
+    re_parsed = re_parsed,
     has_k = has_k,
     equation = equation,
     price = prepared$price,
@@ -1560,6 +1638,8 @@ fit_demand_tmb <- function(
     k_fixed = if (has_k && !estimate_k) k else NULL,
     X_q0 = design$X_q0,
     X_alpha = design$X_alpha,
+    Z_q0 = tmb_data$Z_q0,
+    Z_alpha = tmb_data$Z_alpha,
     validate_subject_pars = validate_subject_pars
   )
 
@@ -1600,7 +1680,7 @@ fit_demand_tmb <- function(
         n_obs = prepared$n_obs,
         n_zeros = prepared$n_zeros,
         n_dropped = prepared$n_dropped,
-        n_random_effects = n_re,
+        n_random_effects = re_dim_total,
         random_effects_spec = random_effects,
         random_effects_parsed = re_parsed,
         random_effects_shape = .re_shape_summary(re_parsed),

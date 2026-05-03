@@ -297,45 +297,93 @@ summary.beezdemand_tmb <- function(
 #' @keywords internal
 .tmb_format_variance_components <- function(object) {
   coefs <- object$model$coefficients
-  n_re <- object$param_info$n_random_effects
-
-  # Build table from coefficients
-  sigma_b <- exp(coefs[["logsigma_b"]])
-  sigma_e <- exp(coefs[["logsigma_e"]])
-
-  rows <- list(
-    data.frame(
-      Component = "sigma_b (Q0 RE SD)",
-      Estimate = sigma_b,
-      stringsAsFactors = FALSE
-    ),
-    data.frame(
-      Component = "sigma_e (Residual SD)",
-      Estimate = sigma_e,
-      stringsAsFactors = FALSE
-    )
-  )
-
-  correlations <- NULL
-
-  if (n_re == 2) {
-    sigma_c <- exp(coefs[["logsigma_c"]])
-    rho_bc <- tanh(coefs[["rho_bc_raw"]])
-
-    rows <- c(rows, list(
-      data.frame(
-        Component = "sigma_c (alpha RE SD)",
-        Estimate = sigma_c,
-        stringsAsFactors = FALSE
-      )
-    ))
-
-    correlations <- data.frame(
-      Component = "rho_bc (Q0-alpha correlation)",
-      Estimate = rho_bc,
-      stringsAsFactors = FALSE
-    )
+  re_parsed <- object$param_info$random_effects_parsed
+  bmap <- if (!is.null(re_parsed)) {
+    .tmb_build_block_map(re_parsed)
+  } else {
+    list(n_blocks = 0L, block_q0_dim = integer(0), block_alpha_dim = integer(0),
+         block_types = integer(0), n_logsigma = 0L, n_rho = 0L)
   }
+
+  logsigma_full <- unname(coefs[names(coefs) == "logsigma"])
+  rho_raw_full <- unname(coefs[names(coefs) == "rho_raw"])
+
+  rows <- list()
+  correlations <- NULL
+  sigma_offset <- 0L
+  rho_offset <- 0L
+
+  for (b in seq_len(bmap$n_blocks)) {
+    d_q0 <- bmap$block_q0_dim[b]
+    d_alpha <- bmap$block_alpha_dim[b]
+    d <- d_q0 + d_alpha
+    if (d == 0L) next
+
+    # Per-RE-column SDs.
+    block_label_prefix <- if (bmap$n_blocks > 1L) sprintf("block%d ", b) else ""
+    pdmat_label <- if (bmap$block_types[b] == 1L) "pdSymm" else "pdDiag"
+    if (d_q0 > 0L) {
+      for (j in seq_len(d_q0)) {
+        nm <- if (d_q0 == 1L) "sigma_b (Q0 RE SD)" else
+              sprintf("sigma_b[%s%d] (Q0 RE SD)", block_label_prefix, j)
+        rows[[length(rows) + 1L]] <- data.frame(
+          Component = nm,
+          Estimate = exp(logsigma_full[sigma_offset + j]),
+          stringsAsFactors = FALSE
+        )
+      }
+    }
+    if (d_alpha > 0L) {
+      for (j in seq_len(d_alpha)) {
+        nm <- if (d_alpha == 1L) "sigma_c (alpha RE SD)" else
+              sprintf("sigma_c[%s%d] (alpha RE SD)", block_label_prefix, j)
+        rows[[length(rows) + 1L]] <- data.frame(
+          Component = nm,
+          Estimate = exp(logsigma_full[sigma_offset + d_q0 + j]),
+          stringsAsFactors = FALSE
+        )
+      }
+    }
+
+    # Off-diagonal correlations (pdSymm only). For backward-compat, the
+    # canonical "rho_bc" label survives only when the block is the
+    # familiar 2x2 (one Q0 RE + one alpha RE) pdSymm.
+    if (bmap$block_types[b] == 1L && d > 1L) {
+      n_off <- d * (d - 1L) / 2L
+      cor_rows <- list()
+      idx <- 0L
+      for (j in 2L:d) {
+        for (k in seq_len(j - 1L)) {
+          idx <- idx + 1L
+          r <- tanh(rho_raw_full[rho_offset + idx])
+          nm <- if (d_q0 == 1L && d_alpha == 1L && d == 2L) {
+            "rho_bc (Q0-alpha correlation)"
+          } else {
+            sprintf("rho[%s%d,%d]", block_label_prefix, j, k)
+          }
+          cor_rows[[length(cor_rows) + 1L]] <- data.frame(
+            Component = nm,
+            Estimate = r,
+            stringsAsFactors = FALSE
+          )
+        }
+      }
+      rho_offset <- rho_offset + n_off
+      if (length(cor_rows) > 0L) {
+        cor_df <- do.call(rbind, cor_rows)
+        correlations <- if (is.null(correlations)) cor_df else
+          rbind(correlations, cor_df)
+      }
+    }
+
+    sigma_offset <- sigma_offset + d
+  }
+
+  rows[[length(rows) + 1L]] <- data.frame(
+    Component = "sigma_e (Residual SD)",
+    Estimate = exp(coefs[["logsigma_e"]]),
+    stringsAsFactors = FALSE
+  )
 
   list(
     table = do.call(rbind, rows),
