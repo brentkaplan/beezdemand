@@ -237,6 +237,28 @@ test_that("predict() rejects newdata missing RE-only RHS column (Codex round 6)"
   )
 })
 
+test_that("predict() rejects newdata with NA in x_var (Codex round 7 followup)", {
+  skip_on_cran()
+  sim <- helper_within_subject_data(seed = 832)
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    sim, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ condition),
+    verbose = 0
+  )))
+  skip_if_not(isTRUE(fit$converged))
+
+  # NA price would create the same downstream array-shape mismatch as
+  # NA in any other model-matrix column. The round-6 fix exempted
+  # x_var "out of caution"; round 7 follow-up tightens that.
+  nd_na_x <- sim
+  nd_na_x$x[1] <- NA
+  expect_error(
+    predict(fit, newdata = nd_na_x),
+    regexp = "missing values in column"
+  )
+})
+
 test_that("predict() rejects newdata with NA in RE-only RHS (Codex round 6)", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 732)

@@ -847,13 +847,12 @@ predict.beezdemand_tmb <- function(
     )
   }
 
-  # NAs in any model-matrix column propagate into mismatched-shape Z /
-  # X arrays downstream. Reject them up front with a clear error so
-  # the user can clean their newdata. Phase 2 / Codex round 6.
+  # NAs in any model-matrix column (including x_var / price) propagate
+  # into mismatched-shape Z / X arrays downstream. Reject them up front
+  # with a clear error so the user can clean their newdata.
+  # Phase 2 / Codex rounds 6 + 7.
   na_cols <- needed[vapply(needed, function(c) any(is.na(newdata[[c]])),
                             logical(1))]
-  na_cols <- setdiff(na_cols, c(pinfo$x_var))  # x_var allowed to be NA? no, but skip out of caution
-  na_cols <- na_cols[na_cols %in% needed]  # re-narrow
   if (length(na_cols) > 0) {
     cli::cli_abort(c(
       "{.arg newdata} has missing values in column{?s}: {.field {na_cols}}",
