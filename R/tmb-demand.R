@@ -772,21 +772,25 @@ NULL
       }
     }
 
-    # Handle vector parameters (beta_q0, beta_alpha)
-    beta_q0_idx <- which(par_names == "beta_q0")
-    if (length(beta_q0_idx) > 0) {
-      fixed_beta_q0 <- fixed_summary[rownames(fixed_summary) == "beta_q0", , drop = FALSE]
-      if (nrow(fixed_beta_q0) == length(beta_q0_idx)) {
-        se_vec[beta_q0_idx] <- fixed_beta_q0[, "Std. Error"]
+    # Handle vector parameters. The sdreport "fixed" table has one row
+    # per coefficient, each named after the parent vector (e.g. "beta_q0",
+    # "logsigma"). The duplicated-name match in the loop above only fills
+    # the first occurrence; explicitly slot vector SEs row-by-row here.
+    # Phase 2 added two new vector parameters: `logsigma` (length
+    # n_logsigma) and `rho_raw` (length n_rho). Without this fix only the
+    # first element of each gets a non-NA SE.
+    .fill_vector_se <- function(name) {
+      idx <- which(par_names == name)
+      if (length(idx) == 0L) return(invisible(NULL))
+      rows <- fixed_summary[rownames(fixed_summary) == name, , drop = FALSE]
+      if (nrow(rows) == length(idx)) {
+        se_vec[idx] <<- rows[, "Std. Error"]
       }
     }
-    beta_alpha_idx <- which(par_names == "beta_alpha")
-    if (length(beta_alpha_idx) > 0) {
-      fixed_beta_alpha <- fixed_summary[rownames(fixed_summary) == "beta_alpha", , drop = FALSE]
-      if (nrow(fixed_beta_alpha) == length(beta_alpha_idx)) {
-        se_vec[beta_alpha_idx] <- fixed_beta_alpha[, "Std. Error"]
-      }
-    }
+    .fill_vector_se("beta_q0")
+    .fill_vector_se("beta_alpha")
+    .fill_vector_se("logsigma")
+    .fill_vector_se("rho_raw")
 
     # Extract random effects
     re_summary <- summary(sdr, "random")
@@ -1398,9 +1402,21 @@ fit_demand_tmb <- function(
     }
   }
 
-  # Drop rows with NAs in any modeling column (mirrors fit_demand_mixed)
+  # Drop rows with NAs in any modeling column (mirrors fit_demand_mixed).
+  # Phase 2: include variables referenced in the RE formula RHS but NOT
+  # already in `factors` -- otherwise NAs in (e.g.) a within-subject
+  # factor `condition` survive into prepared$y while model.matrix() in
+  # .tmb_build_z_matrices() silently drops the row, handing TMB
+  # mismatched arrays. Codex round 5 reproduced n_data=84, n_Z=83.
+  re_rhs_vars <- character(0)
+  for (b in re_parsed$blocks) {
+    rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))
+    re_rhs_vars <- c(re_rhs_vars, all.vars(rhs_form))
+  }
+  re_rhs_vars <- unique(re_rhs_vars)
   model_cols <- unique(c(id_var, x_var, y_var,
-                         factors_q0, factors_alpha, continuous_covariates))
+                         factors_q0, factors_alpha, continuous_covariates,
+                         re_rhs_vars))
   model_cols <- intersect(model_cols, names(data))
   complete_mask <- stats::complete.cases(data[, model_cols, drop = FALSE])
   n_dropped_na <- sum(!complete_mask)

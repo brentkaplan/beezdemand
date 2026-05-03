@@ -172,10 +172,12 @@ summary.beezdemand_tmb <- function(
   component[q0_idx] <- "consumption"
   component[alpha_idx] <- "consumption"
   component[nms == "log_k"] <- "consumption"
-  component[grepl("^logsigma_|^rho_", nms)] <- "variance"
+  # Match bare `logsigma` (Phase 2 vector parameter) as well as
+  # `logsigma_e` and the legacy `logsigma_b` / `logsigma_c` names.
+  component[grepl("^logsigma($|_)|^rho_", nms)] <- "variance"
 
   estimate_scale <- rep("log", length(nms))
-  estimate_scale[grepl("^logsigma_|^rho_", nms)] <- "natural"
+  estimate_scale[grepl("^logsigma($|_)|^rho_", nms)] <- "natural"
 
   # Build coefficient table
   z_val <- coefs / se_vec
@@ -345,17 +347,44 @@ summary.beezdemand_tmb <- function(
       }
     }
 
-    # Off-diagonal correlations (pdSymm only). For backward-compat, the
-    # canonical "rho_bc" label survives only when the block is the
-    # familiar 2x2 (one Q0 RE + one alpha RE) pdSymm.
+    # Off-diagonal correlations (pdSymm only). The C++ template treats
+    # rho_raw entries as PARTIAL correlations consumed by the LKJ-
+    # Cholesky construction (see src/MixedDemand.h). For d == 2 the
+    # single partial correlation equals the marginal correlation
+    # (tanh(rho_raw[0])), so the legacy "rho_bc" label is correct. For
+    # d > 2, the marginal correlations are the off-diagonals of
+    # R_corr = L_corr %*% t(L_corr) -- reconstruct L_corr here using
+    # the same recurrence as the template, then derive R_corr.
+    # Codex round 5 caught the prior code reporting tanh(rho_raw)
+    # directly as rho[j,k], which is a silent statistical wrong answer
+    # for any pdSymm block of size > 2.
     if (bmap$block_types[b] == 1L && d > 1L) {
       n_off <- d * (d - 1L) / 2L
-      cor_rows <- list()
+
+      # Reconstruct the LKJ correlation Cholesky.
+      L_corr <- matrix(0, nrow = d, ncol = d)
+      L_corr[1L, 1L] <- 1
       idx <- 0L
       for (j in 2L:d) {
+        sum_sq <- 0
         for (k in seq_len(j - 1L)) {
           idx <- idx + 1L
           r <- tanh(rho_raw_full[rho_offset + idx])
+          if (k == 1L) {
+            L_corr[j, k] <- r
+          } else {
+            L_corr[j, k] <- r * sqrt(max(0, 1 - sum_sq))
+          }
+          sum_sq <- sum_sq + L_corr[j, k]^2
+        }
+        L_corr[j, j] <- sqrt(max(0, 1 - sum_sq))
+      }
+      R_corr <- L_corr %*% t(L_corr)
+
+      cor_rows <- list()
+      for (j in 2L:d) {
+        for (k in seq_len(j - 1L)) {
+          marginal_r <- R_corr[j, k]
           nm <- if (d_q0 == 1L && d_alpha == 1L && d == 2L) {
             "rho_bc (Q0-alpha correlation)"
           } else {
@@ -363,7 +392,7 @@ summary.beezdemand_tmb <- function(
           }
           cor_rows[[length(cor_rows) + 1L]] <- data.frame(
             Component = nm,
-            Estimate = r,
+            Estimate = marginal_r,
             stringsAsFactors = FALSE
           )
         }
@@ -808,11 +837,28 @@ predict.beezdemand_tmb <- function(
 
   # 2. Coerce newdata factor columns to the training-time level sets so
   #    model.matrix builds the same columns (and errors loudly on unseen
-  #    levels).
+  #    levels). Phase 2 also coerces RE-only RHS factors (those that
+  #    appear in the RE formula but NOT in `factors`) -- otherwise
+  #    .tmb_build_z_matrices() in step 4 below builds a Z with fewer
+  #    columns than re_q0_mat / re_alpha_mat have rows.
   train <- object$data
-  for (f in unique(c(pinfo$factors_q0, pinfo$factors_alpha))) {
+  re_parsed <- pinfo$random_effects_parsed
+  re_factor_vars <- character(0)
+  if (!is.null(re_parsed)) {
+    for (b in re_parsed$blocks) {
+      rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))
+      re_factor_vars <- c(re_factor_vars, all.vars(rhs_form))
+    }
+    re_factor_vars <- unique(re_factor_vars)
+  }
+  factors_to_coerce <- unique(c(
+    pinfo$factors_q0, pinfo$factors_alpha, re_factor_vars
+  ))
+  for (f in factors_to_coerce) {
     if (is.null(f) || !nzchar(f)) next
+    if (!(f %in% names(train))) next
     if (!is.factor(train[[f]])) next
+    if (!(f %in% names(newdata))) next
     train_levels <- levels(train[[f]])
     new_vals <- as.character(newdata[[f]])
     bad <- setdiff(unique(new_vals[!is.na(new_vals)]), train_levels)
@@ -858,15 +904,47 @@ predict.beezdemand_tmb <- function(
       "{n_unknown} observation{?s} from unknown subject{?s}; using {.arg newdata} fixed effects with random effects = 0."
     )
   }
-  b_i_vec <- ifelse(is.na(subj_match), 0, spars$b_i[subj_match])
-  if (n_re == 2 && "c_i" %in% names(spars)) {
-    c_i_vec <- ifelse(is.na(subj_match), 0, spars$c_i[subj_match])
+  # Phase 2 fix (Codex round 5): for factor-expanded RE specs the
+  # per-subject RE contribution is `Z[i, ] %*% re_mat[subj_i, ]`, NOT
+  # just spars$b_i (which holds only the FIRST RE column for backward
+  # compat). Build Z from newdata via the same helper used at fit time;
+  # for intercept-only fits Z is a column of 1s and the dot product
+  # collapses to spars$b_i, preserving backward compatibility.
+  re_q0_mat <- attr(spars, "re_q0_mat")
+  re_alpha_mat <- attr(spars, "re_alpha_mat")
+
+  re_q0_contrib <- numeric(length(subj_ids))
+  re_alpha_contrib <- numeric(length(subj_ids))
+
+  if (!is.null(re_parsed) && !is.null(re_q0_mat) && !is.null(re_alpha_mat)) {
+    z_new <- .tmb_build_z_matrices(re_parsed, newdata, id_var = pinfo$id_var)
+    if (z_new$re_dim_q0 > 0L && ncol(re_q0_mat) > 0L) {
+      for (i in seq_along(subj_ids)) {
+        sm <- subj_match[i]
+        if (!is.na(sm)) {
+          re_q0_contrib[i] <- sum(z_new$Z_q0[i, ] * re_q0_mat[sm, ])
+        }
+      }
+    }
+    if (z_new$re_dim_alpha > 0L && ncol(re_alpha_mat) > 0L) {
+      for (i in seq_along(subj_ids)) {
+        sm <- subj_match[i]
+        if (!is.na(sm)) {
+          re_alpha_contrib[i] <- sum(z_new$Z_alpha[i, ] * re_alpha_mat[sm, ])
+        }
+      }
+    }
   } else {
-    c_i_vec <- rep(0, length(subj_ids))
+    # Fallback path for fits that pre-date Phase 2.4 (no attached
+    # re_q0_mat / re_alpha_mat attribute on subject_pars).
+    re_q0_contrib <- ifelse(is.na(subj_match), 0, spars$b_i[subj_match])
+    if (n_re == 2 && "c_i" %in% names(spars)) {
+      re_alpha_contrib <- ifelse(is.na(subj_match), 0, spars$c_i[subj_match])
+    }
   }
 
-  log_q0_total    <- log_q0_fix    + b_i_vec
-  log_alpha_total <- log_alpha_fix + c_i_vec
+  log_q0_total    <- log_q0_fix    + re_q0_contrib
+  log_alpha_total <- log_alpha_fix + re_alpha_contrib
   list(
     Q0     = exp(log_q0_total),
     alpha  = exp(log_alpha_total),
@@ -1250,10 +1328,12 @@ tidy.beezdemand_tmb <- function(
   component[q0_idx] <- "consumption"
   component[alpha_idx] <- "consumption"
   component[nms == "log_k"] <- "consumption"
-  component[grepl("^logsigma_|^rho_", nms)] <- "variance"
+  # Match bare `logsigma` (Phase 2 vector parameter) as well as
+  # `logsigma_e` and the legacy `logsigma_b` / `logsigma_c` names.
+  component[grepl("^logsigma($|_)|^rho_", nms)] <- "variance"
 
   estimate_scale <- rep("log", length(nms))
-  estimate_scale[grepl("^logsigma_|^rho_", nms)] <- "natural"
+  estimate_scale[grepl("^logsigma($|_)|^rho_", nms)] <- "natural"
 
   z_val <- coefs / se
   p_val <- 2 * stats::pnorm(-abs(z_val))
