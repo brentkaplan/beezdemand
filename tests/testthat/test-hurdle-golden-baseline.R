@@ -25,8 +25,9 @@
 #   estimate, so empirical Bayes posterior modes can drift slightly.
 # =============================================================================
 
-# Reuse the simulator from test-hurdle_part2_variants.R
-source(testthat::test_path("test-hurdle_part2_variants.R"))
+# `simulate_hurdle_part2_data()` is defined in helper-hurdle-part2.R
+# (auto-sourced by testthat). Test files MUST NOT source other test
+# files.
 
 .golden_specs <- list(
   list(

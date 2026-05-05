@@ -235,19 +235,92 @@ test_that("calc_group_metrics aborts on non-numeric `at` value for continuous co
   )
 })
 
-test_that("calc_group_metrics warns on length-1 multi-value `at` continuous", {
+test_that("calc_group_metrics aborts on zero-length `at` value", {
   skip_on_cran()
   d <- helper_subsample_apt_full()
   fit <- fit_demand_tmb(
     d, equation = "exponential", continuous_covariates = "age", verbose = 0
   )
 
-  # Multi-value continuous `at` warns once and uses the first value.
-  expect_warning(
-    metrics <- calc_group_metrics(fit, at = list(age = c(30, 50))),
-    regexp = "length 2|using first value"
+  # Zero-length numeric: any(is.na(numeric(0))) is FALSE, so the
+  # finite-numeric check passes; then `[1]` returns NA. Pre-fix this
+  # produced silent NA Pmax/Omax/Qmax. Validation must abort.
+  expect_error(
+    calc_group_metrics(fit, at = list(age = numeric(0))),
+    regexp = "length 0"
   )
+  expect_error(
+    calc_group_metrics(fit, at = list(age = c())),
+    regexp = "length 0"
+  )
+})
+
+test_that("calc_group_metrics warns ONCE on multi-value `at` continuous (one-shot)", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", continuous_covariates = "age", verbose = 0
+  )
+
+  # calc_group_metrics() builds Q0 and alpha grids in one user call.
+  # Pre-fix the validation/warning fired inside the helper, so each
+  # grid call emitted its own warning -> 2 warnings per public call.
+  # The fix validates ONCE at the top and passes validate=FALSE to
+  # both helper calls. Capture all warnings and assert exactly one
+  # multi-value warning landed.
+  ws <- character(0)
+  metrics <- withCallingHandlers(
+    calc_group_metrics(fit, at = list(age = c(30, 50))),
+    warning = function(w) {
+      ws <<- c(ws, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  multi_warns <- grep("length 2|using first value", ws, value = TRUE)
+  expect_length(multi_warns, 1L)
   expect_equal(metrics$conditioned_on$covariates[["age"]], 30)
+})
+
+test_that("get_demand_param_emms warns ONCE on multi-value `at` continuous", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", continuous_covariates = "age", verbose = 0
+  )
+
+  ws <- character(0)
+  withCallingHandlers(
+    get_demand_param_emms(fit, param = "Q0", at = list(age = c(30, 50))),
+    warning = function(w) {
+      ws <<- c(ws, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  multi_warns <- grep("length 2|using first value|first only", ws, value = TRUE)
+  expect_length(multi_warns, 1L)
+})
+
+test_that("get_demand_comparisons warns ONCE on multi-value `at` continuous", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", factors = "gender",
+    continuous_covariates = "age", verbose = 0
+  )
+
+  # get_demand_comparisons() calls get_demand_param_emms() (1 grid call)
+  # then builds its own grid (2 grid calls total). Pre-fix that meant
+  # 2-3 duplicate warnings. The validate=FALSE plumbing collapses to 1.
+  ws <- character(0)
+  withCallingHandlers(
+    get_demand_comparisons(fit, param = "Q0", at = list(age = c(30, 50))),
+    warning = function(w) {
+      ws <<- c(ws, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  multi_warns <- grep("length 2|using first value|first only", ws, value = TRUE)
+  expect_length(multi_warns, 1L)
 })
 
 test_that("calc_group_metrics aborts on empty `at`-filtered grid", {

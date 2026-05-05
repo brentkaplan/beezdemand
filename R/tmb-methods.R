@@ -1876,25 +1876,103 @@ confint.beezdemand_tmb <- function(
 #'   }
 #'
 #' @keywords internal
-.tmb_build_emm_ref_grid <- function(
-  fit_obj,
-  param = c("Q0", "alpha"),
-  at = NULL,
-  factors_in_emm = NULL
-) {
-  param <- match.arg(param)
+#' Validate the `at` list for TMB EMM/comparison/metric helpers
+#'
+#' Extracted from `.tmb_build_emm_ref_grid()` so each public-facing
+#' function (`get_demand_param_emms`, `get_demand_comparisons`,
+#' `calc_group_metrics`) can validate ONCE at the top of the call —
+#' otherwise grid-builder calls inside one public call (Q0 grid + alpha
+#' grid) emit duplicate warnings on multi-value continuous `at`.
+#'
+#' Aborts on:
+#'   - Unnamed entries.
+#'   - Names not in (fitted factors u continuous_covariates).
+#'   - Factor values not in observed levels.
+#'   - Continuous values that are zero-length, NA, Inf, or non-numeric
+#'     (after suppressWarnings(as.numeric())).
+#'
+#' Warns once on:
+#'   - Multi-value continuous `at` entries (uses first value).
+#'
+#' @keywords internal
+#' @noRd
+.tmb_validate_at <- function(fit_obj, at) {
+  if (is.null(at)) return(invisible(NULL))
+
+  if (is.null(names(at)) || any(!nzchar(names(at)))) {
+    cli::cli_abort(
+      "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)})."
+    )
+  }
 
   cov_names <- fit_obj$param_info$continuous_covariates
   if (is.null(cov_names)) cov_names <- character(0)
-
-  # Discover ALL fitted factors (across both Q0 and alpha) for `at`
-  # validation; the param-specific `use_factors` filter applies later.
   all_factors <- unique(c(
     fit_obj$param_info$factors,
     fit_obj$param_info$factors_q0,
     fit_obj$param_info$factors_alpha
   ))
   all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
+
+  valid_names <- c(all_factors, cov_names)
+  bad_names <- setdiff(names(at), valid_names)
+  if (length(bad_names) > 0L) {
+    cli::cli_abort(c(
+      "Unknown name{?s} in {.arg at}: {.field {bad_names}}.",
+      "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}.",
+      "x" = "Did you mistype a factor or covariate name?"
+    ))
+  }
+
+  data_used <- fit_obj$data
+  for (nm in names(at)) {
+    v <- at[[nm]]
+    if (length(v) < 1L) {
+      cli::cli_abort(c(
+        "{.field {nm}} = {.val {v}} has length 0.",
+        "i" = "Each {.arg at} entry must be a non-empty vector."
+      ))
+    }
+    if (nm %in% all_factors) {
+      observed <- sort(unique(as.character(data_used[[nm]])))
+      bad_vals <- setdiff(as.character(v), observed)
+      if (length(bad_vals) > 0L) {
+        cli::cli_abort(c(
+          "{.field {nm}} = {.val {bad_vals}} not an observed level.",
+          "i" = "Observed levels: {.val {observed}}.",
+          "x" = "Conditioning on an unobserved factor level cannot be evaluated."
+        ))
+      }
+    } else if (nm %in% cov_names) {
+      v_num <- suppressWarnings(as.numeric(v))
+      if (any(is.na(v_num)) || any(!is.finite(v_num))) {
+        cli::cli_abort(c(
+          "{.field {nm}} value{?s} {.val {as.character(v)}} not finite numeric.",
+          "i" = "Continuous-covariate {.arg at} entries must be a single finite numeric value."
+        ))
+      }
+      if (length(v) > 1L) {
+        cli::cli_warn(c(
+          "{.arg at${nm}} has length {length(v)}; using first value {.val {v_num[1]}}.",
+          "i" = "Pass a single numeric value per continuous covariate."
+        ))
+      }
+    }
+  }
+  invisible(NULL)
+}
+
+.tmb_build_emm_ref_grid <- function(
+  fit_obj,
+  param = c("Q0", "alpha"),
+  at = NULL,
+  factors_in_emm = NULL,
+  validate = TRUE
+) {
+  param <- match.arg(param)
+
+  cov_names <- fit_obj$param_info$continuous_covariates
+  if (is.null(cov_names)) cov_names <- character(0)
 
   if (param == "Q0") {
     use_factors <- fit_obj$param_info$factors_q0
@@ -1906,55 +1984,13 @@ confint.beezdemand_tmb <- function(
     use_factors <- intersect(use_factors, factors_in_emm)
   }
 
-  # `at` validation: catch typos and bad values BEFORE grid construction
-  # so users can't get silent default-marginal results from a misspelled
-  # factor name or NA metrics from an off-grid factor level.
-  if (!is.null(at)) {
-    if (is.null(names(at)) || any(!nzchar(names(at)))) {
-      cli::cli_abort(
-        "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)})."
-      )
-    }
-    valid_names <- c(all_factors, cov_names)
-    bad_names <- setdiff(names(at), valid_names)
-    if (length(bad_names) > 0L) {
-      cli::cli_abort(c(
-        "Unknown name{?s} in {.arg at}: {.field {bad_names}}.",
-        "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}.",
-        "x" = "Did you mistype a factor or covariate name?"
-      ))
-    }
-    data_used_for_validate <- fit_obj$data
-    for (nm in names(at)) {
-      v <- at[[nm]]
-      if (nm %in% all_factors) {
-        # Factor: value must be a subset of observed levels.
-        observed <- sort(unique(as.character(data_used_for_validate[[nm]])))
-        bad_vals <- setdiff(as.character(v), observed)
-        if (length(bad_vals) > 0L) {
-          cli::cli_abort(c(
-            "{.field {nm}} = {.val {bad_vals}} not an observed level.",
-            "i" = "Observed levels: {.val {observed}}.",
-            "x" = "Conditioning on an unobserved factor level cannot be evaluated."
-          ))
-        }
-      } else if (nm %in% cov_names) {
-        # Continuous: must be finite numeric (or character coercible).
-        v_num <- suppressWarnings(as.numeric(v))
-        if (any(is.na(v_num)) || any(!is.finite(v_num))) {
-          cli::cli_abort(c(
-            "{.field {nm}} value{?s} {.val {as.character(v)}} not finite numeric.",
-            "i" = "Continuous-covariate {.arg at} entries must be a single finite numeric value."
-          ))
-        }
-        if (length(v) > 1L) {
-          cli::cli_warn(c(
-            "{.arg at${nm}} has length {length(v)}; using first value {.val {v_num[1]}}.",
-            "i" = "Pass a single numeric value per continuous covariate."
-          ))
-        }
-      }
-    }
+  # `at` validation: catch typos and bad values BEFORE grid construction.
+  # Public-facing functions that call this helper twice (e.g.
+  # calc_group_metrics() builds Q0 and alpha grids in one user call)
+  # validate ONCE at their entry point and pass `validate = FALSE` so
+  # the multi-value continuous warning fires only once per public call.
+  if (isTRUE(validate)) {
+    .tmb_validate_at(fit_obj, at)
   }
 
   is_intercept_only <- length(use_factors) == 0L && length(cov_names) == 0L
@@ -2111,20 +2147,11 @@ get_demand_param_emms.beezdemand_tmb <- function(
     vcov_mat <- diag(se_vals^2, nrow = length(se_vals))
   }
 
-  # Surface the multi-value `at` warning at the public API boundary so a
-  # comparisons -> emms -> helper call chain warns exactly once (the
-  # helper itself is silent on this; see .tmb_build_emm_ref_grid()).
-  cov_names_for_warn <- fit_obj$param_info$continuous_covariates
-  if (!is.null(at) && !is.null(cov_names_for_warn)) {
-    for (cv in intersect(names(at), cov_names_for_warn)) {
-      if (length(at[[cv]]) > 1) {
-        cli::cli_warn(c(
-          "Multiple values supplied for continuous covariate {.field {cv}} in {.arg at}; using the first only.",
-          "i" = "Call {.fun get_demand_param_emms} separately for each value to compare."
-        ))
-      }
-    }
-  }
+  # Validate `at` once at the public boundary. Subsequent helper calls
+  # below (and any nested calls from get_demand_comparisons()) pass
+  # `validate = FALSE` so the multi-value-continuous warning fires
+  # exactly once per public call rather than once per param grid.
+  .tmb_validate_at(fit_obj, at)
 
   # Build reference grid via the shared helper so EMMs and comparisons
   # always consume the same conditioned grid (TICKET-011 Phase 0.4).
@@ -2132,7 +2159,8 @@ get_demand_param_emms.beezdemand_tmb <- function(
     fit_obj,
     param = param,
     at = at,
-    factors_in_emm = factors_in_emm
+    factors_in_emm = factors_in_emm,
+    validate = FALSE
   )
 
   if (grid$is_intercept_only) {
@@ -2311,12 +2339,15 @@ get_demand_comparisons.beezdemand_tmb <- function(
   # rounds 2-4 flagged this drift as silent statistical corruption when
   # `at` filters factor levels: ref_X had more rows than emms, so the
   # pairwise loop produced off-grid contrasts and "NA" labels).
+  # `at` was already validated by get_demand_param_emms() above; skip
+  # re-validation so the multi-value warning fires exactly once.
   dots <- list(...)
   grid <- .tmb_build_emm_ref_grid(
     fit_obj,
     param = param,
     at = dots$at,
-    factors_in_emm = dots$factors_in_emm
+    factors_in_emm = dots$factors_in_emm,
+    validate = FALSE
   )
 
   if (grid$is_intercept_only) {
@@ -2454,12 +2485,17 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
 
   # Phase 5C: parameter-first marginalization. Compute log-Q0 and log-alpha
   # EMMs across the reference grid (continuous covariates at training
-  # mean by default; factor levels marginal with equal weights). The
-  # `at` argument forwards through `.tmb_build_emm_ref_grid()` to the
-  # grid construction. Then derive Pmax/Omax/Qmax from the marginalized
-  # parameters -- consistent with the parameter-level convention used by
-  # `get_demand_param_emms()`.
-  grid_q0 <- .tmb_build_emm_ref_grid(object, param = "Q0", at = at)
+  # mean by default; factor levels marginal with equal weights), then
+  # derive Pmax/Omax/Qmax from the marginalized parameters -- consistent
+  # with the parameter-level convention used by `get_demand_param_emms()`.
+  #
+  # Validate `at` ONCE here so the two grid calls below (Q0 + alpha)
+  # don't each emit a duplicate multi-value-continuous warning.
+  .tmb_validate_at(object, at)
+
+  grid_q0 <- .tmb_build_emm_ref_grid(
+    object, param = "Q0", at = at, validate = FALSE
+  )
   if (isTRUE(grid_q0$is_intercept_only)) {
     log_q0_marginal <- beta_q0[1L]
   } else {
@@ -2467,7 +2503,9 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
     log_q0_marginal <- mean(log_q0_emms)
   }
 
-  grid_alpha <- .tmb_build_emm_ref_grid(object, param = "alpha", at = at)
+  grid_alpha <- .tmb_build_emm_ref_grid(
+    object, param = "alpha", at = at, validate = FALSE
+  )
   if (isTRUE(grid_alpha$is_intercept_only)) {
     log_alpha_marginal <- beta_alpha[1L]
   } else {
