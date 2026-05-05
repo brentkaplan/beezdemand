@@ -159,3 +159,89 @@ test_that("fit_demand_hurdle supports SND Part II (part2 = 'simplified_exponenti
   expect_true(is.finite(s$group_metrics$Omax))
 })
 
+# ---------------------------------------------------------------------------
+# TICKET-011 Phase 4 test gap close: 3RE x exponential and 3RE x
+# simplified_exponential were "supported on paper" pre-Phase-4 — the
+# template files HurdleDemand3RE_StdQ0.h and HurdleDemand3RE_SND.h
+# existed and were dispatched by R/hurdle-demand.R, but had zero
+# dedicated isolation tests. These tests establish a regression
+# baseline before the Phase 4 consolidation rewrites the templates.
+# ---------------------------------------------------------------------------
+
+test_that("fit_demand_hurdle supports 3RE x HS-standardized Part II (part2 = 'exponential')", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_part2_data(
+    n_subjects = 60,
+    prices = seq(0, 5, by = 0.5),
+    part2 = "exponential",
+    seed = 124
+  )
+
+  fit <- suppressWarnings(fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0", "alpha"),
+    part2 = "exponential",
+    verbose = 0
+  ))
+
+  expect_s3_class(fit, "beezdemand_hurdle")
+  expect_true(isTRUE(fit$converged))
+  expect_equal(fit$param_info$part2, "exponential")
+  expect_equal(fit$param_info$n_random_effects, 3L)
+
+  # 3RE: per-subject alpha varies via c_i.
+  expect_true("c_i" %in% names(fit$subject_pars))
+  expect_true(stats::var(fit$subject_pars$c_i) > 0)
+
+  # Group metrics finite.
+  group_metrics <- calc_group_metrics(fit)
+  expect_true(is.finite(group_metrics$Pmax))
+  expect_true(is.finite(group_metrics$Omax))
+
+  # log_k present in coef table for HS-standardized part II.
+  expect_true("log_k" %in% names(fit$model$coefficients))
+})
+
+test_that("fit_demand_hurdle supports 3RE x SND Part II (part2 = 'simplified_exponential')", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_part2_data(
+    n_subjects = 60,
+    prices = seq(0, 5, by = 0.5),
+    part2 = "simplified_exponential",
+    seed = 457
+  )
+
+  fit <- suppressWarnings(fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0", "alpha"),
+    part2 = "simplified_exponential",
+    verbose = 0
+  ))
+
+  expect_s3_class(fit, "beezdemand_hurdle")
+  expect_true(isTRUE(fit$converged))
+  expect_equal(fit$param_info$part2, "simplified_exponential")
+  expect_equal(fit$param_info$n_random_effects, 3L)
+  expect_false("log_k" %in% names(fit$model$coefficients))
+
+  # 3RE: per-subject alpha varies via c_i.
+  expect_true("c_i" %in% names(fit$subject_pars))
+  expect_true(stats::var(fit$subject_pars$c_i) > 0)
+
+  # SND Pmax/Omax finite.
+  s <- summary(fit)
+  expect_equal(s$pmax_method_info$method_model, "analytic_snd")
+  expect_true(is.finite(s$group_metrics$Pmax))
+  expect_true(is.finite(s$group_metrics$Omax))
+})
+
