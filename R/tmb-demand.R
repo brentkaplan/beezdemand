@@ -852,12 +852,15 @@ NULL
 ) {
   n_subjects <- length(subject_levels)
 
-  # Per-subject check: does any column of X_q0 or X_alpha vary within an id?
-  # When it does, a single row-wise collapse (first_obs_per_subject below) has
-  # no well-defined meaning, and subject-level Q0/alpha/Pmax/Omax would be
-  # silently wrong. Flag the affected subjects so we can NA their derived
-  # parameters at the end. Phase 2/3 of TICKET-011 replaces this with per-cell
-  # rows once the template has RE slopes on within-subject factors.
+  # Per-subject check: does any column of X_q0, X_alpha, Z_q0, or Z_alpha vary
+  # within an id? When it does, a single row-wise collapse (first_obs_per_subject
+  # below) has no well-defined meaning, and subject-level Q0/alpha/Pmax/Omax
+  # would be silently wrong. Flag the affected subjects so we can NA their
+  # derived parameters at the end. Phase 5A extension: prior to Phase 5A this
+  # check examined only X_q0/X_alpha; for M1-style fits where a within-subject
+  # factor appears only in `random_effects` (not in `factors`), X is intercept-
+  # only and the check passed silently while Z varied. Now Z_q0/Z_alpha are
+  # checked too so the NA flag fires for those fits.
   affected_subjects <- logical(n_subjects)
   offending_cols <- character(0)
   if (isTRUE(validate_subject_pars)) {
@@ -885,16 +888,22 @@ NULL
       }
       list(affected = aff, cols = cols)
     }
-    q0_check <- .check_within_id(X_q0, "X_q0")
-    alpha_check <- .check_within_id(X_alpha, "X_alpha")
-    affected_subjects <- q0_check$affected | alpha_check$affected
-    offending_cols <- unique(c(q0_check$cols, alpha_check$cols))
+    x_q0_check <- .check_within_id(X_q0, "X_q0")
+    x_alpha_check <- .check_within_id(X_alpha, "X_alpha")
+    z_q0_check <- .check_within_id(Z_q0, "Z_q0")
+    z_alpha_check <- .check_within_id(Z_alpha, "Z_alpha")
+    affected_subjects <- x_q0_check$affected | x_alpha_check$affected |
+                         z_q0_check$affected | z_alpha_check$affected
+    offending_cols <- unique(c(
+      x_q0_check$cols, x_alpha_check$cols,
+      z_q0_check$cols, z_alpha_check$cols
+    ))
     if (length(offending_cols) > 0L) {
       cli::cli_warn(c(
         "Design matrix column{?s} {.val {offending_cols}} var{?ies/y} within {.field id}.",
         "i" = "Subject-level {.field Q0}, {.field alpha}, {.field Pmax}, and {.field Omax} in {.field subject_pars} are set to {.val NA} for affected subjects because a row-wise collapse has no well-defined meaning here.",
         "i" = "Use {.code validate_subject_pars = FALSE} to force row-order-dependent values (not recommended).",
-        "i" = "Factor-expanded random-effects support is planned in TICKET-011 Phases 2-3."
+        "i" = "Call {.code get_subject_pars(fit, expanded = TRUE)} for per-(subject, factor-level) values."
       ))
     }
   }
@@ -1160,10 +1169,9 @@ NULL
 #'       (overrides `covariance_structure`).}
 #'     \item{list of `pdMat` / `nlme::pdBlocked`}{Multi-block covariance
 #'       structures like `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`.
-#'       Parsed, but fitting is deferred to Phase 3 of TICKET-011 --
-#'       use `fit_demand_mixed()` for multi-block fits in the meantime.}
+#'       Fully supported via TICKET-011 Phase 3.}
 #'     \item{character vector (deprecated)}{`c("q0", "alpha")` or `"q0"`.
-#'       Soft-deprecated in 0.4.0; emits a `lifecycle::deprecate_soft()`
+#'       Soft-deprecated in 0.3.0; emits a `lifecycle::deprecate_soft()`
 #'       message. Translated internally to the formula `Q0 + alpha ~ 1`
 #'       or `Q0 ~ 1`.}
 #'   }
@@ -1332,13 +1340,12 @@ fit_demand_tmb <- function(
   }
   .validate_re_input(re_parsed, data = data, id_var = id_var)
 
-  if (!.re_is_phase2_fittable(re_parsed)) {
+  if (!.re_is_phase3_fittable(re_parsed)) {
     stop(
-      "random_effects specification requires multi-block support ",
-      "(TICKET-011 Phase 3, not yet shipped). Supported today: a single ",
-      "pdDiag or pdSymm block on Q0 and/or alpha (intercept-only or ",
-      "factor-expanded). Use `fit_demand_mixed()` for `pdBlocked` / ",
-      "`list()` multi-block structures in the meantime.",
+      "random_effects specification contains a pdMat class beyond ",
+      "pdDiag and pdSymm, which `fit_demand_tmb()` does not yet support. ",
+      "Use `fit_demand_mixed()` for `pdCompSymm`, `pdIdent`, `pdLogChol`, ",
+      "or other nlme covariance structures.",
       call. = FALSE
     )
   }

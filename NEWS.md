@@ -1,9 +1,11 @@
-# beezdemand 0.4.0 (development)
+# beezdemand 0.3.0 (development)
 
-This development release opens TICKET-011 (factor-expanded random effects
-for `fit_demand_tmb()` and `fit_demand_hurdle()`) and fixes three
-pre-existing TMB post-fit correctness bugs surfaced while scoping the
-ticket.
+This release ships the TMB mixed-effects modeling tier
+(`fit_demand_tmb()`) along with TICKET-011 — factor-expanded and
+multi-block random-effects support, expanded subject-level reporting,
+and group-metrics conditioning. The "TMB mixed-effects modeling tier"
+section below is the original 0.3.0 introduction; subsequent sections
+cover TICKET-011 phase work added under this development cycle.
 
 ## TMB post-fit fixes (TICKET-011 Phase 0)
 
@@ -15,7 +17,10 @@ ticket.
   silently returned row-order-dependent values. New
   `validate_subject_pars = TRUE` argument provides an escape hatch for
   users who have reasoned about the behavior. Factor-expanded random
-  slopes (the proper replacement for the NA fallback) land in Phase 2/3.
+  slopes landed in TICKET-011 Phase 2 (single-block) and Phase 3
+  (multi-block); the silent first-observed-row fallback was retired
+  in Phase 5A in favor of NA-on-within-id-variation plus an opt-in
+  `expanded` argument on `get_subject_pars()`.
 * `get_demand_param_emms()` on a `beezdemand_tmb` fit now honors
   `continuous_covariates` even when no factors are present. Previously,
   the early-return for factor-less models ignored the `at` argument and
@@ -40,12 +45,12 @@ ticket.
 * Character-vector inputs to `random_effects` (e.g. `c("q0", "alpha")`)
   are soft-deprecated via `lifecycle::deprecate_soft()` and internally
   translated to the equivalent formula. A hard deprecation follows in
-  0.5.0.
+  0.4.0.
 * Formula shapes richer than intercept-only (e.g.
-  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are accepted by the
-  parser but currently error with a clear "Phase 2 not yet shipped"
-  message. Template generalization to a Z-matrix-driven covariance
-  lands in subsequent 0.4.0 patches.
+  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are now fully
+  supported. Template generalization to a Z-matrix-driven covariance
+  landed in TICKET-011 Phase 2 (single-block factor expansion) and
+  Phase 3 (multi-block `pdBlocked`).
 * New internal helpers in `R/random-effects-utils.R`
   (`.classify_re_input`, `.normalize_re_input`, `.validate_re_input`,
   `.re_is_phase1_fittable`, `.deprecate_character_re`,
@@ -82,8 +87,8 @@ land here as the foundation for the Phase 2 factor-RE work.
 * `fit_demand_tmb()` now fits formula-based random effects with
   factor-expanded slopes (e.g. `pdDiag(Q0 + alpha ~ condition)` or
   `pdSymm(Q0 + alpha ~ condition)`). Single-block pdDiag and pdSymm
-  with arbitrary RHS terms are accepted; multi-block `pdBlocked` /
-  `list()` of pdMats remains gated until Phase 3.
+  with arbitrary RHS terms are accepted. Multi-block `pdBlocked` /
+  `list()` of pdMats lands in Phase 3 (also in this release).
 * `src/MixedDemand.h` rewritten with a block-aware DATA interface
   (Z_q0, Z_alpha, block-structure metadata) and a generalized
   per-block Cholesky loop. pdSymm blocks of size > 2 use the
@@ -96,20 +101,77 @@ land here as the foundation for the Phase 2 factor-RE work.
   block representation and emit the design matrices and metadata the
   template needs.
 * `.tmb_compute_subject_pars()` generalized into a per-block
-  reconstruction; subject-level `Q0` / `alpha` for factor-expanded
-  fits use the first observed row of `X` and `Z` per subject (Phase 2
-  deferral; per-(subject, condition) rows planned for Phase 5).
+  reconstruction. For factor-expanded fits, the Phase 2 implementation
+  used first-observed-row `X` and `Z` for subject-level `Q0` / `alpha`;
+  Phase 5A in this release supersedes that with NA-on-within-id-
+  variation plus an opt-in `expanded = TRUE` argument on
+  `get_subject_pars()` for per-(subject, condition) rows.
 * New simulator `.simulate_within_subject_demand()` and parity tests
   confirm TMB Laplace approximation agrees with NLME's iterative
   algorithm to within ~1% on the loglik across all four target specs.
 
-# beezdemand 0.3.0
+## Multi-block pdBlocked random effects (TICKET-011 Phase 3)
 
-This release ships the TMB mixed-effects modeling tier (`fit_demand_tmb()`)
-and clears the outstanding ticket queue against the `feat/tmb-mixed-effects`
-branch. See the "TMB tier" section under New Features for orientation.
+* `fit_demand_tmb()` now accepts multi-block `nlme::pdBlocked(list(...))`
+  and bare `list(pdMat, pdMat, ...)` `random_effects` specifications.
+  The motivating use case is the load-bearing M1 spec from in-house
+  manuscript work:
+  `pdBlocked(list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~condition-1)))`,
+  which combines a correlated subject-baseline block with an
+  uncorrelated subject-by-condition slopes block. The intercepts-only
+  alternative inverts the cigarette Q0 direction on that data; the
+  multi-block spec recovers it.
+* The Phase 2 C++ template, parser, and R glue already supported
+  `n_blocks > 1`; Phase 3 lifts the gate that rejected those shapes.
+  The renamed gate helper `.re_is_phase3_fittable()` accepts any number
+  of single-grouping-level blocks of class `pdDiag` or `pdSymm`. Other
+  pdMat classes (`pdCompSymm`, `pdIdent`, `pdLogChol`, ...) remain
+  unsupported pending a triggering use case; use `fit_demand_mixed()`
+  for those.
+* Bit-identical regression: `pdBlocked(list(pdSymm(Q0+alpha~1)))`
+  (single-block-wrapped) produces the same loglik and coefficients as
+  bare `pdSymm(Q0+alpha~1)` to optimizer tolerance.
+* Acceptance: on simulated within-subject data with a known per-condition
+  Q0 ordering, the M1 spec recovers the truth ordering and matches NLME
+  EMMs within 5% on natural scale (manuscript-repo parity protocol
+  remains the integration gate against actual study data).
 
-## New Features
+## Subject-level reporting for factor-expanded fits (TICKET-011 Phase 5A)
+
+* `get_subject_pars()` gains an opt-in `expanded` argument. When
+  `expanded = TRUE` and the fit's random-effects design varies within
+  id (e.g. M1-style multi-block fits with `condition - 1` slopes), the
+  function returns a long-form table with one row per (subject,
+  factor-level) combination. Columns include the within-subject factor
+  names plus model-derived per-cell `Q0`, `alpha`, `Pmax`, and `Omax`.
+  Numeric within-id-varying RE-RHS terms are conditioned at the
+  subject's mean rather than expanded.
+* Default `expanded = FALSE` returns the wide one-row-per-subject table
+  unchanged; `predict()`, `ranef()`, and other consumers that depend on
+  unique IDs continue to work bit-for-bit.
+* The Phase 0 within-id check now also examines `Z_q0` / `Z_alpha`
+  (random-effects design) columns, not just `X_q0` / `X_alpha`. Prior
+  to this fix, M1-style fits where `condition` appeared only in
+  `random_effects` (not in `factors`) silently returned first-observed-
+  row Q0/alpha values without warning. Now those fits emit the
+  `subject_pars` validation warning and set affected subjects'
+  `Q0`/`alpha`/`Pmax`/`Omax` to `NA` in the default wide table, with a
+  pointer to `expanded = TRUE` for per-(subject, condition) values.
+* Downstream consumers that read `subject_pars$Q0` / `$alpha` directly
+  (`plot(fit, type = "individual")` and
+  `calculate_amplitude_persistence()`) now abort with a targeted message
+  when those columns are NA, pointing users at
+  `get_subject_pars(fit, expanded = TRUE)`. Native expanded-shape
+  support in those consumers is deferred to a follow-up release.
+* Generic signatures: `get_subject_pars()` and `calc_group_metrics()`
+  generics gain `...` so the new `expanded` and `at` arguments dispatch
+  through `UseMethod()` correctly. All existing methods updated.
+
+## Initial 0.3.0 features (TMB mixed-effects modeling tier)
+
+These sections capture the original 0.3.0 release scope (TMB mixed-effects
+modeling tier, hurdle improvements, bug fixes, quality / tooling). The
+TICKET-011 phases above were added under the same 0.3.0 development cycle.
 
 ### TMB mixed-effects modeling tier
 
@@ -204,7 +266,7 @@ branch. See the "TMB tier" section under New Features for orientation.
   historical return shape; `"Q0"` and `"alpha"` narrow the output to a
   single parameter's columns for easier pivoting and plotting.
 
-## Bug Fixes
+## Initial 0.3.0 bug fixes
 
 * `fit_demand_tmb()` now drops rows with `NA` values in any modeling
   column (`id`, price, response, factors, continuous covariates) before
@@ -276,7 +338,7 @@ branch. See the "TMB tier" section under New Features for orientation.
 * Comprehensive package audit fixes — boundary detection, data
   validation, heuristic improvements (commit `60b13a2`).
 
-## Quality / Tooling
+## Initial 0.3.0 quality / tooling
 
 * Bare `stop()` / `warning()` / `message()` calls in non-legacy R files
   replaced with their cli equivalents (`cli::cli_abort`, `cli::cli_warn`,

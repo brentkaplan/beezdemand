@@ -417,6 +417,21 @@ calculate_amplitude_persistence.beezdemand_tmb <- function(fit,
     ))
   }
 
+  # Phase 5A guard: when within-subject random-effects design columns vary
+  # within id, subject-level Q0/alpha/Pmax/Omax are NA in the default wide
+  # subject_pars. Amplitude/persistence metrics aggregated over per-subject
+  # values are not well-defined; abort with a targeted message.
+  q0_na <- if ("Q0" %in% names(pars)) any(is.na(pars$Q0)) else FALSE
+  alpha_na <- if ("alpha" %in% names(pars)) any(is.na(pars$alpha)) else FALSE
+  if (q0_na || alpha_na) {
+    cli::cli_abort(c(
+      "Subject-level {.field Q0}/{.field alpha} are {.val NA} for this fit.",
+      "i" = "Default {.code subject_pars} has no well-defined per-subject value when a within-subject factor varies within id (factor-expanded or multi-block RE specs).",
+      "i" = "Call {.code get_subject_pars(fit, expanded = TRUE)} for per-(subject, factor-level) parameters and reduce/aggregate before calling {.fn calculate_amplitude_persistence}, or fit a different RE structure.",
+      "x" = "Per-(subject, factor-level) amplitude/persistence is planned for a follow-up release."
+    ))
+  }
+
   calculate_amplitude_persistence.default(pars,
                                           amplitude = amplitude,
                                           persistence = persistence,

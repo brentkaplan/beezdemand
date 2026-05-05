@@ -237,20 +237,21 @@
 
 #' Is this RE spec fittable by the Phase-2 (Z-matrix) TMB template?
 #'
-#' Phase 2 generalizes the template to accept arbitrary RE design matrices
-#' Z_q0, Z_alpha for a single pdDiag or pdSymm block. Multi-block
-#' `pdBlocked(list(...))` and explicit `list(...)` of pdMats are still
-#' rejected (Phase 3). Phase-1 cases (intercept-only) remain fittable.
+#' Phase 3 accepts multi-block `pdBlocked(list(...))` and explicit
+#' `list(...)` of pdMats. The C++ template, R glue, and parser already
+#' supported `n_blocks > 1` from Phase 2; Phase 3 lifts the gate that
+#' rejected them.
 #'
-#' Phase 2.5 swaps `fit_demand_tmb()`'s consumer over from
-#' `.re_is_phase1_fittable()` to this gate; until then both functions
-#' coexist.
+#' Each block must be `pdDiag` or `pdSymm`. Other pdMat classes
+#' (`pdCompSymm`, `pdIdent`, `pdLogChol`, ...) remain unsupported pending
+#' a triggering use case.
 #' @keywords internal
 #' @noRd
-.re_is_phase2_fittable <- function(re_parsed) {
-  if (length(re_parsed$blocks) != 1L) return(FALSE)
-  b <- re_parsed$blocks[[1]]
-  if (!(b$pdmat_class %in% c("pdDiag", "pdSymm"))) return(FALSE)
+.re_is_phase3_fittable <- function(re_parsed) {
+  if (length(re_parsed$blocks) < 1L) return(FALSE)
+  for (b in re_parsed$blocks) {
+    if (!(b$pdmat_class %in% c("pdDiag", "pdSymm"))) return(FALSE)
+  }
   TRUE
 }
 
@@ -280,7 +281,7 @@
 #' @noRd
 .deprecate_character_re <- function() {
   lifecycle::deprecate_soft(
-    when  = "0.4.0",
+    when  = "0.3.0",
     what  = "fit_demand_tmb(random_effects)",
     details = c(
       "i" = "Character-vector input is deprecated; use a formula instead.",

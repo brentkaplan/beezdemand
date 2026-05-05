@@ -4,19 +4,45 @@
 \alias{get_subject_pars.beezdemand_tmb}
 \title{Get Subject-Specific Parameters from TMB Model}
 \usage{
-\method{get_subject_pars}{beezdemand_tmb}(object, ...)
+\method{get_subject_pars}{beezdemand_tmb}(object, expanded = FALSE, ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
 
+\item{expanded}{Logical. When \code{FALSE} (default) returns the
+wide one-row-per-subject table. When \code{TRUE}, returns a long
+table with one row per (subject, within-subject-factor-level)
+combination, with model-derived per-cell \code{Q0}, \code{alpha},
+\code{Pmax}, and \code{Omax}. Use this for fits where a within-
+subject factor appears in \code{factors} or in
+\code{random_effects} (e.g. multi-block \code{pdBlocked} specs);
+the wide default returns \code{NA} in those columns because no
+single subject-level value is well-defined.}
+
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
+When \code{expanded = FALSE}: data frame with columns
+\code{id}, \code{b_i}, \code{c_i} (if 2 RE), \code{Q0},
+\code{alpha}, \code{Pmax}, \code{Omax}. When \code{expanded = TRUE}:
+data frame with the within-subject factor columns added, one row per
+(subject, factor-level) combination.
 }
 \description{
 Get Subject-Specific Parameters from TMB Model
 }
+\section{Per-block random-effect matrices}{
+
+For factor-expanded or multi-block fits, the wide table's
+\code{b_i} / \code{c_i} columns hold the first RE column from each
+block (intercept slot for the M1 baseline block, for example) for
+backward compatibility with downstream consumers. Power users who
+need the full per-block RE structure can access
+\code{attr(subject_pars, "re_q0_mat")} and
+\code{attr(subject_pars, "re_alpha_mat")} as
+\code{n_subjects x re_dim} matrices ordered by block.
+}
+
 \examples{
 \donttest{
 data(apt)

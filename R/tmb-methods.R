@@ -1011,9 +1011,32 @@ predict.beezdemand_tmb <- function(
 #' Get Subject-Specific Parameters from TMB Model
 #'
 #' @param object A \code{beezdemand_tmb} object.
+#' @param expanded Logical. When \code{FALSE} (default) returns the
+#'   wide one-row-per-subject table. When \code{TRUE}, returns a long
+#'   table with one row per (subject, within-subject-factor-level)
+#'   combination, with model-derived per-cell \code{Q0}, \code{alpha},
+#'   \code{Pmax}, and \code{Omax}. Use this for fits where a within-
+#'   subject factor appears in \code{factors} or in
+#'   \code{random_effects} (e.g. multi-block \code{pdBlocked} specs);
+#'   the wide default returns \code{NA} in those columns because no
+#'   single subject-level value is well-defined.
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.
+#' @return When \code{expanded = FALSE}: data frame with columns
+#'   \code{id}, \code{b_i}, \code{c_i} (if 2 RE), \code{Q0},
+#'   \code{alpha}, \code{Pmax}, \code{Omax}. When \code{expanded = TRUE}:
+#'   data frame with the within-subject factor columns added, one row per
+#'   (subject, factor-level) combination.
+#'
+#' @section Per-block random-effect matrices:
+#'   For factor-expanded or multi-block fits, the wide table's
+#'   \code{b_i} / \code{c_i} columns hold the first RE column from each
+#'   block (intercept slot for the M1 baseline block, for example) for
+#'   backward compatibility with downstream consumers. Power users who
+#'   need the full per-block RE structure can access
+#'   \code{attr(subject_pars, "re_q0_mat")} and
+#'   \code{attr(subject_pars, "re_alpha_mat")} as
+#'   \code{n_subjects x re_dim} matrices ordered by block.
 #'
 #' @examples
 #' \donttest{
@@ -1023,8 +1046,225 @@ predict.beezdemand_tmb <- function(
 #' }
 #'
 #' @export
-get_subject_pars.beezdemand_tmb <- function(object, ...) {
-  object$subject_pars
+get_subject_pars.beezdemand_tmb <- function(object, expanded = FALSE, ...) {
+  if (!isTRUE(expanded)) {
+    return(object$subject_pars)
+  }
+
+  pinfo <- object$param_info
+  data <- object$data
+  spars <- object$subject_pars
+  re_parsed <- pinfo$random_effects_parsed
+  id_var <- pinfo$id_var
+
+  if (is.null(data)) {
+    cli::cli_abort(c(
+      "Cannot construct expanded {.field subject_pars}: training {.field data} not attached to fit object.",
+      "i" = "This indicates an old fit produced before {.field expanded} support was added."
+    ))
+  }
+
+  # 1. Discover candidate variables: union of fixed-effect factors,
+  #    continuous covariates, and RE-RHS variables from the parsed block
+  #    formulas. continuous_covariates must be in the candidate set so
+  #    that within-id-varying covariates (e.g. trial_num) are conditioned
+  #    at subject mean rather than falling through to copy-first-row.
+  fe_factors <- unique(c(
+    pinfo$factors,
+    pinfo$factors_q0,
+    pinfo$factors_alpha
+  ))
+  re_rhs_vars <- character(0)
+  if (!is.null(re_parsed)) {
+    for (b in re_parsed$blocks) {
+      rhs <- b$formula[[3L]]
+      re_rhs_vars <- c(re_rhs_vars, all.vars(stats::as.formula(
+        paste("~", deparse1(rhs))
+      )))
+    }
+    re_rhs_vars <- unique(re_rhs_vars)
+  }
+  candidate_vars <- unique(c(
+    fe_factors,
+    pinfo$continuous_covariates,
+    re_rhs_vars
+  ))
+  candidate_vars <- candidate_vars[
+    nzchar(candidate_vars) & !is.na(candidate_vars) &
+    candidate_vars %in% names(data)
+  ]
+
+  # 2. Classify each candidate by type and within-id variation.
+  classify <- function(var) {
+    vals <- data[[var]]
+    if (is.factor(vals) || is.character(vals)) {
+      type <- "factor"
+      lvls <- if (is.factor(vals)) levels(vals) else sort(unique(vals))
+    } else if (is.numeric(vals) || is.integer(vals)) {
+      type <- "numeric"
+      lvls <- NULL
+    } else {
+      cli::cli_abort(c(
+        "Cannot expand {.field subject_pars} over RE term {.field {var}} of type {.cls {class(vals)[1]}}.",
+        "i" = "Pass {.code expanded = FALSE} (default) for the wide NA-fill, or pre-process the variable into a factor or numeric before fitting."
+      ))
+    }
+    by_id <- split(vals, data[[id_var]])
+    varies <- any(vapply(by_id, function(v) length(unique(v)) > 1L, logical(1)))
+    list(var = var, type = type, varies = varies, levels = lvls)
+  }
+  classification <- lapply(candidate_vars, classify)
+  names(classification) <- candidate_vars
+
+  # 3. Within-subject factors drive cross-product expansion. Numeric
+  #    within-id-varying variables are NOT expanded — they are
+  #    conditioned at the subject's mean below.
+  expand_factors <- candidate_vars[
+    vapply(classification, function(cls) cls$type == "factor" && cls$varies,
+           logical(1))
+  ]
+
+  # If no within-id variation of any kind exists, the wide spars table
+  # is already well-defined; just return it. Otherwise we still need
+  # per-subject row construction to condition numeric within-id
+  # variables at subject mean.
+  any_within_id <- any(vapply(classification, function(cls) cls$varies,
+                              logical(1)))
+  if (!any_within_id) {
+    return(spars)
+  }
+
+  if (length(expand_factors) > 0L) {
+    expand_grid <- expand.grid(
+      lapply(expand_factors, function(var) classification[[var]]$levels),
+      KEEP.OUT.ATTRS = FALSE,
+      stringsAsFactors = FALSE
+    )
+    names(expand_grid) <- expand_factors
+  } else {
+    # No factor expansion: one row per subject. expand.grid() on an empty
+    # list returns a 1-row 0-col data.frame.
+    expand_grid <- data.frame(.row = 1L)[, FALSE, drop = FALSE]
+  }
+
+  # 4. Build long-form newdata: one row per (subject, factor-cell).
+  subj_ids <- as.character(spars$id)
+  newdata_rows <- vector("list", length(subj_ids))
+  for (i in seq_along(subj_ids)) {
+    sid <- subj_ids[i]
+    subj_rows <- data[as.character(data[[id_var]]) == sid, , drop = FALSE]
+    if (nrow(subj_rows) == 0L) next
+
+    if (ncol(expand_grid) > 0L) {
+      cell_rows <- expand_grid
+    } else {
+      # No factor expansion: a single conditioned row per subject.
+      cell_rows <- data.frame(.placeholder = NA)[, FALSE, drop = FALSE]
+      cell_rows[1L, ".placeholder"] <- NA  # ensure 1 row, 0 cols
+      cell_rows <- cell_rows[, character(0), drop = FALSE]
+    }
+    cell_rows[[id_var]] <- sid
+
+    # x_var (price): use first observed price (Pmax/Omax search range
+    # uses per-subject price_list later, so the row-level x_var only
+    # needs to satisfy .tmb_build_predicted_pars()'s validation).
+    if (!is.null(pinfo$x_var) && nzchar(pinfo$x_var)) {
+      cell_rows[[pinfo$x_var]] <- subj_rows[[pinfo$x_var]][1]
+    }
+
+    # Other variables: between-subject use actual; within-id-varying
+    # numeric use subject mean; factors handled via expand_grid.
+    other_vars <- setdiff(
+      names(data),
+      c(id_var, pinfo$x_var, pinfo$y_var, expand_factors)
+    )
+    for (v in other_vars) {
+      cls <- classification[[v]]
+      if (is.null(cls)) {
+        # Variable not in candidate set: copy first observed value.
+        # (Variables outside factors / continuous_covariates / RE-RHS
+        # are passed through to satisfy .tmb_build_predicted_pars()
+        # column validation; their values do not enter the linear
+        # predictor.)
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      } else if (cls$type == "factor" && !cls$varies) {
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      } else if (cls$type == "numeric" && cls$varies) {
+        cell_rows[[v]] <- mean(subj_rows[[v]], na.rm = TRUE)
+      } else if (cls$type == "numeric" && !cls$varies) {
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      }
+      # factor + varies handled by expand_grid (skip here)
+    }
+
+    # Restore factor levels lost via expand.grid character coercion.
+    for (v in expand_factors) {
+      orig_levels <- classification[[v]]$levels
+      cell_rows[[v]] <- factor(cell_rows[[v]], levels = orig_levels)
+    }
+
+    newdata_rows[[i]] <- cell_rows
+  }
+  newdata_long <- do.call(rbind, newdata_rows)
+  rownames(newdata_long) <- NULL
+
+  # 5. Compute per-row Q0 and alpha via the same machinery predict() uses.
+  bp <- .tmb_build_predicted_pars(object, newdata_long)
+  Q0 <- bp$Q0
+  alpha <- bp$alpha
+
+  # 6. Compute per-row Pmax/Omax. price_list is per-subject (price ranges
+  #    don't typically vary by condition); replicated across cells per
+  #    subject.
+  has_k <- isTRUE(pinfo$has_k)
+  if (has_k) {
+    coefs <- object$model$coefficients
+    if ("log_k" %in% names(coefs)) {
+      k_val <- exp(coefs[["log_k"]])
+    } else if (!is.null(pinfo$k_fixed)) {
+      k_val <- pinfo$k_fixed
+    } else {
+      k_val <- 2
+    }
+    model_type <- "hs"
+    params_df <- data.frame(alpha = alpha, q0 = Q0, k = rep(k_val, length(Q0)))
+    param_scales <- list(alpha = "natural", q0 = "natural", k = "natural")
+  } else {
+    model_type <- "snd"
+    params_df <- data.frame(alpha = alpha, q0 = Q0)
+    param_scales <- list(alpha = "natural", q0 = "natural")
+  }
+
+  # Build per-row price_list using the subject's training price range.
+  row_subj_ids <- as.character(newdata_long[[id_var]])
+  price_per_subject <- split(data[[pinfo$x_var]], data[[id_var]])
+  price_list <- lapply(row_subj_ids, function(sid) {
+    ps <- price_per_subject[[sid]]
+    if (is.null(ps)) numeric(0) else ps
+  })
+
+  omax_pmax <- beezdemand_calc_pmax_omax_vec(
+    params_df = params_df,
+    model_type = model_type,
+    param_scales = param_scales,
+    price_list = price_list,
+    compute_observed = FALSE
+  )
+
+  # 7. Assemble output: id + factor cols + b_i/c_i (replicated) + Q0/alpha/Pmax/Omax.
+  out <- data.frame(id = newdata_long[[id_var]], stringsAsFactors = FALSE)
+  for (v in expand_factors) {
+    out[[v]] <- newdata_long[[v]]
+  }
+  spars_match <- match(as.character(out$id), as.character(spars$id))
+  if ("b_i" %in% names(spars)) out$b_i <- spars$b_i[spars_match]
+  if ("c_i" %in% names(spars)) out$c_i <- spars$c_i[spars_match]
+  out$Q0 <- Q0
+  out$alpha <- alpha
+  out$Pmax <- omax_pmax$pmax_model
+  out$Omax <- omax_pmax$omax_model
+
+  out
 }
 
 
@@ -1182,8 +1422,26 @@ plot.beezdemand_tmb <- function(
     coefs <- x$model$coefficients
     has_k <- x$param_info$has_k
 
+    # Filter by `ids` first (if supplied) so users can plot a subset of
+    # subjects whose Q0/alpha are well-defined even when other subjects
+    # have NA in the wide subject_pars. The Phase 5A guard below fires
+    # only on the post-filter rows.
     if (!is.null(ids)) {
       spars <- spars[spars$id %in% ids, , drop = FALSE]
+    }
+
+    # Phase 5A guard: when within-subject random-effects design columns vary
+    # within id (e.g. M1-style multi-block fits with `condition` slopes),
+    # subject-level Q0/alpha are NA in the default wide subject_pars because
+    # no single subject value is well-defined. Per-(subject, condition) plot
+    # support is deferred; abort with a targeted message until it lands.
+    if (any(is.na(spars$Q0)) || any(is.na(spars$alpha))) {
+      cli::cli_abort(c(
+        "Subject-level {.field Q0}/{.field alpha} are {.val NA} for this fit.",
+        "i" = "Default {.code subject_pars} has no well-defined per-subject value when a within-subject factor varies within id (factor-expanded or multi-block RE specs).",
+        "i" = "Call {.code get_subject_pars(fit, expanded = TRUE)} for per-(subject, factor-level) parameters and reduce/aggregate before plotting, or fit a different RE structure.",
+        "x" = "Per-(subject, factor-level) plotting is planned for a follow-up release."
+      ))
     }
 
     subj_curves <- do.call(rbind, lapply(seq_len(nrow(spars)), function(j) {

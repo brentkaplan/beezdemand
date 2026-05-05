@@ -50,6 +50,44 @@ test_that("subject_pars is populated when all covariates are between-subjects", 
   expect_true(all(is.finite(spars$alpha)))
 })
 
+# Phase 5A regression test: Z-column NA detection. Prior to Phase 5A the
+# .check_within_id() helper examined only X_q0/X_alpha. When `condition`
+# appears only in `random_effects` (not in `factors`), X is intercept-only
+# and the check passed silently while Z varied — first-observed-row Q0/alpha
+# were returned without warning. Phase 5A extends the check to Z columns.
+
+test_that("subject_pars warns and NAs when Z (RE design) varies within id (M1-style)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+
+  # Build a within-subject `condition` variable but DO NOT pass it via
+  # `factors`. Instead, place it only in `random_effects` via a pdDiag
+  # block, mirroring the M1 spec's "block 2" structure.
+  set.seed(45)
+  apt_re_only <- apt
+  apt_re_only$condition <- factor(rep_len(
+    c("A", "B"), nrow(apt_re_only)
+  ))
+
+  expect_warning(
+    fit <- fit_demand_tmb(
+      apt_re_only,
+      equation = "simplified",
+      random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+      multi_start = FALSE,
+      verbose = 0
+    ),
+    regexp = "var(ies|y) within"
+  )
+
+  spars <- get_subject_pars(fit)
+  expect_true(all(is.na(spars$Q0)))
+  expect_true(all(is.na(spars$alpha)))
+  expect_true(all(is.na(spars$Pmax)))
+  expect_true(all(is.na(spars$Omax)))
+  expect_true(all(!is.na(spars$b_i)))
+})
+
 test_that("validate_subject_pars = FALSE disables the within-id check", {
   data(apt, package = "beezdemand")
 

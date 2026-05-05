@@ -4,10 +4,15 @@
 \alias{get_subject_pars}
 \title{Get Subject-Specific Parameters}
 \usage{
-get_subject_pars(object)
+get_subject_pars(object, ...)
 }
 \arguments{
-\item{object}{A fitted \code{beezdemand_hurdle} object.}
+\item{object}{A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.}
+
+\item{...}{Method-specific arguments. The \code{beezdemand_tmb} method
+accepts an \code{expanded} argument for opt-in long-form output with
+per-(subject, factor-level) rows; see
+\code{\link{get_subject_pars.beezdemand_tmb}}.}
 }
 \value{
 Data frame with subject-specific parameters including:

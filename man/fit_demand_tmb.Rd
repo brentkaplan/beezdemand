@@ -76,10 +76,9 @@ objects are accepted and their covariance class is honored
 (overrides \code{covariance_structure}).}
 \item{list of \code{pdMat} / \code{nlme::pdBlocked}}{Multi-block covariance
 structures like \code{list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))}.
-Parsed, but fitting is deferred to Phase 3 of TICKET-011 --
-use \code{fit_demand_mixed()} for multi-block fits in the meantime.}
+Fully supported via TICKET-011 Phase 3.}
 \item{character vector (deprecated)}{\code{c("q0", "alpha")} or \code{"q0"}.
-Soft-deprecated in 0.4.0; emits a \code{lifecycle::deprecate_soft()}
+Soft-deprecated in 0.3.0; emits a \code{lifecycle::deprecate_soft()}
 message. Translated internally to the formula \code{Q0 + alpha ~ 1}
 or \code{Q0 ~ 1}.}
 }}

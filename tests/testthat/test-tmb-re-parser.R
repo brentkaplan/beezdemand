@@ -276,24 +276,34 @@ test_that("fit_demand_tmb accepts factor-expanded RE specs (Phase 2 acceptance)"
   )
 })
 
-test_that("fit_demand_tmb still rejects multi-block pdBlocked (Phase 3 deferral)", {
+test_that("fit_demand_tmb accepts multi-block pdBlocked (Phase 3 acceptance)", {
   skip_on_cran()
   data(apt, package = "beezdemand")
   apt_cond <- apt
   apt_cond$cond <- factor(rep_len(c("A", "B"), nrow(apt_cond)))
 
-  expect_error(
-    fit_demand_tmb(
+  # Phase 3 lifts the multi-block gate. The fit may not converge
+  # cleanly on this small fixture (apt has only 19 subjects per
+  # condition with the 2-block spec), but it must at least construct
+  # a valid TMB AD object and report a structured failure (not the
+  # pre-Phase-3 "Phase 3 not yet shipped" stop).
+  expect_no_error(
+    fit <- fit_demand_tmb(
       apt_cond,
       equation = "simplified",
       random_effects = nlme::pdBlocked(list(
         nlme::pdSymm(Q0 + alpha ~ 1),
         nlme::pdDiag(Q0 + alpha ~ 1)
       )),
+      multi_start = FALSE,
       verbose = 0
-    ),
-    regexp = "Phase 3"
+    )
   )
+  # Parsed RE metadata reflects the multi-block structure.
+  re_parsed <- fit$param_info$random_effects_parsed
+  expect_length(re_parsed$blocks, 2L)
+  expect_equal(re_parsed$blocks[[1]]$pdmat_class, "pdSymm")
+  expect_equal(re_parsed$blocks[[2]]$pdmat_class, "pdDiag")
 })
 
 test_that("fit object carries parsed RE metadata", {
@@ -374,10 +384,10 @@ test_that("nlme::pdDiag() object routes to the same pinned-rho path", {
 })
 
 # ---------------------------------------------------------------------------
-# TICKET-011 Phase 2.2: parser handles factor-expanded RE terms; new
-# `.re_is_phase2_fittable()` gate accepts single-block pdDiag/pdSymm with
-# arbitrary terms. Phase 2.5 will swap fit_demand_tmb()'s consumer over
-# from .re_is_phase1_fittable() to this gate.
+# TICKET-011 Phase 2.2 / Phase 3: parser handles factor-expanded RE terms;
+# `.re_is_phase3_fittable()` gate accepts single-block pdDiag/pdSymm and
+# multi-block pdBlocked / list of pdMats. Phase 2 acceptance for single
+# block, Phase 3 lifts the multi-block gate.
 # ---------------------------------------------------------------------------
 
 test_that("parser expands `~ condition` (treatment contrasts) into n_levels columns", {
@@ -429,7 +439,7 @@ test_that("parser errors on non-intercept formula with no `data`", {
   )
 })
 
-test_that(".re_is_phase2_fittable accepts single-block pdDiag/pdSymm with any terms", {
+test_that(".re_is_phase3_fittable accepts single-block pdDiag/pdSymm with any terms", {
   dat <- data.frame(
     id = rep(1:6, each = 3),
     condition = factor(rep(c("A", "B", "C"), 6)),
@@ -437,27 +447,26 @@ test_that(".re_is_phase2_fittable accepts single-block pdDiag/pdSymm with any te
     y = runif(18)
   )
 
-  # Phase-1-fittable cases must remain Phase-2-fittable too.
-  expect_true(.re_is_phase2_fittable(
+  # Phase-1-fittable cases must remain Phase-3-fittable too.
+  expect_true(.re_is_phase3_fittable(
     .normalize_re_input(c("q0", "alpha"), covariance_structure = "pdSymm")
   ))
-  expect_true(.re_is_phase2_fittable(
+  expect_true(.re_is_phase3_fittable(
     .normalize_re_input(c("q0"), covariance_structure = "pdSymm")
   ))
-  expect_true(.re_is_phase2_fittable(
+  expect_true(.re_is_phase3_fittable(
     .normalize_re_input(Q0 + alpha ~ 1, covariance_structure = "pdSymm")
   ))
 
-  # Factor-expanded single block is the new acceptance: the Phase-1 gate
-  # rejected this; Phase-2 gate accepts it.
-  expect_true(.re_is_phase2_fittable(
+  # Factor-expanded single block is the Phase-2 acceptance.
+  expect_true(.re_is_phase3_fittable(
     .normalize_re_input(
       Q0 + alpha ~ condition,
       covariance_structure = "pdDiag",
       data = dat
     )
   ))
-  expect_true(.re_is_phase2_fittable(
+  expect_true(.re_is_phase3_fittable(
     .normalize_re_input(
       Q0 + alpha ~ condition - 1,
       covariance_structure = "pdSymm",
@@ -466,18 +475,24 @@ test_that(".re_is_phase2_fittable accepts single-block pdDiag/pdSymm with any te
   ))
 })
 
-test_that(".re_is_phase2_fittable still rejects multi-block pdBlocked / list", {
+test_that(".re_is_phase3_fittable accepts multi-block pdBlocked / list", {
+  # Phase 3 lifts the multi-block gate. Both pdBlocked and bare list
+  # of pdMats normalize to multi-block re_parsed and are now fittable.
   blocked <- nlme::pdBlocked(list(
     nlme::pdSymm(Q0 + alpha ~ 1),
     nlme::pdDiag(Q0 + alpha ~ 1)
   ))
   out_multi <- .normalize_re_input(blocked, covariance_structure = "pdDiag")
-  expect_false(.re_is_phase2_fittable(out_multi))
+  expect_true(.re_is_phase3_fittable(out_multi))
+  expect_length(out_multi$blocks, 2L)
+  expect_equal(out_multi$blocks[[1]]$pdmat_class, "pdSymm")
+  expect_equal(out_multi$blocks[[2]]$pdmat_class, "pdDiag")
 
   list_in <- list(
     nlme::pdSymm(Q0 + alpha ~ 1),
     nlme::pdDiag(Q0 + alpha ~ 1)
   )
   out_list <- .normalize_re_input(list_in, covariance_structure = "pdDiag")
-  expect_false(.re_is_phase2_fittable(out_list))
+  expect_true(.re_is_phase3_fittable(out_list))
+  expect_length(out_list$blocks, 2L)
 })

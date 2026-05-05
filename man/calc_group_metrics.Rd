@@ -4,10 +4,13 @@
 \alias{calc_group_metrics}
 \title{Calculate Group-Level Demand Metrics}
 \usage{
-calc_group_metrics(object)
+calc_group_metrics(object, ...)
 }
 \arguments{
-\item{object}{A fitted \code{beezdemand_hurdle} object.}
+\item{object}{A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.}
+
+\item{...}{Method-specific arguments (currently unused; reserved for
+future extensions).}
 }
 \value{
 A named list with group-level Pmax, Omax, and Qmax.

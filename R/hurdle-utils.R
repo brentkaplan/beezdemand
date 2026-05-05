@@ -238,7 +238,9 @@ calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
 #' @description
 #' Calculates group-level (population) Omax and Pmax from a fitted hurdle demand model.
 #'
-#' @param object A fitted \code{beezdemand_hurdle} object.
+#' @param object A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.
+#' @param ... Method-specific arguments (currently unused; reserved for
+#'   future extensions).
 #'
 #' @return A named list with group-level Pmax, Omax, and Qmax.
 #'
@@ -251,12 +253,12 @@ calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
 #'
 #' @seealso \code{\link{calc_omax_pmax}}, \code{\link{fit_demand_hurdle}}
 #' @export
-calc_group_metrics <- function(object) {
+calc_group_metrics <- function(object, ...) {
   UseMethod("calc_group_metrics")
 }
 
 #' @export
-calc_group_metrics.beezdemand_hurdle <- function(object) {
+calc_group_metrics.beezdemand_hurdle <- function(object, ...) {
   # Extract group-level parameters (hurdle uses ln parameterization)
   coefs <- object$model$coefficients
   
@@ -391,7 +393,11 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
 #' Convenience function to extract subject-specific demand parameters from
 #' a fitted hurdle demand model. Equivalent to accessing \code{object$subject_pars}.
 #'
-#' @param object A fitted \code{beezdemand_hurdle} object.
+#' @param object A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.
+#' @param ... Method-specific arguments. The \code{beezdemand_tmb} method
+#'   accepts an \code{expanded} argument for opt-in long-form output with
+#'   per-(subject, factor-level) rows; see
+#'   \code{\link{get_subject_pars.beezdemand_tmb}}.
 #'
 #' @return Data frame with subject-specific parameters including:
 #' \describe{
@@ -416,12 +422,12 @@ calc_group_metrics.beezdemand_hurdle <- function(object) {
 #'
 #' @seealso \code{\link{fit_demand_hurdle}}
 #' @export
-get_subject_pars <- function(object) {
+get_subject_pars <- function(object, ...) {
   UseMethod("get_subject_pars")
 }
 
 #' @export
-get_subject_pars.beezdemand_hurdle <- function(object) {
+get_subject_pars.beezdemand_hurdle <- function(object, ...) {
   object$subject_pars
 }
 
