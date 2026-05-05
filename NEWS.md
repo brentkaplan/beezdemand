@@ -136,6 +136,25 @@ land here as the foundation for the Phase 2 factor-RE work.
   EMMs within 5% on natural scale (manuscript-repo parity protocol
   remains the integration gate against actual study data).
 
+## Documentation: advanced random-effects vignette (TICKET-011 Phase 5B)
+
+* New vignette `tmb-advanced-random-effects.Rmd` covers all
+  random-effects structures beyond intercepts-only:
+  - Decision tree for picking between intercepts-only,
+    factor-expanded single-block (Phase 2), and multi-block
+    `pdBlocked` (Phase 3).
+  - Worked example of the cigarette M1 spec on simulated within-
+    subject data, demonstrating per-condition Q0 ordering recovery.
+  - Reading subject-level results: long-form
+    `get_subject_pars(fit, expanded = TRUE)` and `attr(re_q0_mat)` /
+    `re_alpha_mat` access for power users.
+  - Group metric conditioning with the `at` argument and the
+    parameter-first marginalization convention.
+  - Diagnostics for variance components per block and convergence
+    troubleshooting.
+* Existing `tmb-mixed-effects.Rmd` stays as the intro tier
+  (intercept-only and basic 2-RE).
+
 ## Group-level metric conditioning (TICKET-011 Phase 5C)
 
 * `calc_group_metrics.beezdemand_tmb()` gains an `at` argument for
