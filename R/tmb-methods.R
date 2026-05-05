@@ -469,6 +469,32 @@ print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
   if (!is.null(dm)) {
     cat(sprintf("Pmax: %.4f  Omax: %.4f  Method: %s\n",
                 dm$Pmax, dm$Omax, dm$method %||% "unknown"))
+    # Phase 5C: surface the conditioning point used to derive these
+    # metrics. Continuous covariates default to training mean; factors
+    # default to marginal across observed levels (equal weights).
+    co <- dm$conditioned_on
+    if (!is.null(co)) {
+      parts <- character(0)
+      if (!is.null(co$covariates) && length(co$covariates) > 0L) {
+        cv_strs <- mapply(
+          function(nm, val) sprintf("%s=%.4g", nm, val),
+          names(co$covariates), co$covariates
+        )
+        parts <- c(parts, cv_strs)
+      }
+      if (!is.null(co$factors) && length(co$factors) > 0L) {
+        fac_strs <- mapply(
+          function(nm, val) sprintf("%s=%s", nm,
+            if (length(val) == 1L && val == "marginal") "marginal"
+            else paste(val, collapse = "/")),
+          names(co$factors), co$factors
+        )
+        parts <- c(parts, fac_strs)
+      }
+      if (length(parts) > 0L) {
+        cat("Metrics conditioned at:", paste(parts, collapse = ", "), "\n")
+      }
+    }
   }
 
   cat("\n--- Individual Parameter Summaries ---\n")
@@ -2305,67 +2331,126 @@ get_demand_comparisons.beezdemand_tmb <- function(
 #' Calculate Population-Level Demand Metrics for TMB Model
 #'
 #' @param object A \code{beezdemand_tmb} object.
+#' @param at Named list of factor-level filters or continuous-covariate
+#'   value overrides (e.g. `list(condition = "C1", FTND_z = 0.5)`).
+#'   When `NULL` (default), continuous covariates are evaluated at their
+#'   training mean and factors are marginalized across observed levels
+#'   (equal weights). When supplied, conditions the parameter EMMs to the
+#'   specified factor levels and/or covariate values before deriving
+#'   Pmax/Omax. Same shape as the `at` argument of
+#'   \code{\link{get_demand_param_emms.beezdemand_tmb}} and
+#'   \code{\link{get_demand_comparisons.beezdemand_tmb}}.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A list with `Pmax`, `Omax`, `Qmax`, `elasticity_at_pmax`,
-#'   `method`, and (for covariate-adjusted fits) `conditioned_on`
-#'   describing the reference point used.
+#'   `method`, and `conditioned_on` describing the reference point used.
+#'   The `conditioned_on` field reports the actual conditioning applied
+#'   (covariate values used, factor treatment per factor) so programmatic
+#'   consumers do not have to re-derive it.
 #'
-#' @note For fits that include `continuous_covariates`, the returned
-#'   metrics are computed from the intercept-only coefficients --
-#'   i.e., the curve at every covariate set to 0 -- not at the training
-#'   mean or any other defensible population reference. A warning is
-#'   emitted and the conditioning point is reported in
-#'   `conditioned_on`. Marginalization (or explicit `at` conditioning)
-#'   is planned for TICKET-011 Phase 5; the warn-and-label behavior
-#'   here mirrors the warning convention used by
-#'   `predict(type = "demand")`.
+#' @section Marginalization order:
+#' For derived metrics (Pmax/Omax/Qmax) that depend nonlinearly on `Q0`
+#' and `alpha` jointly, this function marginalizes parameters first then
+#' derives metrics:
+#' \enumerate{
+#'   \item Compute log-Q0 and log-alpha EMMs at each cell of the reference
+#'     grid produced by \code{.tmb_build_emm_ref_grid()}.
+#'   \item Marginalize each parameter across factor cells with equal
+#'     weights (matches the emmeans default).
+#'   \item Derive Pmax/Omax/Qmax from the marginalized log-parameters at
+#'     the user-supplied (or training-mean default) covariate point.
+#' }
+#' This is "metrics evaluated at the average parameter values," NOT
+#' "average metrics across cells" -- the two answers differ for nonlinear
+#' transforms. The convention matches the parameter-level marginalization
+#' used by \code{get_demand_param_emms()}.
 #'
 #' @examples
 #' \donttest{
 #' data(apt)
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #' calc_group_metrics(fit)
+#' # Conditioned at a specific covariate value:
+#' # calc_group_metrics(fit_with_cov, at = list(FTND_z = 1))
 #' }
 #'
+#' @seealso \code{\link{fit_demand_tmb}},
+#'   \code{\link{get_demand_param_emms.beezdemand_tmb}}
 #' @export
-calc_group_metrics.beezdemand_tmb <- function(object, ...) {
+calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
   coefs <- object$model$coefficients
-  equation <- object$param_info$equation
   has_k <- object$param_info$has_k
 
-  # Population-level parameters (intercepts only): exp(beta_q0[1]) and
-  # exp(beta_alpha[1]). For a fit with continuous covariates this is the
-  # covariate=0 reference subject, not a population mean. TICKET-011
-  # Phase 0.5: warn + label so summary.beezdemand_tmb() (which calls this
-  # path unconditionally) cannot silently misreport Pmax/Omax/Qmax for
-  # covariate-adjusted fits. Phase 5 will replace this with proper
-  # marginalization or explicit `at` conditioning.
   beta_q0_idx <- which(names(coefs) == "beta_q0")
   beta_alpha_idx <- which(names(coefs) == "beta_alpha")
+  beta_q0 <- unname(coefs[beta_q0_idx])
+  beta_alpha <- unname(coefs[beta_alpha_idx])
 
-  Q0 <- exp(coefs[beta_q0_idx[1]])
-  alpha_val <- exp(coefs[beta_alpha_idx[1]])
-
-  cov_names <- object$param_info$continuous_covariates
-  conditioned_on <- NULL
-  if (!is.null(cov_names) && length(cov_names) > 0L) {
-    cov_at_zero <- stats::setNames(rep(0, length(cov_names)), cov_names)
-    conditioned_on <- list(covariates = cov_at_zero)
-    cli::cli_warn(c(
-      "{.fun calc_group_metrics} reports population metrics with continuous covariates held at 0.",
-      "i" = "Affected covariate{?s}: {.field {cov_names}}.",
-      "i" = "These are reference-intercept metrics, not training-mean or marginalized metrics.",
-      "i" = "Defensible covariate conditioning lands in TICKET-011 Phase 5; until then, set covariates explicitly when fitting if 0 is off-manifold."
-    ))
+  # Phase 5C: parameter-first marginalization. Compute log-Q0 and log-alpha
+  # EMMs across the reference grid (continuous covariates at training
+  # mean by default; factor levels marginal with equal weights). The
+  # `at` argument forwards through `.tmb_build_emm_ref_grid()` to the
+  # grid construction. Then derive Pmax/Omax/Qmax from the marginalized
+  # parameters -- consistent with the parameter-level convention used by
+  # `get_demand_param_emms()`.
+  grid_q0 <- .tmb_build_emm_ref_grid(object, param = "Q0", at = at)
+  if (isTRUE(grid_q0$is_intercept_only)) {
+    log_q0_marginal <- beta_q0[1L]
+  } else {
+    log_q0_emms <- as.numeric(grid_q0$ref_X %*% beta_q0)
+    log_q0_marginal <- mean(log_q0_emms)
   }
+
+  grid_alpha <- .tmb_build_emm_ref_grid(object, param = "alpha", at = at)
+  if (isTRUE(grid_alpha$is_intercept_only)) {
+    log_alpha_marginal <- beta_alpha[1L]
+  } else {
+    log_alpha_emms <- as.numeric(grid_alpha$ref_X %*% beta_alpha)
+    log_alpha_marginal <- mean(log_alpha_emms)
+  }
+
+  Q0 <- exp(log_q0_marginal)
+  alpha_val <- exp(log_alpha_marginal)
+
+  # Build the conditioned_on field describing the actual conditioning.
+  cov_names <- object$param_info$continuous_covariates
+  if (is.null(cov_names)) cov_names <- character(0)
+  fe_factors <- unique(c(
+    object$param_info$factors,
+    object$param_info$factors_q0,
+    object$param_info$factors_alpha
+  ))
+  fe_factors <- fe_factors[nzchar(fe_factors) & !is.na(fe_factors)]
+  conditioned_on <- list()
+  if (length(cov_names) > 0L) {
+    cov_values <- vapply(cov_names, function(cv) {
+      if (!is.null(at) && cv %in% names(at)) {
+        as.numeric(at[[cv]][1])
+      } else {
+        mean(object$data[[cv]], na.rm = TRUE)
+      }
+    }, numeric(1))
+    names(cov_values) <- cov_names
+    conditioned_on$covariates <- cov_values
+  }
+  if (length(fe_factors) > 0L) {
+    factor_treatment <- vector("list", length(fe_factors))
+    names(factor_treatment) <- fe_factors
+    for (f in fe_factors) {
+      if (!is.null(at) && f %in% names(at)) {
+        factor_treatment[[f]] <- as.character(at[[f]])
+      } else {
+        factor_treatment[[f]] <- "marginal"
+      }
+    }
+    conditioned_on$factors <- factor_treatment
+  }
+  if (length(conditioned_on) == 0L) conditioned_on <- NULL
 
   if (has_k) {
     k_val <- .tmb_get_k(object)
-    model_type <- "hs"
-
     result <- beezdemand_calc_pmax_omax(
-      model_type = model_type,
+      model_type = "hs",
       params = list(alpha = alpha_val, q0 = Q0, k = k_val),
       param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
     )

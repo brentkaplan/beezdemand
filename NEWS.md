@@ -136,6 +136,36 @@ land here as the foundation for the Phase 2 factor-RE work.
   EMMs within 5% on natural scale (manuscript-repo parity protocol
   remains the integration gate against actual study data).
 
+## Group-level metric conditioning (TICKET-011 Phase 5C)
+
+* `calc_group_metrics.beezdemand_tmb()` gains an `at` argument for
+  explicit conditioning on continuous covariates and factor levels.
+  When `at = NULL` (default), continuous covariates are evaluated at
+  their training mean and factors are marginalized across observed
+  levels (equal weights). The argument shape matches
+  `get_demand_param_emms()` / `get_demand_comparisons()`:
+  `at = list(age = 30, gender = "Male")`.
+* The Phase 0.5 `cli::cli_warn()` for "covariates held at 0" is retired
+  entirely. The new training-mean default is statistically defensible,
+  so the warning would only train users to ignore warnings. The
+  `conditioned_on` field in the return list still labels the actual
+  conditioning point (covariate values used; per-factor treatment, with
+  `"marginal"` for the default and the supplied level when `at` is
+  given).
+* For derived metrics that depend nonlinearly on (Q0, alpha) jointly
+  (Pmax, Omax, Qmax), this function uses **parameter-first
+  marginalization**: log-Q0 and log-alpha EMMs are computed on the
+  reference grid via the shared `.tmb_build_emm_ref_grid()` helper,
+  marginalized with equal weights, then Pmax/Omax/Qmax are derived from
+  the marginalized parameter values. This matches the parameter-level
+  marginalization convention used by `get_demand_param_emms()`. (Note:
+  this differs from "compute metrics per cell, then average"; the two
+  approaches give different answers for nonlinear transforms.)
+* `summary.beezdemand_tmb()` now prints a single line under the
+  Population Demand Metrics block — `Metrics conditioned at: <cov>=<X>,
+  <factor>=marginal` — surfacing the conditioning point so a printed
+  summary is self-describing.
+
 ## Subject-level reporting for factor-expanded fits (TICKET-011 Phase 5A)
 
 * `get_subject_pars()` gains an opt-in `expanded` argument. When

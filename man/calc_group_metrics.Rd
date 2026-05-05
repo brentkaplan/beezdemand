@@ -9,8 +9,10 @@ calc_group_metrics(object, ...)
 \arguments{
 \item{object}{A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.}
 
-\item{...}{Method-specific arguments (currently unused; reserved for
-future extensions).}
+\item{...}{Method-specific arguments. The \code{beezdemand_tmb} method
+accepts an \code{at} argument for explicit conditioning of continuous
+covariates and factor levels; see
+\code{\link{calc_group_metrics.beezdemand_tmb}}.}
 }
 \value{
 A named list with group-level Pmax, Omax, and Qmax.

@@ -1,17 +1,18 @@
 # =============================================================================
 # Tests for calc_group_metrics.beezdemand_tmb()
 #
-# TICKET-011 Phase 0.5: For covariate-adjusted fits, the function returns
-# Q0/alpha derived from the *intercept-only* coefficients (i.e., the
-# covariate=0 reference subject), and `summary.beezdemand_tmb()` consumes
-# this unconditionally. Codex adversarial review (round 3, promoted to
-# HIGH severity in round 4) flagged this as silent misreporting of core
-# derived outcomes (Pmax/Omax/Qmax) on the standard summary path.
+# TICKET-011 Phase 5C: replaced Phase 0.5's warn-and-label-at-covariate=0
+# behavior with proper conditioning. Default behavior now evaluates
+# continuous covariates at their training mean and marginalizes factors
+# across observed levels (equal weights). The new `at` argument lets
+# callers override either. The Phase 0.5 warning is retired entirely
+# because the default is statistically defensible; the `conditioned_on`
+# field still labels the actual conditioning point.
 #
-# Phase 0.5 fix: warn + label (matches the predict(type='demand') warning
-# convention, commit b61aeec). Phase 5 will replace warn-and-label with
-# explicit `at` conditioning or proper marginalization, reusing the
-# .tmb_build_emm_ref_grid() helper from Phase 0.4.
+# Marginalization order: parameter-first. log-Q0 and log-alpha EMMs are
+# averaged across reference grid cells, then Pmax/Omax/Qmax are derived
+# from the marginalized parameters. (Not "compute metrics per cell, then
+# average" — the two approaches differ for nonlinear transforms.)
 # =============================================================================
 
 helper_subsample_apt_full <- function(n_per_group = 25) {
@@ -27,42 +28,23 @@ helper_subsample_apt_full <- function(n_per_group = 25) {
   d
 }
 
-test_that("calc_group_metrics warns on covariate-adjusted TMB fits", {
-  skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    continuous_covariates = "age",
-    verbose = 0
-  )
-
-  expect_warning(
-    metrics <- calc_group_metrics(fit),
-    regexp = "covariates? held at 0|covariate=0|conditioned"
-  )
-  expect_true("conditioned_on" %in% names(metrics))
-  expect_equal(metrics$conditioned_on$covariates[["age"]], 0)
-})
+# ---------------------------------------------------------------------------
+# Default behavior: training-mean continuous covariates; factor marginal.
+# ---------------------------------------------------------------------------
 
 test_that("calc_group_metrics is silent for no-covariate TMB fits", {
   skip_on_cran()
   data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt,
-    equation = "exponential",
-    verbose = 0
-  )
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 
   expect_no_warning(metrics <- calc_group_metrics(fit))
-  # No covariates -> no conditioning to label.
-  expect_true(
-    is.null(metrics$conditioned_on) ||
-      length(metrics$conditioned_on$covariates) == 0L
-  )
+  # No covariates and no factors -> conditioned_on is NULL.
+  expect_null(metrics$conditioned_on)
+  expect_true(is.finite(metrics$Pmax))
+  expect_true(is.finite(metrics$Omax))
 })
 
-test_that("summary.beezdemand_tmb propagates calc_group_metrics warning for covariate fits", {
+test_that("calc_group_metrics is silent for covariate fits (Phase 0.5 warning retired)", {
   skip_on_cran()
   d <- helper_subsample_apt_full()
   fit <- fit_demand_tmb(
@@ -72,11 +54,123 @@ test_that("summary.beezdemand_tmb propagates calc_group_metrics warning for cova
     verbose = 0
   )
 
-  # Codex round 3 specifically flagged this propagation path: summary()
-  # consumes calc_group_metrics() unconditionally so the same silent
-  # misreporting lands in the standard summary output.
-  expect_warning(
-    capture.output(summary(fit)),
-    regexp = "covariates? held at 0|covariate=0|conditioned"
+  expect_no_warning(metrics <- calc_group_metrics(fit))
+  expect_true("conditioned_on" %in% names(metrics))
+  expect_true("covariates" %in% names(metrics$conditioned_on))
+  # Default conditioning evaluates `age` at the training mean of the
+  # post-fit data (fit$data, after zero-drop filtering), NOT 0.
+  expect_equal(
+    metrics$conditioned_on$covariates[["age"]],
+    mean(fit$data$age, na.rm = TRUE)
   )
+  expect_false(metrics$conditioned_on$covariates[["age"]] == 0)
+})
+
+# ---------------------------------------------------------------------------
+# `at` argument: explicit conditioning of continuous covariates.
+# ---------------------------------------------------------------------------
+
+test_that("calc_group_metrics(at = list(cov = X)) conditions at the supplied value", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    continuous_covariates = "age",
+    verbose = 0
+  )
+
+  metrics_default <- calc_group_metrics(fit)
+  metrics_at_30 <- calc_group_metrics(fit, at = list(age = 30))
+  metrics_at_50 <- calc_group_metrics(fit, at = list(age = 50))
+
+  # conditioned_on reflects the actual value used.
+  expect_equal(metrics_at_30$conditioned_on$covariates[["age"]], 30)
+  expect_equal(metrics_at_50$conditioned_on$covariates[["age"]], 50)
+
+  # The metrics differ across `at` values when the covariate enters Q0
+  # or alpha. (For an exponential demand model the covariate enters
+  # log-Q0 / log-alpha, so any non-zero coefficient produces a
+  # non-degenerate change. We pin a relative-difference assertion to
+  # avoid depending on a specific direction.)
+  expect_true(
+    metrics_at_30$Pmax != metrics_at_50$Pmax ||
+      metrics_at_30$Omax != metrics_at_50$Omax
+  )
+})
+
+# ---------------------------------------------------------------------------
+# `at` argument: factor-level conditioning.
+# ---------------------------------------------------------------------------
+
+test_that("calc_group_metrics(at = list(factor = level)) conditions on a level", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    factors = "gender",
+    verbose = 0
+  )
+
+  metrics_default <- calc_group_metrics(fit)
+  metrics_male <- calc_group_metrics(fit, at = list(gender = "Male"))
+  metrics_female <- calc_group_metrics(fit, at = list(gender = "Female"))
+
+  # conditioned_on reflects the supplied factor level.
+  expect_equal(metrics_male$conditioned_on$factors$gender, "Male")
+  expect_equal(metrics_female$conditioned_on$factors$gender, "Female")
+  # Default conditioning marks the factor as marginal.
+  expect_equal(metrics_default$conditioned_on$factors$gender, "marginal")
+
+  # Metrics differ by level when gender enters Q0 or alpha.
+  expect_true(metrics_male$Pmax != metrics_female$Pmax)
+})
+
+# ---------------------------------------------------------------------------
+# Generic dispatch: calling the generic with `at` works through ... .
+# ---------------------------------------------------------------------------
+
+test_that("calc_group_metrics() generic dispatches `at` arg", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    continuous_covariates = "age",
+    verbose = 0
+  )
+
+  # Calling the generic (not the method directly) must propagate `at`.
+  m <- calc_group_metrics(fit, at = list(age = 40))
+  expect_equal(m$conditioned_on$covariates[["age"]], 40)
+})
+
+# ---------------------------------------------------------------------------
+# summary.beezdemand_tmb prints the conditioning line.
+# ---------------------------------------------------------------------------
+
+test_that("summary.beezdemand_tmb prints 'Metrics conditioned at:' line for covariate fits", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d,
+    equation = "exponential",
+    continuous_covariates = "age",
+    verbose = 0
+  )
+
+  out <- capture.output(summary(fit))
+  expect_true(any(grepl("Metrics conditioned at:", out, fixed = TRUE)))
+  expect_true(any(grepl("age=", out, fixed = TRUE)))
+})
+
+test_that("summary.beezdemand_tmb omits the conditioning line for plain fits", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+
+  out <- capture.output(summary(fit))
+  # No covariates and no factors -> no conditioning_on -> no print line.
+  expect_false(any(grepl("Metrics conditioned at:", out, fixed = TRUE)))
 })

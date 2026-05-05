@@ -4,37 +4,63 @@
 \alias{calc_group_metrics.beezdemand_tmb}
 \title{Calculate Population-Level Demand Metrics for TMB Model}
 \usage{
-\method{calc_group_metrics}{beezdemand_tmb}(object, ...)
+\method{calc_group_metrics}{beezdemand_tmb}(object, at = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
+
+\item{at}{Named list of factor-level filters or continuous-covariate
+value overrides (e.g. \code{list(condition = "C1", FTND_z = 0.5)}).
+When \code{NULL} (default), continuous covariates are evaluated at their
+training mean and factors are marginalized across observed levels
+(equal weights). When supplied, conditions the parameter EMMs to the
+specified factor levels and/or covariate values before deriving
+Pmax/Omax. Same shape as the \code{at} argument of
+\code{\link{get_demand_param_emms.beezdemand_tmb}} and
+\code{\link{get_demand_comparisons.beezdemand_tmb}}.}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
 A list with \code{Pmax}, \code{Omax}, \code{Qmax}, \code{elasticity_at_pmax},
-\code{method}, and (for covariate-adjusted fits) \code{conditioned_on}
-describing the reference point used.
+\code{method}, and \code{conditioned_on} describing the reference point used.
+The \code{conditioned_on} field reports the actual conditioning applied
+(covariate values used, factor treatment per factor) so programmatic
+consumers do not have to re-derive it.
 }
 \description{
 Calculate Population-Level Demand Metrics for TMB Model
 }
-\note{
-For fits that include \code{continuous_covariates}, the returned
-metrics are computed from the intercept-only coefficients --
-i.e., the curve at every covariate set to 0 -- not at the training
-mean or any other defensible population reference. A warning is
-emitted and the conditioning point is reported in
-\code{conditioned_on}. Marginalization (or explicit \code{at} conditioning)
-is planned for TICKET-011 Phase 5; the warn-and-label behavior
-here mirrors the warning convention used by
-\code{predict(type = "demand")}.
+\section{Marginalization order}{
+
+For derived metrics (Pmax/Omax/Qmax) that depend nonlinearly on \code{Q0}
+and \code{alpha} jointly, this function marginalizes parameters first then
+derives metrics:
+\enumerate{
+\item Compute log-Q0 and log-alpha EMMs at each cell of the reference
+grid produced by \code{.tmb_build_emm_ref_grid()}.
+\item Marginalize each parameter across factor cells with equal
+weights (matches the emmeans default).
+\item Derive Pmax/Omax/Qmax from the marginalized log-parameters at
+the user-supplied (or training-mean default) covariate point.
 }
+This is "metrics evaluated at the average parameter values," NOT
+"average metrics across cells" -- the two answers differ for nonlinear
+transforms. The convention matches the parameter-level marginalization
+used by \code{get_demand_param_emms()}.
+}
+
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 calc_group_metrics(fit)
+# Conditioned at a specific covariate value:
+# calc_group_metrics(fit_with_cov, at = list(FTND_z = 1))
 }
 
+}
+\seealso{
+\code{\link{fit_demand_tmb}},
+\code{\link{get_demand_param_emms.beezdemand_tmb}}
 }

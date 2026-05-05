@@ -239,8 +239,10 @@ calc_omax_pmax_vec <- function(Q0, k, alpha, price_range = NULL) {
 #' Calculates group-level (population) Omax and Pmax from a fitted hurdle demand model.
 #'
 #' @param object A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.
-#' @param ... Method-specific arguments (currently unused; reserved for
-#'   future extensions).
+#' @param ... Method-specific arguments. The \code{beezdemand_tmb} method
+#'   accepts an \code{at} argument for explicit conditioning of continuous
+#'   covariates and factor levels; see
+#'   \code{\link{calc_group_metrics.beezdemand_tmb}}.
 #'
 #' @return A named list with group-level Pmax, Omax, and Qmax.
 #'
