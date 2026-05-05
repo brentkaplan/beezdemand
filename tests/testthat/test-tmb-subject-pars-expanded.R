@@ -154,11 +154,10 @@ test_that("calculate_amplitude_persistence() aborts on M1 fit with expanded=TRUE
 # expansion from the numeric variable).
 # ---------------------------------------------------------------------------
 
-test_that("expanded = TRUE conditions numeric within-id RE-RHS at subject mean", {
+test_that("expanded = TRUE conditions numeric within-id RE-RHS at subject mean (matches manual mean-conditioned newdata; differs from first-row)", {
   skip_on_cran()
 
   data(apt, package = "beezdemand")
-  set.seed(99)
   apt_num <- apt
   # Numeric within-id-varying variable (e.g., trial number). The Z-column
   # NA detection flags this in default wide subject_pars; expanded shape
@@ -178,35 +177,46 @@ test_that("expanded = TRUE conditions numeric within-id RE-RHS at subject mean",
   expect_true(all(is.na(default_pars$Q0)))
 
   # Expanded: numeric within-id RE-RHS conditions at subject mean.
-  # No factor expansion -> nrow == n_subjects.
   exp_pars <- get_subject_pars(fit, expanded = TRUE)
   expect_equal(nrow(exp_pars), length(unique(fit$subject_pars$id)))
-
-  # Q0/alpha must be NON-NA: the expanded path conditions trial_num at
-  # subject mean rather than returning NA. Pre-fix this returned NA
-  # because length(expand_factors) == 0 short-circuited.
   expect_true(all(!is.na(exp_pars$Q0)))
   expect_true(all(!is.na(exp_pars$alpha)))
-  expect_true(all(is.finite(exp_pars$Q0)))
-  expect_true(all(is.finite(exp_pars$alpha)))
 
-  # Verify conditioning is at subject mean, not first-observed-row.
-  # Construct the subject's mean trial_num manually and call predict()
-  # with that newdata; expanded Q0 should match.
-  subj1 <- as.character(unique(apt_num$id))[1]
-  subj1_data <- apt_num[as.character(apt_num$id) == subj1, ]
-  trial_mean <- mean(subj1_data$trial_num)
-  trial_first <- subj1_data$trial_num[1]
-  # Mean and first-row should differ for a sequence 1:N; trial_first = 1,
-  # trial_mean = (N+1)/2 > 1 for N > 1.
-  expect_gt(trial_mean, trial_first)
+  # Hard check: expanded Q0/alpha must MATCH the value derived from a
+  # manual mean-conditioned newdata, and must DIFFER from the value
+  # derived from a first-observed-row newdata. trial_num runs 1:N per
+  # subject, so subject mean = (N+1)/2 vs first-row = 1.
+  for (sid in head(as.character(exp_pars$id), 3)) {
+    subj_rows <- apt_num[as.character(apt_num$id) == sid, ]
+    trial_mean <- mean(subj_rows$trial_num)
+    trial_first <- subj_rows$trial_num[1]
+    expect_gt(trial_mean, trial_first)
 
-  q0_subj1 <- exp_pars$Q0[as.character(exp_pars$id) == subj1]
-  expect_length(q0_subj1, 1L)
-  expect_true(is.finite(q0_subj1))
+    nd_mean <- data.frame(
+      id = sid, x = subj_rows$x[1], y = subj_rows$y[1],
+      trial_num = trial_mean
+    )
+    nd_first <- data.frame(
+      id = sid, x = subj_rows$x[1], y = subj_rows$y[1],
+      trial_num = trial_first
+    )
+    bp_mean <- beezdemand:::.tmb_build_predicted_pars(fit, nd_mean)
+    bp_first <- beezdemand:::.tmb_build_predicted_pars(fit, nd_first)
+
+    exp_q0 <- exp_pars$Q0[as.character(exp_pars$id) == sid]
+    exp_alpha <- exp_pars$alpha[as.character(exp_pars$id) == sid]
+
+    expect_equal(exp_q0, bp_mean$Q0, tolerance = 1e-8,
+                 info = paste("subject", sid, "Q0 mean-conditioned"))
+    expect_equal(exp_alpha, bp_mean$alpha, tolerance = 1e-8,
+                 info = paste("subject", sid, "alpha mean-conditioned"))
+    # Differs from first-row alternative — confirms NOT first-row fallback.
+    expect_false(isTRUE(all.equal(exp_q0, bp_first$Q0, tolerance = 1e-6)),
+                 info = paste("subject", sid, "Q0 NOT first-row"))
+  }
 })
 
-test_that("expanded = TRUE conditions a within-id continuous covariate at subject mean", {
+test_that("expanded = TRUE conditions a within-id continuous covariate at subject mean (matches manual mean-conditioned newdata; differs from first-row)", {
   skip_on_cran()
 
   data(apt, package = "beezdemand")
@@ -215,8 +225,7 @@ test_that("expanded = TRUE conditions a within-id continuous covariate at subjec
   # Within-id-varying continuous covariate placed in `continuous_covariates`
   # rather than `random_effects`. Pre-fix this fell through to the
   # copy-first-row branch because continuous_covariates was missing from
-  # the candidate-variable discovery; expanded Q0 differed from the
-  # subject-mean-conditioned value.
+  # the candidate-variable discovery.
   apt_cov$within_cov <- stats::rnorm(nrow(apt_cov))
 
   fit <- suppressWarnings(fit_demand_tmb(
@@ -228,37 +237,35 @@ test_that("expanded = TRUE conditions a within-id continuous covariate at subjec
   exp_pars <- get_subject_pars(fit, expanded = TRUE)
   expect_true(all(!is.na(exp_pars$Q0)))
 
-  # Compare to a manual subject-mean newdata prediction. Build
-  # newdata with the subject's mean within_cov and identical x.
-  subj1 <- as.character(unique(apt_cov$id))[1]
-  subj1_rows <- apt_cov[as.character(apt_cov$id) == subj1, ]
-  manual_newdata <- data.frame(
-    id = subj1,
-    x = subj1_rows$x[1],
-    within_cov = mean(subj1_rows$within_cov)
-  )
-  manual_pred <- predict(fit, newdata = manual_newdata, type = "response")
+  # Hard check on a few subjects: expanded Q0/alpha must match the
+  # mean-conditioned newdata path and differ from the first-row path.
+  for (sid in head(as.character(exp_pars$id), 3)) {
+    subj_rows <- apt_cov[as.character(apt_cov$id) == sid, ]
+    cov_mean <- mean(subj_rows$within_cov)
+    cov_first <- subj_rows$within_cov[1]
+    if (isTRUE(all.equal(cov_mean, cov_first))) next  # nothing to assert
 
-  exp_q0_subj1 <- exp_pars$Q0[as.character(exp_pars$id) == subj1]
-  # Q0 from expanded should be derivable from the same mean-conditioned
-  # linear predictor that a manual newdata row produces. Since predict
-  # returns y_hat at the supplied x rather than Q0 directly, just
-  # require that Q0 differs from the first-row-conditioned alternative.
-  first_row_newdata <- data.frame(
-    id = subj1,
-    x = subj1_rows$x[1],
-    within_cov = subj1_rows$within_cov[1]
-  )
-  # If subject mean equals first-row exactly (unlikely for rnorm), skip.
-  if (isTRUE(all.equal(mean(subj1_rows$within_cov),
-                       subj1_rows$within_cov[1]))) {
-    skip("Subject mean equals first-row by coincidence; cannot discriminate.")
+    nd_mean <- data.frame(
+      id = sid, x = subj_rows$x[1], y = subj_rows$y[1],
+      within_cov = cov_mean
+    )
+    nd_first <- data.frame(
+      id = sid, x = subj_rows$x[1], y = subj_rows$y[1],
+      within_cov = cov_first
+    )
+    bp_mean <- beezdemand:::.tmb_build_predicted_pars(fit, nd_mean)
+    bp_first <- beezdemand:::.tmb_build_predicted_pars(fit, nd_first)
+
+    exp_q0 <- exp_pars$Q0[as.character(exp_pars$id) == sid]
+    exp_alpha <- exp_pars$alpha[as.character(exp_pars$id) == sid]
+
+    expect_equal(exp_q0, bp_mean$Q0, tolerance = 1e-8,
+                 info = paste("subject", sid, "Q0 mean-conditioned"))
+    expect_equal(exp_alpha, bp_mean$alpha, tolerance = 1e-8,
+                 info = paste("subject", sid, "alpha mean-conditioned"))
+    expect_false(isTRUE(all.equal(exp_q0, bp_first$Q0, tolerance = 1e-6)),
+                 info = paste("subject", sid, "Q0 NOT first-row"))
   }
-  # The two newdata rows would produce different y_hat values; the
-  # expanded Q0 must come from the mean-conditioned path. We test this
-  # qualitatively by confirming Q0 is finite and non-degenerate.
-  expect_length(exp_q0_subj1, 1L)
-  expect_true(is.finite(exp_q0_subj1))
 })
 
 test_that("plot(type='individual', ids=...) filters before the NA guard", {

@@ -1887,6 +1887,15 @@ confint.beezdemand_tmb <- function(
   cov_names <- fit_obj$param_info$continuous_covariates
   if (is.null(cov_names)) cov_names <- character(0)
 
+  # Discover ALL fitted factors (across both Q0 and alpha) for `at`
+  # validation; the param-specific `use_factors` filter applies later.
+  all_factors <- unique(c(
+    fit_obj$param_info$factors,
+    fit_obj$param_info$factors_q0,
+    fit_obj$param_info$factors_alpha
+  ))
+  all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
+
   if (param == "Q0") {
     use_factors <- fit_obj$param_info$factors_q0
   } else {
@@ -1895,6 +1904,57 @@ confint.beezdemand_tmb <- function(
   if (is.null(use_factors)) use_factors <- character(0)
   if (!is.null(factors_in_emm)) {
     use_factors <- intersect(use_factors, factors_in_emm)
+  }
+
+  # `at` validation: catch typos and bad values BEFORE grid construction
+  # so users can't get silent default-marginal results from a misspelled
+  # factor name or NA metrics from an off-grid factor level.
+  if (!is.null(at)) {
+    if (is.null(names(at)) || any(!nzchar(names(at)))) {
+      cli::cli_abort(
+        "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)})."
+      )
+    }
+    valid_names <- c(all_factors, cov_names)
+    bad_names <- setdiff(names(at), valid_names)
+    if (length(bad_names) > 0L) {
+      cli::cli_abort(c(
+        "Unknown name{?s} in {.arg at}: {.field {bad_names}}.",
+        "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}.",
+        "x" = "Did you mistype a factor or covariate name?"
+      ))
+    }
+    data_used_for_validate <- fit_obj$data
+    for (nm in names(at)) {
+      v <- at[[nm]]
+      if (nm %in% all_factors) {
+        # Factor: value must be a subset of observed levels.
+        observed <- sort(unique(as.character(data_used_for_validate[[nm]])))
+        bad_vals <- setdiff(as.character(v), observed)
+        if (length(bad_vals) > 0L) {
+          cli::cli_abort(c(
+            "{.field {nm}} = {.val {bad_vals}} not an observed level.",
+            "i" = "Observed levels: {.val {observed}}.",
+            "x" = "Conditioning on an unobserved factor level cannot be evaluated."
+          ))
+        }
+      } else if (nm %in% cov_names) {
+        # Continuous: must be finite numeric (or character coercible).
+        v_num <- suppressWarnings(as.numeric(v))
+        if (any(is.na(v_num)) || any(!is.finite(v_num))) {
+          cli::cli_abort(c(
+            "{.field {nm}} value{?s} {.val {as.character(v)}} not finite numeric.",
+            "i" = "Continuous-covariate {.arg at} entries must be a single finite numeric value."
+          ))
+        }
+        if (length(v) > 1L) {
+          cli::cli_warn(c(
+            "{.arg at${nm}} has length {length(v)}; using first value {.val {v_num[1]}}.",
+            "i" = "Pass a single numeric value per continuous covariate."
+          ))
+        }
+      }
+    }
   }
 
   is_intercept_only <- length(use_factors) == 0L && length(cov_names) == 0L
@@ -1917,9 +1977,9 @@ confint.beezdemand_tmb <- function(
   }
 
   # Continuous covariates: hold at training mean unless overridden via `at`.
-  # The helper silently uses the first value for multi-value `at`; the
-  # caller is expected to warn (kept at the EMM call site so a single
-  # comparisons call -> emms -> helper chain warns exactly once).
+  # Multi-value `at` for continuous covariates emits a one-shot warning
+  # (above) and uses the first value here — same convention emmeans uses
+  # when its `at` argument supplies a vector.
   if (length(cov_names) > 0L) {
     for (cv in cov_names) {
       cv_value <- mean(data_used[[cv]], na.rm = TRUE)
@@ -1945,11 +2005,17 @@ confint.beezdemand_tmb <- function(
     keep <- rep(TRUE, nrow(level_combos))
     for (nm in names(at)) {
       if (nm %in% use_factors) {
-        keep <- keep & (level_combos[[nm]] %in% at[[nm]])
+        keep <- keep & (as.character(level_combos[[nm]]) %in% as.character(at[[nm]]))
       }
     }
     level_combos <- level_combos[keep, , drop = FALSE]
     ref_X <- ref_X[keep, , drop = FALSE]
+    if (nrow(level_combos) == 0L) {
+      cli::cli_abort(c(
+        "{.arg at} filter produced an empty reference grid.",
+        "i" = "Check that the supplied factor levels exist in the data and are not mutually exclusive."
+      ))
+    }
   }
 
   list(

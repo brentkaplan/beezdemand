@@ -174,3 +174,110 @@ test_that("summary.beezdemand_tmb omits the conditioning line for plain fits", {
   # No covariates and no factors -> no conditioning_on -> no print line.
   expect_false(any(grepl("Metrics conditioned at:", out, fixed = TRUE)))
 })
+
+# ---------------------------------------------------------------------------
+# `at` validation: catch typos and bad values BEFORE grid construction so
+# users can't get silent default-marginal results from a misspelled name
+# or NA metrics from an off-grid factor level. Phase 5C release blocker.
+# ---------------------------------------------------------------------------
+
+test_that("calc_group_metrics aborts on `at` with unknown name (typo)", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  # Mistyped factor name `gendr` must abort, NOT silently return default
+  # marginal metrics.
+  expect_error(
+    calc_group_metrics(fit, at = list(gendr = "Male")),
+    regexp = "Unknown name|gendr"
+  )
+})
+
+test_that("calc_group_metrics aborts on `at` with off-grid factor level", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  # Conditioning on an unobserved factor level must abort, NOT return
+  # NA metrics with conditioned_on labelled with the off-grid value.
+  expect_error(
+    calc_group_metrics(fit, at = list(gender = "NoSuchLevel")),
+    regexp = "not an observed level|NoSuchLevel"
+  )
+})
+
+test_that("calc_group_metrics aborts on non-numeric `at` value for continuous covariate", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", continuous_covariates = "age", verbose = 0
+  )
+
+  # Non-numeric value (e.g., character that doesn't coerce) must abort.
+  expect_error(
+    calc_group_metrics(fit, at = list(age = "not-number")),
+    regexp = "not finite numeric|not-number"
+  )
+
+  # Infinite or NA also aborts.
+  expect_error(
+    calc_group_metrics(fit, at = list(age = NA_real_)),
+    regexp = "not finite numeric"
+  )
+  expect_error(
+    calc_group_metrics(fit, at = list(age = Inf)),
+    regexp = "not finite numeric"
+  )
+})
+
+test_that("calc_group_metrics warns on length-1 multi-value `at` continuous", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", continuous_covariates = "age", verbose = 0
+  )
+
+  # Multi-value continuous `at` warns once and uses the first value.
+  expect_warning(
+    metrics <- calc_group_metrics(fit, at = list(age = c(30, 50))),
+    regexp = "length 2|using first value"
+  )
+  expect_equal(metrics$conditioned_on$covariates[["age"]], 30)
+})
+
+test_that("calc_group_metrics aborts on empty `at`-filtered grid", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  # The previous `at = list(gender = "NoSuchLevel")` test catches the
+  # off-grid level path; this test covers the (rare) path where the
+  # supplied factor levels exist individually but the cross-product
+  # filters out all rows. With a single factor that can't happen
+  # without an off-grid level, so we pin the off-grid branch.
+  expect_error(
+    calc_group_metrics(fit, at = list(gender = c())),
+    regexp = "Unknown|empty|level"
+  )
+})
+
+test_that("calc_group_metrics aborts on unnamed `at` element", {
+  skip_on_cran()
+  d <- helper_subsample_apt_full()
+  fit <- fit_demand_tmb(
+    d, equation = "exponential", factors = "gender", verbose = 0
+  )
+
+  # Mixed named/unnamed list — unnamed entries must abort.
+  expect_error(
+    calc_group_metrics(fit, at = list("Male", gender = "Male")),
+    regexp = "named"
+  )
+})
