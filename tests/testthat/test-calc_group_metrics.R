@@ -341,6 +341,55 @@ test_that("calc_group_metrics aborts on empty `at`-filtered grid", {
   )
 })
 
+test_that("calc_group_metrics rejects collapse-aliased original factor name in `at`", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
+                            labels = c("young", "mid", "old")))
+  d$id <- droplevels(as.factor(d$id))
+
+  # Asymmetric collapse: Q0 -> 2 levels (young+mid into "junior"), alpha
+  # keeps all 3 levels. This makes factors_q0 = "age_group_Q0" and
+  # factors_alpha = "age_group_alpha" (both differ from the original
+  # "age_group" name in param_info$factors).
+  collapse_spec <- list(
+    Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
+    alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
+  )
+
+  fit <- suppressWarnings(fit_demand_tmb(
+    d, equation = "exponential",
+    factors = "age_group",
+    collapse_levels = collapse_spec,
+    verbose = 0
+  ))
+
+  # Sanity: factors_q0 and factors_alpha should now be collapsed names.
+  expect_true(any(grepl("age_group_(Q0|alpha)", c(
+    fit$param_info$factors_q0, fit$param_info$factors_alpha
+  ))))
+
+  # Pre-fix, validation accepted the original name (because
+  # `param_info$factors` includes "age_group") and the helper silently
+  # ignored it (because `use_factors` keys off the collapsed columns).
+  # Post-fix, validation REJECTS with a targeted message that names the
+  # collapsed columns the user should condition on instead.
+  expect_error(
+    calc_group_metrics(fit, at = list(age_group = "young")),
+    regexp = "collapsed|age_group_Q0|age_group_alpha"
+  )
+
+  # The collapsed columns themselves are accepted.
+  expect_no_error(
+    calc_group_metrics(
+      fit,
+      at = list(age_group_Q0 = "junior", age_group_alpha = "young")
+    )
+  )
+})
+
 test_that("calc_group_metrics aborts on unnamed `at` element", {
   skip_on_cran()
   d <- helper_subsample_apt_full()

@@ -593,14 +593,26 @@ fixef.beezdemand_tmb <- function(object, ...) {
 #' Extract Random Effects from TMB Model
 #'
 #' Returns subject-level random effect deviations on the natural (log) scale.
-#' These are the Cholesky-transformed deviations (`b_i` for Q0, `c_i` for
-#' alpha), not standardized scores. To obtain the standardized random effects
-#' (`u` matrix), access `object$tmb_obj` directly.
+#' These are the Cholesky-transformed deviations, not standardized scores.
+#' To obtain the standardized random effects (`u` matrix), access
+#' `object$tmb_obj` directly.
 #'
 #' @param object A \code{beezdemand_tmb} object.
 #' @param ... Additional arguments.
 #'
-#' @return Data frame with subject-level random effects.
+#' @return Data frame with subject-level random effects. Columns:
+#'   \itemize{
+#'     \item `id` — subject identifier
+#'     \item `b_i`, `c_i` (when present) — first-column convenience aliases
+#'       for `q0_(Intercept)` and `alpha_(Intercept)`. Preserved for
+#'       backward compatibility with older callers.
+#'     \item `q0_<term>` — per-block random-effect coefficients for log-Q0,
+#'       one column per random-effects design column from the parsed
+#'       block structure. For factor-expanded or multi-block fits, these
+#'       expose the per-condition slope REs that `b_i` / `c_i` alone do
+#'       not surface.
+#'     \item `alpha_<term>` — analogous columns for log-alpha.
+#'   }
 #'
 #' @examples
 #' \donttest{
@@ -612,8 +624,35 @@ fixef.beezdemand_tmb <- function(object, ...) {
 #' @export
 ranef.beezdemand_tmb <- function(object, ...) {
   spars <- object$subject_pars
-  re_cols <- intersect(c("b_i", "c_i"), names(spars))
-  out <- spars[, c("id", re_cols), drop = FALSE]
+  re_q0 <- attr(spars, "re_q0_mat")
+  re_alpha <- attr(spars, "re_alpha_mat")
+
+  out <- data.frame(id = spars$id, stringsAsFactors = FALSE)
+
+  # Backward compat: include `b_i` / `c_i` when present (first RE column
+  # from each block per the existing convention). Older callers that
+  # hardcoded these names continue to work; new callers should prefer
+  # the `q0_<term>` / `alpha_<term>` columns below.
+  if ("b_i" %in% names(spars)) out$b_i <- spars$b_i
+  if ("c_i" %in% names(spars)) out$c_i <- spars$c_i
+
+  # Phase 5A: surface ALL per-block RE columns. Critical for multi-
+  # block / factor-expanded fits where block-2+ random effects (e.g.,
+  # per-condition slopes) are otherwise omitted from ranef() output and
+  # downstream diagnostics inspect an incomplete RE structure.
+  add_re_cols <- function(out, mat, prefix) {
+    if (is.null(mat) || ncol(mat) == 0L) return(out)
+    nms <- colnames(mat)
+    if (is.null(nms)) nms <- paste0("re_", seq_len(ncol(mat)))
+    for (j in seq_len(ncol(mat))) {
+      col_name <- sprintf("%s_%s", prefix, nms[j])
+      out[[col_name]] <- mat[, j]
+    }
+    out
+  }
+  out <- add_re_cols(out, re_q0, "q0")
+  out <- add_re_cols(out, re_alpha, "alpha")
+
   out
 }
 
@@ -1907,8 +1946,14 @@ confint.beezdemand_tmb <- function(
 
   cov_names <- fit_obj$param_info$continuous_covariates
   if (is.null(cov_names)) cov_names <- character(0)
+  # Active factors are those that actually drive the per-parameter grids
+  # (factors_q0 ∪ factors_alpha). Under `collapse_levels`, the original
+  # `factors` entry differs from the generated `factors_q0` /
+  # `factors_alpha` columns; accepting the original name would let
+  # `at = list(<original> = level)` pass validation only to be silently
+  # ignored by the grid builder (which keys off the collapsed names).
+  # Reject inactive names so the user picks the right collapsed column.
   all_factors <- unique(c(
-    fit_obj$param_info$factors,
     fit_obj$param_info$factors_q0,
     fit_obj$param_info$factors_alpha
   ))
@@ -1917,11 +1962,27 @@ confint.beezdemand_tmb <- function(
   valid_names <- c(all_factors, cov_names)
   bad_names <- setdiff(names(at), valid_names)
   if (length(bad_names) > 0L) {
-    cli::cli_abort(c(
+    # Detect the "user supplied collapse-aliased original name" case so
+    # the error message points at the right collapsed columns.
+    original_factors <- fit_obj$param_info$factors
+    if (is.null(original_factors)) original_factors <- character(0)
+    aliased <- intersect(bad_names, original_factors)
+    msg <- c(
       "Unknown name{?s} in {.arg at}: {.field {bad_names}}.",
-      "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}.",
-      "x" = "Did you mistype a factor or covariate name?"
-    ))
+      "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}."
+    )
+    if (length(aliased) > 0L) {
+      # Identify the collapsed columns that the original name maps to.
+      collapsed_for <- vapply(aliased, function(orig) {
+        cands <- intersect(c(paste0(orig, "_Q0"), paste0(orig, "_alpha")),
+                           all_factors)
+        paste(cands, collapse = " or ")
+      }, character(1))
+      msg <- c(msg,
+        "i" = "{.field {aliased}} was collapsed via {.arg collapse_levels}; condition on {.field {collapsed_for}} instead.")
+    }
+    msg <- c(msg, "x" = "Did you mistype a factor or covariate name?")
+    cli::cli_abort(msg)
   }
 
   data_used <- fit_obj$data

@@ -12,13 +12,25 @@
 \item{...}{Additional arguments.}
 }
 \value{
-Data frame with subject-level random effects.
+Data frame with subject-level random effects. Columns:
+\itemize{
+\item \code{id} — subject identifier
+\item \code{b_i}, \code{c_i} (when present) — first-column convenience aliases
+for \code{q0_(Intercept)} and \code{alpha_(Intercept)}. Preserved for
+backward compatibility with older callers.
+\item \verb{q0_<term>} — per-block random-effect coefficients for log-Q0,
+one column per random-effects design column from the parsed
+block structure. For factor-expanded or multi-block fits, these
+expose the per-condition slope REs that \code{b_i} / \code{c_i} alone do
+not surface.
+\item \verb{alpha_<term>} — analogous columns for log-alpha.
+}
 }
 \description{
 Returns subject-level random effect deviations on the natural (log) scale.
-These are the Cholesky-transformed deviations (\code{b_i} for Q0, \code{c_i} for
-alpha), not standardized scores. To obtain the standardized random effects
-(\code{u} matrix), access \code{object$tmb_obj} directly.
+These are the Cholesky-transformed deviations, not standardized scores.
+To obtain the standardized random effects (\code{u} matrix), access
+\code{object$tmb_obj} directly.
 }
 \examples{
 \donttest{

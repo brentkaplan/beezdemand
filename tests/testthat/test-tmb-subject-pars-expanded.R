@@ -115,13 +115,52 @@ test_that("predict() works on M1-style fit", {
   expect_true(all(is.finite(preds$.fitted)))
 })
 
-test_that("ranef() works on M1-style fit", {
+test_that("ranef() works on M1-style fit and surfaces ALL per-block RE columns", {
   skip_on_cran()
 
   fit <- .fit_m1_style()
   re <- nlme::ranef(fit)
   expect_s3_class(re, "data.frame")
   expect_equal(nrow(re), length(unique(re$id)))
+  expect_true("id" %in% names(re))
+
+  # Phase 5A regression: pre-fix ranef() returned ONLY id/b_i/c_i, which
+  # for an M1-spec fit silently dropped the block-2 condition-slope
+  # random effects. Post-fix, ranef() must surface every column of
+  # re_q0_mat / re_alpha_mat as q0_<term> / alpha_<term>.
+  q0_cols <- grep("^q0_", names(re), value = TRUE)
+  alpha_cols <- grep("^alpha_", names(re), value = TRUE)
+  re_q0_mat <- attr(fit$subject_pars, "re_q0_mat")
+  re_alpha_mat <- attr(fit$subject_pars, "re_alpha_mat")
+  expect_equal(length(q0_cols), ncol(re_q0_mat))
+  expect_equal(length(alpha_cols), ncol(re_alpha_mat))
+
+  # M1 spec has block 1 (1 intercept) + block 2 (3 condition slopes) -> 4
+  # RE columns per parameter. So at minimum 4 q0_* columns and 4 alpha_*
+  # columns must be present.
+  expect_gte(length(q0_cols), 4L)
+  expect_gte(length(alpha_cols), 4L)
+
+  # Backward compat: b_i / c_i still present (first RE column aliases).
+  expect_true("b_i" %in% names(re))
+  expect_true("c_i" %in% names(re))
+  # And they numerically equal the corresponding first per-block column.
+  expect_equal(re$b_i, re_q0_mat[, 1L], tolerance = 1e-10)
+  expect_equal(re$c_i, re_alpha_mat[, 1L], tolerance = 1e-10)
+})
+
+test_that("ranef() preserves intercept-only output shape (backward compat)", {
+  skip_on_cran()
+
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  re <- nlme::ranef(fit)
+
+  # For an intercept-only fit, b_i / c_i remain (existing tests at
+  # test-fit_demand_tmb.R:274 hardcode these names). The new per-block
+  # columns appear too as q0_(Intercept) / alpha_(Intercept), but
+  # callers relying on b_i / c_i continue to work.
+  expect_true(all(c("id", "b_i", "c_i") %in% names(re)))
 })
 
 # ---------------------------------------------------------------------------
