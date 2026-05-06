@@ -921,8 +921,32 @@ NULL
   bmap <- .tmb_build_block_map(re_parsed)
   re_dim_q0 <- sum(bmap$block_q0_dim)
   re_dim_alpha <- sum(bmap$block_alpha_dim)
+  # Per-block term names from the parsed RE structure. For multi-block
+  # fits, block_q0_offset / block_alpha_offset interleave block 1 + 2 +
+  # ... so the column names follow the same order. e.g., for the M1
+  # spec pdBlocked(pdSymm(Q0+α~1), pdDiag(Q0+α~condition-1)), Q0 RE
+  # column names are c("(Intercept)", "conditionA", "conditionB",
+  # "conditionC"). Surfacing real names is what makes ranef()'s
+  # `q0_<term>` / `alpha_<term>` columns informative for downstream
+  # diagnostics rather than the generic q0_re_1 / re_2 / re_3 fallback.
+  re_q0_terms <- character(0)
+  re_alpha_terms <- character(0)
+  for (b in re_parsed$blocks) {
+    if (length(b$terms_q0) > 0L) {
+      re_q0_terms <- c(re_q0_terms, b$terms_q0)
+    }
+    if (length(b$terms_alpha) > 0L) {
+      re_alpha_terms <- c(re_alpha_terms, b$terms_alpha)
+    }
+  }
   re_q0_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_q0)
   re_alpha_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_alpha)
+  if (length(re_q0_terms) == ncol(re_q0_mat) && ncol(re_q0_mat) > 0L) {
+    colnames(re_q0_mat) <- re_q0_terms
+  }
+  if (length(re_alpha_terms) == ncol(re_alpha_mat) && ncol(re_alpha_mat) > 0L) {
+    colnames(re_alpha_mat) <- re_alpha_terms
+  }
 
   if (re_dim_q0 + re_dim_alpha > 0L && bmap$n_blocks > 0L) {
     logsigma_full <- unname(coefficients[names(coefficients) == "logsigma"])
