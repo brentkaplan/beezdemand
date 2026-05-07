@@ -1925,7 +1925,9 @@ confint.beezdemand_tmb <- function(
 #'
 #' Aborts on:
 #'   - Unnamed entries.
-#'   - Names not in (fitted factors u continuous_covariates).
+#'   - Names not in (active factors u continuous_covariates), where
+#'     "active factors" defaults to factors_q0 u factors_alpha but can
+#'     be narrowed to a single param's factor set via `param_scope`.
 #'   - Factor values not in observed levels.
 #'   - Continuous values that are zero-length, NA, Inf, or non-numeric
 #'     (after suppressWarnings(as.numeric())).
@@ -1933,9 +1935,18 @@ confint.beezdemand_tmb <- function(
 #' Warns once on:
 #'   - Multi-value continuous `at` entries (uses first value).
 #'
+#' @param fit_obj A `beezdemand_tmb` object.
+#' @param at User-supplied `at` list (or NULL).
+#' @param param_scope `NULL` (default) accepts the union of factors_q0
+#'   and factors_alpha — appropriate for callers that build BOTH grids
+#'   in one user call (e.g., calc_group_metrics). `"Q0"` or `"alpha"`
+#'   restricts active factors to that param's set, so a Q0 EMM call
+#'   doesn't silently accept an alpha-only collapsed factor name (and
+#'   vice versa) under asymmetric `collapse_levels`.
+#'
 #' @keywords internal
 #' @noRd
-.tmb_validate_at <- function(fit_obj, at) {
+.tmb_validate_at <- function(fit_obj, at, param_scope = NULL) {
   if (is.null(at)) return(invisible(NULL))
 
   if (is.null(names(at)) || any(!nzchar(names(at)))) {
@@ -1946,17 +1957,25 @@ confint.beezdemand_tmb <- function(
 
   cov_names <- fit_obj$param_info$continuous_covariates
   if (is.null(cov_names)) cov_names <- character(0)
-  # Active factors are those that actually drive the per-parameter grids
-  # (factors_q0 ∪ factors_alpha). Under `collapse_levels`, the original
-  # `factors` entry differs from the generated `factors_q0` /
-  # `factors_alpha` columns; accepting the original name would let
-  # `at = list(<original> = level)` pass validation only to be silently
-  # ignored by the grid builder (which keys off the collapsed names).
-  # Reject inactive names so the user picks the right collapsed column.
-  all_factors <- unique(c(
-    fit_obj$param_info$factors_q0,
-    fit_obj$param_info$factors_alpha
-  ))
+  # Active factors are those that actually drive the per-parameter grid
+  # the caller will build. Under `collapse_levels`, factors_q0 and
+  # factors_alpha can diverge; a Q0 EMM call with `param_scope = "Q0"`
+  # rejects alpha-only collapsed names rather than silently ignoring
+  # them. callers that build BOTH grids (calc_group_metrics) pass
+  # NULL to accept the union.
+  if (is.null(param_scope)) {
+    all_factors <- unique(c(
+      fit_obj$param_info$factors_q0,
+      fit_obj$param_info$factors_alpha
+    ))
+  } else if (identical(param_scope, "Q0")) {
+    all_factors <- fit_obj$param_info$factors_q0
+  } else if (identical(param_scope, "alpha")) {
+    all_factors <- fit_obj$param_info$factors_alpha
+  } else {
+    cli::cli_abort("Internal error: unsupported {.arg param_scope}.")
+  }
+  if (is.null(all_factors)) all_factors <- character(0)
   all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
 
   valid_names <- c(all_factors, cov_names)
@@ -2051,7 +2070,7 @@ confint.beezdemand_tmb <- function(
   # validate ONCE at their entry point and pass `validate = FALSE` so
   # the multi-value continuous warning fires only once per public call.
   if (isTRUE(validate)) {
-    .tmb_validate_at(fit_obj, at)
+    .tmb_validate_at(fit_obj, at, param_scope = param)
   }
 
   is_intercept_only <- length(use_factors) == 0L && length(cov_names) == 0L
@@ -2208,11 +2227,14 @@ get_demand_param_emms.beezdemand_tmb <- function(
     vcov_mat <- diag(se_vals^2, nrow = length(se_vals))
   }
 
-  # Validate `at` once at the public boundary. Subsequent helper calls
-  # below (and any nested calls from get_demand_comparisons()) pass
-  # `validate = FALSE` so the multi-value-continuous warning fires
-  # exactly once per public call rather than once per param grid.
-  .tmb_validate_at(fit_obj, at)
+  # Validate `at` once at the public boundary, scoped to the requested
+  # param so a Q0 EMM call doesn't silently accept an alpha-only
+  # collapsed factor name (and vice versa) under asymmetric
+  # `collapse_levels`. Subsequent helper calls below (and any nested
+  # calls from get_demand_comparisons()) pass `validate = FALSE` so the
+  # multi-value-continuous warning fires exactly once per public call
+  # rather than once per param grid.
+  .tmb_validate_at(fit_obj, at, param_scope = param)
 
   # Build reference grid via the shared helper so EMMs and comparisons
   # always consume the same conditioned grid (TICKET-011 Phase 0.4).

@@ -929,16 +929,34 @@ NULL
   # "conditionC"). Surfacing real names is what makes ranef()'s
   # `q0_<term>` / `alpha_<term>` columns informative for downstream
   # diagnostics rather than the generic q0_re_1 / re_2 / re_3 fallback.
-  re_q0_terms <- character(0)
-  re_alpha_terms <- character(0)
-  for (b in re_parsed$blocks) {
-    if (length(b$terms_q0) > 0L) {
-      re_q0_terms <- c(re_q0_terms, b$terms_q0)
+  #
+  # Disambiguate duplicate term names ACROSS blocks (e.g., two pdSymm
+  # blocks both with Q0 ~ 1 produce two "(Intercept)" colnames). Without
+  # disambiguation, ranef()'s `out[[col_name]] <- mat[, j]` loop would
+  # silently overwrite block-1's RE values with block-2's. Suffix only
+  # the duplicates with `_block<N>` so the M1 spec (no duplicates) keeps
+  # clean names.
+  .uniq_block_terms <- function(blocks, slot) {
+    terms <- character(0)
+    block_idx <- integer(0)
+    for (b_idx in seq_along(blocks)) {
+      ts <- blocks[[b_idx]][[slot]]
+      if (length(ts) > 0L) {
+        terms <- c(terms, ts)
+        block_idx <- c(block_idx, rep.int(b_idx, length(ts)))
+      }
     }
-    if (length(b$terms_alpha) > 0L) {
-      re_alpha_terms <- c(re_alpha_terms, b$terms_alpha)
+    if (length(terms) > 0L) {
+      dup_mask <- duplicated(terms) | duplicated(terms, fromLast = TRUE)
+      if (any(dup_mask)) {
+        terms[dup_mask] <- paste0(terms[dup_mask], "_block",
+                                  block_idx[dup_mask])
+      }
     }
+    terms
   }
+  re_q0_terms <- .uniq_block_terms(re_parsed$blocks, "terms_q0")
+  re_alpha_terms <- .uniq_block_terms(re_parsed$blocks, "terms_alpha")
   re_q0_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_q0)
   re_alpha_mat <- matrix(0, nrow = n_subjects, ncol = re_dim_alpha)
   if (length(re_q0_terms) == ncol(re_q0_mat) && ncol(re_q0_mat) > 0L) {

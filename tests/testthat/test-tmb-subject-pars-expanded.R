@@ -149,6 +149,36 @@ test_that("ranef() works on M1-style fit and surfaces ALL per-block RE columns",
   expect_equal(re$c_i, re_alpha_mat[, 1L], tolerance = 1e-10)
 })
 
+test_that("ranef() disambiguates duplicate term names across blocks", {
+  skip_on_cran()
+
+  # Two blocks share the same `(Intercept)` term — without
+  # disambiguation, ranef()'s `out[[col_name]] <- mat[, j]` loop
+  # would silently overwrite block-1's column with block-2's.
+  data(apt, package = "beezdemand")
+  apt_dup <- apt
+  fit <- suppressWarnings(fit_demand_tmb(
+    apt_dup, equation = "simplified",
+    random_effects = nlme::pdBlocked(list(
+      nlme::pdSymm(Q0 ~ 1),
+      nlme::pdSymm(Q0 ~ 1)
+    )),
+    multi_start = FALSE, verbose = 0
+  ))
+
+  re_q0 <- attr(fit$subject_pars, "re_q0_mat")
+  expect_equal(ncol(re_q0), 2L)
+  # Disambiguated colnames: each (Intercept) gets a _block<N> suffix.
+  expect_true(any(grepl("block1", colnames(re_q0))))
+  expect_true(any(grepl("block2", colnames(re_q0))))
+
+  re_df <- nlme::ranef(fit)
+  q0_cols <- grep("^q0_", names(re_df), value = TRUE)
+  expect_equal(length(q0_cols), 2L)
+  # Both block columns must be preserved (not overwritten).
+  expect_false(identical(re_df[[q0_cols[1]]], re_df[[q0_cols[2]]]))
+})
+
 test_that("ranef() preserves intercept-only output shape (backward compat)", {
   skip_on_cran()
 

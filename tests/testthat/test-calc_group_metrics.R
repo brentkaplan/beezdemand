@@ -390,6 +390,57 @@ test_that("calc_group_metrics rejects collapse-aliased original factor name in `
   )
 })
 
+test_that("get_demand_param_emms rejects cross-param `at` factor name (asymmetric collapse)", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
+                            labels = c("young", "mid", "old")))
+  d$id <- droplevels(as.factor(d$id))
+
+  # Asymmetric collapse: Q0 -> 2 levels (junior/old), alpha -> 3 levels.
+  # factors_q0 = "age_group_Q0"; factors_alpha = "age_group_alpha".
+  fit <- suppressWarnings(fit_demand_tmb(
+    d, equation = "exponential",
+    factors = "age_group",
+    collapse_levels = list(
+      Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
+      alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
+    ),
+    verbose = 0
+  ))
+
+  # Pre-fix, get_demand_param_emms(param = "Q0", at = list(age_group_alpha
+  # = "young")) accepted the alpha-only name (validation took the union)
+  # but the Q0 grid silently ignored it. Post-fix, scoped validation
+  # rejects names not in factors_q0 for a Q0 EMM call.
+  expect_error(
+    get_demand_param_emms(fit, param = "Q0", at = list(age_group_alpha = "young")),
+    regexp = "Unknown name|age_group_alpha"
+  )
+  expect_error(
+    get_demand_param_emms(fit, param = "alpha", at = list(age_group_Q0 = "junior")),
+    regexp = "Unknown name|age_group_Q0"
+  )
+
+  # Each param accepts its own collapsed name.
+  expect_no_error(
+    get_demand_param_emms(fit, param = "Q0", at = list(age_group_Q0 = "junior"))
+  )
+  expect_no_error(
+    get_demand_param_emms(fit, param = "alpha", at = list(age_group_alpha = "young"))
+  )
+
+  # calc_group_metrics() accepts BOTH (it builds both grids in one call).
+  expect_no_error(
+    calc_group_metrics(
+      fit,
+      at = list(age_group_Q0 = "junior", age_group_alpha = "young")
+    )
+  )
+})
+
 test_that("calc_group_metrics aborts on unnamed `at` element", {
   skip_on_cran()
   d <- helper_subsample_apt_full()
