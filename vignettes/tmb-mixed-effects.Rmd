@@ -608,6 +608,30 @@ compare_models(fit_1re, fit_2re)
 equation and response scale. Models with different equations (e.g., exponential
 vs exponentiated) model different responses and cannot be compared via AIC.
 
+### Building Nested Models with `update()`
+
+`update(fit, ...)` re-fits with named arguments substituted into the
+original `fit_demand_tmb()` call. Use it to build a candidate fit and
+drop or add factors / covariates / random effects without typing the
+full fit call again:
+
+```{r update-nested}
+# Drop the gender factor to test its joint significance:
+fit_gender_null <- update(fit_gender, factors = NULL)
+compare_models(fit_gender_null, fit_gender)
+```
+
+`evaluate = FALSE` returns the unevaluated call (for inspection) instead
+of re-fitting, matching the convention of `stats::update.default`.
+
+`formula(fit)` and `model.matrix(fit)` round out the introspection API.
+`formula(fit)` returns a named list of one-sided formulas for `Q0` and
+`alpha` plus the random-effect spec; `model.matrix(fit)` returns the
+four design matrices the TMB template consumed (`X_q0`, `X_alpha`,
+`Z_q0`, `Z_alpha`) — a named list rather than the single matrix `lm`
+or `lme4` return, because the TMB tier truly has two fixed-effect
+linear predictors.
+
 ## Convergence Tips
 
 If a model fails to converge, try these strategies in order:

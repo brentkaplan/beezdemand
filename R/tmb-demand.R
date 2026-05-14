@@ -1807,7 +1807,8 @@ fit_demand_tmb <- function(
         rhs_q0 = design$rhs_q0,
         rhs_alpha = design$rhs_alpha
       ),
-      collapse_info = collapse_info
+      collapse_info = collapse_info,
+      call = cl
     ),
     class = "beezdemand_tmb"
   )

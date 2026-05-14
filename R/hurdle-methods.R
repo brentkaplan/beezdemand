@@ -643,6 +643,70 @@ residuals.beezdemand_hurdle <- function(object,
 }
 
 
+# --- formula / model.matrix (TICKET-028) ---
+
+#' Formula for a beezdemand_hurdle fit
+#'
+#' Returns the (currently intercept-only) component formulas plus the
+#' random-effect specification preserved at fit time. Hurdle does not yet
+#' support factor or covariate effects on its Part I (logit participation)
+#' or Part II (log-consumption intensity) components; both `binary` and
+#' `consumption` are `~ 1`. The API is intentionally aligned with
+#' [formula.beezdemand_tmb()] so the shape extends without breaking when
+#' hurdle components gain factor/covariate support.
+#'
+#' @param x A \code{beezdemand_hurdle} object.
+#' @param ... Unused.
+#' @return Named list `list(binary, consumption, random)`.
+#' @seealso [model.matrix.beezdemand_hurdle()].
+#' @export
+formula.beezdemand_hurdle <- function(x, ...) {
+  list(
+    binary      = ~ 1,
+    consumption = ~ 1,
+    random      = x$param_info$random_effects_spec
+  )
+}
+
+
+#' Design matrices for a beezdemand_hurdle fit
+#'
+#' Hurdle currently has intercept-only Part I and Part II linear
+#' predictors, so `X_binary` and `X_consumption` are each a single column
+#' of ones with `nobs(fit)` rows. Returned for parity with
+#' [model.matrix.beezdemand_tmb()]. Future support for factor / covariate
+#' effects on hurdle components will enrich these matrices without
+#' changing the API.
+#'
+#' @param object A \code{beezdemand_hurdle} object.
+#' @param what `NULL` (default) returns the full named list. Otherwise one of
+#'   `"X_binary"` or `"X_consumption"`.
+#' @param ... Unused.
+#' @return Named list of numeric matrices, or a single matrix when `what`
+#'   is set.
+#' @export
+model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
+  valid <- c("X_binary", "X_consumption")
+  if (!is.null(what) && !what %in% valid) {
+    cli::cli_abort(
+      c(
+        "Invalid {.arg what}: {.val {what}}.",
+        "i" = "Valid choices: {.val {valid}}."
+      )
+    )
+  }
+  n <- nobs(object)
+  one_col <- matrix(1, nrow = n, ncol = 1L,
+                    dimnames = list(NULL, "(Intercept)"))
+  full <- list(
+    X_binary      = one_col,
+    X_consumption = one_col
+  )
+  if (is.null(what)) return(full)
+  full[[what]]
+}
+
+
 # ---- Marginal P(zero) integration helpers ----
 
 #' Compute marginal (population-averaged) P(zero)

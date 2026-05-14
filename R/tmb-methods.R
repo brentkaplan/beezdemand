@@ -2043,6 +2043,156 @@ confint.beezdemand_tmb <- function(
 }
 
 
+# --- formula / model.matrix / update (TICKET-028) ---
+
+#' Formula for a beezdemand_tmb fit
+#'
+#' Returns the fixed-effect RHS formulas for Q0 and alpha plus the
+#' original random-effect specification preserved at fit time. The
+#' Q0 and alpha formulas may differ when `collapse_levels` was used
+#' to collapse factor levels asymmetrically.
+#'
+#' @param x A \code{beezdemand_tmb} object.
+#' @param ... Unused.
+#' @return Named list `list(Q0, alpha, random)`. `Q0` and `alpha` are
+#'   one-sided formulas built from `fit$formula_details`. `random` is
+#'   the original `random_effects` argument value (round-trippable back
+#'   to `fit_demand_tmb()`).
+#' @seealso [model.matrix.beezdemand_tmb()], [update.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' formula(fit)
+#' }
+#' @export
+formula.beezdemand_tmb <- function(x, ...) {
+  fd <- x$formula_details
+  # `$original` is the user's raw input preserved by `.normalize_re_input()`
+  # (random-effects-utils.R:71-75) for round-tripping. Returning the parsed
+  # block structure directly would NOT round-trip because fit_demand_tmb()
+  # accepts formulas / pdMat / character / pdBlocked, not the parsed list.
+  rand_original <- x$param_info$random_effects_parsed$original
+  if (is.null(rand_original)) {
+    # Older fits that predate the parser-stored `$original`; fall back to
+    # the raw spec slot.
+    rand_original <- x$param_info$random_effects_spec
+  }
+  list(
+    Q0     = stats::as.formula(paste("~", fd$rhs_q0)),
+    alpha  = stats::as.formula(paste("~", fd$rhs_alpha)),
+    random = rand_original
+  )
+}
+
+
+#' Design matrices for a beezdemand_tmb fit
+#'
+#' By default returns a named list of all four design matrices the TMB
+#' template consumed: `X_q0`, `X_alpha`, `Z_q0`, `Z_alpha`. Use `what`
+#' to select a single matrix. `X_q0` and `X_alpha` are zero-copy
+#' references to `fit$formula_details`; `Z_q0` and `Z_alpha` are
+#' recomputed via the internal builder.
+#'
+#' Returning a named list (vs the single matrix `lm`/`lme4` return) is
+#' intentional: the TMB tier has two fixed-effect linear predictors
+#' (one per nonlinear parameter), not one.
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param what `NULL` (default) returns the full named list. Otherwise one
+#'   of `"X_q0"`, `"X_alpha"`, `"Z_q0"`, `"Z_alpha"`.
+#' @param ... Unused.
+#' @return Named list of numeric matrices, or a single numeric matrix when
+#'   `what` is set. `NULL` (with a message) when a degenerate Z is requested.
+#' @seealso [formula.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' str(model.matrix(fit))
+#' head(model.matrix(fit, what = "X_q0"))
+#' }
+#' @export
+model.matrix.beezdemand_tmb <- function(object, what = NULL, ...) {
+  valid <- c("X_q0", "X_alpha", "Z_q0", "Z_alpha")
+  if (!is.null(what) && !what %in% valid) {
+    cli::cli_abort(
+      c(
+        "Invalid {.arg what}: {.val {what}}.",
+        "i" = "Valid choices: {.val {valid}}.",
+        "i" = "TMB fits have two fixed-effect design matrices (X_q0 and X_alpha)."
+      )
+    )
+  }
+  re_parsed <- object$param_info$random_effects_parsed
+  z <- .tmb_build_z_matrices(
+    re_parsed, object$data,
+    id_var = object$param_info$id_var
+  )
+  Z_q0    <- if (ncol(z$Z_q0) > 0L)    z$Z_q0    else NULL
+  Z_alpha <- if (ncol(z$Z_alpha) > 0L) z$Z_alpha else NULL
+  full <- list(
+    X_q0    = object$formula_details$X_q0,
+    X_alpha = object$formula_details$X_alpha,
+    Z_q0    = Z_q0,
+    Z_alpha = Z_alpha
+  )
+  if (is.null(what)) return(full)
+  out <- full[[what]]
+  if (is.null(out) && grepl("^Z_", what)) {
+    param <- sub("^Z_", "", what)
+    cli::cli_inform("No random effect on {.field {param}}; returning NULL.")
+  }
+  out
+}
+
+
+#' Update a beezdemand_tmb fit
+#'
+#' Re-fits with named arguments substituted into the original call. Pass
+#' any argument of `fit_demand_tmb()` (e.g., `factors = NULL`,
+#' `random_effects = ~ 1`, `equation = "simplified"`). Does NOT support
+#' formula-update syntax (`. - term`) because `fit_demand_tmb()` is
+#' argument-driven, not formula-driven.
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param ... Named arguments to substitute into the original
+#'   `fit_demand_tmb()` call.
+#' @param evaluate If `TRUE` (default), re-evaluate the updated call and
+#'   return the new fit. If `FALSE`, return the unevaluated call.
+#' @return A new `beezdemand_tmb` object, or an unevaluated call.
+#' @seealso [fit_demand_tmb()], [formula.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' update(fit, equation = "simplified", evaluate = FALSE)
+#' }
+#' @export
+update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
+  call <- object$call
+  if (is.null(call)) {
+    cli::cli_abort(
+      "Original call not stored on this fit; cannot update. Refit with the current version of {.fn fit_demand_tmb}."
+    )
+  }
+  extras <- match.call(expand.dots = FALSE)$...
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- as.call(c(as.list(call), extras[!existing]))
+    }
+  }
+  if (!evaluate) return(call)
+  # Re-evaluate the rebuilt call in the caller's frame. The do.call("eval",
+  # ...) form matches the stats::update.default idiom and keeps the
+  # parent-frame resolution explicit (so e.g. user-defined factor levels in
+  # the caller's environment resolve as expected).
+  do.call("eval", list(call, parent.frame()))
+}
+
+
 # --- EMMs and comparisons ---
 
 #' Build the conditioned reference grid for TMB EMMs and comparisons

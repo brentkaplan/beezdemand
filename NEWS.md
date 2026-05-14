@@ -216,6 +216,48 @@ land here as the foundation for the Phase 2 factor-RE work.
   generics gain `...` so the new `expanded` and `at` arguments dispatch
   through `UseMethod()` correctly. All existing methods updated.
 
+## Formula, design-matrix, and update introspection (TICKET-028)
+
+* Added `formula()`, `model.matrix()`, and `update()` methods for
+  `beezdemand_tmb`, plus `formula()` and `model.matrix()` for
+  `beezdemand_hurdle` (five new S3 methods total).
+* `formula(fit_tmb)` returns `list(Q0, alpha, random)` — one-sided
+  formulas for Q0 and alpha (reconstructed from
+  `fit$formula_details$rhs_q0` / `$rhs_alpha`, so they reflect any
+  asymmetric `collapse_levels`) plus the original `random_effects`
+  spec preserved at fit time and round-trippable back to
+  `fit_demand_tmb()`.
+* `model.matrix(fit_tmb)` returns a **named list** of four matrices
+  (`X_q0`, `X_alpha`, `Z_q0`, `Z_alpha`); use `what = ...` to select
+  one. The list-rather-than-matrix return is intentional and
+  documented: the TMB tier has two fixed-effect linear predictors
+  (one per nonlinear parameter), not one. `X_q0` / `X_alpha` are
+  zero-copy references to `fit$formula_details`; `Z_q0` / `Z_alpha`
+  are recomputed via the internal `.tmb_build_z_matrices()` helper.
+  Degenerate Z requests (e.g., `what = "Z_alpha"` on a Q0-only fit)
+  return `NULL` with an informational message.
+* `update(fit_tmb, ...)` re-fits with named arguments substituted
+  into the original call (e.g., `update(fit, factors = NULL)`).
+  Honors `evaluate = FALSE` per the `stats::update.default`
+  convention. Does **not** support formula-update syntax
+  (`. - term`); `fit_demand_tmb()` is argument-driven, not
+  formula-driven.
+* `formula(fit_hurdle)` returns `list(binary, consumption, random)`
+  with both component formulas intercept-only today. Future support
+  for factor/covariate effects on hurdle components will enrich
+  these without changing the API.
+* `model.matrix(fit_hurdle)` returns intercept-only design matrices
+  (`X_binary`, `X_consumption`) for parity with
+  `model.matrix.beezdemand_tmb()`.
+* `beezdemand_tmb` fits now store the original `fit_demand_tmb()`
+  call as `fit$call` so `update()` can rebuild it. `fit_demand_hurdle()`
+  already captured this slot.
+* Does **not** unlock `emmeans` / `effects` / `ggeffects`
+  (need `recover_data` + `emm_basis` methods), `drop1` / `add1` /
+  `MuMIn::dredge` (need `terms()` + formula-update `update()` form),
+  or any tool that dispatches via `coef()` after the planned
+  TICKET-019 default change. Those each remain follow-up tickets.
+
 ## Variance-covariance, fitted, and residual accessors (TICKET-026)
 
 * Added `vcov()`, `fitted()`, and `residuals()` methods for both
