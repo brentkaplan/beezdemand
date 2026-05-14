@@ -45,6 +45,7 @@ Imports:
     TMB (>= 1.9.0)
 Suggests:
     broom.mixed,
+    car,
     GGally,
     knitr,
     tidyverse,
