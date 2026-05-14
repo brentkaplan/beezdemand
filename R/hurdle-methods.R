@@ -546,6 +546,103 @@ nobs.beezdemand_hurdle <- function(object, ...) {
 }
 
 
+# --- vcov / fitted / residuals (TICKET-026) ---
+
+#' Variance-covariance matrix for a beezdemand_hurdle fit
+#'
+#' Returns the joint fixed-effect VCOV across Part I (logit-link
+#' participation) and Part II (log-link demand) components, with row/col
+#' names prefixed by component (`zero_probability.<term>`,
+#' `consumption.<term>`, `variance.<term>`). Same component classification
+#' as `confint.beezdemand_hurdle()`.
+#'
+#' @param object A \code{beezdemand_hurdle} object.
+#' @param ... Unused.
+#' @return Numeric symmetric matrix with component-prefixed dim names.
+#' @seealso [coef.beezdemand_hurdle()], [confint.beezdemand_hurdle()].
+#' @export
+vcov.beezdemand_hurdle <- function(object, ...) {
+  sdr <- object$sdr
+  if (is.null(sdr) || is.null(sdr$cov.fixed)) {
+    cli::cli_abort(
+      "fit did not converge; cov.fixed unavailable. See {.code glance(fit)$converged}."
+    )
+  }
+  V <- as.matrix(sdr$cov.fixed)
+  coef_names <- rownames(V)
+  if (is.null(coef_names) || all(coef_names == "")) {
+    coef_names <- names(object$model$coefficients)
+    rownames(V) <- colnames(V) <- coef_names
+  }
+  component <- dplyr::case_when(
+    coef_names %in% c("beta0", "beta1", "gamma0", "gamma1") ~ "zero_probability",
+    coef_names %in% c("log_q0", "log_alpha", "log_k", "k", "alpha") ~ "consumption",
+    grepl("^logsigma_|^rho_", coef_names) ~ "variance",
+    TRUE ~ "fixed"
+  )
+  new_names <- paste0(component, ".", coef_names)
+  rownames(V) <- colnames(V) <- new_names
+  V
+}
+
+
+#' Fitted values for a beezdemand_hurdle fit
+#'
+#' Returns marginal expected consumption `P(y > 0 | x) * E(y | y > 0, x)`
+#' by default (the `.fitted` column of `predict(fit, type = "demand")`).
+#' With `marginal = FALSE`, returns the conditional-on-positive expectation
+#' (the `.fitted` column of `predict(fit, type = "response")`).
+#'
+#' @param object A \code{beezdemand_hurdle} object.
+#' @param marginal If `TRUE` (default), returns marginal expected
+#'   consumption (`type = "demand"` in predict). If `FALSE`, returns
+#'   conditional-on-positive consumption (`type = "response"`).
+#' @param ... Unused.
+#' @return Numeric vector of length `nobs(object)`.
+#' @seealso [predict.beezdemand_hurdle()], [augment.beezdemand_hurdle()].
+#' @export
+fitted.beezdemand_hurdle <- function(object, marginal = TRUE, ...) {
+  type <- if (isTRUE(marginal)) "demand" else "response"
+  pred <- predict(object, newdata = object$data, type = type)
+  as.numeric(pred$.fitted)
+}
+
+
+#' Residuals for a beezdemand_hurdle fit
+#'
+#' Response-scale residuals against the marginal (default) or conditional
+#' fitted values. `type = "pearson"` divides by the residual SD
+#' `exp(coef[["logsigma_e"]])`.
+#'
+#' @param object A \code{beezdemand_hurdle} object.
+#' @param type One of `"response"` (default) or `"pearson"`.
+#' @param marginal Passed to [fitted.beezdemand_hurdle()]. Default `TRUE`.
+#' @param ... Unused.
+#' @return Numeric vector of length `nobs(object)`.
+#' @seealso [fitted.beezdemand_hurdle()].
+#' @export
+residuals.beezdemand_hurdle <- function(object,
+                                        type = c("response", "pearson"),
+                                        marginal = TRUE,
+                                        ...) {
+  type <- match.arg(type)
+  y_var <- object$param_info$y_var
+  y_obs <- object$data[[y_var]]
+  y_hat <- fitted(object, marginal = marginal)
+  r <- y_obs - y_hat
+  if (type == "response") return(r)
+  sigma_e <- tryCatch(
+    exp(object$model$coefficients[["logsigma_e"]]),
+    error = function(e) NA_real_
+  )
+  if (!is.finite(sigma_e)) {
+    cli::cli_inform("sigma_e not finite; returning response residuals.")
+    return(r)
+  }
+  r / sigma_e
+}
+
+
 # ---- Marginal P(zero) integration helpers ----
 
 #' Compute marginal (population-averaged) P(zero)

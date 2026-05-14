@@ -216,6 +216,45 @@ land here as the foundation for the Phase 2 factor-RE work.
   generics gain `...` so the new `expanded` and `at` arguments dispatch
   through `UseMethod()` correctly. All existing methods updated.
 
+## Variance-covariance, fitted, and residual accessors (TICKET-026)
+
+* Added `vcov()`, `fitted()`, and `residuals()` methods for both
+  `beezdemand_tmb` and `beezdemand_hurdle` (six new S3 methods total).
+  TMB methods default to the model's native likelihood scale (log scale
+  for `"exponential"`, natural/LL4 scale for others), matching
+  `broom::augment(fit)$.fitted` / `$.resid`. `scale = "natural"` opts
+  into back-transformed values; `type = "pearson"` divides by the
+  residual SD on the model scale. Requesting `type = "pearson"` with
+  `scale = "natural"` falls back to `type = "response"` with an
+  informational message because a response-scale residual SD is not
+  identified for the exponential/zben variants without a separate
+  variance assumption.
+* `vcov.beezdemand_hurdle()` returns the joint fixed-effect VCOV with
+  row/column names prefixed by component (`zero_probability.<term>`,
+  `consumption.<term>`, `variance.<term>`) so downstream tools can
+  index by component without an ad-hoc string match.
+* `fitted.beezdemand_hurdle(marginal = TRUE)` (default) returns
+  marginal expected consumption `P(y > 0) * E(y | y > 0)` (the
+  `.fitted` column of `predict(fit, type = "demand")`);
+  `marginal = FALSE` returns the conditional-on-positive expectation.
+* `coef.beezdemand_tmb()` gained a forward-compatible `type = "internal"`
+  alias that returns the optimizer's flat parameterization (current
+  default behavior). This preserves the numeric-vector escape hatch
+  consumed by `car::deltaMethod`, `multcomp::glht`, and similar tooling
+  across the planned `coef()` default change to a per-subject tibble.
+* `augment.beezdemand_tmb()` was refactored to share an internal
+  `.tmb_fitted_resid()` helper with the new `fitted()` and `residuals()`
+  methods, eliminating the duplicate predict() call and guaranteeing
+  the three accessors cannot drift apart on scale convention. Output
+  is bit-identical to the previous implementation.
+* Does **not** automatically unlock `parameters::standard_error`
+  (needs `insight::get_parameters` class-aware dispatch),
+  `DHARMa::simulateResiduals` (needs a `simulate()` method), or
+  `performance::check_residuals` (needs class-specific dispatch). The
+  explicit numeric-vector forms of `car::deltaMethod` and
+  `multcomp::glht` are unlocked when the caller pre-extracts
+  `coef(fit, type = "internal")`.
+
 ## Universal-accessor parity for hurdle fits (TICKET-027)
 
 * Added `nobs.beezdemand_hurdle()` for universal-accessor parity with

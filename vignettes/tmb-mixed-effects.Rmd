@@ -308,6 +308,31 @@ By default, confidence intervals are on the internal (log) scale. Use
 confint(fit_2re, report_space = "natural")
 ```
 
+### Variance-Covariance and the Delta Method
+
+`vcov()` returns the fixed-effect variance-covariance matrix from the TMB
+sdreport — the inverse of the negative Hessian at the MLE, restricted to
+fixed effects after Laplace-marginalizing the random effects. Combined
+with the optimizer's internal parameter vector (`coef(fit, type = "internal")`),
+it lets you apply the delta method to any nonlinear function of the
+parameters via `car::deltaMethod`. Pass the parameter vector explicitly
+so the call is stable across the planned `coef()` default change in a
+future release.
+
+```{r results-vcov-delta, eval = requireNamespace("car", quietly = TRUE)}
+beta <- coef(fit_2re, type = "internal")
+car::deltaMethod(
+  beta,
+  paste0(names(beta)[1], " * 1"),
+  vcov. = vcov(fit_2re)
+)
+```
+
+`fitted(fit)` and `residuals(fit)` are also exposed as direct accessors,
+matching the model-scale convention used by `broom::augment()` (log scale
+for `"exponential"`, natural/LL4 scale for others). Pass
+`scale = "natural"` to back-transform.
+
 ### Predictions
 
 Three prediction types are available:

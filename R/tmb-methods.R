@@ -518,20 +518,37 @@ print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
 
 #' Extract Coefficients from TMB Model
 #'
+#' Returns the optimizer's flat parameterization as a named numeric vector
+#' (entries include `beta_q0`, `beta_alpha`, `logsigma_e`, and any random-
+#' effect or covariance hyperparameters; intercepts are on log scale because
+#' the optimizer works in unconstrained space).
+#'
+#' `type = "internal"` is the current and only supported value; it is exposed
+#' as a forward-compatible alias for the per-subject tibble outputs planned
+#' under TICKET-019 (where `coef(fit)` will default to a per-subject tibble
+#' and `type = "internal"` will be preserved as the numeric-vector escape
+#' hatch consumed by `car::deltaMethod`, `multcomp::glht`, and similar
+#' tooling that expects a flat coefficient vector).
+#'
 #' @param object A \code{beezdemand_tmb} object.
+#' @param type Currently only `"internal"`. Reserved for the per-subject
+#'   tibble outputs planned under TICKET-019.
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return Named numeric vector of fixed effect coefficients.
+#' @return Named numeric vector of fixed-effect coefficients on the
+#'   optimizer's internal parameterization.
 #'
 #' @examples
 #' \donttest{
 #' data(apt)
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #' coef(fit)
+#' coef(fit, type = "internal")  # explicit equivalent
 #' }
 #'
 #' @export
-coef.beezdemand_tmb <- function(object, ...) {
+coef.beezdemand_tmb <- function(object, type = c("internal"), ...) {
+  type <- match.arg(type)
   object$model$coefficients
 }
 
@@ -1751,6 +1768,40 @@ glance.beezdemand_tmb <- function(x, ...) {
 }
 
 
+# Internal: compute fitted values and (response) residuals on a requested
+# scale. Centralizes the scale convention shared by fitted(), residuals(),
+# and augment() so the three accessors cannot drift apart.
+.tmb_fitted_resid <- function(x,
+                              scale = c("model", "natural"),
+                              level = c("subject", "population"),
+                              newdata = NULL) {
+  scale <- match.arg(scale)
+  level <- match.arg(level)
+  # predict.beezdemand_tmb() honors `scale`; `level` is reserved for the
+  # forthcoming TICKET-014 enhancement. The only supported value today is
+  # "subject"; warn and proceed for "population".
+  if (level == "population") {
+    cli::cli_inform(
+      "{.code level = \"population\"} not yet implemented; returning subject-level values (TICKET-014)."
+    )
+  }
+  data_used <- if (is.null(newdata)) x$data else newdata
+  pred <- predict(x, newdata = data_used, type = "response", scale = scale)
+  equation <- x$param_info$equation
+  y_var <- x$param_info$y_var
+  y_obs <- data_used[[y_var]]
+  if (scale == "model" && equation == "exponential") {
+    # Model is on log scale; y_obs is natural. Zero rows are NA on log scale.
+    y_on_scale <- ifelse(y_obs > 0, log(y_obs), NA_real_)
+  } else {
+    # exponentiated/simplified/zben on model scale (already natural), OR
+    # any equation on the natural scale.
+    y_on_scale <- y_obs
+  }
+  list(.fitted = pred$.fitted, .resid = y_on_scale - pred$.fitted)
+}
+
+
 #' Augment a beezdemand_tmb Model
 #'
 #' @param x A \code{beezdemand_tmb} object.
@@ -1771,30 +1822,137 @@ glance.beezdemand_tmb <- function(x, ...) {
 #'
 #' @export
 augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
-  pred <- predict(x, newdata = newdata, type = "response")
-  equation <- x$param_info$equation
-  y_var <- x$param_info$y_var
-
+  fr <- .tmb_fitted_resid(x, scale = "model", level = "subject", newdata = newdata)
   data_used <- if (is.null(newdata)) x$data else newdata
-  y_obs <- data_used[[y_var]]
-
-  # Compute residuals on model scale (matching C++ likelihood)
-  if (equation == "exponential") {
-    # Model operates on log(Q); y_obs is natural consumption.
-    # Zero observations were dropped during fitting, so log(0) = -Inf.
-    # Set residuals to NA for these observations.
-    log_y <- ifelse(y_obs > 0, log(y_obs), NA_real_)
-    pred$.resid <- log_y - pred$.fitted
-  } else {
-    # exponentiated/simplified/zben: y and fitted on same scale
-    pred$.resid <- y_obs - pred$.fitted
-  }
-
-  # Standardized Pearson residuals: (y - mu) / sigma_e
+  out <- tibble::as_tibble(data_used)
+  out$.fitted <- fr$.fitted
+  out$.resid <- fr$.resid
+  # Standardized Pearson residuals on model scale: (y - mu) / sigma_e
   sigma_e <- exp(x$model$coefficients[["logsigma_e"]])
-  pred$.std_resid <- pred$.resid / sigma_e
+  out$.std_resid <- out$.resid / sigma_e
+  out
+}
 
-  pred
+
+# --- vcov / fitted / residuals (TICKET-026) ---
+
+#' Variance-covariance matrix for a beezdemand_tmb fit
+#'
+#' Returns the fixed-effect VCOV from the TMB sdreport, i.e., the inverse of
+#' the negative Hessian at the MLE after Laplace-marginalizing the random
+#' effects. Row/column names follow the optimizer's internal parameterization
+#' (matching `names(coef(object, type = "internal"))`).
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param ... Unused.
+#' @return Numeric symmetric matrix of dimension p x p.
+#' @seealso [coef.beezdemand_tmb()], [confint.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' V <- vcov(fit)
+#' isSymmetric(V)
+#' }
+#' @export
+vcov.beezdemand_tmb <- function(object, ...) {
+  sdr <- object$sdr
+  if (is.null(sdr) || is.null(sdr$cov.fixed)) {
+    cli::cli_abort(
+      "fit did not converge; cov.fixed unavailable. See {.code glance(fit)$converged}."
+    )
+  }
+  V <- as.matrix(sdr$cov.fixed)
+  if (is.null(rownames(V)) || all(rownames(V) == "")) {
+    nm <- names(object$opt$par)
+    rownames(V) <- colnames(V) <- nm
+  }
+  V
+}
+
+
+#' Fitted values for a beezdemand_tmb fit
+#'
+#' Default returns fitted values on the model's native likelihood scale
+#' (log scale for `"exponential"`, natural/LL4 scale for others), matching
+#' `augment(fit)$.fitted`. Set `scale = "natural"` to back-transform.
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param scale One of `"model"` (default) or `"natural"`.
+#' @param level Reserved for TICKET-014. Currently `"subject"` only.
+#' @param ... Unused.
+#' @return Numeric vector of length `nobs(object)`.
+#' @seealso [predict.beezdemand_tmb()], [augment.beezdemand_tmb()],
+#'   [residuals.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' head(fitted(fit))
+#' }
+#' @export
+fitted.beezdemand_tmb <- function(object,
+                                  scale = c("model", "natural"),
+                                  level = c("subject", "population"),
+                                  ...) {
+  scale <- match.arg(scale)
+  level <- match.arg(level)
+  fr <- .tmb_fitted_resid(object, scale = scale, level = level)
+  fr$.fitted
+}
+
+
+#' Residuals for a beezdemand_tmb fit
+#'
+#' Default returns response residuals (`y_on_scale - fitted`) on the model's
+#' native scale. `type = "pearson"` divides by the residual SD on the model
+#' scale (`exp(coef[["logsigma_e"]])`). Requesting `type = "pearson"` with
+#' `scale = "natural"` falls back to `type = "response"` with a message
+#' because a response-scale residual SD is not identified for the
+#' exponential/zben variants without a separate variance assumption.
+#'
+#' @param object A \code{beezdemand_tmb} object.
+#' @param type One of `"response"` (default) or `"pearson"`.
+#' @param scale One of `"model"` (default) or `"natural"`.
+#' @param level Reserved for TICKET-014. Currently `"subject"` only.
+#' @param ... Unused.
+#' @return Numeric vector of length `nobs(object)`.
+#' @seealso [fitted.beezdemand_tmb()], [augment.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' head(residuals(fit))
+#' head(residuals(fit, type = "pearson"))
+#' }
+#' @export
+residuals.beezdemand_tmb <- function(object,
+                                     type = c("response", "pearson"),
+                                     scale = c("model", "natural"),
+                                     level = c("subject", "population"),
+                                     ...) {
+  type <- match.arg(type)
+  scale <- match.arg(scale)
+  level <- match.arg(level)
+  if (type == "pearson" && scale == "natural") {
+    cli::cli_inform(
+      "Pearson residuals on the natural scale are not identified for this model; returning response residuals on the natural scale."
+    )
+    type <- "response"
+  }
+  fr <- .tmb_fitted_resid(object, scale = scale, level = level)
+  if (type == "response") {
+    return(fr$.resid)
+  }
+  sigma_e <- tryCatch(
+    exp(object$model$coefficients[["logsigma_e"]]),
+    error = function(e) NA_real_
+  )
+  if (!is.finite(sigma_e)) {
+    cli::cli_inform("sigma_e not finite; returning response residuals.")
+    return(fr$.resid)
+  }
+  fr$.resid / sigma_e
 }
 
 

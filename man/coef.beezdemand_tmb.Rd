@@ -4,24 +4,40 @@
 \alias{coef.beezdemand_tmb}
 \title{Extract Coefficients from TMB Model}
 \usage{
-\method{coef}{beezdemand_tmb}(object, ...)
+\method{coef}{beezdemand_tmb}(object, type = c("internal"), ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
 
+\item{type}{Currently only \code{"internal"}. Reserved for the per-subject
+tibble outputs planned under TICKET-019.}
+
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-Named numeric vector of fixed effect coefficients.
+Named numeric vector of fixed-effect coefficients on the
+optimizer's internal parameterization.
 }
 \description{
-Extract Coefficients from TMB Model
+Returns the optimizer's flat parameterization as a named numeric vector
+(entries include \code{beta_q0}, \code{beta_alpha}, \code{logsigma_e}, and any random-
+effect or covariance hyperparameters; intercepts are on log scale because
+the optimizer works in unconstrained space).
+}
+\details{
+\code{type = "internal"} is the current and only supported value; it is exposed
+as a forward-compatible alias for the per-subject tibble outputs planned
+under TICKET-019 (where \code{coef(fit)} will default to a per-subject tibble
+and \code{type = "internal"} will be preserved as the numeric-vector escape
+hatch consumed by \code{car::deltaMethod}, \code{multcomp::glht}, and similar
+tooling that expects a flat coefficient vector).
 }
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 coef(fit)
+coef(fit, type = "internal")  # explicit equivalent
 }
 
 }
