@@ -238,3 +238,57 @@ test_that("get_hurdle_param_summary returns summary tibble", {
     c("Q0", "alpha", "breakpoint", "Pmax", "Omax") %in% summ$parameter
   ))
 })
+
+
+# ---- TICKET-027: nobs.beezdemand_hurdle() ------------------------------
+# Fixture follows the convention used by the rest of this file:
+# simulate_hurdle_data() rather than data(apt_full), because fit_demand_hurdle()
+# has no defaults for y_var/x_var/id_var and the simulated dataset is much
+# cheaper to fit (the pre-commit hook runs this file on every commit).
+
+test_that("nobs.beezdemand_hurdle returns integer scalar", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+  n <- nobs(fit)
+  expect_type(n, "integer")
+  expect_length(n, 1)
+  expect_equal(n, as.integer(fit$param_info$n_obs))
+})
+
+test_that("nobs.beezdemand_hurdle matches glance characterization", {
+  # glance.beezdemand_hurdle already returns nobs via param_info$n_obs.
+  # This test characterizes that the new accessor agrees with the existing
+  # glance() value — not that this ticket fixes glance.
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+  g <- broom::glance(fit)
+  expect_equal(g$nobs, nobs(fit))
+})
+
+test_that("BIC.beezdemand_hurdle is unchanged by this ticket (characterization)", {
+  # BIC already reads attr(logLik(fit), "nobs"), which is correctly populated.
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+  expect_true(is.finite(BIC(fit)))
+})

@@ -216,6 +216,14 @@ land here as the foundation for the Phase 2 factor-RE work.
   generics gain `...` so the new `expanded` and `at` arguments dispatch
   through `UseMethod()` correctly. All existing methods updated.
 
+## Universal-accessor parity for hurdle fits (TICKET-027)
+
+* Added `nobs.beezdemand_hurdle()` for universal-accessor parity with
+  `nobs.beezdemand_tmb()` and the cross-price classes. `broom::glance(fit)$nobs`
+  and `BIC(fit)` were already correct via their own paths
+  (`param_info$n_obs` and the `nobs` attribute on `logLik()`, respectively);
+  this method closes the gap for any caller that consumes `nobs()` directly.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects

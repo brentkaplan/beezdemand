@@ -524,6 +524,28 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 }
 
 
+#' Sample size for a beezdemand_hurdle fit
+#'
+#' Universal-accessor parity with `nobs.beezdemand_tmb()` and the cross-price
+#' classes. `broom::glance(fit)$nobs` and `BIC(fit)` were already correct via
+#' their own paths (`param_info$n_obs` and the `nobs` attribute on
+#' `logLik()`, respectively); this method closes the gap for any caller
+#' that consumes `nobs()` directly.
+#'
+#' @param object A \code{beezdemand_hurdle} object.
+#' @param ... Unused.
+#' @return Integer scalar — the number of observations the model was fit on.
+#' @export
+nobs.beezdemand_hurdle <- function(object, ...) {
+  n <- object$param_info$n_obs
+  if (is.null(n) || is.na(n)) {
+    cli::cli_inform("fit$param_info$n_obs missing; falling back to NROW(fit$data).")
+    n <- NROW(object$data)
+  }
+  as.integer(n)
+}
+
+
 # ---- Marginal P(zero) integration helpers ----
 
 #' Compute marginal (population-averaged) P(zero)
