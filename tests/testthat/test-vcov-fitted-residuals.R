@@ -12,6 +12,18 @@
 #   defaults for y_var/x_var/id_var, and the simulated dataset is much
 #   cheaper to fit than apt_full).
 
+test_that("S3 methods are registered for vcov / fitted / residuals", {
+  # Structural / dispatch check that does not require a fit and is therefore
+  # safe to run on CRAN. Guards against accidental deregistration if a future
+  # roxygen edit drops `@export` from one of these methods.
+  expect_false(is.null(getS3method("vcov",      "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("fitted",    "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("residuals", "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("vcov",      "beezdemand_hurdle", optional = TRUE)))
+  expect_false(is.null(getS3method("fitted",    "beezdemand_hurdle", optional = TRUE)))
+  expect_false(is.null(getS3method("residuals", "beezdemand_hurdle", optional = TRUE)))
+})
+
 test_that("vcov.beezdemand_tmb returns symmetric PSD matrix with names", {
   skip_on_cran()
   skip_if_not_installed("TMB")

@@ -9,6 +9,17 @@
 #   test-hurdle_methods.R (fit_demand_hurdle has no defaults for
 #   y_var/x_var/id_var).
 
+test_that("S3 methods are registered for formula / model.matrix / update", {
+  # Structural / dispatch check that does not require a fit and is therefore
+  # safe to run on CRAN. Guards against accidental deregistration if a future
+  # roxygen edit drops `@export` from one of these methods.
+  expect_false(is.null(getS3method("formula",      "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("model.matrix", "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("update",       "beezdemand_tmb",    optional = TRUE)))
+  expect_false(is.null(getS3method("formula",      "beezdemand_hurdle", optional = TRUE)))
+  expect_false(is.null(getS3method("model.matrix", "beezdemand_hurdle", optional = TRUE)))
+})
+
 test_that("formula.beezdemand_tmb returns named list with Q0, alpha, random", {
   skip_on_cran()
   skip_if_not_installed("TMB")
@@ -19,6 +30,33 @@ test_that("formula.beezdemand_tmb returns named list with Q0, alpha, random", {
   expect_named(f, c("Q0", "alpha", "random"))
   expect_s3_class(f$Q0,    "formula")
   expect_s3_class(f$alpha, "formula")
+  # Regression: rhs_q0 / rhs_alpha already include "~" — guard against
+  # nested `~~term` shapes (`paste("~", "~ term")` style bug).
+  q0_dep    <- deparse(f$Q0)
+  alpha_dep <- deparse(f$alpha)
+  expect_false(grepl("~~", q0_dep, fixed = TRUE),
+               info = "formula(fit)$Q0 should not be a nested formula (`~~...`).")
+  expect_false(grepl("~~", alpha_dep, fixed = TRUE),
+               info = "formula(fit)$alpha should not be a nested formula (`~~...`).")
+  # The factor name "gender" should appear in both one-sided formulas:
+  expect_match(q0_dep,    "gender")
+  expect_match(alpha_dep, "gender")
+  # And they should round-trip through stats::terms() without surprise:
+  expect_silent(stats::terms(f$Q0))
+  expect_silent(stats::terms(f$alpha))
+})
+
+test_that("fit_demand_tmb stores call exactly once on the fit object", {
+  # Regression: a draft of TICKET-028 added a second `call = cl` entry
+  # at the bottom of the return structure, duplicating the one already
+  # present near the top (~R/tmb-demand.R:1760). The duplicate slipped
+  # past type-only assertions because both entries hold the same value.
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_equal(sum(names(fit) == "call"), 1L)
+  expect_false(as.logical(anyDuplicated(names(fit))))
 })
 
 test_that("model.matrix.beezdemand_tmb returns named list of four matrices by default", {

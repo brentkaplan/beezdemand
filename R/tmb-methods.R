@@ -2078,9 +2078,13 @@ formula.beezdemand_tmb <- function(x, ...) {
     # the raw spec slot.
     rand_original <- x$param_info$random_effects_spec
   }
+  # rhs_q0 / rhs_alpha already include the leading "~" (see
+  # build_fixed_rhs() in R/utils.R), so pass them straight to as.formula().
+  # Prepending another "~" produces a nested formula (`~~grp`), which R
+  # tolerates but is visibly malformed.
   list(
-    Q0     = stats::as.formula(paste("~", fd$rhs_q0)),
-    alpha  = stats::as.formula(paste("~", fd$rhs_alpha)),
+    Q0     = stats::as.formula(fd$rhs_q0),
+    alpha  = stats::as.formula(fd$rhs_alpha),
     random = rand_original
   )
 }
