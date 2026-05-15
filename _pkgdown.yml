@@ -113,6 +113,11 @@ reference:
       - starts_with("BIC.")
       - starts_with("logLik.")
       - starts_with("nobs.")
+      - starts_with("vcov.")
+      - starts_with("fitted.")
+      - starts_with("residuals.")
+      - starts_with("formula.")
+      - starts_with("model.matrix.")
       - starts_with("get_subject_pars")
       - extract_coefficients
 
@@ -158,6 +163,7 @@ reference:
       - compare_models
       - check_demand_model
       - starts_with("anova.")
+      - starts_with("update.")
       - ExtraF
 
   - title: Visualization
