@@ -506,6 +506,16 @@ fit_gender <- fit_demand_tmb(
 fit_gender
 ```
 
+### Joint Tests
+
+`anova(fit)` reports a joint Wald-χ² test for each parameter × factor block —
+here, whether `gender` shifts $Q_0$ and $\alpha$. Pass additional fits for a
+nested likelihood-ratio test.
+
+```{r results-anova}
+anova(fit_gender)
+```
+
 ### Estimated Marginal Means
 
 ```{r emms-q0}

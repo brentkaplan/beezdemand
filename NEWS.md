@@ -305,6 +305,12 @@ land here as the foundation for the Phase 2 factor-RE work.
   (`param_info$n_obs` and the `nobs` attribute on `logLik()`, respectively);
   this method closes the gap for any caller that consumes `nobs()` directly.
 
+## Joint Wald and nested LRT tests for TMB fits (TICKET-013)
+
+* New `anova.beezdemand_tmb()`: joint Wald-chi-square tests on grouped
+  fixed-effect terms for a single fit, and sequential likelihood-ratio
+  tests for nested fits (TICKET-013).
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects

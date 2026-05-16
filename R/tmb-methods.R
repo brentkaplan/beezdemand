@@ -59,6 +59,147 @@
   }
 }
 
+#' Map a TMB design-matrix column to its originating model term
+#' @keywords internal
+.tmb_term_assign_map <- function(object, param) {
+  X <- if (param == "Q0") object$formula_details$X_q0 else
+    object$formula_details$X_alpha
+  asn <- attr(X, "assign")
+  cn  <- colnames(X)
+  f   <- if (param == "Q0") stats::formula(object)$Q0 else
+    stats::formula(object)$alpha
+  if (is.null(asn)) {
+    # Rebuild to recover the `assign` attribute (Task 0, Step 3 fallback).
+    X   <- stats::model.matrix(f, data = object$data)
+    asn <- attr(X, "assign")
+    cn  <- colnames(X)
+  }
+  labs <- attr(stats::terms(f), "term.labels")
+  # assign == 0 -> intercept (NA term label); k -> labs[k].
+  stats::setNames(ifelse(asn == 0L, NA_character_, labs[asn]), cn)
+}
+
+#' Group beezdemand_tmb fixed effects into testable blocks for anova()
+#' @keywords internal
+.tmb_group_terms <- function(object, terms = NULL, group_by = "auto") {
+  tn <- .tmb_build_term_names(object)
+  # Fixed-effect (beta) positions ONLY — never log_k / logsigma / rho_raw.
+  fe_idx   <- c(tn$q0_idx, tn$alpha_idx)
+  fe_param <- c(rep("Q0", length(tn$q0_idx)),
+                rep("alpha", length(tn$alpha_idx)))
+  fe_term  <- tn$term[fe_idx]
+  raw      <- names(object$model$coefficients)
+
+  # Explicit named-list grouping overrides group_by.
+  if (is.list(terms)) {
+    if (length(terms) == 0L) {
+      cli::cli_abort("`terms` is an empty list: no terms to test.")
+    }
+    return(lapply(names(terms), function(lbl) {
+      want <- terms[[lbl]]
+      hit  <- fe_idx[fe_term %in% want | raw[fe_idx] %in% want]
+      if (length(hit) == 0L) {
+        cli::cli_abort("term group {.val {lbl}} matched no fixed effects.")
+      }
+      list(label = lbl, idx = hit)
+    }))
+  }
+
+  # Character-vector `terms`: restrict the universe.
+  if (is.character(terms)) {
+    if (length(terms) == 0L) cli::cli_abort("`terms` is empty: no terms to test.")
+    unknown <- setdiff(terms, c(fe_term, raw[fe_idx]))
+    if (length(unknown) > 0L) {
+      cli::cli_abort(c(
+        "Unknown term(s): {.val {unknown}}.",
+        i = "Valid terms: {.val {fe_term}}."
+      ))
+    }
+    keep     <- fe_term %in% terms | raw[fe_idx] %in% terms
+    fe_idx   <- fe_idx[keep]
+    fe_param <- fe_param[keep]
+    fe_term  <- fe_term[keep]
+  }
+  if (length(fe_idx) == 0L) cli::cli_abort("no terms to test.")
+
+  if (group_by == "term") {
+    return(lapply(seq_along(fe_idx), function(k) {
+      list(label = fe_term[k], idx = fe_idx[k])
+    }))
+  }
+  if (group_by == "parameter") {
+    return(lapply(unique(fe_param), function(p) {
+      list(label = p, idx = fe_idx[fe_param == p])
+    }))
+  }
+  # group_by == "auto": group non-intercept columns by originating model term.
+  groups <- list()
+  for (p in unique(fe_param)) {
+    sel <- fe_param == p
+    map <- .tmb_term_assign_map(object, p)
+    for (k in which(sel)) {
+      col <- sub("^(Q0|alpha):", "", fe_term[k])
+      tl  <- map[[col]]
+      if (is.null(tl) || is.na(tl)) next            # intercept -> skip
+      key <- paste0(p, " ~ ", tl)
+      groups[[key]] <- c(groups[[key]], fe_idx[k])
+    }
+  }
+  if (length(groups) == 0L) {
+    cli::cli_abort(c(
+      "No non-intercept fixed effects to test under {.code group_by = \"auto\"}.",
+      i = "Use {.code group_by = \"parameter\"} or {.code group_by = \"term\"}."
+    ))
+  }
+  lapply(names(groups), function(k) list(label = k, idx = groups[[k]]))
+}
+
+#' Sequential LRT / AIC table for nested beezdemand_tmb fits
+#' @keywords internal
+.tmb_anova_multifit <- function(object, extra, test) {
+  fits <- c(list(object), extra)
+  if (!all(vapply(fits, inherits, logical(1), "beezdemand_tmb"))) {
+    cli::cli_abort(c(
+      "All models must be {.cls beezdemand_tmb} fits.",
+      i = "Use {.fn compare_models} for mixed backends."
+    ))
+  }
+  df   <- vapply(fits, function(f) length(f$opt$par), numeric(1))
+  ll   <- vapply(fits, function(f) as.numeric(f$loglik), numeric(1))
+  aic  <- vapply(fits, function(f) as.numeric(f$AIC), numeric(1))
+  nob  <- vapply(fits, function(f) as.numeric(nobs(f)), numeric(1))
+
+  if (length(unique(nob)) > 1L) {
+    cli::cli_abort("Models were fit to different numbers of observations; not comparable.")
+  }
+  ord <- order(df)
+  df  <- df[ord]; ll <- ll[ord]; aic <- aic[ord]
+
+  chisq <- c(NA_real_, 2 * diff(ll))
+  ddf   <- c(NA_real_, diff(df))
+  # A valid sequential LRT needs strict nesting: each step must add df
+  # AND not lose log-likelihood. `ddf[-1] <= 0` catches equal-df (or
+  # non-increasing) pairs; `chisq[-1] < 0` catches a higher-df fit that
+  # fits worse. Either symptom => not nested.
+  if (test == "LRT" && (any(ddf[-1] <= 0) || any(chisq[-1] < -1e-8))) {
+    cli::cli_abort(c(
+      "Models are not nested; LRT not applicable.",
+      i = "Sequential fits must have strictly increasing degrees of freedom and log-likelihood.",
+      i = "Try {.code test = \"AIC\"}."
+    ))
+  }
+  pval <- ifelse(is.na(chisq) | ddf <= 0, NA_real_,
+                 stats::pchisq(chisq, df = ddf, lower.tail = FALSE))
+
+  tibble::tibble(
+    Model          = paste0("Model", seq_along(df)),
+    df             = as.integer(df),
+    AIC            = aic,
+    Chisq          = if (test == "AIC") NA_real_ else chisq,
+    `Pr(>Chisq)`   = if (test == "AIC") NA_real_ else pval
+  )
+}
+
 # --- print ---
 
 #' Print Method for TMB Mixed-Effects Demand Model
@@ -1953,6 +2094,95 @@ residuals.beezdemand_tmb <- function(object,
     return(fr$.resid)
   }
   fr$.resid / sigma_e
+}
+
+
+# --- anova ---
+
+#' Joint Wald and likelihood-ratio tests for a TMB demand fit
+#'
+#' For a single fit, computes joint Wald-chi-square tests on grouped
+#' fixed-effect coefficients. For multiple fits passed via `...`, performs
+#' sequential likelihood-ratio tests on nested models.
+#'
+#' @param object A \code{beezdemand_tmb} fit.
+#' @param ... Additional \code{beezdemand_tmb} fits for nested comparison.
+#' @param test One of `"Wald"`, `"LRT"`, `"AIC"`. Default: `"Wald"` for a
+#'   single fit, `"LRT"` when extra fits are supplied.
+#' @param terms `NULL` (all fixed effects), a character vector of term names,
+#'   or a named list mapping group labels to term-name vectors. Term names
+#'   match display names (`Q0:genderMale`) or raw names.
+#' @param group_by One of `"auto"` (group non-intercept terms by
+#'   parameter x factor/covariate), `"parameter"` (one group per Q0 / alpha),
+#'   or `"term"` (one row per coefficient).
+#'
+#' @return For a single fit, a tibble with `Group`, `Chisq`, `df`, `p.value`.
+#'   For multiple fits, a tibble with `Model`, `df`, `AIC`, `Chisq`,
+#'   `` `Pr(>Chisq)` ``.
+#'
+#' @details The Wald statistic for a coefficient block is
+#'   \eqn{W = \beta_g' \Sigma_{gg}^{-1} \beta_g}, asymptotically
+#'   \eqn{\chi^2} on \code{length(beta_g)} df. An exactly rank-deficient
+#'   (perfectly collinear) block has a singular \eqn{\Sigma_{gg}} and triggers
+#'   an explicit error. A near-collinear block is not detected:
+#'   \eqn{\Sigma_{gg}} stays invertible and \eqn{W} becomes large and unstable,
+#'   so such a value should be interpreted with caution. For multiple fits,
+#'   the likelihood-ratio test screens for detectable non-nesting (equal or
+#'   decreasing degrees of freedom, or a larger model with lower
+#'   log-likelihood) but cannot prove nesting from log-likelihood and df
+#'   alone -- pass genuinely nested models. Rows of the multiple-fit table
+#'   are ordered by ascending degrees of freedom, and the \code{Model}
+#'   column labels them \code{Model1}, \code{Model2}, ... in that order.
+#'
+#' @seealso [anova.beezdemand_nlme()], [confint.beezdemand_tmb()].
+#' @examples
+#' \donttest{
+#' data(apt_full)
+#' fit <- fit_demand_tmb(apt_full, equation = "exponential",
+#'                       factors = "gender", verbose = 0)
+#' anova(fit)
+#' anova(fit, group_by = "parameter")
+#' }
+#' @importFrom stats anova pchisq
+#' @export
+anova.beezdemand_tmb <- function(object, ...,
+                                 test = c("Wald", "LRT", "AIC"),
+                                 terms = NULL,
+                                 group_by = c("auto", "parameter", "term")) {
+  extra <- list(...)
+  if (missing(test)) {                                  # C3
+    test <- if (length(extra) > 0L) "LRT" else "Wald"
+  }
+  test <- match.arg(test)
+  group_by <- match.arg(group_by)
+
+  if (length(extra) > 0L) {
+    return(.tmb_anova_multifit(object, extra, test = test))
+  }
+
+  V <- vcov(object)                # vcov() errors if the sdreport variance is unavailable
+  coefs <- object$model$coefficients
+  groups <- .tmb_group_terms(object, terms = terms, group_by = group_by)
+
+  rows <- lapply(groups, function(g) {
+    b <- unname(coefs[g$idx])
+    S <- V[g$idx, g$idx, drop = FALSE]               # C4: beta blocks only
+    Sinv_b <- tryCatch(solve(S, b), error = function(e) {
+      cli::cli_abort(c(
+        "Variance submatrix for group {.val {g$label}} is singular.",
+        i = "Collinear or unidentified terms in this block."
+      ))
+    })
+    W  <- as.numeric(crossprod(b, Sinv_b))
+    df <- length(g$idx)
+    tibble::tibble(
+      Group   = g$label,
+      Chisq   = W,
+      df      = as.integer(df),
+      p.value = stats::pchisq(W, df = df, lower.tail = FALSE)
+    )
+  })
+  dplyr::bind_rows(rows)
 }
 
 
