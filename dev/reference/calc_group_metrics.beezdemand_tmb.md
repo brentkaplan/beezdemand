@@ -6,7 +6,7 @@ Calculate Population-Level Demand Metrics for TMB Model
 
 ``` r
 # S3 method for class 'beezdemand_tmb'
-calc_group_metrics(object, ...)
+calc_group_metrics(object, at = NULL, ...)
 ```
 
 ## Arguments
@@ -15,6 +15,19 @@ calc_group_metrics(object, ...)
 
   A `beezdemand_tmb` object.
 
+- at:
+
+  Named list of factor-level filters or continuous-covariate value
+  overrides (e.g. `list(condition = "C1", FTND_z = 0.5)`). When `NULL`
+  (default), continuous covariates are evaluated at their training mean
+  and factors are marginalized across observed levels (equal weights).
+  When supplied, conditions the parameter EMMs to the specified factor
+  levels and/or covariate values before deriving Pmax/Omax. Same shape
+  as the `at` argument of
+  [`get_demand_param_emms.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.beezdemand_tmb.md)
+  and
+  [`get_demand_comparisons.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md).
+
 - ...:
 
   Additional arguments (currently unused).
@@ -22,19 +35,36 @@ calc_group_metrics(object, ...)
 ## Value
 
 A list with `Pmax`, `Omax`, `Qmax`, `elasticity_at_pmax`, `method`, and
-(for covariate-adjusted fits) `conditioned_on` describing the reference
-point used.
+`conditioned_on` describing the reference point used. The
+`conditioned_on` field reports the actual conditioning applied
+(covariate values used, factor treatment per factor) so programmatic
+consumers do not have to re-derive it.
 
-## Note
+## Marginalization order
 
-For fits that include `continuous_covariates`, the returned metrics are
-computed from the intercept-only coefficients – i.e., the curve at every
-covariate set to 0 – not at the training mean or any other defensible
-population reference. A warning is emitted and the conditioning point is
-reported in `conditioned_on`. Marginalization (or explicit `at`
-conditioning) is planned for TICKET-011 Phase 5; the warn-and-label
-behavior here mirrors the warning convention used by
-`predict(type = "demand")`.
+For derived metrics (Pmax/Omax/Qmax) that depend nonlinearly on `Q0` and
+`alpha` jointly, this function marginalizes parameters first then
+derives metrics:
+
+1.  Compute log-Q0 and log-alpha EMMs at each cell of the reference grid
+    produced by `.tmb_build_emm_ref_grid()`.
+
+2.  Marginalize each parameter across factor cells with equal weights
+    (matches the emmeans default).
+
+3.  Derive Pmax/Omax/Qmax from the marginalized log-parameters at the
+    user-supplied (or training-mean default) covariate point.
+
+This is "metrics evaluated at the average parameter values," NOT
+"average metrics across cells" – the two answers differ for nonlinear
+transforms. The convention matches the parameter-level marginalization
+used by
+[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
+
+## See also
+
+[`fit_demand_tmb`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md),
+[`get_demand_param_emms.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.beezdemand_tmb.md)
 
 ## Examples
 
@@ -45,20 +75,16 @@ fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 calc_group_metrics(fit)
 #> $Pmax
-#> beta_alpha 
-#>   11.23768 
+#> [1] 11.23768
 #> 
 #> $Omax
-#> beta_alpha 
-#>   23.89412 
+#> [1] 23.89412
 #> 
 #> $Qmax
-#>  beta_q0 
-#> 2.126251 
+#> [1] 2.126251
 #> 
 #> $elasticity_at_pmax
-#> beta_alpha 
-#>         -1 
+#> [1] -1
 #> 
 #> $method
 #> [1] "analytic_lambert_w"
@@ -66,5 +92,7 @@ calc_group_metrics(fit)
 #> $conditioned_on
 #> NULL
 #> 
+# Conditioned at a specific covariate value:
+# calc_group_metrics(fit_with_cov, at = list(FTND_z = 1))
 # }
 ```

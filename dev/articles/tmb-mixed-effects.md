@@ -265,13 +265,13 @@ and elasticity (\alpha).
 ``` r
 
 head(nlme::ranef(fit_2re))
-#>   id        b_i         c_i
-#> 1 16 -0.8553425  0.38606925
-#> 2 24  0.0892061 -0.04866633
-#> 3 33  0.6114842 -0.35230990
-#> 4 40  0.1527007  0.50021504
-#> 5 42  0.7378500 -0.89299758
-#> 6 49 -0.2956502  0.40088468
+#>   id        b_i         c_i q0_(Intercept) alpha_(Intercept)
+#> 1 16 -0.8553425  0.38606925     -0.8553425        0.38606925
+#> 2 24  0.0892061 -0.04866633      0.0892061       -0.04866633
+#> 3 33  0.6114842 -0.35230990      0.6114842       -0.35230990
+#> 4 40  0.1527007  0.50021504      0.1527007        0.50021504
+#> 5 42  0.7378500 -0.89299758      0.7378500       -0.89299758
+#> 6 49 -0.2956502  0.40088468     -0.2956502        0.40088468
 ```
 
 The `b_i` column is the random deviation on log(Q_0) and `c_i` is the
@@ -458,7 +458,7 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1   7.050819e-17     -3.85976e-17            1      0.8497968
+#> 1   7.065932e-18    -2.846441e-18            1      0.8497968
 ```
 
 By construction, both factors are sample-standardized (mean 0, SD 1
@@ -500,6 +500,37 @@ confint(fit_2re, report_space = "natural")
 #> 6 logsigma_e         -1.49   -1.54      -1.45    0.95
 #> 7 rho_raw            -0.481  -0.738     -0.225   0.95
 ```
+
+### Variance-Covariance and the Delta Method
+
+[`vcov()`](https://rdrr.io/r/stats/vcov.html) returns the fixed-effect
+variance-covariance matrix from the TMB sdreport — the inverse of the
+negative Hessian at the MLE, restricted to fixed effects after
+Laplace-marginalizing the random effects. Combined with the optimizer’s
+internal parameter vector (`coef(fit, type = "internal")`), it lets you
+apply the delta method to any nonlinear function of the parameters via
+[`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html). Pass
+the parameter vector explicitly so the call is stable across the planned
+[`coef()`](https://rdrr.io/r/stats/coef.html) default change in a future
+release.
+
+``` r
+
+beta <- coef(fit_2re, type = "internal")
+car::deltaMethod(
+  beta,
+  paste0(names(beta)[1], " * 1"),
+  vcov. = vcov(fit_2re)
+)
+#>             Estimate       SE    2.5 % 97.5 %
+#> beta_q0 * 1 1.694405 0.076621 1.544230 1.8446
+```
+
+`fitted(fit)` and `residuals(fit)` are also exposed as direct accessors,
+matching the model-scale convention used by
+[`broom::augment()`](https://generics.r-lib.org/reference/augment.html)
+(log scale for `"exponential"`, natural/LL4 scale for others). Pass
+`scale = "natural"` to back-transform.
 
 ### Predictions
 
@@ -559,20 +590,16 @@ head(pred_pars)
 
 calc_group_metrics(fit_2re)
 #> $Pmax
-#> beta_alpha 
-#>    8.65068 
+#> [1] 8.65068
 #> 
 #> $Omax
-#> beta_alpha 
-#>   12.68535 
+#> [1] 12.68535
 #> 
 #> $Qmax
-#>  beta_q0 
-#> 1.466399 
+#> [1] 1.466399
 #> 
 #> $elasticity_at_pmax
-#> beta_alpha 
-#>         -1 
+#> [1] -1
 #> 
 #> $method
 #> [1] "analytic_lambert_w"
@@ -967,6 +994,53 @@ compare_models(fit_1re, fit_2re)
 equation and response scale. Models with different equations (e.g.,
 exponential vs exponentiated) model different responses and cannot be
 compared via AIC.
+
+### Building Nested Models with `update()`
+
+`update(fit, ...)` re-fits with named arguments substituted into the
+original
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+call. Use it to build a candidate fit and drop or add factors /
+covariates / random effects without typing the full fit call again:
+
+``` r
+
+# Drop the gender factor to test its joint significance:
+fit_gender_null <- update(fit_gender, factors = NULL)
+compare_models(fit_gender_null, fit_gender)
+#> 
+#> Model Comparison
+#> ================================================== 
+#> 
+#>    Model          Class   Backend nobs df    logLik      AIC      BIC delta_AIC
+#>  Model_1 beezdemand_tmb TMB_mixed 1131  7 -268.5364 551.0729 586.2889    0.0000
+#>  Model_2 beezdemand_tmb TMB_mixed 1131  9 -267.3790 552.7580 598.0357    1.6851
+#>  delta_BIC
+#>     0.0000
+#>    11.7468
+#> 
+#> Best model by BIC: Model_1 
+#> 
+#> Likelihood Ratio Tests:
+#> ---------------------------------------- 
+#>          Comparison LR_stat df p_value
+#>  Model_1 vs Model_2  2.3149  2   0.314
+#> 
+#> Notes:
+#>   - LRT nesting assumption not verified.
+```
+
+`evaluate = FALSE` returns the unevaluated call (for inspection) instead
+of re-fitting, matching the convention of
+[`stats::update.default`](https://rdrr.io/r/stats/update.html).
+
+`formula(fit)` and `model.matrix(fit)` round out the introspection API.
+`formula(fit)` returns a named list of one-sided formulas for `Q0` and
+`alpha` plus the random-effect spec; `model.matrix(fit)` returns the
+four design matrices the TMB template consumed (`X_q0`, `X_alpha`,
+`Z_q0`, `Z_alpha`) — a named list rather than the single matrix `lm` or
+`lme4` return, because the TMB tier truly has two fixed-effect linear
+predictors.
 
 ## Convergence Tips
 

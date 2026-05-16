@@ -7,14 +7,21 @@ a fitted hurdle demand model. Equivalent to accessing
 ## Usage
 
 ``` r
-get_subject_pars(object)
+get_subject_pars(object, ...)
 ```
 
 ## Arguments
 
 - object:
 
-  A fitted `beezdemand_hurdle` object.
+  A fitted `beezdemand_hurdle` or `beezdemand_tmb` object.
+
+- ...:
+
+  Method-specific arguments. The `beezdemand_tmb` method accepts an
+  `expanded` argument for opt-in long-form output with per-(subject,
+  factor-level) rows; see
+  [`get_subject_pars.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md).
 
 ## Value
 
@@ -91,7 +98,7 @@ head(pars)
 #> 2 15.36567          16.381413           15.36567
 #> 3 20.86896          13.137907           20.83931
 #> 4 21.41158           6.709803           21.41158
-#> 5 32.75738           9.674081           32.75738
+#> 5 32.75738           9.674080           32.75738
 #> 6 14.59192           7.085743           14.52454
 # }
 ```

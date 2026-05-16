@@ -6,7 +6,7 @@ Get Subject-Specific Parameters from TMB Model
 
 ``` r
 # S3 method for class 'beezdemand_tmb'
-get_subject_pars(object, ...)
+get_subject_pars(object, expanded = FALSE, ...)
 ```
 
 ## Arguments
@@ -15,14 +15,36 @@ get_subject_pars(object, ...)
 
   A `beezdemand_tmb` object.
 
+- expanded:
+
+  Logical. When `FALSE` (default) returns the wide one-row-per-subject
+  table. When `TRUE`, returns a long table with one row per (subject,
+  within-subject-factor-level) combination, with model-derived per-cell
+  `Q0`, `alpha`, `Pmax`, and `Omax`. Use this for fits where a within-
+  subject factor appears in `factors` or in `random_effects` (e.g.
+  multi-block `pdBlocked` specs); the wide default returns `NA` in those
+  columns because no single subject-level value is well-defined.
+
 - ...:
 
   Additional arguments (currently unused).
 
 ## Value
 
-A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax,
-Omax.
+When `expanded = FALSE`: data frame with columns `id`, `b_i`, `c_i` (if
+2 RE), `Q0`, `alpha`, `Pmax`, `Omax`. When `expanded = TRUE`: data frame
+with the within-subject factor columns added, one row per (subject,
+factor-level) combination.
+
+## Per-block random-effect matrices
+
+For factor-expanded or multi-block fits, the wide table's `b_i` / `c_i`
+columns hold the first RE column from each block (intercept slot for the
+M1 baseline block, for example) for backward compatibility with
+downstream consumers. Power users who need the full per-block RE
+structure can access `attr(subject_pars, "re_q0_mat")` and
+`attr(subject_pars, "re_alpha_mat")` as `n_subjects x re_dim` matrices
+ordered by block.
 
 ## Examples
 

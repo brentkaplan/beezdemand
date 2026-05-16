@@ -1,14 +1,14 @@
 # Changelog
 
-## beezdemand 0.4.0 (development)
+## beezdemand 0.3.0 (development)
 
-This development release opens TICKET-011 (factor-expanded random
-effects for
-[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
-and
-[`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md))
-and fixes three pre-existing TMB post-fit correctness bugs surfaced
-while scoping the ticket.
+This release ships the TMB mixed-effects modeling tier
+([`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md))
+along with TICKET-011 — factor-expanded and multi-block random-effects
+support, expanded subject-level reporting, and group-metrics
+conditioning. The “TMB mixed-effects modeling tier” section below is the
+original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
+work added under this development cycle.
 
 ### TMB post-fit fixes (TICKET-011 Phase 0)
 
@@ -21,8 +21,11 @@ while scoping the ticket.
   names the offending columns. Previously the function silently returned
   row-order-dependent values. New `validate_subject_pars = TRUE`
   argument provides an escape hatch for users who have reasoned about
-  the behavior. Factor-expanded random slopes (the proper replacement
-  for the NA fallback) land in Phase 2/3.
+  the behavior. Factor-expanded random slopes landed in TICKET-011 Phase
+  2 (single-block) and Phase 3 (multi-block); the silent
+  first-observed-row fallback was retired in Phase 5A in favor of
+  NA-on-within-id-variation plus an opt-in `expanded` argument on
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md).
 - [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
   on a `beezdemand_tmb` fit now honors `continuous_covariates` even when
   no factors are present. Previously, the early-return for factor-less
@@ -54,12 +57,12 @@ while scoping the ticket.
   are soft-deprecated via
   [`lifecycle::deprecate_soft()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
   and internally translated to the equivalent formula. A hard
-  deprecation follows in 0.5.0.
+  deprecation follows in 0.4.0.
 - Formula shapes richer than intercept-only (e.g.
-  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are accepted by the
-  parser but currently error with a clear “Phase 2 not yet shipped”
-  message. Template generalization to a Z-matrix-driven covariance lands
-  in subsequent 0.4.0 patches.
+  `Q0 + alpha ~ condition`, `pdBlocked(list(...))`) are now fully
+  supported. Template generalization to a Z-matrix-driven covariance
+  landed in TICKET-011 Phase 2 (single-block factor expansion) and Phase
+  3 (multi-block `pdBlocked`).
 - New internal helpers in `R/random-effects-utils.R`
   (`.classify_re_input`, `.normalize_re_input`, `.validate_re_input`,
   `.re_is_phase1_fittable`, `.deprecate_character_re`,
@@ -80,14 +83,12 @@ land here as the foundation for the Phase 2 factor-RE work.
   on a `beezdemand_tmb` fit now consumes the same conditioned reference
   grid as
   [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
-  New internal helper
-  [`.tmb_build_emm_ref_grid()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.md)
-  in `R/tmb-methods.R` ensures both functions honor `at` (factor-level
-  filters AND continuous-covariate value overrides) and
-  `factors_in_emm`. Before this fix the wrapper forwarded `...` to
-  `emms` but rebuilt its own contrast grid from the unfiltered training
-  data, producing off-grid contrasts and `"NA"` labels when `at`
-  filtered factor levels.
+  New internal helper `.tmb_build_emm_ref_grid()` in `R/tmb-methods.R`
+  ensures both functions honor `at` (factor-level filters AND
+  continuous-covariate value overrides) and `factors_in_emm`. Before
+  this fix the wrapper forwarded `...` to `emms` but rebuilt its own
+  contrast grid from the unfiltered training data, producing off-grid
+  contrasts and `"NA"` labels when `at` filtered factor levels.
 - [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
   on a `beezdemand_tmb` fit now warns and returns a `conditioned_on`
   field when continuous covariates are present. The numeric output is
@@ -98,8 +99,7 @@ land here as the foundation for the Phase 2 factor-RE work.
   [`summary.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
   propagates the warning through the standard summary path. Phase 5 will
   replace warn-and-label with explicit conditioning via the
-  [`.tmb_build_emm_ref_grid()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.md)
-  helper.
+  `.tmb_build_emm_ref_grid()` helper.
 
 ### Factor-expanded TMB random effects (TICKET-011 Phase 2)
 
@@ -107,9 +107,9 @@ land here as the foundation for the Phase 2 factor-RE work.
   now fits formula-based random effects with factor-expanded slopes
   (e.g. `pdDiag(Q0 + alpha ~ condition)` or
   `pdSymm(Q0 + alpha ~ condition)`). Single-block pdDiag and pdSymm with
-  arbitrary RHS terms are accepted; multi-block `pdBlocked` /
-  [`list()`](https://rdrr.io/r/base/list.html) of pdMats remains gated
-  until Phase 3.
+  arbitrary RHS terms are accepted. Multi-block `pdBlocked` /
+  [`list()`](https://rdrr.io/r/base/list.html) of pdMats lands in Phase
+  3 (also in this release).
 - `src/MixedDemand.h` rewritten with a block-aware DATA interface (Z_q0,
   Z_alpha, block-structure metadata) and a generalized per-block
   Cholesky loop. pdSymm blocks of size \> 2 use the
@@ -124,25 +124,258 @@ land here as the foundation for the Phase 2 factor-RE work.
   in `R/tmb-demand.R` consume the canonical block representation and
   emit the design matrices and metadata the template needs.
 - [`.tmb_compute_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_compute_subject_pars.md)
-  generalized into a per-block reconstruction; subject-level `Q0` /
-  `alpha` for factor-expanded fits use the first observed row of `X` and
-  `Z` per subject (Phase 2 deferral; per-(subject, condition) rows
-  planned for Phase 5).
+  generalized into a per-block reconstruction. For factor-expanded fits,
+  the Phase 2 implementation used first-observed-row `X` and `Z` for
+  subject-level `Q0` / `alpha`; Phase 5A in this release supersedes that
+  with NA-on-within-id- variation plus an opt-in `expanded = TRUE`
+  argument on
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  for per-(subject, condition) rows.
 - New simulator
   [`.simulate_within_subject_demand()`](https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.md)
   and parity tests confirm TMB Laplace approximation agrees with NLME’s
   iterative algorithm to within ~1% on the loglik across all four target
   specs.
 
-## beezdemand 0.3.0
+### Multi-block pdBlocked random effects (TICKET-011 Phase 3)
 
-This release ships the TMB mixed-effects modeling tier
-([`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md))
-and clears the outstanding ticket queue against the
-`feat/tmb-mixed-effects` branch. See the “TMB tier” section under New
-Features for orientation.
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  now accepts multi-block `nlme::pdBlocked(list(...))` and bare
+  `list(pdMat, pdMat, ...)` `random_effects` specifications. The
+  motivating use case is the load-bearing M1 spec from in-house
+  manuscript work:
+  `pdBlocked(list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~condition-1)))`,
+  which combines a correlated subject-baseline block with an
+  uncorrelated subject-by-condition slopes block. The intercepts-only
+  alternative inverts the cigarette Q0 direction on that data; the
+  multi-block spec recovers it.
+- The Phase 2 C++ template, parser, and R glue already supported
+  `n_blocks > 1`; Phase 3 lifts the gate that rejected those shapes. The
+  renamed gate helper `.re_is_phase3_fittable()` accepts any number of
+  single-grouping-level blocks of class `pdDiag` or `pdSymm`. Other
+  pdMat classes (`pdCompSymm`, `pdIdent`, `pdLogChol`, …) remain
+  unsupported pending a triggering use case; use
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  for those.
+- Bit-identical regression: `pdBlocked(list(pdSymm(Q0+alpha~1)))`
+  (single-block-wrapped) produces the same loglik and coefficients as
+  bare `pdSymm(Q0+alpha~1)` to optimizer tolerance.
+- Acceptance: on simulated within-subject data with a known
+  per-condition Q0 ordering, the M1 spec recovers the truth ordering and
+  matches NLME EMMs within 5% on natural scale (manuscript-repo parity
+  protocol remains the integration gate against actual study data).
 
-### New Features
+### Documentation: advanced random-effects vignette (TICKET-011 Phase 5B)
+
+- New vignette `tmb-advanced-random-effects.Rmd` covers all
+  random-effects structures beyond intercepts-only:
+  - Decision tree for picking between intercepts-only, factor-expanded
+    single-block (Phase 2), and multi-block `pdBlocked` (Phase 3).
+  - Worked example of the cigarette M1 spec on simulated within- subject
+    data, demonstrating per-condition Q0 ordering recovery.
+  - Reading subject-level results: long-form
+    `get_subject_pars(fit, expanded = TRUE)` and `attr(re_q0_mat)` /
+    `re_alpha_mat` access for power users.
+  - Group metric conditioning with the `at` argument and the
+    parameter-first marginalization convention.
+  - Diagnostics for variance components per block and convergence
+    troubleshooting.
+- Existing `tmb-mixed-effects.Rmd` stays as the intro tier
+  (intercept-only and basic 2-RE).
+
+### Group-level metric conditioning (TICKET-011 Phase 5C)
+
+- [`calc_group_metrics.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.md)
+  gains an `at` argument for explicit conditioning on continuous
+  covariates and factor levels. When `at = NULL` (default), continuous
+  covariates are evaluated at their training mean and factors are
+  marginalized across observed levels (equal weights). The argument
+  shape matches
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  /
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md):
+  `at = list(age = 30, gender = "Male")`.
+- The Phase 0.5
+  [`cli::cli_warn()`](https://cli.r-lib.org/reference/cli_abort.html)
+  for “covariates held at 0” is retired entirely. The new training-mean
+  default is statistically defensible, so the warning would only train
+  users to ignore warnings. The `conditioned_on` field in the return
+  list still labels the actual conditioning point (covariate values
+  used; per-factor treatment, with `"marginal"` for the default and the
+  supplied level when `at` is given).
+- For derived metrics that depend nonlinearly on (Q0, alpha) jointly
+  (Pmax, Omax, Qmax), this function uses **parameter-first
+  marginalization**: log-Q0 and log-alpha EMMs are computed on the
+  reference grid via the shared `.tmb_build_emm_ref_grid()` helper,
+  marginalized with equal weights, then Pmax/Omax/Qmax are derived from
+  the marginalized parameter values. This matches the parameter-level
+  marginalization convention used by
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
+  (Note: this differs from “compute metrics per cell, then average”; the
+  two approaches give different answers for nonlinear transforms.)
+- [`summary.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
+  now prints a single line under the Population Demand Metrics block —
+  `Metrics conditioned at: <cov>=<X>, <factor>=marginal` — surfacing the
+  conditioning point so a printed summary is self-describing.
+
+### Subject-level reporting for factor-expanded fits (TICKET-011 Phase 5A)
+
+- [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  gains an opt-in `expanded` argument. When `expanded = TRUE` and the
+  fit’s random-effects design varies within id (e.g. M1-style
+  multi-block fits with `condition - 1` slopes), the function returns a
+  long-form table with one row per (subject, factor-level) combination.
+  Columns include the within-subject factor names plus model-derived
+  per-cell `Q0`, `alpha`, `Pmax`, and `Omax`. Numeric within-id-varying
+  RE-RHS terms are conditioned at the subject’s mean rather than
+  expanded.
+- Default `expanded = FALSE` returns the wide one-row-per-subject table
+  unchanged; [`predict()`](https://rdrr.io/r/stats/predict.html),
+  `ranef()`, and other consumers that depend on unique IDs continue to
+  work bit-for-bit.
+- The Phase 0 within-id check now also examines `Z_q0` / `Z_alpha`
+  (random-effects design) columns, not just `X_q0` / `X_alpha`. Prior to
+  this fix, M1-style fits where `condition` appeared only in
+  `random_effects` (not in `factors`) silently returned first-observed-
+  row Q0/alpha values without warning. Now those fits emit the
+  `subject_pars` validation warning and set affected subjects’
+  `Q0`/`alpha`/`Pmax`/`Omax` to `NA` in the default wide table, with a
+  pointer to `expanded = TRUE` for per-(subject, condition) values.
+- Downstream consumers that read `subject_pars$Q0` / `$alpha` directly
+  (`plot(fit, type = "individual")` and
+  [`calculate_amplitude_persistence()`](https://brentkaplan.github.io/beezdemand/reference/calculate_amplitude_persistence.md))
+  now abort with a targeted message when those columns are NA, pointing
+  users at `get_subject_pars(fit, expanded = TRUE)`. Native
+  expanded-shape support in those consumers is deferred to a follow-up
+  release.
+- Generic signatures:
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  and
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  generics gain `...` so the new `expanded` and `at` arguments dispatch
+  through [`UseMethod()`](https://rdrr.io/r/base/UseMethod.html)
+  correctly. All existing methods updated.
+
+### Formula, design-matrix, and update introspection (TICKET-028)
+
+- Added [`formula()`](https://rdrr.io/r/stats/formula.html),
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html), and
+  [`update()`](https://rdrr.io/r/stats/update.html) methods for
+  `beezdemand_tmb`, plus
+  [`formula()`](https://rdrr.io/r/stats/formula.html) and
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html) for
+  `beezdemand_hurdle` (five new S3 methods total).
+- `formula(fit_tmb)` returns `list(Q0, alpha, random)` — one-sided
+  formulas for Q0 and alpha (reconstructed from
+  `fit$formula_details$rhs_q0` / `$rhs_alpha`, so they reflect any
+  asymmetric `collapse_levels`) plus the original `random_effects` spec
+  preserved at fit time and round-trippable back to
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md).
+- `model.matrix(fit_tmb)` returns a **named list** of four matrices
+  (`X_q0`, `X_alpha`, `Z_q0`, `Z_alpha`); use `what = ...` to select
+  one. The list-rather-than-matrix return is intentional and documented:
+  the TMB tier has two fixed-effect linear predictors (one per nonlinear
+  parameter), not one. `X_q0` / `X_alpha` are zero-copy references to
+  `fit$formula_details`; `Z_q0` / `Z_alpha` are recomputed via the
+  internal
+  [`.tmb_build_z_matrices()`](https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_z_matrices.md)
+  helper. Degenerate Z requests (e.g., `what = "Z_alpha"` on a Q0-only
+  fit) return `NULL` with an informational message.
+- `update(fit_tmb, ...)` re-fits with named arguments substituted into
+  the original call (e.g., `update(fit, factors = NULL)`). Honors
+  `evaluate = FALSE` per the
+  [`stats::update.default`](https://rdrr.io/r/stats/update.html)
+  convention. Does **not** support formula-update syntax (`. - term`);
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  is argument-driven, not formula-driven.
+- `formula(fit_hurdle)` returns `list(binary, consumption, random)` with
+  both component formulas intercept-only today. Future support for
+  factor/covariate effects on hurdle components will enrich these
+  without changing the API.
+- `model.matrix(fit_hurdle)` returns intercept-only design matrices
+  (`X_binary`, `X_consumption`) for parity with
+  [`model.matrix.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/model.matrix.beezdemand_tmb.md).
+- `beezdemand_tmb` fits now store the original
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  call as `fit$call` so
+  [`update()`](https://rdrr.io/r/stats/update.html) can rebuild it.
+  [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+  already captured this slot.
+- Does **not** unlock `emmeans` / `effects` / `ggeffects` (need
+  `recover_data` + `emm_basis` methods), `drop1` / `add1` /
+  `MuMIn::dredge` (need
+  [`terms()`](https://rdrr.io/r/stats/terms.html) + formula-update
+  [`update()`](https://rdrr.io/r/stats/update.html) form), or any tool
+  that dispatches via [`coef()`](https://rdrr.io/r/stats/coef.html)
+  after the planned TICKET-019 default change. Those each remain
+  follow-up tickets.
+
+### Variance-covariance, fitted, and residual accessors (TICKET-026)
+
+- Added [`vcov()`](https://rdrr.io/r/stats/vcov.html),
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html), and
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) methods for
+  both `beezdemand_tmb` and `beezdemand_hurdle` (six new S3 methods
+  total). TMB methods default to the model’s native likelihood scale
+  (log scale for `"exponential"`, natural/LL4 scale for others),
+  matching `broom::augment(fit)$.fitted` / `$.resid`.
+  `scale = "natural"` opts into back-transformed values;
+  `type = "pearson"` divides by the residual SD on the model scale.
+  Requesting `type = "pearson"` with `scale = "natural"` falls back to
+  `type = "response"` with an informational message because a
+  response-scale residual SD is not identified for the exponential/zben
+  variants without a separate variance assumption.
+- [`vcov.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_hurdle.md)
+  returns the joint fixed-effect VCOV with row/column names prefixed by
+  component (`zero_probability.<term>`, `consumption.<term>`,
+  `variance.<term>`) so downstream tools can index by component without
+  an ad-hoc string match.
+- `fitted.beezdemand_hurdle(marginal = TRUE)` (default) returns marginal
+  expected consumption `P(y > 0) * E(y | y > 0)` (the `.fitted` column
+  of `predict(fit, type = "demand")`); `marginal = FALSE` returns the
+  conditional-on-positive expectation.
+- [`coef.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_tmb.md)
+  gained a forward-compatible `type = "internal"` alias that returns the
+  optimizer’s flat parameterization (current default behavior). This
+  preserves the numeric-vector escape hatch consumed by
+  [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html),
+  `multcomp::glht`, and similar tooling across the planned
+  [`coef()`](https://rdrr.io/r/stats/coef.html) default change to a
+  per-subject tibble.
+- [`augment.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_tmb.md)
+  was refactored to share an internal `.tmb_fitted_resid()` helper with
+  the new [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) methods,
+  eliminating the duplicate predict() call and guaranteeing the three
+  accessors cannot drift apart on scale convention. Output is
+  bit-identical to the previous implementation.
+- Does **not** automatically unlock `parameters::standard_error` (needs
+  [`insight::get_parameters`](https://easystats.github.io/insight/reference/get_parameters.html)
+  class-aware dispatch), `DHARMa::simulateResiduals` (needs a
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) method), or
+  [`performance::check_residuals`](https://easystats.github.io/performance/reference/check_residuals.html)
+  (needs class-specific dispatch). The explicit numeric-vector forms of
+  [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html) and
+  `multcomp::glht` are unlocked when the caller pre-extracts
+  `coef(fit, type = "internal")`.
+
+### Universal-accessor parity for hurdle fits (TICKET-027)
+
+- Added
+  [`nobs.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/nobs.beezdemand_hurdle.md)
+  for universal-accessor parity with `nobs.beezdemand_tmb()` and the
+  cross-price classes. `broom::glance(fit)$nobs` and `BIC(fit)` were
+  already correct via their own paths (`param_info$n_obs` and the `nobs`
+  attribute on [`logLik()`](https://rdrr.io/r/stats/logLik.html),
+  respectively); this method closes the gap for any caller that consumes
+  [`nobs()`](https://rdrr.io/r/stats/nobs.html) directly.
+
+### Initial 0.3.0 features (TMB mixed-effects modeling tier)
+
+These sections capture the original 0.3.0 release scope (TMB
+mixed-effects modeling tier, hurdle improvements, bug fixes, quality /
+tooling). The TICKET-011 phases above were added under the same 0.3.0
+development cycle.
 
 #### TMB mixed-effects modeling tier
 
@@ -245,7 +478,7 @@ Features for orientation.
   output to a single parameter’s columns for easier pivoting and
   plotting.
 
-### Bug Fixes
+### Initial 0.3.0 bug fixes
 
 - [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
   now drops rows with `NA` values in any modeling column (`id`, price,
@@ -336,7 +569,7 @@ Features for orientation.
 - Comprehensive package audit fixes — boundary detection, data
   validation, heuristic improvements (commit `60b13a2`).
 
-### Quality / Tooling
+### Initial 0.3.0 quality / tooling
 
 - Bare [`stop()`](https://rdrr.io/r/base/stop.html) /
   [`warning()`](https://rdrr.io/r/base/warning.html) /

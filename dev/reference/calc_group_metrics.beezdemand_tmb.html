@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
-<span><span class="fu"><a href="calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">object</span>, at <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -74,6 +74,18 @@
 <dd><p>A <code>beezdemand_tmb</code> object.</p></dd>
 
 
+<dt id="arg-at">at<a class="anchor" aria-label="anchor" href="#arg-at"></a></dt>
+<dd><p>Named list of factor-level filters or continuous-covariate
+value overrides (e.g. <code>list(condition = "C1", FTND_z = 0.5)</code>).
+When <code>NULL</code> (default), continuous covariates are evaluated at their
+training mean and factors are marginalized across observed levels
+(equal weights). When supplied, conditions the parameter EMMs to the
+specified factor levels and/or covariate values before deriving
+Pmax/Omax. Same shape as the <code>at</code> argument of
+<code><a href="get_demand_param_emms.beezdemand_tmb.html">get_demand_param_emms.beezdemand_tmb</a></code> and
+<code><a href="get_demand_comparisons.beezdemand_tmb.html">get_demand_comparisons.beezdemand_tmb</a></code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments (currently unused).</p></dd>
 
@@ -81,20 +93,32 @@
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with <code>Pmax</code>, <code>Omax</code>, <code>Qmax</code>, <code>elasticity_at_pmax</code>,
-<code>method</code>, and (for covariate-adjusted fits) <code>conditioned_on</code>
-describing the reference point used.</p>
+<code>method</code>, and <code>conditioned_on</code> describing the reference point used.
+The <code>conditioned_on</code> field reports the actual conditioning applied
+(covariate values used, factor treatment per factor) so programmatic
+consumers do not have to re-derive it.</p>
     </div>
     <div class="section level2">
-    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>For fits that include <code>continuous_covariates</code>, the returned
-metrics are computed from the intercept-only coefficients –
-i.e., the curve at every covariate set to 0 – not at the training
-mean or any other defensible population reference. A warning is
-emitted and the conditioning point is reported in
-<code>conditioned_on</code>. Marginalization (or explicit <code>at</code> conditioning)
-is planned for TICKET-011 Phase 5; the warn-and-label behavior
-here mirrors the warning convention used by
-<code>predict(type = "demand")</code>.</p>
+    <h2 id="marginalization-order">Marginalization order<a class="anchor" aria-label="anchor" href="#marginalization-order"></a></h2>
+
+
+<p>For derived metrics (Pmax/Omax/Qmax) that depend nonlinearly on <code>Q0</code>
+and <code>alpha</code> jointly, this function marginalizes parameters first then
+derives metrics:</p><ol><li><p>Compute log-Q0 and log-alpha EMMs at each cell of the reference
+grid produced by <code>.tmb_build_emm_ref_grid()</code>.</p></li>
+<li><p>Marginalize each parameter across factor cells with equal
+weights (matches the emmeans default).</p></li>
+<li><p>Derive Pmax/Omax/Qmax from the marginalized log-parameters at
+the user-supplied (or training-mean default) covariate point.</p></li>
+</ol><p>This is "metrics evaluated at the average parameter values," NOT
+"average metrics across cells" – the two answers differ for nonlinear
+transforms. The convention matches the parameter-level marginalization
+used by <code><a href="get_demand_param_emms.html">get_demand_param_emms()</a></code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="fit_demand_tmb.html">fit_demand_tmb</a></code>,
+<code><a href="get_demand_param_emms.beezdemand_tmb.html">get_demand_param_emms.beezdemand_tmb</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -105,20 +129,16 @@ here mirrors the warning convention used by
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).</span>
 <span class="r-in"><span><span class="fu"><a href="calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   11.23768 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 11.23768</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Omax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   23.89412 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 23.89412</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Qmax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  beta_q0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2.126251 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.126251</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $elasticity_at_pmax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> beta_alpha </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         -1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "analytic_lambert_w"</span>
@@ -126,6 +146,8 @@ here mirrors the warning convention used by
 <span class="r-out co"><span class="r-pr">#&gt;</span> $conditioned_on</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="co"># Conditioned at a specific covariate value:</span></span></span>
+<span class="r-in"><span><span class="co"># calc_group_metrics(fit_with_cov, at = list(FTND_z = 1))</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

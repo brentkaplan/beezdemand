@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-05-03</h4>
+            <h4 data-toc-skip class="date">2026-05-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -371,13 +371,13 @@ intercept on <span class="math inline">Q_0</span> only; <span class="math inline
 (<span class="math inline">Q_0</span>) and elasticity (<span class="math inline">\alpha</span>).</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id        b_i         c_i</span></span>
-<span><span class="co">#&gt; 1 16 -0.8553425  0.38606925</span></span>
-<span><span class="co">#&gt; 2 24  0.0892061 -0.04866633</span></span>
-<span><span class="co">#&gt; 3 33  0.6114842 -0.35230990</span></span>
-<span><span class="co">#&gt; 4 40  0.1527007  0.50021504</span></span>
-<span><span class="co">#&gt; 5 42  0.7378500 -0.89299758</span></span>
-<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468</span></span></code></pre></div>
+<span><span class="co">#&gt;   id        b_i         c_i q0_(Intercept) alpha_(Intercept)</span></span>
+<span><span class="co">#&gt; 1 16 -0.8553425  0.38606925     -0.8553425        0.38606925</span></span>
+<span><span class="co">#&gt; 2 24  0.0892061 -0.04866633      0.0892061       -0.04866633</span></span>
+<span><span class="co">#&gt; 3 33  0.6114842 -0.35230990      0.6114842       -0.35230990</span></span>
+<span><span class="co">#&gt; 4 40  0.1527007  0.50021504      0.1527007        0.50021504</span></span>
+<span><span class="co">#&gt; 5 42  0.7378500 -0.89299758      0.7378500       -0.89299758</span></span>
+<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468     -0.2956502        0.40088468</span></span></code></pre></div>
 <p>The <code>b_i</code> column is the random deviation on log(<span class="math inline">Q_0</span>) and <code>c_i</code> is the random
 deviation on log(<span class="math inline">\alpha</span>) for each
 subject.</p>
@@ -548,7 +548,7 @@ tiers.</p>
 <span>    Persistence_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">Persistence</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt;   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd</span></span>
-<span><span class="co">#&gt; 1   7.050819e-17     -3.85976e-17            1      0.8497968</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   7.065932e-18    -2.846441e-18            1      0.8497968</span></span></code></pre></div>
 <p>By construction, both factors are sample-standardized (mean 0, SD 1
 within the fitted dataset). For cross-sample comparisons, supply
 external <code>basis_means</code> and <code>basis_sds</code> so the
@@ -586,10 +586,37 @@ intervals:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> rho_raw            -<span style="color: #BB0000;">0.481</span>  -<span style="color: #BB0000;">0.738</span>     -<span style="color: #BB0000;">0.225</span>   0.95</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="variance-covariance-and-the-delta-method">Variance-Covariance and the Delta Method<a class="anchor" aria-label="anchor" href="#variance-covariance-and-the-delta-method"></a>
+</h3>
+<p><code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> returns the fixed-effect variance-covariance
+matrix from the TMB sdreport — the inverse of the negative Hessian at
+the MLE, restricted to fixed effects after Laplace-marginalizing the
+random effects. Combined with the optimizer’s internal parameter vector
+(<code>coef(fit, type = "internal")</code>), it lets you apply the delta
+method to any nonlinear function of the parameters via
+<code><a href="https://rdrr.io/pkg/car/man/deltaMethod.html" class="external-link">car::deltaMethod</a></code>. Pass the parameter vector explicitly so
+the call is stable across the planned <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> default change
+in a future release.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"internal"</span><span class="op">)</span></span>
+<span><span class="fu">car</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/car/man/deltaMethod.html" class="external-link">deltaMethod</a></span><span class="op">(</span></span>
+<span>  <span class="va">beta</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">beta</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="st">" * 1"</span><span class="op">)</span>,</span>
+<span>  vcov. <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt;             Estimate       SE    2.5 % 97.5 %</span></span>
+<span><span class="co">#&gt; beta_q0 * 1 1.694405 0.076621 1.544230 1.8446</span></span></code></pre></div>
+<p><code>fitted(fit)</code> and <code>residuals(fit)</code> are also
+exposed as direct accessors, matching the model-scale convention used by
+<code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">broom::augment()</a></code> (log scale for <code>"exponential"</code>,
+natural/LL4 scale for others). Pass <code>scale = "natural"</code> to
+back-transform.</p>
+</div>
+<div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
 </h3>
 <p>Three prediction types are available:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fitted values for observed data</span></span>
 <span><span class="va">pred_resp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_resp</span><span class="op">)</span></span>
@@ -602,7 +629,7 @@ intervals:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 16    Male      30      0         1        1  1        2   0.720</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 16    Male      30      0         1        1  1.5      2   0.662</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 16    Male      30      0         1        1  2        2   0.605</span></span></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Population demand curve at specific prices</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"demand"</span>, prices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 2</span></span></span>
@@ -615,7 +642,7 @@ intervals:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   5     0.855</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  10     0.233</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>  20    -<span style="color: #BB0000;">0.568</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Subject-level parameter estimates (same as get_subject_pars)</span></span>
 <span><span class="va">pred_pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_pars</span><span class="op">)</span></span>
@@ -632,23 +659,19 @@ intervals:</p>
 <div class="section level3">
 <h3 id="population-metrics">Population Metrics<a class="anchor" aria-label="anchor" href="#population-metrics"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $Pmax</span></span>
-<span><span class="co">#&gt; beta_alpha </span></span>
-<span><span class="co">#&gt;    8.65068 </span></span>
+<span><span class="co">#&gt; [1] 8.65068</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $Omax</span></span>
-<span><span class="co">#&gt; beta_alpha </span></span>
-<span><span class="co">#&gt;   12.68535 </span></span>
+<span><span class="co">#&gt; [1] 12.68535</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $Qmax</span></span>
-<span><span class="co">#&gt;  beta_q0 </span></span>
-<span><span class="co">#&gt; 1.466399 </span></span>
+<span><span class="co">#&gt; [1] 1.466399</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $elasticity_at_pmax</span></span>
-<span><span class="co">#&gt; beta_alpha </span></span>
-<span><span class="co">#&gt;         -1 </span></span>
+<span><span class="co">#&gt; [1] -1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $method</span></span>
 <span><span class="co">#&gt; [1] "analytic_lambert_w"</span></span>
@@ -659,21 +682,21 @@ intervals:</p>
 <div class="section level3">
 <h3 id="visualization">Visualization<a class="anchor" aria-label="anchor" href="#visualization"></a>
 </h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"demand"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/plot-demand-1.png" class="r-plt" alt="Population-level demand curve with confidence band." width="1008"><p class="caption">
 Population-level demand curve with confidence band.
 </p>
 </div>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"individual"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/plot-individual-1.png" class="r-plt" alt="Individual demand curves for a random sample of subjects." width="1008"><p class="caption">
 Individual demand curves for a random sample of subjects.
 </p>
 </div>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/plot-parameters-1.png" class="r-plt" alt="Distribution of subject-specific demand parameters." width="1008"><p class="caption">
@@ -694,10 +717,10 @@ confidence intervals derived from the Hessian should be treated as
 unreliable; the warning is also surfaced as a note in
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> output and as a <code>hessian_warning</code>
 attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_2re</span><span class="op">$</span><span class="va">hessian_pd</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Model health check — convergence, variance components, residual stats,</span></span>
 <span><span class="co"># and (since 0.3.0) Hessian positive-definiteness.</span></span>
 <span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
@@ -725,7 +748,7 @@ attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" clas
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Recommendations:</span></span>
 <span><span class="co">#&gt;   - Investigate outlying observations</span></span></code></pre></div>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Augment with fitted values and residuals</span></span>
 <span><span class="va">aug</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">aug</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"x"</span>, <span class="st">"y"</span>, <span class="st">".fitted"</span>, <span class="st">".resid"</span>, <span class="st">".std_resid"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
@@ -738,7 +761,7 @@ attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" clas
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 16     1        2   0.720 -<span style="color: #BB0000;">0.026</span><span style="color: #BB0000; text-decoration: underline;">6</span>     -<span style="color: #BB0000;">0.118</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 16     1.5      2   0.662  0.031<span style="text-decoration: underline;">5</span>      0.140</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 16     2        2   0.605  0.088<span style="text-decoration: underline;">4</span>      0.392</span></span></code></pre></div>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Q-Q plot of random effects</span></span>
 <span><span class="fu"><a href="../reference/plot_qq.html">plot_qq</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -746,7 +769,7 @@ attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" clas
 Q-Q plots of subject-level random effects.
 </p>
 </div>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Random effects diagnostic panels</span></span>
 <span><span class="fu"><a href="../reference/plot_re_diagnostics.html">plot_re_diagnostics</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -754,7 +777,7 @@ Q-Q plots of subject-level random effects.
 Random effects diagnostic panels.
 </p>
 </div>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Residual plot — standard in every modeling workflow</span></span>
 <span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"fitted"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -789,7 +812,7 @@ standard <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="ext
 </h3>
 <p>The expenditure curve shows total spending (<span class="math inline">P \times Q</span>) as a function of price, with
 vertical and horizontal reference lines at <span class="math inline">P_{max}</span> and <span class="math inline">O_{max}</span>:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_expenditure.html">plot_expenditure</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-expenditure-1.png" class="r-plt" alt="Expenditure curve with Pmax and Omax reference lines." width="1008"><p class="caption">
@@ -799,7 +822,7 @@ Expenditure curve with Pmax and Omax reference lines.
 <p>The elasticity curve shows how responsive demand is to price changes.
 The dashed line at <span class="math inline">-1</span> marks unit
 elasticity — prices above this threshold produce elastic demand:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_elasticity.html">plot_elasticity</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-elasticity-1.png" class="r-plt" alt="Own-price elasticity curve with unit elasticity reference." width="1008"><p class="caption">
@@ -814,7 +837,7 @@ Own-price elasticity curve with unit elasticity reference.
 over a grid of <span class="math inline">(Q_0, \alpha)</span> values,
 with the MLE marked. This helps assess identifiability — a sharp,
 well-defined minimum indicates good identification:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_loss_surface.html">plot_loss_surface</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-loss-surface-1.png" class="r-plt" alt="2D loss surface (SSR) over the Q0-alpha parameter space." width="1008"><p class="caption">
@@ -823,7 +846,7 @@ well-defined minimum indicates good identification:</p>
 </div>
 <p>Profile plots show 1D slices through the loss surface, fixing one
 parameter at its MLE and varying the other:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_loss_profile.html">plot_loss_profile</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-loss-profile-1.png" class="r-plt" alt="1D loss profiles for Q0 and alpha." width="1008"><p class="caption">
@@ -836,7 +859,7 @@ parameter at its MLE and varying the other:</p>
 </h3>
 <p>Visualize the distribution of subject-level <span class="math inline">\alpha</span> estimates to assess heterogeneity in
 price sensitivity:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_alpha_distribution.html">plot_alpha_distribution</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-alpha-dist-1.png" class="r-plt" alt="Distribution of subject-level alpha (elasticity) estimates." width="1008"><p class="caption">
@@ -849,7 +872,7 @@ Distribution of subject-level alpha (elasticity) estimates.
 </h3>
 <p>Overlay demand curves from multiple models to visualize how different
 specifications affect the predicted demand function:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_demand_overlay.html">plot_demand_overlay</a></span><span class="op">(</span><span class="va">fit_1re</span>, <span class="va">fit_2re</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1-RE"</span>, <span class="st">"2-RE"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-overlay-1.png" class="r-plt" alt="Demand curves from 1-RE and 2-RE models overlaid." width="1008"><p class="caption">
@@ -857,7 +880,7 @@ Demand curves from 1-RE and 2-RE models overlaid.
 </p>
 </div>
 <p>Compare parameter distributions side by side:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_model_comparison.html">plot_model_comparison</a></span><span class="op">(</span><span class="va">fit_1re</span>, <span class="va">fit_2re</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1-RE"</span>, <span class="st">"2-RE"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/viz-model-comparison-1.png" class="r-plt" alt="Side-by-side parameter estimates from 1-RE and 2-RE models." width="1008"><p class="caption">
@@ -873,7 +896,7 @@ Side-by-side parameter estimates from 1-RE and 2-RE models.
 variables via the <code>factors</code> argument. This adds fixed effects
 to the design matrices for both <span class="math inline">Q_0</span> and
 <span class="math inline">\alpha</span>.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter to Male/Female for a clean two-level comparison</span></span>
 <span><span class="va">dat_mf</span> <span class="op">&lt;-</span> <span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">gender</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Male"</span>, <span class="st">"Female"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -913,14 +936,14 @@ to the design matrices for both <span class="math inline">Q_0</span> and
 <div class="section level3">
 <h3 id="estimated-marginal-means">Estimated Marginal Means<a class="anchor" aria-label="anchor" href="#estimated-marginal-means"></a>
 </h3>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 6</span></span></span>
 <span><span class="co">#&gt;   level         estimate estimate_log std.error conf.low conf.high</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Male       6.07         1.80     0.115     4.85      7.60</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> gender=Female     5.00         1.61     0.102     4.10      6.10</span></span></code></pre></div>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 6</span></span></span>
 <span><span class="co">#&gt;   level         estimate estimate_log std.error conf.low conf.high</span></span>
@@ -935,14 +958,14 @@ represent the population-average <span class="math inline">Q_0</span> or
 <div class="section level3">
 <h3 id="pairwise-comparisons">Pairwise Comparisons<a class="anchor" aria-label="anchor" href="#pairwise-comparisons"></a>
 </h3>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
 <span><span class="co">#&gt;   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Ma…        0.194           1.21     0.153      1.27       0.205   0.205</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: conf.low &lt;dbl&gt;, conf.high &lt;dbl&gt;</span></span></span></code></pre></div>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
 <span><span class="co">#&gt;   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value</span></span>
@@ -963,7 +986,7 @@ include them.</em></p>
 </h2>
 <p>Use <code><a href="../reference/compare_models.html">compare_models()</a></code> to compare nested TMB models via
 likelihood ratio test, AIC, and BIC:</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_models.html">compare_models</a></span><span class="op">(</span><span class="va">fit_1re</span>, <span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model Comparison</span></span>
@@ -989,6 +1012,50 @@ likelihood ratio test, AIC, and BIC:</p>
 data with the same equation and response scale. Models with different
 equations (e.g., exponential vs exponentiated) model different responses
 and cannot be compared via AIC.</p>
+<div class="section level3">
+<h3 id="building-nested-models-with-update">Building Nested Models with <code>update()</code><a class="anchor" aria-label="anchor" href="#building-nested-models-with-update"></a>
+</h3>
+<p><code>update(fit, ...)</code> re-fits with named arguments
+substituted into the original <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> call. Use it
+to build a candidate fit and drop or add factors / covariates / random
+effects without typing the full fit call again:</p>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Drop the gender factor to test its joint significance:</span></span>
+<span><span class="va">fit_gender_null</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">fit_gender</span>, factors <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/compare_models.html">compare_models</a></span><span class="op">(</span><span class="va">fit_gender_null</span>, <span class="va">fit_gender</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Model Comparison</span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;    Model          Class   Backend nobs df    logLik      AIC      BIC delta_AIC</span></span>
+<span><span class="co">#&gt;  Model_1 beezdemand_tmb TMB_mixed 1131  7 -268.5364 551.0729 586.2889    0.0000</span></span>
+<span><span class="co">#&gt;  Model_2 beezdemand_tmb TMB_mixed 1131  9 -267.3790 552.7580 598.0357    1.6851</span></span>
+<span><span class="co">#&gt;  delta_BIC</span></span>
+<span><span class="co">#&gt;     0.0000</span></span>
+<span><span class="co">#&gt;    11.7468</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Best model by BIC: Model_1 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Likelihood Ratio Tests:</span></span>
+<span><span class="co">#&gt; ---------------------------------------- </span></span>
+<span><span class="co">#&gt;          Comparison LR_stat df p_value</span></span>
+<span><span class="co">#&gt;  Model_1 vs Model_2  2.3149  2   0.314</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Notes:</span></span>
+<span><span class="co">#&gt;   - LRT nesting assumption not verified.</span></span></code></pre></div>
+<p><code>evaluate = FALSE</code> returns the unevaluated call (for
+inspection) instead of re-fitting, matching the convention of
+<code><a href="https://rdrr.io/r/stats/update.html" class="external-link">stats::update.default</a></code>.</p>
+<p><code>formula(fit)</code> and <code>model.matrix(fit)</code> round
+out the introspection API. <code>formula(fit)</code> returns a named
+list of one-sided formulas for <code>Q0</code> and <code>alpha</code>
+plus the random-effect spec; <code>model.matrix(fit)</code> returns the
+four design matrices the TMB template consumed (<code>X_q0</code>,
+<code>X_alpha</code>, <code>Z_q0</code>, <code>Z_alpha</code>) — a named
+list rather than the single matrix <code>lm</code> or <code>lme4</code>
+return, because the TMB tier truly has two fixed-effect linear
+predictors.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="convergence-tips">Convergence Tips<a class="anchor" aria-label="anchor" href="#convergence-tips"></a>
@@ -1043,7 +1110,7 @@ and cannot be compared via AIC.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Switch optimizer</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
 <span>  <span class="va">dat</span>, equation <span class="op">=</span> <span class="st">"exponential"</span>,</span>

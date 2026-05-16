@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
-<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, expanded <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -74,13 +74,42 @@
 <dd><p>A <code>beezdemand_tmb</code> object.</p></dd>
 
 
+<dt id="arg-expanded">expanded<a class="anchor" aria-label="anchor" href="#arg-expanded"></a></dt>
+<dd><p>Logical. When <code>FALSE</code> (default) returns the
+wide one-row-per-subject table. When <code>TRUE</code>, returns a long
+table with one row per (subject, within-subject-factor-level)
+combination, with model-derived per-cell <code>Q0</code>, <code>alpha</code>,
+<code>Pmax</code>, and <code>Omax</code>. Use this for fits where a within-
+subject factor appears in <code>factors</code> or in
+<code>random_effects</code> (e.g. multi-block <code>pdBlocked</code> specs);
+the wide default returns <code>NA</code> in those columns because no
+single subject-level value is well-defined.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments (currently unused).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with columns: id, b_i, c_i (if 2 RE), Q0, alpha, Pmax, Omax.</p>
+    <p>When <code>expanded = FALSE</code>: data frame with columns
+<code>id</code>, <code>b_i</code>, <code>c_i</code> (if 2 RE), <code>Q0</code>,
+<code>alpha</code>, <code>Pmax</code>, <code>Omax</code>. When <code>expanded = TRUE</code>:
+data frame with the within-subject factor columns added, one row per
+(subject, factor-level) combination.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="per-block-random-effect-matrices">Per-block random-effect matrices<a class="anchor" aria-label="anchor" href="#per-block-random-effect-matrices"></a></h2>
+
+
+<p>For factor-expanded or multi-block fits, the wide table's
+<code>b_i</code> / <code>c_i</code> columns hold the first RE column from each
+block (intercept slot for the M1 baseline block, for example) for
+backward compatibility with downstream consumers. Power users who
+need the full per-block RE structure can access
+<code>attr(subject_pars, "re_q0_mat")</code> and
+<code>attr(subject_pars, "re_alpha_mat")</code> as
+<code>n_subjects x re_dim</code> matrices ordered by block.</p>
     </div>
 
     <div class="section level2">

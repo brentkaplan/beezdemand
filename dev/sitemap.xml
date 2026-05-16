@@ -14,6 +14,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/model-selection.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/authors.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/index.html</loc></url>
@@ -113,7 +114,6 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_backtransform.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_block_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_design_matrices.html</loc></url>
-<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_emm_ref_grid.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_predicted_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_term_names.html</loc></url>
@@ -136,11 +136,15 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_hurdle.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixed-demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_nlme.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.cp_model_lmer.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/format_param_name.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/formula.beezdemand_hurdle.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/formula.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/get_canonical_metric.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/get_canonical_param.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.html</loc></url>
@@ -176,7 +180,10 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/ll4_inv.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/logLik.beezdemand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/lowNicClean.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/model.matrix.beezdemand_hurdle.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/model.matrix.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/new_beezdemand_systematicity.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/nobs.beezdemand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lm.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lmer.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_nls.html</loc></url>
@@ -244,6 +251,8 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/ranef.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/ranef.cp_model_lmer.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/reexports.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/residuals.beezdemand_hurdle.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/residuals.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/run_hurdle_monte_carlo.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/scale_color_beezdemand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/scale_fill_beezdemand.html</loc></url>
@@ -271,10 +280,13 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/tidy.cp_model_lm.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/tidy.cp_model_lmer.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/tidy.cp_model_nls.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/update.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/validate_collapse_levels.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/validate_cp_data.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/validate_demand_data.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/validate_hurdle_data.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/validate_param_scale.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_hurdle.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_tmb.html</loc></url>
 </urlset>
 

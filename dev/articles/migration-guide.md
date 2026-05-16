@@ -519,7 +519,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.1      beezdemand_0.3.0
+#> [1] dplyr_1.2.1           beezdemand_0.3.0.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
@@ -538,7 +538,7 @@ sessionInfo()
 #> [40] digest_0.6.39       performance_0.16.0  mvtnorm_1.3-7      
 #> [43] purrr_1.2.2         splines_4.6.0       fastmap_1.2.0      
 #> [46] grid_4.6.0          cli_3.6.6           magrittr_2.0.5     
-#> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.12       
+#> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.13       
 #> [52] withr_3.0.2         scales_1.4.0        backports_1.5.1    
 #> [55] estimability_1.5.1  rmarkdown_2.31      emmeans_2.0.3      
 #> [58] otel_0.2.0          lme4_2.0-1          ragg_1.5.2         

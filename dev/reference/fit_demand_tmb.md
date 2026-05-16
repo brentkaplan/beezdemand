@@ -114,14 +114,12 @@ fit_demand_tmb(
   list of `pdMat` / [`nlme::pdBlocked`](https://rdrr.io/pkg/nlme/man/pdBlocked.html)
 
   :   Multi-block covariance structures like
-      `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`. Parsed, but
-      fitting is deferred to Phase 3 of TICKET-011 – use
-      [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
-      for multi-block fits in the meantime.
+      `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`. Fully
+      supported via TICKET-011 Phase 3.
 
   character vector (deprecated)
 
-  :   `c("q0", "alpha")` or `"q0"`. Soft-deprecated in 0.4.0; emits a
+  :   `c("q0", "alpha")` or `"q0"`. Soft-deprecated in 0.3.0; emits a
       [`lifecycle::deprecate_soft()`](https://lifecycle.r-lib.org/reference/deprecate_soft.html)
       message. Translated internally to the formula `Q0 + alpha ~ 1` or
       `Q0 ~ 1`.
@@ -400,7 +398,7 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 171.12 (start set 2 of 3)
+#>   Multi-start: best NLL = 171.11 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
 #> Warning: NaNs produced

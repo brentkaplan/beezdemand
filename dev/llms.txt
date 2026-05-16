@@ -205,12 +205,34 @@ S3 methods for extracting information from fitted models.
   : BIC for Hurdle Demand Model
 - [`logLik(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/logLik.beezdemand_hurdle.md)
   : Extract Log-Likelihood from Hurdle Demand Model
+- [`nobs(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.beezdemand_hurdle.md)
+  : Sample size for a beezdemand_hurdle fit
 - [`nobs(`*`<cp_model_lm>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lm.md)
   : Number of Observations in a Cross-Price Demand Model (Linear)
 - [`nobs(`*`<cp_model_lmer>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_lmer.md)
   : Number of Observations in a Cross-Price Demand Model (Mixed-Effects)
 - [`nobs(`*`<cp_model_nls>`*`)`](https://brentkaplan.github.io/beezdemand/reference/nobs.cp_model_nls.md)
   : Number of Observations in a Cross-Price Demand Model (Nonlinear)
+- [`vcov(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_hurdle.md)
+  : Variance-covariance matrix for a beezdemand_hurdle fit
+- [`vcov(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_tmb.md)
+  : Variance-covariance matrix for a beezdemand_tmb fit
+- [`fitted(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_hurdle.md)
+  : Fitted values for a beezdemand_hurdle fit
+- [`fitted(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_tmb.md)
+  : Fitted values for a beezdemand_tmb fit
+- [`residuals(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/residuals.beezdemand_hurdle.md)
+  : Residuals for a beezdemand_hurdle fit
+- [`residuals(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/residuals.beezdemand_tmb.md)
+  : Residuals for a beezdemand_tmb fit
+- [`formula(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/formula.beezdemand_hurdle.md)
+  : Formula for a beezdemand_hurdle fit
+- [`formula(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/formula.beezdemand_tmb.md)
+  : Formula for a beezdemand_tmb fit
+- [`model.matrix(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/model.matrix.beezdemand_hurdle.md)
+  : Design matrices for a beezdemand_hurdle fit
+- [`model.matrix(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/model.matrix.beezdemand_tmb.md)
+  : Design matrices for a beezdemand_tmb fit
 - [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
   : Get Subject-Specific Parameters
 - [`get_subject_pars(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md)
@@ -314,6 +336,8 @@ Functions for comparing models.
   : ANOVA Method for Hurdle Demand Models
 - [`anova(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_nlme.md)
   : ANOVA Method for NLME Demand Models
+- [`update(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/update.beezdemand_tmb.md)
+  : Update a beezdemand_tmb fit
 - [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md)
   : ExtraF
 
@@ -620,5 +644,7 @@ versions.
   \`beezdemand\`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
 - [Choosing the Right Demand
   Model](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+- [TMB Advanced Random-Effects
+  Structures](https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.md):
 - [TMB Mixed-Effects Demand
   Models](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md):

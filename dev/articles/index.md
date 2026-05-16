@@ -22,5 +22,7 @@
   \`beezdemand\`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
 - [Choosing the Right Demand
   Model](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+- [TMB Advanced Random-Effects
+  Structures](https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.md):
 - [TMB Mixed-Effects Demand
   Models](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md):

@@ -11,7 +11,7 @@ reliable convergence where traditional NLME approaches fail."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,12 +169,11 @@ objects are accepted and their covariance class is honored
 <dt>list of <code>pdMat</code> / <code><a href="https://rdrr.io/pkg/nlme/man/pdBlocked.html" class="external-link">nlme::pdBlocked</a></code></dt>
 <dd><p>Multi-block covariance
 structures like <code>list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))</code>.
-Parsed, but fitting is deferred to Phase 3 of TICKET-011 –
-use <code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> for multi-block fits in the meantime.</p></dd>
+Fully supported via TICKET-011 Phase 3.</p></dd>
 
 <dt>character vector (deprecated)</dt>
 <dd><p><code>c("q0", "alpha")</code> or <code>"q0"</code>.
-Soft-deprecated in 0.4.0; emits a <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_soft()</a></code>
+Soft-deprecated in 0.3.0; emits a <code><a href="https://lifecycle.r-lib.org/reference/deprecate_soft.html" class="external-link">lifecycle::deprecate_soft()</a></code>
 message. Translated internally to the formula <code>Q0 + alpha ~ 1</code>
 or <code>Q0 ~ 1</code>.</p></dd>
 
@@ -429,7 +428,7 @@ the transformation).</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 171.12 (start set 2 of 3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 171.11 (start set 2 of 3)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   WARNING: Did not converge (code 1: false convergence (8))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
