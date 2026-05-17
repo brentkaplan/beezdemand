@@ -367,6 +367,43 @@ pred_pars <- predict(fit_2re, type = "parameters")
 head(pred_pars)
 ```
 
+For `type = "response"`, the `level` argument controls whether predictions
+condition on subject random effects. `level = "subject"` (the default)
+conditions on each subject's random effects and needs an `id` column in
+`newdata`; `level = "population"` sets the random effects to zero and needs
+no `id`. Requesting both at once returns `predict.fixed` (population) and
+`predict.id` (subject) side by side, matching the
+`nlme::predict.lme(level = 0:1)` layout so `nlme`-based plotting code runs
+unchanged.
+
+```{r predict-levels}
+px <- exp(seq(log(0.05), log(20), length.out = 60))
+ids_show <- unique(dat$id)[1:6]
+
+pred_levels <- predict(
+  fit_2re,
+  newdata = expand.grid(x = px, id = ids_show),
+  level = c("population", "subject"),
+  scale = "natural"
+)
+head(pred_levels)
+```
+
+The population-mean curve is identical for every subject, so a single
+`predict.fixed` column overlays the per-subject `predict.id` curves.
+
+```{r predict-levels-plot, fig.cap = "Subject-conditional demand curves (grey) around the population-mean curve (dark)."}
+ggplot(pred_levels, aes(x = x)) +
+  geom_line(aes(y = predict.id, group = id), colour = "grey65") +
+  geom_line(
+    data = subset(pred_levels, id == ids_show[1]),
+    aes(y = predict.fixed), colour = "#2c3e50", linewidth = 1.2
+  ) +
+  scale_x_log10() +
+  labs(x = "Price", y = "Predicted consumption") +
+  theme_minimal()
+```
+
 ### Population Metrics
 
 ```{r results-group-metrics}

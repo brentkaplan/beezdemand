@@ -8,6 +8,7 @@
   object,
   newdata = NULL,
   type = c("response", "parameters", "demand"),
+  level = "subject",
   prices = NULL,
   scale = c("model", "natural"),
   correction = TRUE,
@@ -22,6 +23,19 @@
 \item{type}{Character. One of \code{"response"} (fitted values on response scale),
 \code{"parameters"} (subject-specific parameters), or \code{"demand"} (population
 demand curve).}
+
+\item{level}{Character, used when \code{type = "response"}. \code{"subject"}
+(default) conditions on each subject's random effects and requires the
+model's ID column in \code{newdata} (named \code{id} unless a custom \code{id_var} was
+set at fit time); \code{"population"} evaluates at the fixed-effect
+coefficients with all random effects set to zero on the fitting scale
+(the population-mean curve) and does not require the ID column. Pass
+\code{c("population", "subject")} to return both predictions in one call.
+Note that \code{"population"} is the random-effects-at-zero curve, not a
+marginal prediction integrating over the random-effects distribution
+(see Note). Unlike \code{\link[=predict.beezdemand_nlme]{predict.beezdemand_nlme()}}, which forwards the
+\code{nlme}-style numeric \code{level} (\code{0} / \code{1}) to \code{nlme::predict.lme()}, this
+method accepts the character form only; a numeric \code{level} is rejected.}
 
 \item{prices}{Optional numeric vector of prices for population prediction.}
 
@@ -49,9 +63,17 @@ obtain the median prediction. Only affects the \code{"exponential"} equation.}
 \value{
 Depends on \code{type}:
 \itemize{
-\item \code{"response"}: tibble with .fitted column
-\item \code{"parameters"}: tibble of subject-specific parameters
-\item \code{"demand"}: tibble with price and .fitted columns
+\item \code{"response"}, \code{level = "subject"}: tibble of \code{newdata} plus a
+\code{.fitted} column (the historical column name, retained for backward
+compatibility).
+\item \code{"response"}, \code{level = "population"}: tibble of \code{newdata} plus a
+\code{predict.fixed} column.
+\item \code{"response"}, \code{level = c("population", "subject")}: tibble of
+\code{newdata} plus \code{predict.fixed} and \code{predict.id} columns, matching the
+\code{nlme::predict.lme(level = 0:1)} schema so \code{nlme}-based plotting code
+runs unchanged.
+\item \code{"parameters"}: tibble of subject-specific parameters.
+\item \code{"demand"}: tibble with \code{price} and \code{.fitted} columns.
 }
 }
 \description{
@@ -60,17 +82,26 @@ Predict from TMB Mixed-Effects Demand Model
 \note{
 Population-averaged (marginal) predictions integrating over the
 random effects distribution are not yet implemented for this model tier.
-The \code{type = "demand"} prediction uses RE = 0 (population fixed effects
-only). For marginal integration accounting for Jensen's inequality, use
-\code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}} with \code{marginal = TRUE}.
+The \code{type = "demand"} prediction and \code{level = "population"} both use
+RE = 0 (population fixed effects only). For marginal integration
+accounting for Jensen's inequality, use \code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}}
+with \code{marginal = TRUE}.
 }
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 
-# Fitted values
+# Fitted values (subject-conditional -- the default)
 head(predict(fit, type = "response"))
+
+# Population-mean predictions: no `id` column needed in newdata
+nd <- data.frame(x = c(0.01, 1, 5, 10))
+predict(fit, newdata = nd, level = "population")
+
+# Subject-conditional and population side by side in one call
+nd_id <- data.frame(x = c(0.01, 1, 5, 10), id = unique(apt$id)[1])
+predict(fit, newdata = nd_id, level = c("population", "subject"))
 
 # Population demand curve at specific prices
 predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
@@ -79,4 +110,8 @@ predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
 head(predict(fit, type = "parameters"))
 }
 
+}
+\seealso{
+\code{\link[=predict.beezdemand_nlme]{predict.beezdemand_nlme()}} for the \code{nlme}-backed equivalent,
+which uses the numeric \code{level} convention.
 }

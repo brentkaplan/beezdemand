@@ -4,13 +4,17 @@
 \alias{.tmb_build_predicted_pars}
 \title{Rebuild per-row Q0 and alpha from newdata for predict.beezdemand_tmb}
 \usage{
-.tmb_build_predicted_pars(object, newdata)
+.tmb_build_predicted_pars(object, newdata, level = c("subject", "population"))
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} fit.}
 
 \item{newdata}{A data frame with the modeling columns used at fit time
-(\code{id_var}, \code{x_var}, factor columns, continuous covariate columns).}
+(\code{id_var}, \code{x_var}, factor columns, continuous covariate columns).
+The \code{id_var} column is not required when \code{level = "population"}.}
+
+\item{level}{Character, \code{"subject"} (default) adds each subject's
+random-effect deviate; \code{"population"} sets every random effect to zero.}
 }
 \value{
 A list with elements \code{Q0}, \code{alpha}, and \code{log_q0} (each of length
@@ -19,8 +23,9 @@ A list with elements \code{Q0}, \code{alpha}, and \code{log_q0} (each of length
 \description{
 For each row of \code{newdata}, reconstruct the fixed-effect linear predictor
 from the stored formula RHS and beta coefficients, add the subject's
-random-effect deviate (or zero for unknown subjects), and return
-\code{Q0 = exp(eta_q0)} and \code{alpha = exp(eta_alpha)}. This is what makes
-\code{predict()} respect factor and continuous-covariate values in \code{newdata}.
+random-effect deviate (or zero for unknown subjects, or zero throughout
+when \code{level = "population"}), and return \code{Q0 = exp(eta_q0)} and
+\code{alpha = exp(eta_alpha)}. This is what makes \code{predict()} respect factor
+and continuous-covariate values in \code{newdata}.
 }
 \keyword{internal}

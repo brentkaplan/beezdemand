@@ -840,6 +840,18 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #' @param type Character. One of `"response"` (fitted values on response scale),
 #'   `"parameters"` (subject-specific parameters), or `"demand"` (population
 #'   demand curve).
+#' @param level Character, used when `type = "response"`. `"subject"`
+#'   (default) conditions on each subject's random effects and requires the
+#'   model's ID column in `newdata` (named `id` unless a custom `id_var` was
+#'   set at fit time); `"population"` evaluates at the fixed-effect
+#'   coefficients with all random effects set to zero on the fitting scale
+#'   (the population-mean curve) and does not require the ID column. Pass
+#'   `c("population", "subject")` to return both predictions in one call.
+#'   Note that `"population"` is the random-effects-at-zero curve, not a
+#'   marginal prediction integrating over the random-effects distribution
+#'   (see Note). Unlike [predict.beezdemand_nlme()], which forwards the
+#'   `nlme`-style numeric `level` (`0` / `1`) to `nlme::predict.lme()`, this
+#'   method accepts the character form only; a numeric `level` is rejected.
 #' @param prices Optional numeric vector of prices for population prediction.
 #' @param scale Character. Output scale for predictions: `"model"` returns values
 #'   on the model's native scale (e.g., LL4-transformed for zben, log for
@@ -861,23 +873,40 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #' @param ... Additional arguments.
 #'
 #' @return Depends on `type`:
-#'   - `"response"`: tibble with .fitted column
-#'   - `"parameters"`: tibble of subject-specific parameters
-#'   - `"demand"`: tibble with price and .fitted columns
+#'   - `"response"`, `level = "subject"`: tibble of `newdata` plus a
+#'     `.fitted` column (the historical column name, retained for backward
+#'     compatibility).
+#'   - `"response"`, `level = "population"`: tibble of `newdata` plus a
+#'     `predict.fixed` column.
+#'   - `"response"`, `level = c("population", "subject")`: tibble of
+#'     `newdata` plus `predict.fixed` and `predict.id` columns, matching the
+#'     `nlme::predict.lme(level = 0:1)` schema so `nlme`-based plotting code
+#'     runs unchanged.
+#'   - `"parameters"`: tibble of subject-specific parameters.
+#'   - `"demand"`: tibble with `price` and `.fitted` columns.
 #'
 #' @note Population-averaged (marginal) predictions integrating over the
 #'   random effects distribution are not yet implemented for this model tier.
-#'   The `type = "demand"` prediction uses RE = 0 (population fixed effects
-#'   only). For marginal integration accounting for Jensen's inequality, use
-#'   [predict.beezdemand_hurdle()] with `marginal = TRUE`.
+#'   The `type = "demand"` prediction and `level = "population"` both use
+#'   RE = 0 (population fixed effects only). For marginal integration
+#'   accounting for Jensen's inequality, use [predict.beezdemand_hurdle()]
+#'   with `marginal = TRUE`.
 #'
 #' @examples
 #' \donttest{
 #' data(apt)
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #'
-#' # Fitted values
+#' # Fitted values (subject-conditional -- the default)
 #' head(predict(fit, type = "response"))
+#'
+#' # Population-mean predictions: no `id` column needed in newdata
+#' nd <- data.frame(x = c(0.01, 1, 5, 10))
+#' predict(fit, newdata = nd, level = "population")
+#'
+#' # Subject-conditional and population side by side in one call
+#' nd_id <- data.frame(x = c(0.01, 1, 5, 10), id = unique(apt$id)[1])
+#' predict(fit, newdata = nd_id, level = c("population", "subject"))
 #'
 #' # Population demand curve at specific prices
 #' predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
@@ -886,11 +915,14 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #' head(predict(fit, type = "parameters"))
 #' }
 #'
+#' @seealso [predict.beezdemand_nlme()] for the `nlme`-backed equivalent,
+#'   which uses the numeric `level` convention.
 #' @export
 predict.beezdemand_tmb <- function(
   object,
   newdata = NULL,
   type = c("response", "parameters", "demand"),
+  level = "subject",
   prices = NULL,
   scale = c("model", "natural"),
   correction = TRUE,
@@ -898,6 +930,10 @@ predict.beezdemand_tmb <- function(
 ) {
   type <- match.arg(type)
   scale <- match.arg(scale)
+  # `level` accepts one or both of "subject"/"population". A numeric
+  # nlme-style level (0/1) is rejected here by match.arg(); see the @param
+  # note contrasting this with predict.beezdemand_nlme().
+  level <- match.arg(level, c("subject", "population"), several.ok = TRUE)
 
   if (type == "parameters") {
     return(tibble::as_tibble(object$subject_pars))
@@ -976,36 +1012,105 @@ predict.beezdemand_tmb <- function(
     ))
   }
 
-  # type == "response": subject-specific fitted values (vectorized).
-  # Rebuild fixed-effect linear predictors from newdata so that factor and
-  # continuous-covariate values in newdata propagate into Q0 and alpha
-  # (codex Bug 3 fix).
+  # type == "response": fitted values at the requested random-effect
+  # level(s). Fixed-effect linear predictors are rebuilt from newdata so
+  # that factor and continuous-covariate values propagate into Q0 and
+  # alpha (codex Bug 3 fix); see .tmb_build_predicted_pars().
   if (is.null(newdata)) {
     newdata <- object$data
   }
 
-  bp <- .tmb_build_predicted_pars(object, newdata)
-  price_vec <- newdata[[x_var]]
-  k_val <- if (has_k) .tmb_get_k(object) else NA
+  out <- tibble::as_tibble(newdata)
 
-  fitted_vals <- .tmb_predict_equation(
-    price_vec, bp$Q0, bp$alpha,
-    k = k_val, log_q0 = bp$log_q0,
-    equation = equation
-  )
-
-  ## Back-transform to natural scale if requested
-  if (scale == "natural") {
-    se <- exp(coefs[["logsigma_e"]])
-    fitted_vals <- .tmb_backtransform(fitted_vals, equation, sigma_e = se,
-                                      correction = correction)
+  # Single subject path keeps the historical `.fitted` column name so that
+  # existing callers and the cross-tier predict() contract are unchanged.
+  if (identical(level, "subject")) {
+    out$.fitted <- .tmb_predict_subject(object, newdata, scale = scale,
+                                        correction = correction)
+    return(out)
   }
 
-  out <- tibble::as_tibble(newdata)
-  out$.fitted <- fitted_vals
+  # Population-only or both-levels: use the nlme-style `predict.fixed` /
+  # `predict.id` column names so nlme-based plotting code runs unchanged.
+  if ("population" %in% level) {
+    out$predict.fixed <- .tmb_predict_population(
+      object, newdata, scale = scale, correction = correction
+    )
+  }
+  if ("subject" %in% level) {
+    out$predict.id <- .tmb_predict_subject(
+      object, newdata, scale = scale, correction = correction
+    )
+  }
   out
 }
 
+
+#' Subject-conditional response predictions for a TMB demand fit
+#'
+#' Rebuilds per-row Q0 and alpha conditioning on each subject's random
+#' effects, evaluates the demand equation, and (optionally) back-transforms
+#' to the natural scale. Requires an `id` column in `newdata`.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @param newdata Data frame with the model's `id`, price, factor and
+#'   covariate columns.
+#' @param scale Character, `"model"` or `"natural"` (see
+#'   [predict.beezdemand_tmb()]).
+#' @param correction Logical lognormal retransformation flag (see
+#'   [predict.beezdemand_tmb()]).
+#' @return Numeric vector of fitted values, one per row of `newdata`.
+#' @keywords internal
+.tmb_predict_subject <- function(object, newdata, scale = "model",
+                                 correction = TRUE) {
+  bp <- .tmb_build_predicted_pars(object, newdata, level = "subject")
+  .tmb_response_from_pars(object, newdata, bp, scale, correction)
+}
+
+#' Population-mean response predictions for a TMB demand fit
+#'
+#' Rebuilds per-row Q0 and alpha at the fixed-effect coefficients with all
+#' random effects set to zero on the fitting scale (the population mean),
+#' evaluates the demand equation, and (optionally) back-transforms. Does
+#' not require an `id` column in `newdata`.
+#'
+#' @inheritParams .tmb_predict_subject
+#' @return Numeric vector of fitted values, one per row of `newdata`.
+#' @keywords internal
+.tmb_predict_population <- function(object, newdata, scale = "model",
+                                    correction = TRUE) {
+  bp <- .tmb_build_predicted_pars(object, newdata, level = "population")
+  .tmb_response_from_pars(object, newdata, bp, scale, correction)
+}
+
+#' Evaluate the demand equation from rebuilt per-row parameters
+#'
+#' Shared back end for [.tmb_predict_subject()] and
+#' [.tmb_predict_population()]: evaluates the fit's equation at the
+#' supplied per-row parameters and applies the natural-scale
+#' back-transformation when requested.
+#'
+#' @inheritParams .tmb_predict_subject
+#' @param bp List with `Q0`, `alpha`, and `log_q0` (the output of
+#'   [.tmb_build_predicted_pars()]).
+#' @return Numeric vector of fitted values, one per row of `newdata`.
+#' @keywords internal
+.tmb_response_from_pars <- function(object, newdata, bp, scale, correction) {
+  pinfo    <- object$param_info
+  equation <- pinfo$equation
+  has_k    <- isTRUE(pinfo$has_k)
+  k_val    <- if (has_k) .tmb_get_k(object) else NA
+  fitted   <- .tmb_predict_equation(
+    newdata[[pinfo$x_var]], bp$Q0, bp$alpha,
+    k = k_val, log_q0 = bp$log_q0, equation = equation
+  )
+  if (scale == "natural") {
+    se <- exp(object$model$coefficients[["logsigma_e"]])
+    fitted <- .tmb_backtransform(fitted, equation, sigma_e = se,
+                                 correction = correction)
+  }
+  fitted
+}
 
 #' Predict Single Observation for Each Equation
 #'
@@ -1043,24 +1148,29 @@ predict.beezdemand_tmb <- function(
 #'
 #' For each row of `newdata`, reconstruct the fixed-effect linear predictor
 #' from the stored formula RHS and beta coefficients, add the subject's
-#' random-effect deviate (or zero for unknown subjects), and return
-#' `Q0 = exp(eta_q0)` and `alpha = exp(eta_alpha)`. This is what makes
-#' `predict()` respect factor and continuous-covariate values in `newdata`.
+#' random-effect deviate (or zero for unknown subjects, or zero throughout
+#' when `level = "population"`), and return `Q0 = exp(eta_q0)` and
+#' `alpha = exp(eta_alpha)`. This is what makes `predict()` respect factor
+#' and continuous-covariate values in `newdata`.
 #'
 #' @param object A `beezdemand_tmb` fit.
 #' @param newdata A data frame with the modeling columns used at fit time
 #'   (`id_var`, `x_var`, factor columns, continuous covariate columns).
+#'   The `id_var` column is not required when `level = "population"`.
+#' @param level Character, `"subject"` (default) adds each subject's
+#'   random-effect deviate; `"population"` sets every random effect to zero.
 #' @return A list with elements `Q0`, `alpha`, and `log_q0` (each of length
 #'   `nrow(newdata)`).
 #' @keywords internal
-.tmb_build_predicted_pars <- function(object, newdata) {
+.tmb_build_predicted_pars <- function(object, newdata,
+                                      level = c("subject", "population")) {
+  level <- match.arg(level)
   pinfo <- object$param_info
   spars <- object$subject_pars
   coefs <- object$model$coefficients
 
   beta_q0    <- unname(coefs[names(coefs) == "beta_q0"])
   beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
-  n_re       <- pinfo$n_random_effects
 
   # 1. Validate required columns are present. Phase 2 also requires
   # variables that appear only in the RE formula RHS (not in `factors`):
@@ -1075,9 +1185,17 @@ predict.beezdemand_tmb <- function(
     }
     re_rhs_vars_pre <- unique(re_rhs_vars_pre)
   }
-  needed <- unique(c(pinfo$id_var, pinfo$x_var,
-                     pinfo$factors_q0, pinfo$factors_alpha,
-                     pinfo$continuous_covariates, re_rhs_vars_pre))
+  # Population predictions condition on no subject, so the `id` column and
+  # any variables appearing only in the random-effect formula RHS are not
+  # required (the RE block in step 4 is skipped entirely for that level).
+  if (level == "population") {
+    needed <- unique(c(pinfo$x_var, pinfo$factors_q0, pinfo$factors_alpha,
+                       pinfo$continuous_covariates))
+  } else {
+    needed <- unique(c(pinfo$id_var, pinfo$x_var,
+                       pinfo$factors_q0, pinfo$factors_alpha,
+                       pinfo$continuous_covariates, re_rhs_vars_pre))
+  }
   needed <- needed[!is.null(needed) & nzchar(needed)]
   missing_cols <- setdiff(needed, names(newdata))
   if (length(missing_cols) > 0) {
@@ -1159,7 +1277,47 @@ predict.beezdemand_tmb <- function(
   log_q0_fix    <- as.numeric(X_q0_new    %*% beta_q0)
   log_alpha_fix <- as.numeric(X_alpha_new %*% beta_alpha)
 
-  # 4. Add per-subject random-effect deviates (or zero for unknowns).
+  # 4. Random-effect deviates. `level = "population"` sets every random
+  #    effect to zero (so it needs no `id` lookup); `level = "subject"`
+  #    adds each subject's empirical-Bayes deviate via the helper below.
+  if (level == "population") {
+    re_q0_contrib    <- numeric(nrow(newdata))
+    re_alpha_contrib <- numeric(nrow(newdata))
+  } else {
+    re_dev <- .tmb_subject_re_deviates(object, newdata, re_parsed)
+    re_q0_contrib    <- re_dev$re_q0_contrib
+    re_alpha_contrib <- re_dev$re_alpha_contrib
+  }
+
+  log_q0_total    <- log_q0_fix    + re_q0_contrib
+  log_alpha_total <- log_alpha_fix + re_alpha_contrib
+  list(
+    Q0     = exp(log_q0_total),
+    alpha  = exp(log_alpha_total),
+    log_q0 = log_q0_total
+  )
+}
+
+
+#' Per-subject random-effect deviates for predict.beezdemand_tmb
+#'
+#' For each row of `newdata`, returns the random-effect contribution to the
+#' Q0 and alpha linear predictors, looked up by `id` (zero for subjects not
+#' in the fit). Extracted from [.tmb_build_predicted_pars()] so the
+#' population-level prediction path can skip it entirely.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @param newdata A data frame containing the model's `id` column.
+#' @param re_parsed The fit's parsed random-effects specification
+#'   (`object$param_info$random_effects_parsed`); may be `NULL`.
+#' @return A list with `re_q0_contrib` and `re_alpha_contrib`, each a
+#'   numeric vector of length `nrow(newdata)`.
+#' @keywords internal
+.tmb_subject_re_deviates <- function(object, newdata, re_parsed) {
+  pinfo <- object$param_info
+  spars <- object$subject_pars
+  n_re  <- pinfo$n_random_effects
+
   subj_ids <- as.character(newdata[[pinfo$id_var]])
   subj_match <- match(subj_ids, spars$id)
   n_unknown <- sum(is.na(subj_match))
@@ -1206,14 +1364,7 @@ predict.beezdemand_tmb <- function(
       re_alpha_contrib <- ifelse(is.na(subj_match), 0, spars$c_i[subj_match])
     }
   }
-
-  log_q0_total    <- log_q0_fix    + re_q0_contrib
-  log_alpha_total <- log_alpha_fix + re_alpha_contrib
-  list(
-    Q0     = exp(log_q0_total),
-    alpha  = exp(log_alpha_total),
-    log_q0 = log_q0_total
-  )
+  list(re_q0_contrib = re_q0_contrib, re_alpha_contrib = re_alpha_contrib)
 }
 
 
@@ -1926,24 +2077,25 @@ glance.beezdemand_tmb <- function(x, ...) {
 
 
 # Internal: compute fitted values and (response) residuals on a requested
-# scale. Centralizes the scale convention shared by fitted(), residuals(),
-# and augment() so the three accessors cannot drift apart.
+# scale and random-effect level. Centralizes the scale/level conventions
+# shared by fitted(), residuals(), and augment() so the three accessors
+# cannot drift apart.
 .tmb_fitted_resid <- function(x,
                               scale = c("model", "natural"),
                               level = c("subject", "population"),
                               newdata = NULL) {
   scale <- match.arg(scale)
   level <- match.arg(level)
-  # predict.beezdemand_tmb() honors `scale`; `level` is reserved for the
-  # forthcoming TICKET-014 enhancement. The only supported value today is
-  # "subject"; warn and proceed for "population".
-  if (level == "population") {
-    cli::cli_inform(
-      "{.code level = \"population\"} not yet implemented; returning subject-level values (TICKET-014)."
-    )
-  }
   data_used <- if (is.null(newdata)) x$data else newdata
-  pred <- predict(x, newdata = data_used, type = "response", scale = scale)
+  pred <- predict(x, newdata = data_used, type = "response",
+                  level = level, scale = scale)
+  # predict.beezdemand_tmb() names the fitted column `.fitted` for the
+  # single subject path and `predict.fixed` for the population path.
+  fitted_vals <- if (level == "population") {
+    pred$predict.fixed
+  } else {
+    pred$.fitted
+  }
   equation <- x$param_info$equation
   y_var <- x$param_info$y_var
   y_obs <- data_used[[y_var]]
@@ -1955,7 +2107,7 @@ glance.beezdemand_tmb <- function(x, ...) {
     # any equation on the natural scale.
     y_on_scale <- y_obs
   }
-  list(.fitted = pred$.fitted, .resid = y_on_scale - pred$.fitted)
+  list(.fitted = fitted_vals, .resid = y_on_scale - fitted_vals)
 }
 
 
@@ -2036,7 +2188,9 @@ vcov.beezdemand_tmb <- function(object, ...) {
 #'
 #' @param object A \code{beezdemand_tmb} object.
 #' @param scale One of `"model"` (default) or `"natural"`.
-#' @param level Reserved for TICKET-014. Currently `"subject"` only.
+#' @param level One of `"subject"` (default; conditions on the subject
+#'   random effects) or `"population"` (random effects set to zero, giving
+#'   the population-mean values). See [predict.beezdemand_tmb()].
 #' @param ... Unused.
 #' @return Numeric vector of length `nobs(object)`.
 #' @seealso [predict.beezdemand_tmb()], [augment.beezdemand_tmb()],
@@ -2071,7 +2225,9 @@ fitted.beezdemand_tmb <- function(object,
 #' @param object A \code{beezdemand_tmb} object.
 #' @param type One of `"response"` (default) or `"pearson"`.
 #' @param scale One of `"model"` (default) or `"natural"`.
-#' @param level Reserved for TICKET-014. Currently `"subject"` only.
+#' @param level One of `"subject"` (default; conditions on the subject
+#'   random effects) or `"population"` (random effects set to zero, giving
+#'   the population-mean values). See [predict.beezdemand_tmb()].
 #' @param ... Unused.
 #' @return Numeric vector of length `nobs(object)`.
 #' @seealso [fitted.beezdemand_tmb()], [augment.beezdemand_tmb()].

@@ -16,7 +16,9 @@
 
 \item{scale}{One of \code{"model"} (default) or \code{"natural"}.}
 
-\item{level}{Reserved for TICKET-014. Currently \code{"subject"} only.}
+\item{level}{One of \code{"subject"} (default; conditions on the subject
+random effects) or \code{"population"} (random effects set to zero, giving
+the population-mean values). See \code{\link[=predict.beezdemand_tmb]{predict.beezdemand_tmb()}}.}
 
 \item{...}{Unused.}
 }

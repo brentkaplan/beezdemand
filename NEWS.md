@@ -328,6 +328,27 @@ land here as the foundation for the Phase 2 factor-RE work.
   compare them with `nlme::VarCorr()` should drop that manual conversion --
   it is now applied internally.
 
+## Population and subject prediction levels (TICKET-014)
+
+* `predict.beezdemand_tmb()` gains a `level` argument for
+  `type = "response"`. `level = "subject"` (default) preserves the previous
+  behavior -- it conditions on each subject's random effects, requires the
+  model's ID column in `newdata`, and returns a `.fitted` column. `level =
+  "population"` evaluates at the fixed-effect coefficients with all random
+  effects set to zero (the population-mean curve), does not require the ID
+  column, and returns a `predict.fixed` column. Passing
+  `c("population", "subject")` returns both `predict.fixed` and
+  `predict.id` columns in one call, matching the
+  `nlme::predict.lme(level = 0:1)` schema so `nlme`-based plotting code runs
+  unchanged.
+* Unlike `predict.beezdemand_nlme()`, which accepts the `nlme`-style numeric
+  `level` (`0` / `1`), the TMB method takes the character form only; a
+  numeric `level` is rejected with a `match.arg()`-style error.
+* `fitted()` and `residuals()` for `beezdemand_tmb` fits honor the same
+  `level` argument: `level = "population"` now returns population-mean
+  fitted values and the corresponding residuals. Previously this argument
+  was an unimplemented stub that returned subject-level values.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects
