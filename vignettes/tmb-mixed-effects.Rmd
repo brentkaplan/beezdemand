@@ -240,7 +240,9 @@ standard deviations on the **log10 scale**. TMB estimates these SDs on the
 natural-log scale internally; `summary()` divides them by $\log(10)$ so they
 are directly comparable with `nlme::VarCorr()` on a `fit_demand_mixed()` fit
 using the default `param_space = "log10"`. The residual SD is reported on the
-response scale, and the random-effect correlations are scale-invariant.
+model's likelihood scale, which is equation-dependent (log-consumption for
+`exponential`, the LL4-transformed `y_var` for `zben`); the random-effect
+correlations are scale-invariant.
 
 Note that `tidy()` (shown next) reports the raw internal optimizer parameters
 instead -- the `logsigma` rows are the natural log of each RE SD, not the

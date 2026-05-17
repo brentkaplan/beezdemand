@@ -320,7 +320,7 @@ land here as the foundation for the Phase 2 factor-RE work.
   factor of `log(10) ~= 2.303` from `nlme::VarCorr()` on a structurally
   matched `fit_demand_mixed()` fit using the default `param_space = "log10"`.
   The two backends' random-effect SDs are now directly comparable. The
-  residual SD (reported on the response scale) and the random-effect
+  residual SD (on the model's likelihood scale) and the random-effect
   correlations (scale-invariant) are unchanged.
 * **Breaking change.** The Q0/alpha RE SD rows of
   `summary(fit_tmb)$variance_components$Estimate` change in value by a factor

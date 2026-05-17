@@ -286,8 +286,8 @@ print.beezdemand_tmb <- function(x, ...) {
 #'   divided by \code{log(10)} for reporting, so they are directly comparable
 #'   with \code{nlme::VarCorr()} on a \code{fit_demand_mixed()} fit using the
 #'   default \code{param_space = "log10"}. The residual SD is reported on the
-#'   response scale and the random-effect correlations are scale-invariant;
-#'   neither is rescaled.
+#'   model's likelihood scale (equation-dependent) and the random-effect
+#'   correlations are scale-invariant; neither is rescaled.
 #'
 #' @examples
 #' \donttest{
@@ -602,7 +602,7 @@ print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
   print(as.data.frame(coef_display), row.names = FALSE)
 
   cat("\n--- Variance Components ---\n")
-  cat("(Q0/alpha RE SDs on log10 scale; residual SD on response scale)\n")
+  cat("(Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)\n")
   if (!is.null(x$variance_components)) {
     vc <- x$variance_components
     vc$Estimate <- round(vc$Estimate, digits)

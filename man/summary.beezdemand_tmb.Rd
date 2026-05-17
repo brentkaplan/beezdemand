@@ -22,8 +22,8 @@ the random effects are estimated on the natural-log scale internally and
 divided by \code{log(10)} for reporting, so they are directly comparable
 with \code{nlme::VarCorr()} on a \code{fit_demand_mixed()} fit using the
 default \code{param_space = "log10"}. The residual SD is reported on the
-response scale and the random-effect correlations are scale-invariant;
-neither is rescaled.
+model's likelihood scale (equation-dependent) and the random-effect
+correlations are scale-invariant; neither is rescaled.
 }
 \description{
 Summarize a TMB Mixed-Effects Demand Model Fit

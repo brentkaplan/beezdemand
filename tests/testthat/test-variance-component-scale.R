@@ -130,3 +130,35 @@ test_that("log10 rescaling applies to every row of a factor-expanded RE fit", {
   expect_equal(nrow(re_rows), length(logsigma))
   expect_equal(re_rows$Estimate, exp(logsigma) / log(10), tolerance = 1e-10)
 })
+
+test_that("log10 conversion arithmetic is correct on a synthetic fit (no model fit)", {
+  # Deliberately NOT skip_on_cran(): a pure-arithmetic check on a synthetic
+  # beezdemand_tmb object with no optimizer/TMB fitting, so it runs under
+  # CRAN-style R CMD check and guards the exp(logsigma) / log(10) conversion
+  # against regression -- the model-fitting tests above are skipped on CRAN.
+  object <- list(
+    model = list(coefficients = c(
+      logsigma   = log(0.30),  # Q0 (Intercept) RE SD, natural-log scale
+      logsigma   = log(0.45),  # Q0 slope RE SD, natural-log scale
+      logsigma   = log(0.20),  # alpha (Intercept) RE SD, natural-log scale
+      logsigma_e = log(0.08)   # residual SD
+    )),
+    param_info = list(random_effects_parsed = list(blocks = list(
+      list(
+        terms_q0    = c("(Intercept)", "groupB"),
+        terms_alpha = "(Intercept)",
+        pdmat_class = "pdDiag"
+      )
+    )))
+  )
+
+  vc <- beezdemand:::.tmb_format_variance_components(object)
+  re_rows <- vc$table[!grepl("Residual", vc$table$Component), , drop = FALSE]
+  resid_row <- vc$table[grepl("Residual", vc$table$Component), , drop = FALSE]
+
+  # Q0/alpha RE SDs: natural-log estimates rescaled to log10.
+  expect_equal(nrow(re_rows), 3L)
+  expect_equal(re_rows$Estimate, c(0.30, 0.45, 0.20) / log(10), tolerance = 1e-12)
+  # Residual SD: likelihood scale, NOT rescaled.
+  expect_equal(resid_row$Estimate, 0.08, tolerance = 1e-12)
+})
