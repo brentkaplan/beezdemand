@@ -280,7 +280,14 @@ print.beezdemand_tmb <- function(x, ...) {
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_tmb} (also inherits
-#'   from \code{beezdemand_summary}).
+#'   from \code{beezdemand_summary}). The \code{variance_components} element
+#'   reports the Q0 and alpha random-effect SDs on the \strong{log10 scale}:
+#'   the random effects are estimated on the natural-log scale internally and
+#'   divided by \code{log(10)} for reporting, so they are directly comparable
+#'   with \code{nlme::VarCorr()} on a \code{fit_demand_mixed()} fit using the
+#'   default \code{param_space = "log10"}. The residual SD is reported on the
+#'   response scale and the random-effect correlations are scale-invariant;
+#'   neither is rescaled.
 #'
 #' @examples
 #' \donttest{
@@ -451,6 +458,14 @@ summary.beezdemand_tmb <- function(
   logsigma_full <- unname(coefs[names(coefs) == "logsigma"])
   rho_raw_full <- unname(coefs[names(coefs) == "rho_raw"])
 
+  # TICKET-015: random-effect SDs are estimated on the natural-log scale
+  # (src/MixedDemand.h: Q0_i = exp(log_q0_i), so the RE perturbs log_q0_i).
+  # Report the Q0/alpha RE SDs on the log10 scale -- divide by log(10) -- so
+  # they are directly comparable with nlme::VarCorr() on a param_space =
+  # "log10" NLME fit. The residual SD (sigma_e) is a response-scale SD and
+  # the RE correlations are scale-invariant; neither is rescaled.
+  ln10 <- log(10)
+
   rows <- list()
   correlations <- NULL
   sigma_offset <- 0L
@@ -471,7 +486,7 @@ summary.beezdemand_tmb <- function(
               sprintf("sigma_b[%s%d] (Q0 RE SD)", block_label_prefix, j)
         rows[[length(rows) + 1L]] <- data.frame(
           Component = nm,
-          Estimate = exp(logsigma_full[sigma_offset + j]),
+          Estimate = exp(logsigma_full[sigma_offset + j]) / ln10,
           stringsAsFactors = FALSE
         )
       }
@@ -482,7 +497,7 @@ summary.beezdemand_tmb <- function(
               sprintf("sigma_c[%s%d] (alpha RE SD)", block_label_prefix, j)
         rows[[length(rows) + 1L]] <- data.frame(
           Component = nm,
-          Estimate = exp(logsigma_full[sigma_offset + d_q0 + j]),
+          Estimate = exp(logsigma_full[sigma_offset + d_q0 + j]) / ln10,
           stringsAsFactors = FALSE
         )
       }
@@ -587,6 +602,7 @@ print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
   print(as.data.frame(coef_display), row.names = FALSE)
 
   cat("\n--- Variance Components ---\n")
+  cat("(Q0/alpha RE SDs on log10 scale; residual SD on response scale)\n")
   if (!is.null(x$variance_components)) {
     vc <- x$variance_components
     vc$Estimate <- round(vc$Estimate, digits)

@@ -183,6 +183,10 @@ k by 3-8x.
 near-zero observations, prefer \code{exponential} (Gaussian on log Q, zeros
 dropped) or \code{zben} (Gaussian on LL4-transformed Q, zeros handled by
 the transformation).
+
+Random-effect variance components are reported by \code{summary()} on the
+log10 scale; see \code{?summary.beezdemand_tmb} for the scale convention and
+its \code{nlme::VarCorr()} equivalence.
 }
 \examples{
 \donttest{

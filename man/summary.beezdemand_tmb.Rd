@@ -16,7 +16,14 @@ One of \code{"internal"}, \code{"natural"}, \code{"log10"}.}
 }
 \value{
 An object of class \code{summary.beezdemand_tmb} (also inherits
-from \code{beezdemand_summary}).
+from \code{beezdemand_summary}). The \code{variance_components} element
+reports the Q0 and alpha random-effect SDs on the \strong{log10 scale}:
+the random effects are estimated on the natural-log scale internally and
+divided by \code{log(10)} for reporting, so they are directly comparable
+with \code{nlme::VarCorr()} on a \code{fit_demand_mixed()} fit using the
+default \code{param_space = "log10"}. The residual SD is reported on the
+response scale and the random-effect correlations are scale-invariant;
+neither is rescaled.
 }
 \description{
 Summarize a TMB Mixed-Effects Demand Model Fit

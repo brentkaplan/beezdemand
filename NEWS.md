@@ -311,6 +311,23 @@ land here as the foundation for the Phase 2 factor-RE work.
   fixed-effect terms for a single fit, and sequential likelihood-ratio
   tests for nested fits (TICKET-013).
 
+## TMB variance components reported on the log10 scale (TICKET-015)
+
+* **Bug fix.** `summary(fit_tmb)$variance_components` now reports the Q0 and
+  alpha random-effect SDs on the log10 scale. TMB estimates these SDs on the
+  natural-log scale internally (`src/MixedDemand.h` evaluates
+  `Q0 = exp(log_q0)`); `summary()` previously reported them raw, off by a
+  factor of `log(10) ~= 2.303` from `nlme::VarCorr()` on a structurally
+  matched `fit_demand_mixed()` fit using the default `param_space = "log10"`.
+  The two backends' random-effect SDs are now directly comparable. The
+  residual SD (reported on the response scale) and the random-effect
+  correlations (scale-invariant) are unchanged.
+* **Breaking change.** The Q0/alpha RE SD rows of
+  `summary(fit_tmb)$variance_components$Estimate` change in value by a factor
+  of `1 / log(10)`. Analysis code that divided TMB RE SDs by `~2.303` to
+  compare them with `nlme::VarCorr()` should drop that manual conversion --
+  it is now applied internally.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects
