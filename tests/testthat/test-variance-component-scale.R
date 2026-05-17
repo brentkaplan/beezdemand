@@ -5,8 +5,8 @@
 # effect perturbs log_q0_i). summary()$variance_components reports the Q0 and
 # alpha RE SDs on the log10 scale -- exp(logsigma) / log(10) -- so they are
 # directly comparable with nlme::VarCorr() on a param_space = "log10" NLME fit
-# (the NLME default). The residual SD is a response-scale SD and the RE
-# correlations are scale-invariant; both are reported without rescaling.
+# (the NLME default). The residual SD is on the model's likelihood scale and
+# the RE correlations are scale-invariant; both are reported without rescaling.
 
 test_that("summary() reports Q0 and alpha RE SDs on the log10 scale", {
   skip_on_cran()
@@ -27,7 +27,7 @@ test_that("summary() reports Q0 and alpha RE SDs on the log10 scale", {
   expect_equal(re_rows$Estimate, exp(logsigma) / log(10), tolerance = 1e-10)
 })
 
-test_that("summary() residual SD is reported on the response scale, not rescaled", {
+test_that("summary() residual SD is reported on the likelihood scale, not rescaled", {
   skip_on_cran()
   data(apt, package = "beezdemand")
   apt$y_ll4 <- ll4(apt$y, lambda = 4)

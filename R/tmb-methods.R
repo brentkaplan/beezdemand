@@ -462,8 +462,8 @@ summary.beezdemand_tmb <- function(
   # (src/MixedDemand.h: Q0_i = exp(log_q0_i), so the RE perturbs log_q0_i).
   # Report the Q0/alpha RE SDs on the log10 scale -- divide by log(10) -- so
   # they are directly comparable with nlme::VarCorr() on a param_space =
-  # "log10" NLME fit. The residual SD (sigma_e) is a response-scale SD and
-  # the RE correlations are scale-invariant; neither is rescaled.
+  # "log10" NLME fit. The residual SD (sigma_e) is on the model's likelihood
+  # scale and the RE correlations are scale-invariant; neither is rescaled.
   ln10 <- log(10)
 
   rows <- list()
