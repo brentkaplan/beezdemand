@@ -233,12 +233,18 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     }
   }
 
-  # 3. Check variance components near zero. Phase 2 generalized the RE
-  # parameterization to a `logsigma` vector spanning all blocks; iterate
-  # the full vector and label each entry by its (block, q0|alpha) slot.
+  # 3. Random-effect SD components and near-zero check. Phase 2 generalized
+  # the RE parameterization to a `logsigma` vector spanning all blocks;
+  # iterate the full vector and label each entry by its (block, q0|alpha)
+  # slot. `variances` reports the SDs on the log10 scale -- exp(logsigma) /
+  # log(10) -- matching summary()$variance_components (TICKET-015). The raw
+  # natural-log-scale SDs are retained in `sd_internal_log`, and the
+  # near-zero degeneracy check is applied on that raw internal scale so its
+  # behavior is unchanged.
   coefs <- object$model$coefficients
   re_parsed <- object$param_info$random_effects_parsed
   re_variances <- numeric(0)
+  re_sd_internal <- numeric(0)
   near_zero <- logical(0)
 
   if (!is.null(re_parsed)) {
@@ -256,7 +262,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
           nm <- if (d_q0 == 1L) paste0(block_label, "sigma_b") else
                 sprintf("%ssigma_b[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + j])
-          re_variances[nm] <- v
+          re_sd_internal[nm] <- v
+          re_variances[nm] <- v / log(10)
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -265,7 +272,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
           nm <- if (d_alpha == 1L) paste0(block_label, "sigma_c") else
                 sprintf("%ssigma_c[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + d_q0 + j])
-          re_variances[nm] <- v
+          re_sd_internal[nm] <- v
+          re_variances[nm] <- v / log(10)
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -275,7 +283,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
 
   random_effects <- list(
     variances = re_variances,
-    near_zero = near_zero
+    near_zero = near_zero,
+    sd_internal_log = re_sd_internal
   )
 
   if (any(near_zero, na.rm = TRUE)) {

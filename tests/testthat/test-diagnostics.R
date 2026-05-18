@@ -371,6 +371,29 @@ test_that("check_demand_model.beezdemand_tmb 2-RE: named near_zero contains both
   expect_output(print(diag), "Model Diagnostics")
 })
 
+test_that("check_demand_model TMB: random_effect SDs are on the log10 scale (TICKET-002 addendum)", {
+  # TICKET-002 addendum: $random_effects$variances now matches the public
+  # summary()$variance_components convention -- Q0/alpha RE SDs on the log10
+  # scale (TICKET-015) -- and the raw natural-log-scale SDs used for the
+  # near-zero degeneracy heuristic are exposed separately as $sd_internal_log.
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  )
+
+  diag <- check_demand_model(fit)
+  vc <- summary(fit)$variance_components
+  re_summary <- vc$Estimate[!grepl("Residual", vc$Component)]
+
+  # $variances == summary() Q0/alpha rows (log10 scale).
+  expect_equal(unname(diag$random_effects$variances), re_summary,
+               tolerance = 1e-8)
+  # $sd_internal_log is the raw natural-log-scale SD (a factor log(10) larger).
+  expect_equal(unname(diag$random_effects$sd_internal_log),
+               re_summary * log(10), tolerance = 1e-8)
+})
+
 test_that("plot_residuals works for TMB models", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(

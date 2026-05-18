@@ -360,6 +360,15 @@ land here as the foundation for the Phase 2 factor-RE work.
   `summary(fit_tmb)$variance_components`: the Q0/alpha random-effect SDs on
   the log10 scale and the residual SD on the model's likelihood scale.
 
+## Diagnostics random-effect scale alignment (TICKET-002)
+
+* `check_demand_model()` on a `beezdemand_tmb` fit now reports
+  `$random_effects$variances` on the log10 scale, consistent with
+  `summary(fit_tmb)$variance_components` (the TICKET-015 convention).
+  Previously these were raw natural-log-scale SDs, a factor of `log(10)`
+  larger. The raw internal SDs -- still used for the near-zero degeneracy
+  check -- are now exposed separately as `$random_effects$sd_internal_log`.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects
