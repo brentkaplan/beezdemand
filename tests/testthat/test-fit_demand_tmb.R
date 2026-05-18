@@ -475,7 +475,7 @@ test_that("predict(type='response') is vectorized and consistent with subject_pa
 })
 
 
-test_that("predict warns for unknown subjects", {
+test_that("predict errors for unknown subjects at level = 'subject'", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(
     apt, y_var = "y", x_var = "x", id_var = "id",
@@ -483,9 +483,9 @@ test_that("predict warns for unknown subjects", {
   )
 
   new_data <- data.frame(id = "UNKNOWN", x = c(0, 1, 5), y = c(10, 8, 2))
-  expect_warning(
+  expect_error(
     predict(fit, newdata = new_data, type = "response"),
-    "unknown subject"
+    "not found in the fitted model"
   )
 })
 

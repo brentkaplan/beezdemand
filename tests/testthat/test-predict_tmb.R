@@ -66,17 +66,15 @@ test_that("predict.beezdemand_tmb errors on factor levels not seen in training",
                "levels not seen in training")
 })
 
-test_that("predict.beezdemand_tmb warns and uses newdata FE for unknown subjects", {
+test_that("predict.beezdemand_tmb errors for unknown subjects at level = 'subject'", {
   skip_on_cran()
   d <- .predict_tmb_subset()
   fit <- fit_demand_tmb(d, equation = "exponential",
                         factors = "gender", verbose = 0)
   newd <- d[1:3, ]
   newd$id <- factor("NEW_ID")
-  expect_warning(p <- predict(fit, newdata = newd),
-                 "unknown subject")
-  expect_equal(nrow(p), 3)
-  expect_true(all(is.finite(p$.fitted)))
+  expect_error(predict(fit, newdata = newd),
+               "not found in the fitted model")
 })
 
 test_that("predict.beezdemand_tmb errors on missing required columns", {
