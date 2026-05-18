@@ -244,6 +244,15 @@ model's likelihood scale, which is equation-dependent (log-consumption for
 `exponential`, the LL4-transformed `y_var` for `zben`); the random-effect
 correlations are scale-invariant.
 
+For users coming from `nlme` or `lme4`, the `VarCorr()` accessor returns these
+same variance components in the familiar `nlme::VarCorr()` matrix layout -- a
+`Variance` / `StdDev` matrix (with a `Corr` column for `pdSymm` fits) and a
+final `Residual` row:
+
+```{r results-varcorr}
+VarCorr(fit_2re)
+```
+
 Note that `tidy()` (shown next) reports the raw internal optimizer parameters
 instead -- the `logsigma` rows are the natural log of each RE SD, not the
 log10-scale SDs from `summary()$variance_components`.

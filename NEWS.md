@@ -349,6 +349,17 @@ land here as the foundation for the Phase 2 factor-RE work.
   fitted values and the corresponding residuals. Previously this argument
   was an unimplemented stub that returned subject-level values.
 
+## VarCorr() accessor for TMB fits (TICKET-021)
+
+* `VarCorr()` now has a `beezdemand_tmb` method. `VarCorr(fit_tmb)` returns
+  the random-effect variance components in the matrix layout produced by
+  `nlme::VarCorr()` -- a `"VarCorr.lme"`-class object with `Variance`,
+  `StdDev`, and (for `pdSymm` fits) `Corr` columns plus a final `Residual`
+  row -- so users coming from `nlme` or `lme4` can introspect a TMB fit with
+  a familiar accessor. The values match
+  `summary(fit_tmb)$variance_components`: the Q0/alpha random-effect SDs on
+  the log10 scale and the residual SD on the model's likelihood scale.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects

@@ -6,6 +6,7 @@
 \alias{tidy}
 \alias{glance}
 \alias{augment}
+\alias{VarCorr}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -14,5 +15,7 @@ below to see their documentation.
 
 \describe{
   \item{broom}{\code{\link[broom:reexports]{augment}}, \code{\link[broom:reexports]{glance}}, \code{\link[broom:reexports]{tidy}}}
+
+  \item{lme4}{\code{\link[lme4]{VarCorr}}}
 }}
 

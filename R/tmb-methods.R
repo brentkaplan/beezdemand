@@ -2076,6 +2076,104 @@ glance.beezdemand_tmb <- function(x, ...) {
 }
 
 
+#' Random-Effect Variance Components for a TMB Demand Model
+#'
+#' Extracts the random-effect variance components from a \code{beezdemand_tmb}
+#' fit in the matrix layout produced by \code{nlme::VarCorr()}, so users
+#' familiar with \pkg{nlme} or \pkg{lme4} can introspect a TMB fit with the
+#' accessor they already know. The reported values are the same ones returned
+#' by \code{\link{summary.beezdemand_tmb}}: the Q0 and alpha random-effect
+#' standard deviations on the \strong{log10 scale} and the residual standard
+#' deviation on the model's likelihood scale. This is a presentation shim ---
+#' it formats already-computed values and recomputes nothing.
+#'
+#' @param x A \code{beezdemand_tmb} object.
+#' @param sigma Accepted for signature compatibility with
+#'   \code{nlme::VarCorr()}. The TMB summary already reports absolute standard
+#'   deviations, so this residual scale factor is not applied; the default
+#'   (\code{1}) is a no-op.
+#' @param rdig Integer. Number of significant digits used when formatting the
+#'   displayed values. Default \code{3}.
+#' @param ... Unused; present for generic compatibility.
+#'
+#' @return A character matrix of class \code{"VarCorr.lme"} with one row per
+#'   random-effect term plus a final \code{"Residual"} row, columns
+#'   \code{"Variance"} and \code{"StdDev"}, and --- for fits with correlated
+#'   random effects (\code{pdSymm}) --- a \code{"Corr"} column. \code{print()}
+#'   dispatches to \code{nlme}'s \code{print.VarCorr.lme()}.
+#'
+#' @note The \code{Corr} column is placed using \code{nlme}'s convention ---
+#'   each correlation on the row of its higher-indexed random effect. For
+#'   multi-block \code{pdBlocked} fits this assumes a single correlated block;
+#'   consult \code{summary(x)$correlations} for the authoritative values.
+#'
+#' @seealso \code{\link[nlme]{VarCorr}}, \code{\link{summary.beezdemand_tmb}}
+#'
+#' @examples
+#' \donttest{
+#' data(apt)
+#' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+#' VarCorr(fit)
+#' }
+#'
+#' @importFrom lme4 VarCorr
+#' @export
+VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
+  s <- summary(x)
+  vc <- s$variance_components
+  corr <- s$correlations
+
+  sd_vals <- vc$Estimate
+  n <- length(sd_vals)
+
+  # nlme-style row names: the parameter token inside the component label
+  # ("sigma_b (Q0 RE SD)" -> "Q0", "sigma_e (Residual SD)" -> "Residual"),
+  # de-duplicated for factor-expanded fits with repeated terms.
+  param <- sub("^.*\\(([A-Za-z0-9]+)\\b.*$", "\\1", vc$Component)
+  rn <- make.unique(param, sep = ".")
+
+  variance <- sd_vals^2
+
+  # Correlation layout. Each summary()$correlations row is one off-diagonal of
+  # a pdSymm block, placed at the row of its higher-indexed random effect.
+  # rho_bc is the 2-RE shorthand for the (2, 1) element; rho[j,k] carries
+  # explicit indices (the trailing two integers, after any block prefix).
+  # Multi-block placement assumes a single correlated block.
+  jk <- list()
+  if (!is.null(corr) && nrow(corr) > 0L) {
+    jk <- lapply(corr$Component, function(comp) {
+      if (grepl("^rho_bc", comp)) return(c(2L, 1L))
+      nums <- as.integer(regmatches(comp, gregexpr("[0-9]+", comp))[[1]])
+      if (length(nums) >= 2L) {
+        c(nums[length(nums) - 1L], nums[length(nums)])
+      } else {
+        c(NA_integer_, NA_integer_)
+      }
+    })
+  }
+  ok <- vapply(jk, function(v) all(is.finite(v)), logical(1))
+  max_k <- if (any(ok)) max(vapply(jk[ok], function(v) v[2L], integer(1))) else 0L
+
+  col_nm <- c("Variance", "StdDev",
+              if (max_k > 0L) c("Corr", rep("", max_k - 1L)))
+  out <- matrix("", nrow = n, ncol = length(col_nm),
+                dimnames = list(rn, col_nm))
+  out[, 1L] <- format(signif(variance, rdig))
+  out[, 2L] <- format(signif(sd_vals, rdig))
+
+  for (i in which(ok)) {
+    re_row <- jk[[i]][1L]
+    corr_col <- 2L + jk[[i]][2L]
+    if (re_row >= 1L && re_row <= n && corr_col <= length(col_nm)) {
+      out[re_row, corr_col] <- format(signif(corr$Estimate[i], rdig))
+    }
+  }
+
+  class(out) <- "VarCorr.lme"
+  out
+}
+
+
 # Internal: compute fitted values and (response) residuals on a requested
 # scale and random-effect level. Centralizes the scale/level conventions
 # shared by fitted(), residuals(), and augment() so the three accessors
