@@ -114,6 +114,7 @@ reference:
       - starts_with("logLik.")
       - starts_with("nobs.")
       - starts_with("vcov.")
+      - starts_with("VarCorr")
       - starts_with("fitted.")
       - starts_with("residuals.")
       - starts_with("formula.")
