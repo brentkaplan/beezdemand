@@ -215,6 +215,18 @@ test_that("anova.beezdemand_tmb test='AIC' returns a table without LRT error", {
   expect_equal(nrow(res), 2)
 })
 
+test_that("anova.beezdemand_tmb rejects test='Wald' for a multi-fit comparison", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt_full, package = "beezdemand")
+  fit_null <- fit_demand_tmb(apt_full, equation = "exponential", verbose = 0)
+  fit_full <- fit_demand_tmb(apt_full, equation = "exponential",
+                             factors = "gender", verbose = 0)
+  # Wald is a single-model joint test; comparing multiple fits must use LRT
+  # or AIC. Previously test = "Wald" silently returned the LRT-shaped table.
+  expect_error(anova(fit_null, fit_full, test = "Wald"), "Wald")
+})
+
 # Task 4: cross-backend direction-parity test
 
 test_that("anova.beezdemand_tmb cross-backend direction parity (Wald vs F)", {

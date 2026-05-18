@@ -114,6 +114,18 @@ test_that("predict.beezdemand_tmb errors helpfully on missing id (subject)", {
   )
 })
 
+test_that("predict.beezdemand_tmb level='subject' errors on an unknown id value", {
+  skip_on_cran()
+  fit <- .ptl_fit_exp()
+  # `id` column present but the value is not a subject in the fit. TICKET-014
+  # specifies an error here, not a silent population-mean (RE = 0) fallback.
+  nd <- data.frame(gender = "Male", x = c(0.01, 1), id = "not_a_real_subject")
+  expect_error(
+    predict(fit, newdata = nd, level = "subject"),
+    "not found in the fitted model"
+  )
+})
+
 test_that("predict.beezdemand_tmb errors helpfully on numeric level", {
   skip_on_cran()
   fit <- .ptl_fit_exp()

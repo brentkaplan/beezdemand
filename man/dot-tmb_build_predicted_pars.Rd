@@ -23,9 +23,9 @@ A list with elements \code{Q0}, \code{alpha}, and \code{log_q0} (each of length
 \description{
 For each row of \code{newdata}, reconstruct the fixed-effect linear predictor
 from the stored formula RHS and beta coefficients, add the subject's
-random-effect deviate (or zero for unknown subjects, or zero throughout
-when \code{level = "population"}), and return \code{Q0 = exp(eta_q0)} and
-\code{alpha = exp(eta_alpha)}. This is what makes \code{predict()} respect factor
-and continuous-covariate values in \code{newdata}.
+random-effect deviate (or zero throughout when \code{level = "population"}),
+and return \code{Q0 = exp(eta_q0)} and \code{alpha = exp(eta_alpha)}. This is what
+makes \code{predict()} respect factor and continuous-covariate values in
+\code{newdata}.
 }
 \keyword{internal}

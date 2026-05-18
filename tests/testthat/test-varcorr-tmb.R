@@ -104,3 +104,14 @@ test_that("print() works on VarCorr.beezdemand_tmb output", {
   vc <- VarCorr(fit)
   expect_no_error(print(vc))
 })
+
+test_that("VarCorr.beezdemand_tmb rejects a non-default sigma", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  # sigma cannot be honored: the TMB summary reports absolute SDs, not
+  # components relative to a residual scale (as nlme's reStruct does).
+  expect_error(VarCorr(fit, sigma = 2), "sigma")
+  # The default sigma = 1 still works.
+  expect_no_error(VarCorr(fit))
+})

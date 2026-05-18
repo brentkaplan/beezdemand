@@ -20,8 +20,8 @@ numeric vector of length \code{nrow(newdata)}.
 }
 \description{
 For each row of \code{newdata}, returns the random-effect contribution to the
-Q0 and alpha linear predictors, looked up by \code{id} (zero for subjects not
-in the fit). Extracted from \code{\link[=.tmb_build_predicted_pars]{.tmb_build_predicted_pars()}} so the
-population-level prediction path can skip it entirely.
+Q0 and alpha linear predictors, looked up by \code{id}; errors if any id is
+not a subject in the fit. Extracted from \code{\link[=.tmb_build_predicted_pars]{.tmb_build_predicted_pars()}} so
+the population-level prediction path can skip it entirely.
 }
 \keyword{internal}

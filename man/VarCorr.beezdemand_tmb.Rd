@@ -9,10 +9,10 @@
 \arguments{
 \item{x}{A \code{beezdemand_tmb} object.}
 
-\item{sigma}{Accepted for signature compatibility with
-\code{nlme::VarCorr()}. The TMB summary already reports absolute standard
-deviations, so this residual scale factor is not applied; the default
-(\code{1}) is a no-op.}
+\item{sigma}{Present for signature compatibility with
+\code{nlme::VarCorr()}. The TMB summary reports variance components as
+absolute standard deviations, so there is no residual scale factor to
+apply; any value other than the default (\code{1}) is an error.}
 
 \item{rdig}{Integer. Number of significant digits used when formatting the
 displayed values. Default \code{3}.}

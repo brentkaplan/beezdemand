@@ -164,6 +164,12 @@
       i = "Use {.fn compare_models} for mixed backends."
     ))
   }
+  if (test == "Wald") {
+    cli::cli_abort(c(
+      "{.code test = \"Wald\"} is a single-model joint test; it does not apply to a multi-fit comparison.",
+      i = "Use {.code test = \"LRT\"} or {.code test = \"AIC\"} when comparing multiple fits."
+    ))
+  }
   df   <- vapply(fits, function(f) length(f$opt$par), numeric(1))
   ll   <- vapply(fits, function(f) as.numeric(f$loglik), numeric(1))
   aic  <- vapply(fits, function(f) as.numeric(f$AIC), numeric(1))
@@ -1148,10 +1154,10 @@ predict.beezdemand_tmb <- function(
 #'
 #' For each row of `newdata`, reconstruct the fixed-effect linear predictor
 #' from the stored formula RHS and beta coefficients, add the subject's
-#' random-effect deviate (or zero for unknown subjects, or zero throughout
-#' when `level = "population"`), and return `Q0 = exp(eta_q0)` and
-#' `alpha = exp(eta_alpha)`. This is what makes `predict()` respect factor
-#' and continuous-covariate values in `newdata`.
+#' random-effect deviate (or zero throughout when `level = "population"`),
+#' and return `Q0 = exp(eta_q0)` and `alpha = exp(eta_alpha)`. This is what
+#' makes `predict()` respect factor and continuous-covariate values in
+#' `newdata`.
 #'
 #' @param object A `beezdemand_tmb` fit.
 #' @param newdata A data frame with the modeling columns used at fit time
@@ -1302,9 +1308,9 @@ predict.beezdemand_tmb <- function(
 #' Per-subject random-effect deviates for predict.beezdemand_tmb
 #'
 #' For each row of `newdata`, returns the random-effect contribution to the
-#' Q0 and alpha linear predictors, looked up by `id` (zero for subjects not
-#' in the fit). Extracted from [.tmb_build_predicted_pars()] so the
-#' population-level prediction path can skip it entirely.
+#' Q0 and alpha linear predictors, looked up by `id`; errors if any id is
+#' not a subject in the fit. Extracted from [.tmb_build_predicted_pars()] so
+#' the population-level prediction path can skip it entirely.
 #'
 #' @param object A `beezdemand_tmb` fit.
 #' @param newdata A data frame containing the model's `id` column.
@@ -1320,11 +1326,13 @@ predict.beezdemand_tmb <- function(
 
   subj_ids <- as.character(newdata[[pinfo$id_var]])
   subj_match <- match(subj_ids, spars$id)
-  n_unknown <- sum(is.na(subj_match))
-  if (n_unknown > 0) {
-    cli::cli_warn(
-      "{n_unknown} observation{?s} from unknown subject{?s}; using {.arg newdata} fixed effects with random effects = 0."
-    )
+  if (anyNA(subj_match)) {
+    unknown_ids <- unique(subj_ids[is.na(subj_match)])
+    cli::cli_abort(c(
+      "{cli::qty(unknown_ids)} id{?s} in {.arg newdata} not found in the fitted model: {.val {unknown_ids}}.",
+      i = "{.code level = \"subject\"} conditions on each subject's estimated random effects, which exist only for subjects in the fit.",
+      i = "Use {.code level = \"population\"} for the population-mean prediction (random effects set to zero)."
+    ))
   }
   # Phase 2 fix (Codex round 5): for factor-expanded RE specs the
   # per-subject RE contribution is `Z[i, ] %*% re_mat[subj_i, ]`, NOT
@@ -2088,10 +2096,10 @@ glance.beezdemand_tmb <- function(x, ...) {
 #' it formats already-computed values and recomputes nothing.
 #'
 #' @param x A \code{beezdemand_tmb} object.
-#' @param sigma Accepted for signature compatibility with
-#'   \code{nlme::VarCorr()}. The TMB summary already reports absolute standard
-#'   deviations, so this residual scale factor is not applied; the default
-#'   (\code{1}) is a no-op.
+#' @param sigma Present for signature compatibility with
+#'   \code{nlme::VarCorr()}. The TMB summary reports variance components as
+#'   absolute standard deviations, so there is no residual scale factor to
+#'   apply; any value other than the default (\code{1}) is an error.
 #' @param rdig Integer. Number of significant digits used when formatting the
 #'   displayed values. Default \code{3}.
 #' @param ... Unused; present for generic compatibility.
@@ -2119,6 +2127,13 @@ glance.beezdemand_tmb <- function(x, ...) {
 #' @importFrom lme4 VarCorr
 #' @export
 VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
+  if (!isTRUE(all.equal(sigma, 1))) {
+    cli::cli_abort(c(
+      "{.arg sigma} is not supported for {.cls beezdemand_tmb} fits.",
+      i = "Unlike {.fn nlme::VarCorr}, the TMB summary reports variance components as absolute standard deviations (Q0/alpha on the log10 scale, residual on the likelihood scale), so there is no residual scale factor to apply.",
+      i = "Call {.code VarCorr(x)} without {.arg sigma}."
+    ))
+  }
   s <- summary(x)
   vc <- s$variance_components
   corr <- s$correlations
