@@ -1953,17 +1953,24 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #' Tidy method for beezdemand_nlme
 #'
 #' @param x A beezdemand_nlme object
-#' @param effects Which effects to include: "fixed" (default), "ran_pars", or both
+#' @param effects Character. Which effects to include: `"fixed"`,
+#'   `"ran_pars"`, or both (the default).
 #' @param report_space Character. Reporting space for core parameters. One of
 #'   `"natural"` or `"log10"` (default depends on `param_space` used for fitting).
 #' @param ... Additional arguments (ignored)
-#' @return A tibble of model coefficients with columns:
+#' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name
-#'   - `estimate`: Point estimate
-#'   - `std.error`: Standard error
-#'   - `statistic`: t-value
-#'   - `p.value`: P-value
-#'   - `component`: "fixed" or "variance"
+#'   - `estimate`: Point estimate. For `component == "variance"` rows this is
+#'     a *variance* -- contrast with [tidy.beezdemand_tmb()], whose
+#'     `"ran_pars"` rows report standard deviations.
+#'   - `std.error`: Standard error (`NA` for variance components)
+#'   - `statistic`: t-value (`NA` for variance components)
+#'   - `p.value`: P-value (`NA` for variance components)
+#'   - `component`: `"fixed"` or `"variance"`
+#'   - `estimate_scale`: Scale that `estimate` is reported on
+#'   - `term_display`: Display label for `term`
+#'   - `estimate_internal`: Pre-transform estimate; present whenever
+#'     `effects` includes `"fixed"`
 #' @export
 tidy.beezdemand_nlme <- function(
   x,
@@ -2047,9 +2054,14 @@ tidy.beezdemand_nlme <- function(
 #'   - `equation_form`: The equation form used
 #'   - `nobs`: Number of observations
 #'   - `n_subjects`: Number of subjects
+#'   - `n_random_effects`: Number of random-effect terms (e.g. 2 for
+#'     `Q0 + alpha ~ 1`)
 #'   - `converged`: Convergence status
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
-#'   - `sigma`: Residual standard error
+#'   - `sigma`: Residual standard error (NLME-only)
+#'
+#'   The canonical columns match [glance.beezdemand_tmb()], so
+#'   backend-agnostic code needs no dispatch glue.
 #' @export
 glance.beezdemand_nlme <- function(x, ...) {
   if (is.null(x$model)) {
@@ -2059,6 +2071,7 @@ glance.beezdemand_nlme <- function(x, ...) {
       equation_form = x$param_info$equation_form %||% NA_character_,
       nobs = NA_integer_,
       n_subjects = NA_integer_,
+      n_random_effects = NA_integer_,
       converged = FALSE,
       logLik = NA_real_,
       AIC = NA_real_,
@@ -2084,6 +2097,11 @@ glance.beezdemand_nlme <- function(x, ...) {
     }
   }, error = function(e) NA_integer_)
 
+  n_random_effects <- tryCatch(
+    ncol(nlme::ranef(x$model)),
+    error = function(e) NA_integer_
+  )
+
   tibble::tibble(
     model_class = "beezdemand_nlme",
     backend = "nlme",
@@ -2091,6 +2109,7 @@ glance.beezdemand_nlme <- function(x, ...) {
       x$formula_details$equation_form_selected,
     nobs = n_obs,
     n_subjects = n_subjects,
+    n_random_effects = n_random_effects,
     converged = .check_nlme_convergence(x)$converged,
     logLik = as.numeric(stats::logLik(x$model)),
     AIC = stats::AIC(x$model),

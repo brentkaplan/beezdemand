@@ -19,10 +19,15 @@ A one-row tibble of model statistics with columns:
 \item \code{equation_form}: The equation form used
 \item \code{nobs}: Number of observations
 \item \code{n_subjects}: Number of subjects
+\item \code{n_random_effects}: Number of random-effect terms (e.g. 2 for
+\code{Q0 + alpha ~ 1})
 \item \code{converged}: Convergence status
 \item \code{logLik}, \code{AIC}, \code{BIC}: Model fit statistics
-\item \code{sigma}: Residual standard error
+\item \code{sigma}: Residual standard error (NLME-only)
 }
+
+The canonical columns match \code{\link[=glance.beezdemand_tmb]{glance.beezdemand_tmb()}}, so
+backend-agnostic code needs no dispatch glue.
 }
 \description{
 Glance method for beezdemand_nlme

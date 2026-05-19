@@ -40,11 +40,11 @@ test_that("glance.beezdemand_tmb returns one-row tibble", {
   gl <- glance(fit)
   expect_s3_class(gl, "tbl_df")
   expect_equal(nrow(gl), 1)
-  expect_true(all(c("model_class", "backend", "equation", "nobs", "n_subjects",
+  expect_true(all(c("model_class", "backend", "equation_form", "nobs", "n_subjects",
                      "converged", "logLik", "AIC", "BIC") %in% names(gl)))
   expect_equal(gl$model_class, "beezdemand_tmb")
   expect_equal(gl$backend, "TMB_mixed")
-  expect_equal(gl$equation, "exponential")
+  expect_equal(gl$equation_form, "exponential")
 })
 
 test_that("augment.beezdemand_tmb returns proper tibble", {

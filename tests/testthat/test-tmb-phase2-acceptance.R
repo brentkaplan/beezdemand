@@ -200,7 +200,7 @@ test_that("Phase 2 SEs are populated for every element of vector parameters", {
   expect_true(all(is.finite(se_rho_raw)))
 })
 
-test_that("tidy() classifies bare logsigma as variance component", {
+test_that("tidy() classifies random-effect SDs as variance components", {
   skip_on_cran()
   data(apt, package = "beezdemand")
   fit <- suppressMessages(fit_demand_tmb(
@@ -210,11 +210,16 @@ test_that("tidy() classifies bare logsigma as variance component", {
   ))
 
   td <- broom::tidy(fit)
-  ls_rows <- td[grepl("^logsigma", td$term) & td$term != "logsigma_e", ]
-  # Codex round 5: bare `logsigma` rows used to land in the empty
-  # component bucket because the regex required an underscore suffix.
-  expect_true(nrow(ls_rows) >= 1L)
-  expect_true(all(ls_rows$component == "variance"))
+  # TICKET-017: variance-component rows are built from the block-aware
+  # .tmb_format_variance_components() formatter (Q0/alpha RE SDs + residual
+  # SD on the reporting scale), not the raw `logsigma` optimizer
+  # coefficients. Codex round 5 originally caught bare `logsigma` vector
+  # params landing in an empty component bucket; the formatter makes that
+  # misclassification structurally impossible.
+  re_rows <- td[td$component == "variance", ]
+  expect_true(nrow(re_rows) >= 1L)
+  expect_true(all(re_rows$component == "variance"))
+  expect_true(any(grepl("RE SD", re_rows$term)))
 })
 
 test_that("predict() rejects newdata missing RE-only RHS column (Codex round 6)", {

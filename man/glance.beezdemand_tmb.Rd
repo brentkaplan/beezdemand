@@ -12,7 +12,20 @@
 \item{...}{Additional arguments.}
 }
 \value{
-A one-row tibble of model-level statistics.
+A one-row tibble of model-level statistics with columns:
+\itemize{
+\item \code{model_class}: \code{"beezdemand_tmb"}
+\item \code{backend}: \code{"TMB_mixed"}
+\item \code{equation_form}: The demand equation that was fitted
+\item \code{nobs}: Number of observations
+\item \code{n_subjects}: Number of subjects
+\item \code{n_random_effects}: Total number of random-effect columns per subject
+\item \code{converged}: Convergence status
+\item \code{logLik}, \code{AIC}, \code{BIC}: Model fit statistics
+}
+
+The canonical columns match \code{\link[=glance.beezdemand_nlme]{glance.beezdemand_nlme()}}, so
+backend-agnostic code needs no dispatch glue.
 }
 \description{
 Glance at a beezdemand_tmb Model

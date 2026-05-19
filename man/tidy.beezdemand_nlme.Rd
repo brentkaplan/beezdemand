@@ -14,7 +14,8 @@
 \arguments{
 \item{x}{A beezdemand_nlme object}
 
-\item{effects}{Which effects to include: "fixed" (default), "ran_pars", or both}
+\item{effects}{Character. Which effects to include: \code{"fixed"},
+\code{"ran_pars"}, or both (the default).}
 
 \item{report_space}{Character. Reporting space for core parameters. One of
 \code{"natural"} or \code{"log10"} (default depends on \code{param_space} used for fitting).}
@@ -22,14 +23,20 @@
 \item{...}{Additional arguments (ignored)}
 }
 \value{
-A tibble of model coefficients with columns:
+A tibble of model terms with columns:
 \itemize{
 \item \code{term}: Parameter name
-\item \code{estimate}: Point estimate
-\item \code{std.error}: Standard error
-\item \code{statistic}: t-value
-\item \code{p.value}: P-value
-\item \code{component}: "fixed" or "variance"
+\item \code{estimate}: Point estimate. For \code{component == "variance"} rows this is
+a \emph{variance} -- contrast with \code{\link[=tidy.beezdemand_tmb]{tidy.beezdemand_tmb()}}, whose
+\code{"ran_pars"} rows report standard deviations.
+\item \code{std.error}: Standard error (\code{NA} for variance components)
+\item \code{statistic}: t-value (\code{NA} for variance components)
+\item \code{p.value}: P-value (\code{NA} for variance components)
+\item \code{component}: \code{"fixed"} or \code{"variance"}
+\item \code{estimate_scale}: Scale that \code{estimate} is reported on
+\item \code{term_display}: Display label for \code{term}
+\item \code{estimate_internal}: Pre-transform estimate; present whenever
+\code{effects} includes \code{"fixed"}
 }
 }
 \description{

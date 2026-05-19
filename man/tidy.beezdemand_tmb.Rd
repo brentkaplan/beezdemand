@@ -4,27 +4,61 @@
 \alias{tidy.beezdemand_tmb}
 \title{Tidy a beezdemand_tmb Model}
 \usage{
-\method{tidy}{beezdemand_tmb}(x, report_space = c("natural", "log10", "internal"), ...)
+\method{tidy}{beezdemand_tmb}(
+  x,
+  effects = c("fixed", "ran_pars"),
+  report_space = c("natural", "log10", "internal"),
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{beezdemand_tmb} object.}
 
-\item{report_space}{Character. One of \code{"natural"}, \code{"log10"}, \code{"internal"}.}
+\item{effects}{Character. Which effects to return: \code{"fixed"} for the
+fixed-effect (core demand parameter) rows, \code{"ran_pars"} for the
+random-effect variance components, or both (the default). Matches the
+\code{effects} argument of \code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}}.}
+
+\item{report_space}{Character. Reporting space for the fixed-effect
+(core demand parameter) rows. One of \code{"natural"}, \code{"log10"}, or
+\code{"internal"}. Variance-component rows are unaffected (see Details).}
 
 \item{...}{Additional arguments.}
 }
 \value{
-A tibble of model coefficients.
+A tibble of model terms with columns \code{term}, \code{estimate},
+\code{std.error}, \code{statistic}, \code{p.value}, \code{component}, \code{estimate_scale},
+and \code{term_display}. An \code{estimate_internal} column (the pre-transform
+estimate) is additionally present whenever \code{effects} includes
+\code{"fixed"}. Fixed-effect rows carry \code{component == "fixed"} (matching
+\code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} and the nlme/lme4 convention);
+variance-component rows carry \code{component == "variance"}.
 }
 \description{
 Tidy a beezdemand_tmb Model
+}
+\details{
+Variance-component rows (\code{effects = "ran_pars"}) are exactly the rows of
+\code{summary(x)$variance_components}: the Q0 and alpha random-effect standard
+deviations on the \strong{log10 scale} and the residual standard deviation on
+the model's likelihood scale. They are not the raw internal \code{logsigma}
+optimizer coefficients and do not respond to \code{report_space}; \code{std.error}
+is \code{NA} for them. Random-effect \emph{correlations} are not tidied here -- see
+\code{summary(x)$correlations} or \code{VarCorr(x)} for those.
+
+One cross-backend difference is not yet harmonized:
+\code{tidy.beezdemand_tmb(effects = "ran_pars")} reports random-effect
+\emph{standard deviations}, whereas \code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} reports
+\emph{variances}. Code consuming \code{estimate} from \code{"ran_pars"} rows must
+account for this.
 }
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 tidy(fit)
-tidy(fit, report_space = "log10")
+tidy(fit, effects = "fixed", report_space = "log10")
+tidy(fit, effects = "ran_pars")
 }
 
 }

@@ -369,6 +369,39 @@ land here as the foundation for the Phase 2 factor-RE work.
   larger. The raw internal SDs -- still used for the near-zero degeneracy
   check -- are now exposed separately as `$random_effects$sd_internal_log`.
 
+## broom-method harmonization across NLME and TMB (TICKET-017)
+
+The `tidy()` and `glance()` introspection methods now expose the same
+column names, default arguments, and component labels on the
+`beezdemand_nlme` and `beezdemand_tmb` backends, so backend-agnostic code
+needs no dispatch glue.
+
+* **Breaking change.** `glance(fit_tmb)$equation` is renamed to
+  `equation_form`, matching `glance(fit_nlme)`. There is no aliased
+  `equation` column. The `fit_demand_tmb()` API is unreleased (0.3.0
+  development), so no released code depends on the old name.
+* **Breaking change.** `tidy(fit_tmb)` labels fixed-effect rows
+  `component == "fixed"` instead of `"consumption"`, matching
+  `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering TMB
+  `tidy()` output on `component == "consumption"` will return zero rows.
+  `summary(fit_tmb)$coefficients` and the hurdle methods are unchanged.
+* **Behavior change.** `tidy(fit_tmb, effects = "ran_pars")` reports the
+  random-effect variance components on the same scale as
+  `summary(fit_tmb)$variance_components` -- Q0/alpha RE SDs on the log10
+  scale, residual SD on the likelihood scale -- rather than the raw
+  internal `logsigma` optimizer coefficients. `std.error` is `NA` for
+  these rows, as it is for `tidy(fit_nlme)`.
+* `tidy.beezdemand_tmb()` gains an `effects` argument
+  (`c("fixed", "ran_pars")`, both by default) matching
+  `tidy.beezdemand_nlme()`: `effects = "fixed"` returns the fixed-effect
+  rows, `effects = "ran_pars"` returns the variance-component rows. An
+  invalid value is rejected with a `match.arg()`-style error.
+* `glance(fit_nlme)` gains an `n_random_effects` column (the count of
+  random-effect terms), so the canonical `glance()` columns --
+  `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`,
+  `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` -- are now
+  identical across both backends.
+
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB mixed-effects

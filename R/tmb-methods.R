@@ -1973,83 +1973,147 @@ plot.beezdemand_tmb <- function(
 #' Tidy a beezdemand_tmb Model
 #'
 #' @param x A \code{beezdemand_tmb} object.
-#' @param report_space Character. One of `"natural"`, `"log10"`, `"internal"`.
+#' @param effects Character. Which effects to return: `"fixed"` for the
+#'   fixed-effect (core demand parameter) rows, `"ran_pars"` for the
+#'   random-effect variance components, or both (the default). Matches the
+#'   `effects` argument of [tidy.beezdemand_nlme()].
+#' @param report_space Character. Reporting space for the fixed-effect
+#'   (core demand parameter) rows. One of `"natural"`, `"log10"`, or
+#'   `"internal"`. Variance-component rows are unaffected (see Details).
 #' @param ... Additional arguments.
 #'
-#' @return A tibble of model coefficients.
+#' @return A tibble of model terms with columns `term`, `estimate`,
+#'   `std.error`, `statistic`, `p.value`, `component`, `estimate_scale`,
+#'   and `term_display`. An `estimate_internal` column (the pre-transform
+#'   estimate) is additionally present whenever `effects` includes
+#'   `"fixed"`. Fixed-effect rows carry `component == "fixed"` (matching
+#'   [tidy.beezdemand_nlme()] and the nlme/lme4 convention);
+#'   variance-component rows carry `component == "variance"`.
+#'
+#' @details
+#' Variance-component rows (`effects = "ran_pars"`) are exactly the rows of
+#' `summary(x)$variance_components`: the Q0 and alpha random-effect standard
+#' deviations on the **log10 scale** and the residual standard deviation on
+#' the model's likelihood scale. They are not the raw internal `logsigma`
+#' optimizer coefficients and do not respond to `report_space`; `std.error`
+#' is `NA` for them. Random-effect *correlations* are not tidied here -- see
+#' `summary(x)$correlations` or `VarCorr(x)` for those.
+#'
+#' One cross-backend difference is not yet harmonized:
+#' `tidy.beezdemand_tmb(effects = "ran_pars")` reports random-effect
+#' *standard deviations*, whereas [tidy.beezdemand_nlme()] reports
+#' *variances*. Code consuming `estimate` from `"ran_pars"` rows must
+#' account for this.
 #'
 #' @examples
 #' \donttest{
 #' data(apt)
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #' tidy(fit)
-#' tidy(fit, report_space = "log10")
+#' tidy(fit, effects = "fixed", report_space = "log10")
+#' tidy(fit, effects = "ran_pars")
 #' }
 #'
 #' @export
 tidy.beezdemand_tmb <- function(
   x,
+  effects = c("fixed", "ran_pars"),
   report_space = c("natural", "log10", "internal"),
   ...
 ) {
+  effects <- match.arg(effects, several.ok = TRUE)
   report_space <- match.arg(report_space)
 
-  coefs <- x$model$coefficients
-  se <- x$model$se
-  nms <- names(coefs)
+  result <- tibble::tibble()
 
-  # Create term names
-  tn <- .tmb_build_term_names(x, nms)
-  term <- tn$term
-  q0_idx <- tn$q0_idx
-  alpha_idx <- tn$alpha_idx
+  if ("fixed" %in% effects) {
+    coefs <- x$model$coefficients
+    se <- x$model$se
+    nms <- names(coefs)
 
-  # Determine component
-  component <- character(length(nms))
-  component[q0_idx] <- "consumption"
-  component[alpha_idx] <- "consumption"
-  component[nms == "log_k"] <- "consumption"
-  # Match bare `logsigma` (Phase 2 vector parameter) as well as
-  # `logsigma_e` and the legacy `logsigma_b` / `logsigma_c` names.
-  component[grepl("^logsigma($|_)|^rho_", nms)] <- "variance"
+    tn <- .tmb_build_term_names(x, nms)
+    term <- tn$term
+    q0_idx <- tn$q0_idx
+    alpha_idx <- tn$alpha_idx
 
-  estimate_scale <- rep("log", length(nms))
-  estimate_scale[grepl("^logsigma($|_)|^rho_", nms)] <- "natural"
+    # Fixed-effect rows carry the canonical "fixed" label (matching
+    # tidy.beezdemand_nlme() and the nlme/lme4 convention). The variance
+    # regex flags optimizer variance parameters so they are excluded here;
+    # the user-facing variance rows are built from the TICKET-015 formatter
+    # below, not from the raw `logsigma` / `rho_raw` coefficients.
+    component <- character(length(nms))
+    component[q0_idx] <- "fixed"
+    component[alpha_idx] <- "fixed"
+    component[nms == "log_k"] <- "fixed"
+    component[grepl("^logsigma($|_)|^rho_", nms)] <- "variance"
 
-  z_val <- coefs / se
-  p_val <- 2 * stats::pnorm(-abs(z_val))
+    estimate_scale <- rep("log", length(nms))
+    estimate_scale[grepl("^logsigma($|_)|^rho_", nms)] <- "natural"
 
-  out <- tibble::tibble(
-    term = term,
-    estimate = unname(coefs),
-    std.error = unname(se),
-    statistic = unname(z_val),
-    p.value = unname(p_val),
-    component = component,
-    estimate_scale = estimate_scale,
-    term_display = term
-  )
+    z_val <- coefs / se
+    p_val <- 2 * stats::pnorm(-abs(z_val))
 
-  out <- beezdemand_transform_coef_table(
-    coef_tbl = out,
-    report_space = report_space,
-    internal_space = "natural"
-  )
+    fixed <- tibble::tibble(
+      term = term,
+      estimate = unname(coefs),
+      std.error = unname(se),
+      statistic = unname(z_val),
+      p.value = unname(p_val),
+      component = component,
+      estimate_scale = estimate_scale,
+      term_display = term
+    )
+    fixed <- fixed[fixed$component == "fixed", , drop = FALSE]
 
-  out <- out |>
-    dplyr::mutate(
-      statistic = .data$estimate / .data$std.error,
-      p.value = 2 * stats::pnorm(-abs(.data$statistic))
+    fixed <- beezdemand_transform_coef_table(
+      coef_tbl = fixed,
+      report_space = report_space,
+      internal_space = "natural"
     )
 
+    fixed <- fixed |>
+      dplyr::mutate(
+        statistic = .data$estimate / .data$std.error,
+        p.value = 2 * stats::pnorm(-abs(.data$statistic))
+      )
+
+    result <- dplyr::bind_rows(result, fixed)
+  }
+
+  if ("ran_pars" %in% effects) {
+    # Variance components on the TICKET-015 reporting convention: Q0/alpha
+    # RE SDs on the log10 scale, residual SD on the likelihood scale --
+    # exactly the rows in summary(x)$variance_components, not the raw
+    # `logsigma` optimizer coefficients. RE correlations are intentionally
+    # excluded: they live in summary(x)$correlations and VarCorr(), and
+    # omitting them keeps the row structure aligned with
+    # tidy.beezdemand_nlme(), which likewise reports no correlation rows.
+    vc <- .tmb_format_variance_components(x)
+    sd_tbl <- vc$table
+    is_resid <- grepl("Residual", sd_tbl$Component)
+
+    ran <- tibble::tibble(
+      term = sd_tbl$Component,
+      estimate = sd_tbl$Estimate,
+      std.error = NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_,
+      component = "variance",
+      estimate_scale = ifelse(is_resid, "natural", "log10"),
+      term_display = sd_tbl$Component
+    )
+
+    result <- dplyr::bind_rows(result, ran)
+  }
+
   if (isFALSE(x$hessian_pd)) {
-    attr(out, "hessian_warning") <- paste0(
+    attr(result, "hessian_warning") <- paste0(
       "Hessian is not positive definite (pdHess = FALSE). ",
       "Standard errors, p-values, and confidence intervals may be unreliable."
     )
   }
 
-  out
+  result
 }
 
 
@@ -2058,7 +2122,18 @@ tidy.beezdemand_tmb <- function(
 #' @param x A \code{beezdemand_tmb} object.
 #' @param ... Additional arguments.
 #'
-#' @return A one-row tibble of model-level statistics.
+#' @return A one-row tibble of model-level statistics with columns:
+#'   - `model_class`: `"beezdemand_tmb"`
+#'   - `backend`: `"TMB_mixed"`
+#'   - `equation_form`: The demand equation that was fitted
+#'   - `nobs`: Number of observations
+#'   - `n_subjects`: Number of subjects
+#'   - `n_random_effects`: Total number of random-effect columns per subject
+#'   - `converged`: Convergence status
+#'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#'
+#'   The canonical columns match [glance.beezdemand_nlme()], so
+#'   backend-agnostic code needs no dispatch glue.
 #'
 #' @examples
 #' \donttest{
@@ -2072,7 +2147,7 @@ glance.beezdemand_tmb <- function(x, ...) {
   tibble::tibble(
     model_class = "beezdemand_tmb",
     backend = "TMB_mixed",
-    equation = x$param_info$equation,
+    equation_form = x$param_info$equation,
     nobs = x$param_info$n_obs,
     n_subjects = x$param_info$n_subjects,
     n_random_effects = x$param_info$n_random_effects,
