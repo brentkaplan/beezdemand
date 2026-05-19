@@ -482,13 +482,14 @@ TICKET-011 phases above were added under the same 0.3.0 development cycle.
   predictor from `newdata` instead of reusing training-time
   `subject_pars$Q0` / `alpha`. Predictions for any model with factors or
   continuous covariates now correctly reflect the values supplied in
-  `newdata`; unknown subjects fall back to the newdata fixed effects
-  with random effects = 0 (with a warning). Previously the function
-  silently used cached subject parameters for known subjects and the
-  reference-level intercepts for unknown ones, producing systematically
-  biased `.fitted` values. `augment.beezdemand_tmb()` inherits the fix.
-  Predict now also errors clearly when `newdata` is missing a required
-  modeling column or contains factor levels not seen in training.
+  `newdata`; an unknown subject id at `level = "subject"` is an error
+  (use `level = "population"` for the random-effects-at-zero prediction).
+  Previously the function silently used cached subject parameters for
+  known subjects and the reference-level intercepts for unknown ones,
+  producing systematically biased `.fitted` values.
+  `augment.beezdemand_tmb()` inherits the fix. Predict now also errors
+  clearly when `newdata` is missing a required modeling column or
+  contains factor levels not seen in training.
 
 * `get_demand_param_emms.beezdemand_tmb()` and
   `get_demand_comparisons.beezdemand_tmb()` now include continuous
