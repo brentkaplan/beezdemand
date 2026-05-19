@@ -70,6 +70,7 @@ beezdemand_*.tar.gz
 # Test artifacts #
 ##################
 tests/testthat/Rplots.pdf
+tests/testthat/Rplot[0-9]*.png
 .env
 
 # Browser-automation working dir (chrome-devtools / playwright MCP) #
