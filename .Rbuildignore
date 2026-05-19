@@ -67,3 +67,4 @@
 ^LLMS\.md$
 ^context7\.json$
 ^inst/llm$
+^dev$
