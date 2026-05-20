@@ -39,9 +39,11 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/RecodeOutliers.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/ReplaceZeros.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/SimulateDemand.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/VarCorr.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/annotation_logticks2.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_nlme.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/apt.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/apt_full.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_fixed.html</loc></url>
@@ -111,6 +113,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-standardize_params_to_natural.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_anova_multifit.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_backtransform.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_block_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_build_design_matrices.html</loc></url>
@@ -123,10 +126,16 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_default_starts.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_extract_estimates.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_get_k.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_group_terms.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_multi_start.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_equation.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_population.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_subject.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_prepare_data.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_response_from_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_run_optimizer.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_subject_re_deviates.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_term_assign_map.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-to_natural_scale.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/etm.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/extract_coefficients.html</loc></url>

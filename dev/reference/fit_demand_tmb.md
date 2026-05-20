@@ -304,6 +304,14 @@ near-zero observations, prefer `exponential` (Gaussian on log Q, zeros
 dropped) or `zben` (Gaussian on LL4-transformed Q, zeros handled by the
 transformation).
 
+Random-effect variance components are reported by
+[`summary()`](https://rdrr.io/r/base/summary.html) on the log10 scale;
+see
+[`?summary.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
+for the scale convention and its
+[`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html)
+equivalence.
+
 ## See also
 
 [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
@@ -359,9 +367,10 @@ summary(fit)
 #>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
+#> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_c (alpha RE SD)   0.4585
+#>     sigma_b (Q0 RE SD)   0.1675
+#>  sigma_c (alpha RE SD)   0.1991
 #>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---

@@ -89,9 +89,10 @@ summary(fit)
 #>            rho_raw  -0.4812    0.1310   -3.6742 0.000239
 #> 
 #> --- Variance Components ---
+#> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.7453
-#>  sigma_c (alpha RE SD)   0.9092
+#>     sigma_b (Q0 RE SD)   0.3237
+#>  sigma_c (alpha RE SD)   0.3948
 #>  sigma_e (Residual SD)   0.2252
 #> 
 #> --- RE Correlations ---
@@ -333,9 +334,10 @@ summary(fit_2re)
 #>            rho_raw  -0.4812    0.1310   -3.6742 0.000239
 #> 
 #> --- Variance Components ---
+#> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.7453
-#>  sigma_c (alpha RE SD)   0.9092
+#>     sigma_b (Q0 RE SD)   0.3237
+#>  sigma_c (alpha RE SD)   0.3948
 #>  sigma_e (Residual SD)   0.2252
 #> 
 #> --- RE Correlations ---
@@ -360,19 +362,51 @@ summary(fit_2re)
 #>   * 569 zero-consumption observations dropped for equation='exponential'.
 ```
 
+The `variance_components` block reports the Q_0 and \alpha random-effect
+standard deviations on the **log10 scale**. TMB estimates these SDs on
+the natural-log scale internally;
+[`summary()`](https://rdrr.io/r/base/summary.html) divides them by
+\log(10) so they are directly comparable with
+[`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) on a
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+fit using the default `param_space = "log10"`. The residual SD is
+reported on the model’s likelihood scale, which is equation-dependent
+(log-consumption for `exponential`, the LL4-transformed `y_var` for
+`zben`); the random-effect correlations are scale-invariant.
+
+For users coming from `nlme` or `lme4`, the
+[`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) accessor
+returns these same variance components in the familiar
+[`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) matrix
+layout – a `Variance` / `StdDev` matrix (with a `Corr` column for
+`pdSymm` fits) and a final `Residual` row:
+
+``` r
+
+VarCorr(fit_2re)
+#>          Variance StdDev Corr  
+#> Q0       0.1050   0.324        
+#> alpha    0.1560   0.395  -0.447
+#> Residual 0.0507   0.225
+```
+
+Note that [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
+(shown next) reports the raw internal optimizer parameters instead – the
+`logsigma` rows are the natural log of each RE SD, not the log10-scale
+SDs from `summary()$variance_components`.
+
 ``` r
 
 tidy(fit_2re)
-#> # A tibble: 7 × 9
-#>   term            estimate std.error statistic  p.value component estimate_scale
-#>   <chr>              <dbl>     <dbl>     <dbl>    <dbl> <chr>     <chr>         
-#> 1 Q0:(Intercept)    5.44     0.417       13.1  6.26e-39 consumpt… natural       
-#> 2 alpha:(Interce…   0.0110   0.00117      9.42 4.64e-21 consumpt… natural       
-#> 3 log_k             0.340    0.0276      12.3  9.28e-35 consumpt… log           
-#> 4 logsigma         -0.294    0.0748      -3.93 8.51e- 5 variance  natural       
-#> 5 logsigma         -0.0952   0.0807      -1.18 2.38e- 1 variance  natural       
-#> 6 logsigma_e       -1.49     0.0231     -64.4  0        variance  natural       
-#> 7 rho_raw          -0.481    0.131       -3.67 2.39e- 4 variance  natural       
+#> # A tibble: 6 × 9
+#>   term           estimate std.error statistic   p.value component estimate_scale
+#>   <chr>             <dbl>     <dbl>     <dbl>     <dbl> <chr>     <chr>         
+#> 1 Q0:(Intercept)   5.44     0.417       13.1   6.26e-39 fixed     natural       
+#> 2 alpha:(Interc…   0.0110   0.00117      9.42  4.64e-21 fixed     natural       
+#> 3 log_k            0.340    0.0276      12.3   9.28e-35 fixed     log           
+#> 4 sigma_b (Q0 R…   0.324   NA           NA    NA        variance  log10         
+#> 5 sigma_c (alph…   0.395   NA           NA    NA        variance  log10         
+#> 6 sigma_e (Resi…   0.225   NA           NA    NA        variance  natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 ```
 
@@ -380,9 +414,9 @@ tidy(fit_2re)
 
 glance(fit_2re)
 #> # A tibble: 1 × 10
-#>   model_class    backend   equation   nobs n_subjects n_random_effects converged
-#>   <chr>          <chr>     <chr>     <int>      <int>            <int> <lgl>    
-#> 1 beezdemand_tmb TMB_mixed exponent…  1131         99                2 TRUE     
+#>   model_class  backend equation_form  nobs n_subjects n_random_effects converged
+#>   <chr>        <chr>   <chr>         <int>      <int>            <int> <lgl>    
+#> 1 beezdemand_… TMB_mi… exponential    1131         99                2 TRUE     
 #> # ℹ 3 more variables: logLik <dbl>, AIC <dbl>, BIC <dbl>
 ```
 
@@ -584,6 +618,61 @@ head(pred_pars)
 #> 6 49    -0.296   0.401   4.05 0.0165   7.79  8.50
 ```
 
+For `type = "response"`, the `level` argument controls whether
+predictions condition on subject random effects. `level = "subject"`
+(the default) conditions on each subject’s random effects and needs an
+`id` column in `newdata`; `level = "population"` sets the random effects
+to zero and needs no `id`. Requesting both at once returns
+`predict.fixed` (population) and `predict.id` (subject) side by side,
+matching the `nlme::predict.lme(level = 0:1)` layout so `nlme`-based
+plotting code runs unchanged.
+
+``` r
+
+px <- exp(seq(log(0.05), log(20), length.out = 60))
+ids_show <- unique(dat$id)[1:6]
+
+pred_levels <- predict(
+  fit_2re,
+  newdata = expand.grid(x = px, id = ids_show),
+  level = c("population", "subject"),
+  scale = "natural"
+)
+head(pred_levels)
+#> # A tibble: 6 × 4
+#>        x id    predict.fixed predict.id
+#>    <dbl> <fct>         <dbl>      <dbl>
+#> 1 0.05   16             5.53       2.36
+#> 2 0.0553 16             5.52       2.36
+#> 3 0.0613 16             5.52       2.36
+#> 4 0.0678 16             5.51       2.35
+#> 5 0.0751 16             5.50       2.35
+#> 6 0.0831 16             5.49       2.35
+```
+
+The population-mean curve is identical for every subject, so a single
+`predict.fixed` column overlays the per-subject `predict.id` curves.
+
+``` r
+
+ggplot(pred_levels, aes(x = x)) +
+  geom_line(aes(y = predict.id, group = id), colour = "grey65") +
+  geom_line(
+    data = subset(pred_levels, id == ids_show[1]),
+    aes(y = predict.fixed), colour = "#2c3e50", linewidth = 1.2
+  ) +
+  scale_x_log10() +
+  labs(x = "Price", y = "Predicted consumption") +
+  theme_minimal()
+```
+
+![Subject-conditional demand curves (grey) around the population-mean
+curve
+(dark).](tmb-mixed-effects_files/figure-html/predict-levels-plot-1.png)
+
+Subject-conditional demand curves (grey) around the population-mean
+curve (dark).
+
 ### Population Metrics
 
 ``` r
@@ -674,8 +763,8 @@ check_demand_model(fit_2re)
 #>   Status: Converged
 #> 
 #> Random Effects:
-#>   sigma_b variance: 0.7453
-#>   sigma_c variance: 0.9092
+#>   sigma_b variance: 0.3237
+#>   sigma_c variance: 0.3948
 #> 
 #> Residuals:
 #>   Mean: -0.0001171
@@ -902,6 +991,22 @@ fit_gender
 #>    -1.4905    -0.4591 
 #> 
 #> Use summary() for full results.
+```
+
+### Joint Tests
+
+`anova(fit)` reports a joint Wald-χ² test for each parameter × factor
+block — here, whether `gender` shifts Q_0 and \alpha. Pass additional
+fits for a nested likelihood-ratio test.
+
+``` r
+
+anova(fit_gender)
+#> # A tibble: 2 × 4
+#>   Group          Chisq    df p.value
+#>   <chr>          <dbl> <int>   <dbl>
+#> 1 Q0 ~ gender     1.61     1   0.205
+#> 2 alpha ~ gender  1.63     1   0.202
 ```
 
 ### Estimated Marginal Means

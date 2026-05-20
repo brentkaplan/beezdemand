@@ -27,7 +27,15 @@ summary(object, report_space = c("natural", "log10", "internal"), ...)
 ## Value
 
 An object of class `summary.beezdemand_tmb` (also inherits from
-`beezdemand_summary`).
+`beezdemand_summary`). The `variance_components` element reports the Q0
+and alpha random-effect SDs on the **log10 scale**: the random effects
+are estimated on the natural-log scale internally and divided by
+`log(10)` for reporting, so they are directly comparable with
+[`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) on a
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+fit using the default `param_space = "log10"`. The residual SD is
+reported on the model's likelihood scale (equation-dependent) and the
+random-effect correlations are scale-invariant; neither is rescaled.
 
 ## Examples
 
@@ -57,9 +65,10 @@ summary(fit)
 #>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
+#> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_c (alpha RE SD)   0.4585
+#>     sigma_b (Q0 RE SD)   0.1675
+#>  sigma_c (alpha RE SD)   0.1991
 #>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---
@@ -103,9 +112,10 @@ summary(fit, report_space = "log10")
 #>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
 #> 
 #> --- Variance Components ---
+#> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.3857
-#>  sigma_c (alpha RE SD)   0.4585
+#>     sigma_b (Q0 RE SD)   0.1675
+#>  sigma_c (alpha RE SD)   0.1991
 #>  sigma_e (Residual SD)   0.1423
 #> 
 #> --- RE Correlations ---

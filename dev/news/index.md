@@ -370,6 +370,128 @@ land here as the foundation for the Phase 2 factor-RE work.
   respectively); this method closes the gap for any caller that consumes
   [`nobs()`](https://rdrr.io/r/stats/nobs.html) directly.
 
+### Joint Wald and nested LRT tests for TMB fits (TICKET-013)
+
+- New
+  [`anova.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_tmb.md):
+  joint Wald-chi-square tests on grouped fixed-effect terms for a single
+  fit, and sequential likelihood-ratio tests for nested fits
+  (TICKET-013).
+
+### TMB variance components reported on the log10 scale (TICKET-015)
+
+- **Bug fix.** `summary(fit_tmb)$variance_components` now reports the Q0
+  and alpha random-effect SDs on the log10 scale. TMB estimates these
+  SDs on the natural-log scale internally (`src/MixedDemand.h` evaluates
+  `Q0 = exp(log_q0)`);
+  [`summary()`](https://rdrr.io/r/base/summary.html) previously reported
+  them raw, off by a factor of `log(10) ~= 2.303` from
+  [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) on a
+  structurally matched
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  fit using the default `param_space = "log10"`. The two backends’
+  random-effect SDs are now directly comparable. The residual SD (on the
+  model’s likelihood scale) and the random-effect correlations
+  (scale-invariant) are unchanged.
+- **Breaking change.** The Q0/alpha RE SD rows of
+  `summary(fit_tmb)$variance_components$Estimate` change in value by a
+  factor of `1 / log(10)`. Analysis code that divided TMB RE SDs by
+  `~2.303` to compare them with
+  [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) should
+  drop that manual conversion – it is now applied internally.
+
+### Population and subject prediction levels (TICKET-014)
+
+- [`predict.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_tmb.md)
+  gains a `level` argument for `type = "response"`. `level = "subject"`
+  (default) preserves the previous behavior – it conditions on each
+  subject’s random effects, requires the model’s ID column in `newdata`,
+  and returns a `.fitted` column. `level = "population"` evaluates at
+  the fixed-effect coefficients with all random effects set to zero (the
+  population-mean curve), does not require the ID column, and returns a
+  `predict.fixed` column. Passing `c("population", "subject")` returns
+  both `predict.fixed` and `predict.id` columns in one call, matching
+  the `nlme::predict.lme(level = 0:1)` schema so `nlme`-based plotting
+  code runs unchanged.
+- Unlike
+  [`predict.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_nlme.md),
+  which accepts the `nlme`-style numeric `level` (`0` / `1`), the TMB
+  method takes the character form only; a numeric `level` is rejected
+  with a [`match.arg()`](https://rdrr.io/r/base/match.arg.html)-style
+  error.
+- [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) for
+  `beezdemand_tmb` fits honor the same `level` argument:
+  `level = "population"` now returns population-mean fitted values and
+  the corresponding residuals. Previously this argument was an
+  unimplemented stub that returned subject-level values.
+
+### VarCorr() accessor for TMB fits (TICKET-021)
+
+- [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) now has a
+  `beezdemand_tmb` method. `VarCorr(fit_tmb)` returns the random-effect
+  variance components in the matrix layout produced by
+  [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) – a
+  `"VarCorr.lme"`-class object with `Variance`, `StdDev`, and (for
+  `pdSymm` fits) `Corr` columns plus a final `Residual` row – so users
+  coming from `nlme` or `lme4` can introspect a TMB fit with a familiar
+  accessor. The values match `summary(fit_tmb)$variance_components`: the
+  Q0/alpha random-effect SDs on the log10 scale and the residual SD on
+  the model’s likelihood scale.
+
+### Diagnostics random-effect scale alignment (TICKET-002)
+
+- [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  on a `beezdemand_tmb` fit now reports `$random_effects$variances` on
+  the log10 scale, consistent with
+  `summary(fit_tmb)$variance_components` (the TICKET-015 convention).
+  Previously these were raw natural-log-scale SDs, a factor of `log(10)`
+  larger. The raw internal SDs – still used for the near-zero degeneracy
+  check – are now exposed separately as
+  `$random_effects$sd_internal_log`.
+
+### broom-method harmonization across NLME and TMB (TICKET-017)
+
+The [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+[`glance()`](https://generics.r-lib.org/reference/glance.html)
+introspection methods now expose the same column names, default
+arguments, and component labels on the `beezdemand_nlme` and
+`beezdemand_tmb` backends, so backend-agnostic code needs no dispatch
+glue.
+
+- **Breaking change.** `glance(fit_tmb)$equation` is renamed to
+  `equation_form`, matching `glance(fit_nlme)`. There is no aliased
+  `equation` column. The
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  API is unreleased (0.3.0 development), so no released code depends on
+  the old name.
+- **Breaking change.** `tidy(fit_tmb)` labels fixed-effect rows
+  `component == "fixed"` instead of `"consumption"`, matching
+  `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering
+  TMB [`tidy()`](https://generics.r-lib.org/reference/tidy.html) output
+  on `component == "consumption"` will return zero rows.
+  `summary(fit_tmb)$coefficients` and the hurdle methods are unchanged.
+- **Behavior change.** `tidy(fit_tmb, effects = "ran_pars")` reports the
+  random-effect variance components on the same scale as
+  `summary(fit_tmb)$variance_components` – Q0/alpha RE SDs on the log10
+  scale, residual SD on the likelihood scale – rather than the raw
+  internal `logsigma` optimizer coefficients. `std.error` is `NA` for
+  these rows, as it is for `tidy(fit_nlme)`.
+- [`tidy.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_tmb.md)
+  gains an `effects` argument (`c("fixed", "ran_pars")`, both by
+  default) matching
+  [`tidy.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_nlme.md):
+  `effects = "fixed"` returns the fixed-effect rows,
+  `effects = "ran_pars"` returns the variance-component rows. An invalid
+  value is rejected with a
+  [`match.arg()`](https://rdrr.io/r/base/match.arg.html)-style error.
+- `glance(fit_nlme)` gains an `n_random_effects` column (the count of
+  random-effect terms), so the canonical
+  [`glance()`](https://generics.r-lib.org/reference/glance.html) columns
+  – `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`,
+  `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` – are now
+  identical across both backends.
+
 ### Initial 0.3.0 features (TMB mixed-effects modeling tier)
 
 These sections capture the original 0.3.0 release scope (TMB
@@ -496,11 +618,12 @@ development cycle.
   now rebuilds the fixed-effect linear predictor from `newdata` instead
   of reusing training-time `subject_pars$Q0` / `alpha`. Predictions for
   any model with factors or continuous covariates now correctly reflect
-  the values supplied in `newdata`; unknown subjects fall back to the
-  newdata fixed effects with random effects = 0 (with a warning).
-  Previously the function silently used cached subject parameters for
-  known subjects and the reference-level intercepts for unknown ones,
-  producing systematically biased `.fitted` values.
+  the values supplied in `newdata`; an unknown subject id at
+  `level = "subject"` is an error (use `level = "population"` for the
+  random-effects-at-zero prediction). Previously the function silently
+  used cached subject parameters for known subjects and the
+  reference-level intercepts for unknown ones, producing systematically
+  biased `.fitted` values.
   [`augment.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_tmb.md)
   inherits the fix. Predict now also errors clearly when `newdata` is
   missing a required modeling column or contains factor levels not seen

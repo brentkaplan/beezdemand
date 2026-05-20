@@ -171,6 +171,8 @@ S3 methods for extracting information from fitted models.
   : Variance-covariance matrix for a beezdemand_hurdle fit
 - [`vcov(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/vcov.beezdemand_tmb.md)
   : Variance-covariance matrix for a beezdemand_tmb fit
+- [`VarCorr(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/VarCorr.beezdemand_tmb.md)
+  : Random-Effect Variance Components for a TMB Demand Model
 - [`fitted(`*`<beezdemand_hurdle>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_hurdle.md)
   : Fitted values for a beezdemand_hurdle fit
 - [`fitted(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_tmb.md)
@@ -290,6 +292,8 @@ Functions for comparing models.
   : ANOVA Method for Hurdle Demand Models
 - [`anova(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_nlme.md)
   : ANOVA Method for NLME Demand Models
+- [`anova(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/anova.beezdemand_tmb.md)
+  : Joint Wald and likelihood-ratio tests for a TMB demand fit
 - [`update(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/update.beezdemand_tmb.md)
   : Update a beezdemand_tmb fit
 - [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md)
@@ -545,6 +549,7 @@ Documentation-only pages that group related methods.
   [`tidy`](https://brentkaplan.github.io/beezdemand/reference/reexports.md)
   [`glance`](https://brentkaplan.github.io/beezdemand/reference/reexports.md)
   [`augment`](https://brentkaplan.github.io/beezdemand/reference/reexports.md)
+  [`VarCorr`](https://brentkaplan.github.io/beezdemand/reference/reexports.md)
   : Objects exported from other packages
 
 ## Example Datasets

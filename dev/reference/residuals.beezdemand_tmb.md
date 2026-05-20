@@ -37,7 +37,10 @@ residuals(
 
 - level:
 
-  Reserved for TICKET-014. Currently `"subject"` only.
+  One of `"subject"` (default; conditions on the subject random effects)
+  or `"population"` (random effects set to zero, giving the
+  population-mean values). See
+  [`predict.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_tmb.md).
 
 - ...:
 

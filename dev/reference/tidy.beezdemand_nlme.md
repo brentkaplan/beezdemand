@@ -22,7 +22,8 @@ tidy(
 
 - effects:
 
-  Which effects to include: "fixed" (default), "ran_pars", or both
+  Character. Which effects to include: `"fixed"`, `"ran_pars"`, or both
+  (the default).
 
 - report_space:
 
@@ -35,16 +36,26 @@ tidy(
 
 ## Value
 
-A tibble of model coefficients with columns:
+A tibble of model terms with columns:
 
 - `term`: Parameter name
 
-- `estimate`: Point estimate
+- `estimate`: Point estimate. For `component == "variance"` rows this is
+  a *variance* – contrast with
+  [`tidy.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_tmb.md),
+  whose `"ran_pars"` rows report standard deviations.
 
-- `std.error`: Standard error
+- `std.error`: Standard error (`NA` for variance components)
 
-- `statistic`: t-value
+- `statistic`: t-value (`NA` for variance components)
 
-- `p.value`: P-value
+- `p.value`: P-value (`NA` for variance components)
 
-- `component`: "fixed" or "variance"
+- `component`: `"fixed"` or `"variance"`
+
+- `estimate_scale`: Scale that `estimate` is reported on
+
+- `term_display`: Display label for `term`
+
+- `estimate_internal`: Pre-transform estimate; present whenever
+  `effects` includes `"fixed"`
