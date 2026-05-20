@@ -70,3 +70,5 @@ RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 SystemRequirements: GNU make
 Config/testthat/edition: 3
+Config/testthat/parallel: true
+Config/testthat/start-first: fit_demand_tmb, cross-price, fit_demand_fixed, diagnostics, model-comparison
