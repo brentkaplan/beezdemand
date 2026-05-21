@@ -145,3 +145,35 @@ test_that("tidy(effects='ran_pars') excludes RE correlations on pdSymm TMB fits"
   expect_equal(t_ran$term, vc$Component)
   expect_equal(t_ran$estimate, vc$Estimate, tolerance = 1e-8)
 })
+
+# ---- TICKET-031: summary() coefficient component label parity with tidy() ----
+# Closes the intra-fit gap left by TICKET-017: tidy(fit_tmb) emits "fixed" for
+# q0/alpha/log_k rows, but summary(fit_tmb)$coefficients$component still emitted
+# "consumption". Hurdle keeps "consumption" for Part II rows (different model,
+# different semantics) -- the second test guards that asymmetry.
+
+test_that("summary(fit_tmb)$coefficients$component matches tidy() ('fixed' label)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+
+  s <- summary(fit)$coefficients
+  expect_true(any(s$component == "fixed"))
+  expect_false(any(s$component == "consumption"))
+  # Same rows in summary() and tidy(), indexed by component:
+  t_fixed <- tidy(fit, effects = "fixed")
+  expect_setequal(s$term[s$component == "fixed"], t_fixed$term)
+})
+
+test_that("hurdle summary() keeps 'consumption' for Part II rows (TICKET-031 out of scope)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:5], ]
+  fit <- fit_demand_hurdle(
+    apt_small, y_var = "y", x_var = "x", id_var = "id", verbose = 0
+  )
+  s <- summary(fit)$coefficients
+  expect_true(any(s$component == "consumption"))
+})

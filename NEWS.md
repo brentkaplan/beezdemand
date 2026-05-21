@@ -384,7 +384,8 @@ needs no dispatch glue.
   `component == "fixed"` instead of `"consumption"`, matching
   `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering TMB
   `tidy()` output on `component == "consumption"` will return zero rows.
-  `summary(fit_tmb)$coefficients` and the hurdle methods are unchanged.
+  Hurdle methods are unchanged. (`summary(fit_tmb)$coefficients` was
+  harmonized to `"fixed"` separately in the TICKET-031 follow-up below.)
 * **Behavior change.** `tidy(fit_tmb, effects = "ran_pars")` reports the
   random-effect variance components on the same scale as
   `summary(fit_tmb)$variance_components` -- Q0/alpha RE SDs on the log10
@@ -410,6 +411,16 @@ needs no dispatch glue.
   consumed the previous value as a variance should square the estimate
   (`estimate^2`) or read `nlme::VarCorr(fit$model)[, "Variance"]` directly.
   Hurdle and fixed tiers are unaffected.
+* **Breaking change (TICKET-031, TICKET-017 follow-up).**
+  `summary(fit_tmb)$coefficients$component` now also emits `"fixed"` for
+  q0 / alpha / log_k rows, matching `tidy(fit_tmb)` (renamed in TICKET-017
+  above) and `summary(fit_nlme)$coefficients`. Code filtering
+  `summary(fit_tmb)$coefficients` on `component == "consumption"` will
+  return zero rows. `summary(fit_tmb)$derived_metrics$component` is
+  deliberately left as `"consumption"` -- those rows describe derived
+  demand metrics (pmax, omax, q_at_pmax, elasticity_at_pmax), not fitted
+  coefficients, and a future ticket may rename them to `"derived"` or
+  `"metric"`. Hurdle methods are unchanged.
 
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 

@@ -323,9 +323,14 @@ summary.beezdemand_tmb <- function(
 
   # Determine component and scale for each coefficient
   component <- character(length(nms))
-  component[q0_idx] <- "consumption"
-  component[alpha_idx] <- "consumption"
-  component[nms == "log_k"] <- "consumption"
+  # TICKET-031: align with tidy.beezdemand_tmb() ("fixed" label, post-TICKET-017)
+  # so summary()$coefficients and tidy() use identical component vocabulary on
+  # the same fit. `derived_metrics$component` (below) keeps "consumption" by
+  # explicit ticket scope -- those rows describe derived demand metrics, not
+  # fitted coefficients, so the label has different meaning.
+  component[q0_idx] <- "fixed"
+  component[alpha_idx] <- "fixed"
+  component[nms == "log_k"] <- "fixed"
   # Match bare `logsigma` (Phase 2 vector parameter) as well as
   # `logsigma_e` and the legacy `logsigma_b` / `logsigma_c` names.
   component[grepl("^logsigma($|_)|^rho_", nms)] <- "variance"
