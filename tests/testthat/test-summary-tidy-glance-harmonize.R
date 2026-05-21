@@ -77,6 +77,19 @@ test_that("tidy(effects='ran_pars') returns variance rows only on both backends"
   vc_tmb <- summary(fits$tmb)$variance_components
   expect_equal(t_tmb$estimate, vc_tmb$Estimate, tolerance = 1e-8)
   expect_true(all(t_tmb$estimate_scale %in% c("natural", "log10")))
+  # TICKET-030: NLME tidy(ran_pars)$estimate is now an SD (matching the
+  # broom.mixed::tidy.lme convention and the TMB sibling), not a variance.
+  vc_nlme <- nlme::VarCorr(fits$nlme$model)
+  expect_equal(t_nlme$estimate,
+               as.numeric(vc_nlme[, "StdDev"]),
+               tolerance = 1e-10)
+  # Cross-backend SD agreement on a matched fit pair (drop residual rows --
+  # TMB residual is on the likelihood scale, NLME residual is on the data
+  # scale, so they are not directly comparable; the RE SDs are).
+  re_nlme <- t_nlme$estimate[!grepl("Residual", t_nlme$term)]
+  re_tmb  <- t_tmb$estimate[!grepl("Residual",  t_tmb$term)]
+  expect_equal(length(re_nlme), length(re_tmb))
+  expect_equal(re_tmb, re_nlme, tolerance = 0.05)
 })
 
 test_that("TMB glance()$equation renamed to equation_form outright (no alias)", {

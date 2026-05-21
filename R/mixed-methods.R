@@ -1961,8 +1961,9 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name
 #'   - `estimate`: Point estimate. For `component == "variance"` rows this is
-#'     a *variance* -- contrast with [tidy.beezdemand_tmb()], whose
-#'     `"ran_pars"` rows report standard deviations.
+#'     a *standard deviation* (pulled from `nlme::VarCorr(model)[, "StdDev"]`),
+#'     matching [tidy.beezdemand_tmb()] and the `broom.mixed::tidy.lme`
+#'     convention.
 #'   - `std.error`: Standard error (`NA` for variance components)
 #'   - `statistic`: t-value (`NA` for variance components)
 #'   - `p.value`: P-value (`NA` for variance components)
@@ -2020,12 +2021,15 @@ tidy.beezdemand_nlme <- function(
   if ("ran_pars" %in% effects) {
     # Extract variance components from VarCorr
     vc <- nlme::VarCorr(x$model)
-    # VarCorr returns a matrix-like object; extract variances
+    # VarCorr returns a matrix-like object with both "Variance" and "StdDev"
+    # columns (StdDev = sqrt(Variance) exactly). TICKET-030 switched the
+    # reporting from variance to SD to align with broom.mixed::tidy.lme and
+    # with tidy.beezdemand_tmb. Callers needing the variance can square the
+    # estimate or read nlme::VarCorr(fit$model)[, "Variance"] directly.
     if (is.matrix(vc) || is.data.frame(vc)) {
       var_names <- rownames(vc)
-      # The "Variance" column contains the variance estimates
-      if ("Variance" %in% colnames(vc)) {
-        variances <- as.numeric(vc[, "Variance"])
+      if ("StdDev" %in% colnames(vc)) {
+        variances <- as.numeric(vc[, "StdDev"])
         var_tidy <- tibble::tibble(
           term = var_names,
           estimate = variances,

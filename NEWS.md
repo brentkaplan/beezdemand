@@ -401,6 +401,15 @@ needs no dispatch glue.
   `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`,
   `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` -- are now
   identical across both backends.
+* **Breaking change (TICKET-030, TICKET-017 follow-up).**
+  `tidy(fit_nlme, effects = "ran_pars")$estimate` now reports random-effect
+  *standard deviations* (pulled from `nlme::VarCorr(model)[, "StdDev"]`),
+  not variances. This matches the `tidy(fit_tmb)` sibling (post-TICKET-015)
+  and the `broom.mixed::tidy.lme` upstream convention, closing the
+  cross-backend divergence on `"ran_pars"` rows. Migration: callers that
+  consumed the previous value as a variance should square the estimate
+  (`estimate^2`) or read `nlme::VarCorr(fit$model)[, "Variance"]` directly.
+  Hurdle and fixed tiers are unaffected.
 
 ## Initial 0.3.0 features (TMB mixed-effects modeling tier)
 

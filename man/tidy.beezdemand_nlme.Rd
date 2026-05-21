@@ -27,8 +27,9 @@ A tibble of model terms with columns:
 \itemize{
 \item \code{term}: Parameter name
 \item \code{estimate}: Point estimate. For \code{component == "variance"} rows this is
-a \emph{variance} -- contrast with \code{\link[=tidy.beezdemand_tmb]{tidy.beezdemand_tmb()}}, whose
-\code{"ran_pars"} rows report standard deviations.
+a \emph{standard deviation} (pulled from \code{nlme::VarCorr(model)[, "StdDev"]}),
+matching \code{\link[=tidy.beezdemand_tmb]{tidy.beezdemand_tmb()}} and the \code{broom.mixed::tidy.lme}
+convention.
 \item \code{std.error}: Standard error (\code{NA} for variance components)
 \item \code{statistic}: t-value (\code{NA} for variance components)
 \item \code{p.value}: P-value (\code{NA} for variance components)
