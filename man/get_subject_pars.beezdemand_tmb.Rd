@@ -4,29 +4,45 @@
 \alias{get_subject_pars.beezdemand_tmb}
 \title{Get Subject-Specific Parameters from TMB Model}
 \usage{
-\method{get_subject_pars}{beezdemand_tmb}(object, expanded = FALSE, ...)
+\method{get_subject_pars}{beezdemand_tmb}(object, expanded = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
 
-\item{expanded}{Logical. When \code{FALSE} (default) returns the
-wide one-row-per-subject table. When \code{TRUE}, returns a long
-table with one row per (subject, within-subject-factor-level)
-combination, with model-derived per-cell \code{Q0}, \code{alpha},
-\code{Pmax}, and \code{Omax}. Use this for fits where a within-
-subject factor appears in \code{factors} or in
-\code{random_effects} (e.g. multi-block \code{pdBlocked} specs);
-the wide default returns \code{NA} in those columns because no
-single subject-level value is well-defined.}
+\item{expanded}{Controls return shape for fits with within-id-varying
+design columns (factor-expanded random effects, within-id
+continuous covariates, or multi-block \code{pdBlocked} specs).
+\itemize{
+\item \code{NULL} (default): auto-detect. When fit-time within-id
+variation caused \code{NA} in cached \code{subject_pars$Q0},
+runs the expansion machinery: rows are expanded across
+within-id factor levels (one row per (subject, factor-level)
+cell), and within-id numeric covariates are conditioned at
+the subject's mean (no row expansion from numerics). When the
+cached \code{Q0} has no \code{NA}, returns the wide
+one-row-per-subject shape unchanged.
+\item \code{TRUE}: always attempt expansion. On a fit with no
+within-id variation, silently returns the wide shape.
+\item \code{FALSE}: always return the wide shape. Emits a
+one-line warning on a fit with within-id variation (the
+returned \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}
+are \code{NA}).
+}}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-When \code{expanded = FALSE}: data frame with columns
-\code{id}, \code{b_i}, \code{c_i} (if 2 RE), \code{Q0},
-\code{alpha}, \code{Pmax}, \code{Omax}. When \code{expanded = TRUE}:
-data frame with the within-subject factor columns added, one row per
-(subject, factor-level) combination.
+When the resolved \code{expanded} is \code{FALSE}: data
+frame with columns \code{id}, \code{b_i}, \code{c_i} (if 2 RE),
+\code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}. When the
+resolved \code{expanded} is \code{TRUE}, the shape depends on the
+kind of within-id variation: for fits with within-id factors, the
+within-subject factor columns are added and rows are expanded to one
+per (subject, factor-level) cell with per-cell \code{Q0},
+\code{alpha}, \code{Pmax}, \code{Omax}; for fits whose only within-id
+variation is numeric, the numerics are conditioned at the subject's
+mean and the return is one row per subject (no added factor columns)
+with finite \code{Q0} / \code{alpha}.
 }
 \description{
 Get Subject-Specific Parameters from TMB Model

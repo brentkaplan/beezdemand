@@ -19,7 +19,10 @@ test_that("subject_pars warns and NAs Q0/alpha when a covariate varies within id
     regexp = "varies within"
   )
 
-  spars <- get_subject_pars(fit)
+  # TICKET-022: default auto-detects within-id variation and returns the
+  # long expanded shape; the wide NA-filled regression check remains
+  # valid only behind explicit expanded = FALSE.
+  spars <- suppressWarnings(get_subject_pars(fit, expanded = FALSE))
   expect_true(all(is.na(spars$Q0)))
   expect_true(all(is.na(spars$alpha)))
   expect_true(all(is.na(spars$Pmax)))
@@ -80,7 +83,10 @@ test_that("subject_pars warns and NAs when Z (RE design) varies within id (M1-st
     regexp = "var(ies|y) within"
   )
 
-  spars <- get_subject_pars(fit)
+  # TICKET-022: default auto-detects within-id Z-column variation and
+  # returns the long expanded shape; the wide NA-filled regression
+  # check remains valid only behind explicit expanded = FALSE.
+  spars <- suppressWarnings(get_subject_pars(fit, expanded = FALSE))
   expect_true(all(is.na(spars$Q0)))
   expect_true(all(is.na(spars$alpha)))
   expect_true(all(is.na(spars$Pmax)))

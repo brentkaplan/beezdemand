@@ -42,11 +42,15 @@
 # silently.
 # ---------------------------------------------------------------------------
 
-test_that("expanded = FALSE on M1 fit returns NA in Q0/alpha/Pmax/Omax", {
+test_that("explicit expanded = FALSE on M1 fit returns NA in Q0/alpha/Pmax/Omax", {
   skip_on_cran()
 
   fit <- .fit_m1_style()
-  spars <- get_subject_pars(fit)
+  # TICKET-022: default auto-detects within-id variation and returns the
+  # long shape; the wide NA-filled regression check remains valid only
+  # behind explicit expanded = FALSE, which now also emits a one-line
+  # warning (covered separately in test-tmb-subject-pars-auto-expand.R).
+  spars <- suppressWarnings(get_subject_pars(fit, expanded = FALSE))
 
   expect_equal(nrow(spars), length(unique(spars$id)))
   expect_true(all(is.na(spars$Q0)))
@@ -241,8 +245,11 @@ test_that("expanded = TRUE conditions numeric within-id RE-RHS at subject mean (
     multi_start = FALSE, verbose = 0
   ))
 
-  # Default wide: NA in Q0/alpha (Z-column variation flagged).
-  default_pars <- get_subject_pars(fit)
+  # TICKET-022: explicit expanded = FALSE preserves the wide NA-filled
+  # shape. For this numeric-only within-id fit the new default
+  # auto-detects and returns one mean-conditioned row per subject (not the
+  # long factor-expanded shape).
+  default_pars <- suppressWarnings(get_subject_pars(fit, expanded = FALSE))
   expect_true(all(is.na(default_pars$Q0)))
 
   # Expanded: numeric within-id RE-RHS conditions at subject mean.

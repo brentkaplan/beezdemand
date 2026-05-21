@@ -393,12 +393,20 @@ calc_group_metrics.beezdemand_hurdle <- function(object, ...) {
 #'
 #' @description
 #' Convenience function to extract subject-specific demand parameters from
-#' a fitted hurdle demand model. Equivalent to accessing \code{object$subject_pars}.
+#' a fitted demand model. For \code{beezdemand_hurdle} fits this is
+#' equivalent to accessing \code{object$subject_pars}. For
+#' \code{beezdemand_tmb} fits the return shape depends on the
+#' \code{expanded} argument: it may expand across within-id factor levels
+#' or condition within-id numeric covariates at the subject mean rather
+#' than return the cached \code{object$subject_pars}; see
+#' \code{\link{get_subject_pars.beezdemand_tmb}}.
 #'
 #' @param object A fitted \code{beezdemand_hurdle} or \code{beezdemand_tmb} object.
 #' @param ... Method-specific arguments. The \code{beezdemand_tmb} method
-#'   accepts an \code{expanded} argument for opt-in long-form output with
-#'   per-(subject, factor-level) rows; see
+#'   accepts an \code{expanded} argument (default \code{NULL} =
+#'   auto-detect) that controls whether output is the wide
+#'   one-row-per-subject shape or the long
+#'   per-(subject, factor-level) shape; see
 #'   \code{\link{get_subject_pars.beezdemand_tmb}}.
 #'
 #' @return Data frame with subject-specific parameters including:

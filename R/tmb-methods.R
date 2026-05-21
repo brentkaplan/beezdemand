@@ -1411,25 +1411,71 @@ predict.beezdemand_tmb <- function(
 
 # --- get_subject_pars ---
 
+# Resolve the `expanded` argument for get_subject_pars.beezdemand_tmb.
+# NULL → auto-detect: any NA in cached subject_pars$Q0 means within-id
+# variation was flagged at fit time (R/tmb-demand.R:865-908) and the wide
+# table is unusable; the long expanded shape is the correct default.
+# TRUE/FALSE → explicit override, with a one-line warning on the
+# FALSE-on-within-id case so the user knows they're getting NAs.
+.resolve_subject_pars_expanded <- function(object, expanded) {
+  if (is.null(expanded)) {
+    sp <- object$subject_pars
+    if (is.null(sp) || !("Q0" %in% names(sp))) return(FALSE)
+    return(any(is.na(sp$Q0)))
+  }
+  if (!is.logical(expanded) || length(expanded) != 1L || is.na(expanded)) {
+    cli::cli_abort(c(
+      "{.arg expanded} must be {.code TRUE}, {.code FALSE}, or {.code NULL}.",
+      "i" = "Got {.cls {class(expanded)[1]}} of length {length(expanded)}."
+    ))
+  }
+  if (!expanded) {
+    sp <- object$subject_pars
+    if (!is.null(sp) && "Q0" %in% names(sp) && any(is.na(sp$Q0))) {
+      cli::cli_warn(c(
+        "{.field subject_pars} returned with {.field Q0}/{.field alpha} as {.val NA} for affected subjects.",
+        "i" = "Call {.code get_subject_pars(fit)} (auto-detect) or {.code get_subject_pars(fit, expanded = TRUE)} for per-(subject, factor-level) values."
+      ))
+    }
+  }
+  expanded
+}
+
 #' Get Subject-Specific Parameters from TMB Model
 #'
 #' @param object A \code{beezdemand_tmb} object.
-#' @param expanded Logical. When \code{FALSE} (default) returns the
-#'   wide one-row-per-subject table. When \code{TRUE}, returns a long
-#'   table with one row per (subject, within-subject-factor-level)
-#'   combination, with model-derived per-cell \code{Q0}, \code{alpha},
-#'   \code{Pmax}, and \code{Omax}. Use this for fits where a within-
-#'   subject factor appears in \code{factors} or in
-#'   \code{random_effects} (e.g. multi-block \code{pdBlocked} specs);
-#'   the wide default returns \code{NA} in those columns because no
-#'   single subject-level value is well-defined.
+#' @param expanded Controls return shape for fits with within-id-varying
+#'   design columns (factor-expanded random effects, within-id
+#'   continuous covariates, or multi-block \code{pdBlocked} specs).
+#'   \itemize{
+#'     \item \code{NULL} (default): auto-detect. When fit-time within-id
+#'       variation caused \code{NA} in cached \code{subject_pars$Q0},
+#'       runs the expansion machinery: rows are expanded across
+#'       within-id factor levels (one row per (subject, factor-level)
+#'       cell), and within-id numeric covariates are conditioned at
+#'       the subject's mean (no row expansion from numerics). When the
+#'       cached \code{Q0} has no \code{NA}, returns the wide
+#'       one-row-per-subject shape unchanged.
+#'     \item \code{TRUE}: always attempt expansion. On a fit with no
+#'       within-id variation, silently returns the wide shape.
+#'     \item \code{FALSE}: always return the wide shape. Emits a
+#'       one-line warning on a fit with within-id variation (the
+#'       returned \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}
+#'       are \code{NA}).
+#'   }
 #' @param ... Additional arguments (currently unused).
 #'
-#' @return When \code{expanded = FALSE}: data frame with columns
-#'   \code{id}, \code{b_i}, \code{c_i} (if 2 RE), \code{Q0},
-#'   \code{alpha}, \code{Pmax}, \code{Omax}. When \code{expanded = TRUE}:
-#'   data frame with the within-subject factor columns added, one row per
-#'   (subject, factor-level) combination.
+#' @return When the resolved \code{expanded} is \code{FALSE}: data
+#'   frame with columns \code{id}, \code{b_i}, \code{c_i} (if 2 RE),
+#'   \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}. When the
+#'   resolved \code{expanded} is \code{TRUE}, the shape depends on the
+#'   kind of within-id variation: for fits with within-id factors, the
+#'   within-subject factor columns are added and rows are expanded to one
+#'   per (subject, factor-level) cell with per-cell \code{Q0},
+#'   \code{alpha}, \code{Pmax}, \code{Omax}; for fits whose only within-id
+#'   variation is numeric, the numerics are conditioned at the subject's
+#'   mean and the return is one row per subject (no added factor columns)
+#'   with finite \code{Q0} / \code{alpha}.
 #'
 #' @section Per-block random-effect matrices:
 #'   For factor-expanded or multi-block fits, the wide table's
@@ -1449,8 +1495,9 @@ predict.beezdemand_tmb <- function(
 #' }
 #'
 #' @export
-get_subject_pars.beezdemand_tmb <- function(object, expanded = FALSE, ...) {
-  if (!isTRUE(expanded)) {
+get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, ...) {
+  expanded <- .resolve_subject_pars_expanded(object, expanded)
+  if (!expanded) {
     return(object$subject_pars)
   }
 
@@ -1509,7 +1556,7 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = FALSE, ...) {
     } else {
       cli::cli_abort(c(
         "Cannot expand {.field subject_pars} over RE term {.field {var}} of type {.cls {class(vals)[1]}}.",
-        "i" = "Pass {.code expanded = FALSE} (default) for the wide NA-fill, or pre-process the variable into a factor or numeric before fitting."
+        "i" = "Pass {.code expanded = FALSE} to force the wide NA-fill, or pre-process the variable into a factor or numeric before fitting."
       ))
     }
     by_id <- split(vals, data[[id_var]])

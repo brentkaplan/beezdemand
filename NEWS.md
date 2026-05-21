@@ -7,6 +7,36 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## Breaking changes (TICKET-022)
+
+* `get_subject_pars()` on `beezdemand_tmb` fits now auto-detects fits
+  with within-id-varying design columns (factor-expanded random
+  effects, within-id continuous covariates, or multi-block
+  `pdBlocked` specs) and runs the expansion machinery **by default**.
+  The returned shape depends on the kind of within-id variation:
+  for fits with within-id **factors**, rows are expanded across factor
+  levels (one row per (subject, factor-level) cell with per-cell
+  `Q0`, `alpha`, `Pmax`, `Omax`); for fits whose only within-id
+  variation is in **numeric covariates**, numerics are conditioned at
+  the subject's mean and the return is one row per subject with
+  finite (non-`NA`) `Q0`/`alpha`. Previously the default returned the
+  wide one-row-per-subject shape with `NA` in `Q0`, `alpha`, `Pmax`,
+  and `Omax` for affected subjects — a UX dead-end. The new default
+  signature is `expanded = NULL` (auto-detect); pass `expanded = TRUE`
+  or `expanded = FALSE` for explicit override. For fits without
+  within-id variation the behavior is unchanged (the auto-detect
+  path resolves to the wide shape).
+* `get_subject_pars(fit, expanded = FALSE)` on a fit with within-id
+  variation now emits a one-line warning to flag that the returned
+  `Q0` / `alpha` / `Pmax` / `Omax` columns are `NA`. Pre-change this
+  case was silent.
+* If your existing code relied on the wide NA-filled output to detect
+  within-id variation programmatically, switch to passing
+  `expanded = FALSE` explicitly (and `suppressWarnings()` the new
+  one-line warning) or check `any(is.na(fit$subject_pars$Q0))`
+  directly. The fit-time 4-line warning at fit time
+  (`R/tmb-demand.R`) is unchanged.
+
 ## TMB post-fit fixes (TICKET-011 Phase 0)
 
 * `fit_demand_tmb()` now validates that every column of the fixed-effect
