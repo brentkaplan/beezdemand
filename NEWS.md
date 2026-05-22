@@ -50,6 +50,19 @@ cover TICKET-011 phase work added under this development cycle.
   fixed-effect coefficients. Supplying `report_space` through `...` is an
   error (no scale conversion in `coef()`).
 
+## New features (TICKET-018)
+
+* `confint()` on `beezdemand_tmb` fits gains
+  `method = c("wald", "simulate")`. The default (`"wald"`) is
+  **unchanged**. `"simulate"` draws `R` parametric Monte Carlo samples
+  (default `R = 1000`, with an optional `seed`) from the joint asymptotic
+  Gaussian posterior `N(coef(fit), vcov(fit))` and reports per-coefficient
+  empirical quantiles. It is *diagnostic*: the simulated intervals are
+  asymptotically Wald-equivalent on per-coefficient CIs (useful as a
+  side-by-side check on the Gaussian approximation), do not improve on
+  Wald at boundary cases, and carry no positivity guarantee on the
+  internal scale. No new package dependency is added.
+
 ## TMB post-fit fixes (TICKET-011 Phase 0)
 
 * `fit_demand_tmb()` now validates that every column of the fixed-effect

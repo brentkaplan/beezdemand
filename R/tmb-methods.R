@@ -2668,9 +2668,33 @@ anova.beezdemand_tmb <- function(object, ...,
 #'   Variance parameters (`logsigma_*`, `rho_bc_raw`)
 #'   remain on their internal scales; use [summary()] or
 #'   `.tmb_format_variance_components()` for transformed variance components.
+#' @param method Character. `"wald"` (default) returns Hessian-based
+#'   Wald intervals (`coef +/- z * se`). `"simulate"` draws `R` parametric
+#'   Monte Carlo samples from the joint asymptotic Gaussian posterior
+#'   \eqn{N(\hat\beta, \hat\Sigma)} (with \eqn{\hat\Sigma = }`vcov(object)`)
+#'   and reports per-coefficient empirical quantiles.
+#' @param R Integer. Number of Monte Carlo draws for `method = "simulate"`.
+#'   Must be `>= 100`; `>= 1000` is recommended for stable quantiles.
+#'   Ignored for `method = "wald"`.
+#' @param seed Optional integer seed for `method = "simulate"`
+#'   reproducibility. When supplied, the caller's RNG state is restored on
+#'   exit so the global stream is left unperturbed.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with term, estimate, conf.low, conf.high, level.
+#'
+#' @details `method = "simulate"` is Monte Carlo simulation from the
+#'   asymptotic Gaussian posterior -- not a data-resampling bootstrap and
+#'   not a profile-likelihood interval. Because the sampled distribution is
+#'   the same Gaussian that Wald assumes, the simulated per-coefficient
+#'   quantiles converge to the Wald intervals as `R -> Inf`; the method does
+#'   **not** improve on Wald at boundary cases and offers no positivity
+#'   guarantee on the internal scale (`logsigma_*` intervals can be
+#'   negative). Its value is (a) a diagnostic side-by-side check on the
+#'   Gaussian approximation, and (b) a shared draw primitive
+#'   (`.tmb_parametric_draws()`) for derived-metric confidence intervals.
+#'
+#' @seealso [confint.beezdemand_nlme()], [vcov.beezdemand_tmb()].
 #'
 #' @examples
 #' \donttest{
@@ -2678,6 +2702,8 @@ anova.beezdemand_tmb <- function(object, ...,
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #' confint(fit)
 #' confint(fit, report_space = "natural")
+#' # Diagnostic Monte Carlo intervals (asymptotically Wald-equivalent):
+#' confint(fit, method = "simulate", R = 1000, seed = 42)
 #' }
 #'
 #' @export
@@ -2686,8 +2712,12 @@ confint.beezdemand_tmb <- function(
   parm = NULL,
   level = 0.95,
   report_space = c("internal", "natural"),
+  method = c("wald", "simulate"),
+  R = 1000L,
+  seed = NULL,
   ...
 ) {
+  method <- match.arg(method)
   report_space <- match.arg(report_space)
 
   coefs <- object$model$coefficients
@@ -2699,6 +2729,7 @@ confint.beezdemand_tmb <- function(
   tn <- .tmb_build_term_names(object, nms)
   term <- tn$term
 
+  keep <- rep(TRUE, length(coefs))
   if (!is.null(parm)) {
     # Match against display names first, then fall back to raw names
     keep <- term %in% parm | nms %in% parm
@@ -2708,15 +2739,36 @@ confint.beezdemand_tmb <- function(
     term <- term[keep]
   }
 
-  z <- stats::qnorm((1 + level) / 2)
+  estimates <- coefs
+
+  if (method == "wald") {
+    z <- stats::qnorm((1 + level) / 2)
+    conf_low <- coefs - z * se_vec
+    conf_high <- coefs + z * se_vec
+  } else {
+    if (!is.numeric(R) || length(R) != 1L || is.na(R) || R < 100) {
+      cli::cli_abort(c(
+        "{.arg R} must be a single number >= 100.",
+        i = "Recommend {.code R >= 1000} for stable quantile estimates."
+      ))
+    }
+    a <- (1 - level) / 2
+    if (any(keep)) {
+      # `keep` masks the full coefficient vector, so it indexes the draw
+      # matrix columns (which are in the same opt$par order) directly.
+      draws <- .tmb_parametric_draws(object, R = R, seed = seed)[, keep, drop = FALSE]
+      qs <- apply(draws, 2L, stats::quantile, probs = c(a, 1 - a), names = FALSE)
+      conf_low <- qs[1, ]
+      conf_high <- qs[2, ]
+    } else {
+      conf_low <- numeric(0)
+      conf_high <- numeric(0)
+    }
+  }
 
   # Re-derive indices for the (possibly filtered) vector
   q0_idx <- which(nms == "beta_q0")
   alpha_idx <- which(nms == "beta_alpha")
-
-  estimates <- coefs
-  conf_low <- coefs - z * se_vec
-  conf_high <- coefs + z * se_vec
 
   # Transform if natural
   if (report_space == "natural") {

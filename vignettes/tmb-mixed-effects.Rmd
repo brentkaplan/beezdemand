@@ -330,6 +330,25 @@ By default, confidence intervals are on the internal (log) scale. Use
 confint(fit_2re, report_space = "natural")
 ```
 
+For a quick diagnostic on the Gaussian (Wald) approximation, request Monte
+Carlo intervals with `method = "simulate"`. These draw `R` samples from the
+joint asymptotic posterior `N(coef, vcov)` and report empirical quantiles.
+They are asymptotically Wald-equivalent, so a large discrepancy between the
+two flags a fit where the Gaussian approximation is suspect. This is a
+diagnostic comparison, **not** an accuracy improvement: the `simulate`
+method does not capture non-Gaussian posterior shape and carries no
+positivity guarantee on the internal scale. Set `seed` for reproducibility.
+
+```{r results-confint-simulate}
+ci_wald <- confint(fit_2re)
+ci_sim <- confint(fit_2re, method = "simulate", R = 2000, seed = 42)
+data.frame(
+  term = ci_wald$term,
+  width_wald = ci_wald$conf.high - ci_wald$conf.low,
+  width_sim = ci_sim$conf.high - ci_sim$conf.low
+)
+```
+
 ### Variance-Covariance and the Delta Method
 
 `vcov()` returns the fixed-effect variance-covariance matrix from the TMB

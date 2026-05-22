@@ -9,6 +9,9 @@
   parm = NULL,
   level = 0.95,
   report_space = c("internal", "natural"),
+  method = c("wald", "simulate"),
+  R = 1000L,
+  seed = NULL,
   ...
 )
 }
@@ -29,6 +32,20 @@ Variance parameters (\verb{logsigma_*}, \code{rho_bc_raw})
 remain on their internal scales; use \code{\link[=summary]{summary()}} or
 \code{.tmb_format_variance_components()} for transformed variance components.}
 
+\item{method}{Character. \code{"wald"} (default) returns Hessian-based
+Wald intervals (\verb{coef +/- z * se}). \code{"simulate"} draws \code{R} parametric
+Monte Carlo samples from the joint asymptotic Gaussian posterior
+\eqn{N(\hat\beta, \hat\Sigma)} (with \eqn{\hat\Sigma = }\code{vcov(object)})
+and reports per-coefficient empirical quantiles.}
+
+\item{R}{Integer. Number of Monte Carlo draws for \code{method = "simulate"}.
+Must be \verb{>= 100}; \verb{>= 1000} is recommended for stable quantiles.
+Ignored for \code{method = "wald"}.}
+
+\item{seed}{Optional integer seed for \code{method = "simulate"}
+reproducibility. When supplied, the caller's RNG state is restored on
+exit so the global stream is left unperturbed.}
+
 \item{...}{Additional arguments.}
 }
 \value{
@@ -37,12 +54,29 @@ A tibble with term, estimate, conf.low, conf.high, level.
 \description{
 Confidence Intervals for TMB Model Parameters
 }
+\details{
+\code{method = "simulate"} is Monte Carlo simulation from the
+asymptotic Gaussian posterior -- not a data-resampling bootstrap and
+not a profile-likelihood interval. Because the sampled distribution is
+the same Gaussian that Wald assumes, the simulated per-coefficient
+quantiles converge to the Wald intervals as \code{R -> Inf}; the method does
+\strong{not} improve on Wald at boundary cases and offers no positivity
+guarantee on the internal scale (\verb{logsigma_*} intervals can be
+negative). Its value is (a) a diagnostic side-by-side check on the
+Gaussian approximation, and (b) a shared draw primitive
+(\code{.tmb_parametric_draws()}) for derived-metric confidence intervals.
+}
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 confint(fit)
 confint(fit, report_space = "natural")
+# Diagnostic Monte Carlo intervals (asymptotically Wald-equivalent):
+confint(fit, method = "simulate", R = 1000, seed = 42)
 }
 
+}
+\seealso{
+\code{\link[=confint.beezdemand_nlme]{confint.beezdemand_nlme()}}, \code{\link[=vcov.beezdemand_tmb]{vcov.beezdemand_tmb()}}.
 }
