@@ -1,8 +1,12 @@
 # Get Subject-Specific Parameters
 
 Convenience function to extract subject-specific demand parameters from
-a fitted hurdle demand model. Equivalent to accessing
-`object$subject_pars`.
+a fitted demand model. For `beezdemand_hurdle` fits this is equivalent
+to accessing `object$subject_pars`. For `beezdemand_tmb` fits the return
+shape depends on the `expanded` argument: it may expand across within-id
+factor levels or condition within-id numeric covariates at the subject
+mean rather than return the cached `object$subject_pars`; see
+[`get_subject_pars.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md).
 
 ## Usage
 
@@ -19,8 +23,9 @@ get_subject_pars(object, ...)
 - ...:
 
   Method-specific arguments. The `beezdemand_tmb` method accepts an
-  `expanded` argument for opt-in long-form output with per-(subject,
-  factor-level) rows; see
+  `expanded` argument (default `NULL` = auto-detect) that controls
+  whether output is the wide one-row-per-subject shape or the long
+  per-(subject, factor-level) shape; see
   [`get_subject_pars.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md).
 
 ## Value

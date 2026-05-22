@@ -97,8 +97,9 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble of model terms with columns:</p><ul><li><p><code>term</code>: Parameter name</p></li>
 <li><p><code>estimate</code>: Point estimate. For <code>component == "variance"</code> rows this is
-a <em>variance</em> – contrast with <code><a href="tidy.beezdemand_tmb.html">tidy.beezdemand_tmb()</a></code>, whose
-<code>"ran_pars"</code> rows report standard deviations.</p></li>
+a <em>standard deviation</em> (pulled from <code>nlme::VarCorr(model)[, "StdDev"]</code>),
+matching <code><a href="tidy.beezdemand_tmb.html">tidy.beezdemand_tmb()</a></code> and the <code><a href="https://rdrr.io/pkg/broom.mixed/man/nlme_tidiers.html" class="external-link">broom.mixed::tidy.lme</a></code>
+convention.</p></li>
 <li><p><code>std.error</code>: Standard error (<code>NA</code> for variance components)</p></li>
 <li><p><code>statistic</code>: t-value (<code>NA</code> for variance components)</p></li>
 <li><p><code>p.value</code>: P-value (<code>NA</code> for variance components)</p></li>

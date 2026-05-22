@@ -96,7 +96,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x5558fdf4de98>
+#> <environment: 0x5611d5abfa10>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -172,7 +172,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x555903364ce0>
+#> <environment: 0x5611dacf7b90>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -252,7 +252,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x555906956948>
+#> <environment: 0x5611de2a3320>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -308,11 +308,11 @@ tidy(fit_apt_zben) |> head()
 #> # A tibble: 5 × 9
 #>   term     estimate std.error statistic   p.value component estimate_scale
 #>   <chr>       <dbl>     <dbl>     <dbl>     <dbl> <chr>     <chr>         
-#> 1 Q0        7.21      0.919        7.85  4.29e-15 fixed     natural       
-#> 2 alpha     0.0106    0.00182      5.83  5.69e- 9 fixed     natural       
-#> 3 Q0        0.0286   NA           NA    NA        variance  natural       
-#> 4 alpha     0.0523   NA           NA    NA        variance  natural       
-#> 5 Residual  0.00626  NA           NA    NA        variance  natural       
+#> 1 Q0         7.21     0.919        7.85  4.29e-15 fixed     natural       
+#> 2 alpha      0.0106   0.00182      5.83  5.69e- 9 fixed     natural       
+#> 3 Q0         0.169   NA           NA    NA        variance  natural       
+#> 4 alpha      0.229   NA           NA    NA        variance  natural       
+#> 5 Residual   0.0791  NA           NA    NA        variance  natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 augment(fit_apt_zben) |> head()
 #> # A tibble: 6 × 7
@@ -452,7 +452,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x5559068f2f58>
+#> <environment: 0x5611dde4a850>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -518,7 +518,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x5558faff9420>
+#> <environment: 0x5611d68888e8>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 

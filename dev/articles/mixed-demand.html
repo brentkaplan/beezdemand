@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-05-20</h4>
+            <h4 data-toc-skip class="date">2026-05-22</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/mixed-demand.Rmd" class="external-link"><code>vignettes/mixed-demand.Rmd</code></a></small>
       <div class="d-none name"><code>mixed-demand.Rmd</code></div>
@@ -185,7 +185,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5558fdf4de98&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5611d5abfa10&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -256,7 +256,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555903364ce0&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5611dacf7b90&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -330,7 +330,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555906956948&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5611de2a3320&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -383,11 +383,11 @@ programmatic access to estimates, model summaries, and residuals.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 9</span></span></span>
 <span><span class="co">#&gt;   term     estimate std.error statistic   p.value component estimate_scale</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0        7.21      0.919        7.85  4.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha     0.010<span style="text-decoration: underline;">6</span>    0.001<span style="text-decoration: underline;">82</span>      5.83  5.69<span style="color: #949494;">e</span><span style="color: #BB0000;">- 9</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0        0.028<span style="text-decoration: underline;">6</span>   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> alpha     0.052<span style="text-decoration: underline;">3</span>   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Residual  0.006<span style="text-decoration: underline;">26</span>  <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0         7.21     0.919        7.85  4.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha      0.010<span style="text-decoration: underline;">6</span>   0.001<span style="text-decoration: underline;">82</span>      5.83  5.69<span style="color: #949494;">e</span><span style="color: #BB0000;">- 9</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0         0.169   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> alpha      0.229   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Residual   0.079<span style="text-decoration: underline;">1</span>  <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
@@ -513,7 +513,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5559068f2f58&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5611dde4a850&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -576,7 +576,7 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x5558faff9420&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x5611d68888e8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>

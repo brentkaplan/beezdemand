@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-05-20</h4>
+            <h4 data-toc-skip class="date">2026-05-22</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-advanced-random-effects.Rmd" class="external-link"><code>vignettes/tmb-advanced-random-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-advanced-random-effects.Rmd</code></div>
@@ -270,18 +270,16 @@ should be C1 &gt; C2 &gt; C3. The M1 fit recovers it.</p>
 </h2>
 <p>For fits with within-subject random-effects design (factor-expanded
 single block, multi-block <code>pdBlocked</code>, or numeric within-id
-RE-RHS terms), the wide one-row-per-subject <code>subject_pars</code>
-returns <code>NA</code> in <code>Q0</code>, <code>alpha</code>,
-<code>Pmax</code>, and <code>Omax</code> because no single subject-level
-value is well-defined.</p>
+RE-RHS terms), no single subject-level <code>Q0</code> /
+<code>alpha</code> / <code>Pmax</code> / <code>Omax</code> is
+well-defined — each subject has a per-condition vector instead.</p>
+<p>As of TICKET-022 the default behavior of
+<code><a href="../reference/get_subject_pars.html">get_subject_pars()</a></code> auto-detects this situation and returns
+the <strong>long per-(subject, factor-level) shape</strong> with no
+warning:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">spars_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars_wide</span><span class="op">)</span></span></code></pre></div>
-<p>To get per-(subject, factor-level) values, use
-<code>expanded = TRUE</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">spars_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_m1</span>, expanded <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars_long</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">spars</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars</span><span class="op">)</span></span></code></pre></div>
 <p>The long-form table has one row per (subject, condition) combination.
 <code>b_i</code> and <code>c_i</code> repeat across conditions for the
 same subject (they are subject-level RE intercepts); <code>Q0</code>,
@@ -290,6 +288,15 @@ row because they incorporate the per-condition slope REs.</p>
 <p>Numeric within-id-varying covariates (e.g., trial number) are
 conditioned at the subject’s mean rather than expanded over their values
 — only factor levels drive row expansion.</p>
+<p>To force the old wide one-row-per-subject shape — useful when you
+want to inspect the per-block RE matrix attributes without the row
+expansion — pass <code>expanded = FALSE</code> explicitly. A one-line
+warning flags that the returned <code>Q0</code> / <code>alpha</code> /
+<code>Pmax</code> / <code>Omax</code> columns are <code>NA</code> for
+affected subjects:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">spars_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_m1</span>, expanded <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars_wide</span><span class="op">)</span></span></code></pre></div>
 <p>For power users who want the raw per-block RE matrices:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">re_q0_mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">spars_wide</span>, <span class="st">"re_q0_mat"</span><span class="op">)</span></span>
@@ -305,8 +312,11 @@ the condition slopes.</p>
 <code><a href="../reference/calculate_amplitude_persistence.html">calculate_amplitude_persistence()</a></code> — read
 <code>subject_pars$Q0</code> and <code>$alpha</code> directly. When
 those are NA, both abort with a targeted message pointing at
-<code>expanded = TRUE</code>. Native expanded-shape support in those
-consumers is planned for a follow-up release.</p>
+<code>get_subject_pars(fit, expanded = TRUE)</code> (or, post
+TICKET-022, simply <code>get_subject_pars(fit)</code>) for per-(subject,
+factor-level) values that the caller can aggregate. Native
+expanded-shape support in those consumers is planned for a follow-up
+release.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_m1</span>, type <span class="op">=</span> <span class="st">"individual"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: Subject-level Q0/alpha are "NA" for this fit.</span></span>

@@ -10,6 +10,52 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### Breaking changes (TICKET-022)
+
+- [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  on `beezdemand_tmb` fits now auto-detects fits with within-id-varying
+  design columns (factor-expanded random effects, within-id continuous
+  covariates, or multi-block `pdBlocked` specs) and runs the expansion
+  machinery **by default**. The returned shape depends on the kind of
+  within-id variation: for fits with within-id **factors**, rows are
+  expanded across factor levels (one row per (subject, factor-level)
+  cell with per-cell `Q0`, `alpha`, `Pmax`, `Omax`); for fits whose only
+  within-id variation is in **numeric covariates**, numerics are
+  conditioned at the subject’s mean and the return is one row per
+  subject with finite (non-`NA`) `Q0`/`alpha`. Previously the default
+  returned the wide one-row-per-subject shape with `NA` in `Q0`,
+  `alpha`, `Pmax`, and `Omax` for affected subjects — a UX dead-end. The
+  new default signature is `expanded = NULL` (auto-detect); pass
+  `expanded = TRUE` or `expanded = FALSE` for explicit override. For
+  fits without within-id variation the behavior is unchanged (the
+  auto-detect path resolves to the wide shape).
+- `get_subject_pars(fit, expanded = FALSE)` on a fit with within-id
+  variation now emits a one-line warning to flag that the returned `Q0`
+  / `alpha` / `Pmax` / `Omax` columns are `NA`. Pre-change this case was
+  silent.
+- If your existing code relied on the wide NA-filled output to detect
+  within-id variation programmatically, switch to passing
+  `expanded = FALSE` explicitly (and
+  [`suppressWarnings()`](https://rdrr.io/r/base/warning.html) the new
+  one-line warning) or check `any(is.na(fit$subject_pars$Q0))` directly.
+  The fit-time 4-line warning at fit time (`R/tmb-demand.R`) is
+  unchanged.
+
+### New features (TICKET-019)
+
+- [`coef()`](https://rdrr.io/r/stats/coef.html) on `beezdemand_tmb` fits
+  gains `type = c("internal", "subject", "combined", "fixed")`. The
+  default (`"internal"`) is **unchanged** — it still returns the raw
+  optimizer coefficient vector, so `fixef()` and tooling that dispatches
+  via [`coef()`](https://rdrr.io/r/stats/coef.html)
+  (e.g. [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html),
+  `multcomp::glht`) are unaffected. `type = "subject"` (alias
+  `"combined"`) returns the per-subject parameter tibble
+  (`get_subject_pars(fit)`, auto-detecting within-id factor expansion);
+  `type = "fixed"` returns a one-row tibble of the fixed-effect
+  coefficients. Supplying `report_space` through `...` is an error (no
+  scale conversion in [`coef()`](https://rdrr.io/r/stats/coef.html)).
+
 ### TMB post-fit fixes (TICKET-011 Phase 0)
 
 - [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
@@ -307,8 +353,8 @@ land here as the foundation for the Phase 2 factor-RE work.
   [`terms()`](https://rdrr.io/r/stats/terms.html) + formula-update
   [`update()`](https://rdrr.io/r/stats/update.html) form), or any tool
   that dispatches via [`coef()`](https://rdrr.io/r/stats/coef.html)
-  after the planned TICKET-019 default change. Those each remain
-  follow-up tickets.
+  after a future [`coef()`](https://rdrr.io/r/stats/coef.html) default
+  change. Those each remain follow-up tickets.
 
 ### Variance-covariance, fitted, and residual accessors (TICKET-026)
 
@@ -339,7 +385,7 @@ land here as the foundation for the Phase 2 factor-RE work.
   optimizer’s flat parameterization (current default behavior). This
   preserves the numeric-vector escape hatch consumed by
   [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html),
-  `multcomp::glht`, and similar tooling across the planned
+  `multcomp::glht`, and similar tooling across a future
   [`coef()`](https://rdrr.io/r/stats/coef.html) default change to a
   per-subject tibble.
 - [`augment.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/augment.beezdemand_tmb.md)
@@ -469,8 +515,9 @@ glue.
   `component == "fixed"` instead of `"consumption"`, matching
   `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering
   TMB [`tidy()`](https://generics.r-lib.org/reference/tidy.html) output
-  on `component == "consumption"` will return zero rows.
-  `summary(fit_tmb)$coefficients` and the hurdle methods are unchanged.
+  on `component == "consumption"` will return zero rows. Hurdle methods
+  are unchanged. (`summary(fit_tmb)$coefficients` was harmonized to
+  `"fixed"` separately in the TICKET-031 follow-up below.)
 - **Behavior change.** `tidy(fit_tmb, effects = "ran_pars")` reports the
   random-effect variance components on the same scale as
   `summary(fit_tmb)$variance_components` – Q0/alpha RE SDs on the log10
@@ -491,6 +538,27 @@ glue.
   – `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`,
   `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` – are now
   identical across both backends.
+- **Breaking change (TICKET-030, TICKET-017 follow-up).**
+  `tidy(fit_nlme, effects = "ran_pars")$estimate` now reports
+  random-effect *standard deviations* (pulled from
+  `nlme::VarCorr(model)[, "StdDev"]`), not variances. This matches the
+  `tidy(fit_tmb)` sibling (post-TICKET-015) and the
+  [`broom.mixed::tidy.lme`](https://rdrr.io/pkg/broom.mixed/man/nlme_tidiers.html)
+  upstream convention, closing the cross-backend divergence on
+  `"ran_pars"` rows. Migration: callers that consumed the previous value
+  as a variance should square the estimate (`estimate^2`) or read
+  `nlme::VarCorr(fit$model)[, "Variance"]` directly. Hurdle and fixed
+  tiers are unaffected.
+- **Breaking change (TICKET-031, TICKET-017 follow-up).**
+  `summary(fit_tmb)$coefficients$component` now also emits `"fixed"` for
+  q0 / alpha / log_k rows, matching `tidy(fit_tmb)` (renamed in
+  TICKET-017 above) and `summary(fit_nlme)$coefficients`. Code filtering
+  `summary(fit_tmb)$coefficients` on `component == "consumption"` will
+  return zero rows. `summary(fit_tmb)$derived_metrics$component` is
+  deliberately left as `"consumption"` – those rows describe derived
+  demand metrics (pmax, omax, q_at_pmax, elasticity_at_pmax), not fitted
+  coefficients, and a future ticket may rename them to `"derived"` or
+  `"metric"`. Hurdle methods are unchanged.
 
 ### Initial 0.3.0 features (TMB mixed-effects modeling tier)
 

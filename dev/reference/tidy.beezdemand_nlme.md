@@ -41,9 +41,12 @@ A tibble of model terms with columns:
 - `term`: Parameter name
 
 - `estimate`: Point estimate. For `component == "variance"` rows this is
-  a *variance* – contrast with
-  [`tidy.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_tmb.md),
-  whose `"ran_pars"` rows report standard deviations.
+  a *standard deviation* (pulled from
+  `nlme::VarCorr(model)[, "StdDev"]`), matching
+  [`tidy.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_tmb.md)
+  and the
+  [`broom.mixed::tidy.lme`](https://rdrr.io/pkg/broom.mixed/man/nlme_tidiers.html)
+  convention.
 
 - `std.error`: Standard error (`NA` for variance components)
 

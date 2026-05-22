@@ -169,22 +169,18 @@ population Q₀ ordering should be C1 \> C2 \> C3. The M1 fit recovers it.
 
 For fits with within-subject random-effects design (factor-expanded
 single block, multi-block `pdBlocked`, or numeric within-id RE-RHS
-terms), the wide one-row-per-subject `subject_pars` returns `NA` in
-`Q0`, `alpha`, `Pmax`, and `Omax` because no single subject-level value
-is well-defined.
+terms), no single subject-level `Q0` / `alpha` / `Pmax` / `Omax` is
+well-defined — each subject has a per-condition vector instead.
+
+As of TICKET-022 the default behavior of
+[`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+auto-detects this situation and returns the **long per-(subject,
+factor-level) shape** with no warning:
 
 ``` r
 
-spars_wide <- get_subject_pars(fit_m1)
-head(spars_wide)
-```
-
-To get per-(subject, factor-level) values, use `expanded = TRUE`:
-
-``` r
-
-spars_long <- get_subject_pars(fit_m1, expanded = TRUE)
-head(spars_long)
+spars <- get_subject_pars(fit_m1)
+head(spars)
 ```
 
 The long-form table has one row per (subject, condition) combination.
@@ -195,6 +191,18 @@ per row because they incorporate the per-condition slope REs.
 Numeric within-id-varying covariates (e.g., trial number) are
 conditioned at the subject’s mean rather than expanded over their values
 — only factor levels drive row expansion.
+
+To force the old wide one-row-per-subject shape — useful when you want
+to inspect the per-block RE matrix attributes without the row expansion
+— pass `expanded = FALSE` explicitly. A one-line warning flags that the
+returned `Q0` / `alpha` / `Pmax` / `Omax` columns are `NA` for affected
+subjects:
+
+``` r
+
+spars_wide <- suppressWarnings(get_subject_pars(fit_m1, expanded = FALSE))
+head(spars_wide)
+```
 
 For power users who want the raw per-block RE matrices:
 
@@ -214,9 +222,11 @@ condition slopes.
 Two consumers — `plot(fit, type = "individual")` and
 [`calculate_amplitude_persistence()`](https://brentkaplan.github.io/beezdemand/reference/calculate_amplitude_persistence.md)
 — read `subject_pars$Q0` and `$alpha` directly. When those are NA, both
-abort with a targeted message pointing at `expanded = TRUE`. Native
-expanded-shape support in those consumers is planned for a follow-up
-release.
+abort with a targeted message pointing at
+`get_subject_pars(fit, expanded = TRUE)` (or, post TICKET-022, simply
+`get_subject_pars(fit)`) for per-(subject, factor-level) values that the
+caller can aggregate. Native expanded-shape support in those consumers
+is planned for a follow-up release.
 
 ``` r
 

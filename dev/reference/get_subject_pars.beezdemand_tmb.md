@@ -6,7 +6,7 @@ Get Subject-Specific Parameters from TMB Model
 
 ``` r
 # S3 method for class 'beezdemand_tmb'
-get_subject_pars(object, expanded = FALSE, ...)
+get_subject_pars(object, expanded = NULL, ...)
 ```
 
 ## Arguments
@@ -17,13 +17,24 @@ get_subject_pars(object, expanded = FALSE, ...)
 
 - expanded:
 
-  Logical. When `FALSE` (default) returns the wide one-row-per-subject
-  table. When `TRUE`, returns a long table with one row per (subject,
-  within-subject-factor-level) combination, with model-derived per-cell
-  `Q0`, `alpha`, `Pmax`, and `Omax`. Use this for fits where a within-
-  subject factor appears in `factors` or in `random_effects` (e.g.
-  multi-block `pdBlocked` specs); the wide default returns `NA` in those
-  columns because no single subject-level value is well-defined.
+  Controls return shape for fits with within-id-varying design columns
+  (factor-expanded random effects, within-id continuous covariates, or
+  multi-block `pdBlocked` specs).
+
+  - `NULL` (default): auto-detect. When fit-time within-id variation
+    caused `NA` in cached `subject_pars$Q0`, runs the expansion
+    machinery: rows are expanded across within-id factor levels (one row
+    per (subject, factor-level) cell), and within-id numeric covariates
+    are conditioned at the subject's mean (no row expansion from
+    numerics). When the cached `Q0` has no `NA`, returns the wide
+    one-row-per-subject shape unchanged.
+
+  - `TRUE`: always attempt expansion. On a fit with no within-id
+    variation, silently returns the wide shape.
+
+  - `FALSE`: always return the wide shape. Emits a one-line warning on a
+    fit with within-id variation (the returned `Q0`, `alpha`, `Pmax`,
+    `Omax` are `NA`).
 
 - ...:
 
@@ -31,10 +42,15 @@ get_subject_pars(object, expanded = FALSE, ...)
 
 ## Value
 
-When `expanded = FALSE`: data frame with columns `id`, `b_i`, `c_i` (if
-2 RE), `Q0`, `alpha`, `Pmax`, `Omax`. When `expanded = TRUE`: data frame
-with the within-subject factor columns added, one row per (subject,
-factor-level) combination.
+When the resolved `expanded` is `FALSE`: data frame with columns `id`,
+`b_i`, `c_i` (if 2 RE), `Q0`, `alpha`, `Pmax`, `Omax`. When the resolved
+`expanded` is `TRUE`, the shape depends on the kind of within-id
+variation: for fits with within-id factors, the within-subject factor
+columns are added and rows are expanded to one per (subject,
+factor-level) cell with per-cell `Q0`, `alpha`, `Pmax`, `Omax`; for fits
+whose only within-id variation is numeric, the numerics are conditioned
+at the subject's mean and the return is one row per subject (no added
+factor columns) with finite `Q0` / `alpha`.
 
 ## Per-block random-effect matrices
 

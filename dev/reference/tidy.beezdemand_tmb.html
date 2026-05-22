@@ -114,12 +114,10 @@ deviations on the <strong>log10 scale</strong> and the residual standard deviati
 the model's likelihood scale. They are not the raw internal <code>logsigma</code>
 optimizer coefficients and do not respond to <code>report_space</code>; <code>std.error</code>
 is <code>NA</code> for them. Random-effect <em>correlations</em> are not tidied here – see
-<code>summary(x)$correlations</code> or <code>VarCorr(x)</code> for those.</p>
-<p>One cross-backend difference is not yet harmonized:
-<code>tidy.beezdemand_tmb(effects = "ran_pars")</code> reports random-effect
-<em>standard deviations</em>, whereas <code><a href="tidy.beezdemand_nlme.html">tidy.beezdemand_nlme()</a></code> reports
-<em>variances</em>. Code consuming <code>estimate</code> from <code>"ran_pars"</code> rows must
-account for this.</p>
+<code>summary(x)$correlations</code> or <code>VarCorr(x)</code> for those. The NLME sibling
+<code><a href="tidy.beezdemand_nlme.html">tidy.beezdemand_nlme()</a></code> likewise reports SDs (post-TICKET-030), so
+backend-agnostic code can consume the <code>estimate</code> column without dispatch
+logic on either side.</p>
     </div>
 
     <div class="section level2">

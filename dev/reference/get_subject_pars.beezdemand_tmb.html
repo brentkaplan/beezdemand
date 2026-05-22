@@ -63,7 +63,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
-<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, expanded <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, expanded <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -75,15 +75,23 @@
 
 
 <dt id="arg-expanded">expanded<a class="anchor" aria-label="anchor" href="#arg-expanded"></a></dt>
-<dd><p>Logical. When <code>FALSE</code> (default) returns the
-wide one-row-per-subject table. When <code>TRUE</code>, returns a long
-table with one row per (subject, within-subject-factor-level)
-combination, with model-derived per-cell <code>Q0</code>, <code>alpha</code>,
-<code>Pmax</code>, and <code>Omax</code>. Use this for fits where a within-
-subject factor appears in <code>factors</code> or in
-<code>random_effects</code> (e.g. multi-block <code>pdBlocked</code> specs);
-the wide default returns <code>NA</code> in those columns because no
-single subject-level value is well-defined.</p></dd>
+<dd><p>Controls return shape for fits with within-id-varying
+design columns (factor-expanded random effects, within-id
+continuous covariates, or multi-block <code>pdBlocked</code> specs).</p><ul><li><p><code>NULL</code> (default): auto-detect. When fit-time within-id
+variation caused <code>NA</code> in cached <code>subject_pars$Q0</code>,
+runs the expansion machinery: rows are expanded across
+within-id factor levels (one row per (subject, factor-level)
+cell), and within-id numeric covariates are conditioned at
+the subject's mean (no row expansion from numerics). When the
+cached <code>Q0</code> has no <code>NA</code>, returns the wide
+one-row-per-subject shape unchanged.</p></li>
+<li><p><code>TRUE</code>: always attempt expansion. On a fit with no
+within-id variation, silently returns the wide shape.</p></li>
+<li><p><code>FALSE</code>: always return the wide shape. Emits a
+one-line warning on a fit with within-id variation (the
+returned <code>Q0</code>, <code>alpha</code>, <code>Pmax</code>, <code>Omax</code>
+are <code>NA</code>).</p></li>
+</ul></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -92,11 +100,17 @@ single subject-level value is well-defined.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>When <code>expanded = FALSE</code>: data frame with columns
-<code>id</code>, <code>b_i</code>, <code>c_i</code> (if 2 RE), <code>Q0</code>,
-<code>alpha</code>, <code>Pmax</code>, <code>Omax</code>. When <code>expanded = TRUE</code>:
-data frame with the within-subject factor columns added, one row per
-(subject, factor-level) combination.</p>
+    <p>When the resolved <code>expanded</code> is <code>FALSE</code>: data
+frame with columns <code>id</code>, <code>b_i</code>, <code>c_i</code> (if 2 RE),
+<code>Q0</code>, <code>alpha</code>, <code>Pmax</code>, <code>Omax</code>. When the
+resolved <code>expanded</code> is <code>TRUE</code>, the shape depends on the
+kind of within-id variation: for fits with within-id factors, the
+within-subject factor columns are added and rows are expanded to one
+per (subject, factor-level) cell with per-cell <code>Q0</code>,
+<code>alpha</code>, <code>Pmax</code>, <code>Omax</code>; for fits whose only within-id
+variation is numeric, the numerics are conditioned at the subject's
+mean and the return is one row per subject (no added factor columns)
+with finite <code>Q0</code> / <code>alpha</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="per-block-random-effect-matrices">Per-block random-effect matrices<a class="anchor" aria-label="anchor" href="#per-block-random-effect-matrices"></a></h2>
