@@ -37,6 +37,19 @@ cover TICKET-011 phase work added under this development cycle.
   directly. The fit-time 4-line warning at fit time
   (`R/tmb-demand.R`) is unchanged.
 
+## New features (TICKET-019)
+
+* `coef()` on `beezdemand_tmb` fits gains
+  `type = c("internal", "subject", "combined", "fixed")`. The default
+  (`"internal"`) is **unchanged** — it still returns the raw optimizer
+  coefficient vector, so `fixef()` and tooling that dispatches via
+  `coef()` (e.g. `car::deltaMethod`, `multcomp::glht`) are unaffected.
+  `type = "subject"` (alias `"combined"`) returns the per-subject
+  parameter tibble (`get_subject_pars(fit)`, auto-detecting within-id
+  factor expansion); `type = "fixed"` returns a one-row tibble of the
+  fixed-effect coefficients. Supplying `report_space` through `...` is an
+  error (no scale conversion in `coef()`).
+
 ## TMB post-fit fixes (TICKET-011 Phase 0)
 
 * `fit_demand_tmb()` now validates that every column of the fixed-effect
@@ -285,8 +298,8 @@ land here as the foundation for the Phase 2 factor-RE work.
 * Does **not** unlock `emmeans` / `effects` / `ggeffects`
   (need `recover_data` + `emm_basis` methods), `drop1` / `add1` /
   `MuMIn::dredge` (need `terms()` + formula-update `update()` form),
-  or any tool that dispatches via `coef()` after the planned
-  TICKET-019 default change. Those each remain follow-up tickets.
+  or any tool that dispatches via `coef()` after a future
+  `coef()` default change. Those each remain follow-up tickets.
 
 ## Variance-covariance, fitted, and residual accessors (TICKET-026)
 
@@ -313,7 +326,7 @@ land here as the foundation for the Phase 2 factor-RE work.
   alias that returns the optimizer's flat parameterization (current
   default behavior). This preserves the numeric-vector escape hatch
   consumed by `car::deltaMethod`, `multcomp::glht`, and similar tooling
-  across the planned `coef()` default change to a per-subject tibble.
+  across a future `coef()` default change to a per-subject tibble.
 * `augment.beezdemand_tmb()` was refactored to share an internal
   `.tmb_fitted_resid()` helper with the new `fitted()` and `residuals()`
   methods, eliminating the duplicate predict() call and guaranteeing

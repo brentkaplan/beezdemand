@@ -151,9 +151,9 @@ test_that("vcov errors helpfully on unconverged fit", {
 
 test_that("car::deltaMethod with explicit numeric-vector form is callable", {
   # Smoke test using the recommended downstream pattern. We do NOT pass `fit`
-  # directly because car::deltaMethod.default() calls coef(object), and post-
-  # TICKET-019 coef(fit) will return a per-subject tibble. Pass the named
-  # numeric internal parameter vector instead.
+  # directly because car::deltaMethod.default() calls coef(object); we pass
+  # the explicit internal parameter vector so the call is robust regardless
+  # of coef()'s default (and to any future coef() default change).
   skip_on_cran()
   skip_if_not_installed("TMB")
   skip_if_not_installed("car")

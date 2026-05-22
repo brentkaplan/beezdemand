@@ -4,40 +4,60 @@
 \alias{coef.beezdemand_tmb}
 \title{Extract Coefficients from TMB Model}
 \usage{
-\method{coef}{beezdemand_tmb}(object, type = c("internal"), ...)
+\method{coef}{beezdemand_tmb}(object, type = c("internal", "subject", "combined", "fixed"), ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
 
-\item{type}{Currently only \code{"internal"}. Reserved for the per-subject
-tibble outputs planned under TICKET-019.}
+\item{type}{One of \code{"internal"} (default; raw optimizer vector),
+\code{"subject"} or its alias \code{"combined"} (per-subject
+parameter tibble), or \code{"fixed"} (one-row tibble of fixed-effect
+coefficients).}
 
-\item{...}{Additional arguments (currently unused).}
+\item{...}{Additional arguments (currently unused; supplying
+\code{report_space} is an error).}
 }
 \value{
-Named numeric vector of fixed-effect coefficients on the
-optimizer's internal parameterization.
+For \code{type = "internal"}, a named numeric vector. For
+\code{type = "subject"}/\code{"combined"}, a tibble with one row per
+subject (or one row per subject-by-within-id-factor-level cell when
+the fit has within-id factor variation). For \code{type = "fixed"}, a
+one-row tibble of fixed-effect coefficients.
 }
 \description{
-Returns the optimizer's flat parameterization as a named numeric vector
-(entries include \code{beta_q0}, \code{beta_alpha}, \code{logsigma_e}, and any random-
-effect or covariance hyperparameters; intercepts are on log scale because
-the optimizer works in unconstrained space).
+Extract coefficients from a fitted \code{beezdemand_tmb} model. The
+\code{type} argument selects the return shape. The default,
+\code{"internal"}, is unchanged: a named numeric vector of the
+optimizer's flat parameterization (entries include \code{beta_q0},
+\code{beta_alpha}, \code{logsigma*}, and any covariance
+hyperparameters; intercepts are on the log scale because the optimizer
+works in unconstrained space). This is the numeric-vector escape hatch
+consumed by tooling such as \code{car::deltaMethod} and
+\code{multcomp::glht}.
 }
 \details{
-\code{type = "internal"} is the current and only supported value; it is exposed
-as a forward-compatible alias for the per-subject tibble outputs planned
-under TICKET-019 (where \code{coef(fit)} will default to a per-subject tibble
-and \code{type = "internal"} will be preserved as the numeric-vector escape
-hatch consumed by \code{car::deltaMethod}, \code{multcomp::glht}, and similar
-tooling that expects a flat coefficient vector).
+\code{type = "subject"} (alias \code{"combined"}) returns the
+per-subject parameter tibble from \code{\link{get_subject_pars}} (with
+\code{expanded = NULL}, so within-id factor expansion is auto-detected).
+This is concept-parity with \code{coef.beezdemand_nlme(type = "combined")}
+but not column-identical: it returns resolved per-subject parameters
+(\code{Q0}, \code{alpha}, ...), not a per-design-term coefficient
+matrix. \code{type = "fixed"} returns a one-row tibble of the
+fixed-effect coefficients only (the \code{beta_q0} / \code{beta_alpha}
+block on the internal parameterization), excluding \code{log_k},
+\code{logsigma*}, and \code{rho*}.
+
+Scale conversion is not performed here: supplying \code{report_space}
+through \code{...} is an error. Use \code{\link{get_subject_pars}} or
+\code{\link{predict.beezdemand_tmb}} for natural-scale parameters.
 }
 \examples{
 \donttest{
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
-coef(fit)
-coef(fit, type = "internal")  # explicit equivalent
+coef(fit)                    # raw optimizer vector (default, "internal")
+coef(fit, type = "subject")  # per-subject parameter tibble
+coef(fit, type = "fixed")    # fixed-effect coefficients
 }
 
 }
