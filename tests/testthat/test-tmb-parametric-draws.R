@@ -85,10 +85,13 @@ test_that("confint simulate is reproducible with seed", {
   expect_false(isTRUE(all.equal(ci1$conf.low, ci3$conf.low)))
 })
 
-test_that("confint simulate errors helpfully on R < 100", {
+test_that("confint simulate errors helpfully on invalid R", {
   skip_on_cran()
   fit <- .fit_apt_tmb()
   expect_error(confint(fit, method = "simulate", R = 50), "R")
+  # Non-integer R must error, not silently floor with a recycling warning
+  # inside .tmb_parametric_draws() (mirrors the boot_demand() guard).
+  expect_error(confint(fit, method = "simulate", R = 150.5), "whole number")
 })
 
 test_that(".tmb_parametric_draws returns an R x p matrix matching coef/vcov moments", {

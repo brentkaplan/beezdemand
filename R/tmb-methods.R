@@ -2746,12 +2746,14 @@ confint.beezdemand_tmb <- function(
     conf_low <- coefs - z * se_vec
     conf_high <- coefs + z * se_vec
   } else {
-    if (!is.numeric(R) || length(R) != 1L || is.na(R) || R < 100) {
+    if (!is.numeric(R) || length(R) != 1L || !is.finite(R) ||
+          R < 100 || R != round(R)) {
       cli::cli_abort(c(
-        "{.arg R} must be a single number >= 100.",
+        "{.arg R} must be a single whole number >= 100.",
         i = "Recommend {.code R >= 1000} for stable quantile estimates."
       ))
     }
+    R <- as.integer(R)
     a <- (1 - level) / 2
     if (any(keep)) {
       # `keep` masks the full coefficient vector, so it indexes the draw
