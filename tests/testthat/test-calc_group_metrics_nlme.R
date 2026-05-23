@@ -18,6 +18,21 @@
   d
 }
 
+# Shared zben + gender NLME fit, memoized so it is fit at most once per file run
+# (testthat parallelizes files, not test_that() blocks, so a file-level cache is
+# valid). Reused by the shape, self-consistency, at=, and invalid-at tests to
+# bound peak memory on CI. Pattern mirrors test-boot-demand.R.
+.cgm_cache <- new.env(parent = emptyenv())
+
+.cgm_zben_gender_fit <- function() {
+  if (is.null(.cgm_cache$zben_gender)) {
+    .cgm_cache$zben_gender <- suppressMessages(fit_demand_mixed(
+      .cgm_nlme_subsample(), equation_form = "zben", factors = "gender",
+      y_var = "y_ll4", x_var = "x", id_var = "id"))
+  }
+  .cgm_cache$zben_gender
+}
+
 # Manual parameter-first marginalization reference: geometric mean of the
 # per-cell natural-scale EMMs fed to the shared engine. Mirrors the method's
 # internals but composed only from public pieces, so it is an independent check.
@@ -75,10 +90,7 @@
 # ---------------------------------------------------------------------------
 test_that("calc_group_metrics.beezdemand_nlme returns the flat scalar list", {
   skip_on_cran()
-  d <- .cgm_nlme_subsample()
-  fit <- fit_demand_mixed(
-    d, equation_form = "zben", factors = "gender",
-    y_var = "y_ll4", x_var = "x", id_var = "id")
+  fit <- .cgm_zben_gender_fit()
 
   expect_no_warning(cm <- calc_group_metrics(fit))
   expect_type(cm, "list")
@@ -97,14 +109,14 @@ test_that("calc_group_metrics.beezdemand_nlme returns the flat scalar list", {
 # ---------------------------------------------------------------------------
 test_that("calc_group_metrics nlme and tmb share field + conditioned_on shape", {
   skip_on_cran()
-  d <- .cgm_nlme_subsample()
-  fit_nlme <- fit_demand_mixed(
-    d, equation_form = "zben", factors = "gender",
-    y_var = "y_ll4", x_var = "x", id_var = "id")
-  # Small-subsample zben TMB fit can emit a benign NaN-SE warning from
-  # sdreport; this test only compares field shape, so suppress it.
+  fit_nlme <- .cgm_zben_gender_fit()
+  # Shape parity only checks field names / conditioned_on structure (not
+  # values), so use the smallest adequate factored TMB fit to bound memory --
+  # a large $sdr$cov is unnecessary here. (Also emits a benign NaN-SE warning
+  # from sdreport on small data; suppress it.)
   fit_tmb <- suppressWarnings(fit_demand_tmb(
-    d, equation = "zben", factors = "gender", y_var = "y_ll4", verbose = 0))
+    .cgm_nlme_subsample(n_per_group = 8),
+    equation = "exponential", factors = "gender", verbose = 0))
 
   cm_nlme <- calc_group_metrics(fit_nlme)
   cm_tmb <- calc_group_metrics(fit_tmb)
@@ -120,10 +132,7 @@ test_that("calc_group_metrics nlme and tmb share field + conditioned_on shape", 
 # ---------------------------------------------------------------------------
 test_that("calc_group_metrics.beezdemand_nlme is self-consistent (snd)", {
   skip_on_cran()
-  d <- .cgm_nlme_subsample()
-  fit <- fit_demand_mixed(
-    d, equation_form = "zben", factors = "gender",
-    y_var = "y_ll4", x_var = "x", id_var = "id")
+  fit <- .cgm_zben_gender_fit()
 
   cm <- calc_group_metrics(fit)
   ref <- .cgm_nlme_reference(fit, "snd")
@@ -175,10 +184,7 @@ test_that("calc_group_metrics.beezdemand_nlme: intercept-only conditioned_on NUL
 # ---------------------------------------------------------------------------
 test_that("calc_group_metrics.beezdemand_nlme honors at = factor level", {
   skip_on_cran()
-  d <- .cgm_nlme_subsample()
-  fit <- fit_demand_mixed(
-    d, equation_form = "zben", factors = "gender",
-    y_var = "y_ll4", x_var = "x", id_var = "id")
+  fit <- .cgm_zben_gender_fit()
 
   cm <- calc_group_metrics(fit, at = list(gender = "Male"))
   expect_equal(cm$conditioned_on$factors$gender, "Male")
@@ -192,10 +198,7 @@ test_that("calc_group_metrics.beezdemand_nlme honors at = factor level", {
 # ---------------------------------------------------------------------------
 test_that("calc_group_metrics.beezdemand_nlme errors on invalid at name", {
   skip_on_cran()
-  d <- .cgm_nlme_subsample()
-  fit <- fit_demand_mixed(
-    d, equation_form = "zben", factors = "gender",
-    y_var = "y_ll4", x_var = "x", id_var = "id")
+  fit <- .cgm_zben_gender_fit()
 
   expect_error(
     calc_group_metrics(fit, at = list(nonexistent = "value")),

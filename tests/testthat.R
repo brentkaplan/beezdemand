@@ -9,4 +9,15 @@
 library(testthat)
 library(beezdemand)
 
+# On CI, cap parallel test workers to bound peak memory. Heavy TMB/NLME fits
+# (each carrying a large sdreport covariance) run many-wide under
+# `Config/testthat/parallel: true` and OOM the memory-constrained oldrel-1
+# runner. testthat::default_num_cpus() consults getOption("Ncpus") BEFORE the
+# TESTTHAT_CPUS env var, and r-lib/actions sets Ncpus to the core count, so the
+# cap must set Ncpus explicitly (the env var alone would be ignored).
+if (nzchar(Sys.getenv("CI"))) {
+  options(Ncpus = 2L)
+  Sys.setenv(TESTTHAT_CPUS = "2")
+}
+
 test_check("beezdemand")
