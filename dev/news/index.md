@@ -10,6 +10,21 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### New features (TICKET-025)
+
+- [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  gains a `beezdemand_nlme` method, giving
+  [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+  fits the same population-level metric summary (`Pmax`, `Omax`, `Qmax`,
+  `elasticity_at_pmax`) already available for `beezdemand_tmb` fits.
+  Fixed-effect `Q0` and `alpha` estimated marginal means are
+  marginalized parameter-first (a geometric mean across the reference
+  grid; continuous covariates at their training mean and factor levels
+  equally weighted, unless conditioned via `at`), then the scalar
+  metrics are derived through the shared Pmax/Omax engine. Returns the
+  same flat list (`Pmax`, `Omax`, `Qmax`, `elasticity_at_pmax`,
+  `method`, `conditioned_on`) as the TMB method.
+
 ### New features (TICKET-024)
 
 - [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
