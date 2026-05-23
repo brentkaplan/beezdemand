@@ -10,6 +10,20 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### New features (TICKET-024)
+
+- [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  computes parametric-bootstrap confidence intervals on derived demand
+  metrics (`Pmax`, `Omax`, `Qmax`, `EV`, `elasticity_at_pmax`) for
+  `beezdemand_tmb` fits. Draws of the fixed-effect parameter vector are
+  taken from the joint asymptotic posterior, mapped to per-condition
+  `(Q0, alpha, k)` through the model design, and summarized by empirical
+  quantiles. Returns one row per `(statistic, condition)` (`statistic`,
+  `condition`, `estimate`, `conf.low`, `conf.high`, `level`); the
+  per-cell point estimate matches `calc_group_metrics(fit, at = cell)`.
+  Uncertainty in `k` is propagated when `k` is estimated. NLME fits and
+  nonparametric resampling are planned for a follow-up.
+
 ### Breaking changes (TICKET-022)
 
 - [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
@@ -55,6 +69,20 @@ work added under this development cycle.
   `type = "fixed"` returns a one-row tibble of the fixed-effect
   coefficients. Supplying `report_space` through `...` is an error (no
   scale conversion in [`coef()`](https://rdrr.io/r/stats/coef.html)).
+
+### New features (TICKET-018)
+
+- [`confint()`](https://rdrr.io/r/stats/confint.html) on
+  `beezdemand_tmb` fits gains `method = c("wald", "simulate")`. The
+  default (`"wald"`) is **unchanged**. `"simulate"` draws `R` parametric
+  Monte Carlo samples (default `R = 1000`, with an optional `seed`) from
+  the joint asymptotic Gaussian posterior `N(coef(fit), vcov(fit))` and
+  reports per-coefficient empirical quantiles. It is *diagnostic*: the
+  simulated intervals are asymptotically Wald-equivalent on
+  per-coefficient CIs (useful as a side-by-side check on the Gaussian
+  approximation), do not improve on Wald at boundary cases, and carry no
+  positivity guarantee on the internal scale. No new package dependency
+  is added.
 
 ### TMB post-fit fixes (TICKET-011 Phase 0)
 

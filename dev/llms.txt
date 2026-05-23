@@ -298,6 +298,8 @@ Functions for computing demand-derived metrics like Pmax and Omax.
   : Calculate Group-Level Demand Metrics
 - [`calc_group_metrics(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.md)
   : Calculate Population-Level Demand Metrics for TMB Model
+- [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  : Bootstrap Confidence Intervals for Derived Demand Metrics
 - [`beezdemand_calc_pmax_omax()`](https://brentkaplan.github.io/beezdemand/reference/beezdemand_calc_pmax_omax.md)
   : Calculate Pmax and Omax with Method Reporting and Parameter-Space
   Safety

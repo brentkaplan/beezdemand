@@ -59,6 +59,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/beezdemand_descriptive_methods.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/beezdemand_empirical_methods.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/beezdemand_split_by.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/boot_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/build_fixed_rhs.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.html</loc></url>
@@ -128,6 +129,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_get_k.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_group_terms.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_multi_start.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_parametric_draws.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_equation.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_population.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_subject.html</loc></url>

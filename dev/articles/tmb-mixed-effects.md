@@ -535,6 +535,35 @@ confint(fit_2re, report_space = "natural")
 #> 7 rho_raw            -0.481  -0.738     -0.225   0.95
 ```
 
+For a quick diagnostic on the Gaussian (Wald) approximation, request
+Monte Carlo intervals with `method = "simulate"`. These draw `R` samples
+from the joint asymptotic posterior `N(coef, vcov)` and report empirical
+quantiles. They are asymptotically Wald-equivalent, so a large
+discrepancy between the two flags a fit where the Gaussian approximation
+is suspect. This is a diagnostic comparison, **not** an accuracy
+improvement: the `simulate` method does not capture non-Gaussian
+posterior shape and carries no positivity guarantee on the internal
+scale. Set `seed` for reproducibility.
+
+``` r
+
+ci_wald <- confint(fit_2re)
+ci_sim <- confint(fit_2re, method = "simulate", R = 2000, seed = 42)
+data.frame(
+  term = ci_wald$term,
+  width_wald = ci_wald$conf.high - ci_wald$conf.low,
+  width_sim = ci_sim$conf.high - ci_sim$conf.low
+)
+#>                term width_wald  width_sim
+#> 1    Q0:(Intercept) 0.30035058 0.29461890
+#> 2 alpha:(Intercept) 0.41625530 0.42113249
+#> 3             log_k 0.10833786 0.10835459
+#> 4          logsigma 0.29327780 0.29006254
+#> 5          logsigma 0.31651456 0.31452214
+#> 6        logsigma_e 0.09071999 0.09080796
+#> 7           rho_raw 0.51338445 0.52553410
+```
+
 ### Variance-Covariance and the Delta Method
 
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) returns the fixed-effect

@@ -68,6 +68,9 @@
 <span>  parm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  report_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"internal"</span>, <span class="st">"natural"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"wald"</span>, <span class="st">"simulate"</span><span class="op">)</span>,</span>
+<span>  R <span class="op">=</span> <span class="fl">1000L</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -100,6 +103,26 @@ remain on their internal scales; use <code><a href="https://rdrr.io/r/base/summa
 <code>.tmb_format_variance_components()</code> for transformed variance components.</p></dd>
 
 
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>Character. <code>"wald"</code> (default) returns Hessian-based
+Wald intervals (<code>coef +/- z * se</code>). <code>"simulate"</code> draws <code>R</code> parametric
+Monte Carlo samples from the joint asymptotic Gaussian posterior
+\(N(\hat\beta, \hat\Sigma)\) (with \(\hat\Sigma = \)<code>vcov(object)</code>)
+and reports per-coefficient empirical quantiles.</p></dd>
+
+
+<dt id="arg-r">R<a class="anchor" aria-label="anchor" href="#arg-r"></a></dt>
+<dd><p>Integer. Number of Monte Carlo draws for <code>method = "simulate"</code>.
+Must be <code>&gt;= 100</code>; <code>&gt;= 1000</code> is recommended for stable quantiles.
+Ignored for <code>method = "wald"</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Optional integer seed for <code>method = "simulate"</code>
+reproducibility. When supplied, the caller's RNG state is restored on
+exit so the global stream is left unperturbed.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments.</p></dd>
 
@@ -107,6 +130,23 @@ remain on their internal scales; use <code><a href="https://rdrr.io/r/base/summa
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with term, estimate, conf.low, conf.high, level.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>method = "simulate"</code> is Monte Carlo simulation from the
+asymptotic Gaussian posterior – not a data-resampling bootstrap and
+not a profile-likelihood interval. Because the sampled distribution is
+the same Gaussian that Wald assumes, the simulated per-coefficient
+quantiles converge to the Wald intervals as <code>R -&gt; Inf</code>; the method does
+<strong>not</strong> improve on Wald at boundary cases and offers no positivity
+guarantee on the internal scale (<code>logsigma_*</code> intervals can be
+negative). Its value is (a) a diagnostic side-by-side check on the
+Gaussian approximation, and (b) a shared draw primitive
+(<code><a href="dot-tmb_parametric_draws.html">.tmb_parametric_draws()</a></code>) for derived-metric confidence intervals.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="confint.beezdemand_nlme.html">confint.beezdemand_nlme()</a></code>, <code><a href="vcov.beezdemand_tmb.html">vcov.beezdemand_tmb()</a></code>.</p></div>
     </div>
 
     <div class="section level2">
@@ -137,6 +177,18 @@ remain on their internal scales; use <code><a href="https://rdrr.io/r/base/summa
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> logsigma          -<span style="color: #BB0000;">0.780</span>   -<span style="color: #BB0000;">1.23</span>     -<span style="color: #BB0000;">0.329</span>    0.95</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> logsigma_e        -<span style="color: #BB0000;">1.95</span>    -<span style="color: #BB0000;">2.07</span>     -<span style="color: #BB0000;">1.83</span>     0.95</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> rho_raw           -<span style="color: #BB0000;">0.467</span>   -<span style="color: #BB0000;">1.11</span>      0.178    0.95</span>
+<span class="r-in"><span><span class="co"># Diagnostic Monte Carlo intervals (asymptotically Wald-equivalent):</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, method <span class="op">=</span> <span class="st">"simulate"</span>, R <span class="op">=</span> <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 7 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   term              estimate conf.low conf.high level</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0:(Intercept)       1.87    1.62       2.11   0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha:(Intercept)   -<span style="color: #BB0000;">5.80</span>   -<span style="color: #BB0000;">6.89</span>      -<span style="color: #BB0000;">4.72</span>   0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> log_k                0.895  -<span style="color: #BB0000;">0.039</span><span style="color: #BB0000; text-decoration: underline;">9</span>     1.86   0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> logsigma            -<span style="color: #BB0000;">0.953</span>  -<span style="color: #BB0000;">1.39</span>      -<span style="color: #BB0000;">0.524</span>  0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> logsigma            -<span style="color: #BB0000;">0.780</span>  -<span style="color: #BB0000;">1.23</span>      -<span style="color: #BB0000;">0.336</span>  0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> logsigma_e          -<span style="color: #BB0000;">1.95</span>   -<span style="color: #BB0000;">2.07</span>      -<span style="color: #BB0000;">1.82</span>   0.95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> rho_raw             -<span style="color: #BB0000;">0.467</span>  -<span style="color: #BB0000;">1.10</span>       0.144  0.95</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
