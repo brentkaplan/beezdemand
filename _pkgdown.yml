@@ -144,6 +144,7 @@ reference:
       - calc_omax_pmax
       - calc_observed_pmax_omax
       - starts_with("calc_group_metrics")
+      - starts_with("boot_demand")
       - beezdemand_calc_pmax_omax
       - beezdemand_calc_pmax_omax_vec
       - get_empirical_measures

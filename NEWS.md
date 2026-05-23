@@ -7,6 +7,20 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## New features (TICKET-024)
+
+* `boot_demand()` computes parametric-bootstrap confidence intervals on
+  derived demand metrics (`Pmax`, `Omax`, `Qmax`, `EV`,
+  `elasticity_at_pmax`) for `beezdemand_tmb` fits. Draws of the
+  fixed-effect parameter vector are taken from the joint asymptotic
+  posterior, mapped to per-condition `(Q0, alpha, k)` through the model
+  design, and summarized by empirical quantiles. Returns one row per
+  `(statistic, condition)` (`statistic`, `condition`, `estimate`,
+  `conf.low`, `conf.high`, `level`); the per-cell point estimate matches
+  `calc_group_metrics(fit, at = cell)`. Uncertainty in `k` is propagated
+  when `k` is estimated. NLME fits and nonparametric resampling are
+  planned for a follow-up.
+
 ## Breaking changes (TICKET-022)
 
 * `get_subject_pars()` on `beezdemand_tmb` fits now auto-detects fits
