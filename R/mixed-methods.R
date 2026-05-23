@@ -854,6 +854,173 @@ get_observed_demand_param_emms <- function(
   }
 }
 
+#' Population-level demand metrics for a mixed-effects NLME fit
+#'
+#' Computes parameter-first-marginalized Pmax, Omax, Qmax, and
+#' elasticity-at-Pmax for a [fit_demand_mixed()] model, mirroring the return
+#' contract of [calc_group_metrics()] for `beezdemand_tmb` fits: a flat scalar
+#' list, NOT a tibble.
+#'
+#' Fixed-effect log-Q0 and log-alpha estimated marginal means are averaged
+#' across the reference grid (continuous covariates at their training mean by
+#' default, factor levels equally weighted) on the natural scale (a geometric
+#' mean), then the scalar metrics are derived from the marginalized parameters
+#' via [beezdemand_calc_pmax_omax()]. `model_type` follows the equation form:
+#' `"exponentiated"` (which carries a range parameter `k`) uses the Hursh &
+#' Silberberg solution; `"zben"`/`"simplified"` use the simplified (SND)
+#' solution.
+#'
+#' @param object A `beezdemand_nlme` object from [fit_demand_mixed()].
+#' @param at Optional named list conditioning continuous covariates / factor
+#'   levels (same shape as the `beezdemand_tmb` method). Covariates default to
+#'   their training mean; factors are marginalized with equal weights unless a
+#'   level is supplied.
+#' @param ... Unused.
+#'
+#' @return A flat list with scalar `Pmax`, `Omax`, `Qmax`,
+#'   `elasticity_at_pmax`, character `method`, and `conditioned_on` (a list of
+#'   `$covariates` and/or `$factors`, or `NULL` when the fit has neither).
+#'
+#' @examples
+#' \donttest{
+#' data(apt_full, package = "beezdemand")
+#' apt_full$y_ll4 <- ll4(apt_full$y, lambda = 4)
+#' fit <- fit_demand_mixed(
+#'   apt_full, equation_form = "zben", factors = "gender",
+#'   y_var = "y_ll4", x_var = "x", id_var = "id")
+#' calc_group_metrics(fit)
+#' calc_group_metrics(fit, at = list(gender = "Male"))
+#' }
+#'
+#' @seealso [calc_group_metrics()], [get_demand_param_emms()]
+#' @export
+#' @keywords internal
+calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
+  pinfo <- object$param_info
+  all_factors <- unique(c(pinfo$factors, pinfo$factors_Q0, pinfo$factors_alpha))
+  all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
+  cov_names <- pinfo$continuous_covariates %||% character(0)
+
+  # Validate `at` inline (mirrors .tmb_validate_at logic with NLME field
+  # names: factors_Q0 / factors_alpha are capitalized on the NLME side).
+  if (!is.null(at)) {
+    if (is.null(names(at)) || any(!nzchar(names(at)))) {
+      cli::cli_abort(
+        "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)}).")
+    }
+    valid_names <- c(all_factors, cov_names)
+    bad <- setdiff(names(at), valid_names)
+    if (length(bad) > 0L) {
+      cli::cli_abort(c(
+        "Unknown name{?s} in {.arg at}: {.field {bad}}.",
+        "i" = "Valid names are the fit's factors and continuous covariates: {.field {valid_names}}.",
+        "x" = "Did you mistype a factor or covariate name?"
+      ))
+    }
+    for (nm in names(at)) {
+      v <- at[[nm]]
+      if (length(v) < 1L) {
+        cli::cli_abort("{.field {nm}} in {.arg at} must be a non-empty vector.")
+      }
+      if (nm %in% all_factors) {
+        observed <- sort(unique(as.character(object$data[[nm]])))
+        bad_vals <- setdiff(as.character(v), observed)
+        if (length(bad_vals) > 0L) {
+          cli::cli_abort(c(
+            "{.field {nm}} = {.val {bad_vals}} not an observed level.",
+            "i" = "Observed levels: {.val {observed}}."
+          ))
+        }
+      } else {
+        v_num <- suppressWarnings(as.numeric(v))
+        if (any(is.na(v_num)) || any(!is.finite(v_num))) {
+          cli::cli_abort(
+            "{.field {nm}} value{?s} {.val {as.character(v)}} must be finite numeric.")
+        }
+      }
+    }
+  }
+
+  # Model type / k from the equation form (mirror the TMB has_k mapping:
+  # exponential|exponentiated -> k; NLME's only k-form is exponentiated).
+  eq <- object$formula_details$equation_form_selected
+  has_k <- identical(eq, "exponentiated")
+  k_val <- pinfo$k
+
+  # Parameter-first marginalization: geometric mean of the per-cell natural
+  # EMMs. get_demand_param_emms() joins Q0+alpha internally regardless of
+  # `param`, so the per-param table can carry NA join rows under
+  # overlapping-label collapse_levels -- filter to finite-positive before the
+  # geometric mean, and abort if a parameter has no usable cells. emmeans
+  # SE-related warnings are irrelevant (only point estimates are used), so they
+  # are suppressed for silence-parity with the TMB method.
+  emm_q0 <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE)))
+  emm_alpha <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE)))
+
+  .marginal_geom_mean <- function(vals, lbl) {
+    vals <- vals[is.finite(vals) & vals > 0]
+    if (length(vals) == 0L) {
+      cli::cli_abort(c(
+        "No usable {lbl} EMM rows to marginalize.",
+        "i" = "All emmeans values were non-finite/non-positive (possible with overlapping {.arg collapse_levels} labels)."
+      ))
+    }
+    exp(mean(log(vals)))
+  }
+  Q0 <- .marginal_geom_mean(emm_q0$Q0_natural, "Q0")
+  alpha_val <- .marginal_geom_mean(emm_alpha$alpha_natural, "alpha")
+
+  # conditioned_on description (mirror the TMB method).
+  conditioned_on <- list()
+  if (length(cov_names) > 0L) {
+    cov_values <- vapply(cov_names, function(cv) {
+      if (!is.null(at) && cv %in% names(at)) {
+        as.numeric(at[[cv]][1])
+      } else {
+        mean(object$data[[cv]], na.rm = TRUE)
+      }
+    }, numeric(1))
+    names(cov_values) <- cov_names
+    conditioned_on$covariates <- cov_values
+  }
+  if (length(all_factors) > 0L) {
+    factor_treatment <- vector("list", length(all_factors))
+    names(factor_treatment) <- all_factors
+    for (f in all_factors) {
+      factor_treatment[[f]] <- if (!is.null(at) && f %in% names(at)) {
+        as.character(at[[f]])
+      } else {
+        "marginal"
+      }
+    }
+    conditioned_on$factors <- factor_treatment
+  }
+  if (length(conditioned_on) == 0L) conditioned_on <- NULL
+
+  result <- if (has_k) {
+    beezdemand_calc_pmax_omax(
+      model_type = "hs",
+      params = list(alpha = alpha_val, q0 = Q0, k = k_val),
+      param_scales = list(alpha = "natural", q0 = "natural", k = "natural"))
+  } else {
+    beezdemand_calc_pmax_omax(
+      model_type = "snd",
+      params = list(alpha = alpha_val, q0 = Q0),
+      param_scales = list(alpha = "natural", q0 = "natural"))
+  }
+
+  list(
+    Pmax = result$pmax_model,
+    Omax = result$omax_model,
+    Qmax = result$q_at_pmax_model,
+    elasticity_at_pmax = result$elasticity_at_pmax_model,
+    method = result$method_model,
+    conditioned_on = conditioned_on
+  )
+}
+
 #' Get Pairwise Comparisons for Demand Parameters
 #'
 #' Conducts pairwise comparisons for Q0 and/or alpha parameters from a
