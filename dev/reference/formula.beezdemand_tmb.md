@@ -44,15 +44,15 @@ fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 formula(fit)
 #> $Q0
 #> ~1
-#> <environment: 0x56508e782d50>
+#> <environment: 0x563b4d54d678>
 #> 
 #> $alpha
 #> ~1
-#> <environment: 0x56508e782d50>
+#> <environment: 0x563b4d54d678>
 #> 
 #> $random
 #> Q0 + alpha ~ 1
-#> <environment: 0x56509264e9a8>
+#> <environment: 0x563b60432af0>
 #> 
 # }
 ```
