@@ -69,6 +69,35 @@ jobs:
           echo "=== BEEZDEMAND_TESTTHAT_CPUS='${BEEZDEMAND_TESTTHAT_CPUS}' ==="
           Rscript -e 'cat("detectCores=", parallel::detectCores(), "Ncpus=", format(getOption("Ncpus","unset")), "TESTTHAT_CPUS=", shQuote(Sys.getenv("TESTTHAT_CPUS")), "\n")' || true
 
+      # TEMP DIAGNOSTIC (revert after this run): on the memory-tight Linux jobs,
+      # run the test files one-by-one OUTSIDE R CMD check, emitting per-file RSS
+      # (ps) + system free via message()/free so output streams LIVE and survives
+      # the SIGTERM the in-check test phase dies under. Pinpoints the last file +
+      # cumulative RSS trend at kill time. Single process (mimics 1 worker), gc()
+      # after each file. Codex-recommended trace; runs before check so it is not
+      # lost if check later kills the job.
+      - name: Memory trace (tests file-by-file, outside R CMD check)
+        if: ${{ runner.os == 'Linux' && matrix.config.tt-cpus == 1 }}
+        run: |
+          R CMD INSTALL --no-byte-compile .
+          Rscript -e '
+            suppressMessages(library(testthat)); suppressMessages(library(beezdemand))
+            rss <- function() { kb <- as.numeric(system(paste("ps -o rss= -p", Sys.getpid()), intern = TRUE)); sprintf("%d MB", round(kb / 1024)) }
+            pick <- function(pre) { x <- list.files("tests/testthat", pattern = pre, full.names = TRUE); x[endsWith(x, ".R") | endsWith(x, ".r")] }
+            for (h in sort(c(pick("^helper"), pick("^setup")))) try(sys.source(h, envir = globalenv()), silent = TRUE)
+            fs <- sort(pick("^test-"))
+            message(sprintf("TRACE start: %d files | RSS %s", length(fs), rss()))
+            for (f in fs) {
+              message(sprintf(">>> START %-46s %s | RSS %s", basename(f), format(Sys.time(), "%H:%M:%S"), rss()))
+              t0 <- Sys.time()
+              tryCatch(suppressWarnings(suppressMessages(testthat::test_file(f, reporter = "silent"))), error = function(err) message("    ERR ", conditionMessage(err)))
+              gc(FALSE)
+              message(sprintf("<<< END   %-46s %5.0fs | RSS %s", basename(f), as.numeric(difftime(Sys.time(), t0, units = "secs")), rss()))
+              system("free -m | sed -n 2p")
+            }
+            message("TRACE complete")
+          '
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
