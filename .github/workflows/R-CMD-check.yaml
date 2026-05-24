@@ -22,13 +22,18 @@ jobs:
         config:
           - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release', tt-cpus: 1}
           - {os: ubuntu-latest,  r: 'release'}
-          - {os: ubuntu-latest,  r: 'oldrel-1'}
+          - {os: ubuntu-latest,  r: 'oldrel-1', tt-cpus: 1}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Cap testthat parallel workers on the memory-tight Linux jobs (devel,
+      # oldrel-1) to bound peak RSS during `checking tests`. Empty for other
+      # matrix entries => testthat default (2). Diagnostic for the SIGTERM/
+      # lost-communication OOM seen on those runners; see tests/testthat.R.
+      BEEZDEMAND_TESTTHAT_CPUS: ${{ matrix.config.tt-cpus }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +58,31 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
+      # Diagnostic: capture memory/cpu headroom + resolved testthat worker
+      # inputs BEFORE the heavy check step, so the evidence survives even if the
+      # runner is later OOM-killed and loses communication (no post step runs).
+      - name: Diagnose runner memory + cpus (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== nproc ===" && nproc || true
+          echo "=== free -h ===" && free -h || true
+          echo "=== BEEZDEMAND_TESTTHAT_CPUS='${BEEZDEMAND_TESTTHAT_CPUS}' ==="
+          Rscript -e 'cat("detectCores=", parallel::detectCores(), "Ncpus=", format(getOption("Ncpus","unset")), "TESTTHAT_CPUS=", shQuote(Sys.getenv("TESTTHAT_CPUS")), "\n")' || true
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+      # Diagnostic: dump the check log + testthat.Rout (worker count, which test
+      # files were mid-run at the SIGTERM) on the surviving runner. Uses
+      # always() not failure(): these failures present as run CANCELLATIONS,
+      # under which failure() is false and the step would be skipped.
+      - name: Capture testthat / check logs (Linux)
+        if: ${{ always() && runner.os == 'Linux' }}
+        run: |
+          echo "=== free -h (post-check) ===" && free -h || true
+          echo "=== 00check.log ==="
+          find . -name '00check.log' -exec cat {} \; 2>/dev/null || true
+          echo "=== testthat.Rout(.fail) ==="
+          find . -name 'testthat.Rout*' -exec sh -c 'echo "--- $1 ---"; cat "$1"' _ {} \; 2>/dev/null || true
