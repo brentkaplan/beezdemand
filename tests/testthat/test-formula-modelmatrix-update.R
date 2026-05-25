@@ -8,6 +8,57 @@
 # * Hurdle tests use `simulate_hurdle_data()` to match the convention in
 #   test-hurdle_methods.R (fit_demand_hurdle has no defaults for
 #   y_var/x_var/id_var).
+#
+# These are structure tests (formula slots, model.matrix shapes, dispatch) that
+# do not depend on data-specific values, so fits run on the smallest fixtures
+# that still exercise the path and are memoized at file level (new.env cache,
+# like test-fit_demand_tmb.R). The apt_full + gender fits use a cap-5 subsample
+# (Female/Male <= 5, the rare 2-subject "Would rather not say" level kept whole)
+# so the 3-level gender factor survives on ~200 rows instead of ~18,700.
+# Copy-on-modify keeps cached fits pristine across any per-test mutation.
+.ffu_cache <- new.env(parent = emptyenv())
+
+.ffu_data <- function() {
+  if (is.null(.ffu_cache$dat)) {
+    data(apt_full, package = "beezdemand")
+    g <- as.factor(apt_full$gender)
+    keep <- unlist(lapply(levels(g), function(lv) {
+      ids <- unique(apt_full$id[g == lv])
+      head(ids[order(ids)], 5L)
+    }))
+    d <- apt_full[apt_full$id %in% keep, , drop = FALSE]
+    d$gender <- droplevels(as.factor(d$gender))
+    .ffu_cache$dat <- d
+  }
+  .ffu_cache$dat
+}
+
+.ffu_full_gender <- function() {
+  if (is.null(.ffu_cache$full_gender)) {
+    .ffu_cache$full_gender <- fit_demand_tmb(.ffu_data(), equation = "exponential",
+                                             factors = "gender", multi_start = FALSE,
+                                             verbose = 0)
+  }
+  .ffu_cache$full_gender
+}
+
+.ffu_apt_exp <- function() {
+  if (is.null(.ffu_cache$apt_exp)) {
+    data(apt, package = "beezdemand")
+    .ffu_cache$apt_exp <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  }
+  .ffu_cache$apt_exp
+}
+
+.ffu_hurdle <- function() {
+  if (is.null(.ffu_cache$hurdle)) {
+    sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+    .ffu_cache$hurdle <- fit_demand_hurdle(
+      sim_data, y_var = "y", x_var = "x", id_var = "id",
+      random_effects = c("zeros", "q0"), verbose = 0)
+  }
+  .ffu_cache$hurdle
+}
 
 test_that("S3 methods are registered for formula / model.matrix / update", {
   # Structural / dispatch check that does not require a fit and is therefore
@@ -23,9 +74,7 @@ test_that("S3 methods are registered for formula / model.matrix / update", {
 test_that("formula.beezdemand_tmb returns named list with Q0, alpha, random", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt_full, package = "beezdemand")
-  fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender",
-                        verbose = 0)
+  fit <- .ffu_full_gender()
   f <- formula(fit)
   expect_named(f, c("Q0", "alpha", "random"))
   expect_s3_class(f$Q0,    "formula")
@@ -53,8 +102,7 @@ test_that("fit_demand_tmb stores call exactly once on the fit object", {
   # past type-only assertions because both entries hold the same value.
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- .ffu_apt_exp()
   expect_equal(sum(names(fit) == "call"), 1L)
   expect_false(as.logical(anyDuplicated(names(fit))))
 })
@@ -62,9 +110,7 @@ test_that("fit_demand_tmb stores call exactly once on the fit object", {
 test_that("model.matrix.beezdemand_tmb returns named list of four matrices by default", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt_full, package = "beezdemand")
-  fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender",
-                        verbose = 0)
+  fit <- .ffu_full_gender()
   mm <- model.matrix(fit)
   expect_type(mm, "list")
   expect_named(mm, c("X_q0", "X_alpha", "Z_q0", "Z_alpha"))
@@ -75,9 +121,7 @@ test_that("model.matrix.beezdemand_tmb returns named list of four matrices by de
 test_that("model.matrix reuses stored formula_details$X_q0 / X_alpha (zero-copy)", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt_full, package = "beezdemand")
-  fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender",
-                        verbose = 0)
+  fit <- .ffu_full_gender()
   expect_identical(model.matrix(fit, what = "X_q0"),    fit$formula_details$X_q0)
   expect_identical(model.matrix(fit, what = "X_alpha"), fit$formula_details$X_alpha)
 })
@@ -89,9 +133,8 @@ test_that("asymmetric factors via collapse_levels produce independent X / formul
   # alpha keeps the original 3-level gender.
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt_full, package = "beezdemand")
   fit <- fit_demand_tmb(
-    apt_full, equation = "exponential",
+    .ffu_data(), equation = "exponential",
     factors = "gender",
     collapse_levels = list(
       # Format: list(factor = list(new_level = c(old_levels), ...))
@@ -131,8 +174,7 @@ test_that("model.matrix(what='Z_alpha') on 1-RE fit returns NULL with a message"
 test_that("model.matrix(what='X') errors with named valid alternatives", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- .ffu_apt_exp()
   expect_error(model.matrix(fit, what = "X"),
                "X_q0|X_alpha")
 })
@@ -140,8 +182,14 @@ test_that("model.matrix(what='X') errors with named valid alternatives", {
 test_that("update.beezdemand_tmb refits with replaced arguments", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt_full, package = "beezdemand")
-  fit_full <- fit_demand_tmb(apt_full, equation = "exponential",
+  # update.beezdemand_tmb refits by re-evaluating the stored call in
+  # parent.frame(), which resolves neither test-local nor file-level names (only
+  # globally-visible ones, the way the package dataset `apt_full` is). Expose the
+  # small fixture globally for the duration of this test so the refit re-resolves
+  # it; remove it on exit.
+  assign(".ffu_upd_data", .ffu_data(), envir = globalenv())
+  on.exit(rm(".ffu_upd_data", envir = globalenv()), add = TRUE)
+  fit_full <- fit_demand_tmb(.ffu_upd_data, equation = "exponential",
                              factors = "gender", verbose = 0)
   fit_null <- update(fit_full, factors = NULL)
   expect_s3_class(fit_null, "beezdemand_tmb")
@@ -153,8 +201,7 @@ test_that("update.beezdemand_tmb refits with replaced arguments", {
 test_that("update.beezdemand_tmb evaluate=FALSE returns the call", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- .ffu_apt_exp()
   call <- update(fit, equation = "simplified", evaluate = FALSE)
   # `call` is a base type ("language"), not an S3 object — use is.call().
   expect_true(is.call(call))
@@ -176,13 +223,7 @@ test_that("formula round-trip produces equivalent fit (random spec preserved)", 
 test_that("formula.beezdemand_hurdle returns named list with binary, consumption, random", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
-  fit <- fit_demand_hurdle(
-    sim_data,
-    y_var = "y", x_var = "x", id_var = "id",
-    random_effects = c("zeros", "q0"),
-    verbose = 0
-  )
+  fit <- .ffu_hurdle()
   f <- formula(fit)
   expect_named(f, c("binary", "consumption", "random"))
   expect_s3_class(f$binary,       "formula")
@@ -192,13 +233,7 @@ test_that("formula.beezdemand_hurdle returns named list with binary, consumption
 test_that("model.matrix.beezdemand_hurdle returns named list of component matrices", {
   skip_on_cran()
   skip_if_not_installed("TMB")
-  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
-  fit <- fit_demand_hurdle(
-    sim_data,
-    y_var = "y", x_var = "x", id_var = "id",
-    random_effects = c("zeros", "q0"),
-    verbose = 0
-  )
+  fit <- .ffu_hurdle()
   mm <- model.matrix(fit)
   expect_type(mm, "list")
   # Required component matrices:

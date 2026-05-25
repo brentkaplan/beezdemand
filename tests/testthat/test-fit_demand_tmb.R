@@ -1,11 +1,71 @@
 # Test suite for fit_demand_tmb()
 
+# The basic single-RE fits on `apt` (exponential / exponentiated / simplified,
+# package defaults) are reused across many method/contract tests, so memoize
+# them at file level (new.env cache, mirroring test-anova-tmb.R). Each is fit
+# once and reused; tests that mutate a fit copy it first (`fit2 <- fit`), and
+# R copy-on-modify keeps the cached object pristine regardless.
+.fdt_cache <- new.env(parent = emptyenv())
+
+.fdt_exp <- function() {
+  if (is.null(.fdt_cache$exp)) {
+    data(apt, package = "beezdemand")
+    .fdt_cache$exp <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
+                                     equation = "exponential", verbose = 0)
+  }
+  .fdt_cache$exp
+}
+
+.fdt_expntd <- function() {
+  if (is.null(.fdt_cache$expntd)) {
+    data(apt, package = "beezdemand")
+    .fdt_cache$expntd <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
+                                        equation = "exponentiated", verbose = 0)
+  }
+  .fdt_cache$expntd
+}
+
+.fdt_simplified <- function() {
+  if (is.null(.fdt_cache$simplified)) {
+    data(apt, package = "beezdemand")
+    .fdt_cache$simplified <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
+                                            equation = "simplified", verbose = 0)
+  }
+  .fdt_cache$simplified
+}
+
+# Small apt_full fixture for the factor/covariate tests, which only check
+# structure (design columns, collapse_info, warnings) — not data-dependent
+# values. Cap Female/Male at 5 subjects each and keep the rare
+# "Would rather not say" level whole (2 subjects) so the 3-level gender factor
+# and the age_group cut() both stay populated, while fits run on ~200 rows
+# instead of ~18,700. The gender fit (reused by 3 tests) is memoized.
+.fdt_full_data <- function() {
+  if (is.null(.fdt_cache$full_data)) {
+    data(apt_full, package = "beezdemand")
+    g <- as.factor(apt_full$gender)
+    keep <- unlist(lapply(levels(g), function(lv) {
+      ids <- unique(apt_full$id[g == lv])
+      head(ids[order(ids)], 5L)
+    }))
+    d <- apt_full[apt_full$id %in% keep, , drop = FALSE]
+    d$gender <- droplevels(as.factor(d$gender))
+    .fdt_cache$full_data <- d
+  }
+  .fdt_cache$full_data
+}
+
+.fdt_full_gender <- function() {
+  if (is.null(.fdt_cache$full_gender)) {
+    .fdt_cache$full_gender <- fit_demand_tmb(
+      .fdt_full_data(), y_var = "y", x_var = "x", id_var = "id",
+      equation = "exponential", factors = "gender", multi_start = FALSE, verbose = 0)
+  }
+  .fdt_cache$full_gender
+}
+
 test_that("fit_demand_tmb converges with exponential equation", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   expect_s3_class(fit, "beezdemand_tmb")
   expect_true(fit$converged)
@@ -16,11 +76,7 @@ test_that("fit_demand_tmb converges with exponential equation", {
 })
 
 test_that("fit_demand_tmb converges with simplified equation", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "simplified", verbose = 0
-  )
+  fit <- .fdt_simplified()
 
   expect_s3_class(fit, "beezdemand_tmb")
   expect_true(fit$converged)
@@ -43,11 +99,7 @@ test_that("fit_demand_tmb converges with zben equation", {
 })
 
 test_that("fit_demand_tmb converges with exponentiated equation", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponentiated", verbose = 0
-  )
+  fit <- .fdt_expntd()
 
   expect_s3_class(fit, "beezdemand_tmb")
   # May or may not converge with small data, but should produce estimates
@@ -141,11 +193,7 @@ test_that("multi_start selects best NLL", {
 })
 
 test_that("subject_pars has correct structure", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   spars <- fit$subject_pars
   expect_true(is.data.frame(spars))
@@ -168,11 +216,7 @@ test_that("subject_pars with 2 RE includes c_i", {
 })
 
 test_that("print method works", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   output <- capture.output(print(fit))
   expect_true(any(grepl("TMB Mixed-Effects", output)))
@@ -180,11 +224,7 @@ test_that("print method works", {
 })
 
 test_that("summary method works", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   s <- summary(fit)
   expect_s3_class(s, "summary.beezdemand_tmb")
@@ -198,11 +238,7 @@ test_that("summary method works", {
 })
 
 test_that("predict methods work", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   # Response predictions
   pred_resp <- predict(fit, type = "response")
@@ -223,11 +259,7 @@ test_that("predict methods work", {
 
 test_that("plot method produces ggplot object", {
   skip_if_not_installed("ggplot2")
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   p <- plot(fit, type = "demand")
   expect_s3_class(p, "ggplot")
@@ -240,11 +272,7 @@ test_that("plot method produces ggplot object", {
 })
 
 test_that("coef, logLik, AIC, BIC work", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   expect_true(is.numeric(coef(fit)))
   expect_true(length(coef(fit)) > 0)
@@ -258,11 +286,7 @@ test_that("coef, logLik, AIC, BIC work", {
 })
 
 test_that("fixef and ranef work", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   fe <- fixef(fit)
   expect_true(is.numeric(fe))
@@ -275,11 +299,7 @@ test_that("fixef and ranef work", {
 })
 
 test_that("confint works", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   ci <- confint(fit)
   expect_true(is.data.frame(ci))
@@ -289,11 +309,7 @@ test_that("confint works", {
 })
 
 test_that("get_subject_pars works", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   spars <- get_subject_pars(fit)
   expect_true(is.data.frame(spars))
@@ -301,11 +317,7 @@ test_that("get_subject_pars works", {
 })
 
 test_that("check_demand_model works for TMB model", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   diag <- check_demand_model(fit)
   expect_s3_class(diag, "beezdemand_diagnostics")
@@ -359,12 +371,7 @@ test_that("invalid inputs produce errors", {
 
 test_that("factors work with TMB model", {
   skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
-  data(apt_full, package = "beezdemand")
-
-  fit <- fit_demand_tmb(
-    apt_full, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .fdt_full_gender()
 
   expect_s3_class(fit, "beezdemand_tmb")
   # Design matrices should have more columns with factors
@@ -374,20 +381,21 @@ test_that("factors work with TMB model", {
 
 test_that("collapse_levels works with TMB model", {
   skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
-  data(apt_full, package = "beezdemand")
+  d <- .fdt_full_data()
 
   # Create a factor with 3+ levels for collapsing
-  apt_full$age_group <- cut(apt_full$age, breaks = c(0, 25, 35, Inf),
-                            labels = c("young", "mid", "old"))
+  d$age_group <- cut(d$age, breaks = c(0, 25, 35, Inf),
+                     labels = c("young", "mid", "old"))
 
   fit <- fit_demand_tmb(
-    apt_full, y_var = "y", x_var = "x", id_var = "id",
+    d, y_var = "y", x_var = "x", id_var = "id",
     equation = "exponential",
     factors = "age_group",
     collapse_levels = list(
       Q0 = list(age_group = list(younger = c("young", "mid"), older = "old")),
       alpha = list(age_group = list(younger = "young", older = c("mid", "old")))
     ),
+    multi_start = FALSE,
     verbose = 0
   )
 
@@ -400,12 +408,7 @@ test_that("collapse_levels works with TMB model", {
 
 test_that("subject_pars Q0 matches design-matrix computation for each subject", {
   skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
-  data(apt_full, package = "beezdemand")
-
-  fit <- fit_demand_tmb(
-    apt_full, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .fdt_full_gender()
 
   spars <- get_subject_pars(fit)
   coefs <- coef(fit)
@@ -460,11 +463,7 @@ test_that("subject_pars Q0 matches design-matrix computation for each subject", 
 
 
 test_that("predict(type='response') is vectorized and consistent with subject_pars", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   pred <- predict(fit, type = "response")
   expect_s3_class(pred, "tbl_df")
@@ -476,11 +475,7 @@ test_that("predict(type='response') is vectorized and consistent with subject_pa
 
 
 test_that("predict errors for unknown subjects at level = 'subject'", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   new_data <- data.frame(id = "UNKNOWN", x = c(0, 1, 5), y = c(10, 8, 2))
   expect_error(
@@ -491,11 +486,7 @@ test_that("predict errors for unknown subjects at level = 'subject'", {
 
 
 test_that("optimizer warnings are captured, not silently dropped", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   # opt_warnings field should exist on the result
   expect_true("opt_warnings" %in% names(fit))
@@ -504,11 +495,7 @@ test_that("optimizer warnings are captured, not silently dropped", {
 
 
 test_that("se_available flag is set correctly", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   expect_true("se_available" %in% names(fit))
   # For a successful fit, se_available should be TRUE
@@ -519,11 +506,7 @@ test_that("se_available flag is set correctly", {
 
 
 test_that("backend name distinguishes TMB_mixed from TMB_hurdle", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   g <- glance(fit)
   expect_equal(g$backend, "TMB_mixed")
@@ -881,11 +864,7 @@ test_that("summary notes non-convergence and SE unavailability", {
 # ==============================================================================
 
 test_that("exponential equation ln(10) fix: predictions match HS formula", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   coefs <- coef(fit)
   beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
@@ -907,11 +886,7 @@ test_that("exponential equation ln(10) fix: predictions match HS formula", {
 })
 
 test_that("exponentiated equation predictions match Koffarnus formula", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponentiated", verbose = 0
-  )
+  fit <- .fdt_expntd()
 
   coefs <- coef(fit)
   beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
@@ -933,11 +908,7 @@ test_that("exponentiated equation predictions match Koffarnus formula", {
 })
 
 test_that("simplified equation predictions match Q0*exp(-α*Q0*C)", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "simplified", verbose = 0
-  )
+  fit <- .fdt_simplified()
 
   coefs <- coef(fit)
   beta_q0 <- coefs[names(coefs) == "beta_q0"][1]
@@ -982,11 +953,7 @@ test_that("zben equation predictions match formula with singularity protection",
 })
 
 test_that("exponential backtransform to natural scale includes retransformation correction", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   # Model scale should be log(Q)
   pred_model <- predict(fit, type = "demand", prices = c(0, 1, 5))
@@ -1000,11 +967,7 @@ test_that("exponential backtransform to natural scale includes retransformation 
 })
 
 test_that("exponentiated Pmax/Omax are computed correctly", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponentiated", verbose = 0
-  )
+  fit <- .fdt_expntd()
 
   # All subjects should have finite Pmax/Omax
   spars <- get_subject_pars(fit)
@@ -1020,11 +983,7 @@ test_that("exponentiated Pmax/Omax are computed correctly", {
 })
 
 test_that("simplified Pmax/Omax use SND model type", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "simplified", verbose = 0
-  )
+  fit <- .fdt_simplified()
 
   spars <- get_subject_pars(fit)
   expect_true(all(is.finite(spars$Pmax)))
@@ -1041,11 +1000,7 @@ test_that("simplified Pmax/Omax use SND model type", {
 # ==============================================================================
 
 test_that("confint parm filters by display names", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   # Full confint for reference
   ci_all <- confint(fit)
@@ -1070,12 +1025,7 @@ test_that("confint parm filters by display names", {
 
 test_that("predict(type='demand') warns when factors are present", {
   skip_if_not(exists("apt_full", where = asNamespace("beezdemand")))
-  data(apt_full, package = "beezdemand")
-
-  fit <- fit_demand_tmb(
-    apt_full, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .fdt_full_gender()
 
   expect_warning(
     predict(fit, type = "demand", prices = c(0, 1, 5)),
@@ -1084,11 +1034,7 @@ test_that("predict(type='demand') warns when factors are present", {
 })
 
 test_that("predict(type='demand') does NOT warn without factors", {
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(
-    apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponential", verbose = 0
-  )
+  fit <- .fdt_exp()
 
   expect_no_warning(
     predict(fit, type = "demand", prices = c(0, 1, 5))
@@ -1122,12 +1068,11 @@ test_that("fit_demand_tmb errors cleanly when no rows remain after NA drop", {
 })
 
 test_that("fit_demand_tmb drops NAs in continuous_covariates", {
-  data(apt_full, package = "beezdemand")
-  d <- apt_full
+  d <- .fdt_full_data()
   d$age[1:5] <- NA
   expect_message(
     fit_demand_tmb(d, equation = "exponential",
-                   continuous_covariates = "age", verbose = 1),
+                   continuous_covariates = "age", multi_start = FALSE, verbose = 1),
     "Removed"
   )
 })
