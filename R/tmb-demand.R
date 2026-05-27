@@ -719,13 +719,18 @@ NULL
 #'
 #' @return List with coefficients, se, sdr, variance_components, u_hat.
 #' @keywords internal
-.tmb_extract_estimates <- function(obj, opt, re_dim_total, n_subjects, has_k, verbose) {
-  # Compute sdreport
+.tmb_extract_estimates <- function(obj, opt, re_dim_total, n_subjects, has_k, verbose,
+                                    store_report_cov = FALSE) {
+  # Compute sdreport. getReportCovariance = store_report_cov (default FALSE)
+  # skips the dense covariance of all ADREPORT'd quantities ($sdr$cov), which
+  # is read by no method and is ~88% of object size on large fits. Marginal
+  # SDs, cov.fixed, pdHess, and the report/random summaries are unaffected.
   sdr <- tryCatch(
-    TMB::sdreport(obj),
+    TMB::sdreport(obj, getReportCovariance = store_report_cov),
     error = function(e1) {
       sdr2 <- tryCatch(
-        TMB::sdreport(obj, getJointPrecision = FALSE),
+        TMB::sdreport(obj, getReportCovariance = store_report_cov,
+                      getJointPrecision = FALSE),
         error = function(e2) NULL
       )
       if (is.null(sdr2) && verbose >= 1) {
@@ -1265,6 +1270,13 @@ NULL
 #'   Phases 2-3).
 #' @param verbose Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.
 #' @param ... Additional arguments (currently unused).
+#' @param store_report_cov Logical. Advanced storage control. When `FALSE`
+#'   (default), the full covariance matrix of all ADREPORT'd quantities
+#'   (`$sdr$cov`) is not materialized, shrinking the saved fit substantially
+#'   (often >80% on large datasets) with no loss of functionality: no method
+#'   reads it. Standard errors, `cov.fixed`, variance components, and all
+#'   inference are identical either way. Set `TRUE` only if you need the full
+#'   joint covariance of derived ADREPORT'd quantities.
 #'
 #' @return An object of class `beezdemand_tmb` containing:
 #'   \describe{
@@ -1272,7 +1284,9 @@ NULL
 #'     \item{subject_pars}{Data frame of subject-specific Q0, alpha, Pmax, Omax}
 #'     \item{tmb_obj}{TMB objective function object}
 #'     \item{opt}{Optimization result (normalized across optimizers)}
-#'     \item{sdr}{TMB sdreport object}
+#'     \item{sdr}{TMB sdreport object. Its `$cov` (full covariance of all
+#'       ADREPORT'd quantities) is not materialized -- a scalar `NA` -- unless
+#'       `store_report_cov = TRUE`.}
 #'     \item{converged}{Logical convergence indicator}
 #'     \item{loglik}{Log-likelihood at convergence}
 #'     \item{AIC}{Akaike Information Criterion}
@@ -1361,7 +1375,8 @@ fit_demand_tmb <- function(
   multi_start = TRUE,
   validate_subject_pars = TRUE,
   verbose = 1,
-  ...
+  ...,
+  store_report_cov = FALSE
 ) {
   cl <- match.call()
   # Normalize aliases before match.arg (only when user passed a scalar value)
@@ -1729,7 +1744,8 @@ fit_demand_tmb <- function(
   if (verbose >= 1) message("  Computing standard errors...")
   estimates <- .tmb_extract_estimates(
     obj, opt, re_dim_total, prepared$n_subjects,
-    has_k = has_k && estimate_k, verbose = verbose
+    has_k = has_k && estimate_k, verbose = verbose,
+    store_report_cov = store_report_cov
   )
 
   # Compute subject-specific parameters

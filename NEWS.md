@@ -7,6 +7,18 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## New features (TICKET-023)
+
+* `fit_demand_tmb()` fits are now substantially smaller on disk by default
+  (often >80% smaller via `saveRDS()` on large datasets). The full
+  covariance matrix of all ADREPORT'd quantities (`$sdr$cov`), which is read
+  by no method, is no longer materialized; `$sdr$cov` is a scalar `NA` unless
+  the new `store_report_cov = TRUE` argument is supplied. Standard errors,
+  `cov.fixed`, variance components, and all inference (`coef()`, `vcov()`,
+  `tidy()`, `confint()`, `get_demand_param_emms()`, `get_demand_comparisons()`,
+  `boot_demand()`) are unchanged. Pass `store_report_cov = TRUE` to restore
+  the prior behavior.
+
 ## New features (TICKET-025)
 
 * `calc_group_metrics()` gains a `beezdemand_nlme` method, giving

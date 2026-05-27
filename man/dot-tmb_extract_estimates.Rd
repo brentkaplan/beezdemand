@@ -4,7 +4,15 @@
 \alias{.tmb_extract_estimates}
 \title{Extract Estimates from TMB Fit}
 \usage{
-.tmb_extract_estimates(obj, opt, re_dim_total, n_subjects, has_k, verbose)
+.tmb_extract_estimates(
+  obj,
+  opt,
+  re_dim_total,
+  n_subjects,
+  has_k,
+  verbose,
+  store_report_cov = FALSE
+)
 }
 \arguments{
 \item{obj}{TMB objective function object.}

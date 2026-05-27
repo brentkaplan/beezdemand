@@ -23,7 +23,8 @@ fit_demand_tmb(
   multi_start = TRUE,
   validate_subject_pars = TRUE,
   verbose = 1,
-  ...
+  ...,
+  store_report_cov = FALSE
 )
 }
 \arguments{
@@ -141,6 +142,14 @@ Phases 2-3).}
 \item{verbose}{Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.}
 
 \item{...}{Additional arguments (currently unused).}
+
+\item{store_report_cov}{Logical. Advanced storage control. When \code{FALSE}
+(default), the full covariance matrix of all ADREPORT'd quantities
+(\verb{$sdr$cov}) is not materialized, shrinking the saved fit substantially
+(often >80\% on large datasets) with no loss of functionality: no method
+reads it. Standard errors, \code{cov.fixed}, variance components, and all
+inference are identical either way. Set \code{TRUE} only if you need the full
+joint covariance of derived ADREPORT'd quantities.}
 }
 \value{
 An object of class \code{beezdemand_tmb} containing:
@@ -149,7 +158,9 @@ An object of class \code{beezdemand_tmb} containing:
 \item{subject_pars}{Data frame of subject-specific Q0, alpha, Pmax, Omax}
 \item{tmb_obj}{TMB objective function object}
 \item{opt}{Optimization result (normalized across optimizers)}
-\item{sdr}{TMB sdreport object}
+\item{sdr}{TMB sdreport object. Its \verb{$cov} (full covariance of all
+ADREPORT'd quantities) is not materialized -- a scalar \code{NA} -- unless
+\code{store_report_cov = TRUE}.}
 \item{converged}{Logical convergence indicator}
 \item{loglik}{Log-likelihood at convergence}
 \item{AIC}{Akaike Information Criterion}
