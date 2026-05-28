@@ -355,7 +355,7 @@ test_that("get_demand_comparisons works with single factor (no collapse)", {
   comps <- get_demand_comparisons(
     fit,
     compare_specs = ~factor1,
-    params_to_compare = c("Q0", "alpha")
+    param = c("Q0", "alpha")
   )
 
   # Should return results for both Q0 and alpha
@@ -397,7 +397,7 @@ test_that("get_demand_comparisons works with collapse_levels (asymmetric)", {
   comps <- get_demand_comparisons(
     fit,
     compare_specs = ~factor1,
-    params_to_compare = c("Q0", "alpha")
+    param = c("Q0", "alpha")
   )
 
   # Q0 should have 1 comparison (high vs low)
@@ -432,7 +432,7 @@ test_that("get_demand_comparisons handles multiple factors with different levels
   comps_f1 <- get_demand_comparisons(
     fit,
     compare_specs = ~factor1,
-    params_to_compare = "Q0"
+    param = "Q0"
   )
 
   # Should have 3 pairwise comparisons for factor1
@@ -564,7 +564,7 @@ test_that("get_demand_comparisons maps contrast_by to collapsed factor name", {
   comps <- get_demand_comparisons(
     fit,
     compare_specs = ~ factor1 * factor2,
-    params_to_compare = c("Q0", "alpha"),
+    param = c("Q0", "alpha"),
     contrast_by = "factor2"
   )
 
@@ -625,7 +625,7 @@ test_that("get_demand_comparisons restricts to observed factor combinations", {
     fit,
     compare_specs = ~ dose * drug,
     contrast_by = "drug",
-    params_to_compare = "Q0"
+    param = "Q0"
   )
 
   contrasts_df <- comps$Q0$contrasts_log10
@@ -679,7 +679,7 @@ test_that("get_demand_comparisons does not filter balanced designs", {
     fit,
     compare_specs = ~ dose * drug,
     contrast_by = "drug",
-    params_to_compare = "Q0"
+    param = "Q0"
   )
 
   contrasts_df <- comps$Q0$contrasts_log10
@@ -735,9 +735,9 @@ test_that("get_demand_comparisons.beezdemand_tmb handles continuous covariates",
                         factors = "gender",
                         continuous_covariates = "age", verbose = 0)
   cmp <- get_demand_comparisons(fit, param = "Q0")
-  expect_s3_class(cmp, "tbl_df")
-  expect_true("estimate_log" %in% names(cmp))
-  expect_true(is.finite(cmp$estimate_log[1]))
+  expect_s3_class(cmp, "beezdemand_comparison")
+  td <- broom::tidy(cmp)
+  expect_true(is.finite(td$estimate[1]))
 })
 
 test_that("EMM `at` overrides continuous covariate value for TMB fits", {
@@ -760,11 +760,12 @@ test_that("EMM `at` overrides continuous covariate value for TMB fits", {
   expect_false(isTRUE(all.equal(emm_low$estimate, emm_high$estimate)))
 })
 
-# TICKET-011 Phase 0.3: factors_in_emm that omits any fitted factor must
-# error cleanly rather than silently recycling a shorter x_ref vector
-# against the full beta vector. Proper marginalization over omitted
-# factors is planned for TICKET-011 Phase 5.
-test_that("TMB EMMs error when factors_in_emm drops a fitted factor", {
+# TICKET-016 (Decision 10, Option A): factors_in_emm that omits a fitted
+# factor now MARGINALIZES equal-weight over the full omitted-factor grid
+# (emmeans default weights = "equal") rather than erroring. This lifts the
+# former TICKET-011 Phase 0.3 guard; the public get_demand_param_emms() gains
+# marginalization too (the shared .tmb_build_emm_ref_grid() builder).
+test_that("TMB EMMs marginalize when factors_in_emm drops a fitted factor", {
   skip_on_cran()
   dat <- create_emm_test_data(
     n_subjects = 10,
@@ -780,14 +781,31 @@ test_that("TMB EMMs error when factors_in_emm drops a fitted factor", {
   ))
   skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
 
-  expect_error(
-    get_demand_param_emms(fit, param = "Q0", factors_in_emm = "factor1"),
-    regexp = "factors_in_emm.*must include every fitted factor"
+  # Dropping factor2 marginalizes over it: one EMM row per factor1 level.
+  emm_full <- get_demand_param_emms(fit, param = "Q0")
+  emm_marg <- get_demand_param_emms(fit, param = "Q0", factors_in_emm = "factor1")
+  expect_equal(nrow(emm_full), 4L)   # 2 x 2 observed cells
+  expect_equal(nrow(emm_marg), 2L)   # marginalized to factor1 levels
+
+  # The marginalized EMM equals the equal-weight average over the FULL
+  # factor2 grid of the cell log-predictors (Option A), back-transformed.
+  coefs <- fit$model$coefficients
+  beta_q0 <- unname(coefs[names(coefs) == "beta_q0"])
+  xnames <- colnames(fit$formula_details$X_q0)
+  l1 <- levels(fit$data$factor1)
+  l2 <- levels(fit$data$factor2)
+  full <- expand.grid(
+    factor1 = factor(l1, levels = l1),
+    factor2 = factor(l2, levels = l2)
   )
-  expect_error(
-    get_demand_param_emms(fit, param = "alpha", factors_in_emm = "factor2"),
-    regexp = "factors_in_emm.*must include every fitted factor"
-  )
+  Xf <- stats::model.matrix(~ factor1 + factor2, data = full)[, xnames, drop = FALSE]
+  pred <- as.numeric(Xf %*% beta_q0)
+  marg <- tapply(pred, full$factor1, mean)
+  expect_equal(emm_marg$estimate, as.numeric(exp(marg[l1])), tolerance = 1e-7)
+
+  # alpha path marginalizes symmetrically (drop factor1).
+  emm_alpha <- get_demand_param_emms(fit, param = "alpha", factors_in_emm = "factor2")
+  expect_equal(nrow(emm_alpha), 2L)
 })
 
 # TICKET-011 Phase 0.2: covariate-only TMB EMMs must honor `at`.
@@ -845,19 +863,17 @@ test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_e
   ))
   skip_if_not(isTRUE(fit$converged), "TMB fit did not converge")
 
-  # Phase 0.3 landed a hard error in get_demand_param_emms() when
-  # factors_in_emm drops any fitted factor. If the wrapper forwards
-  # `...` correctly, the same error surfaces through get_demand_comparisons().
-  # Before this fix, factors_in_emm was silently dropped and the call
-  # returned a (wrong) tibble instead of erroring.
-  expect_error(
-    get_demand_comparisons(
-      fit,
-      param = "Q0",
-      factors_in_emm = "factor1"
-    ),
-    regexp = "factors_in_emm.*must include every fitted factor"
-  )
+  # TICKET-016: the former hard error is gone (marginalization now succeeds),
+  # so we re-prove `...`-forwarding with a result-CHANGING assertion. Without
+  # forwarding, factors_in_emm would be silently dropped and both calls would
+  # return identical contrast sets over all 4 cells (6 pairwise contrasts).
+  # With forwarding, factors_in_emm = "factor1" marginalizes factor2 down to a
+  # single pairwise contrast between factor1 levels.
+  res_full <- suppressMessages(get_demand_comparisons(fit, param = "Q0"))
+  res_marg <- suppressMessages(get_demand_comparisons(
+    fit, param = "Q0", factors_in_emm = "factor1"))
+  expect_equal(nrow(broom::tidy(res_full)), 6L)  # choose(4, 2)
+  expect_equal(nrow(broom::tidy(res_marg)), 1L)  # choose(2, 2)
 })
 
 # =============================================================================
@@ -896,8 +912,9 @@ test_that("get_demand_comparisons honors factor-level `at` (no NA labels, correc
 
   # Unconditional baseline: 4 cells (2 levels x 2 levels) -> 6 pairwise.
   cmp_unconditional <- get_demand_comparisons(fit, param = "Q0")
-  expect_equal(nrow(cmp_unconditional), 6L)
-  expect_false(any(is.na(cmp_unconditional$contrast)))
+  td_unc <- broom::tidy(cmp_unconditional)
+  expect_equal(nrow(td_unc), 6L)
+  expect_false(any(is.na(td_unc$contrast)))
 
   # Conditioned on factor2 = "group1": only factor1 contrasts at that
   # level remain. With 2 levels of factor1, that is 1 pairwise contrast.
@@ -905,11 +922,12 @@ test_that("get_demand_comparisons honors factor-level `at` (no NA labels, correc
     fit, param = "Q0",
     at = list(factor2 = "group1")
   )
-  expect_equal(nrow(cmp_at), 1L)
+  td_at <- broom::tidy(cmp_at)
+  expect_equal(nrow(td_at), 1L)
   # Catch both NA values and the "NA" literal string that paste(NA, "-", NA)
   # would emit when emms$level[i] is NA for indices past the filtered grid.
-  expect_false(any(is.na(cmp_at$contrast)))
-  expect_false(any(grepl("\\bNA\\b", cmp_at$contrast)))
+  expect_false(any(is.na(td_at$contrast)))
+  expect_false(any(grepl("\\bNA\\b", td_at$contrast)))
 })
 
 test_that("get_demand_comparisons agrees with EMM differences under `at`", {
@@ -941,10 +959,13 @@ test_that("get_demand_comparisons agrees with EMM differences under `at`", {
     fit, param = "Q0",
     at = list(factor2 = "group1")
   )
+  td_at <- broom::tidy(cmp_at)
   expect_equal(nrow(emms_at), 2L)
-  expect_equal(nrow(cmp_at), 1L)
+  expect_equal(nrow(td_at), 1L)
 
   # Pairwise contrast with two levels: emms[1] - emms[2] (i=1, j=2).
-  expected_diff <- emms_at$estimate_log[1] - emms_at$estimate_log[2]
-  expect_equal(cmp_at$estimate_log, expected_diff, tolerance = 1e-10)
+  # The comparison frame reports on the log10 scale; EMMs carry natural-log
+  # `estimate_log`, so the expected difference divides by log(10).
+  expected_diff_log10 <- (emms_at$estimate_log[1] - emms_at$estimate_log[2]) / log(10)
+  expect_equal(td_at$estimate, expected_diff_log10, tolerance = 1e-8)
 })

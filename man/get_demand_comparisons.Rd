@@ -12,14 +12,15 @@ get_demand_comparisons(fit_obj, ...)
 
 \method{get_demand_comparisons}{beezdemand_nlme}(
   fit_obj,
-  params_to_compare = c("Q0", "alpha"),
+  param = c("Q0", "alpha"),
   compare_specs = NULL,
   contrast_type = "pairwise",
   contrast_by = NULL,
-  adjust = "tukey",
+  adjust = "holm",
   at = NULL,
   ci_level = 0.95,
   report_ratios = TRUE,
+  params_to_compare = lifecycle::deprecated(),
   ...
 )
 }
@@ -28,7 +29,9 @@ get_demand_comparisons(fit_obj, ...)
 
 \item{...}{Additional arguments passed to \code{emmeans::emmeans()} or \code{emmeans::contrast()}.}
 
-\item{params_to_compare}{Character vector: "Q0", "alpha", or \code{c("Q0", "alpha")}. Default \code{c("Q0", "alpha")}.}
+\item{param}{Character vector: "Q0", "alpha", or \code{c("Q0", "alpha")}. Default
+\code{c("Q0", "alpha")} (both). This is the canonical argument name, shared with
+the TMB backend (\code{\link[=get_demand_comparisons.beezdemand_tmb]{get_demand_comparisons.beezdemand_tmb()}}).}
 
 \item{compare_specs}{A formula specifying the factors whose levels are to be included in the EMM calculation
 prior to contrasting. This defines the "cells" of your design for EMMs.
@@ -48,13 +51,18 @@ was fitted), specifying \code{contrast_by} will result in identical contrast est
 of the \code{contrast_by} variable(s). In such cases, consider analyzing main effects directly
 (e.g., \code{compare_specs = ~drug}, \code{contrast_by = NULL}).}
 
-\item{adjust}{P-value adjustment method. Default "tukey".}
+\item{adjust}{P-value adjustment method. Default \code{"holm"} (changed from
+\code{"tukey"} in 0.3.0 for cross-backend reproducibility; pass
+\code{adjust = "tukey"} to retain the previous default).}
 
 \item{at}{Optional named list for \code{emmeans::ref_grid()}.}
 
 \item{ci_level}{Confidence level. Default 0.95.}
 
 \item{report_ratios}{Logical. If TRUE, reports contrasts as ratios. Default \code{TRUE}.}
+
+\item{params_to_compare}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use \code{param}
+instead (deprecated in 0.3.0 to harmonize with the TMB backend).}
 }
 \value{
 A list named by parameter. Each element contains:

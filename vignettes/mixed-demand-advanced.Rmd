@@ -409,7 +409,7 @@ if (
   collapsed_comparisons <- get_demand_comparisons(
     fit_obj = fit_collapsed_asymmetric,
     compare_specs = ~dose, # Use original factor name
-    params_to_compare = c("Q0", "alpha")
+    param = c("Q0", "alpha")
   )
 
   cat("\nQ0 contrasts (collapsed levels):\n")

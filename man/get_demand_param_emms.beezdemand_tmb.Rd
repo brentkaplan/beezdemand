@@ -19,16 +19,18 @@
 \item{param}{Character. Which parameter to compute EMMs for: \code{"Q0"} or
 \code{"alpha"}.}
 
-\item{factors_in_emm}{Character vector of factors to include in the EMM
-reference grid. Must include \emph{every} factor the model was fit on; any
-subset that drops a fitted factor is rejected with a clear error.
-Proper marginalization over omitted factors is planned for TICKET-011
-Phase 5. If \code{NULL} (default), all fitted factors are used.}
+\item{factors_in_emm}{Character vector of factors to retain in the EMM
+reference grid. If it names a strict subset of the fitted factors, the
+omitted factors are \strong{marginalized over} using equal weights across the
+full crossing of their levels (emmeans' default \code{weights = "equal"}),
+matching the NLME backend. If \code{NULL} (default), all fitted factors are
+retained (no marginalization).}
 
 \item{at}{Named list specifying factor levels and continuous-covariate
 values for conditional EMMs. For continuous covariates, a single
 numeric value per covariate; multiple values produce a warning and
-only the first is used.}
+only the first is used. \code{at} on a marginalized (omitted) factor
+restricts the level set averaged over.}
 
 \item{ci_level}{Numeric. Confidence level for intervals.}
 
@@ -43,9 +45,10 @@ Computes estimated marginal means (EMMs) for demand parameters from a
 from \code{TMB::sdreport()}.
 }
 \note{
-TMB EMMs require \code{factors_in_emm} to include every fitted factor.
-Use \code{fit_demand_mixed()} (NLME backend) if you need to marginalize over
-a subset of factors while this gap is closed (see TICKET-011 Phase 5).
+Marginalization is exact because \code{Q0}/\code{alpha} are linear in the
+fixed-effect coefficients on the log scale, so averaging the reference-grid
+design rows and then multiplying by the coefficient vector equals averaging
+the per-cell parameter predictions.
 }
 \examples{
 \donttest{

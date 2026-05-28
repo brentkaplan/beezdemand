@@ -7,31 +7,64 @@
 \method{get_demand_comparisons}{beezdemand_tmb}(
   fit_obj,
   param = c("Q0", "alpha"),
+  compare_specs = NULL,
   contrast_type = c("pairwise", "trt.vs.ctrl"),
-  p_adjust = "holm",
+  contrast_by = NULL,
+  adjust = "holm",
+  at = NULL,
   ci_level = 0.95,
+  report_ratios = TRUE,
   ...
 )
 }
 \arguments{
 \item{fit_obj}{A \code{beezdemand_tmb} object.}
 
-\item{param}{Character. Which parameter: \code{"Q0"} or \code{"alpha"}.}
+\item{param}{Character vector. Which parameter(s) to compare: any of
+\code{"Q0"}, \code{"alpha"}. Default \code{c("Q0", "alpha")} (both).}
 
-\item{contrast_type}{Character. Type of contrast: \code{"pairwise"} or \code{"trt.vs.ctrl"}.}
+\item{compare_specs}{Optional one-sided formula naming the factor subset to
+contrast (e.g. \code{~ gender}). Omitted fitted factors are marginalized over
+with equal weights across the full crossing of their levels (matching the
+NLME backend). If \code{NULL} (default), all fitted factors are retained.}
 
-\item{p_adjust}{Character. P-value adjustment method (default \code{"holm"}).}
+\item{contrast_type}{Character. \code{"pairwise"} (all pairs, factor-level order)
+or \code{"trt.vs.ctrl"} (each level vs. the first/reference level).}
 
-\item{ci_level}{Numeric. Confidence level.}
+\item{contrast_by}{Not yet supported on the TMB backend (planned in
+TICKET-032); supplying it errors. Use the NLME backend for by-grouped
+contrasts.}
 
-\item{...}{Additional arguments.}
+\item{adjust}{Character. P-value adjustment method; must be one of
+\code{stats::p.adjust.methods} (default \code{"holm"}). emmeans-only methods such as
+\code{"tukey"}/\code{"sidak"} are rejected (the TMB backend uses asymptotic z +
+\code{stats::p.adjust()}).}
+
+\item{at}{Named list specifying factor levels and/or continuous-covariate
+values to condition on, as in \code{\link[=get_demand_param_emms.beezdemand_tmb]{get_demand_param_emms.beezdemand_tmb()}}.}
+
+\item{ci_level}{Numeric. Confidence level for intervals. Default 0.95.}
+
+\item{report_ratios}{Logical. If \code{TRUE} (default), include a
+\code{contrasts_ratio} block (multiplicative ratios) per parameter.}
+
+\item{...}{Additional arguments (reserved; \code{factors_in_emm} is accepted as a
+lower-level alternative to \code{compare_specs}).}
 }
 \value{
-A tibble with contrast results.
+A \code{beezdemand_comparison} object: a list named by parameter, each
+element a list with \code{emmeans} (native cell means), \code{contrasts_log10}
+(log10-scale contrasts with \code{contrast}, \code{estimate}, \code{std.error},
+\code{statistic}, \code{df}, \code{conf.low}, \code{conf.high}, \code{p.value}), and (if
+\code{report_ratios}) \code{contrasts_ratio}. Attributes \code{backend},
+\code{adjustment_method}, \code{compare_specs_used}, \code{contrast_type_used}, and
+\code{contrast_by_used} describe the call.
 }
 \description{
-Computes pairwise contrasts between factor levels for demand parameters
-from a \code{beezdemand_tmb} model.
+Computes factor-level contrasts for demand parameters from a
+\code{beezdemand_tmb} model. Returns a classed \code{beezdemand_comparison} object
+(the same container the NLME backend returns), so
+\code{\link[=tidy.beezdemand_comparison]{tidy.beezdemand_comparison()}} gives a backend-agnostic flat frame.
 }
 \examples{
 \donttest{
@@ -39,7 +72,11 @@ data(apt_full)
 dat <- apt_full[apt_full$gender \%in\% c("Male", "Female"), ]
 fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
-get_demand_comparisons(fit, param = "Q0")
+res <- get_demand_comparisons(fit, param = "Q0")
+tidy(res)
 }
 
+}
+\seealso{
+\code{\link[=tidy.beezdemand_comparison]{tidy.beezdemand_comparison()}} for the backend-agnostic frame.
 }

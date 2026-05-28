@@ -3135,7 +3135,18 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
     .tmb_validate_at(fit_obj, at, param_scope = param)
   }
 
-  is_intercept_only <- length(use_factors) == 0L && length(cov_names) == 0L
+  # `use_factors` (above) are the RETAINED factors (after `factors_in_emm`).
+  # `fitted_factors` span the full design the beta vector was fit on; any
+  # factor in fitted_factors but not retained is MARGINALIZED over.
+  fitted_factors <- if (param == "Q0") {
+    fit_obj$param_info$factors_q0
+  } else {
+    fit_obj$param_info$factors_alpha
+  }
+  if (is.null(fitted_factors)) fitted_factors <- character(0)
+  retained_factors <- use_factors
+
+  is_intercept_only <- length(fitted_factors) == 0L && length(cov_names) == 0L
 
   if (is_intercept_only) {
     return(list(
@@ -3148,58 +3159,130 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
   }
 
   data_used <- fit_obj$data
-  if (length(use_factors) > 0L) {
-    level_combos <- unique(data_used[, use_factors, drop = FALSE])
-  } else {
-    level_combos <- data_used[1L, integer(0), drop = FALSE]
-  }
 
-  # Continuous covariates: hold at training mean unless overridden via `at`.
-  # Multi-value `at` for continuous covariates emits a one-shot warning
-  # (above) and uses the first value here — same convention emmeans uses
-  # when its `at` argument supplies a vector.
-  if (length(cov_names) > 0L) {
-    for (cv in cov_names) {
-      cv_value <- mean(data_used[[cv]], na.rm = TRUE)
-      if (!is.null(at) && cv %in% names(at)) {
-        cv_value <- as.numeric(at[[cv]][1])
-      }
-      level_combos[[cv]] <- cv_value
+  # Per-factor level set: training levels, restricted by `at` if supplied.
+  # This is what gets crossed for both the full marginalization grid and the
+  # retained reference grid (so `at` on an omitted factor shrinks the averaged
+  # set, and `at` on a retained factor shrinks the reported cells).
+  factor_level_set <- function(f) {
+    lv <- levels(data_used[[f]])
+    if (is.null(lv)) lv <- sort(unique(as.character(data_used[[f]])))
+    if (!is.null(at) && f %in% names(at)) {
+      lv <- lv[lv %in% as.character(at[[f]])]
     }
+    lv
   }
-
-  ref_X <- stats::model.matrix(
-    stats::as.formula(build_fixed_rhs(
-      factors = use_factors,
-      factor_interaction = fit_obj$param_info$factor_interaction,
-      continuous_covariates = cov_names,
-      data = data_used
-    )),
-    data = level_combos
+  fitted_levels <- stats::setNames(
+    lapply(fitted_factors, factor_level_set), fitted_factors
   )
+  if (any(vapply(fitted_levels, length, integer(1)) == 0L)) {
+    cli::cli_abort(c(
+      "{.arg at} filter produced an empty reference grid.",
+      "i" = "Check that the supplied factor levels exist in the data and are not mutually exclusive."
+    ))
+  }
 
-  # Apply factor-level `at` filter; covariate values were substituted above.
-  if (!is.null(at) && length(use_factors) > 0L) {
-    keep <- rep(TRUE, nrow(level_combos))
-    for (nm in names(at)) {
-      if (nm %in% use_factors) {
-        keep <- keep & (as.character(level_combos[[nm]]) %in% as.character(at[[nm]]))
-      }
-    }
-    level_combos <- level_combos[keep, , drop = FALSE]
-    ref_X <- ref_X[keep, , drop = FALSE]
+  # Build a key from factor columns (factor labels, delimiter-safe).
+  make_key <- function(df, cols) {
+    if (length(cols) == 0L) return(rep("", nrow(df)))
+    do.call(paste, c(lapply(cols, function(cc) as.character(df[[cc]])),
+                     list(sep = "\r")))
+  }
+  as_training_factor <- function(values, f) {
+    factor(values, levels = levels(data_used[[f]]) %||%
+             sort(unique(as.character(data_used[[f]]))))
+  }
+
+  # Full factorial grid over ALL fitted factors (Decision 10, Option A) — the
+  # model predicts every cell, so the equal-weight average is taken over the
+  # full crossing, matching emmeans' default `weights = "equal"` (and hence
+  # the NLME backend's omitted-factor averaging).
+  if (length(fitted_factors) > 0L) {
+    full_combos <- do.call(expand.grid, c(
+      lapply(fitted_factors, function(f) as_training_factor(fitted_levels[[f]], f)),
+      list(KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+    ))
+    names(full_combos) <- fitted_factors
+  } else {
+    full_combos <- data_used[1L, integer(0), drop = FALSE]
+  }
+
+  # Retained reference grid: full crossing of retained factors' (at-restricted)
+  # levels, ordered by factor-level index (Decision 7), then filtered to
+  # OBSERVED combinations — the genuine `semi_join` analog (separate from the
+  # averaging weights). For a single retained factor the filter is a no-op.
+  if (length(retained_factors) > 0L) {
+    level_combos <- do.call(expand.grid, c(
+      lapply(retained_factors, function(f) as_training_factor(fitted_levels[[f]], f)),
+      list(KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
+    ))
+    names(level_combos) <- retained_factors
+    ord <- do.call(order, lapply(retained_factors,
+                                 function(f) as.integer(level_combos[[f]])))
+    level_combos <- level_combos[ord, , drop = FALSE]
+    observed_keys <- make_key(
+      unique(data_used[, retained_factors, drop = FALSE]), retained_factors
+    )
+    level_combos <- level_combos[
+      make_key(level_combos, retained_factors) %in% observed_keys, ,
+      drop = FALSE
+    ]
     if (nrow(level_combos) == 0L) {
       cli::cli_abort(c(
         "{.arg at} filter produced an empty reference grid.",
         "i" = "Check that the supplied factor levels exist in the data and are not mutually exclusive."
       ))
     }
+    rownames(level_combos) <- NULL
+  } else {
+    # All factors marginalized (or none fitted): a single grand-mean row.
+    level_combos <- data_used[1L, integer(0), drop = FALSE]
   }
+
+  # Continuous covariates: hold at training mean unless overridden via `at`.
+  # Constant across grid rows; multi-value `at` warns above and uses the first.
+  if (length(cov_names) > 0L) {
+    for (cv in cov_names) {
+      cv_value <- mean(data_used[[cv]], na.rm = TRUE)
+      if (!is.null(at) && cv %in% names(at)) {
+        cv_value <- as.numeric(at[[cv]][1])
+      }
+      full_combos[[cv]] <- cv_value
+      level_combos[[cv]] <- cv_value
+    }
+  }
+
+  X_full <- stats::model.matrix(
+    stats::as.formula(build_fixed_rhs(
+      factors = fitted_factors,
+      factor_interaction = fit_obj$param_info$factor_interaction,
+      continuous_covariates = cov_names,
+      data = data_used
+    )),
+    data = full_combos
+  )
+
+  # Averaging matrix A (n_retained x n_full): each retained cell places equal
+  # weight 1/m on the m full-grid rows matching it (m = product of omitted
+  # factors' level counts). X_marg = A %*% X_full keeps ncol == length(beta),
+  # so downstream `sum(x*beta)` / `t(x) V x` are exact (linear-in-beta on the
+  # log/linear-predictor scale). For no omitted factors, A selects the observed
+  # cells (m = 1) and X_marg reduces to the per-cell design — bit-identical to
+  # the pre-marginalization path apart from Decision 7 ordering.
+  full_keys <- make_key(full_combos, retained_factors)
+  ret_keys <- make_key(level_combos, retained_factors)
+  A <- matrix(0, nrow = nrow(level_combos), ncol = nrow(full_combos))
+  for (r in seq_len(nrow(level_combos))) {
+    sel <- which(full_keys == ret_keys[r])
+    A[r, sel] <- 1 / length(sel)
+  }
+  ref_X <- A %*% X_full
+  colnames(ref_X) <- colnames(X_full)
 
   list(
     level_combos = level_combos,
     ref_X = ref_X,
-    use_factors = use_factors,
+    use_factors = retained_factors,
     cov_names = cov_names,
     is_intercept_only = FALSE
   )
@@ -3216,23 +3299,26 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 #' @param fit_obj A \code{beezdemand_tmb} object.
 #' @param param Character. Which parameter to compute EMMs for: `"Q0"` or
 #'   `"alpha"`.
-#' @param factors_in_emm Character vector of factors to include in the EMM
-#'   reference grid. Must include *every* factor the model was fit on; any
-#'   subset that drops a fitted factor is rejected with a clear error.
-#'   Proper marginalization over omitted factors is planned for TICKET-011
-#'   Phase 5. If `NULL` (default), all fitted factors are used.
+#' @param factors_in_emm Character vector of factors to retain in the EMM
+#'   reference grid. If it names a strict subset of the fitted factors, the
+#'   omitted factors are **marginalized over** using equal weights across the
+#'   full crossing of their levels (emmeans' default `weights = "equal"`),
+#'   matching the NLME backend. If `NULL` (default), all fitted factors are
+#'   retained (no marginalization).
 #' @param at Named list specifying factor levels and continuous-covariate
 #'   values for conditional EMMs. For continuous covariates, a single
 #'   numeric value per covariate; multiple values produce a warning and
-#'   only the first is used.
+#'   only the first is used. `at` on a marginalized (omitted) factor
+#'   restricts the level set averaged over.
 #' @param ci_level Numeric. Confidence level for intervals.
 #' @param ... Additional arguments.
 #'
 #' @return A tibble with columns: level, estimate, std.error, conf.low, conf.high.
 #'
-#' @note TMB EMMs require `factors_in_emm` to include every fitted factor.
-#'   Use `fit_demand_mixed()` (NLME backend) if you need to marginalize over
-#'   a subset of factors while this gap is closed (see TICKET-011 Phase 5).
+#' @note Marginalization is exact because `Q0`/`alpha` are linear in the
+#'   fixed-effect coefficients on the log scale, so averaging the reference-grid
+#'   design rows and then multiplying by the coefficient vector equals averaging
+#'   the per-cell parameter predictions.
 #'
 #' @examples
 #' \donttest{
@@ -3329,24 +3415,16 @@ get_demand_param_emms.beezdemand_tmb <- function(
   level_combos <- grid$level_combos
   ref_X <- grid$ref_X
 
-  # Dimension guard: the fitted beta spans the full design from `factors` +
-  # `continuous_covariates`, so the reference grid must share that basis.
-  # When `factors_in_emm` drops any fitted factor, `ref_X` has fewer columns
-  # than `beta`, and downstream `sum(x_ref * beta)` would silently recycle
-  # the shorter vector. Reject explicitly; proper marginalization over
-  # omitted factors is planned for TICKET-011 Phase 5.
+  # Safety net: after marginalization (.tmb_build_emm_ref_grid averages over
+  # the full omitted-factor grid) `ref_X` always shares the fitted beta's
+  # column basis, so this should never fire. It guards only against a genuine
+  # covariate-basis mismatch (e.g. a malformed fit object) that would otherwise
+  # let `sum(x_ref * beta)` silently recycle a shorter vector.
   if (ncol(ref_X) != length(beta)) {
-    fitted_for_param <- if (param == "Q0") {
-      fit_obj$param_info$factors_q0
-    } else {
-      fit_obj$param_info$factors_alpha
-    }
-    if (is.null(fitted_for_param)) fitted_for_param <- character(0)
     cli::cli_abort(c(
-      "{.arg factors_in_emm} must include every fitted factor for {.field {param}}.",
-      "i" = "Fitted factors: {.val {fitted_for_param}}.",
-      "i" = "Requested: {.val {factors_in_emm}}.",
-      "x" = "Marginalization over omitted factors is not yet supported for TMB fits (planned in TICKET-011 Phase 5)."
+      "Reference-grid design for {.field {param}} has {ncol(ref_X)} column{?s} \\
+       but the fitted coefficient vector has {length(beta)}.",
+      "x" = "Covariate/design basis mismatch; cannot evaluate EMMs."
     ))
   }
 
@@ -3393,17 +3471,44 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #' Get Demand Parameter Comparisons for TMB Model
 #'
 #' @description
-#' Computes pairwise contrasts between factor levels for demand parameters
-#' from a `beezdemand_tmb` model.
+#' Computes factor-level contrasts for demand parameters from a
+#' `beezdemand_tmb` model. Returns a classed `beezdemand_comparison` object
+#' (the same container the NLME backend returns), so
+#' [tidy.beezdemand_comparison()] gives a backend-agnostic flat frame.
 #'
 #' @param fit_obj A \code{beezdemand_tmb} object.
-#' @param param Character. Which parameter: `"Q0"` or `"alpha"`.
-#' @param contrast_type Character. Type of contrast: `"pairwise"` or `"trt.vs.ctrl"`.
-#' @param p_adjust Character. P-value adjustment method (default `"holm"`).
-#' @param ci_level Numeric. Confidence level.
-#' @param ... Additional arguments.
+#' @param param Character vector. Which parameter(s) to compare: any of
+#'   `"Q0"`, `"alpha"`. Default `c("Q0", "alpha")` (both).
+#' @param compare_specs Optional one-sided formula naming the factor subset to
+#'   contrast (e.g. `~ gender`). Omitted fitted factors are marginalized over
+#'   with equal weights across the full crossing of their levels (matching the
+#'   NLME backend). If `NULL` (default), all fitted factors are retained.
+#' @param contrast_type Character. `"pairwise"` (all pairs, factor-level order)
+#'   or `"trt.vs.ctrl"` (each level vs. the first/reference level).
+#' @param contrast_by Not yet supported on the TMB backend (planned in
+#'   TICKET-032); supplying it errors. Use the NLME backend for by-grouped
+#'   contrasts.
+#' @param adjust Character. P-value adjustment method; must be one of
+#'   `stats::p.adjust.methods` (default `"holm"`). emmeans-only methods such as
+#'   `"tukey"`/`"sidak"` are rejected (the TMB backend uses asymptotic z +
+#'   `stats::p.adjust()`).
+#' @param at Named list specifying factor levels and/or continuous-covariate
+#'   values to condition on, as in [get_demand_param_emms.beezdemand_tmb()].
+#' @param ci_level Numeric. Confidence level for intervals. Default 0.95.
+#' @param report_ratios Logical. If `TRUE` (default), include a
+#'   `contrasts_ratio` block (multiplicative ratios) per parameter.
+#' @param ... Additional arguments (reserved; `factors_in_emm` is accepted as a
+#'   lower-level alternative to `compare_specs`).
 #'
-#' @return A tibble with contrast results.
+#' @return A `beezdemand_comparison` object: a list named by parameter, each
+#'   element a list with `emmeans` (native cell means), `contrasts_log10`
+#'   (log10-scale contrasts with `contrast`, `estimate`, `std.error`,
+#'   `statistic`, `df`, `conf.low`, `conf.high`, `p.value`), and (if
+#'   `report_ratios`) `contrasts_ratio`. Attributes `backend`,
+#'   `adjustment_method`, `compare_specs_used`, `contrast_type_used`, and
+#'   `contrast_by_used` describe the call.
+#'
+#' @seealso [tidy.beezdemand_comparison()] for the backend-agnostic frame.
 #'
 #' @examples
 #' \donttest{
@@ -3411,160 +3516,260 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
 #' fit <- fit_demand_tmb(dat, equation = "exponential",
 #'                       factors = "gender", verbose = 0)
-#' get_demand_comparisons(fit, param = "Q0")
+#' res <- get_demand_comparisons(fit, param = "Q0")
+#' tidy(res)
 #' }
 #'
 #' @export
 get_demand_comparisons.beezdemand_tmb <- function(
   fit_obj,
   param = c("Q0", "alpha"),
+  compare_specs = NULL,
   contrast_type = c("pairwise", "trt.vs.ctrl"),
-  p_adjust = "holm",
+  contrast_by = NULL,
+  adjust = "holm",
+  at = NULL,
   ci_level = 0.95,
+  report_ratios = TRUE,
   ...
 ) {
-  param <- match.arg(param)
+  param <- match.arg(param, c("Q0", "alpha"), several.ok = TRUE)
   contrast_type <- match.arg(contrast_type)
 
-  # Forward `...` (notably `at` and `factors_in_emm`) so callers can
-  # condition the contrast reference grid on specific factor levels or
-  # covariate values. Before this, these args were silently dropped.
-  emms <- get_demand_param_emms(
-    fit_obj,
-    param = param,
-    ci_level = ci_level,
-    ...
-  )
-
-  if (nrow(emms) < 2) {
-    message("Fewer than 2 levels; no contrasts to compute.")
-    return(tibble::tibble(
-      contrast = character(),
-      estimate = numeric(),
-      std.error = numeric(),
-      statistic = numeric(),
-      p.value = numeric()
+  # contrast_by deferred to TICKET-032 (signature parity only on TMB).
+  if (!is.null(contrast_by)) {
+    cli::cli_abort(c(
+      "{.arg contrast_by} is not yet supported on the TMB backend.",
+      "i" = "By-grouped contrasts are planned in TICKET-032.",
+      "i" = "Use the NLME backend ({.fn fit_demand_mixed}) for by-grouped contrasts."
     ))
   }
 
-  # Get beta and vcov
-  coefs <- fit_obj$model$coefficients
-  sdr <- fit_obj$sdr
-
-  if (param == "Q0") {
-    beta_idx <- which(names(coefs) == "beta_q0")
-    beta <- coefs[beta_idx]
-    use_factors <- fit_obj$param_info$factors_q0
-  } else {
-    beta_idx <- which(names(coefs) == "beta_alpha")
-    beta <- coefs[beta_idx]
-    use_factors <- fit_obj$param_info$factors_alpha
+  # adjust: validate against the base-R set (Decision 6). emmeans-only methods
+  # (tukey/sidak/scheffe/mvt) are not implementable with stats::p.adjust().
+  if (!isTRUE(adjust %in% stats::p.adjust.methods)) {
+    cli::cli_abort(c(
+      "{.arg adjust} = {.val {adjust}} is not a valid p-value adjustment method.",
+      "i" = "Valid methods: {.val {stats::p.adjust.methods}}.",
+      "x" = "emmeans-only methods (e.g. {.val tukey}, {.val sidak}) are unavailable on the TMB backend (asymptotic z + {.fn stats::p.adjust})."
+    ))
   }
 
-  # vcov
+  dots <- list(...)
+  if ("p_adjust" %in% names(dots)) {
+    cli::cli_abort(c(
+      "{.arg p_adjust} has been renamed to {.arg adjust}.",
+      "i" = "Pass {.code adjust = {.val {dots$p_adjust}}} instead."
+    ))
+  }
+
+  # Resolve the retained factor set: `compare_specs` (canonical) wins, else the
+  # lower-level `factors_in_emm` via `...` (backward compatible).
+  factors_in_emm <- NULL
+  if (!is.null(compare_specs)) {
+    if (!inherits(compare_specs, "formula")) {
+      cli::cli_abort("{.arg compare_specs} must be a one-sided formula (e.g. {.code ~ gender}).")
+    }
+    factors_in_emm <- all.vars(compare_specs)
+    fitted_all <- unique(c(
+      fit_obj$param_info$factors_q0,
+      fit_obj$param_info$factors_alpha,
+      fit_obj$param_info$factors
+    ))
+    fitted_all <- fitted_all[nzchar(fitted_all) & !is.na(fitted_all)]
+    bad <- setdiff(factors_in_emm, fitted_all)
+    if (length(bad) > 0L) {
+      cli::cli_abort(c(
+        "{.arg compare_specs} names factor{?s} not in the fit: {.val {bad}}.",
+        "i" = "Fitted factors: {.val {fitted_all}}."
+      ))
+    }
+  } else if (!is.null(dots$factors_in_emm)) {
+    factors_in_emm <- dots$factors_in_emm
+  }
+
+  # Validate `at` once at the public boundary (single multi-value warning).
+  .tmb_validate_at(fit_obj, at)
+
+  results_list <- stats::setNames(
+    lapply(param, function(p) {
+      .tmb_compare_one_param(
+        fit_obj, p, factors_in_emm, contrast_type,
+        adjust, at, ci_level, report_ratios
+      )
+    }),
+    param
+  )
+
+  class(results_list) <- "beezdemand_comparison"
+  attr(results_list, "backend") <- "tmb"
+  attr(results_list, "compare_specs_used") <- if (is.null(compare_specs)) {
+    "all fitted factors"
+  } else {
+    deparse(compare_specs)
+  }
+  attr(results_list, "contrast_type_used") <- contrast_type
+  attr(results_list, "contrast_by_used") <- "NULL"
+  attr(results_list, "adjustment_method") <- adjust
+  results_list
+}
+
+# Build one parameter's nested comparison block for the TMB backend. Returns
+# list(emmeans, contrasts_log10[, contrasts_ratio]); `contrasts_log10` carries
+# an `std_labels` attribute of emmeans-style contrast labels (built from
+# STRUCTURED ref-grid level values, never by regex-parsing native strings) that
+# tidy.beezdemand_comparison() reads for the cross-backend `contrast` column.
+.tmb_compare_one_param <- function(fit_obj, param, factors_in_emm,
+                                   contrast_type, adjust, at, ci_level,
+                                   report_ratios) {
+  coefs <- fit_obj$model$coefficients
+  sdr <- fit_obj$sdr
+  target_name <- if (param == "Q0") "beta_q0" else "beta_alpha"
+  beta <- unname(coefs[names(coefs) == target_name])
+
   vcov_mat <- NULL
   if (!is.null(sdr) && !is.null(sdr$cov.fixed)) {
     full_vcov <- as.matrix(sdr$cov.fixed)
     par_names <- names(fit_obj$opt$par)
-    target_name <- if (param == "Q0") "beta_q0" else "beta_alpha"
     target_idx <- which(par_names == target_name)
     if (length(target_idx) == length(beta)) {
       vcov_mat <- full_vcov[target_idx, target_idx, drop = FALSE]
     }
   }
-
   if (is.null(vcov_mat)) {
-    se_vals <- fit_obj$model$se[beta_idx]
+    se_vals <- fit_obj$model$se[names(coefs) == target_name]
     vcov_mat <- diag(se_vals^2, nrow = length(se_vals))
   }
 
-  # Build the same conditioned reference grid the EMM call above used.
-  # Re-extract `at` and `factors_in_emm` from `...` so the helper sees the
-  # same conditioning that produced `emms` (TICKET-011 Phase 0.4 — Codex
-  # rounds 2-4 flagged this drift as silent statistical corruption when
-  # `at` filters factor levels: ref_X had more rows than emms, so the
-  # pairwise loop produced off-grid contrasts and "NA" labels).
-  # `at` was already validated by get_demand_param_emms() above; skip
-  # re-validation so the multi-value warning fires exactly once.
-  dots <- list(...)
   grid <- .tmb_build_emm_ref_grid(
-    fit_obj,
-    param = param,
-    at = dots$at,
-    factors_in_emm = dots$factors_in_emm,
-    validate = FALSE
+    fit_obj, param = param, at = at,
+    factors_in_emm = factors_in_emm, validate = FALSE
   )
-
-  if (grid$is_intercept_only) {
-    # Intercept-only fit: no factor levels to contrast.
-    return(tibble::tibble(
-      contrast = character(),
-      estimate = numeric(),
-      std.error = numeric(),
-      statistic = numeric(),
-      p.value = numeric()
-    ))
-  }
-
-  level_combos <- grid$level_combos
-  ref_X <- grid$ref_X
-  cov_names <- grid$cov_names
-
-  n_levels <- nrow(ref_X)
   z <- stats::qnorm((1 + ci_level) / 2)
 
-  # Pairwise contrasts on log scale
-  contrasts <- list()
-  if (contrast_type == "pairwise") {
-    for (i in seq_len(n_levels - 1)) {
-      for (j in (i + 1):n_levels) {
-        diff_x <- ref_X[i, ] - ref_X[j, ]
-        est_diff <- sum(diff_x * beta)
-        se_diff <- sqrt(as.numeric(t(diff_x) %*% vcov_mat %*% diff_x))
-        z_stat <- est_diff / se_diff
-        p_raw <- 2 * stats::pnorm(-abs(z_stat))
+  empty_log10 <- tibble::tibble(
+    contrast = character(), estimate = numeric(), std.error = numeric(),
+    statistic = numeric(), df = numeric(),
+    conf.low = numeric(), conf.high = numeric(), p.value = numeric()
+  )
+  empty_ratio <- tibble::tibble(
+    contrast = character(), ratio = numeric(),
+    conf.low = numeric(), conf.high = numeric(), p.value = numeric()
+  )
+  finish_empty <- function(emm_block) {
+    out <- list(emmeans = emm_block, contrasts_log10 = empty_log10)
+    attr(out$contrasts_log10, "std_labels") <- character()
+    if (report_ratios) out$contrasts_ratio <- empty_ratio
+    out
+  }
 
-        label_i <- emms$level[i]
-        label_j <- emms$level[j]
+  if (isTRUE(grid$is_intercept_only)) {
+    est <- beta[1L]
+    se <- sqrt(vcov_mat[1L, 1L])
+    emm_block <- tibble::tibble(
+      level = "(Intercept)", estimate = exp(est), estimate_log = est,
+      std.error = se, conf.low = exp(est - z * se), conf.high = exp(est + z * se)
+    )
+    return(finish_empty(emm_block))
+  }
 
-        contrasts[[length(contrasts) + 1]] <- tibble::tibble(
-          contrast = paste(label_i, "-", label_j),
-          estimate_log = est_diff,
-          estimate_ratio = exp(est_diff),
-          std.error = se_diff,
-          statistic = z_stat,
-          p.value.raw = p_raw
-        )
-      }
+  use_factors <- grid$use_factors
+  cov_names <- grid$cov_names
+  level_combos <- grid$level_combos
+  ref_X <- grid$ref_X
+  n <- nrow(ref_X)
+
+  cell_est <- as.numeric(ref_X %*% beta)
+  cell_se <- sqrt(diag(ref_X %*% vcov_mat %*% t(ref_X)))
+
+  native_label <- function(i) {
+    if (length(use_factors) > 0L) {
+      paste(vapply(use_factors, function(f)
+        paste0(f, "=", as.character(level_combos[[f]][i])), character(1)),
+        collapse = ", ")
+    } else if (length(cov_names) > 0L) {
+      paste(vapply(cov_names, function(cv)
+        paste0(cv, "=", level_combos[[cv]][i]), character(1)), collapse = ", ")
+    } else {
+      "(Intercept)"
     }
-  } else {
-    # trt.vs.ctrl: compare all to first level
-    for (j in 2:n_levels) {
-      diff_x <- ref_X[j, ] - ref_X[1, ]
-      est_diff <- sum(diff_x * beta)
-      se_diff <- sqrt(as.numeric(t(diff_x) %*% vcov_mat %*% diff_x))
-      z_stat <- est_diff / se_diff
-      p_raw <- 2 * stats::pnorm(-abs(z_stat))
-
-      contrasts[[length(contrasts) + 1]] <- tibble::tibble(
-        contrast = paste(emms$level[j], "-", emms$level[1]),
-        estimate_log = est_diff,
-        estimate_ratio = exp(est_diff),
-        std.error = se_diff,
-        statistic = z_stat,
-        p.value.raw = p_raw
-      )
+  }
+  std_label <- function(i) {
+    if (length(use_factors) > 0L) {
+      paste(vapply(use_factors, function(f)
+        as.character(level_combos[[f]][i]), character(1)), collapse = " ")
+    } else {
+      native_label(i)
     }
   }
 
-  result <- dplyr::bind_rows(contrasts)
+  emm_block <- tibble::tibble(
+    level = vapply(seq_len(n), native_label, character(1)),
+    estimate = exp(cell_est), estimate_log = cell_est, std.error = cell_se,
+    conf.low = exp(cell_est - z * cell_se),
+    conf.high = exp(cell_est + z * cell_se)
+  )
 
-  # P-value adjustment
-  result$p.value <- stats::p.adjust(result$p.value.raw, method = p_adjust)
-  result$conf.low <- exp(result$estimate_log - z * result$std.error)
-  result$conf.high <- exp(result$estimate_log + z * result$std.error)
+  if (n < 2L) {
+    return(finish_empty(emm_block))
+  }
 
-  result
+  # Contrast index pairs in factor-level order (the builder already ordered
+  # the grid by level index). pairwise: i<j (level_i - level_j);
+  # trt.vs.ctrl: each later level vs. the first (level_j - level_1).
+  if (contrast_type == "pairwise") {
+    cmb <- utils::combn(n, 2L)
+    lhs <- cmb[1L, ]
+    rhs <- cmb[2L, ]
+  } else {
+    lhs <- seq.int(2L, n)
+    rhs <- rep(1L, n - 1L)
+  }
+
+  est_log <- numeric(length(lhs))
+  se_log <- numeric(length(lhs))
+  native <- character(length(lhs))
+  stdlab <- character(length(lhs))
+  for (k in seq_along(lhs)) {
+    dx <- ref_X[lhs[k], ] - ref_X[rhs[k], ]
+    est_log[k] <- sum(dx * beta)
+    se_log[k] <- sqrt(as.numeric(t(dx) %*% vcov_mat %*% dx))
+    native[k] <- paste(native_label(lhs[k]), "-", native_label(rhs[k]))
+    stdlab[k] <- paste(std_label(lhs[k]), "-", std_label(rhs[k]))
+  }
+
+  zstat <- est_log / se_log
+  p_raw <- 2 * stats::pnorm(-abs(zstat))
+  p_adj <- stats::p.adjust(p_raw, method = adjust)
+  ln10 <- log(10)
+  est_log10 <- est_log / ln10
+  se_log10 <- se_log / ln10
+
+  contrasts_log10 <- tibble::tibble(
+    contrast = native,
+    estimate = est_log10,
+    std.error = se_log10,
+    statistic = zstat,
+    df = Inf,
+    conf.low = est_log10 - z * se_log10,
+    conf.high = est_log10 + z * se_log10,
+    p.value = p_adj
+  )
+  attr(contrasts_log10, "std_labels") <- stdlab
+
+  out <- list(emmeans = emm_block, contrasts_log10 = contrasts_log10)
+  if (report_ratios) {
+    contrasts_ratio <- tibble::tibble(
+      contrast = native,
+      ratio = exp(est_log),
+      conf.low = exp(est_log - z * se_log),
+      conf.high = exp(est_log + z * se_log),
+      p.value = p_adj
+    )
+    attr(contrasts_ratio, "std_labels") <- stdlab
+    out$contrasts_ratio <- contrasts_ratio
+  }
+  out
 }
 
 

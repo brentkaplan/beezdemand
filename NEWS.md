@@ -7,6 +7,46 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## get_demand_comparisons() backend harmonization (TICKET-016)
+
+* `get_demand_comparisons()` now returns a classed `beezdemand_comparison`
+  object on **both** the NLME and TMB backends, and a new
+  `tidy.beezdemand_comparison()` method gives a backend-agnostic flat
+  contrasts frame (`param`, `contrast`, `estimate`, `std.error`, `statistic`,
+  `df`, `conf.low`, `conf.high`, `p.value`) with identical columns regardless
+  of backend. Estimates and CIs are reported on the log10 scale on both
+  backends; `tidy(res, exponentiate = TRUE)` returns base-invariant ratios.
+  (Per-backend inference is unchanged: NLME reports a *t* statistic with finite
+  `df`, TMB an asymptotic *z* with `df = Inf`.)
+
+* `get_demand_comparisons()` now compares **both** `Q0` and `alpha` by default
+  on both backends (the TMB backend previously returned `Q0` only).
+
+* The TMB backend gains `compare_specs`, a formal `at` argument,
+  `report_ratios`, factor-level contrast ordering (previously
+  data-appearance order, which could flip signs when input rows were
+  reordered), and **equal-weight marginalization over omitted factors**
+  (averaging across the full crossing of their levels, emmeans' default
+  `weights = "equal"`, matching the NLME backend). `get_demand_param_emms()`
+  for TMB fits likewise marginalizes when `factors_in_emm` names a subset of
+  the fitted factors, rather than erroring.
+
+* **Behavior change (NLME):** the default p-value adjustment is now `"holm"`
+  (was `"tukey"`); pass `adjust = "tukey"` to retain the previous default.
+  Rationale: cross-backend reproducibility and the base-R pairwise default.
+
+* **Deprecation (NLME):** `get_demand_comparisons(params_to_compare = )` is
+  deprecated in favor of `param`. Supplying both is an error.
+
+* Developer-facing (unreleased TMB API):
+  `get_demand_comparisons.beezdemand_tmb()` renames `p_adjust` to `adjust`
+  (no alias) and validates it against `stats::p.adjust.methods`; emmeans-only
+  methods (e.g. `"tukey"`, `"sidak"`) are rejected.
+
+* `contrast_by` (by-grouped contrasts) is **not yet** supported on the TMB
+  backend (planned as a follow-up); supplying it errors with guidance to use
+  the NLME backend. Backend harmonization is therefore partial until that lands.
+
 ## New features (TICKET-023)
 
 * `fit_demand_tmb()` fits are now substantially smaller on disk by default

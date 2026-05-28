@@ -1030,7 +1030,11 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #' optionally, ratios (on the natural scale by applying 10^difference).
 #'
 #' @param fit_obj A `beezdemand_nlme` object.
-#' @param params_to_compare Character vector: "Q0", "alpha", or `c("Q0", "alpha")`. Default `c("Q0", "alpha")`.
+#' @param param Character vector: "Q0", "alpha", or `c("Q0", "alpha")`. Default
+#'   `c("Q0", "alpha")` (both). This is the canonical argument name, shared with
+#'   the TMB backend ([get_demand_comparisons.beezdemand_tmb()]).
+#' @param params_to_compare `r lifecycle::badge("deprecated")` Use `param`
+#'   instead (deprecated in 0.3.0 to harmonize with the TMB backend).
 #' @param compare_specs A formula specifying the factors whose levels are to be included in the EMM calculation
 #'   prior to contrasting. This defines the "cells" of your design for EMMs.
 #'   E.g., `~ factor1` (EMMs for levels of factor1, averaging over others),
@@ -1046,7 +1050,9 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #'   was fitted), specifying `contrast_by` will result in identical contrast estimates across the levels
 #'   of the `contrast_by` variable(s). In such cases, consider analyzing main effects directly
 #'   (e.g., `compare_specs = ~drug`, `contrast_by = NULL`).
-#' @param adjust P-value adjustment method. Default "tukey".
+#' @param adjust P-value adjustment method. Default `"holm"` (changed from
+#'   `"tukey"` in 0.3.0 for cross-backend reproducibility; pass
+#'   `adjust = "tukey"` to retain the previous default).
 #' @param at Optional named list for `emmeans::ref_grid()`.
 #' @param ci_level Confidence level. Default 0.95.
 #' @param report_ratios Logical. If TRUE, reports contrasts as ratios. Default `TRUE`.
@@ -1087,16 +1093,34 @@ get_demand_comparisons.default <- function(fit_obj, ...) {
 #' @export
 get_demand_comparisons.beezdemand_nlme <- function(
   fit_obj,
-  params_to_compare = c("Q0", "alpha"),
+  param = c("Q0", "alpha"),
   compare_specs = NULL,
   contrast_type = "pairwise",
   contrast_by = NULL,
-  adjust = "tukey",
+  adjust = "holm",
   at = NULL,
   ci_level = 0.95,
   report_ratios = TRUE,
+  params_to_compare = lifecycle::deprecated(),
   ...
 ) {
+  # TICKET-016: `params_to_compare` deprecated in favor of the canonical `param`
+  # (harmonizes the argument name with the TMB backend).
+  if (lifecycle::is_present(params_to_compare)) {
+    if (!missing(param)) {
+      cli::cli_abort(
+        "Supply only one of {.arg param} and the deprecated {.arg params_to_compare}."
+      )
+    }
+    lifecycle::deprecate_warn(
+      "0.3.0",
+      "get_demand_comparisons(params_to_compare = )",
+      "get_demand_comparisons(param = )"
+    )
+    param <- params_to_compare
+  }
+  param <- match.arg(param, c("Q0", "alpha"), several.ok = TRUE)
+
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -1178,12 +1202,12 @@ get_demand_comparisons.beezdemand_nlme <- function(
   # after the loop.
   effective_contrast_by <- contrast_by
 
-  for (param_name in params_to_compare) {
+  for (param_name in param) {
     if (!param_name %in% c("Q0", "alpha")) {
       warning(
         "Unknown parameter '",
         param_name,
-        "' in `params_to_compare`. Skipping."
+        "' in `param`. Skipping."
       )
       next
     }
@@ -1517,6 +1541,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
   }
 
   class(results_list) <- "beezdemand_comparison"
+  attr(results_list, "backend") <- "nlme"
   attr(results_list, "compare_specs_used") <- deparse(emm_specs_formula)
   attr(results_list, "contrast_type_used") <- contrast_type
   attr(results_list, "contrast_by_used") <- if (
@@ -1530,6 +1555,96 @@ get_demand_comparisons.beezdemand_nlme <- function(
   return(results_list)
 }
 
+# Backend-aware flattener shared by tidy.beezdemand_comparison() and
+# print.beezdemand_comparison(). Maps each backend's NATIVE nested dialect to
+# the neutral cross-backend schema (Decision 4). TMB contrast labels come from
+# the STRUCTURED `std_labels` attribute (built from ref-grid level values, not
+# regex), so they match emmeans' native level-value labels on the NLME side.
+.beezdemand_comparison_flat <- function(x, exponentiate = FALSE) {
+  backend <- attr(x, "backend") %||% "nlme"
+  empty <- tibble::tibble(
+    param = character(), contrast = character(), estimate = numeric(),
+    std.error = numeric(), statistic = numeric(), df = numeric(),
+    conf.low = numeric(), conf.high = numeric(), p.value = numeric()
+  )
+
+  rows <- lapply(names(x), function(p) {
+    cl <- x[[p]]$contrasts_log10
+    if (is.null(cl) || nrow(cl) == 0L || !("estimate" %in% names(cl))) {
+      return(NULL)
+    }
+    if (identical(backend, "tmb")) {
+      lab <- attr(cl, "std_labels")
+      if (is.null(lab) || length(lab) != nrow(cl)) lab <- cl$contrast
+      tibble::tibble(
+        param = p, contrast = lab,
+        estimate = cl$estimate, std.error = cl$std.error,
+        statistic = cl$statistic, df = cl$df,
+        conf.low = cl$conf.low, conf.high = cl$conf.high,
+        p.value = cl$p.value
+      )
+    } else {
+      tibble::tibble(
+        param = p, contrast = cl$contrast_definition,
+        estimate = cl$estimate, std.error = cl$SE,
+        statistic = cl$t.ratio, df = cl$df,
+        conf.low = cl$lower.CL, conf.high = cl$upper.CL,
+        p.value = cl$p.value
+      )
+    }
+  })
+
+  out <- dplyr::bind_rows(rows)
+  if (nrow(out) == 0L) out <- empty
+
+  if (isTRUE(exponentiate)) {
+    # Base-invariant ratios; std.error is NA per broom's exponentiated-fit
+    # convention (the delta-method SE does not transform multiplicatively).
+    out$estimate <- 10^out$estimate
+    out$conf.low <- 10^out$conf.low
+    out$conf.high <- 10^out$conf.high
+    out$std.error <- NA_real_
+  }
+  out
+}
+
+#' Tidy a demand-parameter comparison into a flat contrasts frame
+#'
+#' @description
+#' Backend-agnostic [broom::tidy()] method for `beezdemand_comparison` objects
+#' (returned by [get_demand_comparisons()] on both the NLME and TMB backends).
+#' This flat long tibble is the cross-backend contract: identical column names
+#' and order regardless of backend. The nested object itself keeps each
+#' backend's native dialect (see [get_demand_comparisons()]).
+#'
+#' @param x A `beezdemand_comparison` object.
+#' @param exponentiate Logical. If `TRUE`, return base-invariant ratios
+#'   (`estimate = 10^estimate`, CIs back-transformed); `std.error` becomes `NA`
+#'   following broom's convention for exponentiated fits. Default `FALSE`.
+#' @param ... Unused.
+#'
+#' @return A tibble with columns `param`, `contrast`, `estimate`, `std.error`,
+#'   `statistic`, `df`, `conf.low`, `conf.high`, `p.value`. Estimates and CIs
+#'   are on the log10 scale (or ratios when `exponentiate = TRUE`). `statistic`
+#'   is a *t* ratio with finite `df` on the NLME backend and an asymptotic *z*
+#'   (`df = Inf`) on the TMB backend (the value differs by backend, by design).
+#'
+#' @examples
+#' \donttest{
+#' data(apt_full)
+#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' fit <- fit_demand_tmb(dat, equation = "exponential",
+#'                       factors = "gender", verbose = 0)
+#' res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
+#' tidy(res)
+#' tidy(res, exponentiate = TRUE)
+#' }
+#'
+#' @export
+tidy.beezdemand_comparison <- function(x, exponentiate = FALSE, ...) {
+  .beezdemand_comparison_flat(x, exponentiate = exponentiate)
+}
+
 #' Print method for beezdemand_comparison objects
 #'
 #' @param x A `beezdemand_comparison` object.
@@ -1538,12 +1653,13 @@ get_demand_comparisons.beezdemand_nlme <- function(
 #' @return Invisibly returns the input object \code{x}.
 #' @export
 print.beezdemand_comparison <- function(x, digits = 3, ...) {
-  cat("Demand Parameter Comparisons (from beezdemand_nlme fit)\n")
+  backend <- attr(x, "backend") %||% "nlme"
   emm_specs_used <- attr(x, "compare_specs_used")
   contrast_type <- attr(x, "contrast_type_used")
   contrast_by <- attr(x, "contrast_by_used")
   adj_method <- attr(x, "adjustment_method")
 
+  cat(sprintf("Demand Parameter Comparisons (%s backend)\n", backend))
   if (!is.null(emm_specs_used)) {
     cat("EMMs computed over:", emm_specs_used, "\n")
   }
@@ -1558,7 +1674,22 @@ print.beezdemand_comparison <- function(x, digits = 3, ...) {
   if (!is.null(adj_method)) {
     cat("P-value adjustment method:", adj_method, "\n")
   }
-  cat(paste(rep("=", 50), collapse = ""), "\n\n")
+  cat(strrep("=", 50), "\n")
+
+  flat <- .beezdemand_comparison_flat(x)
+  for (p in names(x)) {
+    cat(sprintf("\n%s (log10-scale contrasts):\n", p))
+    sub <- flat[flat$param == p,
+                c("contrast", "estimate", "std.error",
+                  "conf.low", "conf.high", "p.value")]
+    if (nrow(sub) == 0L) {
+      cat("  <no contrasts>\n")
+    } else {
+      num <- vapply(sub, is.numeric, logical(1))
+      sub[num] <- lapply(sub[num], round, digits = digits)
+      print(as.data.frame(sub), row.names = FALSE)
+    }
+  }
 
   invisible(x)
 }
