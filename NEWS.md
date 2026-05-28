@@ -47,6 +47,25 @@ cover TICKET-011 phase work added under this development cycle.
   backend (planned as a follow-up); supplying it errors with guidance to use
   the NLME backend. Backend harmonization is therefore partial until that lands.
 
+* **Correctness fixes (post-review).** (1) The NLME backend now validates
+  `compare_specs` against the union of the model's fitted factors (originals
+  and per-parameter collapsed columns) and errors on names not in that union,
+  matching the TMB boundary check; cross-parameter aliases that pass the
+  boundary but cannot resolve for a given parameter (e.g. `~ age_group_alpha`
+  with `param = "Q0"`) abort with a parameter-scoped message rather than
+  silently producing an intercept-only EMM. Factors whose collapsed column has
+  fewer than 2 levels for a parameter still return empty contrasts for that
+  parameter without error (the existing intentional behavior). (2) Under
+  asymmetric `collapse_levels`, naming the **original** factor in
+  `compare_specs`/`factors_in_emm` (e.g. `~ age_group`) now resolves to that
+  parameter's collapsed column on the TMB backend (`age_group_Q0` /
+  `age_group_alpha`), as it already did on NLME, instead of silently returning
+  zero contrasts; a name that cannot be resolved for the parameter is rejected
+  with an error. (3) TMB EMM and contrast reference grids are now built using
+  the **fitted** design's contrasts, so changing the global
+  `options("contrasts")` between fitting and calling no longer silently changes
+  the estimates.
+
 ## New features (TICKET-023)
 
 * `fit_demand_tmb()` fits are now substantially smaller on disk by default

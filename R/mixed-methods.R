@@ -1192,6 +1192,28 @@ get_demand_comparisons.beezdemand_nlme <- function(
       )
     }
     base_factors <- all.vars(compare_specs)
+    # F3 + follow-up (Codex re-review): validate the requested factors at the
+    # boundary, mirroring the TMB backend, instead of letting a bogus name fall
+    # through emmeans() into a silent partial result. Under asymmetric
+    # `collapse_levels`, `compare_specs` may name either the original factor
+    # (which `.get_actual_factors_for_param()` maps per parameter) OR the
+    # parameter's collapsed column directly -- so validate against the union of
+    # original names and per-parameter columns. Cross-parameter aliases that
+    # don't resolve for a given parameter are caught later in the per-param
+    # loop with a clearer parameter-scoped message.
+    valid_factors <- unique(c(
+      all_model_factors,
+      fit_obj$param_info$factors_Q0,
+      fit_obj$param_info$factors_alpha
+    ))
+    valid_factors <- valid_factors[!is.na(valid_factors) & nzchar(valid_factors)]
+    bad_factors <- setdiff(base_factors, valid_factors)
+    if (length(bad_factors) > 0L) {
+      cli::cli_abort(c(
+        "{.arg compare_specs} names factor{?s} not in the fit: {.val {bad_factors}}.",
+        "i" = "Fitted factors: {.val {valid_factors}}."
+      ))
+    }
     user_provided_specs <- TRUE
   }
 
@@ -1227,6 +1249,34 @@ get_demand_comparisons.beezdemand_nlme <- function(
       param_factors,
       param_suffix
     )
+
+    # F3 follow-up: a non-empty `base_factors` that resolves to zero
+    # `actual_factors` has two distinct causes, which must be handled
+    # differently (test_emms_comparisons.R:375 pins this):
+    #   (a) Cross-parameter alias under asymmetric `collapse_levels` -- the
+    #       requested factor is not in this parameter's design at all (e.g.
+    #       ~ age_group_alpha for param = "Q0"). Abort with a parameter-scoped
+    #       message; matches the TMB resolver guard.
+    #   (b) Factor collapsed to a single level for this parameter -- the
+    #       factor IS in this parameter's design (its collapsed column is in
+    #       `param_factors`) but has < 2 levels, so no contrast is possible.
+    #       Preserve the prior silent intercept-only behavior; the empty
+    #       contrasts table is the expected output for that case.
+    if (user_provided_specs &&
+        length(base_factors) > 0L &&
+        length(actual_factors) == 0L) {
+      resolvable_in_param <- any(
+        base_factors %in% param_factors |
+          paste0(base_factors, "_", param_suffix) %in% param_factors
+      )
+      if (!resolvable_in_param) {
+        cli::cli_abort(c(
+          "{cli::qty(base_factors)}{.arg compare_specs} factor{?s} {.val {base_factors}} {?does/do} not resolve for {param_name}.",
+          "i" = "{param_name} factors: {.val {param_factors}}.",
+          "x" = "Under asymmetric {.arg collapse_levels} a factor can be retained for one parameter but not the other."
+        ))
+      }
+    }
 
     # Build specs formula for this parameter
     if (length(actual_factors) > 0) {

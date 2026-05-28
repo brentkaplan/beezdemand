@@ -3104,6 +3104,39 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
   invisible(NULL)
 }
 
+# Resolve user-requested retained factors against a parameter's fitted factor
+# columns (F2, Codex post-commit review). Under asymmetric `collapse_levels` the
+# fitted columns are renamed per parameter (`age_group` -> `age_group_Q0` /
+# `age_group_alpha`), but users pass the ORIGINAL name via `compare_specs`
+# (mirroring the NLME backend's .get_actual_factors_for_param()). A plain
+# `intersect()` would silently drop the original name and collapse to a
+# grand-mean (empty contrasts). Map each requested name to this parameter's
+# column (direct hit, else the `<name>_<param>` collapse alias); abort if a
+# requested name cannot be resolved for this parameter rather than marginalize
+# the user's comparison away. `param` is "Q0" or "alpha" (matches the collapse
+# suffix). Returns the resolved retained-factor column names.
+.tmb_resolve_retained_factors <- function(requested, fitted_factors, param) {
+  resolved <- character(0)
+  unresolved <- character(0)
+  for (f in requested) {
+    if (f %in% fitted_factors) {
+      resolved <- c(resolved, f)
+    } else if (paste0(f, "_", param) %in% fitted_factors) {
+      resolved <- c(resolved, paste0(f, "_", param))
+    } else {
+      unresolved <- c(unresolved, f)
+    }
+  }
+  if (length(unresolved) > 0L) {
+    cli::cli_abort(c(
+      "{cli::qty(unresolved)}Requested factor{?s} {.val {unresolved}} {?is/are} not in the {param} design.",
+      "i" = "Fitted {param} factors: {.val {fitted_factors}}.",
+      "x" = "Under asymmetric {.arg collapse_levels} a factor can differ between Q0 and alpha; pass the original factor name (mapped per parameter) or this parameter's collapsed column."
+    ))
+  }
+  unique(resolved)
+}
+
 .tmb_build_emm_ref_grid <- function(
   fit_obj,
   param = c("Q0", "alpha"),
@@ -3123,7 +3156,14 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
   }
   if (is.null(use_factors)) use_factors <- character(0)
   if (!is.null(factors_in_emm)) {
-    use_factors <- intersect(use_factors, factors_in_emm)
+    # NULL = retain all fitted factors; explicit character(0) (e.g. `~ 1`) =
+    # marginalize everything to a grand mean; otherwise resolve the requested
+    # names against this parameter's columns (collapse-aware; see helper).
+    if (length(factors_in_emm) == 0L) {
+      use_factors <- character(0)
+    } else {
+      use_factors <- .tmb_resolve_retained_factors(factors_in_emm, use_factors, param)
+    }
   }
 
   # `at` validation: catch typos and bad values BEFORE grid construction.
@@ -3252,6 +3292,16 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
     }
   }
 
+  # Pin the rebuilt basis to the FITTED design's contrasts (F1, Codex
+  # post-commit review). `model.matrix()` otherwise picks up whatever
+  # `options("contrasts")` is in effect at call time; if that differs from fit
+  # time the rebuilt basis can keep the same column count but encode a different
+  # basis, silently multiplying the wrong columns by `beta`. Passing the fitted
+  # `contrasts` attribute reproduces the fit-time basis, and we then verify the
+  # columns match the fitted design (reordering if needed) and abort loudly
+  # rather than compute against a mismatched basis.
+  fitted_X <- if (param == "Q0") fit_obj$formula_details$X_q0 else
+    fit_obj$formula_details$X_alpha
   X_full <- stats::model.matrix(
     stats::as.formula(build_fixed_rhs(
       factors = fitted_factors,
@@ -3259,8 +3309,21 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
       continuous_covariates = cov_names,
       data = data_used
     )),
-    data = full_combos
+    data = full_combos,
+    contrasts.arg = attr(fitted_X, "contrasts")
   )
+  fitted_cols <- colnames(fitted_X)
+  if (!is.null(fitted_cols)) {
+    if (!setequal(colnames(X_full), fitted_cols)) {
+      cli::cli_abort(c(
+        "Could not reproduce the fitted {param} design matrix for the EMM grid.",
+        "i" = "Rebuilt columns: {.val {colnames(X_full)}}.",
+        "i" = "Fitted columns: {.val {fitted_cols}}.",
+        "x" = "This can happen if the model's factor levels or contrasts changed after fitting."
+      ))
+    }
+    X_full <- X_full[, fitted_cols, drop = FALSE]
+  }
 
   # Averaging matrix A (n_retained x n_full): each retained cell places equal
   # weight 1/m on the m full-grid rows matching it (m = product of omitted
@@ -3304,7 +3367,9 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 #'   omitted factors are **marginalized over** using equal weights across the
 #'   full crossing of their levels (emmeans' default `weights = "equal"`),
 #'   matching the NLME backend. If `NULL` (default), all fitted factors are
-#'   retained (no marginalization).
+#'   retained (no marginalization). Under asymmetric `collapse_levels` you may
+#'   name either the original factor or its collapsed per-parameter column; a
+#'   name that resolves to neither for this parameter is rejected with an error.
 #' @param at Named list specifying factor levels and continuous-covariate
 #'   values for conditional EMMs. For continuous covariates, a single
 #'   numeric value per covariate; multiple values produce a warning and
@@ -3482,7 +3547,10 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #' @param compare_specs Optional one-sided formula naming the factor subset to
 #'   contrast (e.g. `~ gender`). Omitted fitted factors are marginalized over
 #'   with equal weights across the full crossing of their levels (matching the
-#'   NLME backend). If `NULL` (default), all fitted factors are retained.
+#'   NLME backend). If `NULL` (default), all fitted factors are retained. Under
+#'   asymmetric `collapse_levels`, name the **original** factor (e.g.
+#'   `~ age_group`); it resolves to that parameter's collapsed column
+#'   (`age_group_Q0` / `age_group_alpha`), as on the NLME backend.
 #' @param contrast_type Character. `"pairwise"` (all pairs, factor-level order)
 #'   or `"trt.vs.ctrl"` (each level vs. the first/reference level).
 #' @param contrast_by Not yet supported on the TMB backend (planned in

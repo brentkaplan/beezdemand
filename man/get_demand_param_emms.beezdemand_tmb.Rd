@@ -24,7 +24,9 @@ reference grid. If it names a strict subset of the fitted factors, the
 omitted factors are \strong{marginalized over} using equal weights across the
 full crossing of their levels (emmeans' default \code{weights = "equal"}),
 matching the NLME backend. If \code{NULL} (default), all fitted factors are
-retained (no marginalization).}
+retained (no marginalization). Under asymmetric \code{collapse_levels} you may
+name either the original factor or its collapsed per-parameter column; a
+name that resolves to neither for this parameter is rejected with an error.}
 
 \item{at}{Named list specifying factor levels and continuous-covariate
 values for conditional EMMs. For continuous covariates, a single

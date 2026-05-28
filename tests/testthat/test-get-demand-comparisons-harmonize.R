@@ -85,6 +85,59 @@
   .h16_cache$tmb2fu
 }
 
+# Asymmetric-collapse TMB fit (F2 regression): Q0 collapses age_group to 2
+# levels (junior/old), alpha keeps 3 (young/mid/old). So factors_q0 =
+# "age_group_Q0", factors_alpha = "age_group_alpha", but param_info$factors =
+# "age_group" (the original name users pass via compare_specs). Subsampled
+# across all three age tiers so every level survives; CI-memory hygiene.
+.h16_collapse_data <- function(per_tier = 18) {
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
+                            labels = c("young", "mid", "old")))
+  d <- d[!is.na(d$age_group), ]
+  ids_keep <- unlist(lapply(levels(d$age_group), function(g) {
+    ig <- unique(d$id[d$age_group == g]); head(ig[order(ig)], per_tier)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  d
+}
+
+.h16_collapse_fit <- function() {
+  if (is.null(.h16_cache$collapse)) {
+    .h16_cache$collapse <- suppressWarnings(fit_demand_tmb(
+      .h16_collapse_data(), equation = "exponential", factors = "age_group",
+      collapse_levels = list(
+        Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
+        alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
+      ),
+      verbose = 0))
+  }
+  .h16_cache$collapse
+}
+
+# NLME analog of the asymmetric-collapse fit (F3 follow-up regression). Same
+# structure: factors_Q0 = age_group_Q0 (2 lev), factors_alpha = age_group_alpha
+# (3 lev), param_info$factors = age_group (original). Used to verify the NLME
+# compare_specs validator accepts both the original factor name AND the
+# per-parameter collapsed column, and aborts per-param on a cross-parameter
+# alias (mirroring the TMB resolver).
+.h16_nlme_collapse_fit <- function() {
+  if (is.null(.h16_cache$nlme_collapse)) {
+    d <- .h16_collapse_data(per_tier = 12)  # smaller -> faster nlme fit
+    d$y_ll4 <- ll4(d$y, lambda = 4)
+    .h16_cache$nlme_collapse <- suppressMessages(fit_demand_mixed(
+      d, y_var = "y_ll4", x_var = "x", id_var = "id",
+      factors = "age_group", equation_form = "zben",
+      collapse_levels = list(
+        Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
+        alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
+      )))
+  }
+  .h16_cache$nlme_collapse
+}
+
 # Synthetic single-factor exponential demand with a CUSTOM level order, used
 # to prove factor-level (not data-appearance) contrast ordering on TMB.
 .h16_sim_one_factor <- function(level_order, n_per = 9, seed = 11) {
@@ -297,6 +350,137 @@ test_that("compare_specs naming a non-fitted factor errors", {
   expect_error(
     suppressMessages(get_demand_comparisons(fit, param = "Q0", compare_specs = ~ nope)),
     regexp = "nope"
+  )
+})
+
+# F3 (Codex post-commit review): the NLME backend must validate compare_specs at
+# the boundary like TMB does, instead of letting a bogus formula fall through
+# emmeans() into a silent degenerate result. Harmonized contract parity.
+test_that("NLME compare_specs naming a non-fitted factor errors (contract parity)", {
+  skip_on_cran()
+  fit <- .h16_nlme_fit()
+  expect_error(
+    suppressMessages(get_demand_comparisons(fit, param = "Q0", compare_specs = ~ nope)),
+    regexp = "nope"
+  )
+  # The abort lists the valid factor(s) so the user can correct the call.
+  expect_error(
+    suppressMessages(get_demand_comparisons(fit, param = "Q0", compare_specs = ~ nope)),
+    regexp = "gender"
+  )
+})
+
+# F3 follow-up (Codex re-review after the post-commit fixes): the boundary
+# validator must accept BOTH the original factor name AND the per-parameter
+# collapsed column under asymmetric collapse_levels (parity with TMB and with
+# the prior NLME behavior via .get_actual_factors_for_param), and a cross-
+# parameter alias (e.g. ~ age_group_alpha for param = "Q0") must abort in the
+# per-param resolver instead of silently degenerating to an intercept-only EMM.
+test_that("NLME compare_specs accepts original or per-param collapsed name; aborts on cross-param alias (F3 follow-up)", {
+  skip_on_cran()
+  fit <- .h16_nlme_collapse_fit()
+  expect_setequal(fit$param_info$factors_Q0, "age_group_Q0")
+  expect_setequal(fit$param_info$factors_alpha, "age_group_alpha")
+
+  # (1) original name -> works (already did).
+  r_orig <- suppressMessages(
+    get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group))
+  expect_s3_class(r_orig, "beezdemand_comparison")
+  expect_true(!is.null(r_orig$Q0$contrasts_log10) &&
+              nrow(r_orig$Q0$contrasts_log10) >= 1L)
+
+  # (2) explicit collapsed column -> must also work (regression: my F3 boundary
+  # check rejected this; .get_actual_factors_for_param previously accepted it).
+  r_col <- suppressMessages(
+    get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group_Q0))
+  expect_s3_class(r_col, "beezdemand_comparison")
+  expect_true(!is.null(r_col$Q0$contrasts_log10) &&
+              nrow(r_col$Q0$contrasts_log10) >= 1L)
+
+  # (3) cross-parameter alias for param = "Q0" -> abort. The abort must come
+  # from the per-param resolver (mentions the param scope), not the boundary
+  # union validation (which by design accepts the union and lets per-param
+  # mismatches abort with a clearer message).
+  expect_error(
+    suppressMessages(
+      get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group_alpha)),
+    regexp = "age_group_alpha"
+  )
+  expect_error(
+    suppressMessages(
+      get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group_alpha)),
+    regexp = "Q0"
+  )
+
+  # (4) genuinely-bogus name -> still aborts (unchanged from F3).
+  expect_error(
+    suppressMessages(
+      get_demand_comparisons(fit, param = "Q0", compare_specs = ~ nope)),
+    regexp = "nope"
+  )
+})
+
+# F1 (Codex post-commit review): the marginalization grid is rebuilt with
+# model.matrix(), which otherwise honors options("contrasts") at call time. The
+# rebuilt basis must be pinned to the fitted design's contrasts so a changed
+# global contrasts option cannot silently multiply the wrong basis by beta.
+test_that("TMB EMMs/contrasts are invariant to options(contrasts) (F1)", {
+  skip_on_cran()
+  fit <- .h16_tmb_fit()
+
+  e_def <- suppressMessages(get_demand_param_emms(fit, param = "Q0"))$estimate
+  e_flip <- withr::with_options(
+    list(contrasts = c("contr.sum", "contr.poly")),
+    suppressMessages(get_demand_param_emms(fit, param = "Q0"))$estimate)
+  expect_equal(e_flip, e_def, tolerance = 1e-10)
+
+  c_def <- broom::tidy(suppressMessages(
+    get_demand_comparisons(fit, param = "Q0", compare_specs = ~ gender)))$estimate
+  c_flip <- withr::with_options(
+    list(contrasts = c("contr.sum", "contr.poly")),
+    broom::tidy(suppressMessages(
+      get_demand_comparisons(fit, param = "Q0", compare_specs = ~ gender)))$estimate)
+  expect_equal(c_flip, c_def, tolerance = 1e-10)
+})
+
+# F2 (Codex post-commit review): under asymmetric collapse_levels the fitted
+# factor columns are renamed per parameter (age_group -> age_group_Q0 /
+# age_group_alpha). compare_specs names the ORIGINAL factor (as on NLME); it
+# must map to the per-parameter column, not silently intersect to nothing and
+# return a grand-mean (0 contrasts).
+test_that("TMB compare_specs maps the original factor under asymmetric collapse (F2)", {
+  skip_on_cran()
+  fit <- .h16_collapse_fit()
+  # Sanity: the fixture is genuinely asymmetric.
+  expect_setequal(fit$param_info$factors_q0, "age_group_Q0")
+  expect_setequal(fit$param_info$factors_alpha, "age_group_alpha")
+
+  # Q0: original name resolves to age_group_Q0 (junior/old) -> one contrast,
+  # identical to passing the explicit collapsed column (was 0 rows pre-fix).
+  o_q0 <- broom::tidy(suppressWarnings(suppressMessages(
+    get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group))))
+  c_q0 <- broom::tidy(suppressWarnings(suppressMessages(
+    get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group_Q0))))
+  expect_equal(nrow(o_q0), 1L)
+  expect_equal(o_q0$estimate, c_q0$estimate)
+
+  # alpha: original name resolves to age_group_alpha (young/mid/old) -> 3
+  # pairwise contrasts.
+  o_al <- broom::tidy(suppressWarnings(suppressMessages(
+    get_demand_comparisons(fit, param = "alpha", compare_specs = ~ age_group))))
+  expect_equal(nrow(o_al), 3L)
+})
+
+test_that("TMB compare_specs aborts on a cross-parameter collapsed name (F2 guard)", {
+  skip_on_cran()
+  fit <- .h16_collapse_fit()
+  # age_group_alpha passes the union validation (it is a fitted alpha factor)
+  # but is not in the Q0 design and has no Q0 alias -> must abort, not silently
+  # marginalize the comparison away.
+  expect_error(
+    suppressWarnings(suppressMessages(
+      get_demand_comparisons(fit, param = "Q0", compare_specs = ~ age_group_alpha))),
+    regexp = "age_group_alpha"
   )
 })
 

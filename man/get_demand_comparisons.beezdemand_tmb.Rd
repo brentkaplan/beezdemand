@@ -26,7 +26,10 @@
 \item{compare_specs}{Optional one-sided formula naming the factor subset to
 contrast (e.g. \code{~ gender}). Omitted fitted factors are marginalized over
 with equal weights across the full crossing of their levels (matching the
-NLME backend). If \code{NULL} (default), all fitted factors are retained.}
+NLME backend). If \code{NULL} (default), all fitted factors are retained. Under
+asymmetric \code{collapse_levels}, name the \strong{original} factor (e.g.
+\code{~ age_group}); it resolves to that parameter's collapsed column
+(\code{age_group_Q0} / \code{age_group_alpha}), as on the NLME backend.}
 
 \item{contrast_type}{Character. \code{"pairwise"} (all pairs, factor-level order)
 or \code{"trt.vs.ctrl"} (each level vs. the first/reference level).}
