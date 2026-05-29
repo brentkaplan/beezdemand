@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-05-25</h4>
+            <h4 data-toc-skip class="date">2026-05-29</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/mixed-demand-advanced.Rmd" class="external-link"><code>vignettes/mixed-demand-advanced.Rmd</code></a></small>
       <div class="d-none name"><code>mixed-demand-advanced.Rmd</code></div>
@@ -272,7 +272,7 @@ to keep original levels for that parameter.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c9f6317228&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55eb46a70758&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0):     ~ dose_Q0 </span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (alpha):  ~ dose_alpha </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
@@ -381,7 +381,7 @@ not.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55c9f8102798&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55eb48379168&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0):     ~ dose_Q0 </span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
@@ -472,7 +472,7 @@ alpha collapses to 2 groups, the EMM table will have 10 rows (5 ×
 <span>  <span class="va">collapsed_comparisons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span></span>
 <span>    fit_obj <span class="op">=</span> <span class="va">fit_collapsed_asymmetric</span>,</span>
 <span>    compare_specs <span class="op">=</span> <span class="op">~</span><span class="va">dose</span>, <span class="co"># Use original factor name</span></span>
-<span>    params_to_compare <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q0"</span>, <span class="st">"alpha"</span><span class="op">)</span></span>
+<span>    param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q0"</span>, <span class="st">"alpha"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nQ0 contrasts (collapsed levels):\n"</span><span class="op">)</span></span>
@@ -752,11 +752,23 @@ that parameter will be empty.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; --- Pairwise comparisons for 'dose' (averaging over other factors if any): ---</span></span>
-<span><span class="co">#&gt; Demand Parameter Comparisons (from beezdemand_nlme fit)</span></span>
+<span><span class="co">#&gt; Demand Parameter Comparisons (nlme backend)</span></span>
 <span><span class="co">#&gt; EMMs computed over: ~dose </span></span>
 <span><span class="co">#&gt; Contrast type: pairwise</span></span>
 <span><span class="co">#&gt; P-value adjustment method: fdr </span></span>
-<span><span class="co">#&gt; ==================================================</span></span></code></pre></div>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Q0 (log10-scale contrasts):</span></span>
+<span><span class="co">#&gt;                 contrast estimate std.error conf.low conf.high p.value</span></span>
+<span><span class="co">#&gt;  (dose3e-04) - dose0.001    0.258     0.093    0.026     0.490   0.008</span></span>
+<span><span class="co">#&gt;  (dose3e-04) - dose0.003    0.519     0.091    0.290     0.748   0.000</span></span>
+<span><span class="co">#&gt;    dose0.001 - dose0.003    0.261     0.085    0.048     0.475   0.006</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; alpha (log10-scale contrasts):</span></span>
+<span><span class="co">#&gt;                 contrast estimate std.error conf.low conf.high p.value</span></span>
+<span><span class="co">#&gt;  (dose3e-04) - dose0.001    0.084     0.068   -0.087     0.255   0.337</span></span>
+<span><span class="co">#&gt;  (dose3e-04) - dose0.003   -0.010     0.071   -0.187     0.168   0.891</span></span>
+<span><span class="co">#&gt;    dose0.001 - dose0.003   -0.094     0.070   -0.269     0.082   0.337</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="advanced-topics">Advanced Topics<a class="anchor" aria-label="anchor" href="#advanced-topics"></a>
@@ -823,7 +835,7 @@ an additional continuous covariate. This uses a shared RHS for
 </h4>
 <p>We can examine how the parameters change with continuous covariates
 using <code><a href="../reference/get_demand_param_trends.html">get_demand_param_trends()</a></code>, which wraps
-<code><a href="https://rvlenth.github.io/emmeans/reference/emtrends.html" class="external-link">emmeans::emtrends()</a></code> and returns tidy results for Q0 and
+<code><a href="https://rdrr.io/pkg/emmeans/man/emtrends.html" class="external-link">emmeans::emtrends()</a></code> and returns tidy results for Q0 and
 alpha trends on the log10 scale.</p>
 <p>Below we compute trends with respect to <code>age</code> and
 <code>dose_num</code>, first overall and then by <code>drug</code> (if

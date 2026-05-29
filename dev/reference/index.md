@@ -62,6 +62,8 @@ Functions for preparing and transforming demand data.
 
 S3 methods for extracting information from fitted models.
 
+- [`tidy(`*`<beezdemand_comparison>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_comparison.md)
+  : Tidy a demand-parameter comparison into a flat contrasts frame
 - [`tidy(`*`<beezdemand_fixed>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_fixed.md)
   : Tidy Method for beezdemand_fixed
 - [`tidy(`*`<beezdemand_fixed_grouped>`*`)`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_fixed_grouped.md)

@@ -89,7 +89,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-05-25</h4>
+            <h4 data-toc-skip class="date">2026-05-29</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -1059,15 +1059,15 @@ likelihood-ratio test.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 6</span></span></span>
 <span><span class="co">#&gt;   level         estimate estimate_log std.error conf.low conf.high</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Male       6.07         1.80     0.115     4.85      7.60</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> gender=Female     5.00         1.61     0.102     4.10      6.10</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Female     5.00         1.61     0.102     4.10      6.10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> gender=Male       6.07         1.80     0.115     4.85      7.60</span></span></code></pre></div>
 <div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 6</span></span></span>
 <span><span class="co">#&gt;   level         estimate estimate_log std.error conf.low conf.high</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Male    0.009<span style="text-decoration: underline;">54</span>        -<span style="color: #BB0000;">4.65</span>     0.155  0.007<span style="text-decoration: underline;">05</span>    0.012<span style="text-decoration: underline;">9</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> gender=Female  0.012<span style="text-decoration: underline;">2</span>         -<span style="color: #BB0000;">4.40</span>     0.133  0.009<span style="text-decoration: underline;">43</span>    0.015<span style="text-decoration: underline;">9</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Female  0.012<span style="text-decoration: underline;">2</span>         -<span style="color: #BB0000;">4.40</span>     0.133  0.009<span style="text-decoration: underline;">43</span>    0.015<span style="text-decoration: underline;">9</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> gender=Male    0.009<span style="text-decoration: underline;">54</span>        -<span style="color: #BB0000;">4.65</span>     0.155  0.007<span style="text-decoration: underline;">05</span>    0.012<span style="text-decoration: underline;">9</span></span></span></code></pre></div>
 <p>EMMs are reported on both the natural scale (<code>estimate</code>)
 and log scale (<code>estimate_log</code>). The natural-scale estimates
 represent the population-average <span class="math inline">Q_0</span> or
@@ -1078,18 +1078,26 @@ represent the population-average <span class="math inline">Q_0</span> or
 </h3>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
-<span><span class="co">#&gt;   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Ma…        0.194           1.21     0.153      1.27       0.205   0.205</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: conf.low &lt;dbl&gt;, conf.high &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; Demand Parameter Comparisons (tmb backend)</span></span>
+<span><span class="co">#&gt; EMMs computed over: all fitted factors </span></span>
+<span><span class="co">#&gt; Contrast type: pairwise</span></span>
+<span><span class="co">#&gt; P-value adjustment method: holm </span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Q0 (log10-scale contrasts):</span></span>
+<span><span class="co">#&gt;       contrast estimate std.error conf.low conf.high p.value</span></span>
+<span><span class="co">#&gt;  Female - Male   -0.084     0.067   -0.215     0.046   0.205</span></span></code></pre></div>
 <div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
-<span><span class="co">#&gt;   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> gender=Ma…       -<span style="color: #BB0000;">0.249</span>          0.779     0.195     -<span style="color: #BB0000;">1.28</span>       0.202   0.202</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: conf.low &lt;dbl&gt;, conf.high &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; Demand Parameter Comparisons (tmb backend)</span></span>
+<span><span class="co">#&gt; EMMs computed over: all fitted factors </span></span>
+<span><span class="co">#&gt; Contrast type: pairwise</span></span>
+<span><span class="co">#&gt; P-value adjustment method: holm </span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; alpha (log10-scale contrasts):</span></span>
+<span><span class="co">#&gt;       contrast estimate std.error conf.low conf.high p.value</span></span>
+<span><span class="co">#&gt;  Female - Male    0.108     0.085   -0.058     0.275   0.202</span></span></code></pre></div>
 <p>The <code>estimate_ratio</code> column gives the multiplicative ratio
 between groups on the natural scale (e.g., a ratio of 1.34 means Group
 A’s <span class="math inline">Q_0</span> is 34% higher than Group

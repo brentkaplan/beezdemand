@@ -10,6 +10,125 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### get_demand_comparisons() by-grouped contrasts on TMB (TICKET-032)
+
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  now supports `contrast_by` on the **TMB** backend, completing the
+  NLME/TMB harmonization begun in TICKET-016. Within each observed
+  combination of the by-level(s), pairwise (or `trt.vs.ctrl`) contrasts
+  are computed over the remaining factors, with p-value adjustment
+  applied **per by-cell**. Results match the NLME backend in shape,
+  direction, by-cell labels, and message UX (numerics differ by design:
+  TMB uses asymptotic *z*, NLME *t*). A by-cell of a single contrast
+  reproduces the corresponding `at =`-filtered call exactly.
+
+- Nested contrast tables (`$contrasts_log10`, `$contrasts_ratio`) and
+  the flat [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
+  frame gain leading by-column(s) using the **user-requested original**
+  factor name (e.g. `age_cut`, not the collapse-mapped `age_cut_alpha`).
+  The [`tidy()`](https://generics.r-lib.org/reference/tidy.html) schema
+  is unchanged (the canonical 9 columns) when `contrast_by` is inactive.
+  [`print()`](https://rdrr.io/r/base/print.html) shows the by-column(s)
+  before `contrast`.
+
+- Both backends now populate a `contrast_by_map` attribute (a
+  per-parameter named map from the original by-name to the effective,
+  possibly collapse-mapped, column). `contrast_by` resolution is
+  **soft** per parameter (a by-variable absent from a parameter’s design
+  is skipped) whereas `compare_specs` resolution remains **strict** (an
+  unresolvable name aborts).
+
+- **Behavior change (NLME):** supplying a `contrast_by` factor that is
+  not in `compare_specs` now aborts loudly with a parameter-scoped
+  message, on both backends. Previously the NLME backend silently
+  returned an empty contrasts table (with a `$contrasts_log10_error`
+  note). No released code relied on the silent-empty path.
+
+### get_demand_comparisons() backend harmonization (TICKET-016)
+
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  now returns a classed `beezdemand_comparison` object on **both** the
+  NLME and TMB backends, and a new
+  [`tidy.beezdemand_comparison()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_comparison.md)
+  method gives a backend-agnostic flat contrasts frame (`param`,
+  `contrast`, `estimate`, `std.error`, `statistic`, `df`, `conf.low`,
+  `conf.high`, `p.value`) with identical columns regardless of backend.
+  Estimates and CIs are reported on the log10 scale on both backends;
+  `tidy(res, exponentiate = TRUE)` returns base-invariant ratios.
+  (Per-backend inference is unchanged: NLME reports a *t* statistic with
+  finite `df`, TMB an asymptotic *z* with `df = Inf`.)
+
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  now compares **both** `Q0` and `alpha` by default on both backends
+  (the TMB backend previously returned `Q0` only).
+
+- The TMB backend gains `compare_specs`, a formal `at` argument,
+  `report_ratios`, factor-level contrast ordering (previously
+  data-appearance order, which could flip signs when input rows were
+  reordered), and **equal-weight marginalization over omitted factors**
+  (averaging across the full crossing of their levels, emmeans’ default
+  `weights = "equal"`, matching the NLME backend).
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  for TMB fits likewise marginalizes when `factors_in_emm` names a
+  subset of the fitted factors, rather than erroring.
+
+- **Behavior change (NLME):** the default p-value adjustment is now
+  `"holm"` (was `"tukey"`); pass `adjust = "tukey"` to retain the
+  previous default. Rationale: cross-backend reproducibility and the
+  base-R pairwise default.
+
+- **Deprecation (NLME):** `get_demand_comparisons(params_to_compare = )`
+  is deprecated in favor of `param`. Supplying both is an error.
+
+- Developer-facing (unreleased TMB API):
+  [`get_demand_comparisons.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md)
+  renames `p_adjust` to `adjust` (no alias) and validates it against
+  [`stats::p.adjust.methods`](https://rdrr.io/r/stats/p.adjust.html);
+  emmeans-only methods (e.g. `"tukey"`, `"sidak"`) are rejected.
+
+- `contrast_by` (by-grouped contrasts) is now supported on the TMB
+  backend (TICKET-032, see below), completing the backend harmonization.
+
+- **Correctness fixes (post-review).** (1) The NLME backend now
+  validates `compare_specs` against the union of the model’s fitted
+  factors (originals and per-parameter collapsed columns) and errors on
+  names not in that union, matching the TMB boundary check;
+  cross-parameter aliases that pass the boundary but cannot resolve for
+  a given parameter (e.g. `~ age_group_alpha` with `param = "Q0"`) abort
+  with a parameter-scoped message rather than silently producing an
+  intercept-only EMM. Factors whose collapsed column has fewer than 2
+  levels for a parameter still return empty contrasts for that parameter
+  without error (the existing intentional behavior). (2) Under
+  asymmetric `collapse_levels`, naming the **original** factor in
+  `compare_specs`/`factors_in_emm` (e.g. `~ age_group`) now resolves to
+  that parameter’s collapsed column on the TMB backend (`age_group_Q0` /
+  `age_group_alpha`), as it already did on NLME, instead of silently
+  returning zero contrasts; a name that cannot be resolved for the
+  parameter is rejected with an error. (3) TMB EMM and contrast
+  reference grids are now built using the **fitted** design’s contrasts,
+  so changing the global `options("contrasts")` between fitting and
+  calling no longer silently changes the estimates.
+
+### New features (TICKET-023)
+
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  fits are now substantially smaller on disk by default (often \>80%
+  smaller via [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) on
+  large datasets). The full covariance matrix of all ADREPORT’d
+  quantities (`$sdr$cov`), which is read by no method, is no longer
+  materialized; `$sdr$cov` is a scalar `NA` unless the new
+  `store_report_cov = TRUE` argument is supplied. Standard errors,
+  `cov.fixed`, variance components, and all inference
+  ([`coef()`](https://rdrr.io/r/stats/coef.html),
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+  [`confint()`](https://rdrr.io/r/stats/confint.html),
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md),
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md),
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md))
+  are unchanged. Pass `store_report_cov = TRUE` to restore the prior
+  behavior.
+
 ### New features (TICKET-025)
 
 - [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
@@ -746,7 +865,7 @@ development cycle.
   now include continuous covariates in the reference grid, matching the
   dimensionality of the fitted `beta` coefficients. Covariates default
   to their training-data mean (matching
-  [`emmeans::ref_grid`](https://rvlenth.github.io/emmeans/reference/ref_grid.html))
+  [`emmeans::ref_grid`](https://rdrr.io/pkg/emmeans/man/ref_grid.html))
   and can be overridden via `at = list(covname = value)`. Previously,
   TMB fits that mixed factors and continuous covariates produced
   `non-conformable arguments` in the Wald variance calculation or

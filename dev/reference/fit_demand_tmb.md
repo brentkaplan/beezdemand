@@ -27,7 +27,8 @@ fit_demand_tmb(
   multi_start = TRUE,
   validate_subject_pars = TRUE,
   verbose = 1,
-  ...
+  ...,
+  store_report_cov = FALSE
 )
 ```
 
@@ -227,6 +228,16 @@ fit_demand_tmb(
 
   Additional arguments (currently unused).
 
+- store_report_cov:
+
+  Logical. Advanced storage control. When `FALSE` (default), the full
+  covariance matrix of all ADREPORT'd quantities (`$sdr$cov`) is not
+  materialized, shrinking the saved fit substantially (often \>80% on
+  large datasets) with no loss of functionality: no method reads it.
+  Standard errors, `cov.fixed`, variance components, and all inference
+  are identical either way. Set `TRUE` only if you need the full joint
+  covariance of derived ADREPORT'd quantities.
+
 ## Value
 
 An object of class `beezdemand_tmb` containing:
@@ -249,7 +260,9 @@ An object of class `beezdemand_tmb` containing:
 
 - sdr:
 
-  TMB sdreport object
+  TMB sdreport object. Its `$cov` (full covariance of all ADREPORT'd
+  quantities) is not materialized – a scalar `NA` – unless
+  `store_report_cov = TRUE`.
 
 - converged:
 
@@ -438,8 +451,8 @@ get_demand_param_emms(fit3, param = "alpha")
 #> # A tibble: 3 × 6
 #>   level                       estimate estimate_log std.error conf.low conf.high
 #>   <chr>                          <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Male                  0.00626        -5.07    0.0475  5.70e-3   0.00687
-#> 2 gender=Female                0.00739        -4.91    0.0456  6.76e-3   0.00808
+#> 1 gender=Female                0.00739        -4.91    0.0456  6.76e-3   0.00808
+#> 2 gender=Male                  0.00626        -5.07    0.0475  5.70e-3   0.00687
 #> 3 gender=Would rather not say  0.00290        -5.84    2.92    9.43e-6   0.890  
 
 # Factor-expanded random slopes on a within-subject factor (Phase 2):

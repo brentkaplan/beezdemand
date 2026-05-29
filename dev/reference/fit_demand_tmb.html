@@ -87,7 +87,8 @@ reliable convergence where traditional NLME approaches fail.</p>
 <span>  multi_start <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  validate_subject_pars <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  store_report_cov <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -276,6 +277,16 @@ Phases 2-3).</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments (currently unused).</p></dd>
 
+
+<dt id="arg-store-report-cov">store_report_cov<a class="anchor" aria-label="anchor" href="#arg-store-report-cov"></a></dt>
+<dd><p>Logical. Advanced storage control. When <code>FALSE</code>
+(default), the full covariance matrix of all ADREPORT'd quantities
+(<code>$sdr$cov</code>) is not materialized, shrinking the saved fit substantially
+(often &gt;80% on large datasets) with no loss of functionality: no method
+reads it. Standard errors, <code>cov.fixed</code>, variance components, and all
+inference are identical either way. Set <code>TRUE</code> only if you need the full
+joint covariance of derived ADREPORT'd quantities.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -292,7 +303,9 @@ Phases 2-3).</p></dd>
 <dd><p>Optimization result (normalized across optimizers)</p></dd>
 
 <dt>sdr</dt>
-<dd><p>TMB sdreport object</p></dd>
+<dd><p>TMB sdreport object. Its <code>$cov</code> (full covariance of all
+ADREPORT'd quantities) is not materialized – a scalar <code>NA</code> – unless
+<code>store_report_cov = TRUE</code>.</p></dd>
 
 <dt>converged</dt>
 <dd><p>Logical convergence indicator</p></dd>
@@ -463,8 +476,8 @@ its <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-li
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   level                       estimate estimate_log std.error conf.low conf.high</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Male                  0.006<span style="text-decoration: underline;">26</span>        -<span style="color: #BB0000;">5.07</span>    0.047<span style="text-decoration: underline;">5</span>  5.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.006<span style="text-decoration: underline;">87</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Female                0.007<span style="text-decoration: underline;">39</span>        -<span style="color: #BB0000;">4.91</span>    0.045<span style="text-decoration: underline;">6</span>  6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.008<span style="text-decoration: underline;">08</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Female                0.007<span style="text-decoration: underline;">39</span>        -<span style="color: #BB0000;">4.91</span>    0.045<span style="text-decoration: underline;">6</span>  6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.008<span style="text-decoration: underline;">08</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Male                  0.006<span style="text-decoration: underline;">26</span>        -<span style="color: #BB0000;">5.07</span>    0.047<span style="text-decoration: underline;">5</span>  5.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.006<span style="text-decoration: underline;">87</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> gender=Would rather not say  0.002<span style="text-decoration: underline;">90</span>        -<span style="color: #BB0000;">5.84</span>    2.92    9.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>   0.890  </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Factor-expanded random slopes on a within-subject factor (Phase 2):</span></span></span>

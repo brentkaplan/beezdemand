@@ -173,7 +173,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c9f6317228>
+#> <environment: 0x55eb46a70758>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ dose_alpha 
 #> Factors:  dose 
@@ -283,7 +283,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c9f8102798>
+#> <environment: 0x55eb48379168>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ 1 
 #> Factors:  dose 
@@ -378,7 +378,7 @@ if (
   collapsed_comparisons <- get_demand_comparisons(
     fit_obj = fit_collapsed_asymmetric,
     compare_specs = ~dose, # Use original factor name
-    params_to_compare = c("Q0", "alpha")
+    param = c("Q0", "alpha")
   )
 
   cat("\nQ0 contrasts (collapsed levels):\n")
@@ -667,11 +667,23 @@ if (
   )
 }
 #> --- Pairwise comparisons for 'dose' (averaging over other factors if any): ---
-#> Demand Parameter Comparisons (from beezdemand_nlme fit)
+#> Demand Parameter Comparisons (nlme backend)
 #> EMMs computed over: ~dose 
 #> Contrast type: pairwise
 #> P-value adjustment method: fdr 
-#> ==================================================
+#> ================================================== 
+#> 
+#> Q0 (log10-scale contrasts):
+#>                 contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-04) - dose0.001    0.258     0.093    0.026     0.490   0.008
+#>  (dose3e-04) - dose0.003    0.519     0.091    0.290     0.748   0.000
+#>    dose0.001 - dose0.003    0.261     0.085    0.048     0.475   0.006
+#> 
+#> alpha (log10-scale contrasts):
+#>                 contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-04) - dose0.001    0.084     0.068   -0.087     0.255   0.337
+#>  (dose3e-04) - dose0.003   -0.010     0.071   -0.187     0.168   0.891
+#>    dose0.001 - dose0.003   -0.094     0.070   -0.269     0.082   0.337
 ```
 
 ### Advanced Topics
@@ -732,7 +744,7 @@ We can examine how the parameters change with continuous covariates
 using
 [`get_demand_param_trends()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_trends.md),
 which wraps
-[`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html)
+[`emmeans::emtrends()`](https://rdrr.io/pkg/emmeans/man/emtrends.html)
 and returns tidy results for Q0 and alpha trends on the log10 scale.
 
 Below we compute trends with respect to `age` and `dose_num`, first

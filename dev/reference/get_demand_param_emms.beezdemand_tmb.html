@@ -93,18 +93,22 @@ from <code><a href="https://rdrr.io/pkg/TMB/man/sdreport.html" class="external-l
 
 
 <dt id="arg-factors-in-emm">factors_in_emm<a class="anchor" aria-label="anchor" href="#arg-factors-in-emm"></a></dt>
-<dd><p>Character vector of factors to include in the EMM
-reference grid. Must include <em>every</em> factor the model was fit on; any
-subset that drops a fitted factor is rejected with a clear error.
-Proper marginalization over omitted factors is planned for TICKET-011
-Phase 5. If <code>NULL</code> (default), all fitted factors are used.</p></dd>
+<dd><p>Character vector of factors to retain in the EMM
+reference grid. If it names a strict subset of the fitted factors, the
+omitted factors are <strong>marginalized over</strong> using equal weights across the
+full crossing of their levels (emmeans' default <code>weights = "equal"</code>),
+matching the NLME backend. If <code>NULL</code> (default), all fitted factors are
+retained (no marginalization). Under asymmetric <code>collapse_levels</code> you may
+name either the original factor or its collapsed per-parameter column; a
+name that resolves to neither for this parameter is rejected with an error.</p></dd>
 
 
 <dt id="arg-at">at<a class="anchor" aria-label="anchor" href="#arg-at"></a></dt>
 <dd><p>Named list specifying factor levels and continuous-covariate
 values for conditional EMMs. For continuous covariates, a single
 numeric value per covariate; multiple values produce a warning and
-only the first is used.</p></dd>
+only the first is used. <code>at</code> on a marginalized (omitted) factor
+restricts the level set averaged over.</p></dd>
 
 
 <dt id="arg-ci-level">ci_level<a class="anchor" aria-label="anchor" href="#arg-ci-level"></a></dt>
@@ -121,9 +125,10 @@ only the first is used.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>TMB EMMs require <code>factors_in_emm</code> to include every fitted factor.
-Use <code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code> (NLME backend) if you need to marginalize over
-a subset of factors while this gap is closed (see TICKET-011 Phase 5).</p>
+    <p>Marginalization is exact because <code>Q0</code>/<code>alpha</code> are linear in the
+fixed-effect coefficients on the log scale, so averaging the reference-grid
+design rows and then multiplying by the coefficient vector equals averaging
+the per-cell parameter predictions.</p>
     </div>
 
     <div class="section level2">
@@ -140,16 +145,16 @@ a subset of factors while this gap is closed (see TICKET-011 Phase 5).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   level         estimate estimate_log std.error conf.low conf.high</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Male       6.40         1.86    0.031<span style="text-decoration: underline;">0</span>     6.02      6.80</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Female     5.03         1.62    0.027<span style="text-decoration: underline;">0</span>     4.77      5.30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Female     5.03         1.62    0.027<span style="text-decoration: underline;">0</span>     4.77      5.30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Male       6.40         1.86    0.031<span style="text-decoration: underline;">0</span>     6.02      6.80</span>
 <span class="r-in"><span><span class="fu"><a href="get_demand_param_emms.html">get_demand_param_emms</a></span><span class="op">(</span><span class="va">fit</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   level         estimate estimate_log std.error conf.low conf.high</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Male    0.003<span style="text-decoration: underline;">16</span>        -<span style="color: #BB0000;">5.76</span>       <span style="color: #BB0000;">NaN</span>      <span style="color: #BB0000;">NaN</span>       <span style="color: #BB0000;">NaN</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Female  0.003<span style="text-decoration: underline;">20</span>        -<span style="color: #BB0000;">5.74</span>       <span style="color: #BB0000;">NaN</span>      <span style="color: #BB0000;">NaN</span>       <span style="color: #BB0000;">NaN</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Female  0.003<span style="text-decoration: underline;">20</span>        -<span style="color: #BB0000;">5.74</span>       <span style="color: #BB0000;">NaN</span>      <span style="color: #BB0000;">NaN</span>       <span style="color: #BB0000;">NaN</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Male    0.003<span style="text-decoration: underline;">16</span>        -<span style="color: #BB0000;">5.76</span>       <span style="color: #BB0000;">NaN</span>      <span style="color: #BB0000;">NaN</span>       <span style="color: #BB0000;">NaN</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -5,7 +5,15 @@ Extract Estimates from TMB Fit
 ## Usage
 
 ``` r
-.tmb_extract_estimates(obj, opt, re_dim_total, n_subjects, has_k, verbose)
+.tmb_extract_estimates(
+  obj,
+  opt,
+  re_dim_total,
+  n_subjects,
+  has_k,
+  verbose,
+  store_report_cov = FALSE
+)
 ```
 
 ## Arguments

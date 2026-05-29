@@ -1046,8 +1046,8 @@ get_demand_param_emms(fit_gender, param = "Q0")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Male       6.07         1.80     0.115     4.85      7.60
-#> 2 gender=Female     5.00         1.61     0.102     4.10      6.10
+#> 1 gender=Female     5.00         1.61     0.102     4.10      6.10
+#> 2 gender=Male       6.07         1.80     0.115     4.85      7.60
 ```
 
 ``` r
@@ -1056,8 +1056,8 @@ get_demand_param_emms(fit_gender, param = "alpha")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Male    0.00954        -4.65     0.155  0.00705    0.0129
-#> 2 gender=Female  0.0122         -4.40     0.133  0.00943    0.0159
+#> 1 gender=Female  0.0122         -4.40     0.133  0.00943    0.0159
+#> 2 gender=Male    0.00954        -4.65     0.155  0.00705    0.0129
 ```
 
 EMMs are reported on both the natural scale (`estimate`) and log scale
@@ -1069,21 +1069,29 @@ population-average Q_0 or \alpha for each group.
 ``` r
 
 get_demand_comparisons(fit_gender, param = "Q0")
-#> # A tibble: 1 × 9
-#>   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value
-#>   <chr>             <dbl>          <dbl>     <dbl>     <dbl>       <dbl>   <dbl>
-#> 1 gender=Ma…        0.194           1.21     0.153      1.27       0.205   0.205
-#> # ℹ 2 more variables: conf.low <dbl>, conf.high <dbl>
+#> Demand Parameter Comparisons (tmb backend)
+#> EMMs computed over: all fitted factors 
+#> Contrast type: pairwise
+#> P-value adjustment method: holm 
+#> ================================================== 
+#> 
+#> Q0 (log10-scale contrasts):
+#>       contrast estimate std.error conf.low conf.high p.value
+#>  Female - Male   -0.084     0.067   -0.215     0.046   0.205
 ```
 
 ``` r
 
 get_demand_comparisons(fit_gender, param = "alpha")
-#> # A tibble: 1 × 9
-#>   contrast   estimate_log estimate_ratio std.error statistic p.value.raw p.value
-#>   <chr>             <dbl>          <dbl>     <dbl>     <dbl>       <dbl>   <dbl>
-#> 1 gender=Ma…       -0.249          0.779     0.195     -1.28       0.202   0.202
-#> # ℹ 2 more variables: conf.low <dbl>, conf.high <dbl>
+#> Demand Parameter Comparisons (tmb backend)
+#> EMMs computed over: all fitted factors 
+#> Contrast type: pairwise
+#> P-value adjustment method: holm 
+#> ================================================== 
+#> 
+#> alpha (log10-scale contrasts):
+#>       contrast estimate std.error conf.low conf.high p.value
+#>  Female - Male    0.108     0.085   -0.058     0.275   0.202
 ```
 
 The `estimate_ratio` column gives the multiplicative ratio between

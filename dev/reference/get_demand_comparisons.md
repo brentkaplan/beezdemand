@@ -17,14 +17,15 @@ get_demand_comparisons(fit_obj, ...)
 # S3 method for class 'beezdemand_nlme'
 get_demand_comparisons(
   fit_obj,
-  params_to_compare = c("Q0", "alpha"),
+  param = c("Q0", "alpha"),
   compare_specs = NULL,
   contrast_type = "pairwise",
   contrast_by = NULL,
-  adjust = "tukey",
+  adjust = "holm",
   at = NULL,
   ci_level = 0.95,
   report_ratios = TRUE,
+  params_to_compare = lifecycle::deprecated(),
   ...
 )
 ```
@@ -38,14 +39,16 @@ get_demand_comparisons(
 - ...:
 
   Additional arguments passed to
-  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
+  [`emmeans::emmeans()`](https://rdrr.io/pkg/emmeans/man/emmeans.html)
   or
-  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
+  [`emmeans::contrast()`](https://rdrr.io/pkg/emmeans/man/contrast.html).
 
-- params_to_compare:
+- param:
 
   Character vector: "Q0", "alpha", or `c("Q0", "alpha")`. Default
-  `c("Q0", "alpha")`.
+  `c("Q0", "alpha")` (both). This is the canonical argument name, shared
+  with the TMB backend
+  ([`get_demand_comparisons.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md)).
 
 - compare_specs:
 
@@ -60,7 +63,7 @@ get_demand_comparisons(
 
   Character string specifying the type of contrast (passed to `method`
   in
-  [`emmeans::contrast`](https://rvlenth.github.io/emmeans/reference/contrast.html)).
+  [`emmeans::contrast`](https://rdrr.io/pkg/emmeans/man/contrast.html)).
   Commonly `"pairwise"`, `"revpairwise"`, `"eff"`, `"consec"`, `"poly"`.
   Default `"pairwise"`.
 
@@ -68,7 +71,7 @@ get_demand_comparisons(
 
   Optional character vector of factor names to condition the contrasts
   by (passed to `by` in
-  [`emmeans::contrast`](https://rvlenth.github.io/emmeans/reference/contrast.html)).
+  [`emmeans::contrast`](https://rdrr.io/pkg/emmeans/man/contrast.html)).
   If `NULL` (default), contrasts are performed over the primary terms
   implied by `compare_specs` and `contrast_type`. Example: If
   `compare_specs = ~ dose * drug`, `contrast_type = "pairwise"`, and
@@ -82,12 +85,14 @@ get_demand_comparisons(
 
 - adjust:
 
-  P-value adjustment method. Default "tukey".
+  P-value adjustment method. Default `"holm"` (changed from `"tukey"` in
+  0.3.0 for cross-backend reproducibility; pass `adjust = "tukey"` to
+  retain the previous default).
 
 - at:
 
   Optional named list for
-  [`emmeans::ref_grid()`](https://rvlenth.github.io/emmeans/reference/ref_grid.html).
+  [`emmeans::ref_grid()`](https://rdrr.io/pkg/emmeans/man/ref_grid.html).
 
 - ci_level:
 
@@ -96,6 +101,11 @@ get_demand_comparisons(
 - report_ratios:
 
   Logical. If TRUE, reports contrasts as ratios. Default `TRUE`.
+
+- params_to_compare:
+
+  **\[deprecated\]** Use `param` instead (deprecated in 0.3.0 to
+  harmonize with the TMB backend).
 
 ## Value
 
@@ -136,21 +146,38 @@ get_demand_comparisons(fit)
 #> Using default 'compare_specs': ~ dose for EMMs.
 #> 
 #> --- Processing comparisons for parameter: Q0 ---
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
 #> 
 #> --- Processing comparisons for parameter: alpha ---
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Demand Parameter Comparisons (from beezdemand_nlme fit)
+#> Demand Parameter Comparisons (nlme backend)
 #> EMMs computed over: ~dose 
 #> Contrast type: pairwise
-#> P-value adjustment method: tukey 
+#> P-value adjustment method: holm 
 #> ================================================== 
 #> 
+#> Q0 (log10-scale contrasts):
+#>                   contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-05) - (dose1e-04)    0.199     0.136   -0.189     0.588   0.290
+#>  (dose3e-05) - (dose3e-04)    0.363     0.129   -0.004     0.731   0.022
+#>    (dose3e-05) - dose0.001    0.670     0.131    0.295     1.046   0.000
+#>    (dose3e-05) - dose0.003    0.675     0.145    0.261     1.089   0.000
+#>  (dose1e-04) - (dose3e-04)    0.164     0.091   -0.097     0.425   0.226
+#>    (dose1e-04) - dose0.001    0.471     0.095    0.199     0.743   0.000
+#>    (dose1e-04) - dose0.003    0.476     0.113    0.153     0.799   0.000
+#>    (dose3e-04) - dose0.001    0.307     0.084    0.067     0.548   0.002
+#>    (dose3e-04) - dose0.003    0.312     0.104    0.015     0.609   0.016
+#>      dose0.001 - dose0.003    0.004     0.107   -0.302     0.311   0.967
+#> 
+#> alpha (log10-scale contrasts):
+#>                   contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-05) - (dose1e-04)    0.071     0.092   -0.193     0.336       1
+#>  (dose3e-05) - (dose3e-04)    0.015     0.088   -0.235     0.265       1
+#>    (dose3e-05) - dose0.001    0.042     0.094   -0.226     0.310       1
+#>    (dose3e-05) - dose0.003    0.086     0.109   -0.224     0.396       1
+#>  (dose1e-04) - (dose3e-04)   -0.056     0.065   -0.243     0.131       1
+#>    (dose1e-04) - dose0.001   -0.030     0.073   -0.240     0.180       1
+#>    (dose1e-04) - dose0.003    0.015     0.092   -0.247     0.276       1
+#>    (dose3e-04) - dose0.001    0.027     0.067   -0.165     0.219       1
+#>    (dose3e-04) - dose0.003    0.071     0.087   -0.176     0.319       1
+#>      dose0.001 - dose0.003    0.044     0.093   -0.221     0.310       1
 # }
 ```
