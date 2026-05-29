@@ -272,7 +272,7 @@ to keep original levels for that parameter.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55eb46a70758&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55f0c7b85698&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0):     ~ dose_Q0 </span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (alpha):  ~ dose_alpha </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
@@ -381,7 +381,7 @@ not.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x55eb48379168&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x55f0c9493df8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0):     ~ dose_Q0 </span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
@@ -835,7 +835,7 @@ an additional continuous covariate. This uses a shared RHS for
 </h4>
 <p>We can examine how the parameters change with continuous covariates
 using <code><a href="../reference/get_demand_param_trends.html">get_demand_param_trends()</a></code>, which wraps
-<code><a href="https://rdrr.io/pkg/emmeans/man/emtrends.html" class="external-link">emmeans::emtrends()</a></code> and returns tidy results for Q0 and
+<code><a href="https://rvlenth.github.io/emmeans/reference/emtrends.html" class="external-link">emmeans::emtrends()</a></code> and returns tidy results for Q0 and
 alpha trends on the log10 scale.</p>
 <p>Below we compute trends with respect to <code>age</code> and
 <code>dose_num</code>, first overall and then by <code>drug</code> (if

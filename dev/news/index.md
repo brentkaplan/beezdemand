@@ -865,7 +865,7 @@ development cycle.
   now include continuous covariates in the reference grid, matching the
   dimensionality of the fitted `beta` coefficients. Covariates default
   to their training-data mean (matching
-  [`emmeans::ref_grid`](https://rdrr.io/pkg/emmeans/man/ref_grid.html))
+  [`emmeans::ref_grid`](https://rvlenth.github.io/emmeans/reference/ref_grid.html))
   and can be overridden via `at = list(covname = value)`. Previously,
   TMB fits that mixed factors and continuous covariates produced
   `non-conformable arguments` in the Wald variance calculation or

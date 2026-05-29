@@ -39,9 +39,9 @@ get_demand_comparisons(
 - ...:
 
   Additional arguments passed to
-  [`emmeans::emmeans()`](https://rdrr.io/pkg/emmeans/man/emmeans.html)
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
   or
-  [`emmeans::contrast()`](https://rdrr.io/pkg/emmeans/man/contrast.html).
+  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
 
 - param:
 
@@ -63,7 +63,7 @@ get_demand_comparisons(
 
   Character string specifying the type of contrast (passed to `method`
   in
-  [`emmeans::contrast`](https://rdrr.io/pkg/emmeans/man/contrast.html)).
+  [`emmeans::contrast`](https://rvlenth.github.io/emmeans/reference/contrast.html)).
   Commonly `"pairwise"`, `"revpairwise"`, `"eff"`, `"consec"`, `"poly"`.
   Default `"pairwise"`.
 
@@ -71,7 +71,7 @@ get_demand_comparisons(
 
   Optional character vector of factor names to condition the contrasts
   by (passed to `by` in
-  [`emmeans::contrast`](https://rdrr.io/pkg/emmeans/man/contrast.html)).
+  [`emmeans::contrast`](https://rvlenth.github.io/emmeans/reference/contrast.html)).
   If `NULL` (default), contrasts are performed over the primary terms
   implied by `compare_specs` and `contrast_type`. Example: If
   `compare_specs = ~ dose * drug`, `contrast_type = "pairwise"`, and
@@ -92,7 +92,7 @@ get_demand_comparisons(
 - at:
 
   Optional named list for
-  [`emmeans::ref_grid()`](https://rdrr.io/pkg/emmeans/man/ref_grid.html).
+  [`emmeans::ref_grid()`](https://rvlenth.github.io/emmeans/reference/ref_grid.html).
 
 - ci_level:
 

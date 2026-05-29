@@ -104,7 +104,7 @@ optionally, ratios (on the natural scale by applying 10^difference).</p>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/pkg/emmeans/man/emmeans.html" class="external-link">emmeans::emmeans()</a></code> or <code><a href="https://rdrr.io/pkg/emmeans/man/contrast.html" class="external-link">emmeans::contrast()</a></code>.</p></dd>
+<dd><p>Additional arguments passed to <code><a href="https://rvlenth.github.io/emmeans/reference/emmeans.html" class="external-link">emmeans::emmeans()</a></code> or <code><a href="https://rvlenth.github.io/emmeans/reference/contrast.html" class="external-link">emmeans::contrast()</a></code>.</p></dd>
 
 
 <dt id="arg-param">param<a class="anchor" aria-label="anchor" href="#arg-param"></a></dt>
@@ -122,12 +122,12 @@ If <code>NULL</code>, it defaults to an interaction of all factors in <code>fit_
 
 
 <dt id="arg-contrast-type">contrast_type<a class="anchor" aria-label="anchor" href="#arg-contrast-type"></a></dt>
-<dd><p>Character string specifying the type of contrast (passed to <code>method</code> in <code><a href="https://rdrr.io/pkg/emmeans/man/contrast.html" class="external-link">emmeans::contrast</a></code>).
+<dd><p>Character string specifying the type of contrast (passed to <code>method</code> in <code><a href="https://rvlenth.github.io/emmeans/reference/contrast.html" class="external-link">emmeans::contrast</a></code>).
 Commonly <code>"pairwise"</code>, <code>"revpairwise"</code>, <code>"eff"</code>, <code>"consec"</code>, <code>"poly"</code>. Default <code>"pairwise"</code>.</p></dd>
 
 
 <dt id="arg-contrast-by">contrast_by<a class="anchor" aria-label="anchor" href="#arg-contrast-by"></a></dt>
-<dd><p>Optional character vector of factor names to condition the contrasts by (passed to <code>by</code> in <code><a href="https://rdrr.io/pkg/emmeans/man/contrast.html" class="external-link">emmeans::contrast</a></code>).
+<dd><p>Optional character vector of factor names to condition the contrasts by (passed to <code>by</code> in <code><a href="https://rvlenth.github.io/emmeans/reference/contrast.html" class="external-link">emmeans::contrast</a></code>).
 If <code>NULL</code> (default), contrasts are performed over the primary terms implied by <code>compare_specs</code> and <code>contrast_type</code>.
 Example: If <code>compare_specs = ~ dose * drug</code>, <code>contrast_type = "pairwise"</code>, and <code>contrast_by = "dose"</code>,
 this will perform pairwise comparisons of <code>drug</code> levels within each level of <code>dose</code>.
@@ -144,7 +144,7 @@ of the <code>contrast_by</code> variable(s). In such cases, consider analyzing m
 
 
 <dt id="arg-at">at<a class="anchor" aria-label="anchor" href="#arg-at"></a></dt>
-<dd><p>Optional named list for <code><a href="https://rdrr.io/pkg/emmeans/man/ref_grid.html" class="external-link">emmeans::ref_grid()</a></code>.</p></dd>
+<dd><p>Optional named list for <code><a href="https://rvlenth.github.io/emmeans/reference/ref_grid.html" class="external-link">emmeans::ref_grid()</a></code>.</p></dd>
 
 
 <dt id="arg-ci-level">ci_level<a class="anchor" aria-label="anchor" href="#arg-ci-level"></a></dt>

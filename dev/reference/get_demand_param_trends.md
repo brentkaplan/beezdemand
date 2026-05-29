@@ -2,7 +2,7 @@
 
 Computes the trend (slope) of `Q0` and/or `alpha` with respect to one or
 more continuous covariates using
-[`emmeans::emtrends()`](https://rdrr.io/pkg/emmeans/man/emtrends.html)
+[`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html)
 on a fitted `beezdemand_nlme` model. Trends are computed on the
 parameter estimation scale (log10), consistent with how parameters are
 modeled.
@@ -47,7 +47,7 @@ get_demand_param_trends(
 
   Optional named list to condition variables (factors or continuous)
   when computing trends (passed through to
-  [`emmeans::ref_grid`](https://rdrr.io/pkg/emmeans/man/ref_grid.html)).
+  [`emmeans::ref_grid`](https://rvlenth.github.io/emmeans/reference/ref_grid.html)).
 
 - ci_level:
 
@@ -56,7 +56,7 @@ get_demand_param_trends(
 - ...:
 
   Additional args passed to
-  [`emmeans::emtrends()`](https://rdrr.io/pkg/emmeans/man/emtrends.html).
+  [`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html).
 
 ## Value
 

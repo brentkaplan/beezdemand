@@ -35,7 +35,7 @@ get_demand_param_emms(
 - ...:
 
   Additional arguments passed to
-  [`emmeans::emmeans()`](https://rdrr.io/pkg/emmeans/man/emmeans.html).
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
 
 - factors_in_emm:
 
@@ -45,7 +45,7 @@ get_demand_param_emms(
 - at:
 
   Optional named list specifying levels of conditioning variables for
-  [`emmeans::ref_grid()`](https://rdrr.io/pkg/emmeans/man/ref_grid.html).
+  [`emmeans::ref_grid()`](https://rvlenth.github.io/emmeans/reference/ref_grid.html).
 
 - ci_level:
 

@@ -173,7 +173,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55eb46a70758>
+#> <environment: 0x55f0c7b85698>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ dose_alpha 
 #> Factors:  dose 
@@ -283,7 +283,7 @@ if (
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55eb48379168>
+#> <environment: 0x55f0c9493df8>
 #> Fixed Effects Structure (Q0):     ~ dose_Q0 
 #> Fixed Effects Structure (alpha):  ~ 1 
 #> Factors:  dose 
@@ -744,7 +744,7 @@ We can examine how the parameters change with continuous covariates
 using
 [`get_demand_param_trends()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_trends.md),
 which wraps
-[`emmeans::emtrends()`](https://rdrr.io/pkg/emmeans/man/emtrends.html)
+[`emmeans::emtrends()`](https://rvlenth.github.io/emmeans/reference/emtrends.html)
 and returns tidy results for Q0 and alpha trends on the log10 scale.
 
 Below we compute trends with respect to `age` and `dose_num`, first
