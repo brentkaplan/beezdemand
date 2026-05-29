@@ -590,14 +590,23 @@ test_that("print.beezdemand_comparison is backend-agnostic and renders tables", 
 })
 
 # =============================================================================
-# 12. contrast_by deferred on TMB / works on NLME (Decision 8 / TICKET-032)
+# 12. contrast_by now works on TMB (TICKET-032 — was deferred)
 # =============================================================================
-test_that("contrast_by errors on TMB (deferred to TICKET-032)", {
+test_that("contrast_by works on TMB (TICKET-032)", {
   skip_on_cran()
-  fit <- .h16_tmb_fit()
-  expect_error(
-    suppressMessages(get_demand_comparisons(fit, param = "Q0", contrast_by = "gender")),
-    regexp = "not yet supported|follow-up|TMB|TICKET-032"
+  fit <- .h16_tmb_2f()
+  res <- suppressMessages(get_demand_comparisons(
+    fit, param = "Q0",
+    compare_specs = ~ gender * age_group, contrast_by = "age_group"
+  ))
+  expect_s3_class(res, "beezdemand_comparison")
+  # by-column present (user-requested original name), inserted before contrast
+  expect_true("age_group" %in% names(res$Q0$contrasts_log10))
+  expect_identical(names(res$Q0$contrasts_log10)[1], "age_group")
+  # one gender contrast per observed age_group level
+  expect_setequal(
+    unique(res$Q0$contrasts_log10$age_group),
+    as.character(unique(.h16_two_factor_data()$age_group))
   )
 })
 

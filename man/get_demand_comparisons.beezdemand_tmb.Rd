@@ -34,9 +34,21 @@ asymmetric \code{collapse_levels}, name the \strong{original} factor (e.g.
 \item{contrast_type}{Character. \code{"pairwise"} (all pairs, factor-level order)
 or \code{"trt.vs.ctrl"} (each level vs. the first/reference level).}
 
-\item{contrast_by}{Not yet supported on the TMB backend (planned in
-TICKET-032); supplying it errors. Use the NLME backend for by-grouped
-contrasts.}
+\item{contrast_by}{Optional \code{NULL} (default) or character vector of factor
+name(s) within \code{compare_specs} to condition the contrasts on. Within each
+observed combination of by-level(s), pairwise (or \code{trt.vs.ctrl}) contrasts
+are computed over the remaining (non-by) factors, with p-value adjustment
+applied \strong{per by-cell}. The by-variable(s) must be named in
+\code{compare_specs} (per parameter after collapse-mapping); a \code{contrast_by}
+factor absent from \code{compare_specs} aborts. Unlike \code{compare_specs} (which
+aborts on an unresolvable name), \code{contrast_by} \strong{soft-skips} a parameter
+for which it does not resolve under asymmetric \code{collapse_levels}. Numeric
+results match the NLME backend in shape and direction (TMB uses asymptotic
+\emph{z} vs. NLME's \emph{t}). Continuous covariates are held at the global training
+mean within by-levels (the same convention as \code{at}), not recomputed per
+by-level. Multi-by is accepted but currently untested on TMB (its
+two-factor fixed-effect cap precludes a \code{compare_specs} with the 3+ factors
+a multi-by Cartesian would require).}
 
 \item{adjust}{Character. P-value adjustment method; must be one of
 \code{stats::p.adjust.methods} (default \code{"holm"}). emmeans-only methods such as
@@ -59,9 +71,12 @@ A \code{beezdemand_comparison} object: a list named by parameter, each
 element a list with \code{emmeans} (native cell means), \code{contrasts_log10}
 (log10-scale contrasts with \code{contrast}, \code{estimate}, \code{std.error},
 \code{statistic}, \code{df}, \code{conf.low}, \code{conf.high}, \code{p.value}), and (if
-\code{report_ratios}) \code{contrasts_ratio}. Attributes \code{backend},
-\code{adjustment_method}, \code{compare_specs_used}, \code{contrast_type_used}, and
-\code{contrast_by_used} describe the call.
+\code{report_ratios}) \code{contrasts_ratio}. When \code{contrast_by} is active, the
+contrast tables gain leading by-column(s) (user-requested original names)
+before \code{contrast}. Attributes \code{backend}, \code{adjustment_method},
+\code{compare_specs_used}, \code{contrast_type_used}, \code{contrast_by_used}, and
+\code{contrast_by_map} (per-parameter original -> effective by-name map)
+describe the call.
 }
 \description{
 Computes factor-level contrasts for demand parameters from a

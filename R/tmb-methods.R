@@ -3553,9 +3553,21 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #'   (`age_group_Q0` / `age_group_alpha`), as on the NLME backend.
 #' @param contrast_type Character. `"pairwise"` (all pairs, factor-level order)
 #'   or `"trt.vs.ctrl"` (each level vs. the first/reference level).
-#' @param contrast_by Not yet supported on the TMB backend (planned in
-#'   TICKET-032); supplying it errors. Use the NLME backend for by-grouped
-#'   contrasts.
+#' @param contrast_by Optional `NULL` (default) or character vector of factor
+#'   name(s) within `compare_specs` to condition the contrasts on. Within each
+#'   observed combination of by-level(s), pairwise (or `trt.vs.ctrl`) contrasts
+#'   are computed over the remaining (non-by) factors, with p-value adjustment
+#'   applied **per by-cell**. The by-variable(s) must be named in
+#'   `compare_specs` (per parameter after collapse-mapping); a `contrast_by`
+#'   factor absent from `compare_specs` aborts. Unlike `compare_specs` (which
+#'   aborts on an unresolvable name), `contrast_by` **soft-skips** a parameter
+#'   for which it does not resolve under asymmetric `collapse_levels`. Numeric
+#'   results match the NLME backend in shape and direction (TMB uses asymptotic
+#'   *z* vs. NLME's *t*). Continuous covariates are held at the global training
+#'   mean within by-levels (the same convention as `at`), not recomputed per
+#'   by-level. Multi-by is accepted but currently untested on TMB (its
+#'   two-factor fixed-effect cap precludes a `compare_specs` with the 3+ factors
+#'   a multi-by Cartesian would require).
 #' @param adjust Character. P-value adjustment method; must be one of
 #'   `stats::p.adjust.methods` (default `"holm"`). emmeans-only methods such as
 #'   `"tukey"`/`"sidak"` are rejected (the TMB backend uses asymptotic z +
@@ -3572,9 +3584,12 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #'   element a list with `emmeans` (native cell means), `contrasts_log10`
 #'   (log10-scale contrasts with `contrast`, `estimate`, `std.error`,
 #'   `statistic`, `df`, `conf.low`, `conf.high`, `p.value`), and (if
-#'   `report_ratios`) `contrasts_ratio`. Attributes `backend`,
-#'   `adjustment_method`, `compare_specs_used`, `contrast_type_used`, and
-#'   `contrast_by_used` describe the call.
+#'   `report_ratios`) `contrasts_ratio`. When `contrast_by` is active, the
+#'   contrast tables gain leading by-column(s) (user-requested original names)
+#'   before `contrast`. Attributes `backend`, `adjustment_method`,
+#'   `compare_specs_used`, `contrast_type_used`, `contrast_by_used`, and
+#'   `contrast_by_map` (per-parameter original -> effective by-name map)
+#'   describe the call.
 #'
 #' @seealso [tidy.beezdemand_comparison()] for the backend-agnostic frame.
 #'
@@ -3604,13 +3619,30 @@ get_demand_comparisons.beezdemand_tmb <- function(
   param <- match.arg(param, c("Q0", "alpha"), several.ok = TRUE)
   contrast_type <- match.arg(contrast_type)
 
-  # contrast_by deferred to TICKET-032 (signature parity only on TMB).
+  # contrast_by (TICKET-032): NULL or character(1+). Boundary union-validation
+  # (loud) catches typos here, once, before the per-param loop; per-parameter
+  # collapse-aware resolution + soft-skip happens inside .tmb_compare_one_param().
   if (!is.null(contrast_by)) {
-    cli::cli_abort(c(
-      "{.arg contrast_by} is not yet supported on the TMB backend.",
-      "i" = "By-grouped contrasts are planned in TICKET-032.",
-      "i" = "Use the NLME backend ({.fn fit_demand_mixed}) for by-grouped contrasts."
-    ))
+    if (!is.character(contrast_by)) {
+      cli::cli_abort("{.arg contrast_by} must be {.code NULL} or a character vector of factor name(s).")
+    }
+    if (length(contrast_by) == 0L) {
+      contrast_by <- NULL  # zero-length == no by-grouping
+    } else {
+      valid_by <- unique(c(
+        fit_obj$param_info$factors,
+        fit_obj$param_info$factors_q0,
+        fit_obj$param_info$factors_alpha
+      ))
+      valid_by <- valid_by[!is.na(valid_by) & nzchar(valid_by)]
+      bad_by <- setdiff(contrast_by, valid_by)
+      if (length(bad_by) > 0L) {
+        cli::cli_abort(c(
+          "{.arg contrast_by} names factor{?s} not in the fit: {.val {bad_by}}.",
+          "i" = "Fitted factors: {.val {valid_by}}."
+        ))
+      }
+    }
   }
 
   # adjust: validate against the base-R set (Decision 6). emmeans-only methods
@@ -3663,11 +3695,22 @@ get_demand_comparisons.beezdemand_tmb <- function(
     lapply(param, function(p) {
       .tmb_compare_one_param(
         fit_obj, p, factors_in_emm, contrast_type,
-        adjust, at, ci_level, report_ratios
+        adjust, at, ci_level, report_ratios, contrast_by
       )
     }),
     param
   )
+
+  # Collect the per-parameter original -> effective contrast_by maps (attached
+  # by .tmb_compare_one_param); strip the now-redundant slot from each block.
+  contrast_by_map <- stats::setNames(
+    lapply(results_list, function(b) {
+      m <- attr(b, "contrast_by_map")
+      if (is.null(m)) stats::setNames(character(0), character(0)) else m
+    }),
+    param
+  )
+  for (p in param) attr(results_list[[p]], "contrast_by_map") <- NULL
 
   class(results_list) <- "beezdemand_comparison"
   attr(results_list, "backend") <- "tmb"
@@ -3677,7 +3720,17 @@ get_demand_comparisons.beezdemand_tmb <- function(
     deparse(compare_specs)
   }
   attr(results_list, "contrast_type_used") <- contrast_type
-  attr(results_list, "contrast_by_used") <- "NULL"
+  # Report the user-requested original name(s) ONLY when by-grouping was
+  # actually applied for at least one parameter; otherwise "NULL" so the
+  # flattener/print do not synthesize an all-NA by-column (Codex review
+  # Recommended 1, e.g. redundant-by ignored for every parameter).
+  any_by_applied <- any(vapply(contrast_by_map, length, integer(1)) > 0L)
+  attr(results_list, "contrast_by_used") <- if (is.null(contrast_by) || !any_by_applied) {
+    "NULL"
+  } else {
+    paste(contrast_by, collapse = ", ")
+  }
+  attr(results_list, "contrast_by_map") <- contrast_by_map
   attr(results_list, "adjustment_method") <- adjust
   results_list
 }
@@ -3689,7 +3742,7 @@ get_demand_comparisons.beezdemand_tmb <- function(
 # tidy.beezdemand_comparison() reads for the cross-backend `contrast` column.
 .tmb_compare_one_param <- function(fit_obj, param, factors_in_emm,
                                    contrast_type, adjust, at, ci_level,
-                                   report_ratios) {
+                                   report_ratios, contrast_by = NULL) {
   coefs <- fit_obj$model$coefficients
   sdr <- fit_obj$sdr
   target_name <- if (param == "Q0") "beta_q0" else "beta_alpha"
@@ -3750,9 +3803,13 @@ get_demand_comparisons.beezdemand_tmb <- function(
   cell_est <- as.numeric(ref_X %*% beta)
   cell_se <- sqrt(diag(ref_X %*% vcov_mat %*% t(ref_X)))
 
-  native_label <- function(i) {
-    if (length(use_factors) > 0L) {
-      paste(vapply(use_factors, function(f)
+  # Label builders parametrized by the factor subset used for the label. For
+  # by-grouped contrasts the by-vars are EXCLUDED from the contrast label (they
+  # become separate by-columns), so the within-cell label matches the
+  # `at = `-filtered route (the self-consistency anchor, TICKET-032 Decision 8).
+  native_label_f <- function(i, fs) {
+    if (length(fs) > 0L) {
+      paste(vapply(fs, function(f)
         paste0(f, "=", as.character(level_combos[[f]][i])), character(1)),
         collapse = ", ")
     } else if (length(cov_names) > 0L) {
@@ -3762,14 +3819,16 @@ get_demand_comparisons.beezdemand_tmb <- function(
       "(Intercept)"
     }
   }
-  std_label <- function(i) {
-    if (length(use_factors) > 0L) {
-      paste(vapply(use_factors, function(f)
+  std_label_f <- function(i, fs) {
+    if (length(fs) > 0L) {
+      paste(vapply(fs, function(f)
         as.character(level_combos[[f]][i]), character(1)), collapse = " ")
     } else {
-      native_label(i)
+      native_label_f(i, fs)
     }
   }
+  native_label <- function(i) native_label_f(i, use_factors)
+  std_label <- function(i) std_label_f(i, use_factors)
 
   emm_block <- tibble::tibble(
     level = vapply(seq_len(n), native_label, character(1)),
@@ -3778,65 +3837,193 @@ get_demand_comparisons.beezdemand_tmb <- function(
     conf.high = exp(cell_est + z * cell_se)
   )
 
-  if (n < 2L) {
-    return(finish_empty(emm_block))
-  }
-
-  # Contrast index pairs in factor-level order (the builder already ordered
-  # the grid by level index). pairwise: i<j (level_i - level_j);
-  # trt.vs.ctrl: each later level vs. the first (level_j - level_1).
-  if (contrast_type == "pairwise") {
-    cmb <- utils::combn(n, 2L)
-    lhs <- cmb[1L, ]
-    rhs <- cmb[2L, ]
-  } else {
-    lhs <- seq.int(2L, n)
-    rhs <- rep(1L, n - 1L)
-  }
-
-  est_log <- numeric(length(lhs))
-  se_log <- numeric(length(lhs))
-  native <- character(length(lhs))
-  stdlab <- character(length(lhs))
-  for (k in seq_along(lhs)) {
-    dx <- ref_X[lhs[k], ] - ref_X[rhs[k], ]
-    est_log[k] <- sum(dx * beta)
-    se_log[k] <- sqrt(as.numeric(t(dx) %*% vcov_mat %*% dx))
-    native[k] <- paste(native_label(lhs[k]), "-", native_label(rhs[k]))
-    stdlab[k] <- paste(std_label(lhs[k]), "-", std_label(rhs[k]))
-  }
-
-  zstat <- est_log / se_log
-  p_raw <- 2 * stats::pnorm(-abs(zstat))
-  p_adj <- stats::p.adjust(p_raw, method = adjust)
   ln10 <- log(10)
-  est_log10 <- est_log / ln10
-  se_log10 <- se_log / ln10
 
-  contrasts_log10 <- tibble::tibble(
-    contrast = native,
-    estimate = est_log10,
-    std.error = se_log10,
-    statistic = zstat,
-    df = Inf,
-    conf.low = est_log10 - z * se_log10,
-    conf.high = est_log10 + z * se_log10,
-    p.value = p_adj
+  # ---- Resolve contrast_by for this parameter (collapse-aware, soft) --------
+  # The boundary union-validation already ran (typos error in the public
+  # function); here we map each requested by-var to THIS parameter's column
+  # (direct hit, else the `<name>_<param>` collapse alias) and soft-skip names
+  # absent from this parameter's design (collapse-induced asymmetry). `by_map`
+  # records the original -> effective resolution actually used for by-grouping.
+  effective_by <- character(0)
+  by_map <- stats::setNames(character(0), character(0))
+  if (n >= 2L && !is.null(contrast_by)) {
+    param_factor_set <- if (param == "Q0") {
+      fit_obj$param_info$factors_q0
+    } else {
+      fit_obj$param_info$factors_alpha
+    }
+    if (is.null(param_factor_set)) param_factor_set <- character(0)
+    for (cb in contrast_by) {
+      if (cb %in% param_factor_set) {
+        effective_by <- c(effective_by, cb)
+        by_map[cb] <- cb
+      } else if (paste0(cb, "_", param) %in% param_factor_set) {
+        mapped <- paste0(cb, "_", param)
+        effective_by <- c(effective_by, mapped)
+        by_map[cb] <- mapped
+        message(
+          "  Mapped contrast_by from '", cb, "' to '", mapped,
+          "' for ", param, " due to collapse_levels."
+        )
+      }
+      # else: silent per-param skip (collapse-induced asymmetry).
+    }
+
+    # Within-param collision: two requested by-vars -> same effective column.
+    if (any(duplicated(effective_by))) {
+      cli::cli_abort(c(
+        "Two {.arg contrast_by} variables resolve to the same column for {param}.",
+        "i" = "Resolved columns: {.val {effective_by}}."
+      ))
+    }
+
+    # Pre-validation: every effective by-var must be in this parameter's
+    # `compare_specs` retained set (the by-grid). Replaces the old NLME
+    # silent-empty path with a loud, backend-consistent abort.
+    if (length(effective_by) > 0L && !all(effective_by %in% use_factors)) {
+      not_in <- setdiff(effective_by, use_factors)
+      cli::cli_abort(c(
+        "{cli::qty(not_in)}{.arg contrast_by} factor{?s} {.val {not_in}} {?is/are} not in {.arg compare_specs} for {param}.",
+        "i" = "{cli::qty(use_factors)}{.arg compare_specs} factor{?s} for {param}: {.val {use_factors}}.",
+        "x" = "Name the by-variable(s) in {.arg compare_specs} to condition contrasts on them."
+      ))
+    }
+
+    # Redundant-by (NLME-exact): length-1 compare_specs equal to the by-set.
+    if (length(effective_by) > 0L && length(use_factors) == 1L &&
+        identical(sort(use_factors), sort(effective_by))) {
+      message(
+        "  `contrast_by` (", paste(effective_by, collapse = ", "),
+        ") is redundant with `compare_specs` (~ ",
+        paste(use_factors, collapse = " * "),
+        ") for simple contrasts. Ignoring `contrast_by` for this parameter."
+      )
+      effective_by <- character(0)
+    }
+
+    # Keep `by_map` consistent with what is actually used for by-grouping.
+    by_map <- by_map[unname(by_map) %in% effective_by]
+
+    # Additive-model heads-up (GLOBAL model factor set, mirroring NLME).
+    original_factors <- fit_obj$param_info$factors
+    if (is.null(original_factors)) original_factors <- character(0)
+    if (length(effective_by) > 0L && length(original_factors) > 1L &&
+        !isTRUE(fit_obj$param_info$factor_interaction)) {
+      message(
+        "  Note: The original model fit for '", param,
+        "' appears to be additive for factors: ",
+        paste(original_factors, collapse = ", "),
+        ". Contrasts using 'contrast_by = \"", paste(contrast_by, collapse = ", "),
+        "\"' will likely show identical estimates across levels of '",
+        paste(contrast_by, collapse = ", "), "'."
+      )
+    }
+  }
+
+  comparison_factors <- setdiff(use_factors, effective_by)
+
+  # Row blocks: one per observed by-cell (factor-level order preserved from the
+  # ref grid), or a single global block when no by-grouping is active. The
+  # single-block path reproduces the pre-TICKET-032 output bit-for-bit.
+  if (length(effective_by) > 0L) {
+    by_key <- do.call(paste, c(
+      lapply(effective_by, function(f) as.character(level_combos[[f]])),
+      list(sep = "\r")
+    ))
+    blocks <- lapply(unique(by_key), function(k) which(by_key == k))
+  } else {
+    blocks <- list(seq_len(n))
+  }
+
+  # Compute pairwise / trt.vs.ctrl contrasts within one block of grid rows.
+  # p-values are adjusted WITHIN the block (per by-cell), so a single-contrast
+  # cell matches the `at = `-filtered route exactly.
+  do_block <- function(rows) {
+    m <- length(rows)
+    if (m < 2L) return(NULL)
+    if (contrast_type == "pairwise") {
+      cmb <- utils::combn(m, 2L)
+      lhs <- rows[cmb[1L, ]]
+      rhs <- rows[cmb[2L, ]]
+    } else {
+      lhs <- rows[seq.int(2L, m)]
+      rhs <- rep(rows[1L], m - 1L)
+    }
+    est_log <- numeric(length(lhs))
+    se_log <- numeric(length(lhs))
+    native <- character(length(lhs))
+    stdlab <- character(length(lhs))
+    for (k in seq_along(lhs)) {
+      dx <- ref_X[lhs[k], ] - ref_X[rhs[k], ]
+      est_log[k] <- sum(dx * beta)
+      se_log[k] <- sqrt(as.numeric(t(dx) %*% vcov_mat %*% dx))
+      native[k] <- paste(native_label_f(lhs[k], comparison_factors), "-",
+                         native_label_f(rhs[k], comparison_factors))
+      stdlab[k] <- paste(std_label_f(lhs[k], comparison_factors), "-",
+                        std_label_f(rhs[k], comparison_factors))
+    }
+    zstat <- est_log / se_log
+    p_adj <- stats::p.adjust(2 * stats::pnorm(-abs(zstat)), method = adjust)
+    est_log10 <- est_log / ln10
+    se_log10 <- se_log / ln10
+    list(
+      log10 = tibble::tibble(
+        contrast = native, estimate = est_log10, std.error = se_log10,
+        statistic = zstat, df = Inf,
+        conf.low = est_log10 - z * se_log10,
+        conf.high = est_log10 + z * se_log10, p.value = p_adj
+      ),
+      ratio = tibble::tibble(
+        contrast = native, ratio = exp(est_log),
+        conf.low = exp(est_log - z * se_log),
+        conf.high = exp(est_log + z * se_log), p.value = p_adj
+      ),
+      std_labels = stdlab,
+      first_row = rows[1L]
+    )
+  }
+
+  # Build the by-column tibble (user-requested ORIGINAL names) for a block.
+  by_cols_for <- function(first_row, nrows) {
+    if (length(effective_by) == 0L) return(NULL)
+    cols <- lapply(names(by_map), function(orig) {
+      rep(as.character(level_combos[[by_map[[orig]]]][first_row]), nrows)
+    })
+    tibble::as_tibble(stats::setNames(cols, names(by_map)))
+  }
+
+  block_results <- Filter(Negate(is.null), lapply(blocks, do_block))
+
+  if (length(block_results) == 0L) {
+    # Empty but contrast_by was resolved: preserve the map so the metadata
+    # contract holds even with no contrast rows (Codex review Recommended 2).
+    res <- finish_empty(emm_block)
+    attr(res, "contrast_by_map") <- by_map
+    return(res)
+  }
+
+  log10_parts <- lapply(block_results, function(r) {
+    bc <- by_cols_for(r$first_row, nrow(r$log10))
+    if (is.null(bc)) r$log10 else dplyr::bind_cols(bc, r$log10)
+  })
+  ratio_parts <- lapply(block_results, function(r) {
+    bc <- by_cols_for(r$first_row, nrow(r$ratio))
+    if (is.null(bc)) r$ratio else dplyr::bind_cols(bc, r$ratio)
+  })
+
+  contrasts_log10 <- dplyr::bind_rows(log10_parts)
+  attr(contrasts_log10, "std_labels") <- unlist(
+    lapply(block_results, function(r) r$std_labels), use.names = FALSE
   )
-  attr(contrasts_log10, "std_labels") <- stdlab
 
   out <- list(emmeans = emm_block, contrasts_log10 = contrasts_log10)
   if (report_ratios) {
-    contrasts_ratio <- tibble::tibble(
-      contrast = native,
-      ratio = exp(est_log),
-      conf.low = exp(est_log - z * se_log),
-      conf.high = exp(est_log + z * se_log),
-      p.value = p_adj
-    )
-    attr(contrasts_ratio, "std_labels") <- stdlab
+    contrasts_ratio <- dplyr::bind_rows(ratio_parts)
+    attr(contrasts_ratio, "std_labels") <- attr(contrasts_log10, "std_labels")
     out$contrasts_ratio <- contrasts_ratio
   }
+  attr(out, "contrast_by_map") <- by_map
   out
 }
 

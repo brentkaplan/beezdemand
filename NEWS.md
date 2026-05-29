@@ -7,6 +7,35 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## get_demand_comparisons() by-grouped contrasts on TMB (TICKET-032)
+
+* `get_demand_comparisons()` now supports `contrast_by` on the **TMB** backend,
+  completing the NLME/TMB harmonization begun in TICKET-016. Within each
+  observed combination of the by-level(s), pairwise (or `trt.vs.ctrl`)
+  contrasts are computed over the remaining factors, with p-value adjustment
+  applied **per by-cell**. Results match the NLME backend in shape, direction,
+  by-cell labels, and message UX (numerics differ by design: TMB uses
+  asymptotic *z*, NLME *t*). A by-cell of a single contrast reproduces the
+  corresponding `at = `-filtered call exactly.
+
+* Nested contrast tables (`$contrasts_log10`, `$contrasts_ratio`) and the flat
+  `tidy()` frame gain leading by-column(s) using the **user-requested original**
+  factor name (e.g. `age_cut`, not the collapse-mapped `age_cut_alpha`). The
+  `tidy()` schema is unchanged (the canonical 9 columns) when `contrast_by` is
+  inactive. `print()` shows the by-column(s) before `contrast`.
+
+* Both backends now populate a `contrast_by_map` attribute (a per-parameter
+  named map from the original by-name to the effective, possibly
+  collapse-mapped, column). `contrast_by` resolution is **soft** per parameter
+  (a by-variable absent from a parameter's design is skipped) whereas
+  `compare_specs` resolution remains **strict** (an unresolvable name aborts).
+
+* **Behavior change (NLME):** supplying a `contrast_by` factor that is not in
+  `compare_specs` now aborts loudly with a parameter-scoped message, on both
+  backends. Previously the NLME backend silently returned an empty contrasts
+  table (with a `$contrasts_log10_error` note). No released code relied on the
+  silent-empty path.
+
 ## get_demand_comparisons() backend harmonization (TICKET-016)
 
 * `get_demand_comparisons()` now returns a classed `beezdemand_comparison`
@@ -43,9 +72,8 @@ cover TICKET-011 phase work added under this development cycle.
   (no alias) and validates it against `stats::p.adjust.methods`; emmeans-only
   methods (e.g. `"tukey"`, `"sidak"`) are rejected.
 
-* `contrast_by` (by-grouped contrasts) is **not yet** supported on the TMB
-  backend (planned as a follow-up); supplying it errors with guidance to use
-  the NLME backend. Backend harmonization is therefore partial until that lands.
+* `contrast_by` (by-grouped contrasts) is now supported on the TMB backend
+  (TICKET-032, see below), completing the backend harmonization.
 
 * **Correctness fixes (post-review).** (1) The NLME backend now validates
   `compare_specs` against the union of the model's fitted factors (originals
