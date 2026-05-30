@@ -864,15 +864,19 @@ test_that("glance.beezdemand_nlme reports actual convergence status", {
   expect_type(g$converged, "logical")
 })
 
-test_that(".check_nlme_convergence detects known warning patterns", {
+test_that(".check_nlme_convergence flags warnings via fit_warned without gating converged (TICKET-020)", {
   fake <- structure(list(
-    model = list(apVar = matrix(1)),
+    model = list(apVar = matrix(1)),  # PD apVar: final fit is usable
     fit_warnings = c("false convergence (8)")
   ), class = "beezdemand_nlme")
 
   result <- beezdemand:::.check_nlme_convergence(fake)
-  expect_false(result$converged)
+  # Iteration-level warning is still detected as a diagnostic ...
+  expect_true(result$fit_warned)
   expect_match(result$message, "false convergence")
+  # ... but no longer flips the operational gate when apVar is PD (TICKET-020).
+  expect_true(result$converged)
+  expect_true(result$final_fit_ok)
 })
 
 test_that(".check_nlme_convergence handles old objects without fit_warnings", {

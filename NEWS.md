@@ -7,6 +7,32 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## NLME convergence reporting (TICKET-020)
+
+* **Bug fix.** `glance(fit_nlme)$converged` no longer flips to `FALSE` merely
+  because nlme emitted iteration-level convergence warnings (false convergence,
+  singular precision matrix, step-halving, iteration limit, ...) during its
+  PNLS-LME alternation. nlme prints these routinely while iterating even when the
+  fit settles to a usable optimum, so the old heuristic produced false negatives
+  on fits that were perfectly usable for inference (positive-definite `apVar`,
+  valid emmeans/contrasts/predictions, no terminal error). `converged` now
+  reports the operational gate: `apVar` is positive-definite **and** there is no
+  terminal error.
+
+* `glance(fit_nlme)` gains two additive NLME-only columns: **`final_fit_ok`**
+  (the canonical usable-for-inference gate; identical to `converged`) and
+  **`fit_warned`** (a diagnostic flag, `TRUE` when iteration-level convergence
+  warnings were emitted — informational only, does not gate `converged`).
+
+* **Breaking change (semantic).** Some fits previously flagged
+  `converged = FALSE` (despite a usable `apVar`) now correctly read `TRUE`. Code
+  that scripted around the old false-`FALSE` behavior should gate on
+  `final_fit_ok` (the canonical check) and inspect `fit_warned` for iteration
+  diagnostics. `check_demand_model(fit_nlme)` likewise no longer reports
+  "Model did not converge" for warned-but-usable fits. The genuine-failure path
+  is unchanged: a non-positive-definite `apVar` (or a terminal error) still reads
+  `converged = FALSE`.
+
 ## get_demand_comparisons() NLME nested by-column naming (TICKET-033)
 
 * **Breaking (NLME, narrow):** when `contrast_by` conditions on a factor that

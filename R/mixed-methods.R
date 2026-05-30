@@ -2618,12 +2618,24 @@ tidy.beezdemand_nlme <- function(
 #'   - `n_subjects`: Number of subjects
 #'   - `n_random_effects`: Number of random-effect terms (e.g. 2 for
 #'     `Q0 + alpha ~ 1`)
-#'   - `converged`: Convergence status
+#'   - `converged`: Operational convergence status. `TRUE` when the final fit is
+#'     usable for inference — i.e. `apVar` (nlme's approximate covariance of the
+#'     variance-covariance parameters) is positive-definite AND there is no
+#'     terminal error. Alias for `final_fit_ok`. As of TICKET-020 this is no
+#'     longer flipped to `FALSE` by iteration-level optimizer warnings (see
+#'     `fit_warned`).
+#'   - `final_fit_ok`: The canonical usable-for-inference gate (`apVar` PD and no
+#'     terminal error); identical to `converged`. NLME-only.
+#'   - `fit_warned`: Diagnostic flag — `TRUE` when nlme emitted iteration-level
+#'     convergence warnings (false convergence, singular, step-halving, iteration
+#'     limit, ...) during PNLS-LME alternation. Informational only; does not gate
+#'     `converged`. NLME-only.
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
 #'   - `sigma`: Residual standard error (NLME-only)
 #'
-#'   The canonical columns match [glance.beezdemand_tmb()], so
-#'   backend-agnostic code needs no dispatch glue.
+#'   The shared canonical columns (through `converged`, `logLik`, `AIC`, `BIC`)
+#'   match [glance.beezdemand_tmb()], so backend-agnostic code needs no dispatch
+#'   glue; `final_fit_ok` and `fit_warned` are additive NLME-only diagnostics.
 #' @export
 glance.beezdemand_nlme <- function(x, ...) {
   if (is.null(x$model)) {
@@ -2635,6 +2647,8 @@ glance.beezdemand_nlme <- function(x, ...) {
       n_subjects = NA_integer_,
       n_random_effects = NA_integer_,
       converged = FALSE,
+      final_fit_ok = FALSE,
+      fit_warned = FALSE,
       logLik = NA_real_,
       AIC = NA_real_,
       BIC = NA_real_,
@@ -2664,6 +2678,8 @@ glance.beezdemand_nlme <- function(x, ...) {
     error = function(e) NA_integer_
   )
 
+  conv <- .check_nlme_convergence(x)
+
   tibble::tibble(
     model_class = "beezdemand_nlme",
     backend = "nlme",
@@ -2672,7 +2688,9 @@ glance.beezdemand_nlme <- function(x, ...) {
     nobs = n_obs,
     n_subjects = n_subjects,
     n_random_effects = n_random_effects,
-    converged = .check_nlme_convergence(x)$converged,
+    converged = conv$converged,
+    final_fit_ok = conv$final_fit_ok,
+    fit_warned = conv$fit_warned,
     logLik = as.numeric(stats::logLik(x$model)),
     AIC = stats::AIC(x$model),
     BIC = stats::BIC(x$model),

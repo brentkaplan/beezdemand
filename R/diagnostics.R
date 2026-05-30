@@ -862,45 +862,76 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 }
 
 
+# Assess NLME final-fit usability separately from iteration-level warnings
+# (TICKET-020). Returns a list with:
+#   * final_fit_ok - the operational gate: apVar is a finite numeric matrix
+#       (nlme's approximate covariance of the variance-covariance parameters
+#       inverted to a well-conditioned optimum) AND no terminal error. A
+#       practical "usable for inference" signal.
+#   * fit_warned   - diagnostic only: did nlme emit iteration-level convergence
+#       warnings during its PNLS-LME alternation? These are informational and do
+#       NOT gate usability — nlme routinely prints them while iterating even when
+#       the outer alternation settles to a usable optimum.
+#   * converged    - alias for final_fit_ok (the historical column name). Before
+#       TICKET-020 this was final_fit_ok && !fit_warned, which produced false
+#       negatives on usable fits whenever the optimizer happened to print a
+#       warning while iterating.
 .check_nlme_convergence <- function(object) {
-  converged <- TRUE
-  messages <- character(0)
-
   if (is.null(object$model)) {
-    return(list(converged = FALSE, message = "Model fitting failed"))
+    return(list(converged = FALSE, final_fit_ok = FALSE, fit_warned = FALSE,
+                message = "Model fitting failed"))
   }
 
   model <- object$model
 
-  # Check apVar for Hessian issues (existing check)
-  if (is.character(model$apVar)) {
-    converged <- FALSE
+  # final_fit_ok: apVar is nlme's approximate covariance matrix of the estimated
+  # variance-covariance parameters (random-effects + residual), from the Hessian
+  # of the (restricted) log-likelihood w.r.t. those parameters. It is a finite
+  # numeric matrix when that Hessian inverted (a well-conditioned optimum) and a
+  # character sentinel ("Non-positive definite ...") when it failed -- in which
+  # case nlme::intervals() also errors. A finite apVar + no terminal error is the
+  # usable-for-inference gate. (Fixed-effect SEs come from model$varFix, which is
+  # available whenever the model fits; apVar is the stricter conditioning signal.)
+  apVar_ok <- is.matrix(model$apVar) && all(is.finite(model$apVar))
+  no_error <- is.null(object$error_message)
+  final_fit_ok <- apVar_ok && no_error
+
+  # fit_warned: were iteration-level convergence warnings emitted?
+  # NOTE: object$fit_warnings is NULL for pre-fix saved objects; length(NULL) == 0 is safe.
+  convergence_patterns <- c(
+    "false convergence",
+    "singular",
+    "step halving factor reduced below minimum",
+    "maximum number of iterations",
+    "did not converge",
+    "iteration limit reached"
+  )
+  pattern_regex <- paste(convergence_patterns, collapse = "|")
+  fit_warnings <- object$fit_warnings
+  bad_warnings <- if (length(fit_warnings) > 0) {
+    fit_warnings[grepl(pattern_regex, fit_warnings, ignore.case = TRUE)]
+  } else {
+    character(0)
+  }
+  fit_warned <- length(bad_warnings) > 0
+
+  # Human-readable diagnostic message (informational; never a gate).
+  messages <- character(0)
+  if (!apVar_ok) {
     messages <- c(messages, "Hessian is not positive definite; variance estimates may be unreliable")
   }
-
-  # Check stored fit warnings for convergence failure patterns
-  # NOTE: object$fit_warnings is NULL for pre-fix saved objects; length(NULL) == 0 is safe
-  fit_warnings <- object$fit_warnings
-  if (length(fit_warnings) > 0) {
-    convergence_patterns <- c(
-      "false convergence",
-      "singular",
-      "step halving factor reduced below minimum",
-      "maximum number of iterations",
-      "did not converge",
-      "iteration limit reached"
-    )
-    pattern_regex <- paste(convergence_patterns, collapse = "|")
-    bad_warnings <- fit_warnings[grepl(pattern_regex, fit_warnings, ignore.case = TRUE)]
-    if (length(bad_warnings) > 0) {
-      converged <- FALSE
-      messages <- c(messages, paste("Fit warning:", bad_warnings))
-    }
+  if (!no_error) {
+    messages <- c(messages, object$error_message)
+  }
+  if (fit_warned) {
+    messages <- c(messages, paste("Fit warning:", bad_warnings))
   }
 
   list(
-    converged = converged,
-    message = if (length(messages) > 0) paste(messages, collapse = "; ") else NULL
+    converged    = final_fit_ok,   # alias for final_fit_ok going forward (TICKET-020)
+    final_fit_ok = final_fit_ok,
+    fit_warned   = fit_warned,
+    message      = if (length(messages) > 0) paste(messages, collapse = "; ") else NULL
   )
 }
 
