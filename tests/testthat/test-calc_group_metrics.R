@@ -13,6 +13,18 @@
 # averaged across reference grid cells, then Pmax/Omax/Qmax are derived
 # from the marginalized parameters. (Not "compute metrics per cell, then
 # average" — the two approaches differ for nonlinear transforms.)
+#
+# Fixtures: the ~18 fits here reduce to a handful of distinct specs — mostly on
+# the same 50-subject `apt_full` subsample (the two no-covariate blocks use the
+# small built-in `apt`) — so they are fit ONCE and memoized at file level
+# (new.env cache, mirroring test-anova-tmb.R / test-boot-demand.R)
+# to keep this file off the CI test-phase critical path. Tests do not mutate
+# fits (calc_group_metrics()/get_demand_param_emms()/get_demand_comparisons()
+# are read-only over the fit), so the cached objects stay pristine. The
+# collapse-spec fits previously ran on the FULL Male/Female set (~1,100
+# subjects / ~18,700 rows); they now use the same 25/group subsample, which
+# still populates all three age_group levels — these tests assert structure
+# (collapsed factor names, error/no-error), not data-dependent values.
 # =============================================================================
 
 helper_subsample_apt_full <- function(n_per_group = 25) {
@@ -28,14 +40,91 @@ helper_subsample_apt_full <- function(n_per_group = 25) {
   d
 }
 
+.cgmt_cache <- new.env(parent = emptyenv())
+
+# 50-subject subsample, fit once and reused.
+.cgmt_data <- function() {
+  if (is.null(.cgmt_cache$data)) .cgmt_cache$data <- helper_subsample_apt_full()
+  .cgmt_cache$data
+}
+
+# Plain apt exponential (no covariate / no factor).
+.cgmt_apt_exp <- function() {
+  if (is.null(.cgmt_cache$apt_exp)) {
+    data(apt, package = "beezdemand")
+    .cgmt_cache$apt_exp <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  }
+  .cgmt_cache$apt_exp
+}
+
+# Subsample + continuous_covariates = "age".
+.cgmt_fit_age <- function() {
+  if (is.null(.cgmt_cache$fit_age)) {
+    .cgmt_cache$fit_age <- fit_demand_tmb(
+      .cgmt_data(), equation = "exponential",
+      continuous_covariates = "age", verbose = 0
+    )
+  }
+  .cgmt_cache$fit_age
+}
+
+# Subsample + factors = "gender".
+.cgmt_fit_gender <- function() {
+  if (is.null(.cgmt_cache$fit_gender)) {
+    .cgmt_cache$fit_gender <- fit_demand_tmb(
+      .cgmt_data(), equation = "exponential",
+      factors = "gender", verbose = 0
+    )
+  }
+  .cgmt_cache$fit_gender
+}
+
+# Subsample + factors = "gender" + continuous_covariates = "age".
+.cgmt_fit_gender_age <- function() {
+  if (is.null(.cgmt_cache$fit_gender_age)) {
+    .cgmt_cache$fit_gender_age <- fit_demand_tmb(
+      .cgmt_data(), equation = "exponential",
+      factors = "gender", continuous_covariates = "age", verbose = 0
+    )
+  }
+  .cgmt_cache$fit_gender_age
+}
+
+# Subsample + age_group factor (3 levels) for the asymmetric-collapse tests.
+.cgmt_collapse_data <- function() {
+  if (is.null(.cgmt_cache$collapse_data)) {
+    d <- helper_subsample_apt_full()
+    d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
+                              labels = c("young", "mid", "old")))
+    d$id <- droplevels(as.factor(d$id))
+    .cgmt_cache$collapse_data <- d
+  }
+  .cgmt_cache$collapse_data
+}
+
+# Asymmetric collapse fit: Q0 -> 2 levels (junior/old), alpha -> 3 levels.
+.cgmt_fit_collapse <- function() {
+  if (is.null(.cgmt_cache$fit_collapse)) {
+    .cgmt_cache$fit_collapse <- suppressWarnings(fit_demand_tmb(
+      .cgmt_collapse_data(), equation = "exponential",
+      factors = "age_group",
+      collapse_levels = list(
+        Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
+        alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
+      ),
+      verbose = 0
+    ))
+  }
+  .cgmt_cache$fit_collapse
+}
+
 # ---------------------------------------------------------------------------
 # Default behavior: training-mean continuous covariates; factor marginal.
 # ---------------------------------------------------------------------------
 
 test_that("calc_group_metrics is silent for no-covariate TMB fits", {
   skip_on_cran()
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- .cgmt_apt_exp()
 
   expect_no_warning(metrics <- calc_group_metrics(fit))
   # No covariates and no factors -> conditioned_on is NULL.
@@ -46,13 +135,7 @@ test_that("calc_group_metrics is silent for no-covariate TMB fits", {
 
 test_that("calc_group_metrics is silent for covariate fits (Phase 0.5 warning retired)", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    continuous_covariates = "age",
-    verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   expect_no_warning(metrics <- calc_group_metrics(fit))
   expect_true("conditioned_on" %in% names(metrics))
@@ -72,13 +155,7 @@ test_that("calc_group_metrics is silent for covariate fits (Phase 0.5 warning re
 
 test_that("calc_group_metrics(at = list(cov = X)) conditions at the supplied value", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    continuous_covariates = "age",
-    verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   metrics_default <- calc_group_metrics(fit)
   metrics_at_30 <- calc_group_metrics(fit, at = list(age = 30))
@@ -105,13 +182,7 @@ test_that("calc_group_metrics(at = list(cov = X)) conditions at the supplied val
 
 test_that("calc_group_metrics(at = list(factor = level)) conditions on a level", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    factors = "gender",
-    verbose = 0
-  )
+  fit <- .cgmt_fit_gender()
 
   metrics_default <- calc_group_metrics(fit)
   metrics_male <- calc_group_metrics(fit, at = list(gender = "Male"))
@@ -133,13 +204,7 @@ test_that("calc_group_metrics(at = list(factor = level)) conditions on a level",
 
 test_that("calc_group_metrics() generic dispatches `at` arg", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    continuous_covariates = "age",
-    verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   # Calling the generic (not the method directly) must propagate `at`.
   m <- calc_group_metrics(fit, at = list(age = 40))
@@ -152,13 +217,7 @@ test_that("calc_group_metrics() generic dispatches `at` arg", {
 
 test_that("summary.beezdemand_tmb prints 'Metrics conditioned at:' line for covariate fits", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d,
-    equation = "exponential",
-    continuous_covariates = "age",
-    verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   out <- capture.output(summary(fit))
   expect_true(any(grepl("Metrics conditioned at:", out, fixed = TRUE)))
@@ -167,8 +226,7 @@ test_that("summary.beezdemand_tmb prints 'Metrics conditioned at:' line for cova
 
 test_that("summary.beezdemand_tmb omits the conditioning line for plain fits", {
   skip_on_cran()
-  data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- .cgmt_apt_exp()
 
   out <- capture.output(summary(fit))
   # No covariates and no factors -> no conditioning_on -> no print line.
@@ -183,10 +241,7 @@ test_that("summary.beezdemand_tmb omits the conditioning line for plain fits", {
 
 test_that("calc_group_metrics aborts on `at` with unknown name (typo)", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .cgmt_fit_gender()
 
   # Mistyped factor name `gendr` must abort, NOT silently return default
   # marginal metrics.
@@ -198,10 +253,7 @@ test_that("calc_group_metrics aborts on `at` with unknown name (typo)", {
 
 test_that("calc_group_metrics aborts on `at` with off-grid factor level", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .cgmt_fit_gender()
 
   # Conditioning on an unobserved factor level must abort, NOT return
   # NA metrics with conditioned_on labelled with the off-grid value.
@@ -213,10 +265,7 @@ test_that("calc_group_metrics aborts on `at` with off-grid factor level", {
 
 test_that("calc_group_metrics aborts on non-numeric `at` value for continuous covariate", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", continuous_covariates = "age", verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   # Non-numeric value (e.g., character that doesn't coerce) must abort.
   expect_error(
@@ -237,10 +286,7 @@ test_that("calc_group_metrics aborts on non-numeric `at` value for continuous co
 
 test_that("calc_group_metrics aborts on zero-length `at` value", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", continuous_covariates = "age", verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   # Zero-length numeric: any(is.na(numeric(0))) is FALSE, so the
   # finite-numeric check passes; then `[1]` returns NA. Pre-fix this
@@ -257,10 +303,7 @@ test_that("calc_group_metrics aborts on zero-length `at` value", {
 
 test_that("calc_group_metrics warns ONCE on multi-value `at` continuous (one-shot)", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", continuous_covariates = "age", verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   # calc_group_metrics() builds Q0 and alpha grids in one user call.
   # Pre-fix the validation/warning fired inside the helper, so each
@@ -283,10 +326,7 @@ test_that("calc_group_metrics warns ONCE on multi-value `at` continuous (one-sho
 
 test_that("get_demand_param_emms warns ONCE on multi-value `at` continuous", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", continuous_covariates = "age", verbose = 0
-  )
+  fit <- .cgmt_fit_age()
 
   ws <- character(0)
   withCallingHandlers(
@@ -302,11 +342,7 @@ test_that("get_demand_param_emms warns ONCE on multi-value `at` continuous", {
 
 test_that("get_demand_comparisons warns ONCE on multi-value `at` continuous", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", factors = "gender",
-    continuous_covariates = "age", verbose = 0
-  )
+  fit <- .cgmt_fit_gender_age()
 
   # get_demand_comparisons() calls get_demand_param_emms() (1 grid call)
   # then builds its own grid (2 grid calls total). Pre-fix that meant
@@ -325,10 +361,7 @@ test_that("get_demand_comparisons warns ONCE on multi-value `at` continuous", {
 
 test_that("calc_group_metrics aborts on empty `at`-filtered grid", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .cgmt_fit_gender()
 
   # The previous `at = list(gender = "NoSuchLevel")` test catches the
   # off-grid level path; this test covers the (rare) path where the
@@ -343,28 +376,20 @@ test_that("calc_group_metrics aborts on empty `at`-filtered grid", {
 
 test_that("calc_group_metrics rejects collapse-aliased original factor name in `at`", {
   skip_on_cran()
-  data(apt_full, package = "beezdemand")
-  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
-  d$gender <- droplevels(as.factor(d$gender))
-  d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
-                            labels = c("young", "mid", "old")))
-  d$id <- droplevels(as.factor(d$id))
-
   # Asymmetric collapse: Q0 -> 2 levels (young+mid into "junior"), alpha
   # keeps all 3 levels. This makes factors_q0 = "age_group_Q0" and
   # factors_alpha = "age_group_alpha" (both differ from the original
   # "age_group" name in param_info$factors).
-  collapse_spec <- list(
-    Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
-    alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
-  )
+  fit <- .cgmt_fit_collapse()
 
-  fit <- suppressWarnings(fit_demand_tmb(
-    d, equation = "exponential",
-    factors = "age_group",
-    collapse_levels = collapse_spec,
-    verbose = 0
-  ))
+  # Fixture sanity: the 25/group subsample must retain all three age_group
+  # levels, else the asymmetric collapse below degenerates (Q0 -> {junior, old},
+  # alpha -> {young, mid, old}) and these tests would pass vacuously. Guards
+  # against a future subsample-size / id-order change silently weakening them.
+  expect_setequal(
+    as.character(unique(.cgmt_collapse_data()$age_group)),
+    c("young", "mid", "old")
+  )
 
   # Sanity: factors_q0 and factors_alpha should now be collapsed names.
   expect_true(any(grepl("age_group_(Q0|alpha)", c(
@@ -392,24 +417,9 @@ test_that("calc_group_metrics rejects collapse-aliased original factor name in `
 
 test_that("get_demand_param_emms rejects cross-param `at` factor name (asymmetric collapse)", {
   skip_on_cran()
-  data(apt_full, package = "beezdemand")
-  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
-  d$gender <- droplevels(as.factor(d$gender))
-  d$age_group <- factor(cut(d$age, c(0, 25, 35, Inf),
-                            labels = c("young", "mid", "old")))
-  d$id <- droplevels(as.factor(d$id))
-
   # Asymmetric collapse: Q0 -> 2 levels (junior/old), alpha -> 3 levels.
   # factors_q0 = "age_group_Q0"; factors_alpha = "age_group_alpha".
-  fit <- suppressWarnings(fit_demand_tmb(
-    d, equation = "exponential",
-    factors = "age_group",
-    collapse_levels = list(
-      Q0    = list(age_group = list(junior = c("young", "mid"), old = "old")),
-      alpha = list(age_group = list(young = "young", mid = "mid", old = "old"))
-    ),
-    verbose = 0
-  ))
+  fit <- .cgmt_fit_collapse()
 
   # Pre-fix, get_demand_param_emms(param = "Q0", at = list(age_group_alpha
   # = "young")) accepted the alpha-only name (validation took the union)
@@ -443,10 +453,7 @@ test_that("get_demand_param_emms rejects cross-param `at` factor name (asymmetri
 
 test_that("calc_group_metrics aborts on unnamed `at` element", {
   skip_on_cran()
-  d <- helper_subsample_apt_full()
-  fit <- fit_demand_tmb(
-    d, equation = "exponential", factors = "gender", verbose = 0
-  )
+  fit <- .cgmt_fit_gender()
 
   # Mixed named/unnamed list — unnamed entries must abort.
   expect_error(
