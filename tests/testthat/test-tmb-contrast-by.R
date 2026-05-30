@@ -507,3 +507,95 @@ test_that("multi-factor compare_specs does not trigger redundant-by", {
   # by-grouping proceeded: by-column present
   expect_true("age_cut" %in% names(res$Q0$contrasts_log10))
 })
+
+# ===========================================================================
+# TICKET-033 — NLME nested $contrasts_log10 / $contrasts_ratio by-column rename
+# (effective -> user-original). The TMB nested by-column already uses the
+# user-original name (test 3, :433); these tests pin the NLME side to match.
+# ===========================================================================
+
+# Test A (Critical) — cross-backend parity: NLME nested by-col == user-original
+# under asymmetric collapse, matching the TMB backend (which test 3 already
+# pins) and the flat tidy() output. Reuses memoized fixtures; no new fit.
+test_that("NLME nested by-column uses the user-original name under collapse (TICKET-033)", {
+  skip_on_cran()
+  fit <- .h32_nlme_collapse_fit()  # gender x age_group, asymmetric collapse
+  res <- suppressMessages(get_demand_comparisons(
+    fit, param = c("Q0", "alpha"),
+    compare_specs = ~ gender * age_group, contrast_by = "age_group"))
+
+  # by-column carries the USER-ORIGINAL name on BOTH parameters ...
+  expect_true("age_group" %in% names(res$Q0$contrasts_log10))
+  expect_true("age_group" %in% names(res$alpha$contrasts_log10))
+  # ... and the collapse-mapped (effective) name is GONE.
+  expect_false("age_group_Q0" %in% names(res$Q0$contrasts_log10))
+  expect_false("age_group_alpha" %in% names(res$alpha$contrasts_log10))
+
+  # ratio block matches log10 (same by-col rename).
+  expect_true("age_group" %in% names(res$Q0$contrasts_ratio))
+  expect_true("age_group" %in% names(res$alpha$contrasts_ratio))
+  expect_false("age_group_alpha" %in% names(res$alpha$contrasts_ratio))
+
+  # Cross-backend parity: identical nested by-col name to the TMB analog (test 3).
+  res_tmb <- suppressMessages(get_demand_comparisons(
+    .h32_collapse_fit(), param = c("Q0", "alpha"),
+    compare_specs = ~ gender * age_group, contrast_by = "age_group"))
+  expect_identical(
+    intersect("age_group", names(res$alpha$contrasts_log10)),
+    intersect("age_group", names(res_tmb$alpha$contrasts_log10)))
+
+  # Flattener regression guard: flat tidy() by-col still populated (not all-NA).
+  td <- broom::tidy(res)
+  expect_true("age_group" %in% names(td))
+  expect_false(all(is.na(td$age_group[td$param == "alpha"])))
+})
+
+# Test D (Blocking guard, Codex B1) — renaming to a reserved column name aborts.
+# A factor literally named `estimate`, collapsed for alpha, maps to
+# `estimate_alpha`; renaming back to `estimate` would collide with the contrast
+# `estimate` column. One small synthetic NLME fit (mirrors the test_emms builder).
+test_that("nested by-col rename aborts when the original name is a reserved column (TICKET-033)", {
+  skip_on_cran()
+  set.seed(321)
+  d <- expand.grid(id = factor(1:6), x = c(0.1, 1, 10),
+                   grp = c("A", "B"), estimate = c("low", "mid", "high"))
+  d$y <- 80 * exp(-0.002 * 80 * d$x) + stats::rnorm(nrow(d), 0, 3)
+  d$y[d$y < 0.1] <- 0.1
+  d$grp <- factor(d$grp)
+  d$estimate <- factor(d$estimate)
+  fit <- suppressMessages(suppressWarnings(fit_demand_mixed(
+    d, y_var = "y", x_var = "x", id_var = "id",
+    factors = c("grp", "estimate"), equation_form = "simplified",
+    collapse_levels = list(
+      alpha = list(estimate = list(aa = c("low", "mid"), bb = "high"))))))
+  skip_if(is.null(fit$model), "collision-guard fixture failed to converge")
+  expect_error(
+    suppressMessages(get_demand_comparisons(
+      fit, compare_specs = ~ grp * estimate, contrast_by = "estimate",
+      param = "alpha")),
+    regexp = "reserved contrast column|collide")
+})
+
+# Test E (Recommended guard, Codex R2) — two by-vars resolving to one effective
+# column abort, mirroring the TMB within-param collision guard. Reuses the
+# memoized NLME collapse fixture (no new fit).
+test_that("NLME contrast_by aborts when two by-vars resolve to one column (TICKET-033)", {
+  skip_on_cran()
+  fit <- .h32_nlme_collapse_fit()  # age_group -> age_group_alpha under collapse
+  expect_error(
+    suppressMessages(get_demand_comparisons(
+      fit, compare_specs = ~ gender * age_group,
+      contrast_by = c("age_group", "age_group_alpha"), param = "alpha")),
+    regexp = "resolve to the same column")
+})
+
+# Test F (Optional, Codex Opt4) — NLME redundant-by no-op falls through to plain
+# pairwise (no by-column), confirming the rename no-ops on the empty map.
+test_that("NLME redundant-by falls through to plain pairwise (no by-column)", {
+  skip_on_cran()
+  fit <- .h32_nlme_fit()  # gender x age_cut, no collapse
+  res <- suppressMessages(get_demand_comparisons(
+    fit, compare_specs = ~ gender, contrast_by = "gender", param = "Q0"))
+  expect_false("gender" %in% names(res$Q0$contrasts_log10))  # by-col dropped
+  expect_true(nrow(res$Q0$contrasts_log10) >= 1L)            # plain pairwise rows
+})

@@ -521,7 +521,7 @@ test_that("get_demand_comparisons errors on invalid fit object", {
 })
 
 
-test_that("get_demand_comparisons maps contrast_by to collapsed factor name", {
+test_that("get_demand_comparisons nested by-column uses the user-original name under collapse (TICKET-033)", {
   skip_on_cran()
 
   # Create data with two factors (3 levels each for more meaningful collapse)
@@ -568,18 +568,27 @@ test_that("get_demand_comparisons maps contrast_by to collapsed factor name", {
     contrast_by = "factor2"
   )
 
-  # Q0 should have comparisons with factor2 as 'by' variable
+  # Q0 (not collapsed) keeps the original factor name as 'by' variable.
   expect_true("Q0" %in% names(comps))
   expect_true(is.data.frame(comps$Q0$contrasts_log10))
   expect_true(nrow(comps$Q0$contrasts_log10) > 0)
   expect_true("factor2" %in% names(comps$Q0$contrasts_log10))
 
-  # alpha should have comparisons with factor2_alpha as 'by' variable
+  # alpha (collapsed to factor2_alpha internally) now reports the USER-ORIGINAL
+  # name `factor2` in the nested object too (TICKET-033) -- harmonized with the
+  # TMB backend and the flat tidy() output. The collapse-mapped name is gone.
   expect_true("alpha" %in% names(comps))
   expect_true(is.data.frame(comps$alpha$contrasts_log10))
   expect_true(nrow(comps$alpha$contrasts_log10) > 0)
-  # The mapped factor should appear in the results
-  expect_true("factor2_alpha" %in% names(comps$alpha$contrasts_log10))
+  expect_true("factor2" %in% names(comps$alpha$contrasts_log10))
+  expect_false("factor2_alpha" %in% names(comps$alpha$contrasts_log10))
+
+  # ratio block carries the same renamed by-column.
+  expect_true("factor2" %in% names(comps$alpha$contrasts_ratio))
+  expect_false("factor2_alpha" %in% names(comps$alpha$contrasts_ratio))
+
+  # Values are preserved (the collapsed level labels), only the name moved.
+  expect_false(any(is.na(comps$alpha$contrasts_log10$factor2)))
 })
 
 

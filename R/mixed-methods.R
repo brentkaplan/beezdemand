@@ -1063,7 +1063,11 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #'   \item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
 #'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of comparisons
 #'     as ratios (natural scale), with CIs for ratios.}
-#'   S3 class `beezdemand_comparison` is assigned.
+#'   S3 class `beezdemand_comparison` is assigned. When `contrast_by` is active,
+#'   the nested contrast tables carry leading by-column(s) named with the
+#'   user-requested *original* factor name (e.g. `dose`, not the
+#'   collapse-mapped `dose_alpha`), harmonized with the TMB backend and the flat
+#'   [tidy()][tidy.beezdemand_comparison] output (TICKET-033).
 #'
 #' @examples
 #' \donttest{
@@ -1419,9 +1423,10 @@ get_demand_comparisons.beezdemand_nlme <- function(
       }
 
       # Map contrast_by to collapsed factor name if needed. `cb_map_param`
-      # records the original -> effective resolution (TICKET-032) so the flat
-      # tidy() output and the `contrast_by_map` attribute can rename the NLME
-      # nested by-column (effective) back to the user-requested original.
+      # records the original -> effective resolution and drives three things:
+      # the construction-time rename of the nested by-column back to the
+      # user-requested original (TICKET-033), the `contrast_by_map` metadata
+      # attribute, and the flat tidy() fallback lookup (TICKET-032).
       effective_contrast_by <- contrast_by
       cb_map_param <- if (is.null(contrast_by)) {
         stats::setNames(character(0), character(0))
@@ -1466,6 +1471,22 @@ get_demand_comparisons.beezdemand_nlme <- function(
           # contrast_by factors not available for this parameter
           effective_contrast_by <- NULL
         }
+      }
+
+      # TICKET-033 (Codex R2): mirror the TMB within-param collision guard
+      # (R/tmb-methods.R duplicate-effective check). Two requested by-vars that
+      # resolve to the SAME effective column -- e.g.
+      # contrast_by = c("age_group", "age_group_alpha") under asymmetric
+      # collapse (both map to age_group_alpha for alpha), or a literal duplicate
+      # c("gender", "gender") with no collapse -- would otherwise pass a
+      # malformed `by` to emmeans::contrast() and mislabel the renamed nested
+      # by-column. Abort loudly per parameter, before the contrast call.
+      if (!is.null(effective_contrast_by) &&
+          any(duplicated(effective_contrast_by))) {
+        cli::cli_abort(c(
+          "Two {.arg contrast_by} variables resolve to the same column for {param_name}.",
+          "i" = "Resolved columns: {.val {effective_contrast_by}}."
+        ))
       }
 
       # Redundant 'by' check
@@ -1641,6 +1662,63 @@ get_demand_comparisons.beezdemand_nlme <- function(
                   "p.value"
                 )
             }
+
+            # TICKET-033: rename the nested by-column(s) from the EFFECTIVE
+            # (collapse-mapped) name (e.g. "age_group_alpha") back to the
+            # user-requested ORIGINAL ("age_group"), so the NLME nested
+            # $contrasts_log10 / $contrasts_ratio by-columns match the TMB
+            # backend and the flat tidy() output. No-op when no collapse-mapping
+            # occurred (effective == original) or when by-grouping fell through
+            # (map filtered to empty). MUST run AFTER the $contrasts_ratio block
+            # above, which selects the effective by-cols from the log10 table.
+            cb_rename <- contrast_by_map_list[[param_name]] # original -> effective
+            cb_rename <- cb_rename[names(cb_rename) != unname(cb_rename)]
+            if (length(cb_rename) > 0L) {
+              present <- unname(cb_rename) %in%
+                names(current_param_results$contrasts_log10)
+              cb_rename <- cb_rename[present]
+            }
+            if (length(cb_rename) > 0L) {
+              # Collision guard (Codex B1): the user-original target name must
+              # not already exist among the NON-source columns of either nested
+              # table (e.g. a factor literally named `estimate`/`df`/`p.value`).
+              # Abort loudly rather than let dplyr::rename() error cryptically.
+              existing_cols <- unique(c(
+                names(current_param_results$contrasts_log10),
+                if (report_ratios &&
+                    !is.null(current_param_results$contrasts_ratio)) {
+                  names(current_param_results$contrasts_ratio)
+                } else {
+                  character(0)
+                }
+              ))
+              clash <- intersect(
+                names(cb_rename),
+                setdiff(existing_cols, unname(cb_rename))
+              )
+              if (length(clash) > 0L) {
+                cli::cli_abort(c(
+                  "Cannot harmonize {.arg contrast_by} column name{?s} for {param_name}.",
+                  "x" = "{cli::qty(clash)}Factor name{?s} {.val {clash}} collide{?s/} with a reserved contrast column.",
+                  "i" = "Rename the offending factor before fitting the model."
+                ))
+              }
+              # dplyr::rename(new = "old"); cb_rename is c(original = "effective").
+              current_param_results$contrasts_log10 <- dplyr::rename(
+                current_param_results$contrasts_log10, !!!cb_rename
+              )
+              if (report_ratios &&
+                  !is.null(current_param_results$contrasts_ratio) &&
+                  ncol(current_param_results$contrasts_ratio) > 0L) {
+                keep <- unname(cb_rename) %in%
+                  names(current_param_results$contrasts_ratio)
+                if (any(keep)) {
+                  current_param_results$contrasts_ratio <- dplyr::rename(
+                    current_param_results$contrasts_ratio, !!!cb_rename[keep]
+                  )
+                }
+              }
+            }
           }
         }
       } else {
@@ -1696,10 +1774,12 @@ get_demand_comparisons.beezdemand_nlme <- function(
 # the STRUCTURED `std_labels` attribute (built from ref-grid level values, not
 # regex), so they match emmeans' native level-value labels on the NLME side.
 #
-# TICKET-032: when `contrast_by` is active, by-columns (user-requested ORIGINAL
-# names) are inserted BEFORE `param`. TMB nested tables already carry the
-# original by-col names; NLME nested tables carry the EFFECTIVE (mapped) name,
-# so we rename effective -> original via the `contrast_by_map` attribute.
+# TICKET-032/033: when `contrast_by` is active, by-columns (user-requested
+# ORIGINAL names) are inserted BEFORE `param`. As of TICKET-033 BOTH backends
+# carry the user-original by-col name in the nested tables (TMB built them that
+# way; NLME now renames effective -> original at construction). The flattener
+# therefore prefers the original name and falls back to the effective name only
+# defensively (e.g. an externally-constructed or pre-033 cached object).
 .beezdemand_comparison_flat <- function(x, exponentiate = FALSE) {
   backend <- attr(x, "backend") %||% "nlme"
   by_used <- attr(x, "contrast_by_used")
@@ -1713,11 +1793,13 @@ get_demand_comparisons.beezdemand_nlme <- function(
     conf.low = numeric(), conf.high = numeric(), p.value = numeric()
   )
 
-  # Resolve the source column in `cl` for each user-requested by-name.
+  # Resolve the source column in `cl` for each user-requested by-name. Both
+  # backends now carry the user-original name (TICKET-033); prefer it, and fall
+  # back to the effective (collapse-mapped) name for defensiveness against
+  # externally-constructed or pre-033 cached objects on the NLME side.
   by_source_col <- function(nm, cl, p) {
-    if (identical(backend, "tmb")) {
-      if (nm %in% names(cl)) return(nm)
-    } else {
+    if (nm %in% names(cl)) return(nm)
+    if (!identical(backend, "tmb")) {
       pm <- if (!is.null(cb_map)) cb_map[[p]] else NULL
       eff <- if (!is.null(pm) && nm %in% names(pm)) pm[[nm]] else nm
       if (eff %in% names(cl)) return(eff)

@@ -70,7 +70,11 @@ A list named by parameter. Each element contains:
 \item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
 \item{contrasts_ratio}{(If \code{report_ratios=TRUE} and successful) Tibble of comparisons
 as ratios (natural scale), with CIs for ratios.}
-S3 class \code{beezdemand_comparison} is assigned.
+S3 class \code{beezdemand_comparison} is assigned. When \code{contrast_by} is active,
+the nested contrast tables carry leading by-column(s) named with the
+user-requested \emph{original} factor name (e.g. \code{dose}, not the
+collapse-mapped \code{dose_alpha}), harmonized with the TMB backend and the flat
+\link[=tidy.beezdemand_comparison]{tidy()} output (TICKET-033).
 }
 \description{
 Conducts pairwise comparisons for Q0 and/or alpha parameters from a

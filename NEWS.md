@@ -7,6 +7,29 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## get_demand_comparisons() NLME nested by-column naming (TICKET-033)
+
+* **Breaking (NLME, narrow):** when `contrast_by` conditions on a factor that
+  was asymmetrically collapsed via `collapse_levels`, the nested
+  `$contrasts_log10` / `$contrasts_ratio` by-column(s) now use the
+  **user-requested original** factor name (e.g. `age_group`) instead of the
+  collapse-mapped name (e.g. `age_group_alpha`). This completes the TICKET-016
+  harmonization: the NLME nested object now matches the TMB backend and the
+  flat `tidy()` output, all of which already used the original name. The
+  by-column **values** (the collapsed level labels) are unchanged. Only code
+  that reads the suffixed nested by-column directly
+  (`comps$alpha$contrasts_log10$age_group_alpha`) is affected — replace with the
+  original name (`...$age_group`). `tidy()` output and the uncollapsed-fit case
+  are unaffected.
+
+* Two robustness guards were added to the NLME `contrast_by` path: supplying two
+  by-variables that resolve to the same effective column (e.g.
+  `c("age_group", "age_group_alpha")` under collapse) now aborts, **mirroring the
+  TMB backend**; and a factor name that would collide with a reserved contrast
+  column during the nested rename (e.g. a factor literally named `estimate`) now
+  aborts with a clear message rather than failing cryptically (this collision
+  guard is NLME-specific — it arises from the rename introduced here).
+
 ## get_demand_comparisons() by-grouped contrasts on TMB (TICKET-032)
 
 * `get_demand_comparisons()` now supports `contrast_by` on the **TMB** backend,
