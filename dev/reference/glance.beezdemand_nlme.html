@@ -87,11 +87,23 @@
 <li><p><code>n_subjects</code>: Number of subjects</p></li>
 <li><p><code>n_random_effects</code>: Number of random-effect terms (e.g. 2 for
 <code>Q0 + alpha ~ 1</code>)</p></li>
-<li><p><code>converged</code>: Convergence status</p></li>
+<li><p><code>converged</code>: Operational convergence status. <code>TRUE</code> when the final fit is
+usable for inference — i.e. <code>apVar</code> (nlme's approximate covariance of the
+variance-covariance parameters) is positive-definite AND there is no
+terminal error. Alias for <code>final_fit_ok</code>. As of TICKET-020 this is no
+longer flipped to <code>FALSE</code> by iteration-level optimizer warnings (see
+<code>fit_warned</code>).</p></li>
+<li><p><code>final_fit_ok</code>: The canonical usable-for-inference gate (<code>apVar</code> PD and no
+terminal error); identical to <code>converged</code>. NLME-only.</p></li>
+<li><p><code>fit_warned</code>: Diagnostic flag — <code>TRUE</code> when nlme emitted iteration-level
+convergence warnings (false convergence, singular, step-halving, iteration
+limit, ...) during PNLS-LME alternation. Informational only; does not gate
+<code>converged</code>. NLME-only.</p></li>
 <li><p><code>logLik</code>, <code>AIC</code>, <code>BIC</code>: Model fit statistics</p></li>
 <li><p><code>sigma</code>: Residual standard error (NLME-only)</p></li>
-</ul><p>The canonical columns match <code><a href="glance.beezdemand_tmb.html">glance.beezdemand_tmb()</a></code>, so
-backend-agnostic code needs no dispatch glue.</p>
+</ul><p>The shared canonical columns (through <code>converged</code>, <code>logLik</code>, <code>AIC</code>, <code>BIC</code>)
+match <code><a href="glance.beezdemand_tmb.html">glance.beezdemand_tmb()</a></code>, so backend-agnostic code needs no dispatch
+glue; <code>final_fit_ok</code> and <code>fit_warned</code> are additive NLME-only diagnostics.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

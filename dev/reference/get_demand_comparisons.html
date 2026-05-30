@@ -173,7 +173,11 @@ instead (deprecated in 0.3.0 to harmonize with the TMB backend).</p></dd>
 <dd><p>(If <code>report_ratios=TRUE</code> and successful) Tibble of comparisons
 as ratios (natural scale), with CIs for ratios.</p></dd>
 
-</dl><p>S3 class <code>beezdemand_comparison</code> is assigned.</p>
+</dl><p>S3 class <code>beezdemand_comparison</code> is assigned. When <code>contrast_by</code> is active,
+the nested contrast tables carry leading by-column(s) named with the
+user-requested <em>original</em> factor name (e.g. <code>dose</code>, not the
+collapse-mapped <code>dose_alpha</code>), harmonized with the TMB backend and the flat
+<a href="tidy.beezdemand_comparison.html">tidy()</a> output (TICKET-033).</p>
     </div>
 
     <div class="section level2">

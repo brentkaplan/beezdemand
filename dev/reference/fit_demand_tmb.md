@@ -420,7 +420,7 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 171.11 (start set 2 of 3)
+#>   Multi-start: best NLL = 171.12 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
 #> Warning: NaNs produced
