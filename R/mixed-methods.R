@@ -2996,6 +2996,548 @@ ranef.beezdemand_nlme <- function(object, ...) {
   nlme::ranef(object$model, ...)
 }
 
+# ===========================================================================
+# get_subject_pars.beezdemand_nlme() (TICKET-034)
+#
+# Subject-level demand parameters for an NLME fit, reconstructed as
+# `param_{i,cell} = back(X_row %*% fixef + Z_row %*% ranef[subject])`. Mirrors
+# the verified TMB path (.tmb_compute_subject_pars) but back-transforms with
+# `10^` (NLME's internal scale is log10) instead of `exp`. Z is built from the
+# random-effects formula via model.matrix (NOT by parsing ranef() labels);
+# ranef() column names are used only to align each design column to its BLUP.
+# ===========================================================================
+
+# Build the xlev list for a set of factor names (factors with >= 2 levels),
+# using training-data levels so contrasts match the fitted model.
+.nlme_get_xlevs <- function(factor_names, dat) {
+  xlevs <- list()
+  for (f in factor_names) {
+    if (f %in% names(dat)) {
+      col <- dat[[f]]
+      if (!is.factor(col)) col <- factor(col)
+      if (nlevels(col) >= 2L) xlevs[[f]] <- levels(col)
+    }
+  }
+  xlevs
+}
+
+# Factor/character variables referenced by a one-sided fixed-effects formula
+# string that are present in the training data.
+.nlme_fixed_factor_vars <- function(form_str, train_data) {
+  vars <- all.vars(stats::as.formula(form_str))
+  vars <- intersect(vars, names(train_data))
+  vars[vapply(vars, function(v) {
+    is.factor(train_data[[v]]) || is.character(train_data[[v]])
+  }, logical(1))]
+}
+
+# Coerce every newdata column that is a factor/character in the training data
+# to a factor carrying the FULL training levels, so model.matrix() (for both X
+# and Z) produces the same contrast / indicator columns the fit used.
+.nlme_coerce_training_factors <- function(newdata, train_data) {
+  for (v in names(newdata)) {
+    if (v %in% names(train_data) &&
+        (is.factor(train_data[[v]]) || is.character(train_data[[v]]))) {
+      newdata[[v]] <- factor(newdata[[v]], levels = levels(factor(train_data[[v]])))
+    }
+  }
+  newdata
+}
+
+# Fixed-effect design matrix for one parameter, built with training levels.
+# Aborts if any row is dropped (would misalign with newdata).
+.nlme_fixed_design <- function(form_str, newdata, train_data) {
+  form <- stats::as.formula(form_str)
+  fac_vars <- .nlme_fixed_factor_vars(form_str, train_data)
+  xlev <- .nlme_get_xlevs(fac_vars, train_data)
+  X <- stats::model.matrix(form, data = newdata, xlev = xlev)
+  if (nrow(X) != nrow(newdata)) {
+    cli::cli_abort(c(
+      "Internal error building the fixed-effect design in {.fn get_subject_pars}.",
+      "i" = "{nrow(newdata) - nrow(X)} row(s) were dropped (NA or unmatched factor level)."
+    ))
+  }
+  X
+}
+
+# Match one (parameter, RE term) to its ranef() column index. nlme names a
+# parameter's RE column `<p>.<term>` when it has multiple terms, but a bare
+# `<p>` for an intercept-only parameter -- accept both. Aborts when the term
+# cannot be matched, or when the column name is duplicated (the only way two
+# matches arise for a single term lookup).
+.nlme_match_re_column <- function(re_cols, p, t) {
+  cands <- paste0(p, ".", t)
+  if (t == "(Intercept)") cands <- c(cands, p)
+  matches <- which(re_cols %in% cands)
+  if (length(matches) == 0L) {
+    cli::cli_abort(c(
+      "Cannot align random effect {.val {paste0(p, '.', t)}} to {.fn ranef} output.",
+      "i" = "Available columns: {.val {re_cols}}"
+    ))
+  }
+  if (length(matches) > 1L) {
+    cli::cli_abort(c(
+      "Random-effect term {.val {paste0(p, '.', t)}} is ambiguous (duplicate across blocks).",
+      "i" = "Duplicate RE terms across {.cls pdBlocked} blocks are not supported; use distinct terms per block."
+    ))
+  }
+  matches
+}
+
+# Reconstruct per-row natural-scale Q0 and alpha for an NLME fit.
+# `newdata` may be one row per subject (wide path) or one row per
+# (subject, factor-cell) (expanded path).
+.nlme_build_predicted_pars <- function(object, newdata) {
+  pinfo <- object$param_info
+  fd <- object$formula_details
+  internal_space <- object$param_space %||% pinfo$param_space %||% "log10"
+  id_var <- pinfo$id_var
+
+  newdata <- .nlme_coerce_training_factors(newdata, object$data)
+
+  fe <- nlme::fixef(object$model)
+  re <- nlme::ranef(object$model)
+  re_parsed <- .normalize_re_input(
+    fd$random_effects_formula,
+    covariance_structure = "pdDiag",
+    data = object$data
+  )
+
+  subj_idx <- match(as.character(newdata[[id_var]]), rownames(re))
+  if (anyNA(subj_idx)) {
+    bad <- unique(as.character(newdata[[id_var]])[is.na(subj_idx)])
+    cli::cli_abort(c(
+      "{.fn get_subject_pars} received subject id(s) not present in the fitted model:",
+      "x" = "{.val {bad}}"
+    ))
+  }
+
+  compute_param <- function(p) {
+    form_str <- if (p == "Q0") {
+      fd$fixed_effects_formula_str_Q0
+    } else {
+      fd$fixed_effects_formula_str_alpha
+    }
+    X <- .nlme_fixed_design(form_str, newdata, object$data)
+    # nlme names a parameter's coefficients `<p>.<term>` when it has >1 term,
+    # but a bare `<p>` when it has only an intercept. Normalize both to the
+    # model-matrix term name ("(Intercept)").
+    beta <- fe[names(fe) == p | startsWith(names(fe), paste0(p, "."))]
+    bn <- names(beta)
+    names(beta) <- ifelse(bn == p, "(Intercept)", sub(paste0("^", p, "\\."), "", bn))
+    if (anyDuplicated(colnames(X)) || anyDuplicated(names(beta))) {
+      cli::cli_abort(c(
+        "Duplicate column/coefficient names in the fixed-effect design for {.field {p}}.",
+        "i" = "design: {.val {colnames(X)}}",
+        "i" = "coefs: {.val {names(beta)}}"
+      ))
+    }
+    if (!setequal(colnames(X), names(beta))) {
+      cli::cli_abort(c(
+        "Fixed-effect design columns for {.field {p}} do not match the fitted coefficients.",
+        "i" = "design: {.val {colnames(X)}}",
+        "i" = "coefs: {.val {names(beta)}}"
+      ))
+    }
+    eta <- as.numeric(X %*% beta[colnames(X)])
+
+    p_low <- tolower(p)
+    consumed <- integer(0)
+    for (b in re_parsed$blocks) {
+      terms_p <- if (p == "Q0") b$terms_q0 else b$terms_alpha
+      if (length(terms_p) == 0L) next
+      Zb <- .tmb_block_design_columns(b, newdata, parameter = p_low)
+      if (nrow(Zb) != nrow(newdata)) {
+        cli::cli_abort("Internal error: random-effect design row mismatch in {.fn get_subject_pars}.")
+      }
+      for (t in terms_p) {
+        idx <- .nlme_match_re_column(colnames(re), p, t)
+        if (idx %in% consumed) {
+          # Same term supplied by two different blocks -> points at one ranef
+          # column; double-counting would be silently wrong.
+          cli::cli_abort(c(
+            "Random-effect term {.val {paste0(p, '.', t)}} is ambiguous (duplicate across blocks).",
+            "i" = "Duplicate RE terms across {.cls pdBlocked} blocks are not supported; use distinct terms per block."
+          ))
+        }
+        consumed <- c(consumed, idx)
+        eta <- eta + Zb[, t] * re[subj_idx, idx]
+      }
+    }
+    if (internal_space == "log10") 10^eta else eta
+  }
+
+  list(Q0 = compute_param("Q0"), alpha = compute_param("alpha"))
+}
+
+# Build X_q0/X_alpha/Z_q0/Z_alpha over the TRAINING rows plus the per-row
+# subject id, for the within-id design-variation check.
+.nlme_subject_design <- function(object) {
+  fd <- object$formula_details
+  data <- object$data
+  id_var <- object$param_info$id_var
+  data2 <- .nlme_coerce_training_factors(data, data)
+
+  X_q0 <- .nlme_fixed_design(fd$fixed_effects_formula_str_Q0, data2, data)
+  X_alpha <- .nlme_fixed_design(fd$fixed_effects_formula_str_alpha, data2, data)
+  re_parsed <- .normalize_re_input(
+    fd$random_effects_formula,
+    covariance_structure = "pdDiag",
+    data = data
+  )
+  zb <- .tmb_build_z_matrices(re_parsed, data2, id_var)
+
+  list(
+    X_q0 = X_q0, X_alpha = X_alpha,
+    Z_q0 = zb$Z_q0, Z_alpha = zb$Z_alpha,
+    subject_id = as.character(data[[id_var]])
+  )
+}
+
+# Per-subject within-id design-column variation (port of the TMB
+# .check_within_id at R/tmb-demand.R:872-905). Returns a per-subject logical
+# flag (ordered by first appearance of the id) plus the named version and the
+# offending column names.
+.nlme_check_within_id <- function(design, subject_id) {
+  subj_levels <- unique(subject_id)
+  affected <- stats::setNames(logical(length(subj_levels)),
+                              as.character(subj_levels))
+  offending <- character(0)
+  check_mat <- function(mat, nm) {
+    if (is.null(mat) || ncol(mat) == 0L) return(invisible(NULL))
+    cn <- colnames(mat)
+    if (is.null(cn)) cn <- paste0(nm, "[,", seq_len(ncol(mat)), "]")
+    for (j in seq_len(ncol(mat))) {
+      sp <- split(mat[, j], subject_id)
+      varies <- vapply(sp, function(v) length(unique(v)) > 1L, logical(1))
+      if (any(varies)) {
+        offending <<- c(offending, cn[j])
+        affected[names(varies)[varies]] <<- TRUE
+      }
+    }
+  }
+  check_mat(design$X_q0, "X_q0")
+  check_mat(design$X_alpha, "X_alpha")
+  check_mat(design$Z_q0, "Z_q0")
+  check_mat(design$Z_alpha, "Z_alpha")
+  list(
+    affected = unname(affected),
+    affected_named = affected,
+    subjects = as.character(subj_levels),
+    offending_cols = unique(offending)
+  )
+}
+
+# Resolve the `expanded` argument for the NLME method. NLME has no fit-time
+# subject_pars cache, so the within-id signal comes from the design check.
+# Abort + warning strings copied verbatim from .resolve_subject_pars_expanded
+# (R/tmb-methods.R) so behavior is identical across backends.
+.resolve_subject_pars_expanded_nlme <- function(object, expanded, any_within_id) {
+  if (is.null(expanded)) {
+    return(isTRUE(any_within_id))
+  }
+  if (!is.logical(expanded) || length(expanded) != 1L || is.na(expanded)) {
+    cli::cli_abort(c(
+      "{.arg expanded} must be {.code TRUE}, {.code FALSE}, or {.code NULL}.",
+      "i" = "Got {.cls {class(expanded)[1]}} of length {length(expanded)}."
+    ))
+  }
+  if (!expanded && isTRUE(any_within_id)) {
+    cli::cli_warn(c(
+      "{.field subject_pars} returned with {.field Q0}/{.field alpha} as {.val NA} for affected subjects.",
+      "i" = "Call {.code get_subject_pars(fit)} (auto-detect) or {.code get_subject_pars(fit, expanded = TRUE)} for per-(subject, factor-level) values."
+    ))
+  }
+  expanded
+}
+
+# Discover within-id candidate variables and build the long
+# one-row-per-(subject, factor-cell) newdata. Duplicated from the
+# backend-agnostic TMB scaffold (R/tmb-methods.R:1574-1716); RE-RHS variables
+# are taken from all.vars() of each parsed RE block formula (so RE-only
+# factors are caught), and within-id numerics are conditioned at subject mean.
+.nlme_subject_pars_long_newdata <- function(object) {
+  pinfo <- object$param_info
+  fd <- object$formula_details
+  data <- object$data
+  id_var <- pinfo$id_var
+
+  re_parsed <- .normalize_re_input(
+    fd$random_effects_formula,
+    covariance_structure = "pdDiag",
+    data = data
+  )
+  re_rhs_vars <- unique(unlist(lapply(re_parsed$blocks, function(b) {
+    setdiff(all.vars(b$formula), c("Q0", "alpha"))
+  })))
+  # Variables that enter only via fixed_rhs are NOT in pinfo$factors* /
+  # continuous_covariates, so pull them straight off the fixed-effect formula
+  # strings; otherwise a within-id fixed_rhs term would be silently collapsed
+  # to the subject's first row instead of expanded / mean-conditioned.
+  fixed_rhs_vars <- unique(c(
+    all.vars(stats::as.formula(fd$fixed_effects_formula_str_Q0)),
+    all.vars(stats::as.formula(fd$fixed_effects_formula_str_alpha))
+  ))
+
+  candidate_vars <- unique(c(
+    pinfo$factors, pinfo$factors_Q0, pinfo$factors_alpha,
+    pinfo$continuous_covariates, re_rhs_vars, fixed_rhs_vars
+  ))
+  candidate_vars <- candidate_vars[
+    !is.na(candidate_vars) & nzchar(candidate_vars) &
+      candidate_vars %in% names(data)
+  ]
+
+  classify <- function(var) {
+    vals <- data[[var]]
+    if (is.factor(vals) || is.character(vals)) {
+      type <- "factor"
+      lvls <- if (is.factor(vals)) levels(vals) else sort(unique(vals))
+    } else if (is.numeric(vals)) {
+      type <- "numeric"
+      lvls <- NULL
+    } else {
+      cli::cli_abort(c(
+        "Cannot expand {.field subject_pars} over term {.field {var}} of type {.cls {class(vals)[1]}}.",
+        "i" = "Pass {.code expanded = FALSE}, or pre-process the variable into a factor or numeric before fitting."
+      ))
+    }
+    by_id <- split(vals, data[[id_var]])
+    varies <- any(vapply(by_id, function(v) length(unique(v)) > 1L, logical(1)))
+    list(var = var, type = type, varies = varies, levels = lvls)
+  }
+  classification <- lapply(candidate_vars, classify)
+  names(classification) <- candidate_vars
+
+  expand_factors <- candidate_vars[
+    vapply(classification,
+           function(cls) cls$type == "factor" && cls$varies, logical(1))
+  ]
+
+  if (length(expand_factors) > 0L) {
+    expand_grid <- expand.grid(
+      lapply(expand_factors, function(var) classification[[var]]$levels),
+      KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE
+    )
+    names(expand_grid) <- expand_factors
+  } else {
+    expand_grid <- data.frame(.row = 1L)[, FALSE, drop = FALSE]
+  }
+
+  subj_ids <- as.character(unique(data[[id_var]]))
+  newdata_rows <- vector("list", length(subj_ids))
+  for (i in seq_along(subj_ids)) {
+    sid <- subj_ids[i]
+    subj_rows <- data[as.character(data[[id_var]]) == sid, , drop = FALSE]
+    if (nrow(subj_rows) == 0L) next
+
+    if (ncol(expand_grid) > 0L) {
+      cell_rows <- expand_grid
+    } else {
+      cell_rows <- data.frame(.placeholder = NA)[, character(0), drop = FALSE]
+      cell_rows[1L, ".tmp"] <- NA
+      cell_rows <- cell_rows[, character(0), drop = FALSE]
+    }
+    cell_rows[[id_var]] <- sid
+
+    if (!is.null(pinfo$x_var) && nzchar(pinfo$x_var)) {
+      cell_rows[[pinfo$x_var]] <- subj_rows[[pinfo$x_var]][1]
+    }
+
+    other_vars <- setdiff(
+      names(data),
+      c(id_var, pinfo$x_var, pinfo$y_var, expand_factors)
+    )
+    for (v in other_vars) {
+      cls <- classification[[v]]
+      if (is.null(cls)) {
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      } else if (cls$type == "factor" && !cls$varies) {
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      } else if (cls$type == "numeric" && cls$varies) {
+        cell_rows[[v]] <- mean(subj_rows[[v]], na.rm = TRUE)
+      } else if (cls$type == "numeric" && !cls$varies) {
+        cell_rows[[v]] <- subj_rows[[v]][1]
+      }
+    }
+
+    for (v in expand_factors) {
+      cell_rows[[v]] <- factor(cell_rows[[v]], levels = classification[[v]]$levels)
+    }
+
+    newdata_rows[[i]] <- cell_rows
+  }
+  newdata_long <- do.call(rbind, newdata_rows)
+  rownames(newdata_long) <- NULL
+
+  list(newdata_long = newdata_long, expand_factors = expand_factors)
+}
+
+# Compute Pmax/Omax for a vector of natural-scale (Q0, alpha) with a
+# row-aligned price_list (one element per output row, keyed by that row's
+# subject) -- matching beezdemand_calc_pmax_omax_vec()'s by-row indexing.
+.nlme_pmax_omax <- function(object, Q0, alpha, row_subject_ids) {
+  pinfo <- object$param_info
+  data <- object$data
+  k_val <- pinfo$k
+  has_k <- !is.null(k_val)
+
+  price_per_subject <- split(data[[pinfo$x_var]], as.character(data[[pinfo$id_var]]))
+  price_list <- lapply(as.character(row_subject_ids), function(sid) {
+    ps <- price_per_subject[[sid]]
+    if (is.null(ps)) numeric(0) else ps
+  })
+
+  if (has_k) {
+    params_df <- data.frame(alpha = alpha, q0 = Q0, k = rep(k_val, length(Q0)))
+    param_scales <- list(alpha = "natural", q0 = "natural", k = "natural")
+    model_type <- "hs"
+  } else {
+    params_df <- data.frame(alpha = alpha, q0 = Q0)
+    param_scales <- list(alpha = "natural", q0 = "natural")
+    model_type <- "snd"
+  }
+
+  res <- beezdemand_calc_pmax_omax_vec(
+    params_df = params_df,
+    model_type = model_type,
+    param_scales = param_scales,
+    price_list = price_list,
+    compute_observed = FALSE
+  )
+  list(Pmax = res$pmax_model, Omax = res$omax_model)
+}
+
+#' Get Subject-Specific Parameters from an NLME Demand Model
+#'
+#' Subject-level demand parameters for a \code{beezdemand_nlme} fit,
+#' matching the column / scale / \code{expanded} contract of
+#' \code{\link{get_subject_pars.beezdemand_tmb}}. Combines the population
+#' fixed effects with each subject's random-effect deviations and
+#' back-transforms to the natural scale.
+#'
+#' @param object A \code{beezdemand_nlme} object.
+#' @param expanded Controls the return shape for fits with within-id-varying
+#'   design columns (within-subject factors, within-id covariates, or
+#'   multi-block \code{pdBlocked} specs).
+#'   \itemize{
+#'     \item \code{NULL} (default): auto-detect. Expands to one row per
+#'       (subject, factor-level) cell when within-id variation is present;
+#'       otherwise returns the wide one-row-per-subject shape.
+#'     \item \code{TRUE}: always attempt expansion (no-op when there is no
+#'       within-id variation).
+#'     \item \code{FALSE}: always return the wide shape; emits a one-line
+#'       warning when within-id variation is present (the affected subjects'
+#'       \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax} are \code{NA}).
+#'   }
+#' @param ... Currently unused.
+#'
+#' @return A data frame. Wide form: \code{id}, \code{b_i}, \code{c_i} (if
+#'   alpha has random effects), \code{Q0}, \code{alpha}, \code{Pmax},
+#'   \code{Omax}. Expanded form additionally includes the within-subject
+#'   factor column(s) with one row per (subject, factor-level) cell.
+#'   \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax} are on the natural
+#'   scale.
+#'
+#' @section Random-effect aliases (\code{b_i} / \code{c_i}):
+#'   \code{b_i} / \code{c_i} are the subject's first-block random-effect
+#'   deviation for Q0 / alpha. For parity with the TMB method these are
+#'   reported on the natural-log linear-predictor scale: for the default
+#'   \code{param_space = "log10"} the stored log10 deviation is multiplied by
+#'   \code{log(10)}; for \code{param_space = "natural"} the deviation is
+#'   returned on the natural parameter scale. The full per-coefficient random
+#'   effects remain available via \code{ranef()}.
+#'
+#' @seealso \code{\link{get_subject_pars.beezdemand_tmb}}
+#' @method get_subject_pars beezdemand_nlme
+#' @export
+get_subject_pars.beezdemand_nlme <- function(object, expanded = NULL, ...) {
+  if (!inherits(object, "beezdemand_nlme")) {
+    stop("Input 'object' must be of class 'beezdemand_nlme'.")
+  }
+  if (is.null(object$model)) {
+    cli::cli_abort("No fitted model found in the object; fitting may have failed.")
+  }
+
+  pinfo <- object$param_info
+  internal_space <- object$param_space %||% pinfo$param_space %||% "log10"
+  id_var <- pinfo$id_var
+
+  design <- .nlme_subject_design(object)
+  check <- .nlme_check_within_id(design, design$subject_id)
+  any_within_id <- any(check$affected)
+  expanded <- .resolve_subject_pars_expanded_nlme(object, expanded, any_within_id)
+
+  # Per-subject random-effect aliases (natural-log scale to match TMB).
+  re <- nlme::ranef(object$model)
+  ids <- rownames(re)
+  scale_re <- if (internal_space == "log10") log(10) else 1
+  # Match `Q0`/`alpha` (bare, intercept-only) or `Q0.`/`alpha.` (multi-term).
+  q0_re_cols <- grep("^Q0(\\.|$)", colnames(re), value = TRUE)
+  alpha_re_cols <- grep("^alpha(\\.|$)", colnames(re), value = TRUE)
+  b_i <- if (length(q0_re_cols) > 0L) re[[q0_re_cols[1]]] * scale_re else NULL
+  c_i <- if (length(alpha_re_cols) > 0L) re[[alpha_re_cols[1]]] * scale_re else NULL
+
+  # Wide path: when expanded is FALSE, OR when there is no within-id variation
+  # (so expansion is a no-op -- matches the TMB method's early return and keeps
+  # row order consistent with ranef()).
+  if (!expanded || !any_within_id) {
+    # Wide: one row per subject, parameters from the subject's first obs row.
+    data <- object$data
+    first_idx <- match(ids, as.character(data[[id_var]]))
+    newdata_wide <- data[first_idx, , drop = FALSE]
+    pp <- .nlme_build_predicted_pars(object, newdata_wide)
+    Q0 <- pp$Q0
+    alpha <- pp$alpha
+    po <- .nlme_pmax_omax(object, Q0, alpha, ids)
+    Pmax <- po$Pmax
+    Omax <- po$Omax
+
+    # NA only the affected subjects (per-subject parity with TMB).
+    aff <- check$affected_named[ids]
+    aff[is.na(aff)] <- FALSE
+    if (any(aff)) {
+      Q0[aff] <- NA_real_
+      alpha[aff] <- NA_real_
+      Pmax[aff] <- NA_real_
+      Omax[aff] <- NA_real_
+    }
+
+    out <- data.frame(id = ids, stringsAsFactors = FALSE)
+    if (!is.null(b_i)) out$b_i <- b_i
+    if (!is.null(c_i)) out$c_i <- c_i
+    out$Q0 <- Q0
+    out$alpha <- alpha
+    out$Pmax <- Pmax
+    out$Omax <- Omax
+    cols <- c("id", intersect(c("b_i", "c_i"), names(out)),
+              "Q0", "alpha", "Pmax", "Omax")
+    return(out[, cols])
+  }
+
+  # Expanded: one row per (subject, factor-cell).
+  nd <- .nlme_subject_pars_long_newdata(object)
+  newdata_long <- nd$newdata_long
+  expand_factors <- nd$expand_factors
+
+  pp <- .nlme_build_predicted_pars(object, newdata_long)
+  Q0 <- pp$Q0
+  alpha <- pp$alpha
+  row_ids <- as.character(newdata_long[[id_var]])
+  po <- .nlme_pmax_omax(object, Q0, alpha, row_ids)
+
+  out <- data.frame(id = newdata_long[[id_var]], stringsAsFactors = FALSE)
+  for (v in expand_factors) out[[v]] <- newdata_long[[v]]
+  spars_match <- match(row_ids, ids)
+  if (!is.null(b_i)) out$b_i <- b_i[spars_match]
+  if (!is.null(c_i)) out$c_i <- c_i[spars_match]
+  out$Q0 <- Q0
+  out$alpha <- alpha
+  out$Pmax <- po$Pmax
+  out$Omax <- po$Omax
+  out
+}
+
 #' Predict Method for beezdemand_nlme Objects
 #'
 #' Generates point predictions from a fitted `beezdemand_nlme` model.
