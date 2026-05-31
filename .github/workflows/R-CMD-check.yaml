@@ -5,6 +5,7 @@ on:
     branches: [main, master, develop, feat/*, fix/*]
   pull_request:
     branches: [main, master, develop]
+  workflow_dispatch:
 
 name: R-CMD-check
 
@@ -29,6 +30,15 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Cap thread fan-out so the parallel testthat workers don't oversubscribe the
+      # runner's cores and starve the GitHub runner agent of CPU (the documented
+      # "lost-communication"/SIGTERM cause). See project_ci_oom_diagnosis.
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      BLIS_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      R_DATATABLE_NUM_THREADS: 1
 
     steps:
       - uses: actions/checkout@v4

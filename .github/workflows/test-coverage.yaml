@@ -16,6 +16,14 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # Match R-CMD-check: cap thread fan-out to avoid CPU oversubscription /
+      # runner-agent starvation during the full-suite covr run.
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      BLIS_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      R_DATATABLE_NUM_THREADS: 1
 
     steps:
       - uses: actions/checkout@v4
