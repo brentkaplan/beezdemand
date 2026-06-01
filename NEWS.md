@@ -7,6 +7,22 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## NLME summary/tidy reporting fixes
+
+* **Bug fix.** `tidy(fit_nlme, report_space = "natural")` now reports the same
+  degrees-of-freedom-aware p-values as `summary()`. Previously `tidy()`
+  recomputed transformed-scale p-values with a normal approximation (`pnorm()`)
+  while `summary()` correctly reused nlme's containment t degrees of freedom
+  (`pt()`; TICKET-006), so the two methods disagreed — anti-conservatively in
+  `tidy()` — for small samples. Both now share a single recompute helper.
+
+* **Bug fix.** `summary(fit_nlme)$converged` now reflects the same operational
+  convergence gate as `glance(fit_nlme)$converged` (positive-definite `apVar`
+  **and** no terminal error; TICKET-020). It previously hard-coded `TRUE`, so a
+  summary could report convergence on a fit that `glance()` correctly flagged as
+  unusable for inference. Any diagnostic message now appears in the summary's
+  `notes`.
+
 ## Subject-level parameters for NLME fits (TICKET-034)
 
 * **New method.** `get_subject_pars()` now has a `beezdemand_nlme` method,

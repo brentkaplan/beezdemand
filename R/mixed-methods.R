@@ -2283,6 +2283,24 @@ print.beezdemand_nlme <- function(
   invisible(x)
 }
 
+# Recompute fixed-effect test statistics and p-values after a delta-method
+# parameter transformation (when report_space != internal_space). The transform
+# rescales estimate/SE but does NOT change the underlying t-distribution, so
+# nlme's containment-based degrees of freedom are reused; the z-test is only a
+# fallback when DF are unavailable (TICKET-006). Shared by
+# summary.beezdemand_nlme() and tidy.beezdemand_nlme() so the two methods report
+# identical inference on the same fit and cannot drift (release-audit C1: tidy
+# had silently used pnorm() while summary used pt()).
+.nlme_recompute_transformed_stats <- function(estimate, std.error, df_residual) {
+  statistic <- estimate / std.error
+  p.value <- if (all(is.na(df_residual))) {
+    2 * stats::pnorm(-abs(statistic))
+  } else {
+    2 * stats::pt(-abs(statistic), df = df_residual)
+  }
+  list(statistic = statistic, p.value = p.value)
+}
+
 #' Summary method for beezdemand_nlme
 #'
 #' Returns a structured summary object containing model coefficients,
@@ -2363,12 +2381,11 @@ summary.beezdemand_nlme <- function(
       report_space = report_space,
       internal_space = internal_space
     )
-    coefficients$statistic <- coefficients$estimate / coefficients$std.error
-    coefficients$p.value <- if (all(is.na(df_residual))) {
-      2 * stats::pnorm(-abs(coefficients$statistic))
-    } else {
-      2 * stats::pt(-abs(coefficients$statistic), df = df_residual)
-    }
+    rec <- .nlme_recompute_transformed_stats(
+      coefficients$estimate, coefficients$std.error, df_residual
+    )
+    coefficients$statistic <- rec$statistic
+    coefficients$p.value <- rec$p.value
   }
 
   # Random effects structure
@@ -2392,6 +2409,17 @@ summary.beezdemand_nlme <- function(
     }
   }, error = function(e) NA_integer_)
 
+  # Operational convergence gate, shared with glance.beezdemand_nlme() via the
+  # same helper (TICKET-020). summary() previously hard-coded converged = TRUE,
+  # which contradicted glance() on an unusable (non-PD apVar) fit (release-audit
+  # C2). The diagnostic message (if any) is surfaced in `notes`.
+  conv <- .check_nlme_convergence(object)
+  conv_notes <- if (!isTRUE(conv$converged) && !is.null(conv$message)) {
+    conv$message
+  } else {
+    character(0)
+  }
+
   structure(
     list(
       call = object$call,
@@ -2408,7 +2436,7 @@ summary.beezdemand_nlme <- function(
       id_var = object$param_info$id_var,
       nobs = n_obs,
       n_subjects = n_subjects,
-      converged = TRUE,
+      converged = conv$converged,
       logLik = as.numeric(stats::logLik(object$model)),
       AIC = stats::AIC(object$model),
       BIC = stats::BIC(object$model),
@@ -2417,7 +2445,7 @@ summary.beezdemand_nlme <- function(
       derived_metrics = beezdemand_empty_derived_metrics(),
       fixed_effects = ttable,
       random_effects = random_effects,
-      notes = character(0)
+      notes = conv_notes
     ),
     class = c("summary.beezdemand_nlme", "beezdemand_summary")
   )
@@ -2549,6 +2577,9 @@ tidy.beezdemand_nlme <- function(
   if ("fixed" %in% effects) {
     nlme_summary <- summary(x$model)
     ttable <- nlme_summary$tTable
+    # Preserve nlme's containment-based DF for the post-transform recompute
+    # (see .nlme_recompute_transformed_stats / TICKET-006).
+    df_residual <- if ("DF" %in% colnames(ttable)) ttable[, "DF"] else NA_real_
     fixed <- tibble::tibble(
       term = rownames(ttable),
       estimate = ttable[, "Value"],
@@ -2567,11 +2598,13 @@ tidy.beezdemand_nlme <- function(
     )
 
     if (report_space != internal_space) {
-      fixed <- fixed |>
-        dplyr::mutate(
-          statistic = .data$estimate / .data$std.error,
-          p.value = 2 * stats::pnorm(-abs(.data$statistic))
-        )
+      # Reuse the DF-aware recompute shared with summary.beezdemand_nlme() so
+      # the two methods never disagree (release-audit C1).
+      rec <- .nlme_recompute_transformed_stats(
+        fixed$estimate, fixed$std.error, df_residual
+      )
+      fixed$statistic <- rec$statistic
+      fixed$p.value <- rec$p.value
     }
     result <- dplyr::bind_rows(result, fixed)
   }
