@@ -23,6 +23,16 @@ cover TICKET-011 phase work added under this development cycle.
   unusable for inference. Any diagnostic message now appears in the summary's
   `notes`.
 
+## TMB VarCorr multi-block correlation placement
+
+* **Bug fix.** `VarCorr(fit_tmb)` now places random-effect correlations on the
+  correct rows for multi-block `pdBlocked` fits. The `Corr` entries were
+  previously positioned using indices local to each covariance block, which was
+  correct only when the correlated (`pdSymm`) block came first; a correlated
+  block in any later position was placed on the wrong row. Positions are now
+  derived from the same block map used to compute `summary(fit)$correlations`,
+  adding each block's global row offset. Single-block fits are unaffected.
+
 ## Subject-level parameters for NLME fits (TICKET-034)
 
 * **New method.** `get_subject_pars()` now has a `beezdemand_nlme` method,

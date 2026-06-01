@@ -2265,6 +2265,35 @@ glance.beezdemand_tmb <- function(x, ...) {
 }
 
 
+# Global (row_j, col_k) matrix positions for each off-diagonal RE correlation of
+# a TMB pdBlocked structure, generated in the SAME block/j/k order that
+# .tmb_format_variance_components() emits summary()$correlations. Each pdSymm
+# block contributes its d*(d-1)/2 off-diagonals with the block's global row
+# offset (the cumulative RE dimension of all earlier blocks) added, so a
+# correlation between global REs j > k lands on row j, correlation-column k --
+# nlme's VarCorr layout. Used by VarCorr.beezdemand_tmb(); fixes release-audit
+# C3, where local block indices were used as global positions (correct only when
+# the correlated block happened to be first).
+.tmb_varcorr_corr_positions <- function(bmap) {
+  pos <- list()
+  if (is.null(bmap) || isTRUE(bmap$n_blocks < 1L)) return(pos)
+  offset <- 0L
+  for (b in seq_len(bmap$n_blocks)) {
+    d <- bmap$block_q0_dim[b] + bmap$block_alpha_dim[b]
+    if (is.na(d) || d == 0L) next
+    if (isTRUE(bmap$block_types[b] == 1L) && d > 1L) {
+      for (j in 2L:d) {
+        for (k in seq_len(j - 1L)) {
+          pos[[length(pos) + 1L]] <- c(offset + j, offset + k)
+        }
+      }
+    }
+    offset <- offset + d
+  }
+  pos
+}
+
+
 #' Random-Effect Variance Components for a TMB Demand Model
 #'
 #' Extracts the random-effect variance components from a \code{beezdemand_tmb}
@@ -2293,8 +2322,10 @@ glance.beezdemand_tmb <- function(x, ...) {
 #'
 #' @note The \code{Corr} column is placed using \code{nlme}'s convention ---
 #'   each correlation on the row of its higher-indexed random effect. For
-#'   multi-block \code{pdBlocked} fits this assumes a single correlated block;
-#'   consult \code{summary(x)$correlations} for the authoritative values.
+#'   multi-block \code{pdBlocked} fits the correlations are placed on the
+#'   correct global rows (each correlated block's off-diagonals are offset by
+#'   the cumulative random-effect dimension of the earlier blocks);
+#'   \code{summary(x)$correlations} remains available for the labelled values.
 #'
 #' @seealso \code{\link[nlme]{VarCorr}}, \code{\link{summary.beezdemand_tmb}}
 #'
@@ -2330,22 +2361,32 @@ VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
 
   variance <- sd_vals^2
 
-  # Correlation layout. Each summary()$correlations row is one off-diagonal of
-  # a pdSymm block, placed at the row of its higher-indexed random effect.
-  # rho_bc is the 2-RE shorthand for the (2, 1) element; rho[j,k] carries
-  # explicit indices (the trailing two integers, after any block prefix).
-  # Multi-block placement assumes a single correlated block.
+  # Correlation layout. Each summary()$correlations row is one off-diagonal of a
+  # pdSymm block, placed at the GLOBAL row of its higher-indexed random effect.
+  # Positions are derived from the same block map summary() used to generate the
+  # correlations (identical block/j/k order), so multi-block pdBlocked fits add
+  # each block's global row offset rather than treating local block indices as
+  # global (release-audit C3).
   jk <- list()
   if (!is.null(corr) && nrow(corr) > 0L) {
-    jk <- lapply(corr$Component, function(comp) {
-      if (grepl("^rho_bc", comp)) return(c(2L, 1L))
-      nums <- as.integer(regmatches(comp, gregexpr("[0-9]+", comp))[[1]])
-      if (length(nums) >= 2L) {
-        c(nums[length(nums) - 1L], nums[length(nums)])
-      } else {
-        c(NA_integer_, NA_integer_)
-      }
-    })
+    re_parsed <- x$param_info$random_effects_parsed
+    bmap <- if (!is.null(re_parsed)) .tmb_build_block_map(re_parsed) else NULL
+    jk <- .tmb_varcorr_corr_positions(bmap)
+
+    # Fallback (block map unavailable, or its off-diagonal count disagrees with
+    # the reported correlations): parse the trailing indices from the component
+    # labels. Correct for single-block fits; preserves pre-C3 behavior.
+    if (length(jk) != nrow(corr)) {
+      jk <- lapply(corr$Component, function(comp) {
+        if (grepl("^rho_bc", comp)) return(c(2L, 1L))
+        nums <- as.integer(regmatches(comp, gregexpr("[0-9]+", comp))[[1]])
+        if (length(nums) >= 2L) {
+          c(nums[length(nums) - 1L], nums[length(nums)])
+        } else {
+          c(NA_integer_, NA_integer_)
+        }
+      })
+    }
   }
   ok <- vapply(jk, function(v) all(is.finite(v)), logical(1))
   max_k <- if (any(ok)) max(vapply(jk[ok], function(v) v[2L], integer(1))) else 0L

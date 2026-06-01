@@ -39,8 +39,10 @@ it formats already-computed values and recomputes nothing.
 \note{
 The \code{Corr} column is placed using \code{nlme}'s convention ---
 each correlation on the row of its higher-indexed random effect. For
-multi-block \code{pdBlocked} fits this assumes a single correlated block;
-consult \code{summary(x)$correlations} for the authoritative values.
+multi-block \code{pdBlocked} fits the correlations are placed on the
+correct global rows (each correlated block's off-diagonals are offset by
+the cumulative random-effect dimension of the earlier blocks);
+\code{summary(x)$correlations} remains available for the labelled values.
 }
 \examples{
 \donttest{
