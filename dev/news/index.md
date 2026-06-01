@@ -10,6 +10,36 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### Subject-level parameters for NLME fits (TICKET-034)
+
+- **New method.**
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  now has a `beezdemand_nlme` method, closing the last cross-backend
+  asymmetry (every other demand-model extractor already had one). It
+  returns the same columns as
+  [`get_subject_pars.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md)
+  — wide form `id`, `b_i`, `c_i` (if alpha has random effects), `Q0`,
+  `alpha`, `Pmax`, `Omax`; expanded form adds the within-subject factor
+  column(s) with one row per (subject, factor-level) cell. `Q0`,
+  `alpha`, `Pmax`, `Omax` are on the natural scale.
+
+- Honors the same `expanded` contract as the TMB method: `NULL`
+  (default) auto-detects within-id variation and expands when present;
+  `TRUE` always attempts expansion; `FALSE` returns the wide shape and
+  warns (with affected subjects’ `Q0`/`alpha`/`Pmax`/`Omax` set to `NA`)
+  when within-id variation exists. Per-subject parameters are
+  reconstructed from the fixed effects plus each subject’s random-effect
+  deviations and back-transformed from the model’s `param_space` (log10
+  by default) to the natural scale.
+
+- The `b_i` / `c_i` random-effect aliases are reported on the
+  natural-log linear-predictor scale to match the TMB method (the log10
+  deviations are multiplied by `log(10)` for `param_space = "log10"`).
+  The full per-coefficient random effects remain available via
+  `ranef()`. The backend-agnostic expansion scaffold is currently
+  duplicated from the TMB method; unifying the two into a shared
+  internal is a planned follow-up.
+
 ### NLME convergence reporting (TICKET-020)
 
 - **Bug fix.** `glance(fit_nlme)$converged` no longer flips to `FALSE`

@@ -523,7 +523,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
-#>  [4] xfun_0.57           bslib_0.11.0        ggplot2_4.0.3      
+#>  [4] xfun_0.58           bslib_0.11.0        ggplot2_4.0.3      
 #>  [7] htmlwidgets_1.6.4   insight_1.5.1       lattice_0.22-9     
 #> [10] vctrs_0.7.3         tools_4.6.0         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    

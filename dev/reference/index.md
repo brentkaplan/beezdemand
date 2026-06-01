@@ -193,6 +193,8 @@ S3 methods for extracting information from fitted models.
   : Design matrices for a beezdemand_tmb fit
 - [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
   : Get Subject-Specific Parameters
+- [`get_subject_pars(`*`<beezdemand_nlme>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_nlme.md)
+  : Get Subject-Specific Parameters from an NLME Demand Model
 - [`get_subject_pars(`*`<beezdemand_tmb>`*`)`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md)
   : Get Subject-Specific Parameters from TMB Model
 - [`extract_coefficients()`](https://brentkaplan.github.io/beezdemand/reference/extract_coefficients.md)
