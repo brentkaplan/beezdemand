@@ -1,4 +1,4 @@
-# beezdemand 0.3.0 (development)
+# beezdemand 0.3.0
 
 This release ships the TMB mixed-effects modeling tier
 (`fit_demand_tmb()`) along with TICKET-011 — factor-expanded and
