@@ -23,6 +23,17 @@ cover TICKET-011 phase work added under this development cycle.
   unusable for inference. Any diagnostic message now appears in the summary's
   `notes`.
 
+## NLME comparison metadata
+
+* **Bug fix.** The `compare_specs_used` attribute on
+  `get_demand_comparisons(fit_nlme, ...)` output now records the user's
+  requested comparison spec (or `"all fitted factors"` when none is given),
+  matching the TMB backend. It previously stored the last parameter's
+  internally-derived per-parameter formula, which under asymmetric
+  `collapse_levels` was both misleading (it could show a collapsed
+  intercept-only `~1`, or an internal collapsed column name) and dependent on
+  the order of `param`.
+
 ## TMB VarCorr multi-block correlation placement
 
 * **Bug fix.** `VarCorr(fit_tmb)` now places random-effect correlations on the

@@ -408,6 +408,55 @@ test_that("get_demand_comparisons works with collapse_levels (asymmetric)", {
 })
 
 
+test_that("compare_specs_used records the user request, not the last param's collapsed formula (release-audit C4)", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 10, n_levels_factor1 = 3)
+
+  # Asymmetric collapse: Q0 keeps factor1 (2 levels), alpha collapses to a
+  # single level (intercept-only). The per-parameter emm formula thus differs,
+  # so the recorded `compare_specs_used` must NOT depend on which parameter
+  # happens to be processed last.
+  collapse_spec <- list(
+    Q0 = list(factor1 = list(low = c("level1", "level2"), high = c("level3"))),
+    alpha = list(factor1 = list(all = c("level1", "level2", "level3")))
+  )
+
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", collapse_levels = collapse_spec,
+    equation_form = "simplified"
+  )
+  skip_if(is.null(fit$model), "NLME fit did not converge")
+
+  # alpha LAST: old code stored alpha's collapsed "~1"; must be the user's spec.
+  comps <- get_demand_comparisons(fit, compare_specs = ~factor1,
+                                  param = c("Q0", "alpha"))
+  expect_equal(attr(comps, "compare_specs_used"), "~factor1")
+
+  # Order-independence: Q0 LAST must give the same recorded spec.
+  comps_rev <- get_demand_comparisons(fit, compare_specs = ~factor1,
+                                      param = c("alpha", "Q0"))
+  expect_equal(attr(comps_rev, "compare_specs_used"), "~factor1")
+})
+
+
+test_that("compare_specs_used default label matches the TMB backend when no spec given (release-audit C4)", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 10, n_levels_factor1 = 3)
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified"
+  )
+  skip_if(is.null(fit$model), "NLME fit did not converge")
+
+  comps <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
+  # Mirror get_demand_comparisons.beezdemand_tmb()'s NULL-spec label.
+  expect_equal(attr(comps, "compare_specs_used"), "all fitted factors")
+})
+
+
 test_that("get_demand_comparisons handles multiple factors with different levels", {
   skip_on_cran()
 

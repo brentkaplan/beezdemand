@@ -1742,7 +1742,17 @@ get_demand_comparisons.beezdemand_nlme <- function(
 
   class(results_list) <- "beezdemand_comparison"
   attr(results_list, "backend") <- "nlme"
-  attr(results_list, "compare_specs_used") <- deparse(emm_specs_formula)
+  # Record the user's requested comparison spec (or the all-factors default),
+  # NOT the last loop iteration's per-parameter `emm_specs_formula` -- under
+  # asymmetric `collapse_levels` that formula differs per parameter (and may
+  # carry an internal collapsed column name), so the previous value was both
+  # misleading and order-dependent. Mirrors the TMB backend's label
+  # (release-audit C4).
+  attr(results_list, "compare_specs_used") <- if (user_provided_specs) {
+    deparse(compare_specs)
+  } else {
+    "all fitted factors"
+  }
   attr(results_list, "contrast_type_used") <- contrast_type
   # `contrast_by_used` reports the user-requested ORIGINAL name(s) (TICKET-032),
   # so it survives collapse-mapping and is consistent across backends -- but
