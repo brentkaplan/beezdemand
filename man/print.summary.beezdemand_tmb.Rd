@@ -13,6 +13,10 @@
 
 \item{...}{Additional arguments.}
 }
+\value{
+Invisibly returns the input object \code{x}; called for its
+side effect of printing a formatted model summary to the console.
+}
 \description{
 Print Method for TMB Model Summary
 }

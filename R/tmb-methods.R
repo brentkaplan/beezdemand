@@ -594,6 +594,8 @@ summary.beezdemand_tmb <- function(
 #' @param digits Number of significant digits.
 #' @param ... Additional arguments.
 #'
+#' @return Invisibly returns the input object \code{x}; called for its
+#'   side effect of printing a formatted model summary to the console.
 #' @export
 print.summary.beezdemand_tmb <- function(x, digits = 4, ...) {
   cat("\nTMB Mixed-Effects Demand Model Summary\n")
