@@ -72,7 +72,9 @@ Compute Subject-Specific Parameters
 
 - validate_subject_pars:
 
-  Logical (default `TRUE`); see Phase 0 NA fallback.
+  Logical (default `TRUE`); see the `validate_subject_pars` argument of
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  for the NA fallback.
 
 ## Value
 
@@ -83,6 +85,6 @@ Data frame of subject-specific parameters.
 For factor-expanded RE specs (e.g. `pdDiag(Q0+alpha~condition)`),
 subject-level Q0 / alpha here use the first observed row of `Z_q0` /
 `Z_alpha` per subject – which encodes the subject's first observed
-condition only. Per-(subject, condition) rows are planned for Phase 5;
-meanwhile use [`predict()`](https://rdrr.io/r/stats/predict.html) for
-cell-level values.
+condition only. This helper does not emit per-(subject, condition) rows;
+use [`predict()`](https://rdrr.io/r/stats/predict.html) for cell-level
+values.

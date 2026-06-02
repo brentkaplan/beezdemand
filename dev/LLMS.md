@@ -3,7 +3,7 @@
 > Behavioral economic demand analysis in R. Models how consumption
 > declines as price increases using purchase task data.
 
-Package version: 0.2.0 Docs: <https://brentkaplan.github.io/beezdemand/>
+Package version: 0.3.0 Docs: <https://brentkaplan.github.io/beezdemand/>
 
 ## Entry Points
 

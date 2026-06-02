@@ -9,7 +9,7 @@ variance components, correlations, and fit statistics."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,8 +30,12 @@ variance components, correlations, and fit statistics."><meta property="og:image
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -82,7 +86,9 @@ variance components, correlations, and fit statistics.</p>
 <dd><p>Character. Reporting space for core demand parameters.
 One of:</p><ul><li><p><code>"internal"</code>: report internal/fitting parameters (default internal naming)</p></li>
 <li><p><code>"natural"</code>: report natural-scale parameters when a natural mapping exists</p></li>
-<li><p><code>"log10"</code>: report <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10()</a></code>-scale parameters when a mapping exists</p></li>
+<li><p><code>"log10"</code>: report <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10()</a></code>-scale parameters when a mapping exists
+<code>estimate</code>/<code>std.error</code> follow <code>report_space</code>; <code>statistic</code>/<code>p.value</code> are always
+computed on the estimation scale (transformation-invariant Wald test).</p></li>
 </ul></dd>
 
 
@@ -106,7 +112,8 @@ from <code>beezdemand_summary</code>) containing:</p><dl><dt>call</dt>
 <dd><p>Tibble of fixed effects with estimates, SEs, z-values, p-values</p></dd>
 
 <dt>coefficients_matrix</dt>
-<dd><p>Matrix form for printing (legacy compatibility)</p></dd>
+<dd><p>Matrix form for printing, on the internal
+(estimation) scale regardless of <code>report_space</code> (legacy compatibility)</p></dd>
 
 <dt>variance_components</dt>
 <dd><p>Matrix of variance/covariance estimates</p></dd>

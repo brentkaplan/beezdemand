@@ -22,3 +22,8 @@ print(x, digits = 4, ...)
 - ...:
 
   Additional arguments.
+
+## Value
+
+Invisibly returns the input object `x`; called for its side effect of
+printing a formatted model summary to the console.

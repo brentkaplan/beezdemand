@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,8 +28,12 @@
     <li><a class="dropdown-item" href="articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -60,7 +64,13 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format follows Keep a Changelog and this project adheres to Semantic Versioning.</p>
 <div class="section level2">
-<h2 id="unreleased"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
+<h2 id="id_030"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0" class="external-link">0.3.0</a><a class="anchor" aria-label="anchor" href="#id_030"></a></h2>
+<p>Major feature release. See <code>NEWS.md</code> for the complete, detailed changelog (TMB mixed-effects tier <code><a href="reference/fit_demand_tmb.html">fit_demand_tmb()</a></code>, factor-expanded/multi-block random effects, cross-backend EMM/contrast harmonization, parametric bootstrap CIs).</p>
+<div class="section level3">
+<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<ul><li>
+<strong>Reporting (broom convention).</strong> <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> report the Wald <code>statistic</code>/<code>p.value</code> on the estimation (log/log10) scale for every <code>report_space</code> (including the default <code>"natural"</code>); only <code>estimate</code>/<code>std.error</code> are back-transformed. This changes the default reported test statistic/p-value for the core demand parameters (Q0/alpha/k).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
 <ul><li>
@@ -95,7 +105,7 @@
 <li>Migration guide vignette (<code><a href="articles/migration-guide.html">vignette("migration-guide")</a></code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
 <ul><li>
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> methods for hurdle and NLME models now return structured S3 objects (use <code>print(summary(fit))</code> for console output).</li>
 <li>
@@ -155,7 +165,7 @@
 <code><a href="reference/ExtraF.html">ExtraF()</a></code> gained the ability to specify a start value for alpha.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
+<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
 <ul><li>Replaced dependency on <code>nlmrt</code> with <code>nlsr</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -202,7 +212,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.95%20tag%20exists.%20--">0.0.95</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0095---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
+<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> Output summary column formerly named <code>ID</code> is now <code>id</code> (lowercase). Update scripts to reference <code>id</code> accordingly.</li>
 </ul></div>
@@ -242,7 +252,7 @@
 <code><a href="reference/FitCurves.html">FitCurves()</a></code> supports fitting mean/pooled data via <code>method</code> argument.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
+<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> <code><a href="reference/FitCurves.html">FitCurves()</a></code> no longer accepts in-function data transformations. Perform transformations beforehand using <code><a href="reference/ChangeData.html">ChangeData()</a></code>.</li>
 <li>
@@ -264,7 +274,7 @@
 <code><a href="reference/ChangeData.html">ChangeData()</a></code> introduced to replace <code><a href="reference/ReplaceZeros.html">ReplaceZeros()</a></code> and certain transformation arguments previously in <code><a href="reference/FitCurves.html">FitCurves()</a></code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
+<h3 id="changed-5">Changed<a class="anchor" aria-label="anchor" href="#changed-5"></a></h3>
 <ul><li>
 <strong>BREAKING (temporary):</strong> <code><a href="reference/FitCurves.html">FitCurves()</a></code> returns a list object during transition. Update scripts to extract the first element if required; this was marked as temporary.</li>
 </ul></div>
@@ -291,7 +301,7 @@
 <ul><li>Removed legacy code from an older workflow; all functions now use long-form data.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-5">Changed<a class="anchor" aria-label="anchor" href="#changed-5"></a></h3>
+<h3 id="changed-6">Changed<a class="anchor" aria-label="anchor" href="#changed-6"></a></h3>
 <ul><li>
 <strong>BREAKING:</strong> Standardized on long-form data input across the package. Convert data to long format before using modeling functions.</li>
 </ul><hr></div>

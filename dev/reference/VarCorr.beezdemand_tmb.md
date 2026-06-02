@@ -53,8 +53,10 @@ dispatches to `nlme`'s `print.VarCorr.lme()`.
 
 The `Corr` column is placed using `nlme`'s convention — each correlation
 on the row of its higher-indexed random effect. For multi-block
-`pdBlocked` fits this assumes a single correlated block; consult
-`summary(x)$correlations` for the authoritative values.
+`pdBlocked` fits the correlations are placed on the correct global rows
+(each correlated block's off-diagonals are offset by the cumulative
+random-effect dimension of the earlier blocks);
+`summary(x)$correlations` remains available for the labelled values.
 
 ## See also
 

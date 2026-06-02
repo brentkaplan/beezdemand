@@ -11,7 +11,7 @@ reliable convergence where traditional NLME approaches fail."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,8 +32,12 @@ reliable convergence where traditional NLME approaches fail."><meta property="og
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -154,12 +158,12 @@ If <code>NULL</code> and <code>estimate_k = FALSE</code>, k defaults to 2.</p></
 Accepts any of the following, in order of generality:</p><dl><dt>formula (default)</dt>
 <dd><p><code>Q0 + alpha ~ 1</code> – random intercepts on
 both parameters (equivalent to the legacy <code>c("q0", "alpha")</code>
-shortcut). <code>Q0 ~ 1</code> limits REs to Q0. Formulas with
+shortcut). <code>Q0 ~ 1</code> limits REs to Q0. Formulas with a
 factor-expanded RHS (e.g., <code>Q0 + alpha ~ condition</code> or
-<code>Q0 + alpha ~ condition - 1</code>) are now supported in Phase 2 –
-see TICKET-011 Phase 2 for details. The within-subject factor
-must vary within each <code>id</code>; pure between-subject factors
-belong in <code>factors</code>, not in the RE formula.</p></dd>
+<code>Q0 + alpha ~ condition - 1</code>) are supported, giving each subject
+a random effect per factor level. The within-subject factor must
+vary within each <code>id</code>; pure between-subject factors belong in
+<code>factors</code>, not in the RE formula.</p></dd>
 
 <dt><code><a href="https://rdrr.io/pkg/nlme/man/pdMat.html" class="external-link">nlme::pdMat</a></code></dt>
 <dd><p>e.g., <code>nlme::pdDiag(Q0 + alpha ~ 1)</code> or
@@ -169,8 +173,8 @@ objects are accepted and their covariance class is honored
 
 <dt>list of <code>pdMat</code> / <code><a href="https://rdrr.io/pkg/nlme/man/pdBlocked.html" class="external-link">nlme::pdBlocked</a></code></dt>
 <dd><p>Multi-block covariance
-structures like <code>list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))</code>.
-Fully supported via TICKET-011 Phase 3.</p></dd>
+structures like <code>list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))</code>
+are fully supported.</p></dd>
 
 <dt>character vector (deprecated)</dt>
 <dd><p><code>c("q0", "alpha")</code> or <code>"q0"</code>.
@@ -266,8 +270,7 @@ each <code>id</code> before computing <code>subject_pars</code>. When a factor o
 covariate varies within subject, Q0/alpha/Pmax/Omax are set to
 <code>NA_real_</code> for affected subjects and a warning names the offending
 columns. Set to <code>FALSE</code> to force row-order-dependent values (not
-recommended; proper factor-expanded RE support lands in TICKET-011
-Phases 2-3).</p></dd>
+recommended; prefer a factor-expanded random-effects formula instead).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -396,8 +399,8 @@ its <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-li
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --- Fixed Effects ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               term estimate std.error statistic  p.value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5120    0.8097   15.0689  &lt; 2e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017  -10.3606  &lt; 2e-16</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              log_k   0.8955    0.4838    1.8509 0.064184</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.7798    0.2302   -3.3879 0.000704</span>
@@ -479,16 +482,13 @@ its <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-li
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> gender=Female                0.007<span style="text-decoration: underline;">39</span>        -<span style="color: #BB0000;">4.91</span>    0.045<span style="text-decoration: underline;">6</span>  6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.008<span style="text-decoration: underline;">08</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> gender=Male                  0.006<span style="text-decoration: underline;">26</span>        -<span style="color: #BB0000;">5.07</span>    0.047<span style="text-decoration: underline;">5</span>  5.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   0.006<span style="text-decoration: underline;">87</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> gender=Would rather not say  0.002<span style="text-decoration: underline;">90</span>        -<span style="color: #BB0000;">5.84</span>    2.92    9.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>   0.890  </span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Factor-expanded random slopes on a within-subject factor (Phase 2):</span></span></span>
-<span class="r-in"><span><span class="co"># each subject contributes a Q0 / alpha RE per condition level.</span></span></span>
-<span class="r-in"><span><span class="co"># Replace `cond` below with your in-subject factor.</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">fit4</span> <span class="op">&lt;-</span> <span class="fu">fit_demand_tmb</span><span class="op">(</span><span class="va">within_data</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span></span>
-<span class="r-in"><span>                       equation <span class="op">=</span> <span class="st">"zben"</span>, factors <span class="op">=</span> <span class="st">"cond"</span>,</span></span>
-<span class="r-in"><span>                       random_effects <span class="op">=</span> <span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/pdDiag.html" class="external-link">pdDiag</a></span><span class="op">(</span><span class="va">Q0</span> <span class="op">+</span> <span class="va">alpha</span> <span class="op">~</span> <span class="va">cond</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Factor-expanded random slopes on a within-subject factor are supported</span></span></span>
+<span class="r-in"><span><span class="co"># through the `random_effects` formula interface, e.g.</span></span></span>
+<span class="r-in"><span><span class="co">#   random_effects = nlme::pdDiag(Q0 + alpha ~ cond)</span></span></span>
+<span class="r-in"><span><span class="co"># so each subject contributes a Q0 / alpha random effect per factor level.</span></span></span>
+<span class="r-in"><span><span class="co"># See vignette("tmb-advanced-random-effects", package = "beezdemand").</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

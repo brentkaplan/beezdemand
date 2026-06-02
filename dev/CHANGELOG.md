@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and this project adheres to Semantic
 Versioning.
 
-## [Unreleased](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD)
+## [0.3.0](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0)
+
+Major feature release. See `NEWS.md` for the complete, detailed
+changelog (TMB mixed-effects tier
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md),
+factor-expanded/multi-block random effects, cross-backend EMM/contrast
+harmonization, parametric bootstrap CIs).
+
+### Changed
+
+- **Reporting (broom convention).**
+  [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) report the
+  Wald `statistic`/`p.value` on the estimation (log/log10) scale for
+  every `report_space` (including the default `"natural"`); only
+  `estimate`/`std.error` are back-transformed. This changes the default
+  reported test statistic/p-value for the core demand parameters
+  (Q0/alpha/k).
 
 ### Fixed
 

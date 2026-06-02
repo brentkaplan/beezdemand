@@ -11,7 +11,7 @@ and supports different demand equation forms."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,8 +32,12 @@ and supports different demand equation forms."><meta property="og:image" content
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -299,7 +303,7 @@ Ignored if <code>fixed_rhs</code> is provided.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Equation Form Selected:  zben </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NLME Model Formula:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c086d65140&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x5586f31e78f8&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Factors: None</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ID Variable for Random Effects:  id </span>
@@ -346,9 +350,9 @@ Ignored if <code>fixed_rhs</code> is provided.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Observations: 160 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Fixed Effects:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           Value Std.Error        DF t-value  p-value    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Q0      7.21552   0.91936 149.00000   7.848 7.58e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> alpha   0.01060   0.00182 149.00000   5.827 3.36e-08 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Value Std.Error        DF t-value p-value    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Q0      7.21552   0.91936 149.00000   15.51  &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> alpha   0.01060   0.00182 149.00000  -26.49  &lt;2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

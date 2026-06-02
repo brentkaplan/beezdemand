@@ -18,7 +18,10 @@ summary(object, report_space = c("natural", "log10", "internal"), ...)
 - report_space:
 
   Character. Reporting space for core demand parameters. One of
-  `"internal"`, `"natural"`, `"log10"`.
+  `"internal"`, `"natural"`, `"log10"`. `estimate`/`std.error` are
+  reported on this scale; `statistic`/`p.value` are always computed on
+  the estimation scale (transformation-invariant Wald test, so on the
+  natural scale `statistic != estimate/std.error`, by design).
 
 - ...:
 
@@ -56,8 +59,8 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16
-#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103
+#>     Q0:(Intercept)   6.5120    0.8097   15.0689  < 2e-16
+#>  alpha:(Intercept)   0.0030    0.0017  -10.3606  < 2e-16
 #>              log_k   0.8955    0.4838    1.8509 0.064184
 #>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
 #>           logsigma  -0.7798    0.2302   -3.3879 0.000704

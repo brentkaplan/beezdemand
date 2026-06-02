@@ -130,7 +130,7 @@ the user-requested *original* factor name (e.g. `dose`, not the
 collapse-mapped `dose_alpha`), harmonized with the TMB backend and the
 flat
 [tidy()](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_comparison.md)
-output (TICKET-033).
+output.
 
 ## Examples
 
@@ -155,7 +155,7 @@ get_demand_comparisons(fit)
 #> 
 #> --- Processing comparisons for parameter: alpha ---
 #> Demand Parameter Comparisons (nlme backend)
-#> EMMs computed over: ~dose 
+#> EMMs computed over: all fitted factors 
 #> Contrast type: pairwise
 #> P-value adjustment method: holm 
 #> ================================================== 

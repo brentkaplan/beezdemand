@@ -21,7 +21,7 @@ it formats already-computed values and recomputes nothing."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,8 +42,12 @@ it formats already-computed values and recomputes nothing."><meta property="og:i
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -123,8 +127,10 @@ dispatches to <code>nlme</code>'s <code>print.VarCorr.lme()</code>.</p>
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
     <p>The <code>Corr</code> column is placed using <code>nlme</code>'s convention —
 each correlation on the row of its higher-indexed random effect. For
-multi-block <code>pdBlocked</code> fits this assumes a single correlated block;
-consult <code>summary(x)$correlations</code> for the authoritative values.</p>
+multi-block <code>pdBlocked</code> fits the correlations are placed on the
+correct global rows (each correlated block's off-diagonals are offset by
+the cumulative random-effect dimension of the earlier blocks);
+<code>summary(x)$correlations</code> remains available for the labelled values.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -98,10 +98,10 @@ fit_demand_tmb(
 
   :   `Q0 + alpha ~ 1` – random intercepts on both parameters
       (equivalent to the legacy `c("q0", "alpha")` shortcut). `Q0 ~ 1`
-      limits REs to Q0. Formulas with factor-expanded RHS (e.g.,
-      `Q0 + alpha ~ condition` or `Q0 + alpha ~ condition - 1`) are now
-      supported in Phase 2 – see TICKET-011 Phase 2 for details. The
-      within-subject factor must vary within each `id`; pure
+      limits REs to Q0. Formulas with a factor-expanded RHS (e.g.,
+      `Q0 + alpha ~ condition` or `Q0 + alpha ~ condition - 1`) are
+      supported, giving each subject a random effect per factor level.
+      The within-subject factor must vary within each `id`; pure
       between-subject factors belong in `factors`, not in the RE
       formula.
 
@@ -115,8 +115,8 @@ fit_demand_tmb(
   list of `pdMat` / [`nlme::pdBlocked`](https://rdrr.io/pkg/nlme/man/pdBlocked.html)
 
   :   Multi-block covariance structures like
-      `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`. Fully
-      supported via TICKET-011 Phase 3.
+      `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))` are fully
+      supported.
 
   character vector (deprecated)
 
@@ -217,8 +217,8 @@ fit_demand_tmb(
   computing `subject_pars`. When a factor or continuous covariate varies
   within subject, Q0/alpha/Pmax/Omax are set to `NA_real_` for affected
   subjects and a warning names the offending columns. Set to `FALSE` to
-  force row-order-dependent values (not recommended; proper
-  factor-expanded RE support lands in TICKET-011 Phases 2-3).
+  force row-order-dependent values (not recommended; prefer a
+  factor-expanded random-effects formula instead).
 
 - verbose:
 
@@ -371,8 +371,8 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16
-#>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103
+#>     Q0:(Intercept)   6.5120    0.8097   15.0689  < 2e-16
+#>  alpha:(Intercept)   0.0030    0.0017  -10.3606  < 2e-16
 #>              log_k   0.8955    0.4838    1.8509 0.064184
 #>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
 #>           logsigma  -0.7798    0.2302   -3.3879 0.000704
@@ -454,14 +454,11 @@ get_demand_param_emms(fit3, param = "alpha")
 #> 1 gender=Female                0.00739        -4.91    0.0456  6.76e-3   0.00808
 #> 2 gender=Male                  0.00626        -5.07    0.0475  5.70e-3   0.00687
 #> 3 gender=Would rather not say  0.00290        -5.84    2.92    9.43e-6   0.890  
-
-# Factor-expanded random slopes on a within-subject factor (Phase 2):
-# each subject contributes a Q0 / alpha RE per condition level.
-# Replace `cond` below with your in-subject factor.
-if (FALSE) { # \dontrun{
-fit4 <- fit_demand_tmb(within_data, y_var = "y_ll4", x_var = "x", id_var = "id",
-                       equation = "zben", factors = "cond",
-                       random_effects = nlme::pdDiag(Q0 + alpha ~ cond))
-} # }
 # }
+
+# Factor-expanded random slopes on a within-subject factor are supported
+# through the `random_effects` formula interface, e.g.
+#   random_effects = nlme::pdDiag(Q0 + alpha ~ cond)
+# so each subject contributes a Q0 / alpha random effect per factor level.
+# See vignette("tmb-advanced-random-effects", package = "beezdemand").
 ```

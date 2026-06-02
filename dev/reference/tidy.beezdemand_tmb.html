@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,8 +28,12 @@
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -89,7 +93,9 @@ random-effect variance components, or both (the default). Matches the
 <dt id="arg-report-space">report_space<a class="anchor" aria-label="anchor" href="#arg-report-space"></a></dt>
 <dd><p>Character. Reporting space for the fixed-effect
 (core demand parameter) rows. One of <code>"natural"</code>, <code>"log10"</code>, or
-<code>"internal"</code>. Variance-component rows are unaffected (see Details).</p></dd>
+<code>"internal"</code>. Variance-component rows are unaffected (see Details).
+<code>estimate</code>/<code>std.error</code> follow this scale; <code>statistic</code>/<code>p.value</code> are always
+on the estimation scale (transformation-invariant).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -115,9 +121,8 @@ the model's likelihood scale. They are not the raw internal <code>logsigma</code
 optimizer coefficients and do not respond to <code>report_space</code>; <code>std.error</code>
 is <code>NA</code> for them. Random-effect <em>correlations</em> are not tidied here – see
 <code>summary(x)$correlations</code> or <code>VarCorr(x)</code> for those. The NLME sibling
-<code><a href="tidy.beezdemand_nlme.html">tidy.beezdemand_nlme()</a></code> likewise reports SDs (post-TICKET-030), so
-backend-agnostic code can consume the <code>estimate</code> column without dispatch
-logic on either side.</p>
+<code><a href="tidy.beezdemand_nlme.html">tidy.beezdemand_nlme()</a></code> likewise reports SDs, so backend-agnostic code can
+consume the <code>estimate</code> column without dispatch logic on either side.</p>
     </div>
 
     <div class="section level2">
@@ -130,8 +135,8 @@ logic on either side.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 9</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   term           estimate std.error statistic   p.value component estimate_scale</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0:(Intercept)  6.51      0.810        8.04  8.80<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span> fixed     natural       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha:(Interc…  0.003<span style="text-decoration: underline;">02</span>   0.001<span style="text-decoration: underline;">69</span>      1.79  7.41<span style="color: #949494;">e</span><span style="color: #BB0000;">- 2</span> fixed     natural       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0:(Intercept)  6.51      0.810       15.1   2.59<span style="color: #949494;">e</span><span style="color: #BB0000;">-51</span> fixed     natural       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha:(Interc…  0.003<span style="text-decoration: underline;">02</span>   0.001<span style="text-decoration: underline;">69</span>    -<span style="color: #BB0000;">10.4</span>   3.75<span style="color: #949494;">e</span><span style="color: #BB0000;">-25</span> fixed     natural       </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> log_k           0.895     0.484        1.85  6.42<span style="color: #949494;">e</span><span style="color: #BB0000;">- 2</span> fixed     log           </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> sigma_b (Q0 R…  0.167    <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  log10         </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> sigma_c (alph…  0.199    <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  log10         </span>

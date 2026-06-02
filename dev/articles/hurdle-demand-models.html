@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,8 +51,12 @@
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -89,7 +93,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-06-01</h4>
+            <h4 data-toc-skip class="date">2026-06-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/hurdle-demand-models.Rmd" class="external-link"><code>vignettes/hurdle-demand-models.Rmd</code></a></small>
       <div class="d-none name"><code>hurdle-demand-models.Rmd</code></div>
@@ -419,9 +423,9 @@ for:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> beta0      -<span style="color: #BB0000;">392.</span>      147.         -<span style="color: #BB0000;">2.67</span> 7.55<span style="color: #949494;">e</span><span style="color: #BB0000;">- 3</span> zero_probabi… logit         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> beta1       136.       50.4         2.69 7.09<span style="color: #949494;">e</span><span style="color: #BB0000;">- 3</span> zero_probabi… logit         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0            6.95      0.813       8.54 1.36<span style="color: #949494;">e</span><span style="color: #BB0000;">-17</span> consumption   natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> k             1.74      0.157      11.1  1.32<span style="color: #949494;">e</span><span style="color: #BB0000;">-28</span> consumption   natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> alpha         0.098<span style="text-decoration: underline;">8</span>    0.016<span style="text-decoration: underline;">6</span>      5.94 2.77<span style="color: #949494;">e</span><span style="color: #BB0000;">- 9</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0            6.95      0.813      16.5  1.65<span style="color: #949494;">e</span><span style="color: #BB0000;">-61</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> k             1.74      0.157       6.16 7.34<span style="color: #949494;">e</span><span style="color: #BB0000;">-10</span> consumption   natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> alpha         0.098<span style="text-decoration: underline;">8</span>    0.016<span style="text-decoration: underline;">6</span>    -<span style="color: #BB0000;">13.8</span>  4.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-43</span> consumption   natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> logsigma_a    5.77      1.48        3.89 1.00<span style="color: #949494;">e</span><span style="color: #BB0000;">- 4</span> variance      natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span>

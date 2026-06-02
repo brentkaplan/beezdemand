@@ -15,7 +15,7 @@ optionally, ratios (on the natural scale by applying 10^difference)."><meta prop
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,8 +36,12 @@ optionally, ratios (on the natural scale by applying 10^difference)."><meta prop
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -177,7 +181,7 @@ as ratios (natural scale), with CIs for ratios.</p></dd>
 the nested contrast tables carry leading by-column(s) named with the
 user-requested <em>original</em> factor name (e.g. <code>dose</code>, not the
 collapse-mapped <code>dose_alpha</code>), harmonized with the TMB backend and the flat
-<a href="tidy.beezdemand_comparison.html">tidy()</a> output (TICKET-033).</p>
+<a href="tidy.beezdemand_comparison.html">tidy()</a> output.</p>
     </div>
 
     <div class="section level2">
@@ -202,7 +206,7 @@ collapse-mapped <code>dose_alpha</code>), harmonized with the TMB backend and th
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --- Processing comparisons for parameter: alpha ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Demand Parameter Comparisons (nlme backend)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EMMs computed over: ~dose </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EMMs computed over: all fitted factors </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Contrast type: pairwise</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> P-value adjustment method: holm </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ================================================== </span>

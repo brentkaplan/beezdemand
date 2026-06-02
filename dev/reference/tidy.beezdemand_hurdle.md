@@ -18,7 +18,9 @@ tidy(x, report_space = c("natural", "log10", "internal"), ...)
 - report_space:
 
   Character. Reporting space for core demand parameters. One of
-  `"internal"`, `"natural"`, or `"log10"`.
+  `"internal"`, `"natural"`, or `"log10"`. `estimate`/`std.error` follow
+  this scale; `statistic`/`p.value` are always on the estimation scale
+  (transformation-invariant).
 
 - ...:
 

@@ -80,8 +80,8 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   5.4434    0.4171   13.0512  < 2e-16
-#>  alpha:(Intercept)   0.0110    0.0012    9.4171  < 2e-16
+#>     Q0:(Intercept)   5.4434    0.4171   22.1140  < 2e-16
+#>  alpha:(Intercept)   0.0110    0.0012  -42.4332  < 2e-16
 #>              log_k   0.3399    0.0276   12.2980  < 2e-16
 #>           logsigma  -0.2940    0.0748   -3.9297 8.51e-05
 #>           logsigma  -0.0952    0.0807   -1.1796 0.238169
@@ -325,8 +325,8 @@ summary(fit_2re)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   5.4434    0.4171   13.0512  < 2e-16
-#>  alpha:(Intercept)   0.0110    0.0012    9.4171  < 2e-16
+#>     Q0:(Intercept)   5.4434    0.4171   22.1140  < 2e-16
+#>  alpha:(Intercept)   0.0110    0.0012  -42.4332  < 2e-16
 #>              log_k   0.3399    0.0276   12.2980  < 2e-16
 #>           logsigma  -0.2940    0.0748   -3.9297 8.51e-05
 #>           logsigma  -0.0952    0.0807   -1.1796 0.238169
@@ -399,14 +399,14 @@ SDs from `summary()$variance_components`.
 
 tidy(fit_2re)
 #> # A tibble: 6 × 9
-#>   term           estimate std.error statistic   p.value component estimate_scale
-#>   <chr>             <dbl>     <dbl>     <dbl>     <dbl> <chr>     <chr>         
-#> 1 Q0:(Intercept)   5.44     0.417       13.1   6.26e-39 fixed     natural       
-#> 2 alpha:(Interc…   0.0110   0.00117      9.42  4.64e-21 fixed     natural       
-#> 3 log_k            0.340    0.0276      12.3   9.28e-35 fixed     log           
-#> 4 sigma_b (Q0 R…   0.324   NA           NA    NA        variance  log10         
-#> 5 sigma_c (alph…   0.395   NA           NA    NA        variance  log10         
-#> 6 sigma_e (Resi…   0.225   NA           NA    NA        variance  natural       
+#>   term          estimate std.error statistic    p.value component estimate_scale
+#>   <chr>            <dbl>     <dbl>     <dbl>      <dbl> <chr>     <chr>         
+#> 1 Q0:(Intercep…   5.44     0.417        22.1  2.32e-108 fixed     natural       
+#> 2 alpha:(Inter…   0.0110   0.00117     -42.4  0         fixed     natural       
+#> 3 log_k           0.340    0.0276       12.3  9.28e- 35 fixed     log           
+#> 4 sigma_b (Q0 …   0.324   NA            NA   NA         variance  log10         
+#> 5 sigma_c (alp…   0.395   NA            NA   NA         variance  log10         
+#> 6 sigma_e (Res…   0.225   NA            NA   NA         variance  natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 ```
 

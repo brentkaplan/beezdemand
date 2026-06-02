@@ -220,9 +220,9 @@ tidy(fit2) |> head()
 #>   <chr>          <dbl>     <dbl>     <dbl>    <dbl> <chr>         <chr>         
 #> 1 beta0      -392.      147.         -2.67 7.55e- 3 zero_probabi… logit         
 #> 2 beta1       136.       50.4         2.69 7.09e- 3 zero_probabi… logit         
-#> 3 Q0            6.95      0.813       8.54 1.36e-17 consumption   natural       
-#> 4 k             1.74      0.157      11.1  1.32e-28 consumption   natural       
-#> 5 alpha         0.0988    0.0166      5.94 2.77e- 9 consumption   natural       
+#> 3 Q0            6.95      0.813      16.5  1.65e-61 consumption   natural       
+#> 4 k             1.74      0.157       6.16 7.34e-10 consumption   natural       
+#> 5 alpha         0.0988    0.0166    -13.8  4.43e-43 consumption   natural       
 #> 6 logsigma_a    5.77      1.48        3.89 1.00e- 4 variance      natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 glance(fit2)

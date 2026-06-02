@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,8 +28,12 @@
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -76,7 +80,10 @@
 
 <dt id="arg-report-space">report_space<a class="anchor" aria-label="anchor" href="#arg-report-space"></a></dt>
 <dd><p>Character. Reporting space for core demand parameters.
-One of <code>"internal"</code>, <code>"natural"</code>, <code>"log10"</code>.</p></dd>
+One of <code>"internal"</code>, <code>"natural"</code>, <code>"log10"</code>. <code>estimate</code>/<code>std.error</code> are
+reported on this scale; <code>statistic</code>/<code>p.value</code> are always computed on the
+estimation scale (transformation-invariant Wald test, so on the natural
+scale <code>statistic != estimate/std.error</code>, by design).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -114,8 +121,8 @@ correlations are scale-invariant; neither is rescaled.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> --- Fixed Effects ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               term estimate std.error statistic  p.value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5120    0.8097    8.0425 8.80e-16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017    1.7860 0.074103</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Q0:(Intercept)   6.5120    0.8097   15.0689  &lt; 2e-16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  alpha:(Intercept)   0.0030    0.0017  -10.3606  &lt; 2e-16</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              log_k   0.8955    0.4838    1.8509 0.064184</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           logsigma  -0.7798    0.2302   -3.3879 0.000704</span>

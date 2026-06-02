@@ -275,7 +275,7 @@ print(fit)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x55c086d65140>
+#> <environment: 0x5586f31e78f8>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -322,9 +322,9 @@ summary(fit)
 #>   Observations: 160 
 #> 
 #> Fixed Effects:
-#>           Value Std.Error        DF t-value  p-value    
-#> Q0      7.21552   0.91936 149.00000   7.848 7.58e-13 ***
-#> alpha   0.01060   0.00182 149.00000   5.827 3.36e-08 ***
+#>           Value Std.Error        DF t-value p-value    
+#> Q0      7.21552   0.91936 149.00000   15.51  <2e-16 ***
+#> alpha   0.01060   0.00182 149.00000  -26.49  <2e-16 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

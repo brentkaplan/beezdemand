@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,8 +51,12 @@
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -89,7 +93,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-06-01</h4>
+            <h4 data-toc-skip class="date">2026-06-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -178,8 +182,8 @@ NLS curves</strong>, see <code><a href="../articles/fixed-demand.html">vignette(
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Fixed Effects ---</span></span>
 <span><span class="co">#&gt;               term estimate std.error statistic  p.value</span></span>
-<span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   13.0512  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012    9.4171  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   22.1140  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012  -42.4332  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;              log_k   0.3399    0.0276   12.2980  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;           logsigma  -0.2940    0.0748   -3.9297 8.51e-05</span></span>
 <span><span class="co">#&gt;           logsigma  -0.0952    0.0807   -1.1796 0.238169</span></span>
@@ -430,8 +434,8 @@ use a <span class="math inline">k</span> parameter.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Fixed Effects ---</span></span>
 <span><span class="co">#&gt;               term estimate std.error statistic  p.value</span></span>
-<span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   13.0512  &lt; 2e-16</span></span>
-<span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012    9.4171  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;     Q0:(Intercept)   5.4434    0.4171   22.1140  &lt; 2e-16</span></span>
+<span><span class="co">#&gt;  alpha:(Intercept)   0.0110    0.0012  -42.4332  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;              log_k   0.3399    0.0276   12.2980  &lt; 2e-16</span></span>
 <span><span class="co">#&gt;           logsigma  -0.2940    0.0748   -3.9297 8.51e-05</span></span>
 <span><span class="co">#&gt;           logsigma  -0.0952    0.0807   -1.1796 0.238169</span></span>
@@ -495,14 +499,14 @@ natural log of each RE SD, not the log10-scale SDs from
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
-<span><span class="co">#&gt;   term           estimate std.error statistic   p.value component estimate_scale</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercept)   5.44     0.417       13.1   6.26<span style="color: #949494;">e</span><span style="color: #BB0000;">-39</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha:(Interc…   0.011<span style="text-decoration: underline;">0</span>   0.001<span style="text-decoration: underline;">17</span>      9.42  4.64<span style="color: #949494;">e</span><span style="color: #BB0000;">-21</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k            0.340    0.027<span style="text-decoration: underline;">6</span>      12.3   9.28<span style="color: #949494;">e</span><span style="color: #BB0000;">-35</span> fixed     log           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> sigma_b (Q0 R…   0.324   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  log10         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> sigma_c (alph…   0.395   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  log10         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> sigma_e (Resi…   0.225   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt;   term          estimate std.error statistic    p.value component estimate_scale</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0:(Intercep…   5.44     0.417        22.1  2.32<span style="color: #949494;">e</span><span style="color: #BB0000;">-108</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha:(Inter…   0.011<span style="text-decoration: underline;">0</span>   0.001<span style="text-decoration: underline;">17</span>     -<span style="color: #BB0000;">42.4</span>  0   <span style="color: #949494;"> </span>     fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> log_k           0.340    0.027<span style="text-decoration: underline;">6</span>       12.3  9.28<span style="color: #949494;">e</span><span style="color: #BB0000;">- 35</span> fixed     log           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> sigma_b (Q0 …   0.324   <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>     variance  log10         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> sigma_c (alp…   0.395   <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>     variance  log10         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> sigma_e (Res…   0.225   <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>     variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span></code></pre></div>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>

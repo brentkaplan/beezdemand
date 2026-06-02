@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">beezdemand</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,8 +51,12 @@
     <li><a class="dropdown-item" href="../articles/mixed-demand.html">Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/mixed-demand-advanced.html">Advanced Mixed-Effects Models</a></li>
     <li><a class="dropdown-item" href="../articles/tmb-mixed-effects.html">TMB Mixed-Effects Models</a></li>
+    <li><a class="dropdown-item" href="../articles/tmb-advanced-random-effects.html">TMB Advanced Random-Effects Structures</a></li>
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
+    <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Migration</h6></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration Guide: FitCurves to fit_demand_fixed</a></li>
@@ -89,7 +93,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-06-01</h4>
+            <h4 data-toc-skip class="date">2026-06-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/mixed-demand.Rmd" class="external-link"><code>vignettes/mixed-demand.Rmd</code></a></small>
       <div class="d-none name"><code>mixed-demand.Rmd</code></div>
@@ -185,7 +189,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x557c88f51310&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x556bcbf1a0c8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -256,7 +260,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x557c90798128&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x556bd34dcf30&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -330,7 +334,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x557c93ac4dd8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x556bd67e77b8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -384,11 +388,11 @@ programmatic access to estimates, model summaries, and residuals.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 9</span></span></span>
 <span><span class="co">#&gt;   term     estimate std.error statistic   p.value component estimate_scale</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0         7.21     0.919        7.85  4.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha      0.010<span style="text-decoration: underline;">6</span>   0.001<span style="text-decoration: underline;">82</span>      5.83  5.69<span style="color: #949494;">e</span><span style="color: #BB0000;">- 9</span> fixed     natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0         0.169   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> alpha      0.229   <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Residual   0.079<span style="text-decoration: underline;">1</span>  <span style="color: #BB0000;">NA</span>           <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Q0         7.21     0.919        15.5  7.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-33</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> alpha      0.010<span style="text-decoration: underline;">6</span>   0.001<span style="text-decoration: underline;">82</span>     -<span style="color: #BB0000;">26.5</span>  3.05<span style="color: #949494;">e</span><span style="color: #BB0000;">-58</span> fixed     natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Q0         0.169   <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> alpha      0.229   <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Residual   0.079<span style="text-decoration: underline;">1</span>  <span style="color: #BB0000;">NA</span>            <span style="color: #BB0000;">NA</span>   <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span>    variance  natural       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: term_display &lt;chr&gt;, estimate_internal &lt;dbl&gt;</span></span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
@@ -514,7 +518,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x557c92856d78&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x556bd545ff58&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -577,7 +581,7 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x557c93c98660&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x556bd68a48b0&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -637,12 +641,12 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Fixed Effects:</span></span>
 <span><span class="co">#&gt;                       Value Std.Error        DF t-value  p-value    </span></span>
-<span><span class="co">#&gt; Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01   5.817 1.11e-06 ***</span></span>
-<span><span class="co">#&gt; Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01   4.370 9.68e-05 ***</span></span>
-<span><span class="co">#&gt; Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01   4.429 8.10e-05 ***</span></span>
-<span><span class="co">#&gt; alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01   8.289 5.86e-10 ***</span></span>
-<span><span class="co">#&gt; alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01   5.941 7.56e-07 ***</span></span>
-<span><span class="co">#&gt; alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   5.707 1.57e-06 ***</span></span>
+<span><span class="co">#&gt; Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01  32.351  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01  -2.593   0.0135 *  </span></span>
+<span><span class="co">#&gt; Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01  -5.294 5.68e-06 ***</span></span>
+<span><span class="co">#&gt; alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01 -88.769  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01  -1.150   0.2575    </span></span>
+<span><span class="co">#&gt; alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   0.128   0.8989    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -658,7 +662,10 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Model Fit:</span></span>
 <span><span class="co">#&gt;   Log-Likelihood: 17.9 </span></span>
 <span><span class="co">#&gt;   AIC: -17.8 </span></span>
-<span><span class="co">#&gt;   BIC: -1.54</span></span>
+<span><span class="co">#&gt;   BIC: -1.54 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Notes:</span></span>
+<span><span class="co">#&gt;   - Hessian is not positive definite; variance estimates may be unreliable</span></span>
 <span></span>
 <span><span class="co"># Fixed effects</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span>

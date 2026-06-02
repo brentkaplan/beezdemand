@@ -33,6 +33,8 @@ tidy(
   Character. Reporting space for the fixed-effect (core demand
   parameter) rows. One of `"natural"`, `"log10"`, or `"internal"`.
   Variance-component rows are unaffected (see Details).
+  `estimate`/`std.error` follow this scale; `statistic`/`p.value` are
+  always on the estimation scale (transformation-invariant).
 
 - ...:
 
@@ -60,8 +62,8 @@ deviation on the model's likelihood scale. They are not the raw internal
 tidied here – see `summary(x)$correlations` or `VarCorr(x)` for those.
 The NLME sibling
 [`tidy.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_nlme.md)
-likewise reports SDs (post-TICKET-030), so backend-agnostic code can
-consume the `estimate` column without dispatch logic on either side.
+likewise reports SDs, so backend-agnostic code can consume the
+`estimate` column without dispatch logic on either side.
 
 ## Examples
 
@@ -74,8 +76,8 @@ tidy(fit)
 #> # A tibble: 6 × 9
 #>   term           estimate std.error statistic   p.value component estimate_scale
 #>   <chr>             <dbl>     <dbl>     <dbl>     <dbl> <chr>     <chr>         
-#> 1 Q0:(Intercept)  6.51      0.810        8.04  8.80e-16 fixed     natural       
-#> 2 alpha:(Interc…  0.00302   0.00169      1.79  7.41e- 2 fixed     natural       
+#> 1 Q0:(Intercept)  6.51      0.810       15.1   2.59e-51 fixed     natural       
+#> 2 alpha:(Interc…  0.00302   0.00169    -10.4   3.75e-25 fixed     natural       
 #> 3 log_k           0.895     0.484        1.85  6.42e- 2 fixed     log           
 #> 4 sigma_b (Q0 R…  0.167    NA           NA    NA        variance  log10         
 #> 5 sigma_c (alph…  0.199    NA           NA    NA        variance  log10         
