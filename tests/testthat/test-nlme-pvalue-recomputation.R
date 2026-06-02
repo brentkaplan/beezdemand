@@ -2,11 +2,13 @@
 # NLME summary parameter-transformation path and a labelling fix on the
 # hurdle summary coefficient matrix.
 #
-# Bug 1 (NLME): when the user requests `report_space != internal_space`,
-# `summary.beezdemand_nlme()` previously discarded nlme's containment-based
-# degrees of freedom and recomputed p-values via `pnorm()`, producing
-# anti-conservative (z-style) results for small N. Fix preserves DF and uses
-# `pt()` after the delta-method transformation.
+# Bug 1 (NLME), superseded by the v0.3.0 release audit: `summary`/`tidy` no
+# longer recompute the Wald test after the delta-method back-transform. Under the
+# broom/emmeans convention `statistic`/`p.value` are kept on the estimation scale
+# (nlme's native containment-t test) for every `report_space`, while only
+# `estimate`/`std.error` are back-transformed. So the natural-scale test simply
+# equals nlme's native DF-aware t-test (transformation-invariant). The cross-tier
+# contract lives in test-report-space-test-invariance.R.
 #
 # Bug 2 (hurdle): `summary.beezdemand_hurdle()` labelled the test-statistic
 # column "t value" while the p-values were correctly computed via `pnorm()`
@@ -15,7 +17,7 @@
 
 # --- Bug 1: NLME t-test preservation -----------------------------------------
 
-test_that("NLME summary with report_space='natural' uses pt() with nlme DF, not pnorm()", {
+test_that("NLME summary report_space='natural' keeps the native nlme (DF-aware t) test", {
   skip_on_cran()
   skip_if_not_installed("nlme")
 
@@ -31,13 +33,14 @@ test_that("NLME summary with report_space='natural' uses pt() with nlme DF, not 
   expect_true(all(s_natural$coefficients$p.value >= 0))
   expect_true(all(s_natural$coefficients$p.value <= 1))
 
-  # Bug-1 guard: p-values must NOT match what pnorm() would produce on the
-  # same statistics. If they match exactly, the bug has returned.
-  z_pvals <- 2 * stats::pnorm(-abs(s_natural$coefficients$statistic))
-  expect_false(
-    isTRUE(all.equal(s_natural$coefficients$p.value, z_pvals, tolerance = 1e-12)),
-    info = "Natural-scale NLME p-values must use pt(), not pnorm()."
-  )
+  # Broom convention: the back-transform rescales estimate/SE but the Wald test is
+  # kept on the estimation scale, so statistic/p.value equal nlme's native
+  # containment-t (DF-aware) values -- NOT a recomputed natural-scale test.
+  tt <- summary(fit$model)$tTable
+  expect_equal(unname(s_natural$coefficients$statistic),
+               unname(tt[, "t-value"]), tolerance = 1e-9)
+  expect_equal(unname(s_natural$coefficients$p.value),
+               unname(tt[, "p-value"]), tolerance = 1e-9)
 })
 
 test_that("NLME natural-scale p-values are >= z-test p-values (heavier t tails)", {
@@ -103,11 +106,9 @@ test_that("hurdle summary p-values still use pnorm() (z-test is correct for TMB)
 
   s <- summary(fit_h)
 
-  # The tibble's p.value is computed AFTER beezdemand_transform_coef_table()
-  # rescales estimates/SEs (log → natural for log_q0/log_alpha/log_k). The
-  # invariant we care about for TICKET-006 is that the *post-transform*
-  # p-values still come from pnorm() — verifying that with the post-transform
-  # statistic.
+  # statistic/p.value are kept on the estimation scale (broom convention), so the
+  # hurdle p.value still comes from pnorm() of the retained z-statistic regardless
+  # of report_space (estimate/SE are back-transformed; the test is not).
   expected_pvals <- 2 * stats::pnorm(-abs(s$coefficients$statistic))
   expect_equal(s$coefficients$p.value, expected_pvals, tolerance = 1e-12)
 })

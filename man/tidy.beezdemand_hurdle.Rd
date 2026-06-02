@@ -10,7 +10,9 @@
 \item{x}{An object of class \code{beezdemand_hurdle}.}
 
 \item{report_space}{Character. Reporting space for core demand parameters.
-One of \code{"internal"}, \code{"natural"}, or \code{"log10"}.}
+One of \code{"internal"}, \code{"natural"}, or \code{"log10"}. \code{estimate}/\code{std.error} follow
+this scale; \code{statistic}/\code{p.value} are always on the estimation scale
+(transformation-invariant).}
 
 \item{...}{Additional arguments (currently unused).}
 }

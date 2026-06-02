@@ -16,6 +16,8 @@ One of:
 \item \code{"internal"}: report internal/fitting parameters (default internal naming)
 \item \code{"natural"}: report natural-scale parameters when a natural mapping exists
 \item \code{"log10"}: report \code{log10()}-scale parameters when a mapping exists
+\code{estimate}/\code{std.error} follow \code{report_space}; \code{statistic}/\code{p.value} are always
+computed on the estimation scale (transformation-invariant Wald test).
 }}
 
 \item{...}{Additional arguments (currently unused).}
@@ -28,7 +30,8 @@ from \code{beezdemand_summary}) containing:
 \item{model_class}{"beezdemand_hurdle"}
 \item{backend}{"TMB"}
 \item{coefficients}{Tibble of fixed effects with estimates, SEs, z-values, p-values}
-\item{coefficients_matrix}{Matrix form for printing (legacy compatibility)}
+\item{coefficients_matrix}{Matrix form for printing, on the internal
+(estimation) scale regardless of \code{report_space} (legacy compatibility)}
 \item{variance_components}{Matrix of variance/covariance estimates}
 \item{correlations}{Matrix of correlation estimates}
 \item{n_subjects}{Number of subjects}

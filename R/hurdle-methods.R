@@ -40,6 +40,8 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'   - `"internal"`: report internal/fitting parameters (default internal naming)
 #'   - `"natural"`: report natural-scale parameters when a natural mapping exists
 #'   - `"log10"`: report `log10()`-scale parameters when a mapping exists
+#'   `estimate`/`std.error` follow `report_space`; `statistic`/`p.value` are always
+#'   computed on the estimation scale (transformation-invariant Wald test).
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_hurdle} (also inherits
@@ -49,7 +51,8 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'   \item{model_class}{"beezdemand_hurdle"}
 #'   \item{backend}{"TMB"}
 #'   \item{coefficients}{Tibble of fixed effects with estimates, SEs, z-values, p-values}
-#'   \item{coefficients_matrix}{Matrix form for printing (legacy compatibility)}
+#'   \item{coefficients_matrix}{Matrix form for printing, on the internal
+#'     (estimation) scale regardless of `report_space` (legacy compatibility)}
 #'   \item{variance_components}{Matrix of variance/covariance estimates}
 #'   \item{correlations}{Matrix of correlation estimates}
 #'   \item{n_subjects}{Number of subjects}
@@ -150,11 +153,10 @@ summary.beezdemand_hurdle <- function(
     internal_space = "natural"
   )
 
-  coefficients <- coefficients |>
-    dplyr::mutate(
-      statistic = ifelse(.data$std.error > 0, .data$estimate / .data$std.error, NA_real_),
-      p.value = 2 * stats::pnorm(-abs(.data$statistic))
-    )
+  # `statistic`/`p.value` stay on the estimation (log/logit) scale for every
+  # `report_space` (broom convention); only `estimate`/`std.error` are
+  # back-transformed above. A natural-scale Wald recompute would be degenerate
+  # (statistic = 1/(c*SE), sign-losing). See test-report-space-test-invariance.R.
 
   # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)
@@ -2110,7 +2112,9 @@ plot_subject <- function(
 #'
 #' @param x An object of class \code{beezdemand_hurdle}.
 #' @param report_space Character. Reporting space for core demand parameters.
-#'   One of `"internal"`, `"natural"`, or `"log10"`.
+#'   One of `"internal"`, `"natural"`, or `"log10"`. `estimate`/`std.error` follow
+#'   this scale; `statistic`/`p.value` are always on the estimation scale
+#'   (transformation-invariant).
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return A tibble with columns:
@@ -2178,11 +2182,9 @@ tidy.beezdemand_hurdle <- function(
     internal_space = "natural"
   )
 
-  out <- out |>
-    dplyr::mutate(
-      statistic = .data$estimate / .data$std.error,
-      p.value = 2 * stats::pnorm(-abs(.data$statistic))
-    )
+  # Keep the estimation-scale `statistic`/`p.value` (broom convention); only
+  # `estimate`/`std.error` are back-transformed. (No degenerate natural-scale
+  # Wald recompute -- see test-report-space-test-invariance.R.)
 
   if (isFALSE(x$hessian_pd)) {
     attr(out, "hessian_warning") <- paste0(

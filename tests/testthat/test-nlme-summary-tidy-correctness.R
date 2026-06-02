@@ -1,12 +1,12 @@
 # Regression tests for the v0.3.0 release audit (Codex findings C1 + C2).
 #
-# C1 (summary<->tidy p-value consistency): TICKET-006 established that, when the
-# user requests `report_space != internal_space`, the NLME *summary* path
-# preserves nlme's containment-based degrees of freedom and recomputes p-values
-# via `pt()` after the delta-method transform. `tidy.beezdemand_nlme()` was left
-# recomputing via `pnorm()` (mixed-methods.R), so summary() and tidy() on the
-# SAME fit + report_space disagree (anti-conservative tidy p-values for small N).
-# Fix: tidy() reuses the same DF-aware `pt()` recompute as summary().
+# C1 (summary<->tidy p-value consistency): superseded by the v0.3.0 release audit.
+# `summary`/`tidy` no longer recompute the Wald test after the delta-method
+# back-transform; under the broom convention both keep the estimation-scale test
+# (nlme's native containment-t), so they agree by construction for every
+# `report_space` and the natural-scale p-values equal nlme's native DF-aware
+# values. (The earlier C1 fix unified a summary-vs-tidy pnorm/pt mismatch; the
+# recompute it unified has since been removed entirely.)
 #
 # C2 (summary convergence contract): TICKET-020 made `glance$converged` the
 # operational gate (apVar PD AND no terminal error) via `.check_nlme_convergence`.
@@ -34,7 +34,7 @@
 
 # --- C1: tidy must match summary's DF-aware test ------------------------------
 
-test_that("tidy.beezdemand_nlme natural-scale p-values use pt() with nlme DF, not pnorm()", {
+test_that("tidy.beezdemand_nlme natural-scale test equals nlme's native DF-aware (pt) test", {
   skip_on_cran()
   skip_if_not_installed("nlme")
 
@@ -44,15 +44,14 @@ test_that("tidy.beezdemand_nlme natural-scale p-values use pt() with nlme DF, no
   expect_true(all(is.finite(td$p.value)))
   expect_true(all(td$p.value >= 0 & td$p.value <= 1))
 
-  # Bug guard: tidy p-values must NOT equal what pnorm() would give on the same
-  # statistics. If they match exactly, the pnorm() bug has returned.
-  z_pvals <- 2 * stats::pnorm(-abs(td$statistic))
-  expect_false(
-    isTRUE(all.equal(td$p.value, z_pvals, tolerance = 1e-12)),
-    info = "Natural-scale NLME tidy p-values must use pt(), not pnorm()."
-  )
+  # Broom convention: statistic/p.value are kept on the estimation scale, so they
+  # equal nlme's native containment-t (DF-aware) values regardless of report_space.
+  tt <- summary(fit$model)$tTable
+  expect_equal(unname(td$statistic), unname(tt[, "t-value"]), tolerance = 1e-9)
+  expect_equal(unname(td$p.value), unname(tt[, "p-value"]), tolerance = 1e-9)
 
   # t-tails are heavier than normal -> two-sided pt p-values >= pnorm p-values.
+  z_pvals <- 2 * stats::pnorm(-abs(td$statistic))
   expect_true(all(td$p.value + 1e-12 >= z_pvals))
 })
 

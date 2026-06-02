@@ -282,7 +282,10 @@ print.beezdemand_tmb <- function(x, ...) {
 #'
 #' @param object An object of class \code{beezdemand_tmb}.
 #' @param report_space Character. Reporting space for core demand parameters.
-#'   One of `"internal"`, `"natural"`, `"log10"`.
+#'   One of `"internal"`, `"natural"`, `"log10"`. `estimate`/`std.error` are
+#'   reported on this scale; `statistic`/`p.value` are always computed on the
+#'   estimation scale (transformation-invariant Wald test, so on the natural
+#'   scale `statistic != estimate/std.error`, by design).
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_tmb} (also inherits
@@ -359,11 +362,11 @@ summary.beezdemand_tmb <- function(
     internal_space = "natural"
   )
 
-  coefficients <- coefficients |>
-    dplyr::mutate(
-      statistic = .data$estimate / .data$std.error,
-      p.value = 2 * stats::pnorm(-abs(.data$statistic))
-    )
+  # `statistic`/`p.value` stay on the estimation (log) scale for every
+  # `report_space` (broom/emmeans convention); only `estimate`/`std.error` are
+  # back-transformed above. Recomputing the Wald test on the back-transformed
+  # scale is degenerate (statistic = 1/(c*SE), independent of -- and dropping the
+  # sign of -- the estimate). See tests/testthat/test-report-space-test-invariance.R.
 
   # Compute group-level demand metrics
   group_metrics <- calc_group_metrics(object)
@@ -2091,6 +2094,8 @@ plot.beezdemand_tmb <- function(
 #' @param report_space Character. Reporting space for the fixed-effect
 #'   (core demand parameter) rows. One of `"natural"`, `"log10"`, or
 #'   `"internal"`. Variance-component rows are unaffected (see Details).
+#'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always
+#'   on the estimation scale (transformation-invariant).
 #' @param ... Additional arguments.
 #'
 #' @return A tibble of model terms with columns `term`, `estimate`,
@@ -2178,11 +2183,9 @@ tidy.beezdemand_tmb <- function(
       internal_space = "natural"
     )
 
-    fixed <- fixed |>
-      dplyr::mutate(
-        statistic = .data$estimate / .data$std.error,
-        p.value = 2 * stats::pnorm(-abs(.data$statistic))
-      )
+    # Keep the estimation-scale `statistic`/`p.value` (broom convention); only
+    # `estimate`/`std.error` are back-transformed. (No degenerate natural-scale
+    # Wald recompute -- see test-report-space-test-invariance.R.)
 
     result <- dplyr::bind_rows(result, fixed)
   }

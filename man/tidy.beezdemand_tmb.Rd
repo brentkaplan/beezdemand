@@ -21,7 +21,9 @@ random-effect variance components, or both (the default). Matches the
 
 \item{report_space}{Character. Reporting space for the fixed-effect
 (core demand parameter) rows. One of \code{"natural"}, \code{"log10"}, or
-\code{"internal"}. Variance-component rows are unaffected (see Details).}
+\code{"internal"}. Variance-component rows are unaffected (see Details).
+\code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always
+on the estimation scale (transformation-invariant).}
 
 \item{...}{Additional arguments.}
 }

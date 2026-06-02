@@ -9,12 +9,19 @@ cover TICKET-011 phase work added under this development cycle.
 
 ## NLME summary/tidy reporting fixes
 
-* **Bug fix.** `tidy(fit_nlme, report_space = "natural")` now reports the same
-  degrees-of-freedom-aware p-values as `summary()`. Previously `tidy()`
-  recomputed transformed-scale p-values with a normal approximation (`pnorm()`)
-  while `summary()` correctly reused nlme's containment t degrees of freedom
-  (`pt()`; TICKET-006), so the two methods disagreed — anti-conservatively in
-  `tidy()` — for small samples. Both now share a single recompute helper.
+* **Reporting change (broom convention).** `summary()` and `tidy()` now report the
+  Wald `statistic` and `p.value` on the **estimation scale** (log/log10; logit for
+  hurdle participation rows) for every `report_space`, including the default
+  `"natural"`; only `estimate` and
+  `std.error` are back-transformed. Previously the natural scale recomputed the
+  test from the back-transformed estimate/SE, which is degenerate for log-scale
+  parameters — the statistic reduces to `1/(c·SE)`, independent of (and dropping
+  the sign of) the estimate, and for factor effects tests an impossible null
+  (ratio = 0 rather than ratio = 1). Keeping the test on the estimation scale
+  matches broom/emmeans/glmmTMB: for NLME the natural-scale test is nlme's native
+  containment-t (DF-aware) test; for the TMB and hurdle tiers it is the `pnorm()`
+  z-test. **This changes the default reported `statistic`/`p.value` for the core
+  demand parameters (Q0/alpha/k); `estimate` and `std.error` are unchanged.**
 
 * **Bug fix.** `summary(fit_nlme)$converged` now reflects the same operational
   convergence gate as `glance(fit_nlme)$converged` (positive-definite `apVar`
@@ -853,11 +860,12 @@ TICKET-011 phases above were added under the same 0.3.0 development cycle.
   factor combinations and identical estimates across `contrast_by` groups
   in additive models.
 
-* `summary.beezdemand_nlme()` with `report_space != internal_space` now
-  preserves nlme's containment-based degrees of freedom across the
-  delta-method parameter transformation, computing p-values via
-  `stats::pt()` instead of `stats::pnorm()`. Small-N inference is no
-  longer anti-conservative on natural-scale summaries (TICKET-006).
+* `summary.beezdemand_nlme()` / `tidy()` keep the Wald `statistic`/`p.value` on
+  the estimation scale when `report_space != internal_space`, so natural-scale
+  inference is nlme's native containment-t (DF-aware) test rather than a
+  recomputed (and degenerate) natural-scale Wald test. Only `estimate`/`std.error`
+  are back-transformed (broom convention; supersedes the earlier TICKET-006
+  delta-method recompute).
 
 * `summary.beezdemand_hurdle()$coefficients_matrix` is now labelled
   `"z value"` (was `"t value"`) to match the pnorm-based p-value

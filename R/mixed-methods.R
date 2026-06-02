@@ -2293,24 +2293,6 @@ print.beezdemand_nlme <- function(
   invisible(x)
 }
 
-# Recompute fixed-effect test statistics and p-values after a delta-method
-# parameter transformation (when report_space != internal_space). The transform
-# rescales estimate/SE but does NOT change the underlying t-distribution, so
-# nlme's containment-based degrees of freedom are reused; the z-test is only a
-# fallback when DF are unavailable (TICKET-006). Shared by
-# summary.beezdemand_nlme() and tidy.beezdemand_nlme() so the two methods report
-# identical inference on the same fit and cannot drift (release-audit C1: tidy
-# had silently used pnorm() while summary used pt()).
-.nlme_recompute_transformed_stats <- function(estimate, std.error, df_residual) {
-  statistic <- estimate / std.error
-  p.value <- if (all(is.na(df_residual))) {
-    2 * stats::pnorm(-abs(statistic))
-  } else {
-    2 * stats::pt(-abs(statistic), df = df_residual)
-  }
-  list(statistic = statistic, p.value = p.value)
-}
-
 #' Summary method for beezdemand_nlme
 #'
 #' Returns a structured summary object containing model coefficients,
@@ -2318,7 +2300,10 @@ print.beezdemand_nlme <- function(
 #'
 #' @param object A beezdemand_nlme object
 #' @param report_space Character. Reporting space for core parameters. One of
-#'   `"natural"` or `"log10"` (default depends on `param_space` used for fitting).
+#'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
+#'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
+#'   the estimation scale — nlme's native containment-t test
+#'   (transformation-invariant).
 #' @param ... Additional arguments (passed to summary.nlme)
 #' @return A `summary.beezdemand_nlme` object (inherits from
 #'   `beezdemand_summary`) with fields including:
@@ -2369,11 +2354,6 @@ summary.beezdemand_nlme <- function(
   # Extract fixed effects table
   ttable <- nlme_summary$tTable
   internal_space <- object$param_space %||% object$param_info$param_space %||% "log10"
-  # Preserve nlme's containment-based degrees of freedom for use after parameter
-  # transformation. The delta method changes estimate/SE but not the underlying
-  # t-distribution, so reusing these df keeps inference correctly t-based for
-  # small N (TICKET-006).
-  df_residual <- if ("DF" %in% colnames(ttable)) ttable[, "DF"] else NA_real_
   coefficients <- tibble::tibble(
     term = rownames(ttable),
     estimate = ttable[, "Value"],
@@ -2386,16 +2366,14 @@ summary.beezdemand_nlme <- function(
   )
 
   if (report_space != internal_space) {
+    # Back-transform estimate/SE only; the Wald `statistic`/`p.value` stay on the
+    # estimation scale (nlme's native containment-t test), so the reported test is
+    # transformation-invariant (broom convention; test-report-space-test-invariance.R).
     coefficients <- beezdemand_transform_coef_table(
       coef_tbl = coefficients,
       report_space = report_space,
       internal_space = internal_space
     )
-    rec <- .nlme_recompute_transformed_stats(
-      coefficients$estimate, coefficients$std.error, df_residual
-    )
-    coefficients$statistic <- rec$statistic
-    coefficients$p.value <- rec$p.value
   }
 
   # Random effects structure
@@ -2552,7 +2530,10 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #' @param effects Character. Which effects to include: `"fixed"`,
 #'   `"ran_pars"`, or both (the default).
 #' @param report_space Character. Reporting space for core parameters. One of
-#'   `"natural"` or `"log10"` (default depends on `param_space` used for fitting).
+#'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
+#'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
+#'   the estimation scale — nlme's native containment-t test
+#'   (transformation-invariant).
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name
@@ -2587,9 +2568,6 @@ tidy.beezdemand_nlme <- function(
   if ("fixed" %in% effects) {
     nlme_summary <- summary(x$model)
     ttable <- nlme_summary$tTable
-    # Preserve nlme's containment-based DF for the post-transform recompute
-    # (see .nlme_recompute_transformed_stats / TICKET-006).
-    df_residual <- if ("DF" %in% colnames(ttable)) ttable[, "DF"] else NA_real_
     fixed <- tibble::tibble(
       term = rownames(ttable),
       estimate = ttable[, "Value"],
@@ -2601,21 +2579,14 @@ tidy.beezdemand_nlme <- function(
       term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
     )
 
+    # Back-transform estimate/SE only; `statistic`/`p.value` stay on nlme's native
+    # estimation scale so summary() and tidy() report the same transformation-
+    # invariant test (broom convention; test-report-space-test-invariance.R).
     fixed <- beezdemand_transform_coef_table(
       coef_tbl = fixed,
       report_space = report_space,
       internal_space = internal_space
     )
-
-    if (report_space != internal_space) {
-      # Reuse the DF-aware recompute shared with summary.beezdemand_nlme() so
-      # the two methods never disagree (release-audit C1).
-      rec <- .nlme_recompute_transformed_stats(
-        fixed$estimate, fixed$std.error, df_residual
-      )
-      fixed$statistic <- rec$statistic
-      fixed$p.value <- rec$p.value
-    }
     result <- dplyr::bind_rows(result, fixed)
   }
 
