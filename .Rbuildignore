@@ -51,6 +51,9 @@
 ^[^/]+\.txt$
 ^tests/testthat/Rplots\.pdf$
 ^tests/testthat/Rplot[0-9]+\.png$
+^scripts$
+^nlme-.*\.png$
+^tmb-.*\.png$
 ^vignettes/\.build\.timestamp$
 ^vignettes/demand-typical-workflow\.html$
 ^vignettes/demand-typical-workflow_cache$
