@@ -4,7 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format follows Keep a Changelog and this project adheres to Semantic Versioning.
 
-## [Unreleased]
+## [0.3.0]
+
+Major feature release. See `NEWS.md` for the complete, detailed changelog
+(TMB mixed-effects tier `fit_demand_tmb()`, factor-expanded/multi-block random
+effects, cross-backend EMM/contrast harmonization, parametric bootstrap CIs).
+
+### Changed
+- **Reporting (broom convention).** `summary()` and `tidy()` report the Wald
+  `statistic`/`p.value` on the estimation (log/log10) scale for every
+  `report_space` (including the default `"natural"`); only `estimate`/`std.error`
+  are back-transformed. This changes the default reported test statistic/p-value
+  for the core demand parameters (Q0/alpha/k).
 
 ### Fixed
 - `get_demand_comparisons()` now filters emmeans grid to observed factor
@@ -180,7 +191,8 @@ When tags are available, update the compare links below.
 The repository URL from DESCRIPTION is https://github.com/brentkaplan/beezdemand
 -->
 
-[Unreleased]: https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/brentkaplan/beezdemand/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/brentkaplan/beezdemand/compare/v0.1.2...v0.1.3
 
