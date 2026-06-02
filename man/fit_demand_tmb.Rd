@@ -65,19 +65,19 @@ Accepts any of the following, in order of generality:
 \describe{
 \item{formula (default)}{\code{Q0 + alpha ~ 1} -- random intercepts on
 both parameters (equivalent to the legacy \code{c("q0", "alpha")}
-shortcut). \code{Q0 ~ 1} limits REs to Q0. Formulas with
+shortcut). \code{Q0 ~ 1} limits REs to Q0. Formulas with a
 factor-expanded RHS (e.g., \code{Q0 + alpha ~ condition} or
-\code{Q0 + alpha ~ condition - 1}) are now supported in Phase 2 --
-see TICKET-011 Phase 2 for details. The within-subject factor
-must vary within each \code{id}; pure between-subject factors
-belong in \code{factors}, not in the RE formula.}
+\code{Q0 + alpha ~ condition - 1}) are supported, giving each subject
+a random effect per factor level. The within-subject factor must
+vary within each \code{id}; pure between-subject factors belong in
+\code{factors}, not in the RE formula.}
 \item{\code{nlme::pdMat}}{e.g., \code{nlme::pdDiag(Q0 + alpha ~ 1)} or
 \code{nlme::pdSymm(Q0 + alpha ~ condition)}. Pre-constructed pdMat
 objects are accepted and their covariance class is honored
 (overrides \code{covariance_structure}).}
 \item{list of \code{pdMat} / \code{nlme::pdBlocked}}{Multi-block covariance
-structures like \code{list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))}.
-Fully supported via TICKET-011 Phase 3.}
+structures like \code{list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))}
+are fully supported.}
 \item{character vector (deprecated)}{\code{c("q0", "alpha")} or \code{"q0"}.
 Soft-deprecated in 0.3.0; emits a \code{lifecycle::deprecate_soft()}
 message. Translated internally to the formula \code{Q0 + alpha ~ 1}
@@ -136,8 +136,7 @@ each \code{id} before computing \code{subject_pars}. When a factor or continuous
 covariate varies within subject, Q0/alpha/Pmax/Omax are set to
 \code{NA_real_} for affected subjects and a warning names the offending
 columns. Set to \code{FALSE} to force row-order-dependent values (not
-recommended; proper factor-expanded RE support lands in TICKET-011
-Phases 2-3).}
+recommended; prefer a factor-expanded random-effects formula instead).}
 
 \item{verbose}{Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.}
 
@@ -218,16 +217,13 @@ data(apt_full)
 fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponential", factors = "gender")
 get_demand_param_emms(fit3, param = "alpha")
+}
 
-# Factor-expanded random slopes on a within-subject factor (Phase 2):
-# each subject contributes a Q0 / alpha RE per condition level.
-# Replace `cond` below with your in-subject factor.
-\dontrun{
-fit4 <- fit_demand_tmb(within_data, y_var = "y_ll4", x_var = "x", id_var = "id",
-                       equation = "zben", factors = "cond",
-                       random_effects = nlme::pdDiag(Q0 + alpha ~ cond))
-}
-}
+# Factor-expanded random slopes on a within-subject factor are supported
+# through the `random_effects` formula interface, e.g.
+#   random_effects = nlme::pdDiag(Q0 + alpha ~ cond)
+# so each subject contributes a Q0 / alpha random effect per factor level.
+# See vignette("tmb-advanced-random-effects", package = "beezdemand").
 
 }
 \seealso{

@@ -35,9 +35,12 @@ but be aware that, as with any software release, there might be (unknown) bugs p
 | Your Situation | Recommended Approach | Learn More |
 |----------------|---------------------|------------|
 | Single purchase task, individual fits | `fit_demand_fixed()` | [Fixed demand](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.html) |
-| Need group comparisons, random effects | `fit_demand_mixed()` | [Mixed demand](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
+| Group comparisons / random effects (modern TMB backend) | `fit_demand_tmb()` | [TMB mixed-effects](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.html) |
+| Group comparisons / random effects (classic NLME backend) | `fit_demand_mixed()` | [Mixed demand](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
 | Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
 | Cross-commodity substitution | `fit_cp_*()` functions | [Cross-price models](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
+
+`beezdemand` provides a **five-tier modeling framework**: legacy NLS (`FitCurves()`, maintained for backward compatibility), modern fixed-effect NLS (`fit_demand_fixed()`), nonlinear mixed-effects via `nlme` (`fit_demand_mixed()`), mixed-effects via Template Model Builder (`fit_demand_tmb()`, the recommended backend for new mixed-effects work), and two-part hurdle models (`fit_demand_hurdle()`). The TMB and NLME tiers fit the same hierarchical demand models; `fit_demand_tmb()` adds automatic differentiation, a Laplace approximation, multi-start optimization, and the option to estimate `k`.
 
 For detailed guidance on choosing the right modeling approach, see the [model selection guide](https://brentkaplan.github.io/beezdemand/articles/model-selection.html) or `vignette("model-selection")`. Full documentation is available at the [pkgdown site](https://brentkaplan.github.io/beezdemand/).
 
@@ -444,6 +447,44 @@ plot(
 For more details, see the "Mixed-Effects Demand Modeling with `beezdemand`"
 vignette, which covers starting values, fixed/random effects, and post-hoc
 analyses of parameter estimates.
+
+## TMB Mixed-Effects Demand Models
+
+`fit_demand_tmb()` fits the same hierarchical demand models as
+`fit_demand_mixed()` but is built on [Template Model Builder
+(TMB)](https://github.com/kaskr/adcomp), which uses exact automatic
+differentiation, a Laplace approximation for the random effects, and multi-start
+optimization. It is the **recommended backend for new mixed-effects work**:
+where the `nlme` PNLS algorithm frequently fails to converge on demand
+equations, TMB is markedly more robust, and it can additionally estimate the
+scaling constant `k` rather than fixing it. Fits return `beezdemand_tmb` objects
+with the full S3 method suite (`coef()`, `predict()`, `summary()`, `plot()`,
+`tidy()`, `glance()`, `confint()`, `VarCorr()`, ...) and support factor
+covariates with estimated marginal means and pairwise comparisons.
+
+```{r mixed-tmb, eval = FALSE}
+data(apt, package = "beezdemand")
+
+# Hursh & Silberberg exponential model with random intercepts on Q0 and alpha
+fit_tmb <- fit_demand_tmb(
+  apt,
+  y_var = "y", x_var = "x", id_var = "id",
+  equation = "exponential",
+  random_effects = Q0 + alpha ~ 1
+)
+summary(fit_tmb)
+
+# With a between-subjects factor and post-hoc comparisons
+fit_tmb_grp <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender")
+get_demand_param_emms(fit_tmb_grp, param = "alpha")
+```
+
+See the [TMB mixed-effects
+vignette](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.html)
+(`vignette("tmb-mixed-effects")`) for a full walkthrough, and the [advanced
+random-effects
+guide](https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.html)
+for factor-expanded and multi-block covariance structures.
 
 ## Learn More About Functions
 

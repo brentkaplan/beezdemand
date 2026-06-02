@@ -2107,9 +2107,8 @@ plot.beezdemand_tmb <- function(
 #' optimizer coefficients and do not respond to `report_space`; `std.error`
 #' is `NA` for them. Random-effect *correlations* are not tidied here -- see
 #' `summary(x)$correlations` or `VarCorr(x)` for those. The NLME sibling
-#' [tidy.beezdemand_nlme()] likewise reports SDs (post-TICKET-030), so
-#' backend-agnostic code can consume the `estimate` column without dispatch
-#' logic on either side.
+#' [tidy.beezdemand_nlme()] likewise reports SDs, so backend-agnostic code can
+#' consume the `estimate` column without dispatch logic on either side.
 #'
 #' @examples
 #' \donttest{

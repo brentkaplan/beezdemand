@@ -24,9 +24,8 @@ A one-row tibble of model statistics with columns:
 \item \code{converged}: Operational convergence status. \code{TRUE} when the final fit is
 usable for inference — i.e. \code{apVar} (nlme's approximate covariance of the
 variance-covariance parameters) is positive-definite AND there is no
-terminal error. Alias for \code{final_fit_ok}. As of TICKET-020 this is no
-longer flipped to \code{FALSE} by iteration-level optimizer warnings (see
-\code{fit_warned}).
+terminal error. Alias for \code{final_fit_ok}. It is not flipped to \code{FALSE}
+by iteration-level optimizer warnings (see \code{fit_warned}).
 \item \code{final_fit_ok}: The canonical usable-for-inference gate (\code{apVar} PD and no
 terminal error); identical to \code{converged}. NLME-only.
 \item \code{fit_warned}: Diagnostic flag — \code{TRUE} when nlme emitted iteration-level

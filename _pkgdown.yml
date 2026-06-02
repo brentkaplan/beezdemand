@@ -52,10 +52,16 @@ navbar:
           href: articles/mixed-demand-advanced.html
         - text: TMB Mixed-Effects Models
           href: articles/tmb-mixed-effects.html
+        - text: "TMB Advanced Random-Effects Structures"
+          href: articles/tmb-advanced-random-effects.html
         - text: Hurdle Demand Models
           href: articles/hurdle-demand-models.html
         - text: Cross-Price Models
           href: articles/cross-price-models.html
+        - text: "---"
+        - text: Troubleshooting
+        - text: Understanding Convergence
+          href: articles/convergence-guide.html
         - text: "---"
         - text: Migration
         - text: "Migration Guide: FitCurves to fit_demand_fixed"

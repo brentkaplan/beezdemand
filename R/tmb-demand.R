@@ -838,13 +838,14 @@ NULL
 #' @param k_fixed Numeric or NULL.
 #' @param X_q0,X_alpha Fixed-effect design matrices.
 #' @param Z_q0,Z_alpha Random-effect design matrices.
-#' @param validate_subject_pars Logical (default `TRUE`); see Phase 0 NA fallback.
+#' @param validate_subject_pars Logical (default `TRUE`); see the
+#'   `validate_subject_pars` argument of [fit_demand_tmb()] for the NA fallback.
 #'
 #' @note For factor-expanded RE specs (e.g. `pdDiag(Q0+alpha~condition)`),
 #'   subject-level Q0 / alpha here use the first observed row of `Z_q0` /
 #'   `Z_alpha` per subject -- which encodes the subject's first observed
-#'   condition only. Per-(subject, condition) rows are planned for Phase 5;
-#'   meanwhile use `predict()` for cell-level values.
+#'   condition only. This helper does not emit per-(subject, condition) rows;
+#'   use `predict()` for cell-level values.
 #'
 #' @return Data frame of subject-specific parameters.
 #' @keywords internal
@@ -1204,19 +1205,19 @@ NULL
 #'   \describe{
 #'     \item{formula (default)}{`Q0 + alpha ~ 1` -- random intercepts on
 #'       both parameters (equivalent to the legacy `c("q0", "alpha")`
-#'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with
+#'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with a
 #'       factor-expanded RHS (e.g., `Q0 + alpha ~ condition` or
-#'       `Q0 + alpha ~ condition - 1`) are now supported in Phase 2 --
-#'       see TICKET-011 Phase 2 for details. The within-subject factor
-#'       must vary within each `id`; pure between-subject factors
-#'       belong in `factors`, not in the RE formula.}
+#'       `Q0 + alpha ~ condition - 1`) are supported, giving each subject
+#'       a random effect per factor level. The within-subject factor must
+#'       vary within each `id`; pure between-subject factors belong in
+#'       `factors`, not in the RE formula.}
 #'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)` or
 #'       `nlme::pdSymm(Q0 + alpha ~ condition)`. Pre-constructed pdMat
 #'       objects are accepted and their covariance class is honored
 #'       (overrides `covariance_structure`).}
 #'     \item{list of `pdMat` / `nlme::pdBlocked`}{Multi-block covariance
-#'       structures like `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`.
-#'       Fully supported via TICKET-011 Phase 3.}
+#'       structures like `list(pdSymm(Q0+alpha~1), pdDiag(Q0+alpha~cond-1))`
+#'       are fully supported.}
 #'     \item{character vector (deprecated)}{`c("q0", "alpha")` or `"q0"`.
 #'       Soft-deprecated in 0.3.0; emits a `lifecycle::deprecate_soft()`
 #'       message. Translated internally to the formula `Q0 + alpha ~ 1`
@@ -1266,8 +1267,7 @@ NULL
 #'   covariate varies within subject, Q0/alpha/Pmax/Omax are set to
 #'   `NA_real_` for affected subjects and a warning names the offending
 #'   columns. Set to `FALSE` to force row-order-dependent values (not
-#'   recommended; proper factor-expanded RE support lands in TICKET-011
-#'   Phases 2-3).
+#'   recommended; prefer a factor-expanded random-effects formula instead).
 #' @param verbose Integer. Verbosity level: 0 = silent, 1 = progress, 2 = debug.
 #' @param ... Additional arguments (currently unused).
 #' @param store_report_cov Logical. Advanced storage control. When `FALSE`
@@ -1339,16 +1339,13 @@ NULL
 #' fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
 #'                        equation = "exponential", factors = "gender")
 #' get_demand_param_emms(fit3, param = "alpha")
+#' }
 #'
-#' # Factor-expanded random slopes on a within-subject factor (Phase 2):
-#' # each subject contributes a Q0 / alpha RE per condition level.
-#' # Replace `cond` below with your in-subject factor.
-#' \dontrun{
-#' fit4 <- fit_demand_tmb(within_data, y_var = "y_ll4", x_var = "x", id_var = "id",
-#'                        equation = "zben", factors = "cond",
-#'                        random_effects = nlme::pdDiag(Q0 + alpha ~ cond))
-#' }
-#' }
+#' # Factor-expanded random slopes on a within-subject factor are supported
+#' # through the `random_effects` formula interface, e.g.
+#' #   random_effects = nlme::pdDiag(Q0 + alpha ~ cond)
+#' # so each subject contributes a Q0 / alpha random effect per factor level.
+#' # See vignette("tmb-advanced-random-effects", package = "beezdemand").
 #'
 #' @seealso [fit_demand_mixed()] for NLME-based fitting,
 #'   [fit_demand_hurdle()] for two-part hurdle models,

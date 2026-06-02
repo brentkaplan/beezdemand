@@ -45,9 +45,8 @@ the model's likelihood scale. They are not the raw internal \code{logsigma}
 optimizer coefficients and do not respond to \code{report_space}; \code{std.error}
 is \code{NA} for them. Random-effect \emph{correlations} are not tidied here -- see
 \code{summary(x)$correlations} or \code{VarCorr(x)} for those. The NLME sibling
-\code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} likewise reports SDs (post-TICKET-030), so
-backend-agnostic code can consume the \code{estimate} column without dispatch
-logic on either side.
+\code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} likewise reports SDs, so backend-agnostic code can
+consume the \code{estimate} column without dispatch logic on either side.
 }
 \examples{
 \donttest{

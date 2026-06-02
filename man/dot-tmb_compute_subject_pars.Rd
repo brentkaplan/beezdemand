@@ -45,7 +45,8 @@
 
 \item{Z_q0, Z_alpha}{Random-effect design matrices.}
 
-\item{validate_subject_pars}{Logical (default \code{TRUE}); see Phase 0 NA fallback.}
+\item{validate_subject_pars}{Logical (default \code{TRUE}); see the
+\code{validate_subject_pars} argument of \code{\link[=fit_demand_tmb]{fit_demand_tmb()}} for the NA fallback.}
 }
 \value{
 Data frame of subject-specific parameters.
@@ -57,7 +58,7 @@ Compute Subject-Specific Parameters
 For factor-expanded RE specs (e.g. \code{pdDiag(Q0+alpha~condition)}),
 subject-level Q0 / alpha here use the first observed row of \code{Z_q0} /
 \code{Z_alpha} per subject -- which encodes the subject's first observed
-condition only. Per-(subject, condition) rows are planned for Phase 5;
-meanwhile use \code{predict()} for cell-level values.
+condition only. This helper does not emit per-(subject, condition) rows;
+use \code{predict()} for cell-level values.
 }
 \keyword{internal}

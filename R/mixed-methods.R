@@ -1067,7 +1067,7 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #'   the nested contrast tables carry leading by-column(s) named with the
 #'   user-requested *original* factor name (e.g. `dose`, not the
 #'   collapse-mapped `dose_alpha`), harmonized with the TMB backend and the flat
-#'   [tidy()][tidy.beezdemand_comparison] output (TICKET-033).
+#'   [tidy()][tidy.beezdemand_comparison] output.
 #'
 #' @examples
 #' \donttest{
@@ -2664,9 +2664,8 @@ tidy.beezdemand_nlme <- function(
 #'   - `converged`: Operational convergence status. `TRUE` when the final fit is
 #'     usable for inference — i.e. `apVar` (nlme's approximate covariance of the
 #'     variance-covariance parameters) is positive-definite AND there is no
-#'     terminal error. Alias for `final_fit_ok`. As of TICKET-020 this is no
-#'     longer flipped to `FALSE` by iteration-level optimizer warnings (see
-#'     `fit_warned`).
+#'     terminal error. Alias for `final_fit_ok`. It is not flipped to `FALSE`
+#'     by iteration-level optimizer warnings (see `fit_warned`).
 #'   - `final_fit_ok`: The canonical usable-for-inference gate (`apVar` PD and no
 #'     terminal error); identical to `converged`. NLME-only.
 #'   - `fit_warned`: Diagnostic flag — `TRUE` when nlme emitted iteration-level
