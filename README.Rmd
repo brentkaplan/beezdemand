@@ -475,6 +475,7 @@ fit_tmb <- fit_demand_tmb(
 summary(fit_tmb)
 
 # With a between-subjects factor and post-hoc comparisons
+data(apt_full, package = "beezdemand")
 fit_tmb_grp <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender")
 get_demand_param_emms(fit_tmb_grp, param = "alpha")
 ```
