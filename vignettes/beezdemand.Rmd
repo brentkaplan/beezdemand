@@ -27,10 +27,9 @@ knitr::opts_chunk$set(
 
 Behavioral economic demand is gaining in popularity. The motivation behind `beezdemand` was to
 create an alternative tool to conduct these
-analyses. This package is not necessarily meant to be a replacement
-for other software; rather, it is meant to serve as an
-additional tool in the behavioral economist's toolbox. It is meant for
-researchers to conduct behavioral economic (be) demand the easy (ez) way.
+analyses. `beezdemand` is one more tool in the behavioral economist's
+toolbox, not a replacement for other software. It lets researchers conduct
+behavioral economic (be) demand analysis the easy (ez) way.
 
 ## Note About Use
 
