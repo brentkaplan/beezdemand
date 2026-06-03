@@ -48,6 +48,8 @@ test_that("lambertW does not hit the iteration limit for in-range arguments", {
 })
 
 test_that("lambertW is vectorized consistently with scalar calls", {
-  z <- c(0.5, 1, exp(1), 5)
+  # Mix positive z with the negative arguments the HS/hurdle Pmax solver feeds
+  # in (all in (-1/e, 0)), to cover the actual Lambert-W region used downstream.
+  z <- c(0.5, 1, exp(1), 5, -1 / (3 * log(10)), -1 / 3, -1 / 5)
   expect_equal(lambertW(z), vapply(z, lambertW, numeric(1)), tolerance = 1e-10)
 })

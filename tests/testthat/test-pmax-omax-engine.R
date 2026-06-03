@@ -96,7 +96,7 @@ test_that("Hurdle analytic pmax fails when k < e", {
   
   expect_false(result$success)
   expect_true(is.na(result$pmax))
-  expect_true(grepl("k.*< e", result$note))
+  expect_true(grepl("no interior maximum", result$note))
 })
 
 test_that("SND analytic pmax is correct closed form", {
@@ -512,10 +512,11 @@ test_that("Analytic Pmax succeeds above threshold and is NA below threshold", {
   expect_false(.pmax_analytic_hs(0.01, 10, hs_thr - 0.1)$success)
   expect_false(.pmax_analytic_hurdle(0.5, hu_thr - 0.1)$success)
   expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr - 0.1)$success)
-  # NOTE (audit FLAG, not asserted here): the EXACT boundary k == threshold is
-  # handled inconsistently -- HS uses `k <= threshold` -> NA, while both hurdle
-  # functions use `k < threshold` -> finite. The contract (EQUATIONS_CONTRACT.md
-  # L542,572) specifies k >= e (inclusive, matching the hurdle behavior), but the
-  # strict interior-maximum interpretation (an inflection, not a max, at exactly
-  # the threshold) matches HS. Convention to be reconciled by the maintainer.
+  # AT the threshold: all model types use strict-max semantics (resolved per the
+  # Codex review). At exactly k == threshold the expenditure function has a
+  # tangent inflection, not a strict interior maximum, so Pmax is NA -- and HS
+  # and the two hurdle variants now agree (previously HS used <= but hurdle <).
+  expect_false(.pmax_analytic_hs(0.01, 10, hs_thr)$success)
+  expect_false(.pmax_analytic_hurdle(0.5, hu_thr)$success)
+  expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr)$success)
 })

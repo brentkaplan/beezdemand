@@ -204,13 +204,13 @@ NULL
     ))
   }
   
-  if (k_nat < threshold) {
+  if (k_nat <= threshold) {
     return(list(
       pmax = NA_real_,
       method = "analytic_lambert_w_hurdle",
       success = FALSE,
       note = sprintf(
-        "k (%.4f) < e (~%.4f): no interior maximum exists",
+        "k (%.4f) <= e (~%.4f): no interior maximum exists",
         k_nat, threshold
       )
     ))
@@ -283,13 +283,13 @@ NULL
     ))
   }
 
-  if (k_nat < threshold) {
+  if (k_nat <= threshold) {
     return(list(
       pmax = NA_real_,
       method = "analytic_lambert_w_hurdle_hs_stdq0",
       success = FALSE,
       note = sprintf(
-        "k (%.4f) < e (~%.4f): no interior maximum exists",
+        "k (%.4f) <= e (~%.4f): no interior maximum exists",
         k_nat, threshold
       )
     ))
