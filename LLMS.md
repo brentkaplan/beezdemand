@@ -11,6 +11,7 @@ Docs: <https://brentkaplan.github.io/beezdemand/>
 |----------|---------|---------|
 | `fit_demand_fixed()` | Individual NLS demand curves | `beezdemand_fixed` |
 | `fit_demand_mixed()` | Hierarchical NLME with random effects | `beezdemand_nlme` |
+| `fit_demand_tmb()` | Mixed-effects demand via TMB (recommended for new work) | `beezdemand_tmb` |
 | `fit_demand_hurdle()` | Two-part hurdle model via TMB | `beezdemand_hurdle` |
 | `fit_cp_nls()` | Nonlinear cross-price elasticity | `cp_model_nls` |
 | `fit_cp_linear()` | Linear or mixed cross-price | `cp_model_lm` / `cp_model_lmer` |
@@ -37,6 +38,7 @@ Cross-price fitters `fit_cp_nls()` and `fit_cp_linear()` now also accept `x_var`
 |-------|-------------|
 | `beezdemand_fixed` | `id`, `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 | `beezdemand_nlme` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
+| `beezdemand_tmb` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 | `beezdemand_hurdle` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 
 ### `glance()` columns
@@ -45,6 +47,7 @@ Cross-price fitters `fit_cp_nls()` and `fit_cp_linear()` now also accept `x_var`
 |-------|-------------|
 | `beezdemand_fixed` | `model_class`, `equation`, `k_spec`, `nobs`, `n_subjects`, `n_success`, `n_fail` |
 | `beezdemand_nlme` | `model_class`, `equation`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC` |
+| `beezdemand_tmb` | `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`, `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` |
 | `beezdemand_hurdle` | `model_class`, `part2`, `random_effects`, `n_subjects`, `nobs`, `converged`, `logLik`, `AIC`, `BIC` |
 
 ### `augment()` columns
@@ -53,6 +56,7 @@ Cross-price fitters `fit_cp_nls()` and `fit_cp_linear()` now also accept `x_var`
 |-------|-------------|
 | `beezdemand_fixed` | original data + `.fitted`, `.resid` |
 | `beezdemand_nlme` | original data + `.fitted`, `.resid` |
+| `beezdemand_tmb` | original data + `.fitted`, `.resid`, `.std_resid` |
 | `beezdemand_hurdle` | original data + `.fitted_prob_zero`, `.fitted_logQ`, `.fitted`, `.resid` |
 
 ## Common Pitfalls
@@ -61,7 +65,7 @@ Cross-price fitters `fit_cp_nls()` and `fit_cp_linear()` now also accept `x_var`
 
 2. **Log-space confusion:** `fit_demand_mixed()` with `equation_form = "zben"` expects LL4-transformed y values. Pass raw y through `ll4()` first, then use `inv_fun = ll4_inv` in `plot()` to back-transform.
 
-3. **Equation aliases:** `"hs"` (in `fit_demand_fixed`) corresponds to Hursh & Silberberg (2008). The same model is called `"zben"` in `fit_demand_mixed` and `"zhao_exponential"` in `fit_demand_hurdle`. Different names, same underlying exponential demand equation.
+3. **Equation names across tiers:** the Hursh & Silberberg (2008) exponential model is named `"hs"` or `"exponential"` in `fit_demand_fixed()`, and `"exponential"` in `fit_demand_tmb()` and `fit_demand_hurdle()` (Part II). The zero-bounded exponential (`"zben"`, in `fit_demand_mixed()` and `fit_demand_tmb()`) and the Zhao two-part model (`"zhao_exponential"`, the `fit_demand_hurdle()` Part II default) are *distinct* demand equations with different functional forms, not aliases of HS. See `vignette("model-selection")` for the full equation map.
 
 4. **Cross-price column names:** `fit_cp_nls()` and `fit_cp_linear()` accept `x_var`/`y_var` (and `id_var`/`group_var`/`target_var` for `fit_cp_linear()`) to map non-standard column names to canonical ones. Defaults are `x`, `y`, `id`, `group`, `target`. Canonical names are always used in the returned `$data`.
 
