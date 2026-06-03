@@ -390,3 +390,132 @@ test_that("Full engine returns all expected fields", {
   expect_true("q0_scale_in" %in% names(result))
   expect_true("k_scale_in" %in% names(result))
 })
+
+# ============================================================================
+# Independent (non-circular) verification added for the v0.3.0 audit.
+#
+# The expected Pmax values below come from brute-force maximization of the
+# expenditure function E(P) = P * Q(P), with Q(P) re-derived directly from the
+# published demand equation -- they NEVER call .pmax_analytic_*() or lambertW(),
+# unlike the circular checks above (e.g. L51-56 feed w_arg back through
+# lambertW). For HS and the hurdle variants demand has a positive lower
+# asymptote, so E(P) -> Inf as P -> Inf; the analytic Pmax is therefore the
+# FIRST interior local maximum (the W0 / unit-elasticity point), not the global
+# maximum. The oracle scans for that first local max. SND expenditure -> 0, so
+# its first local max is also the global max.
+# ============================================================================
+
+# First interior local maximum of E on a fine grid, refined with optimize().
+# Never references the engine or lambertW.
+.audit_first_local_max <- function(Efn, p_grid) {
+  E <- vapply(p_grid, Efn, numeric(1))
+  for (i in 2:(length(p_grid) - 1L)) {
+    if (E[i] > E[i - 1L] && E[i] >= E[i + 1L]) {
+      opt <- stats::optimize(
+        Efn,
+        lower = p_grid[i - 1L],
+        upper = p_grid[i + 1L],
+        maximum = TRUE,
+        tol = 1e-10
+      )
+      return(opt$maximum)
+    }
+  }
+  NA_real_
+}
+
+test_that("HS analytic Pmax matches an independent brute-force local maximum", {
+  alpha <- 0.01; q0 <- 10; k <- 3
+  demand <- function(p) q0 * 10^(k * (exp(-alpha * q0 * p) - 1))
+  oracle <- .audit_first_local_max(
+    function(p) p * demand(p),
+    seq(1e-3, 50, length.out = 8000)
+  )
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "hs",
+    params = list(alpha = alpha, q0 = q0, k = k),
+    param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
+  )
+  expect_equal(res$method_model, "analytic_lambert_w")
+  expect_equal(res$pmax_model, oracle, tolerance = 1e-4)
+})
+
+test_that("Zhao hurdle analytic Pmax matches an independent brute-force local maximum", {
+  alpha <- 0.5; q0 <- 10; k <- 3
+  demand <- function(p) q0 * exp(k * (exp(-alpha * p) - 1))
+  oracle <- .audit_first_local_max(
+    function(p) p * demand(p),
+    seq(1e-3, 30, length.out = 8000)
+  )
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "hurdle",
+    params = list(alpha = alpha, q0 = q0, k = k),
+    param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
+  )
+  expect_equal(res$pmax_model, oracle, tolerance = 1e-4)
+})
+
+test_that("StdQ0 hurdle analytic Pmax matches an independent brute-force local maximum", {
+  alpha <- 0.05; q0 <- 8; k <- 3
+  demand <- function(p) q0 * exp(k * (exp(-alpha * q0 * p) - 1))
+  oracle <- .audit_first_local_max(
+    function(p) p * demand(p),
+    seq(1e-3, 40, length.out = 8000)
+  )
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "hurdle_hs_stdq0",
+    params = list(alpha = alpha, q0 = q0, k = k),
+    param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
+  )
+  expect_equal(res$pmax_model, oracle, tolerance = 1e-4)
+})
+
+test_that("SND analytic Pmax matches an independent global maximum", {
+  alpha <- 0.001; q0 <- 5
+  demand <- function(p) q0 * exp(-alpha * q0 * p)
+  opt <- stats::optimize(
+    function(p) p * demand(p),
+    lower = 1, upper = 5000, maximum = TRUE, tol = 1e-10
+  )
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "snd",
+    params = list(alpha = alpha, q0 = q0),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
+  expect_equal(res$pmax_model, 1 / (alpha * q0), tolerance = 1e-8) # = 200
+  expect_equal(res$pmax_model, opt$maximum, tolerance = 1e-4)
+})
+
+test_that("SND Omax equals 1/(e*alpha) and is invariant to Q0", {
+  alpha <- 0.001
+  res5 <- beezdemand_calc_pmax_omax(
+    model_type = "snd", params = list(alpha = alpha, q0 = 5),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
+  res50 <- beezdemand_calc_pmax_omax(
+    model_type = "snd", params = list(alpha = alpha, q0 = 50),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
+  expect_equal(res5$omax_model, 1 / (exp(1) * alpha), tolerance = 1e-6)
+  expect_equal(res50$omax_model, 1 / (exp(1) * alpha), tolerance = 1e-6)
+  expect_equal(res5$omax_model, res50$omax_model, tolerance = 1e-8)
+})
+
+test_that("Analytic Pmax succeeds above threshold and is NA below threshold", {
+  hs_thr <- exp(1) / log(10)
+  hu_thr <- exp(1)
+  # strictly above threshold -> analytic solution exists
+  expect_true(.pmax_analytic_hs(0.01, 10, hs_thr + 0.1)$success)
+  expect_true(.pmax_analytic_hurdle(0.5, hu_thr + 0.1)$success)
+  expect_true(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr + 0.1)$success)
+  # strictly below threshold -> no real solution
+  expect_false(.pmax_analytic_hs(0.01, 10, hs_thr - 0.1)$success)
+  expect_false(.pmax_analytic_hurdle(0.5, hu_thr - 0.1)$success)
+  expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr - 0.1)$success)
+  # NOTE (audit FLAG, not asserted here): the EXACT boundary k == threshold is
+  # handled inconsistently -- HS uses `k <= threshold` -> NA, while both hurdle
+  # functions use `k < threshold` -> finite. The contract (EQUATIONS_CONTRACT.md
+  # L542,572) specifies k >= e (inclusive, matching the hurdle behavior), but the
+  # strict interior-maximum interpretation (an inflection, not a max, at exactly
+  # the threshold) matches HS. Convention to be reconciled by the maintainer.
+})

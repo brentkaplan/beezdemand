@@ -270,6 +270,77 @@ test_that("TMB predict zben clamps for Q0 < 1 (prevents sign flip)", {
 })
 
 # ==============================================================================
+# v0.3.0 audit: TMB equation mean-function correctness (.tmb_predict_equation)
+#
+# Deterministic verification that each equation branch matches the published
+# demand equation -- in particular that the k*ln(10) factor in the TMB template
+# (src/MixedDemand.h) correctly implements the base-10 form 10^{k(...)}. These
+# checks call the R-side evaluator directly with known parameters; the expected
+# values are re-derived from the published equations, not from the evaluator.
+# ==============================================================================
+
+test_that("TMB exponentiated equals the canonical Koffarnus form Q0*10^(k(...))", {
+  price <- c(0, 0.5, 1, 2, 5, 10, 20)
+  Q0 <- 12; alpha <- 0.006; k <- 2.5
+  got <- beezdemand:::.tmb_predict_equation(
+    price = price, Q0 = Q0, alpha = alpha, k = k,
+    log_q0 = log(Q0), equation = "exponentiated"
+  )
+  # Koffarnus et al. (2015): Q = Q0 * 10^(k (exp(-alpha*Q0*C) - 1))
+  expected <- Q0 * 10^(k * (exp(-alpha * Q0 * price) - 1))
+  expect_equal(got, expected, tolerance = 1e-10)
+})
+
+test_that("TMB exponentiated == exp(exponential): k*ln(10) scaling is consistent", {
+  price <- c(0, 1, 3, 7, 15)
+  Q0 <- 8; alpha <- 0.01; k <- 3
+  log_q <- beezdemand:::.tmb_predict_equation(
+    price = price, Q0 = Q0, alpha = alpha, k = k,
+    log_q0 = log(Q0), equation = "exponential"
+  )
+  q <- beezdemand:::.tmb_predict_equation(
+    price = price, Q0 = Q0, alpha = alpha, k = k,
+    log_q0 = log(Q0), equation = "exponentiated"
+  )
+  # exp(ln(10)*k*x) == 10^(k*x); the two branches must agree after exp().
+  expect_equal(exp(log_q), q, tolerance = 1e-10)
+  # exponential returns ln(Q); compare to the canonical HS in ln units.
+  expect_equal(
+    log_q,
+    log(Q0) + k * log(10) * (exp(-alpha * Q0 * price) - 1),
+    tolerance = 1e-12
+  )
+})
+
+test_that("TMB simplified equals Q0*exp(-alpha*Q0*price) and is monotone decreasing", {
+  price <- c(0, 0.5, 1, 2, 4, 8, 16)
+  Q0 <- 15; alpha <- 0.004
+  got <- beezdemand:::.tmb_predict_equation(
+    price = price, Q0 = Q0, alpha = alpha, k = NA_real_,
+    log_q0 = log(Q0), equation = "simplified"
+  )
+  expect_equal(got, Q0 * exp(-alpha * Q0 * price), tolerance = 1e-12)
+  expect_equal(got[1], Q0, tolerance = 1e-12) # Q at price 0 = Q0
+  expect_true(all(diff(got) < 0)) # strictly decreasing
+})
+
+test_that("TMB zben clamp keeps demand finite, positive, and decreasing for Q0 <= 1", {
+  price <- seq(0, 20, by = 1)
+  for (Q0 in c(0.1, 0.5, 1.0, 2.0)) {
+    got <- beezdemand:::.tmb_predict_equation(
+      price = price, Q0 = Q0, alpha = 0.01, k = 2,
+      log_q0 = log(Q0), equation = "zben"
+    )
+    expect_true(all(is.finite(got)))
+    expect_true(all(got >= 0))
+    expect_true(
+      all(diff(got) <= 1e-12),
+      info = sprintf("zben should be non-increasing at Q0=%.2f", Q0)
+    )
+  }
+})
+
+# ==============================================================================
 # Issue 6: Hurdle residual diagnostics
 # ==============================================================================
 

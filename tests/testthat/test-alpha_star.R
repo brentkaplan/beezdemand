@@ -59,6 +59,50 @@ test_that(".calc_alpha_star delta-method SE matches finite-difference gradient (
   expect_equal(res$se, expected_se, tolerance = 1e-6)
 })
 
+test_that(".calc_alpha_star raw partials match finite difference (natural space)", {
+  # Natural space has identity chain-rule Jacobian, so finite-differencing the
+  # ACTUAL .calc_alpha_star() estimate isolates the hand-coded raw partials
+  # (R/alpha-star.R:160-161) -- the log/log10 tests above cannot separate the
+  # partials from the d(natural)/d(theta) factor. Hand derivation (base 10):
+  #   L_k = ln(1 - 1/(k*c)),  c = ln(10)
+  #   d(alpha*)/d(alpha) = -1 / L_k
+  #   d(alpha*)/dk       =  alpha / (k*(c*k - 1)*L_k^2)
+  alpha <- 0.01
+  k <- 3
+  Sigma <- matrix(
+    c(0.002^2, 1e-7,
+      1e-7, 0.05^2),
+    nrow = 2, byrow = TRUE,
+    dimnames = list(c("alpha", "k"), c("alpha", "k"))
+  )
+  res <- beezdemand:::.calc_alpha_star(
+    params = list(alpha = alpha, k = k),
+    param_scales = list(alpha = "natural", k = "natural"),
+    vcov = Sigma,
+    base = "10"
+  )
+
+  fn <- function(a, kk) {
+    beezdemand:::.calc_alpha_star(
+      params = list(alpha = a, k = kk),
+      param_scales = list(alpha = "natural", k = "natural"),
+      base = "10"
+    )$estimate
+  }
+  h <- 1e-7
+  g_alpha <- (fn(alpha + h, k) - fn(alpha - h, k)) / (2 * h)
+  g_k <- (fn(alpha, k + h) - fn(alpha, k - h)) / (2 * h)
+
+  c_const <- log(10)
+  L_k <- log(1 - 1 / (k * c_const))
+  expect_equal(g_alpha, -1 / L_k, tolerance = 1e-5)
+  expect_equal(g_k, alpha / (k * (c_const * k - 1) * L_k^2), tolerance = 1e-5)
+
+  g <- c(alpha = g_alpha, k = g_k)
+  expected_se <- sqrt(as.numeric(t(g) %*% Sigma %*% g))
+  expect_equal(res$se, expected_se, tolerance = 1e-6)
+})
+
 test_that(".calc_alpha_star delta-method SE matches finite-difference gradient (log10 space)", {
   theta_alpha <- log10(0.01)
   theta_k <- log10(3)
