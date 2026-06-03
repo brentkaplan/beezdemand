@@ -1,10 +1,14 @@
 # Guard the compiled TMB template (src/MixedDemand.h) end-to-end, not just the R
 # prediction mirror (.tmb_predict_equation). Simulate from each equation's
-# data-generating process, fit through the compiled TMB objective, and confirm
-# the population parameters are recovered. If a C++ mean branch drifted from the
-# published equation, recovery would fail here even though the R-mirror equation
-# tests still passed. (Codex audit recommendation; complements
-# test-statistical-corrections.R.)
+# published MEAN function with a small perturbation, fit through the compiled
+# TMB objective, and confirm the population parameters are recovered. These are
+# mean-function recovery probes: the small multiplicative perturbation keeps
+# simulated consumption positive and is a convenience, not a claim about the
+# equation-specific error model -- the point is that the compiled mean must
+# match the published equation for the optimizer to recover the truth. If a C++
+# mean branch drifted from its published form, recovery would fail here even
+# though the R-mirror equation tests still passed. (Codex audit recommendation;
+# complements test-statistical-corrections.R.)
 #
 # Coverage: eqn_type 0 (exponential/HS), 1 (exponentiated/Koffarnus),
 # 2 (simplified/SND). The zben branch (eqn_type 3) is guarded by the R

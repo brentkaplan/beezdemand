@@ -41,7 +41,8 @@ print.beezdemand_hurdle <- function(x, ...) {
 #'   - `"natural"`: report natural-scale parameters when a natural mapping exists
 #'   - `"log10"`: report `log10()`-scale parameters when a mapping exists
 #'   `estimate`/`std.error` follow `report_space`; `statistic`/`p.value` are always
-#'   computed on the estimation scale (transformation-invariant Wald test).
+#'   computed on the estimation scale (the Wald test is defined there and is not
+#'   recomputed after back-transforming).
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_hurdle} (also inherits

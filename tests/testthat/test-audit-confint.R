@@ -111,10 +111,17 @@ test_that("confint.beezdemand_tmb default is Wald = estimate +/- z*SE", {
   expect_equal(ci$conf.low, co - z * se, tolerance = 1e-10)
   expect_equal(ci$conf.high, co + z * se, tolerance = 1e-10)
 
-  # Natural scale exponentiates beta_q0 / beta_alpha (no k in simplified).
+  # Natural scale exponentiates beta_q0 / beta_alpha (no k in simplified) for the
+  # estimate AND both interval bounds.
   logp <- nms %in% c("beta_q0", "beta_alpha", "log_k")
   ci_nat <- confint(fit, level = 0.95, report_space = "natural")
   exp_est <- co
   exp_est[logp] <- exp(co[logp])
+  exp_lo <- co - z * se
+  exp_lo[logp] <- exp(exp_lo[logp])
+  exp_hi <- co + z * se
+  exp_hi[logp] <- exp(exp_hi[logp])
   expect_equal(ci_nat$estimate, exp_est, tolerance = 1e-8)
+  expect_equal(ci_nat$conf.low, exp_lo, tolerance = 1e-8)
+  expect_equal(ci_nat$conf.high, exp_hi, tolerance = 1e-8)
 })

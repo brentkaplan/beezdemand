@@ -238,11 +238,12 @@ summary(fit_2re)
 The fixed-effect coefficient table reports `estimate` and `std.error` on the
 scale set by `report_space`: the default, `"natural"`, back-transforms $Q_0$,
 $\alpha$, and $k$ off the log estimation scale. The `statistic` and `p.value`
-columns are always computed on the estimation (log) scale, because a Wald test
-is transformation-invariant and the back-transformed null for a strictly
-positive parameter is degenerate (it would test "ratio = 0" rather than
-"ratio = 1"). One consequence: `estimate / std.error` from the default table
-does not reproduce the reported `statistic`. This matches the `broom` and
+columns are always computed on the estimation (log) scale, where the Wald test
+is well defined; they are not recomputed from the back-transformed `estimate`
+and `std.error` (that recompute is degenerate for a strictly positive
+parameter -- it would test "ratio = 0" rather than "ratio = 1"). One
+consequence: `estimate / std.error` from the default table does not reproduce
+the reported `statistic`. This matches the `broom` and
 `emmeans` convention; pass `report_space = "internal"` (or `"log10"`) to read
 the estimate and SE on the same scale as the test.
 

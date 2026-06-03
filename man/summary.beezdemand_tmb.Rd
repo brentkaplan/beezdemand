@@ -12,8 +12,9 @@
 \item{report_space}{Character. Reporting space for core demand parameters.
 One of \code{"internal"}, \code{"natural"}, \code{"log10"}. \code{estimate}/\code{std.error} are
 reported on this scale; \code{statistic}/\code{p.value} are always computed on the
-estimation scale (transformation-invariant Wald test, so on the natural
-scale \code{statistic != estimate/std.error}, by design).}
+estimation scale (the Wald test is defined there and is not recomputed
+after back-transforming, so on the natural scale
+\code{statistic != estimate/std.error}, by design).}
 
 \item{...}{Additional arguments (currently unused).}
 }

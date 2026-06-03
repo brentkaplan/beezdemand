@@ -17,7 +17,8 @@ One of:
 \item \code{"natural"}: report natural-scale parameters when a natural mapping exists
 \item \code{"log10"}: report \code{log10()}-scale parameters when a mapping exists
 \code{estimate}/\code{std.error} follow \code{report_space}; \code{statistic}/\code{p.value} are always
-computed on the estimation scale (transformation-invariant Wald test).
+computed on the estimation scale (the Wald test is defined there and is not
+recomputed after back-transforming).
 }}
 
 \item{...}{Additional arguments (currently unused).}

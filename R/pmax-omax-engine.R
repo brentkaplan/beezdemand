@@ -183,7 +183,7 @@ NULL
 #' @return List with pmax, method, and notes
 #' @keywords internal
 .pmax_analytic_hurdle <- function(alpha_nat, k_nat) {
-  # Real Lambert W solution requires k >= e
+  # Real Lambert W solution requires k > e
   threshold <- exp(1)
   
   if (is.na(alpha_nat) || is.na(k_nat)) {
@@ -262,7 +262,7 @@ NULL
 #' @return List with pmax, method, and notes
 #' @keywords internal
 .pmax_analytic_hurdle_hs_stdq0 <- function(alpha_nat, q0_nat, k_nat) {
-  # Real Lambert W solution requires k >= e
+  # Real Lambert W solution requires k > e
   threshold <- exp(1)
 
   if (is.na(alpha_nat) || is.na(q0_nat) || is.na(k_nat)) {

@@ -430,13 +430,15 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 | Omax | Maximum expenditure | Dataset-dependent |
 | Breakpoint | First price with zero consumption | Dataset-dependent |
 
-For the models with a span parameter $k$, the analytic `Pmax`/`Omax` exist only
-when the expenditure curve $P \times Q(P)$ has an interior maximum: this needs
-$k > e/\ln(10) \approx 1.18$ for the exponentiated and Hursh & Silberberg
-equations and $k > e \approx 2.72$ for the hurdle models. At or below the
-threshold the two stationary points merge into a tangent inflection, so there
-is no interior maximum and both metrics are returned as `NA`. (The simplified
-SND model has no $k$; its `Pmax` $= 1/(\alpha Q_0)$ always exists.)
+For the models with a span parameter $k$, an *analytic interior* `Pmax`/`Omax`
+exists only when the expenditure curve $P \times Q(P)$ has an interior maximum:
+this needs $k > e/\ln(10) \approx 1.18$ for the exponentiated and Hursh &
+Silberberg equations and $k > e \approx 2.72$ for the hurdle models. At or below
+the threshold the two stationary points merge into a tangent inflection, so the
+analytic solver returns `NA`; depending on the fit, the engine's observed-domain
+numerical fallback may instead report a maximum at the boundary of the observed
+price range. (The simplified SND model has no $k$; its `Pmax` $= 1/(\alpha Q_0)$
+always exists.)
 
 ---
 

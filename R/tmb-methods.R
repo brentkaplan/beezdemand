@@ -284,8 +284,9 @@ print.beezdemand_tmb <- function(x, ...) {
 #' @param report_space Character. Reporting space for core demand parameters.
 #'   One of `"internal"`, `"natural"`, `"log10"`. `estimate`/`std.error` are
 #'   reported on this scale; `statistic`/`p.value` are always computed on the
-#'   estimation scale (transformation-invariant Wald test, so on the natural
-#'   scale `statistic != estimate/std.error`, by design).
+#'   estimation scale (the Wald test is defined there and is not recomputed
+#'   after back-transforming, so on the natural scale
+#'   `statistic != estimate/std.error`, by design).
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{summary.beezdemand_tmb} (also inherits
