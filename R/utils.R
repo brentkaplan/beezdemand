@@ -334,9 +334,15 @@ lambertW = function(
     f = (w != -1)
     t = f * t / (p * (w + f) - 0.5 * (w + 2.0) * t / (w + f))
     w = w - t
+    # Vectorized convergence check: break only once every element has
+    # converged. Uses all(... &) rather than && so that vector-valued z works
+    # under R >= 4.3 (where && errors on length-> 1 operands); for scalar z this
+    # is identical to the original && form.
     if (
-      abs(Re(t)) < (2.48 * eps) * (1.0 + abs(Re(w))) &&
-        abs(Im(t)) < (2.48 * eps) * (1.0 + abs(Im(w)))
+      all(
+        abs(Re(t)) < (2.48 * eps) * (1.0 + abs(Re(w))) &
+          abs(Im(t)) < (2.48 * eps) * (1.0 + abs(Im(w)))
+      )
     ) {
       break
     }
