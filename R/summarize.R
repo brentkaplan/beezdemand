@@ -23,7 +23,7 @@
 ##'
 ##' This function applies the 3 criteria proposed by Stein et al., (2015) for identification of nonsystematic purchase task data. The three criteria include trend (deltaq), bounce, and reversals from 0. Also reports number of positive consumption values.
 ##' @title Systematic Purchase Task Data Checker
-##' @param dat Dataframe in long form. Colums are id, x, y.
+##' @param dat Dataframe in long form. Columns are id, x, y.
 ##' @param deltaq Numeric vector of length equal to one. The criterion by which the relative change in quantity purchased will be compared. Relative changes in quantity purchased below this criterion will be flagged. Default value is 0.025.
 ##' @param bounce Numeric vector of length equal to one. The criterion by which the number of price-to-price increases in consumption that exceed 25% of initial consumption at the lowest price, expressed relative to the total number of price increments, will be compared. The relative number of price-to-price increases above this criterion will be flagged. Default value is 0.10.
 ##' @param reversals Numeric vector of length equal to one. The criterion by which the number of reversals from number of consecutive (see ncons0) 0s will be compared. Number of reversals above this criterion will be flagged. Default value is 0.
@@ -139,7 +139,7 @@ CheckUnsystematic <- function(dat, deltaq = 0.025, bounce = 0.10, reversals = 0,
 ##' @param bwplot Boolean. If TRUE, a ggplot2 box and whisker plot is saved. Default is FALSE.
 ##' @param outdir Character. Directory where plot will be saved. Be sure to include trailing '/'. Default location is one level up in "../plots/".
 ##' @param device Character. Type of file. Default is "png". Can be "pdf".
-##' @param filename Character. Specify filename. Defualt is "bwplot".
+##' @param filename Character. Specify filename. Default is "bwplot".
 ##' @return Dataframe with descriptive statistics
 ##' @author Brent Kaplan <bkaplan.ku@@gmail.com>
 ##' @seealso [get_descriptive_summary()] for the modern interface

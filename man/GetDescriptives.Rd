@@ -21,7 +21,7 @@ GetDescriptives(
 
 \item{device}{Character. Type of file. Default is "png". Can be "pdf".}
 
-\item{filename}{Character. Specify filename. Defualt is "bwplot".}
+\item{filename}{Character. Specify filename. Default is "bwplot".}
 }
 \value{
 Dataframe with descriptive statistics

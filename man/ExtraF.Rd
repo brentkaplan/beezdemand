@@ -27,7 +27,7 @@ ExtraF(
 
 \item{verbose}{If TRUE, prints all output including models}
 
-\item{k}{User-defined k value; if missing will attempt to find shared k and then mean emprirical range (in log units)}
+\item{k}{User-defined k value; if missing will attempt to find shared k and then mean empirical range (in log units)}
 
 \item{compare}{Specify whether to compare alpha or Q0. Default is alpha}
 

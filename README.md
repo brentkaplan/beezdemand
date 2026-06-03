@@ -265,7 +265,7 @@ The dataset is now “tidy” because: (1) each variable forms a column, (2)
 each observation forms a row, and (3) each type of observational unit
 forms a table (in this case, our observational unit is the Alcohol
 Purchase Task data). To learn more about the benefits of tidy data,
-readers are encouraged to consult Hadley Wikham’s essay on [Tidy
+readers are encouraged to consult Hadley Wickham’s essay on [Tidy
 Data](https://vita.had.co.nz/papers/tidy-data.html).
 
 ## Obtain Descriptive Data

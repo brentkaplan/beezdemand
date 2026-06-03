@@ -29,7 +29,7 @@ FitCurves(
 
 \item{k}{A numeric (or character) vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample + .5. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis. If k = "range", k will be calculated based on the max/min of the entire sample + .5.}
 
-\item{agg}{Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregrated appropriately and analyzed in the specified way.}
+\item{agg}{Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregated appropriately and analyzed in the specified way.}
 
 \item{detailed}{If TRUE, output will be a 3 element list including (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting. Default value is FALSE, which returns only the dataframe of results.}
 

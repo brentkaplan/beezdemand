@@ -33,7 +33,7 @@
 ##' @param dat data frame (long form) of purchase task data.
 ##' @param equation Character vector of length one. Accepts either "hs" for Hursh and Silberberg (2008) or "koff" for Koffarnus, Franck, Stein, and Bickel (2015).
 ##' @param k A numeric (or character) vector of length one. Reflects the range of consumption in log10 units. If none provided, k will be calculated based on the max/min of the entire sample + .5. If k = "ind", k will be calculated per individual using max/min + .5. If k = "fit", k will be a free parameter on an individual basis. If k = "range", k will be calculated based on the max/min of the entire sample + .5.
-##' @param agg Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregrated appropriately and analyzed in the specified way.
+##' @param agg Character vector of length one accepts either "Mean" or "Pooled". If not NULL (default), data will be aggregated appropriately and analyzed in the specified way.
 ##' @param detailed If TRUE, output will be a 3 element list including (1) dataframe of results, (2) list of model objects, (3) list of individual dataframes used in fitting. Default value is FALSE, which returns only the dataframe of results.
 ##' @param xcol The column name that should be treated as "x" data
 ##' @param ycol The column name that should be treated as "y" data
@@ -1488,7 +1488,7 @@ FitMeanCurves <- function(
 ##' @param equation "hs"
 ##' @param groups NULL for all. Character vector matching groups in groupcol
 ##' @param verbose If TRUE, prints all output including models
-##' @param k User-defined k value; if missing will attempt to find shared k and then mean emprirical range (in log units)
+##' @param k User-defined k value; if missing will attempt to find shared k and then mean empirical range (in log units)
 ##' @param compare Specify whether to compare alpha or Q0. Default is alpha
 ##' @param idcol The column name that should be treated as dataset identifier
 ##' @param xcol The column name that should be treated as "x" data
