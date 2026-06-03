@@ -114,6 +114,10 @@ get_empirical_measures <- function(data,
 
     adf <- dat[dat$id == ps[i], ]
 
+    # Order by price so the row-walking BP0 logic and the Pmaxe tie-break are
+    # price-ordered, not dependent on the incidental row order of the input.
+    adf <- adf[order(adf$x), ]
+
     # Check for duplicates
     if (any(duplicated(adf$x))) {
       validation_error(
