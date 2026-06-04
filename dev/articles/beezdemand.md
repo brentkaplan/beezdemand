@@ -4,10 +4,9 @@
 
 Behavioral economic demand is gaining in popularity. The motivation
 behind `beezdemand` was to create an alternative tool to conduct these
-analyses. This package is not necessarily meant to be a replacement for
-other softwares; rather, it is meant to serve as an additional tool in
-the behavioral economist’s toolbox. It is meant for researchers to
-conduct behavioral economic (be) demand the easy (ez) way.
+analyses. `beezdemand` is one more tool in the behavioral economist’s
+toolbox, not a replacement for other software. It lets researchers
+conduct behavioral economic (be) demand analysis the easy (ez) way.
 
 ### Note About Use
 
@@ -215,7 +214,7 @@ The dataset is now “tidy” because: (1) each variable forms a column, (2)
 each observation forms a row, and (3) each type of observational unit
 forms a table (in this case, our observational unit is the Alcohol
 Purchase Task data). To learn more about the benefits of tidy data,
-readers are encouraged to consult Hadley Wikham’s essay on [Tidy
+readers are encouraged to consult Hadley Wickham’s essay on [Tidy
 Data](https://vita.had.co.nz/papers/tidy-data.html).
 
 #### Obtain Descriptive Data

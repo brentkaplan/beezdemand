@@ -80,7 +80,7 @@ In short:
   you want to recover, and an intercepts-only fit gets the direction
   wrong on within-subject heterogeneous data.
 
-## 2. Factor-expanded REs (Phase 2)
+## 2. Factor-expanded REs
 
 [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 accepts a single `pdDiag` or `pdSymm` block with a factor on the
@@ -120,7 +120,7 @@ Random slopes on `condition` give each subject their own deviation from
 the population-level condition shift. `pdDiag` makes those deviations
 independent across conditions; `pdSymm` allows them to correlate.
 
-## 3. Multi-block `pdBlocked` (Phase 3)
+## 3. Multi-block `pdBlocked`
 
 The single most consequential RE structure is the two-block `pdBlocked`
 spec used in our cigarette demand work:
@@ -165,14 +165,14 @@ emms_q0
 The simulator was configured with `delta_q0 = c(0, -0.4, -0.9)`, so the
 population Q₀ ordering should be C1 \> C2 \> C3. The M1 fit recovers it.
 
-## 4. Reading subject-level results (Phase 5A)
+## 4. Reading subject-level results
 
 For fits with within-subject random-effects design (factor-expanded
 single block, multi-block `pdBlocked`, or numeric within-id RE-RHS
 terms), no single subject-level `Q0` / `alpha` / `Pmax` / `Omax` is
 well-defined — each subject has a per-condition vector instead.
 
-As of TICKET-022 the default behavior of
+By default,
 [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
 auto-detects this situation and returns the **long per-(subject,
 factor-level) shape** with no warning:
@@ -223,7 +223,7 @@ Two consumers — `plot(fit, type = "individual")` and
 [`calculate_amplitude_persistence()`](https://brentkaplan.github.io/beezdemand/reference/calculate_amplitude_persistence.md)
 — read `subject_pars$Q0` and `$alpha` directly. When those are NA, both
 abort with a targeted message pointing at
-`get_subject_pars(fit, expanded = TRUE)` (or, post TICKET-022, simply
+`get_subject_pars(fit, expanded = TRUE)` (or simply
 `get_subject_pars(fit)`) for per-(subject, factor-level) values that the
 caller can aggregate. Native expanded-shape support in those consumers
 is planned for a follow-up release.
@@ -247,7 +247,7 @@ methods work correctly on M1-style fits; they do not read
 `subject_pars$Q0` and instead consume the `re_q0_mat` / `re_alpha_mat`
 attributes.
 
-## 5. Group metrics with conditioning (Phase 5C)
+## 5. Group metrics with conditioning
 
 [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
 returns population-level Pmax, Omax, Qmax. By default, continuous

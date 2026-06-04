@@ -10,6 +10,33 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### Statistical-accuracy fixes (pre-release audit)
+
+- **Bug fix.**
+  [`lambertW()`](https://brentkaplan.github.io/beezdemand/reference/lambertW.md)
+  now accepts vector input. The Halley-iteration convergence check
+  combined possibly-length-`n` operands with `&&`, which errors under R
+  \>= 4.3 (“length \> 1 in coercion to logical(1)”); it now uses a
+  vectorized `all(... &)`. Scalar results are unchanged, so existing
+  scalar callers are unaffected. This hardens every analytic
+  `Pmax`/`Omax` path that vectorizes over price.
+
+- **Bug fix.**
+  [`get_empirical_measures()`](https://brentkaplan.github.io/beezdemand/reference/get_empirical_measures.md)
+  now computes the breakpoint `BP0` and the empirical `Pmaxe`
+  order-invariantly by sorting each series by price before walking
+  consumption. Previously a subject whose rows were not in
+  ascending-price order could receive an incorrect breakpoint; results
+  are unchanged for already price-ordered input (the typical case).
+
+- **Consistency fix.** The analytic `Pmax`/`Omax` existence threshold is
+  now a strict interior maximum across all equations. Both hurdle
+  variants previously returned a finite `Pmax` at the exact boundary
+  `k = e`; they now return `NA` there, matching the Hursh & Silberberg
+  path (already strict at `k = e / ln(10)`). At the boundary the two
+  stationary points merge into a tangent inflection, so no strict
+  interior maximum exists. The practical effect is measure-zero.
+
 ### NLME summary/tidy reporting fixes
 
 - **Reporting change (broom convention).**

@@ -48,8 +48,8 @@ FitCurves(
 - agg:
 
   Character vector of length one accepts either "Mean" or "Pooled". If
-  not NULL (default), data will be aggregrated appropriately and
-  analyzed in the specified way.
+  not NULL (default), data will be aggregated appropriately and analyzed
+  in the specified way.
 
 - detailed:
 

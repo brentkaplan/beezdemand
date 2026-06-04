@@ -30,7 +30,8 @@ summary(object, report_space = c("natural", "log10", "internal"), ...)
   - `"log10"`: report [`log10()`](https://rdrr.io/r/base/Log.html)-scale
     parameters when a mapping exists `estimate`/`std.error` follow
     `report_space`; `statistic`/`p.value` are always computed on the
-    estimation scale (transformation-invariant Wald test).
+    estimation scale (the Wald test is defined there and is not
+    recomputed after back-transforming).
 
 - ...:
 

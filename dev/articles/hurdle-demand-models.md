@@ -42,18 +42,24 @@ Where:
 ### Part II: Continuous Model (Consumption Given Positive)
 
 **With 3 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
-(\exp(-(\alpha + c_i) \cdot \text{price}) - 1) + \varepsilon\_{ij}
+(\exp(-\alpha_i \cdot \text{price}) - 1) + \varepsilon\_{ij}, \qquad
+\alpha_i = \exp(\log\alpha + c_i)
 
 **With 2 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
-(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon\_{ij}
+(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon\_{ij}, \qquad
+\alpha = \exp(\log\alpha)
 
 Where:
 
 - Q_0 = intensity (consumption at price 0)
 - k = scaling parameter for exponential decay
-- \alpha = elasticity parameter
-- b_i = subject-specific random effect on intensity
-- c_i = subject-specific random effect on elasticity (3-RE model only)
+- \alpha = elasticity parameter, estimated in log space (\log\alpha) so
+  that \alpha \> 0
+- b_i = subject-specific random effect on log-intensity
+- c_i = subject-specific random effect on log-elasticity (3-RE model
+  only). It is multiplicative on the natural scale: \alpha_i =
+  \exp(\log\alpha + c_i), which keeps each subject’s elasticity
+  positive.
 
 ### Random Effects Structure
 
@@ -298,7 +304,7 @@ plot_qq(fit2)
 | `beta1` | Part I slope: change in log-odds per unit increase in log(price) |
 | `logQ0` | Log of intensity parameter (population average) |
 | `k` | Scaling parameter for demand decay |
-| `alpha` | Elasticity parameter (population average for 2-RE, mean for 3-RE) |
+| `alpha` | Population elasticity \exp(\log\alpha); subject values are \exp(\log\alpha + c_i) in the 3-RE model |
 
 ### Subject-Specific Parameters
 
@@ -310,7 +316,7 @@ The `subject_pars` data frame contains:
 | `b_i` | Random effect for Part II (intensity) |
 | `c_i` | Random effect for alpha (3-RE model only) |
 | `Q0` | Individual intensity: \exp(\log Q_0 + b_i) |
-| `alpha` | Individual elasticity: \alpha + c_i (or just \alpha for 2-RE) |
+| `alpha` | Individual elasticity: \exp(\log\alpha + c_i) (or \exp(\log\alpha) for 2-RE) |
 | `breakpoint` | Price where P(zero) = 0.5: \exp(-(\beta_0 + a_i) / \beta_1) - \epsilon |
 | `Pmax` | Price at maximum expenditure |
 | `Omax` | Maximum expenditure |

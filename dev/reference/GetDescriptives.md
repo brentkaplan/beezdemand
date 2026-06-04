@@ -36,7 +36,7 @@ GetDescriptives(
 
 - filename:
 
-  Character. Specify filename. Defualt is "bwplot".
+  Character. Specify filename. Default is "bwplot".
 
 ## Value
 
