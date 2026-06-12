@@ -940,12 +940,18 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #'   If `newdata` is `NULL`, returns predictions for all subjects across a price grid.
 #' @param type One of:
 #'   \describe{
-#'     \item{\code{"response"}}{Predicted consumption (part II)}
+#'     \item{\code{"demand"}}{(default) Predicted expected consumption
+#'       = (1 - P0) * response -- the marginal expectation; see
+#'       \emph{Scoring predictions}}
+#'     \item{\code{"response"}}{Predicted consumption conditional on
+#'       consuming (part II), \eqn{E[Y \mid Y > 0]}}
 #'     \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
 #'     \item{\code{"probability"}}{Predicted probability of zero consumption (part I)}
-#'     \item{\code{"demand"}}{Predicted expected consumption = (1 - P0) * response}
 #'     \item{\code{"parameters"}}{Subject-specific parameters (no `.fitted` column)}
 #'   }
+#'   The default changed from \code{"response"} to \code{"demand"} in
+#'   beezdemand 0.3.0; omitting \code{type} emits a one-time-per-session
+#'   message naming the change.
 #' @param prices Optional numeric vector of prices used only when `newdata = NULL`.
 #' @param marginal Logical; if `TRUE`, computes population-averaged (marginal)
 #'   predictions by integrating over the random effects distribution.
@@ -974,6 +980,19 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' @param interval One of `"none"` (default) or `"confidence"`.
 #' @param level Confidence level when `interval = "confidence"`.
 #' @param ... Unused.
+#'
+#' @section Scoring predictions:
+#' A hurdle model has two natural "predicted consumption" quantities and
+#' they answer different questions. \code{type = "response"} is the
+#' conditional positive mean \eqn{E[Y \mid Y > 0]}: consumption \emph{given}
+#' that any is purchased. \code{type = "demand"} is the marginal expectation
+#' \eqn{(1 - p_0) E[Y \mid Y > 0]}, which weights in the probability of
+#' buying nothing. Observed consumption includes zeros, so predictions
+#' scored against raw data (cross-validation error, calibration, model
+#' comparison on predictions) must use \code{type = "demand"}; scoring with
+#' \code{"response"} systematically overstates error wherever \eqn{p_0} is
+#' large (typically at high prices). This is why \code{"demand"} is the
+#' default as of beezdemand 0.3.0.
 #'
 #' @details
 #' ## Retransformation correction
@@ -1054,7 +1073,7 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 predict.beezdemand_hurdle <- function(
   object,
   newdata = NULL,
-  type = c("response", "link", "parameters", "probability", "demand"),
+  type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
@@ -1066,6 +1085,24 @@ predict.beezdemand_hurdle <- function(
   ...
 ) {
   newdata_user <- newdata
+  if (missing(type)) {
+    # 0.2.0 -> 0.3.0 transition message (TICKET-042): the old default
+    # ("response", the conditional positive mean) was a documented
+    # CV-scoring footgun against zero-inclusive consumption.
+    cli::cli_inform(
+      c(
+        "i" = "As of beezdemand 0.3.0, {.fn predict} for hurdle fits defaults
+               to {.val demand} (the marginal expectation
+               (1 - p0) * E[Y | Y > 0]), not {.val response} (the conditional
+               positive mean).",
+        " " = "Pass {.code type} explicitly to silence this once-per-session
+               message; see {.topic predict.beezdemand_hurdle}."
+      ),
+      .frequency = "once",
+      .frequency_id = "beezdemand_hurdle_predict_default",
+      class = "beezdemand_message"
+    )
+  }
   type <- match.arg(type)
   interval <- match.arg(interval)
   if (!is.null(level) && (!is.numeric(level) || length(level) != 1 || is.na(level) ||

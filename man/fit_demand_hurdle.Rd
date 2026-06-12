@@ -135,7 +135,9 @@ compare_hurdle_models(fit3, fit2)
 
 }
 \seealso{
-\code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}},
+\code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}}
+(and its \emph{Scoring predictions} section: score zero-inclusive
+consumption with \code{type = "demand"}, the default since 0.3.0),
 \code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
 \code{\link{simulate_hurdle_data}}
 

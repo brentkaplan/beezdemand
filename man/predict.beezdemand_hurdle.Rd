@@ -7,7 +7,7 @@
 \method{predict}{beezdemand_hurdle}(
   object,
   newdata = NULL,
-  type = c("response", "link", "parameters", "probability", "demand"),
+  type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
@@ -29,12 +29,18 @@ If \code{newdata} is \code{NULL}, returns predictions for all subjects across a 
 
 \item{type}{One of:
 \describe{
-\item{\code{"response"}}{Predicted consumption (part II)}
+\item{\code{"demand"}}{(default) Predicted expected consumption
+= (1 - P0) * response -- the marginal expectation; see
+\emph{Scoring predictions}}
+\item{\code{"response"}}{Predicted consumption conditional on
+consuming (part II), \eqn{E[Y \mid Y > 0]}}
 \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
 \item{\code{"probability"}}{Predicted probability of zero consumption (part I)}
-\item{\code{"demand"}}{Predicted expected consumption = (1 - P0) * response}
 \item{\code{"parameters"}}{Subject-specific parameters (no \code{.fitted} column)}
-}}
+}
+The default changed from \code{"response"} to \code{"demand"} in
+beezdemand 0.3.0; omitting \code{type} emits a one-time-per-session
+message naming the change.}
 
 \item{prices}{Optional numeric vector of prices used only when \code{newdata = NULL}.}
 
@@ -143,6 +149,21 @@ subject. The marginal prediction is appropriate for predicting aggregate
 consumption in a population.
 }
 }
+\section{Scoring predictions}{
+
+A hurdle model has two natural "predicted consumption" quantities and
+they answer different questions. \code{type = "response"} is the
+conditional positive mean \eqn{E[Y \mid Y > 0]}: consumption \emph{given}
+that any is purchased. \code{type = "demand"} is the marginal expectation
+\eqn{(1 - p_0) E[Y \mid Y > 0]}, which weights in the probability of
+buying nothing. Observed consumption includes zeros, so predictions
+scored against raw data (cross-validation error, calibration, model
+comparison on predictions) must use \code{type = "demand"}; scoring with
+\code{"response"} systematically overstates error wherever \eqn{p_0} is
+large (typically at high prices). This is why \code{"demand"} is the
+default as of beezdemand 0.3.0.
+}
+
 \examples{
 \donttest{
 data(apt)

@@ -212,6 +212,33 @@ compare_models(fit3, fit2)
 
 A significant p-value suggests the 3-RE model provides a better fit.
 
+## Predicting and Scoring
+
+A hurdle model carries two different "predicted consumption" quantities,
+and choosing the wrong one quietly distorts any score computed against
+observed data:
+
+- `type = "demand"` (the default since beezdemand 0.3.0) is the marginal
+  expectation `(1 - P0) * E[Y | Y > 0]`. Observed consumption includes
+  zeros, so this is the quantity to score against raw data --
+  cross-validation error, calibration checks, or model comparison on
+  predictions.
+- `type = "response"` is the conditional positive mean `E[Y | Y > 0]`:
+  expected consumption *given that any is purchased*. Scoring raw data
+  with it systematically overstates prediction error wherever the
+  probability of zero consumption is large (typically at high prices).
+
+```{r predict-scoring}
+# Marginal expectation (the default): score this against observed y
+pred <- predict(fit2, type = "demand", prices = c(0.5, 1, 5, 10))
+pred[, c("x", "prob_zero", "predicted_consumption", ".fitted")]
+```
+
+The `prob_zero` and `predicted_consumption` columns expose the two parts;
+`.fitted` is their product `(1 - prob_zero) * predicted_consumption`. See
+the *Scoring predictions* section of `?predict.beezdemand_hurdle` for
+details.
+
 ## Visualization
 
 ```{r plotting-demand, fig.cap="Population demand curve from 2-RE hurdle model."}

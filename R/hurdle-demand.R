@@ -654,7 +654,9 @@ NULL
 #' use:
 #' \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
 #'
-#' @seealso \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}},
+#' @seealso \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}}
+#'   (and its \emph{Scoring predictions} section: score zero-inclusive
+#'   consumption with \code{type = "demand"}, the default since 0.3.0),
 #'   \code{\link{plot.beezdemand_hurdle}}, \code{\link{compare_hurdle_models}},
 #'   \code{\link{simulate_hurdle_data}}
 #'
@@ -889,7 +891,10 @@ fit_demand_hurdle <- function(
   if (verbose >= 1) {
     message("  Computing standard errors...")
   }
-  sdr <- tryCatch(
+  # One shared guard so the sdreport call and the summary extraction below
+  # emit at most ONE classed sqrt-NaN warning per fit (TICKET-046)
+  sdr_guard <- new.env(parent = emptyenv())
+  sdr <- .tmb_quiet_sdreport(tryCatch(
     TMB::sdreport(obj),
     error = function(e1) {
       sdr2 <- tryCatch(
@@ -897,11 +902,14 @@ fit_demand_hurdle <- function(
         error = function(e2) NULL
       )
       if (is.null(sdr2) && verbose >= 1) {
-        warning("Standard error computation failed: ", e1$message)
+        cli::cli_warn(
+          "Standard error computation failed: {e1$message}",
+          class = c("beezdemand_sdreport_warning", "beezdemand_warning")
+        )
       }
       sdr2
     }
-  )
+  ), guard = sdr_guard)
 
   # Hessian positive-definiteness gate (TICKET-008). When TMB reports
   # pdHess = FALSE the resulting standard errors, p-values, and Wald CIs are
@@ -973,11 +981,19 @@ fit_demand_hurdle <- function(
 
   # Extract standard errors and derived quantities (handle NULL sdr)
   if (!is.null(sdr)) {
-    se <- summary(sdr, "fixed")[fixed_names, "Std. Error"]
-    adr <- summary(sdr, "report")
+    sums <- .tmb_quiet_sdreport(
+      list(
+        se = summary(sdr, "fixed")[fixed_names, "Std. Error"],
+        adr = summary(sdr, "report"),
+        re_summary = summary(sdr, "random")
+      ),
+      guard = sdr_guard
+    )
+    se <- sums$se
+    adr <- sums$adr
     variance_components <- adr[var_names, , drop = FALSE]
     correlations <- adr[rho_names, , drop = FALSE]
-    re_summary <- summary(sdr, "random")
+    re_summary <- sums$re_summary
     u_hat <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
   } else {
     se <- rep(NA_real_, length(fixed_names))

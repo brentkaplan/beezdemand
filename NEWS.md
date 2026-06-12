@@ -7,6 +7,36 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## Breaking change: hurdle predict() default (TICKET-042)
+
+* `predict.beezdemand_hurdle()` now defaults to `type = "demand"` (the
+  marginal expectation `(1 - p0) * E[Y | Y > 0]`) instead of
+  `type = "response"` (the conditional positive mean `E[Y | Y > 0]`).
+  Rationale: observed consumption includes zeros, so scoring predictions
+  against raw data with the conditional mean systematically overstates
+  hurdle error wherever the probability of zero consumption is large — a
+  documented cross-validation erratum. This is a deliberate breaking
+  change from 0.2.0: the marginal expectation is the statistically
+  correct default for prediction scoring, and a clean flip (with
+  communication) was judged better than shipping the footgun for another
+  release. Omitting `type` emits a once-per-session message naming the
+  change; every `type`'s computation is unchanged, so
+  `type = "response"` restores the old behavior exactly. See the new
+  "Scoring predictions" section in `?predict.beezdemand_hurdle`.
+
+## Condition hygiene: sdreport warnings (TICKET-046)
+
+* Weakly identified TMB and hurdle fits no longer leak raw "NaNs
+  produced" warnings from `TMB::sdreport()`/`summary.sdreport()` SE
+  extraction (one per offending block). They are replaced by at most ONE
+  classed warning per fit (`beezdemand_sdreport_warning`, with parent
+  class `beezdemand_warning`) pointing at `$hessian_pd` and `summary()`
+  diagnostics. Matching is on the warning's `sqrt()` call rather than the
+  locale-dependent message text, and unrelated warnings pass through
+  untouched. The existing "Standard error computation failed" warning now
+  carries the same classes. No fit results, SEs, or `hessian_pd` logic
+  changed.
+
 ## Statistical-accuracy fixes (pre-release audit)
 
 * **Bug fix.** `lambertW()` now accepts vector input. The Halley-iteration

@@ -707,6 +707,47 @@ NULL
 }
 
 
+#' Quiet sqrt-NaN warnings from sdreport SE extraction (TICKET-046)
+#'
+#' Wraps an sdreport + summary extraction region. TMB's `summary.sdreport()`
+#' takes `sqrt()` of (possibly negative) variance estimates, so weakly
+#' identified fits leak raw "NaNs produced" warnings -- uninformative noise
+#' whose meaningful signal (`hessian_pd = FALSE`, NA SEs) is already
+#' reported downstream. Warnings raised by a `sqrt()` call inside `expr`
+#' are muffled and replaced by AT MOST ONE classed warning
+#' (`beezdemand_sdreport_warning` / `beezdemand_warning`); matching is on
+#' the condition's call (locale-safe), so any other warning propagates
+#' untouched. Pass one `guard` environment across multiple regions of the
+#' same fit to dedupe the classed warning per fit.
+#' @noRd
+.tmb_quiet_sdreport <- function(expr, guard = new.env(parent = emptyenv())) {
+  if (is.null(guard$emitted)) guard$emitted <- FALSE
+  saw_sqrt_nan <- FALSE
+  out <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      cc <- conditionCall(w)
+      if (is.call(cc) && identical(cc[[1L]], quote(sqrt))) {
+        saw_sqrt_nan <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  if (saw_sqrt_nan && !guard$emitted) {
+    guard$emitted <- TRUE
+    cli::cli_warn(
+      c(
+        "!" = "Some standard errors are unavailable (non-positive variance
+               estimates from {.fn TMB::sdreport}).",
+        "i" = "This usually reflects a weakly identified fit; check
+               {.code $hessian_pd} and {.fn summary} diagnostics."
+      ),
+      class = c("beezdemand_sdreport_warning", "beezdemand_warning")
+    )
+  }
+  out
+}
+
 #' Extract Estimates from TMB Fit
 #'
 #' @param obj TMB objective function object.
@@ -734,7 +775,10 @@ NULL
         error = function(e2) NULL
       )
       if (is.null(sdr2) && verbose >= 1) {
-        warning("Standard error computation failed: ", e1$message)
+        cli::cli_warn(
+          "Standard error computation failed: {e1$message}",
+          class = c("beezdemand_sdreport_warning", "beezdemand_warning")
+        )
       }
       sdr2
     }
@@ -1739,11 +1783,13 @@ fit_demand_tmb <- function(
 
   # Extract estimates
   if (verbose >= 1) message("  Computing standard errors...")
-  estimates <- .tmb_extract_estimates(
+  # One sqrt-NaN capture region per fit: covers the sdreport call and every
+  # summary.sdreport() extraction inside (TICKET-046)
+  estimates <- .tmb_quiet_sdreport(.tmb_extract_estimates(
     obj, opt, re_dim_total, prepared$n_subjects,
     has_k = has_k && estimate_k, verbose = verbose,
     store_report_cov = store_report_cov
-  )
+  ))
 
   # Compute subject-specific parameters
   subject_pars <- .tmb_compute_subject_pars(
