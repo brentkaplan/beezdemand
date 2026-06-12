@@ -127,7 +127,7 @@ maximum is found. For small alpha values, Pmax can be quite large.</p>
 <span class="r-in"><span><span class="fu">calc_omax_pmax</span><span class="op">(</span>Q0 <span class="op">=</span> <span class="fl">10</span>, k <span class="op">=</span> <span class="fl">2</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`calc_omax_pmax()` was deprecated in beezdemand 0.2.0.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Please use `beezdemand_calc_pmax_omax()` instead.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Note: k (2.000) &lt; e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Note: k (2.000) &lt;= e (~2.718); the expenditure function has no strict interior maximum. Returning the maximum over a bounded search interval via numerical optimization.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 19.99993</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -138,10 +138,10 @@ maximum is found. For small alpha values, Pmax can be quite large.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.353476</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $note</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "k &lt; e: bounded-range maximum over [0.001, 20.000] via numerical optimization"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "k &lt;= e: bounded-range maximum over [0.001, 20.000] via numerical optimization"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># With k &gt;= e (~2.718), a local maximum exists</span></span></span>
+<span class="r-in"><span><span class="co"># With k &gt; e (~2.718), a strict interior maximum exists</span></span></span>
 <span class="r-in"><span><span class="fu">calc_omax_pmax</span><span class="op">(</span>Q0 <span class="op">=</span> <span class="fl">10</span>, k <span class="op">=</span> <span class="fl">3</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.238123</span>
