@@ -2426,6 +2426,9 @@ GetEmpirical <- function(dat, xcol = "x", ycol = "y", idcol = "id") {
       ))
     }
 
+    ## BP0 and Pmaxe walks assume ascending price order
+    adf <- adf[order(adf$x), ]
+
     adf[, "expend"] <- adf$x * adf$y
 
     ## Find empirical measures

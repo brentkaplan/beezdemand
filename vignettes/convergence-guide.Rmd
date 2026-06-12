@@ -711,7 +711,7 @@ fit_2re <- fit_demand_hurdle(
 fit_snd <- fit_demand_hurdle(
   data,
   y_var = "y", x_var = "x", id_var = "id",
-  part2_equation = "simplified_exponential"  # Fewer parameters (no k)
+  part2 = "simplified_exponential"  # Fewer parameters (no k)
 )
 ```
 

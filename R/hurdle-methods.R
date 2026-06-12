@@ -374,7 +374,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
     }
     cat(sprintf("  Method: %s\n", method %||% "unknown"))
   } else {
-    cat("  Pmax/Omax: NA (k < e, no local maximum exists)\n")
+    cat("  Pmax/Omax: NA (k <= e, no strict interior maximum exists)\n")
     if (!is.null(x$group_metrics$note)) {
       cat(sprintf("  Note: %s\n", x$group_metrics$note))
     }

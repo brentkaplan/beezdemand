@@ -43,7 +43,7 @@ maximum is found. For small alpha values, Pmax can be quite large.
 # Calculate for group-level parameters
 calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
 
-# With k >= e (~2.718), a local maximum exists
+# With k > e (~2.718), a strict interior maximum exists
 calc_omax_pmax(Q0 = 10, k = 3, alpha = 0.5)
 
 }

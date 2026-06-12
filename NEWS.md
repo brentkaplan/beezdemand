@@ -50,7 +50,9 @@ cover TICKET-011 phase work added under this development cycle.
   the empirical `Pmaxe` order-invariantly by sorting each series by price before
   walking consumption. Previously a subject whose rows were not in
   ascending-price order could receive an incorrect breakpoint; results are
-  unchanged for already price-ordered input (the typical case).
+  unchanged for already price-ordered input (the typical case). The deprecated
+  legacy path `GetEmpirical()` received the same per-subject sort, so the two
+  functions stay in agreement on unsorted input.
 
 * **Consistency fix.** The analytic `Pmax`/`Omax` existence threshold is now a
   strict interior maximum across all equations. Both hurdle variants previously
@@ -58,7 +60,9 @@ cover TICKET-011 phase work added under this development cycle.
   there, matching the Hursh & Silberberg path (already strict at
   `k = e / ln(10)`). At the boundary the two stationary points merge into a
   tangent inflection, so no strict interior maximum exists. The practical effect
-  is measure-zero.
+  is measure-zero. The deprecated numerical helper `calc_omax_pmax()` now
+  classifies `k = e` the same way: it takes its bounded-range fallback (with
+  the usual warning and `note`) instead of the analytic root path.
 
 ## NLME summary/tidy reporting fixes
 

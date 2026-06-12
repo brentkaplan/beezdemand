@@ -231,6 +231,29 @@ test_that("get_empirical_measures matches GetEmpirical results", {
   expect_equal(modern_result$measures, legacy_result)
 })
 
+test_that("GetEmpirical is order-invariant like get_empirical_measures", {
+  # The BP0 walk (adf$x[j + 1]) and the Pmaxe tie-break assume rows in
+  # ascending price order; the legacy path must sort per subject just like
+  # the modern fix in get_empirical_measures().
+  dat <- data.frame(
+    id = rep("1", 4),
+    x = c(1, 2, 3, 4),
+    y = c(3, 2, 1, 0),
+    stringsAsFactors = FALSE
+  )
+  dat_rev <- dat[rev(seq_len(nrow(dat))), ]
+
+  sorted_result <- suppressWarnings(GetEmpirical(dat))
+  reversed_result <- suppressWarnings(GetEmpirical(dat_rev))
+
+  expect_equal(reversed_result, sorted_result)
+  expect_equal(sorted_result$BP0[1], 4)
+
+  # And the legacy result still agrees with the modern path
+  modern_result <- get_empirical_measures(dat_rev)
+  expect_equal(modern_result$measures, reversed_result)
+})
+
 test_that("get_empirical_measures handles Pmaxe with tied maximum expenditures", {
   # Create data where multiple prices have same max expenditure
   test_data <- data.frame(

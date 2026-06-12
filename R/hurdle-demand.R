@@ -287,65 +287,6 @@ NULL
 }
 
 
-#' Extract Results from TMB Hurdle Fit
-#'
-#' @description
-#' Internal function to extract coefficients, standard errors, and derived
-#' quantities from a fitted TMB hurdle model.
-#'
-#' @param opt Optimization result from \code{nlminb()}.
-#' @param obj TMB objective function object.
-#' @param sdr TMB sdreport object (can be NULL).
-#' @param param_names List from \code{.hurdle_get_param_names()}.
-#' @param n_subjects Number of subjects.
-#' @param n_re Number of random effects.
-#'
-#' @return A list with coefficients, se, variance_components, correlations,
-#'   and random effects matrix.
-#' @keywords internal
-.hurdle_extract_estimates <- function(opt, obj, sdr, param_names, n_subjects,
-                                      n_re) {
-  fixed_names <- param_names$fixed_names
-  var_names <- param_names$var_names
-  rho_names <- param_names$rho_names
-
-  coefficients <- opt$par_internal[fixed_names]
-
-  if (!is.null(sdr)) {
-    se <- summary(sdr, "fixed")[fixed_names, "Std. Error"]
-    adr <- summary(sdr, "report")
-    variance_components <- adr[var_names, , drop = FALSE]
-    correlations <- adr[rho_names, , drop = FALSE]
-    re_summary <- summary(sdr, "random")
-    u_hat <- matrix(re_summary[, "Estimate"], nrow = n_subjects, ncol = n_re)
-  } else {
-    se <- rep(NA_real_, length(fixed_names))
-    names(se) <- fixed_names
-    variance_components <- matrix(
-      NA_real_,
-      nrow = length(var_names),
-      ncol = 2,
-      dimnames = list(var_names, c("Estimate", "Std. Error"))
-    )
-    correlations <- matrix(
-      NA_real_,
-      nrow = length(rho_names),
-      ncol = 2,
-      dimnames = list(rho_names, c("Estimate", "Std. Error"))
-    )
-    u_hat <- matrix(0, nrow = n_subjects, ncol = n_re)
-  }
-
-  list(
-    coefficients = coefficients,
-    se = se,
-    variance_components = variance_components,
-    correlations = correlations,
-    u_hat = u_hat
-  )
-}
-
-
 #' Transform Random Effects to Original Scale
 #'
 #' @description

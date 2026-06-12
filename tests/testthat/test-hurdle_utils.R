@@ -1,7 +1,7 @@
 # Tests for utility functions
 
 test_that("calc_omax_pmax returns correct values for valid parameters", {
-  # With k >= e, local maximum exists
+  # With k > e, a strict interior maximum exists
   result <- calc_omax_pmax(Q0 = 10, k = 3, alpha = 0.5)
 
   expect_true(is.list(result))
@@ -18,10 +18,10 @@ test_that("calc_omax_pmax handles k < e with numerical fallback", {
   # but numerical optimization can still find the maximum.
   # Per EQUATIONS_CONTRACT.md: implementation should fall back to numerical methods.
 
-  # Expect a warning about k < e and numerical optimization
+  # Expect a warning about k <= e and numerical optimization
   expect_warning(
     result <- calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5),
-    "k.*< e.*numerical optimization"
+    "k.*<= e.*numerical optimization"
   )
 
   # Numerical fallback should still return valid values
@@ -34,6 +34,21 @@ test_that("calc_omax_pmax handles k < e with numerical fallback", {
 
   # Should have a note explaining the fallback
   expect_true(!is.null(result$note))
+})
+
+test_that("calc_omax_pmax treats k = e as no strict interior maximum", {
+  # At exactly k = e the two stationary points of expenditure merge into a
+  # tangent inflection, so no strict interior maximum exists. The boundary
+  # must take the bounded-range fallback (warning + note), not the analytic
+  # root path, matching the engine's strict threshold (NEWS 0.3.0).
+  expect_warning(
+    result <- calc_omax_pmax(Q0 = 10, k = exp(1), alpha = 0.5),
+    "no strict interior maximum"
+  )
+
+  expect_true(!is.null(result$note))
+  expect_match(result$note, "bounded-range")
+  expect_true(is.numeric(result$Pmax))
 })
 
 test_that("calc_omax_pmax handles edge cases", {

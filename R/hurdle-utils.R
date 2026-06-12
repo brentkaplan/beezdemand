@@ -32,7 +32,7 @@
 #' # Calculate for group-level parameters
 #' calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
 #'
-#' # With k >= e (~2.718), a local maximum exists
+#' # With k > e (~2.718), a strict interior maximum exists
 #' calc_omax_pmax(Q0 = 10, k = 3, alpha = 0.5)
 #'
 #' @seealso \code{\link{calc_group_metrics}}, \code{\link{fit_demand_hurdle}}
@@ -61,18 +61,19 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
   # Derivative of expenditure: dE/dp = Q(p) * [1 - k * alpha * p * exp(-alpha * p)]
   # Local max when: k * alpha * p * exp(-alpha * p) = 1
   # The function g(p) = p * exp(-alpha * p) has max at p = 1/alpha with value 1/(alpha * e)
-  # So local max exists only if k * alpha * (1/(alpha*e)) = k/e >= 1, i.e., k >= e
+  # A strict interior max exists only if k/e > 1, i.e., k > e; at k = e the two
+  # stationary points merge into a tangent inflection (no strict maximum).
 
   e_const <- exp(1)
 
-  if (k < e_const) {
-    # No local maximum - expenditure is monotonically increasing
-    # Per EQUATIONS_CONTRACT.md: Pmax closed-form via Lambert W requires k >= e
-    # Implementation returns a bounded-range maximum when k < e
+  if (k <= e_const) {
+    # No strict interior maximum - expenditure is non-decreasing
+    # Per EQUATIONS_CONTRACT.md: Pmax closed-form via Lambert W requires k > e
+    # Implementation returns a bounded-range maximum when k <= e
     warning(
       sprintf(
         paste0(
-          "Note: k (%.3f) < e (~2.718); the expenditure function has no interior maximum. ",
+          "Note: k (%.3f) <= e (~2.718); the expenditure function has no strict interior maximum. ",
           "Returning the maximum over a bounded search interval via numerical optimization."
         ),
         k
@@ -106,7 +107,7 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
         Omax = Omax,
         Qmax = Qmax,
         note = sprintf(
-          "k < e: bounded-range maximum over [%.3f, %.3f] via numerical optimization",
+          "k <= e: bounded-range maximum over [%.3f, %.3f] via numerical optimization",
           price_range_fallback[1],
           price_range_fallback[2]
         )
@@ -119,7 +120,7 @@ calc_omax_pmax <- function(Q0, k, alpha, price_range = NULL) {
       Omax = NA_real_,
       Qmax = NA_real_,
       note = sprintf(
-        "k < e: bounded-range maximum over [%.3f, %.3f] failed",
+        "k <= e: bounded-range maximum over [%.3f, %.3f] failed",
         price_range_fallback[1],
         price_range_fallback[2]
       )
