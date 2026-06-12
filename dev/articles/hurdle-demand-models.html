@@ -639,8 +639,8 @@ computed against observed data:</p>
 <code>type = "demand"</code> (the default since beezdemand 0.3.0) is
 the marginal expectation <code>(1 - P0) * E[Y | Y &gt; 0]</code>.
 Observed consumption includes zeros, so this is the quantity to score
-against raw data – cross-validation error, calibration checks, or model
-comparison on predictions.</li>
+against raw data (cross-validation error, calibration checks, or model
+comparison on predictions).</li>
 <li>
 <code>type = "response"</code> is the conditional positive mean
 <code>E[Y | Y &gt; 0]</code>: expected consumption <em>given that any is

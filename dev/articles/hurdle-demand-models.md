@@ -362,9 +362,9 @@ observed data:
 
 - `type = "demand"` (the default since beezdemand 0.3.0) is the marginal
   expectation `(1 - P0) * E[Y | Y > 0]`. Observed consumption includes
-  zeros, so this is the quantity to score against raw data –
-  cross-validation error, calibration checks, or model comparison on
-  predictions.
+  zeros, so this is the quantity to score against raw data
+  (cross-validation error, calibration checks, or model comparison on
+  predictions).
 - `type = "response"` is the conditional positive mean `E[Y | Y > 0]`:
   expected consumption *given that any is purchased*. Scoring raw data
   with it systematically overstates prediction error wherever the
