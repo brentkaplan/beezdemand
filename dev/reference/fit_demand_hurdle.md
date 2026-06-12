@@ -188,7 +188,9 @@ use: \$\$\log\_{10}(\alpha) = \log(\alpha) / \log(10).\$\$
 ## See also
 
 [`summary.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_hurdle.md),
-[`predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md),
+[`predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+(and its *Scoring predictions* section: score zero-inclusive consumption
+with `type = "demand"`, the default since 0.3.0),
 [`plot.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_hurdle.md),
 [`compare_hurdle_models`](https://brentkaplan.github.io/beezdemand/reference/compare_hurdle_models.md),
 [`simulate_hurdle_data`](https://brentkaplan.github.io/beezdemand/reference/simulate_hurdle_data.md)

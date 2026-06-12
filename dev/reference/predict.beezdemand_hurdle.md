@@ -9,7 +9,7 @@ Returns predictions from a fitted hurdle demand model.
 predict(
   object,
   newdata = NULL,
-  type = c("response", "link", "parameters", "probability", "demand"),
+  type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
   marginal_method = c("kde", "normal", "empirical"),
@@ -40,9 +40,15 @@ predict(
 
   One of:
 
+  `"demand"`
+
+  :   (default) Predicted expected consumption = (1 - P0) \* response –
+      the marginal expectation; see *Scoring predictions*
+
   `"response"`
 
-  :   Predicted consumption (part II)
+  :   Predicted consumption conditional on consuming (part II), \\E\[Y
+      \mid Y \> 0\]\\
 
   `"link"`
 
@@ -52,13 +58,13 @@ predict(
 
   :   Predicted probability of zero consumption (part I)
 
-  `"demand"`
-
-  :   Predicted expected consumption = (1 - P0) \* response
-
   `"parameters"`
 
   :   Subject-specific parameters (no `.fitted` column)
+
+  The default changed from `"response"` to `"demand"` in beezdemand
+  0.3.0; omitting `type` emits a one-time-per-session message naming the
+  change.
 
 - prices:
 
@@ -182,6 +188,20 @@ be computed in two ways:
 The conditional prediction is appropriate for characterizing a "typical"
 subject. The marginal prediction is appropriate for predicting aggregate
 consumption in a population.
+
+## Scoring predictions
+
+A hurdle model has two natural "predicted consumption" quantities and
+they answer different questions. `type = "response"` is the conditional
+positive mean \\E\[Y \mid Y \> 0\]\\: consumption *given* that any is
+purchased. `type = "demand"` is the marginal expectation \\(1 - p_0)
+E\[Y \mid Y \> 0\]\\, which weights in the probability of buying
+nothing. Observed consumption includes zeros, so predictions scored
+against raw data (cross-validation error, calibration, model comparison
+on predictions) must use `type = "demand"`; scoring with `"response"`
+systematically overstates error wherever \\p_0\\ is large (typically at
+high prices). This is why `"demand"` is the default as of beezdemand
+0.3.0.
 
 ## Examples
 

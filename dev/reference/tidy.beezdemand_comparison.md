@@ -52,8 +52,10 @@ dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
 fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
 #>   equation='exponential': Dropped 5839 zero-consumption observations (12827 remaining).
-#> Warning: NaNs produced
-#> Warning: NaNs produced
+#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
+#>   `TMB::sdreport()`).
+#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
+#>   `summary()` diagnostics.
 res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
 #> Warning: NaNs produced
 tidy(res)

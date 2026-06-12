@@ -64,13 +64,15 @@ fit <- fit_demand_hurdle(apt_sub, y_var = "y", x_var = "x", id_var = "id")
 #>   Optimizing...
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
-#> Warning: NaNs produced
+#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
+#>   `TMB::sdreport()`).
+#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
+#>   `summary()` diagnostics.
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
 #> ℹ Standard errors, p-values, and confidence intervals may be unreliable.
 #> ℹ Run `check_demand_model()` for detailed diagnostics.
 #> ℹ Consider simplifying the model (fewer random effects) or checking data
 #>   quality.
-#> Warning: NaNs produced
 #> Done. Log-likelihood: -81.74
 summary(fit)
 #> 

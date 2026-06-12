@@ -354,6 +354,50 @@ compare_models(fit3, fit2)
 
 A significant p-value suggests the 3-RE model provides a better fit.
 
+## Predicting and Scoring
+
+A hurdle model carries two different “predicted consumption” quantities,
+and choosing the wrong one quietly distorts any score computed against
+observed data:
+
+- `type = "demand"` (the default since beezdemand 0.3.0) is the marginal
+  expectation `(1 - P0) * E[Y | Y > 0]`. Observed consumption includes
+  zeros, so this is the quantity to score against raw data –
+  cross-validation error, calibration checks, or model comparison on
+  predictions.
+- `type = "response"` is the conditional positive mean `E[Y | Y > 0]`:
+  expected consumption *given that any is purchased*. Scoring raw data
+  with it systematically overstates prediction error wherever the
+  probability of zero consumption is large (typically at high prices).
+
+``` r
+
+# Marginal expectation (the default): score this against observed y
+pred <- predict(fit2, type = "demand", prices = c(0.5, 1, 5, 10))
+pred[, c("x", "prob_zero", "predicted_consumption", ".fitted")]
+#> # A tibble: 40 × 4
+#>        x prob_zero predicted_consumption .fitted
+#>    <dbl>     <dbl>                 <dbl>   <dbl>
+#>  1   0.5 3.54e-250                 10.9    10.9 
+#>  2   0.5 4.96e-221                  3.39    3.39
+#>  3   0.5 3.07e-194                  5.15    5.15
+#>  4   0.5 5.53e-198                  7.69    7.69
+#>  5   0.5 3.21e-198                  9.94    9.94
+#>  6   0.5 4.97e-161                  5.16    5.16
+#>  7   0.5 3.35e-228                  8.11    8.11
+#>  8   0.5 5.98e-224                  7.66    7.66
+#>  9   0.5 2.75e-212                  6.56    6.56
+#> 10   0.5 7.71e-184                  4.48    4.48
+#> # ℹ 30 more rows
+```
+
+The `prob_zero` and `predicted_consumption` columns expose the two
+parts; `.fitted` is their product
+`(1 - prob_zero) * predicted_consumption`. See the *Scoring predictions*
+section of
+[`?predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+for details.
+
 ## Visualization
 
 ``` r

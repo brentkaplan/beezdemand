@@ -423,13 +423,15 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Multi-start: best NLL = 171.11 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
-#> Warning: NaNs produced
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
 #> ℹ Standard errors, p-values, and confidence intervals may be unreliable.
 #> ℹ Run `check_demand_model()` for detailed diagnostics.
 #> ℹ Consider simplifying the model (fewer random effects) or checking data
 #>   quality.
-#> Warning: NaNs produced
+#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
+#>   `TMB::sdreport()`).
+#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
+#>   `summary()` diagnostics.
 #> Done.
 
 # With covariates
