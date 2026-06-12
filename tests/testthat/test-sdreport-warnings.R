@@ -59,6 +59,41 @@ test_that(".tmb_quiet_sdreport dedupes across a warn-error-retry fallback chain"
   expect_identical(sum(classed), 1L)
 })
 
+test_that("two regions sharing one guard emit exactly one classed warning", {
+  # the hurdle fit path wraps two separate regions (the sdreport fallback
+  # chain and the summary extraction) with one shared guard env
+  # (Codex 042-diff R2)
+  guard <- new.env(parent = emptyenv())
+  warns <- list()
+  withCallingHandlers(
+    {
+      beezdemand:::.tmb_quiet_sdreport(sqrt(-1), guard = guard)
+      beezdemand:::.tmb_quiet_sdreport(sqrt(-1), guard = guard)
+    },
+    warning = function(w) {
+      warns[[length(warns) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  classed <- vapply(warns, inherits, logical(1), "beezdemand_sdreport_warning")
+  expect_identical(sum(classed), 1L)
+
+  # independent guards (separate fits) each emit their own warning
+  warns2 <- list()
+  withCallingHandlers(
+    {
+      beezdemand:::.tmb_quiet_sdreport(sqrt(-1))
+      beezdemand:::.tmb_quiet_sdreport(sqrt(-1))
+    },
+    warning = function(w) {
+      warns2[[length(warns2) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  classed2 <- vapply(warns2, inherits, logical(1), "beezdemand_sdreport_warning")
+  expect_identical(sum(classed2), 2L)
+})
+
 test_that(".tmb_quiet_sdreport passes unrelated warnings through untouched", {
   warns <- list()
   out <- withCallingHandlers(

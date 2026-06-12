@@ -47,6 +47,18 @@ test_that("predict default is type = 'demand' with a one-time transition message
   # explicit type never triggers the transition message
   expect_no_message(predict(fit, type = "demand"))
   expect_no_message(predict(fit, type = "response"))
+
+  # POSITIONAL type is not "missing": no message, old semantics intact
+  # (Codex 042-diff R1)
+  expect_no_message(p_pos <- predict(fit, NULL, "response"))
+  expect_identical(p_pos$.fitted, p_pos$predicted_consumption)
+
+  # the prices path follows the new default too: omitted type == explicit
+  # "demand" at the same prices
+  pr <- c(0.5, 1, 5)
+  p_prices_default <- predict(fit, prices = pr)
+  p_prices_demand <- predict(fit, type = "demand", prices = pr)
+  expect_identical(p_prices_default$.fitted, p_prices_demand$.fitted)
 })
 
 test_that("downstream methods pass type explicitly and are unaffected by the flip", {
