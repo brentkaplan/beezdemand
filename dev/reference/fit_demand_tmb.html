@@ -165,6 +165,15 @@ a random effect per factor level. The within-subject factor must
 vary within each <code>id</code>; pure between-subject factors belong in
 <code>factors</code>, not in the RE formula.</p></dd>
 
+<dt>continuous within-id covariate (random slope)</dt>
+<dd><p>A <em>numeric</em>
+RHS term such as <code>Q0 + alpha ~ dose_c</code> gives each subject a random
+<em>slope</em> on that covariate (dose-response demand). The covariate must
+vary within <code>id</code> for enough subjects and should be <strong>centered</strong>
+(and, for dose ladders, typically <code>log10</code>-transformed); see Details.
+Pair it with <code>continuous_covariates</code> to also estimate the population
+(fixed) dose slope.</p></dd>
+
 <dt><code><a href="https://rdrr.io/pkg/nlme/man/pdMat.html" class="external-link">nlme::pdMat</a></code></dt>
 <dd><p>e.g., <code>nlme::pdDiag(Q0 + alpha ~ 1)</code> or
 <code>nlme::pdSymm(Q0 + alpha ~ condition)</code>. Pre-constructed pdMat
@@ -202,7 +211,12 @@ their interaction.</p></dd>
 
 
 <dt id="arg-continuous-covariates">continuous_covariates<a class="anchor" aria-label="anchor" href="#arg-continuous-covariates"></a></dt>
-<dd><p>Character vector of continuous covariate names.</p></dd>
+<dd><p>Character vector of continuous covariate names
+entered as fixed (population) effects on Q0 and alpha. To also let the
+per-subject dose-response vary, add the same (centered) covariate as a
+random slope in <code>random_effects</code> (e.g. <code>Q0 + alpha ~ dose_c</code>); the fixed
+and random parts are sourced separately and recovering the population dose
+slope requires both.</p></dd>
 
 
 <dt id="arg-collapse-levels">collapse_levels<a class="anchor" aria-label="anchor" href="#arg-collapse-levels"></a></dt>
@@ -347,6 +361,25 @@ likelihood optimization.</p>
 Q0 and alpha. This typically improves model fit substantially. The
 conventional fixed-k approach (Hursh &amp; Silberberg, 2008) often overestimates
 k by 3-8x.</p>
+<p><strong>Continuous within-subject random slopes (dose-response).</strong> A numeric term
+in the random-effects formula (e.g. <code>Q0 + alpha ~ dose_c</code>) gives each
+subject a random <em>slope</em> on a continuous within-<code>id</code> covariate, so
+intensity and elasticity change with the covariate (dose) at a
+subject-specific rate. The population (fixed) slope is sourced separately from
+<code>continuous_covariates</code>; recovering it requires both. The covariate must
+vary within <code>id</code> for enough subjects (a hard error below 2 informative
+subjects; a warning below 80\<!-- %). Pass it \strong{centered} (mean 0; for dose -->
+ladders typically a centered <code>log10</code> dose) so the random intercept is the
+subject deviation at the reference value and the intercept/slope covariance is
+interpretable. No silent transform is applied: an uncentered covariate is still
+fit, but the intercept/slope correlation is reference-dependent and a warning
+is emitted. Per-subject parameters at a chosen covariate value are available
+via <code>get_subject_pars(fit, at = c(dose_c = value))</code> and
+<code>predict(fit, type = "parameters", at = ...)</code>; the per-subject slope
+deviations appear as <code>q0_&lt;term&gt;</code> / <code>alpha_&lt;term&gt;</code> columns there and
+in <code>ranef()</code>, and the variance components are labelled by the covariate
+term in <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> / <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr()</a></code>. See
+<code><a href="../articles/tmb-advanced-random-effects.html">vignette("tmb-advanced-random-effects")</a></code> for a worked example.</p>
 <p><strong>Error model considerations:</strong> The <code>exponentiated</code> and
 <code>simplified</code> equations use a Gaussian error model on raw consumption
 (Q), which assigns non-zero density to negative values. For data with many
@@ -448,7 +481,7 @@ its <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-li
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Optimizing...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 171.11 (start set 2 of 3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   Multi-start: best NLL = 171.10 (start set 2 of 3)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   WARNING: Did not converge (code 1: false convergence (8))</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   Computing standard errors...</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> Hessian is not positive definite (`pdHess = FALSE`).</span>

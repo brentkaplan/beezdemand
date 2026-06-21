@@ -105,6 +105,16 @@ fit_demand_tmb(
       between-subject factors belong in `factors`, not in the RE
       formula.
 
+  continuous within-id covariate (random slope)
+
+  :   A *numeric* RHS term such as `Q0 + alpha ~ dose_c` gives each
+      subject a random *slope* on that covariate (dose-response demand).
+      The covariate must vary within `id` for enough subjects and should
+      be **centered** (and, for dose ladders, typically
+      `log10`-transformed); see Details. Pair it with
+      `continuous_covariates` to also estimate the population (fixed)
+      dose slope.
+
   [`nlme::pdMat`](https://rdrr.io/pkg/nlme/man/pdMat.html)
 
   :   e.g., `nlme::pdDiag(Q0 + alpha ~ 1)` or
@@ -142,7 +152,12 @@ fit_demand_tmb(
 
 - continuous_covariates:
 
-  Character vector of continuous covariate names.
+  Character vector of continuous covariate names entered as fixed
+  (population) effects on Q0 and alpha. To also let the per-subject
+  dose-response vary, add the same (centered) covariate as a random
+  slope in `random_effects` (e.g. `Q0 + alpha ~ dose_c`); the fixed and
+  random parts are sourced separately and recovering the population dose
+  slope requires both.
 
 - collapse_levels:
 
@@ -310,6 +325,28 @@ Q0 and alpha. This typically improves model fit substantially. The
 conventional fixed-k approach (Hursh & Silberberg, 2008) often
 overestimates k by 3-8x.
 
+**Continuous within-subject random slopes (dose-response).** A numeric
+term in the random-effects formula (e.g. `Q0 + alpha ~ dose_c`) gives
+each subject a random *slope* on a continuous within-`id` covariate, so
+intensity and elasticity change with the covariate (dose) at a
+subject-specific rate. The population (fixed) slope is sourced
+separately from `continuous_covariates`; recovering it requires both.
+The covariate must vary within `id` for enough subjects (a hard error
+below 2 informative subjects; a warning below 80\\ ladders typically a
+centered `log10` dose) so the random intercept is the subject deviation
+at the reference value and the intercept/slope covariance is
+interpretable. No silent transform is applied: an uncentered covariate
+is still fit, but the intercept/slope correlation is reference-dependent
+and a warning is emitted. Per-subject parameters at a chosen covariate
+value are available via `get_subject_pars(fit, at = c(dose_c = value))`
+and `predict(fit, type = "parameters", at = ...)`; the per-subject slope
+deviations appear as `q0_<term>` / `alpha_<term>` columns there and in
+`ranef()`, and the variance components are labelled by the covariate
+term in [`summary()`](https://rdrr.io/r/base/summary.html) /
+[`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html). See
+[`vignette("tmb-advanced-random-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.md)
+for a worked example.
+
 **Error model considerations:** The `exponentiated` and `simplified`
 equations use a Gaussian error model on raw consumption (Q), which
 assigns non-zero density to negative values. For data with many
@@ -420,7 +457,7 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 171.11 (start set 2 of 3)
+#>   Multi-start: best NLL = 171.10 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).

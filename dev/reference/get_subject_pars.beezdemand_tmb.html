@@ -67,7 +67,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_tmb'</span></span>
-<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, expanded <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">object</span>, expanded <span class="op">=</span> <span class="cn">NULL</span>, at <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -96,6 +96,17 @@ one-line warning on a fit with within-id variation (the
 returned <code>Q0</code>, <code>alpha</code>, <code>Pmax</code>, <code>Omax</code>
 are <code>NA</code>).</p></li>
 </ul></dd>
+
+
+<dt id="arg-at">at<a class="anchor" aria-label="anchor" href="#arg-at"></a></dt>
+<dd><p>Optional named numeric vector/list (e.g. <code>c(dose_c = 1)</code>)
+giving the covariate value(s) at which to evaluate per-subject
+<code>Q0</code>/<code>alpha</code> for continuous random-effect slope terms
+(TICKET-051). Defaults to each subject's mean of the covariate (which
+equals the reference 0 for a centered, balanced design). The per-subject
+slope deviations are always returned as <code>q0_&lt;term&gt;</code> /
+<code>alpha_&lt;term&gt;</code> columns regardless of <code>at</code>. Ignored (with a
+warning) for fits without a continuous random slope.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

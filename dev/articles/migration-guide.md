@@ -523,7 +523,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
-#>  [4] xfun_0.58           bslib_0.11.0        ggplot2_4.0.3      
+#>  [4] xfun_0.59           bslib_0.11.0        ggplot2_4.0.3      
 #>  [7] htmlwidgets_1.6.4   insight_1.5.1       lattice_0.22-9     
 #> [10] vctrs_0.7.3         tools_4.6.0         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
@@ -539,7 +539,7 @@ sessionInfo()
 #> [43] purrr_1.2.2         splines_4.6.0       fastmap_1.2.0      
 #> [46] grid_4.6.0          cli_3.6.6           magrittr_2.0.5     
 #> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.13       
-#> [52] withr_3.0.2         scales_1.4.0        backports_1.5.1    
+#> [52] withr_3.0.3         scales_1.4.0        backports_1.5.1    
 #> [55] estimability_1.5.1  rmarkdown_2.31      emmeans_2.0.3      
 #> [58] otel_0.2.0          lme4_2.0-1          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         

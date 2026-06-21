@@ -14,6 +14,7 @@ predict(
   prices = NULL,
   scale = c("model", "natural"),
   correction = TRUE,
+  at = NULL,
   ...
 )
 ```
@@ -80,6 +81,15 @@ predict(
   Logical. If `TRUE` (default), applies the lognormal retransformation
   correction when `scale = "natural"`. Set to `FALSE` to obtain the
   median prediction. Only affects the `"exponential"` equation.
+
+- at:
+
+  Optional named numeric vector/list (e.g. `c(dose_c = 1)`) giving the
+  covariate value(s) at which to evaluate per-subject `Q0`/`alpha` when
+  `type = "parameters"` and the fit has a continuous random-effect slope
+  (TICKET-051). Defaults to each subject's mean of the covariate (= the
+  reference 0 for a centered, balanced design). Ignored (with a warning)
+  otherwise.
 
 - ...:
 

@@ -72,7 +72,8 @@
 <span>  <span class="va">equation</span>,</span>
 <span>  <span class="va">re_parsed</span>,</span>
 <span>  <span class="va">has_k</span>,</span>
-<span>  k_fixed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  k_fixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  data <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,6 +103,11 @@
 
 <dt id="arg-k-fixed">k_fixed<a class="anchor" aria-label="anchor" href="#arg-k-fixed"></a></dt>
 <dd><p>Numeric or NULL.</p></dd>
+
+
+<dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
+<dd><p>Long-format fit data used for slope-aware start scaling
+(TICKET-051); NULL falls back to flat starts.</p></dd>
 
 </dl></div>
     <div class="section level2">

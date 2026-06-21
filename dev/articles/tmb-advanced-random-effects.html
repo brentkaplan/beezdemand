@@ -93,7 +93,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-06-12</h4>
+            <h4 data-toc-skip class="date">2026-06-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-advanced-random-effects.Rmd" class="external-link"><code>vignettes/tmb-advanced-random-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-advanced-random-effects.Rmd</code></div>
@@ -288,9 +288,16 @@ shape</strong> with no warning:</p>
 same subject (they are subject-level RE intercepts); <code>Q0</code>,
 <code>alpha</code>, <code>Pmax</code>, and <code>Omax</code> differ per
 row because they incorporate the per-condition slope REs.</p>
-<p>Numeric within-id-varying covariates (e.g., trial number) are
-conditioned at the subject’s mean rather than expanded over their values
-— only factor levels drive row expansion.</p>
+<p>Numeric within-id-varying covariates are conditioned at the subject’s
+mean (one row per subject, not expanded over their values — only factor
+levels drive row expansion). When a numeric covariate is itself a
+<em>random slope</em> (a numeric term in the random-effects formula),
+<code><a href="../reference/get_subject_pars.html">get_subject_pars()</a></code> and
+<code>predict(type = "parameters")</code> additionally surface the
+per-subject slope deviations as <code>q0_&lt;term&gt;</code> /
+<code>alpha_&lt;term&gt;</code> columns, and an <code>at =</code>
+argument evaluates <code>Q0</code> / <code>alpha</code> at a chosen
+covariate value — see the dose-response section below.</p>
 <p>To force the old wide one-row-per-subject shape — useful when you
 want to inspect the per-block RE matrix attributes without the row
 expansion — pass <code>expanded = FALSE</code> explicitly. A one-line
@@ -465,6 +472,98 @@ columns.</li>
 <span><span class="fu"><a href="../reference/calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>condition <span class="op">=</span> <span class="st">"C1"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>condition <span class="op">=</span> <span class="st">"C3"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="continuous-within-subject-random-slopes-dose-response">8. Continuous within-subject random slopes (dose-response)<a class="anchor" aria-label="anchor" href="#continuous-within-subject-random-slopes-dose-response"></a>
+</h2>
+<p>The factor-expanded REs above model a <em>discrete</em>
+within-subject manipulation. When the within-subject covariate is
+<em>continuous</em> — the canonical case is <strong>dose-response
+demand</strong>, where each subject completes the purchase task at
+several drug doses — a random <em>slope</em> on that covariate is the
+parsimonious model: each subject’s intensity (Q₀) and elasticity (α)
+change with dose at their own rate.</p>
+<p>Specify the random slope with a numeric term in the random-effects
+formula, and pair it with <code>continuous_covariates</code> for the
+population (fixed) dose slope. Pass the covariate
+<strong>centered</strong> (mean 0; for dose ladders typically a centered
+<code>log10</code> dose) so the random intercept is each subject’s
+deviation at the reference dose.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
+<span><span class="va">n_sub</span>  <span class="op">&lt;-</span> <span class="fl">60</span></span>
+<span><span class="va">doses</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>            <span class="co"># centered (e.g. centered log10 dose)</span></span>
+<span><span class="va">prices</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">16</span><span class="op">)</span></span>
+<span><span class="co"># Per-subject random intercept + slope on log Q0 and log alpha.</span></span>
+<span><span class="va">Sigma</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.30</span>, <span class="fl">0.10</span>, <span class="fl">0.30</span>, <span class="fl">0.10</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>        <span class="co"># (u_q0, w_q0, u_alpha, w_alpha)</span></span>
+<span><span class="va">Sigma</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">Sigma</span><span class="op">[</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="fl">0.30</span> <span class="op">*</span> <span class="fl">0.10</span>   <span class="co"># Q0 intercept-slope corr</span></span>
+<span><span class="va">Sigma</span><span class="op">[</span><span class="fl">3</span>, <span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">Sigma</span><span class="op">[</span><span class="fl">4</span>, <span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="fl">0.30</span> <span class="op">*</span> <span class="fl">0.10</span>   <span class="co"># alpha intercept-slope corr</span></span>
+<span><span class="va">L</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/chol.html" class="external-link">chol</a></span><span class="op">(</span><span class="va">Sigma</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">rows</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>; <span class="va">k</span> <span class="op">&lt;-</span> <span class="fl">1L</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_sub</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">re</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">L</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">d</span> <span class="kw">in</span> <span class="va">doses</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">q0</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span>    <span class="op">+</span> <span class="fl">0.10</span> <span class="op">*</span> <span class="va">d</span> <span class="op">+</span> <span class="va">re</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="va">re</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">d</span><span class="op">)</span></span>
+<span>    <span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.006</span><span class="op">)</span> <span class="op">-</span> <span class="fl">0.15</span> <span class="op">*</span> <span class="va">d</span> <span class="op">+</span> <span class="va">re</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">+</span> <span class="va">re</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span> <span class="op">*</span> <span class="va">d</span><span class="op">)</span></span>
+<span>    <span class="va">mu</span>    <span class="op">&lt;-</span> <span class="va">q0</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">alpha</span> <span class="op">*</span> <span class="va">q0</span> <span class="op">*</span> <span class="va">prices</span><span class="op">)</span></span>
+<span>    <span class="va">rows</span><span class="op">[[</span><span class="va">k</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">i</span>, dose_c <span class="op">=</span> <span class="va">d</span>, x <span class="op">=</span> <span class="va">prices</span>,</span>
+<span>                            y <span class="op">=</span> <span class="va">mu</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">prices</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.05</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="va">k</span> <span class="op">&lt;-</span> <span class="va">k</span> <span class="op">+</span> <span class="fl">1L</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">dose_dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">rows</span><span class="op">)</span>, id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Fit intensity and elasticity random slopes on
+<code>dose_c</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_dose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
+<span>  <span class="va">dose_dat</span>, equation <span class="op">=</span> <span class="st">"simplified"</span>,</span>
+<span>  continuous_covariates <span class="op">=</span> <span class="st">"dose_c"</span>,</span>
+<span>  random_effects <span class="op">=</span> <span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/pdSymm.html" class="external-link">pdSymm</a></span><span class="op">(</span><span class="va">Q0</span> <span class="op">+</span> <span class="va">alpha</span> <span class="op">~</span> <span class="va">dose_c</span><span class="op">)</span>,</span>
+<span>  multi_start <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># beta_q0[2] ~ 0.10 and beta_alpha[2] ~ -0.15 are the (log-scale) dose slopes.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_dose</span><span class="op">)</span></span></code></pre></div>
+<p>The variance components are labelled by the covariate term, and the
+intercept/slope correlation is reported per parameter side:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr</a></span><span class="op">(</span><span class="va">fit_dose</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_dose</span><span class="op">)</span><span class="op">$</span><span class="va">variance_components</span></span></code></pre></div>
+<p><code><a href="../reference/get_subject_pars.html">get_subject_pars()</a></code> carries each subject’s slope
+deviation (<code>q0_dose_c</code> / <code>alpha_dose_c</code>, the same
+values <code>ranef()</code> exposes). Because no single Q₀/α exists once
+the curve depends on dose, evaluate per-subject parameters at a
+covariate value with <code>at =</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sp_ref</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_dose</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>dose_c <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span>   <span class="co"># reference dose</span></span>
+<span><span class="va">sp_high</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_dose</span>, at <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>dose_c <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span>   <span class="co"># +2 dose units</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_ref</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"q0_dose_c"</span>, <span class="st">"alpha_dose_c"</span>, <span class="st">"Q0"</span>, <span class="st">"alpha"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co"># Each subject's Q0 moves with dose at their own (fixed + random) rate:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id      <span class="op">=</span> <span class="va">sp_ref</span><span class="op">$</span><span class="va">id</span>,</span>
+<span>                Q0_at_0 <span class="op">=</span> <span class="va">sp_ref</span><span class="op">$</span><span class="va">Q0</span>,</span>
+<span>                Q0_at_2 <span class="op">=</span> <span class="va">sp_high</span><span class="op">$</span><span class="va">Q0</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">sp_ref</span><span class="op">$</span><span class="va">id</span>, <span class="va">sp_high</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/check_demand_model.html">check_demand_model()</a></code> adds a near-singular check on the
+intercept/slope covariance (a |correlation| near 1 means the two random
+effects are nearly collinear):</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_dose</span><span class="op">)</span><span class="op">$</span><span class="va">random_effects</span><span class="op">$</span><span class="va">near_singular</span></span></code></pre></div>
+<p><strong>Why continuous rather than a factor?</strong> A
+<code>K</code>-level factor random slope needs a
+<code>2K</code>-dimensional per-subject block; the continuous form needs
+just 4 random effects, independent of how many doses were tested:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cov_params</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dim</span><span class="op">)</span> <span class="va">dim</span> <span class="op">*</span> <span class="op">(</span><span class="va">dim</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>  <span class="co"># pdSymm covariance parameters</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  K_doses              <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">6</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  factor_re_params     <span class="op">=</span> <span class="fu">cov_params</span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">6</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span>,  <span class="co"># 2K-dim block</span></span>
+<span>  continuous_re_params <span class="op">=</span> <span class="fu">cov_params</span><span class="op">(</span><span class="fl">4</span><span class="op">)</span>                 <span class="co"># intercept + slope on Q0 &amp; alpha</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt;   K_doses factor_re_params continuous_re_params</span></span>
+<span><span class="co">#&gt; 1       3               21                   10</span></span>
+<span><span class="co">#&gt; 2       6               78                   10</span></span>
+<span><span class="co">#&gt; 3      10              210                   10</span></span></code></pre></div>
+<p>For a roughly log-spaced dose ladder the continuous slope is also the
+better-specified model, and it sidesteps the convergence difficulty a
+large factor block brings on sparse data.</p>
 </div>
 <div class="section level2">
 <h2 id="cross-references">Cross-references<a class="anchor" aria-label="anchor" href="#cross-references"></a>

@@ -6,7 +6,7 @@ Get Subject-Specific Parameters from TMB Model
 
 ``` r
 # S3 method for class 'beezdemand_tmb'
-get_subject_pars(object, expanded = NULL, ...)
+get_subject_pars(object, expanded = NULL, at = NULL, ...)
 ```
 
 ## Arguments
@@ -35,6 +35,17 @@ get_subject_pars(object, expanded = NULL, ...)
   - `FALSE`: always return the wide shape. Emits a one-line warning on a
     fit with within-id variation (the returned `Q0`, `alpha`, `Pmax`,
     `Omax` are `NA`).
+
+- at:
+
+  Optional named numeric vector/list (e.g. `c(dose_c = 1)`) giving the
+  covariate value(s) at which to evaluate per-subject `Q0`/`alpha` for
+  continuous random-effect slope terms (TICKET-051). Defaults to each
+  subject's mean of the covariate (which equals the reference 0 for a
+  centered, balanced design). The per-subject slope deviations are
+  always returned as `q0_<term>` / `alpha_<term>` columns regardless of
+  `at`. Ignored (with a warning) for fits without a continuous random
+  slope.
 
 - ...:
 

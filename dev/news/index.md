@@ -10,6 +10,38 @@ conditioning. The “TMB mixed-effects modeling tier” section below is the
 original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
 work added under this development cycle.
 
+### Continuous within-subject random slopes in `fit_demand_tmb()`
+
+- [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  now treats a continuous within-subject covariate as a first-class
+  random slope (dose-response demand). Specify it with a numeric
+  random-effects term, e.g.
+  `random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c)`, and pair it with
+  `continuous_covariates = "dose_c"` for the population (fixed) dose
+  slope. Each subject’s intensity and elasticity then change with the
+  covariate at their own rate, with far fewer parameters than the
+  equivalent multi-level factor random slope.
+- [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  and `predict(type = "parameters")` expose the per-subject slope
+  deviations (`q0_<term>` / `alpha_<term>`, matching `ranef()`) and
+  accept an `at =` argument to evaluate per-subject `Q0`/`alpha` at a
+  chosen covariate value (e.g. `at = c(dose_c = 0)`); the two surfaces
+  now agree and no longer return `NA`.
+- [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html), and
+  `tidy(effects = "ran_pars")` label the continuous-term variance
+  component and its intercept correlation by the covariate name rather
+  than a positional index.
+- The identifiability guard runs on the complete-case fit data with
+  concrete messages: a hard error when fewer than two subjects vary in
+  the covariate, a warning when fewer than 80% do, and a centering
+  reminder when the covariate is not centered. Slope-variance start
+  values are scaled to the covariate’s spread, and
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  flags a near-singular intercept/slope covariance.
+- Existing factor-expanded, multi-block, and intercept-only fits are
+  unaffected (output is byte-identical).
+
 ### Breaking change: hurdle predict() default (TICKET-042)
 
 - [`predict.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)

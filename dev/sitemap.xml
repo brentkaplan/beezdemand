@@ -112,6 +112,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_hurdle_hs_stdq0.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_snd.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_continuous_re_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-standardize_params_to_natural.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_anova_multifit.html</loc></url>
@@ -134,6 +135,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_population.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_predict_subject.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_prepare_data.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_re_logsigma_starts.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_response_from_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_run_optimizer.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-tmb_subject_re_deviates.html</loc></url>
