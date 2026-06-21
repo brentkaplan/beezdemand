@@ -323,6 +323,8 @@ NULL
 #' @param re_parsed Canonical RE block structure.
 #' @param has_k Logical.
 #' @param k_fixed Numeric or NULL.
+#' @param data Long-format fit data used for slope-aware start scaling
+#'   (TICKET-051); NULL falls back to flat starts.
 #'
 #' @return Named list of starting values shaped for the Phase-2 template:
 #'   `logsigma` is a vector of length `sum(block dims)`, `rho_raw` is a
@@ -330,7 +332,7 @@ NULL
 #'   ordered \[block1_q0, block1_alpha, block2_q0, ...\].
 #' @keywords internal
 .tmb_default_starts <- function(prepared, design, equation, re_parsed, has_k,
-                                 k_fixed = NULL) {
+                                 k_fixed = NULL, data = NULL) {
   y <- prepared$y
   price <- prepared$price
   n_subjects <- prepared$n_subjects
@@ -372,13 +374,49 @@ NULL
     beta_q0 = beta_q0,
     beta_alpha = beta_alpha,
     log_k = if (has_k && !is.null(k_fixed)) log(k_fixed) else log(2),
-    logsigma = rep(log(0.5), bmap$n_logsigma),
+    logsigma = .tmb_re_logsigma_starts(re_parsed, data, base = log(0.5)),
     logsigma_e = log(1),
     rho_raw = rep(0, bmap$n_rho),
     u = matrix(0, nrow = n_subjects, ncol = re_dim_total)
   )
 
   starts
+}
+
+
+#' Per-RE-column starting log-SD values, scaled for continuous slopes
+#'
+#' Returns the `logsigma` starting vector in canonical block order (per block:
+#' Q0 columns then alpha columns). Intercept and factor-dummy columns keep the
+#' flat `base` start (byte-identical to the historical `rep(log(0.5), n)`),
+#' while a *numeric* continuous-covariate slope column is started at
+#' `base - log(spread)` so the slope's contribution `w_i * x_c` is on the same
+#' scale as an intercept deviation -- a slope SD lives on (covariate)^-1 units.
+#' New behavior engages only when a numeric RE-RHS term is present, so factor
+#' and intercept-only fits are unaffected (TICKET-051).
+#'
+#' @param re_parsed Output of `.normalize_re_input()`.
+#' @param data Long-format fit data, or NULL (-> all columns at `base`).
+#' @param base Numeric; flat starting log-SD (default `log(0.5)`).
+#' @return Numeric vector of length `n_logsigma`.
+#' @keywords internal
+.tmb_re_logsigma_starts <- function(re_parsed, data, base = log(0.5)) {
+  term_names <- character(0)
+  for (b in re_parsed$blocks) {
+    term_names <- c(term_names, b$terms_q0, b$terms_alpha)
+  }
+  out <- rep(base, length(term_names))
+  if (is.null(data) || length(term_names) == 0L) return(out)
+  cont <- .tmb_continuous_re_terms(re_parsed, data)
+  for (i in seq_along(term_names)) {
+    if (term_names[i] %in% cont) {
+      spread <- stats::sd(data[[term_names[i]]], na.rm = TRUE)
+      if (is.finite(spread) && spread > 0) {
+        out[i] <- base - log(spread)
+      }
+    }
+  }
+  out
 }
 
 
@@ -630,7 +668,13 @@ NULL
     s2$log_k <- log(3)
   }
   if (length(s2$logsigma) > 0L) {
-    s2$logsigma <- rep_len(sigma_b_high, length(s2$logsigma))
+    # Shift the (possibly slope-scaled) base logsigma uniformly so non-slope
+    # entries land at sigma_b_high exactly as before (additivity) while a
+    # continuous-slope column keeps its covariate-spread scaling (TICKET-051).
+    # With the default starts, non-slope entries are exactly sigma_b_high; if a
+    # user supplied a custom `logsigma`, the shift is applied to their values
+    # (respecting the user offset) rather than overwriting them.
+    s2$logsigma <- start_values$logsigma + (sigma_b_high - log(0.5))
   }
   s2$logsigma_e <- sigma_e_high
   start_sets[[2]] <- s2
@@ -645,7 +689,8 @@ NULL
     s3$log_k <- log(1.5)
   }
   if (length(s3$logsigma) > 0L) {
-    s3$logsigma <- rep_len(sigma_b_low, length(s3$logsigma))
+    # See s2: uniform shift preserves non-slope starts, scales slope starts.
+    s3$logsigma <- start_values$logsigma + (sigma_b_low - log(0.5))
   }
   s3$logsigma_e <- sigma_e_low
   start_sets[[3]] <- s3
@@ -1255,6 +1300,13 @@ NULL
 #'       a random effect per factor level. The within-subject factor must
 #'       vary within each `id`; pure between-subject factors belong in
 #'       `factors`, not in the RE formula.}
+#'     \item{continuous within-id covariate (random slope)}{A *numeric*
+#'       RHS term such as `Q0 + alpha ~ dose_c` gives each subject a random
+#'       *slope* on that covariate (dose-response demand). The covariate must
+#'       vary within `id` for enough subjects and should be **centered**
+#'       (and, for dose ladders, typically `log10`-transformed); see Details.
+#'       Pair it with `continuous_covariates` to also estimate the population
+#'       (fixed) dose slope.}
 #'     \item{`nlme::pdMat`}{e.g., `nlme::pdDiag(Q0 + alpha ~ 1)` or
 #'       `nlme::pdSymm(Q0 + alpha ~ condition)`. Pre-constructed pdMat
 #'       objects are accepted and their covariance class is honored
@@ -1273,7 +1325,12 @@ NULL
 #' @param factors Character vector of factor variable names for group comparisons.
 #' @param factor_interaction Logical. If `TRUE` and two factors provided, include
 #'   their interaction.
-#' @param continuous_covariates Character vector of continuous covariate names.
+#' @param continuous_covariates Character vector of continuous covariate names
+#'   entered as fixed (population) effects on Q0 and alpha. To also let the
+#'   per-subject dose-response vary, add the same (centered) covariate as a
+#'   random slope in `random_effects` (e.g. `Q0 + alpha ~ dose_c`); the fixed
+#'   and random parts are sourced separately and recovering the population dose
+#'   slope requires both.
 #' @param collapse_levels Named list for asymmetric factor collapsing. Structure:
 #'   `list(Q0 = list(factor = list(new = c(old))), alpha = list(...))`.
 #' @param start_values Named list of starting values. If `NULL`, data-driven
@@ -1352,6 +1409,26 @@ NULL
 #' Q0 and alpha. This typically improves model fit substantially. The
 #' conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
 #' k by 3-8x.
+#'
+#' **Continuous within-subject random slopes (dose-response).** A numeric term
+#' in the random-effects formula (e.g. \code{Q0 + alpha ~ dose_c}) gives each
+#' subject a random \emph{slope} on a continuous within-\code{id} covariate, so
+#' intensity and elasticity change with the covariate (dose) at a
+#' subject-specific rate. The population (fixed) slope is sourced separately from
+#' \code{continuous_covariates}; recovering it requires both. The covariate must
+#' vary within \code{id} for enough subjects (a hard error below 2 informative
+#' subjects; a warning below 80\%). Pass it \strong{centered} (mean 0; for dose
+#' ladders typically a centered \code{log10} dose) so the random intercept is the
+#' subject deviation at the reference value and the intercept/slope covariance is
+#' interpretable. No silent transform is applied: an uncentered covariate is still
+#' fit, but the intercept/slope correlation is reference-dependent and a warning
+#' is emitted. Per-subject parameters at a chosen covariate value are available
+#' via \code{get_subject_pars(fit, at = c(dose_c = value))} and
+#' \code{predict(fit, type = "parameters", at = ...)}; the per-subject slope
+#' deviations appear as \code{q0_<term>} / \code{alpha_<term>} columns there and
+#' in \code{ranef()}, and the variance components are labelled by the covariate
+#' term in \code{summary()} / \code{VarCorr()}. See
+#' \code{vignette("tmb-advanced-random-effects")} for a worked example.
 #'
 #' **Error model considerations:** The \code{exponentiated} and
 #' \code{simplified} equations use a Gaussian error model on raw consumption
@@ -1440,7 +1517,10 @@ fit_demand_tmb <- function(
   if (re_parsed$source == "character") {
     .deprecate_character_re()
   }
-  .validate_re_input(re_parsed, data = data, id_var = id_var)
+  # NB: identifiability validation (.validate_re_input) is deferred to AFTER
+  # complete-case filtering below (TICKET-051) -- a continuous covariate can be
+  # within-subject before filtering and between-subject afterwards, and the
+  # >= 2-informative-subject / 80% thresholds must see the final fit data.
 
   if (!.re_is_phase3_fittable(re_parsed)) {
     stop(
@@ -1591,6 +1671,14 @@ fit_demand_tmb <- function(
     data_for_design <- data
   }
 
+  # Identifiability / within-subject validation on the EXACT rows passed to TMB
+  # (TICKET-051): complete-case filtered, and -- for the exponential equation --
+  # after zero-consumption rows are dropped (data_for_design). This catches a
+  # covariate that is within-subject before filtering but between-subject in the
+  # modeled rows, and applies the >= 2-informative-subject / 80% thresholds to
+  # the data the likelihood actually uses.
+  .validate_re_input(re_parsed, data = data_for_design, id_var = id_var)
+
   design <- .tmb_build_design_matrices(
     data = data_for_design,
     factors_q0 = factors_q0,
@@ -1632,7 +1720,8 @@ fit_demand_tmb <- function(
   default_starts <- .tmb_default_starts(
     prepared, design, equation, re_parsed,
     has_k = has_k && estimate_k,
-    k_fixed = if (has_k && !estimate_k) k else NULL
+    k_fixed = if (has_k && !estimate_k) k else NULL,
+    data = data_for_design
   )
 
   # Merge user start values

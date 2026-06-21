@@ -10,7 +10,8 @@
   equation,
   re_parsed,
   has_k,
-  k_fixed = NULL
+  k_fixed = NULL,
+  data = NULL
 )
 }
 \arguments{
@@ -25,6 +26,9 @@
 \item{has_k}{Logical.}
 
 \item{k_fixed}{Numeric or NULL.}
+
+\item{data}{Long-format fit data used for slope-aware start scaling
+(TICKET-051); NULL falls back to flat starts.}
 }
 \value{
 Named list of starting values shaped for the Phase-2 template:

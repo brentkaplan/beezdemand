@@ -12,6 +12,7 @@
   prices = NULL,
   scale = c("model", "natural"),
   correction = TRUE,
+  at = NULL,
   ...
 )
 }
@@ -57,6 +58,13 @@ natural scale).}
 \item{correction}{Logical. If \code{TRUE} (default), applies the lognormal
 retransformation correction when \code{scale = "natural"}. Set to \code{FALSE} to
 obtain the median prediction. Only affects the \code{"exponential"} equation.}
+
+\item{at}{Optional named numeric vector/list (e.g. \code{c(dose_c = 1)}) giving
+the covariate value(s) at which to evaluate per-subject \code{Q0}/\code{alpha} when
+\code{type = "parameters"} and the fit has a continuous random-effect slope
+(TICKET-051). Defaults to each subject's mean of the covariate (= the
+reference 0 for a centered, balanced design). Ignored (with a warning)
+otherwise.}
 
 \item{...}{Additional arguments.}
 }

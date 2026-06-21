@@ -71,6 +71,13 @@ factor-expanded RHS (e.g., \code{Q0 + alpha ~ condition} or
 a random effect per factor level. The within-subject factor must
 vary within each \code{id}; pure between-subject factors belong in
 \code{factors}, not in the RE formula.}
+\item{continuous within-id covariate (random slope)}{A \emph{numeric}
+RHS term such as \code{Q0 + alpha ~ dose_c} gives each subject a random
+\emph{slope} on that covariate (dose-response demand). The covariate must
+vary within \code{id} for enough subjects and should be \strong{centered}
+(and, for dose ladders, typically \code{log10}-transformed); see Details.
+Pair it with \code{continuous_covariates} to also estimate the population
+(fixed) dose slope.}
 \item{\code{nlme::pdMat}}{e.g., \code{nlme::pdDiag(Q0 + alpha ~ 1)} or
 \code{nlme::pdSymm(Q0 + alpha ~ condition)}. Pre-constructed pdMat
 objects are accepted and their covariance class is honored
@@ -93,7 +100,12 @@ formula; ignored for pre-constructed pdMat / list / pdBlocked inputs.}
 \item{factor_interaction}{Logical. If \code{TRUE} and two factors provided, include
 their interaction.}
 
-\item{continuous_covariates}{Character vector of continuous covariate names.}
+\item{continuous_covariates}{Character vector of continuous covariate names
+entered as fixed (population) effects on Q0 and alpha. To also let the
+per-subject dose-response vary, add the same (centered) covariate as a
+random slope in \code{random_effects} (e.g. \code{Q0 + alpha ~ dose_c}); the fixed
+and random parts are sourced separately and recovering the population dose
+slope requires both.}
 
 \item{collapse_levels}{Named list for asymmetric factor collapsing. Structure:
 \code{list(Q0 = list(factor = list(new = c(old))), alpha = list(...))}.}
@@ -186,6 +198,26 @@ When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
 Q0 and alpha. This typically improves model fit substantially. The
 conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
 k by 3-8x.
+
+\strong{Continuous within-subject random slopes (dose-response).} A numeric term
+in the random-effects formula (e.g. \code{Q0 + alpha ~ dose_c}) gives each
+subject a random \emph{slope} on a continuous within-\code{id} covariate, so
+intensity and elasticity change with the covariate (dose) at a
+subject-specific rate. The population (fixed) slope is sourced separately from
+\code{continuous_covariates}; recovering it requires both. The covariate must
+vary within \code{id} for enough subjects (a hard error below 2 informative
+subjects; a warning below 80\\%). Pass it \strong{centered} (mean 0; for dose
+ladders typically a centered \code{log10} dose) so the random intercept is the
+subject deviation at the reference value and the intercept/slope covariance is
+interpretable. No silent transform is applied: an uncentered covariate is still
+fit, but the intercept/slope correlation is reference-dependent and a warning
+is emitted. Per-subject parameters at a chosen covariate value are available
+via \code{get_subject_pars(fit, at = c(dose_c = value))} and
+\code{predict(fit, type = "parameters", at = ...)}; the per-subject slope
+deviations appear as \code{q0_<term>} / \code{alpha_<term>} columns there and
+in \code{ranef()}, and the variance components are labelled by the covariate
+term in \code{summary()} / \code{VarCorr()}. See
+\code{vignette("tmb-advanced-random-effects")} for a worked example.
 
 \strong{Error model considerations:} The \code{exponentiated} and
 \code{simplified} equations use a Gaussian error model on raw consumption

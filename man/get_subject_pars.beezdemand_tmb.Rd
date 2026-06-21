@@ -4,7 +4,7 @@
 \alias{get_subject_pars.beezdemand_tmb}
 \title{Get Subject-Specific Parameters from TMB Model}
 \usage{
-\method{get_subject_pars}{beezdemand_tmb}(object, expanded = NULL, ...)
+\method{get_subject_pars}{beezdemand_tmb}(object, expanded = NULL, at = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{beezdemand_tmb} object.}
@@ -28,6 +28,15 @@ one-line warning on a fit with within-id variation (the
 returned \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}
 are \code{NA}).
 }}
+
+\item{at}{Optional named numeric vector/list (e.g. \code{c(dose_c = 1)})
+giving the covariate value(s) at which to evaluate per-subject
+\code{Q0}/\code{alpha} for continuous random-effect slope terms
+(TICKET-051). Defaults to each subject's mean of the covariate (which
+equals the reference 0 for a centered, balanced design). The per-subject
+slope deviations are always returned as \code{q0_<term>} /
+\code{alpha_<term>} columns regardless of \code{at}. Ignored (with a
+warning) for fits without a continuous random slope.}
 
 \item{...}{Additional arguments (currently unused).}
 }

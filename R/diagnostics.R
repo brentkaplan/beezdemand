@@ -281,17 +281,60 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     }
   }
 
+  # Near-singular covariance involving a CONTINUOUS RE slope (TICKET-051): a
+  # marginal |correlation| near 1 between the slope and another random effect
+  # (an intercept or another slope) means the covariance is on the boundary.
+  # Engages ONLY when a numeric RE term is present, so factor / intercept-only
+  # fits keep the historical `random_effects` list shape and issues byte-for-byte.
+  # Restricted to correlations involving the continuous slope term; mirrors the
+  # NLME near-singular threshold (0.99).
+  cont_terms <- if (!is.null(re_parsed)) {
+    .tmb_continuous_re_terms(re_parsed, object$data)
+  } else {
+    character(0)
+  }
+
   random_effects <- list(
     variances = re_variances,
     near_zero = near_zero,
     sd_internal_log = re_sd_internal
   )
 
+  if (length(cont_terms) > 0L) {
+    vc <- tryCatch(.tmb_format_variance_components(object),
+                   error = function(e) NULL)
+    re_correlations <- NULL
+    near_singular <- NA
+    if (!is.null(vc) && !is.null(vc$correlations) &&
+        nrow(vc$correlations) > 0L) {
+      re_correlations <- vc$correlations
+      slope_rows <- vapply(vc$correlations$Component, function(comp) {
+        any(vapply(cont_terms, function(t) grepl(t, comp, fixed = TRUE),
+                   logical(1)))
+      }, logical(1))
+      corr_vals <- vc$correlations$Estimate[slope_rows]
+      corr_vals <- corr_vals[!is.na(corr_vals)]
+      near_singular <- length(corr_vals) > 0L && any(abs(corr_vals) > 0.99)
+    }
+    random_effects$correlations <- re_correlations
+    random_effects$near_singular <- near_singular
+  }
+
   if (any(near_zero, na.rm = TRUE)) {
     near_zero_re <- names(re_variances)[near_zero & !is.na(near_zero)]
     issues <- c(issues, paste("Random effect variance near zero:",
                               paste(near_zero_re, collapse = ", ")))
     recommendations <- c(recommendations, "Consider removing these random effects")
+  }
+
+  if (length(cont_terms) > 0L && isTRUE(random_effects$near_singular)) {
+    issues <- c(issues, paste(
+      "Random-effect covariance involving a continuous slope is near-singular",
+      "(|correlation| > 0.99); the affected random effects are nearly collinear.",
+      "See `random_effects$correlations` for the specific pair."))
+    recommendations <- c(recommendations, paste(
+      "Consider a simpler covariance (pdDiag) or centering/rescaling the",
+      "continuous covariate"))
   }
 
   # 4. Check residuals

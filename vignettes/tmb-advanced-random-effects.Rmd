@@ -213,9 +213,14 @@ The long-form table has one row per (subject, condition) combination.
 subject-level RE intercepts); `Q0`, `alpha`, `Pmax`, and `Omax` differ
 per row because they incorporate the per-condition slope REs.
 
-Numeric within-id-varying covariates (e.g., trial number) are
-conditioned at the subject's mean rather than expanded over their
-values — only factor levels drive row expansion.
+Numeric within-id-varying covariates are conditioned at the subject's
+mean (one row per subject, not expanded over their values — only factor
+levels drive row expansion). When a numeric covariate is itself a
+*random slope* (a numeric term in the random-effects formula),
+`get_subject_pars()` and `predict(type = "parameters")` additionally
+surface the per-subject slope deviations as `q0_<term>` / `alpha_<term>`
+columns, and an `at =` argument evaluates `Q0` / `alpha` at a chosen
+covariate value — see the dose-response section below.
 
 To force the old wide one-row-per-subject shape — useful when you want
 to inspect the per-block RE matrix attributes without the row
@@ -385,6 +390,107 @@ calc_group_metrics(fit)
 calc_group_metrics(fit, at = list(condition = "C1"))
 calc_group_metrics(fit, at = list(condition = "C3"))
 ```
+
+# 8. Continuous within-subject random slopes (dose-response)
+
+The factor-expanded REs above model a *discrete* within-subject
+manipulation. When the within-subject covariate is *continuous* — the
+canonical case is **dose-response demand**, where each subject completes
+the purchase task at several drug doses — a random *slope* on that
+covariate is the parsimonious model: each subject's intensity (Q₀) and
+elasticity (α) change with dose at their own rate.
+
+Specify the random slope with a numeric term in the random-effects
+formula, and pair it with `continuous_covariates` for the population
+(fixed) dose slope. Pass the covariate **centered** (mean 0; for dose
+ladders typically a centered `log10` dose) so the random intercept is
+each subject's deviation at the reference dose.
+
+```{r dose-sim}
+set.seed(2026)
+n_sub  <- 60
+doses  <- c(-2, -1, 0, 1, 2)            # centered (e.g. centered log10 dose)
+prices <- c(0, 1, 2, 4, 8, 16)
+# Per-subject random intercept + slope on log Q0 and log alpha.
+Sigma <- diag(c(0.30, 0.10, 0.30, 0.10)^2)        # (u_q0, w_q0, u_alpha, w_alpha)
+Sigma[1, 2] <- Sigma[2, 1] <- 0.3 * 0.30 * 0.10   # Q0 intercept-slope corr
+Sigma[3, 4] <- Sigma[4, 3] <- 0.3 * 0.30 * 0.10   # alpha intercept-slope corr
+L <- t(chol(Sigma))
+rows <- list(); k <- 1L
+for (i in seq_len(n_sub)) {
+  re <- as.numeric(L %*% rnorm(4))
+  for (d in doses) {
+    q0    <- exp(log(20)    + 0.10 * d + re[1] + re[2] * d)
+    alpha <- exp(log(0.006) - 0.15 * d + re[3] + re[4] * d)
+    mu    <- q0 * exp(-alpha * q0 * prices)
+    rows[[k]] <- data.frame(id = i, dose_c = d, x = prices,
+                            y = mu * exp(rnorm(length(prices), 0, 0.05)))
+    k <- k + 1L
+  }
+}
+dose_dat <- transform(do.call(rbind, rows), id = factor(id))
+```
+
+Fit intensity and elasticity random slopes on `dose_c`:
+
+```{r dose-fit, eval = !render_fast}
+fit_dose <- fit_demand_tmb(
+  dose_dat, equation = "simplified",
+  continuous_covariates = "dose_c",
+  random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c),
+  multi_start = FALSE, verbose = 0
+)
+# beta_q0[2] ~ 0.10 and beta_alpha[2] ~ -0.15 are the (log-scale) dose slopes.
+coef(fit_dose)
+```
+
+The variance components are labelled by the covariate term, and the
+intercept/slope correlation is reported per parameter side:
+
+```{r dose-varcorr, eval = !render_fast}
+VarCorr(fit_dose)
+summary(fit_dose)$variance_components
+```
+
+`get_subject_pars()` carries each subject's slope deviation
+(`q0_dose_c` / `alpha_dose_c`, the same values `ranef()` exposes). Because
+no single Q₀/α exists once the curve depends on dose, evaluate per-subject
+parameters at a covariate value with `at =`:
+
+```{r dose-subjpars, eval = !render_fast}
+sp_ref  <- get_subject_pars(fit_dose, at = c(dose_c = 0))   # reference dose
+sp_high <- get_subject_pars(fit_dose, at = c(dose_c = 2))   # +2 dose units
+head(sp_ref[, c("id", "q0_dose_c", "alpha_dose_c", "Q0", "alpha")])
+# Each subject's Q0 moves with dose at their own (fixed + random) rate:
+head(data.frame(id      = sp_ref$id,
+                Q0_at_0 = sp_ref$Q0,
+                Q0_at_2 = sp_high$Q0[match(sp_ref$id, sp_high$id)]))
+```
+
+`check_demand_model()` adds a near-singular check on the intercept/slope
+covariance (a |correlation| near 1 means the two random effects are
+nearly collinear):
+
+```{r dose-diag, eval = !render_fast}
+check_demand_model(fit_dose)$random_effects$near_singular
+```
+
+**Why continuous rather than a factor?** A `K`-level factor random slope
+needs a `2K`-dimensional per-subject block; the continuous form needs
+just 4 random effects, independent of how many doses were tested:
+
+```{r dose-parsimony}
+cov_params <- function(dim) dim * (dim + 1) / 2  # pdSymm covariance parameters
+data.frame(
+  K_doses              = c(3, 6, 10),
+  factor_re_params     = cov_params(2 * c(3, 6, 10)),  # 2K-dim block
+  continuous_re_params = cov_params(4)                 # intercept + slope on Q0 & alpha
+)
+```
+
+For a roughly log-spaced dose ladder the continuous slope is also the
+better-specified model, and it sidesteps the convergence difficulty a
+large factor block brings on sparse data.
 
 # Cross-references
 

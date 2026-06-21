@@ -309,6 +309,39 @@
   paste(block_descs, collapse = " + ")
 }
 
+#' Numeric (continuous) random-effect slope terms in a parsed RE spec
+#'
+#' Returns the names of RE-RHS terms that are *numeric* columns in `data`
+#' (continuous within-subject random slopes, TICKET-051) -- the terms that make
+#' a subject's Q0/alpha a function of a covariate. Intercepts (`"(Intercept)"`)
+#' and factor-dummy columns are excluded because their names are not numeric
+#' columns of `data`.
+#'
+#' @param re_parsed Output of `.normalize_re_input()`.
+#' @param data Long-format fit data.
+#' @return Character vector of continuous RE term names (possibly empty).
+#' @keywords internal
+#' @noRd
+.tmb_continuous_re_terms <- function(re_parsed, data) {
+  if (is.null(re_parsed) || is.null(data)) return(character(0))
+  out <- character(0)
+  for (b in re_parsed$blocks) {
+    rhs_vars <- all.vars(stats::as.formula(paste("~", deparse1(b$formula[[3L]]))))
+    # Numeric RHS *variables* (derived from the formula, not from matching
+    # model-matrix column names against arbitrary data columns). A continuous
+    # slope column's model-matrix name equals the numeric variable name exactly;
+    # factor dummies are <var><level> and the intercept is "(Intercept)", so the
+    # intersect with the block's term names selects only genuine slope columns.
+    numeric_vars <- rhs_vars[vapply(
+      rhs_vars,
+      function(v) v %in% names(data) && is.numeric(data[[v]]),
+      logical(1)
+    )]
+    out <- c(out, intersect(c(b$terms_q0, b$terms_alpha), numeric_vars))
+  }
+  setdiff(unique(out), "(Intercept)")
+}
+
 # ---------------------------------------------------------------------------
 # Identifiability / data-shape validation
 # ---------------------------------------------------------------------------
@@ -342,13 +375,64 @@
         data[[v]], data[[id_var]],
         function(vals) length(unique(vals)) > 1L
       )
-      if (!any(varies, na.rm = TRUE)) {
-        stop(
-          "Random slopes on '", v, "' require a within-subject factor; ",
-          "'", v, "' is between-subjects in this data. ",
-          "Use `factors = '", v, "'` for between-subjects fixed effects instead.",
-          call. = FALSE
-        )
+      n_subj <- sum(!is.na(varies))
+      n_informative <- sum(varies, na.rm = TRUE)
+
+      if (is.numeric(data[[v]])) {
+        # Continuous within-subject covariate => random *slope* (TICKET-051).
+        # Identifiability is graded: a slope variance needs >= 2 informative
+        # subjects (each with >= 2 distinct covariate values); warn when most
+        # subjects contribute only through shrinkage. The caller runs this on
+        # the complete-case fit data so that a covariate which is within-subject
+        # before filtering but between-subject afterwards is still caught.
+        if (n_informative < 2L) {
+          stop(
+            "Random slope on continuous covariate '", v, "' is not estimable: ",
+            "only ", n_informative, " of ", n_subj,
+            " subjects have >= 2 distinct '", v, "' values (need at least 2). ",
+            "If '", v, "' varies between subjects (one value per subject), pass ",
+            "it as `continuous_covariates = '", v, "'` for a fixed dose-response ",
+            "effect instead of a random slope.",
+            call. = FALSE
+          )
+        }
+        if (n_subj > 0L && n_informative < 0.8 * n_subj) {
+          n_shrink <- n_subj - n_informative
+          warning(
+            "Random slope on '", v, "': only ", n_informative, " of ", n_subj,
+            " subjects (", round(100 * n_informative / n_subj),
+            "%) have >= 2 distinct '", v, "' values; the remaining ", n_shrink,
+            " contribute to the slope only through shrinkage toward the ",
+            "population slope.",
+            call. = FALSE
+          )
+        }
+        # Centering nudge (TICKET-051): a continuous RE covariate should be
+        # centered so the intercept/slope covariance is interpretable. No
+        # silent transform is applied; warn when it is clearly off-centre.
+        v_mean <- mean(data[[v]], na.rm = TRUE)
+        v_sd <- stats::sd(data[[v]], na.rm = TRUE)
+        if (is.finite(v_sd) && v_sd > 0 && abs(v_mean) > 0.1 * v_sd) {
+          warning(
+            "Continuous random-slope covariate '", v, "' is not centered ",
+            "(mean = ", signif(v_mean, 3L), "). Center it (subtract its mean; ",
+            "for dose ladders typically center log10 dose) so the random ",
+            "intercept is the subject deviation at the reference value and the ",
+            "intercept/slope correlation is not reference-dependent.",
+            call. = FALSE
+          )
+        }
+      } else {
+        # Factor / categorical within-subject term: preserve the existing
+        # (TICKET-011) behavior and message byte-for-byte (additivity).
+        if (!any(varies, na.rm = TRUE)) {
+          stop(
+            "Random slopes on '", v, "' require a within-subject factor; ",
+            "'", v, "' is between-subjects in this data. ",
+            "Use `factors = '", v, "'` for between-subjects fixed effects instead.",
+            call. = FALSE
+          )
+        }
       }
     }
   }

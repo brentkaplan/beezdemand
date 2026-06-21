@@ -389,8 +389,19 @@ summary.beezdemand_tmb <- function(
     )
   )
 
-  # Individual parameter summaries
-  spars <- object$subject_pars
+  # Individual parameter summaries. For a continuous random-slope fit the cached
+  # wide subject_pars holds NA (no single Q0/alpha per subject); summarize the
+  # reconciled per-subject table (conditioned at the subject mean) instead so the
+  # Individual-Parameter section is not all-NA (TICKET-051). Factor/intercept
+  # fits keep the cached table (byte-identical).
+  cont_terms_ip <- .tmb_continuous_re_terms(
+    object$param_info$random_effects_parsed, object$data
+  )
+  spars <- if (length(cont_terms_ip) > 0L) {
+    tryCatch(get_subject_pars(object), error = function(e) object$subject_pars)
+  } else {
+    object$subject_pars
+  }
   individual_metrics <- list(
     Q0 = summary(spars$Q0),
     alpha = summary(spars$alpha),
@@ -486,6 +497,15 @@ summary.beezdemand_tmb <- function(
   sigma_offset <- 0L
   rho_offset <- 0L
 
+  # TICKET-051: name continuous (numeric) RE-slope variance components with the
+  # covariate term rather than a positional index; intercept and factor-dummy
+  # columns keep their positional label (factor/intercept fits byte-identical).
+  cont_terms <- .tmb_continuous_re_terms(re_parsed, object$data)
+  .vc_idx <- function(terms_vec, j) {
+    tj <- if (length(terms_vec) >= j) terms_vec[[j]] else NA_character_
+    if (!is.na(tj) && tj %in% cont_terms) tj else as.character(j)
+  }
+
   for (b in seq_len(bmap$n_blocks)) {
     d_q0 <- bmap$block_q0_dim[b]
     d_alpha <- bmap$block_alpha_dim[b]
@@ -495,10 +515,14 @@ summary.beezdemand_tmb <- function(
     # Per-RE-column SDs.
     block_label_prefix <- if (bmap$n_blocks > 1L) sprintf("block%d ", b) else ""
     pdmat_label <- if (bmap$block_types[b] == 1L) "pdSymm" else "pdDiag"
+    blk_terms_q0 <- if (!is.null(re_parsed)) re_parsed$blocks[[b]]$terms_q0 else character(0)
+    blk_terms_alpha <- if (!is.null(re_parsed)) re_parsed$blocks[[b]]$terms_alpha else character(0)
     if (d_q0 > 0L) {
       for (j in seq_len(d_q0)) {
-        nm <- if (d_q0 == 1L) "sigma_b (Q0 RE SD)" else
-              sprintf("sigma_b[%s%d] (Q0 RE SD)", block_label_prefix, j)
+        is_cont <- length(blk_terms_q0) >= j && (blk_terms_q0[[j]] %in% cont_terms)
+        nm <- if (d_q0 == 1L && !is_cont) "sigma_b (Q0 RE SD)" else
+              sprintf("sigma_b[%s%s] (Q0 RE SD)", block_label_prefix,
+                      .vc_idx(blk_terms_q0, j))
         rows[[length(rows) + 1L]] <- data.frame(
           Component = nm,
           Estimate = exp(logsigma_full[sigma_offset + j]) / ln10,
@@ -508,8 +532,10 @@ summary.beezdemand_tmb <- function(
     }
     if (d_alpha > 0L) {
       for (j in seq_len(d_alpha)) {
-        nm <- if (d_alpha == 1L) "sigma_c (alpha RE SD)" else
-              sprintf("sigma_c[%s%d] (alpha RE SD)", block_label_prefix, j)
+        is_cont <- length(blk_terms_alpha) >= j && (blk_terms_alpha[[j]] %in% cont_terms)
+        nm <- if (d_alpha == 1L && !is_cont) "sigma_c (alpha RE SD)" else
+              sprintf("sigma_c[%s%s] (alpha RE SD)", block_label_prefix,
+                      .vc_idx(blk_terms_alpha, j))
         rows[[length(rows) + 1L]] <- data.frame(
           Component = nm,
           Estimate = exp(logsigma_full[sigma_offset + d_q0 + j]) / ln10,
@@ -552,12 +578,21 @@ summary.beezdemand_tmb <- function(
       }
       R_corr <- L_corr %*% t(L_corr)
 
+      # Column labels for this block (q0 columns then alpha columns), used to
+      # name correlations that involve a continuous RE term (TICKET-051).
+      blk_col_terms <- c(blk_terms_q0, blk_terms_alpha)
+      blk_col_param <- c(rep("Q0", d_q0), rep("alpha", d_alpha))
+      block_has_cont <- any(blk_col_terms %in% cont_terms)
       cor_rows <- list()
       for (j in 2L:d) {
         for (k in seq_len(j - 1L)) {
           marginal_r <- R_corr[j, k]
-          nm <- if (d_q0 == 1L && d_alpha == 1L && d == 2L) {
+          nm <- if (d_q0 == 1L && d_alpha == 1L && d == 2L && !block_has_cont) {
             "rho_bc (Q0-alpha correlation)"
+          } else if (block_has_cont && length(blk_col_terms) == d) {
+            sprintf("rho[%s%s:%s, %s:%s]", block_label_prefix,
+                    blk_col_param[j], blk_col_terms[j],
+                    blk_col_param[k], blk_col_terms[k])
           } else {
             sprintf("rho[%s%d,%d]", block_label_prefix, j, k)
           }
@@ -944,6 +979,12 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #' @param correction Logical. If `TRUE` (default), applies the lognormal
 #'   retransformation correction when `scale = "natural"`. Set to `FALSE` to
 #'   obtain the median prediction. Only affects the `"exponential"` equation.
+#' @param at Optional named numeric vector/list (e.g. `c(dose_c = 1)`) giving
+#'   the covariate value(s) at which to evaluate per-subject `Q0`/`alpha` when
+#'   `type = "parameters"` and the fit has a continuous random-effect slope
+#'   (TICKET-051). Defaults to each subject's mean of the covariate (= the
+#'   reference 0 for a centered, balanced design). Ignored (with a warning)
+#'   otherwise.
 #' @param ... Additional arguments.
 #'
 #' @return Depends on `type`:
@@ -1000,6 +1041,7 @@ predict.beezdemand_tmb <- function(
   prices = NULL,
   scale = c("model", "natural"),
   correction = TRUE,
+  at = NULL,
   ...
 ) {
   type <- match.arg(type)
@@ -1010,6 +1052,18 @@ predict.beezdemand_tmb <- function(
   level <- match.arg(level, c("subject", "population"), several.ok = TRUE)
 
   if (type == "parameters") {
+    re_parsed <- object$param_info$random_effects_parsed
+    cont_terms <- .tmb_continuous_re_terms(re_parsed, object$data)
+    if (length(cont_terms) > 0L) {
+      # Reconcile with get_subject_pars(): per-subject parameters evaluated at
+      # `at` (default reference 0) with slope columns -- never the NA collapse.
+      return(tibble::as_tibble(get_subject_pars(object, at = at)))
+    }
+    if (!is.null(at)) {
+      cli::cli_warn(
+        "{.arg at} is ignored: this fit has no continuous random-effect slope."
+      )
+    }
     return(tibble::as_tibble(object$subject_pars))
   }
 
@@ -1504,6 +1558,17 @@ predict.beezdemand_tmb <- function(
   expanded
 }
 
+# Resolve the requested evaluation value for a continuous RE term `v` from the
+# `at` argument (TICKET-051). `at` may be a named numeric vector/list keyed by
+# covariate name (`c(dose_c = 2)`), or an unnamed length-1 scalar applied to a
+# single continuous term. Returns NULL when `v` has no requested value.
+.tmb_at_value <- function(at, v) {
+  if (is.null(at)) return(NULL)
+  if (!is.null(names(at)) && v %in% names(at)) return(at[[v]])
+  if (is.null(names(at)) && length(at) == 1L) return(at[[1L]])
+  NULL
+}
+
 #' Get Subject-Specific Parameters from TMB Model
 #'
 #' @param object A \code{beezdemand_tmb} object.
@@ -1526,6 +1591,14 @@ predict.beezdemand_tmb <- function(
 #'       returned \code{Q0}, \code{alpha}, \code{Pmax}, \code{Omax}
 #'       are \code{NA}).
 #'   }
+#' @param at Optional named numeric vector/list (e.g. \code{c(dose_c = 1)})
+#'   giving the covariate value(s) at which to evaluate per-subject
+#'   \code{Q0}/\code{alpha} for continuous random-effect slope terms
+#'   (TICKET-051). Defaults to each subject's mean of the covariate (which
+#'   equals the reference 0 for a centered, balanced design). The per-subject
+#'   slope deviations are always returned as \code{q0_<term>} /
+#'   \code{alpha_<term>} columns regardless of \code{at}. Ignored (with a
+#'   warning) for fits without a continuous random slope.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @return When the resolved \code{expanded} is \code{FALSE}: data
@@ -1558,17 +1631,50 @@ predict.beezdemand_tmb <- function(
 #' }
 #'
 #' @export
-get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, ...) {
-  expanded <- .resolve_subject_pars_expanded(object, expanded)
-  if (!expanded) {
-    return(object$subject_pars)
-  }
-
+get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, ...) {
   pinfo <- object$param_info
   data <- object$data
   spars <- object$subject_pars
   re_parsed <- pinfo$random_effects_parsed
   id_var <- pinfo$id_var
+
+  # TICKET-051: continuous within-subject RE slope terms. When present, the
+  # per-subject Q0/alpha are a function of the covariate -- evaluate them at
+  # `at` (default the reference 0) and surface per-subject slope deviations
+  # rather than the NA wide collapse. Factor/intercept fits (no numeric RE
+  # term) keep the existing behavior byte-for-byte.
+  cont_terms <- .tmb_continuous_re_terms(re_parsed, data)
+  expanded_was_null <- is.null(expanded)
+
+  expanded <- .resolve_subject_pars_expanded(object, expanded)
+  if (length(cont_terms) > 0L) {
+    if (expanded_was_null) {
+      # Continuous slope: the reconciled per-subject table (slope columns + `at`)
+      # is the right default even when subject_pars$Q0 is non-NA (e.g. a fit with
+      # validate_subject_pars = FALSE). An explicit expanded = FALSE still
+      # returns the wide table.
+      expanded <- TRUE
+    }
+    if (!is.null(at) && !expanded) {
+      cli::cli_warn(
+        "{.arg at} is ignored when {.code expanded = FALSE}; the wide table holds row-order-dependent or NA parameters."
+      )
+    } else if (!is.null(at) && !is.null(names(at))) {
+      bad <- setdiff(names(at), cont_terms)
+      if (length(bad) > 0L) {
+        cli::cli_warn(
+          "{.arg at} name{?s} {.val {bad}} {?is/are} not a continuous RE term and will be ignored."
+        )
+      }
+    }
+  } else if (!is.null(at)) {
+    cli::cli_warn(
+      "{.arg at} is ignored: this fit has no continuous random-effect slope."
+    )
+  }
+  if (!expanded) {
+    return(object$subject_pars)
+  }
 
   if (is.null(data)) {
     cli::cli_abort(c(
@@ -1703,7 +1809,17 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, ...) {
       } else if (cls$type == "factor" && !cls$varies) {
         cell_rows[[v]] <- subj_rows[[v]][1]
       } else if (cls$type == "numeric" && cls$varies) {
-        cell_rows[[v]] <- mean(subj_rows[[v]], na.rm = TRUE)
+        # Within-id numeric: condition at the subject mean by default
+        # (TICKET-022). For a continuous RE-slope term (TICKET-051) an explicit
+        # `at` value overrides the mean so users can evaluate per-subject
+        # Q0/alpha at a chosen covariate value (e.g. the reference,
+        # at = c(dose_c = 0)). For a centered covariate the two coincide.
+        at_v <- if (v %in% cont_terms) .tmb_at_value(at, v) else NULL
+        cell_rows[[v]] <- if (!is.null(at_v)) {
+          at_v
+        } else {
+          mean(subj_rows[[v]], na.rm = TRUE)
+        }
       } else if (cls$type == "numeric" && !cls$varies) {
         cell_rows[[v]] <- subj_rows[[v]][1]
       }
@@ -1772,6 +1888,23 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, ...) {
   spars_match <- match(as.character(out$id), as.character(spars$id))
   if ("b_i" %in% names(spars)) out$b_i <- spars$b_i[spars_match]
   if ("c_i" %in% names(spars)) out$c_i <- spars$c_i[spars_match]
+
+  # TICKET-051: per-subject slope deviations for continuous RE terms (the same
+  # values ranef() exposes), so the dose-response is visible at the subject
+  # level alongside the point Q0/alpha evaluated at `at`.
+  if (length(cont_terms) > 0L) {
+    re_q0_mat <- attr(spars, "re_q0_mat")
+    re_alpha_mat <- attr(spars, "re_alpha_mat")
+    for (tm in cont_terms) {
+      if (!is.null(re_q0_mat) && tm %in% colnames(re_q0_mat)) {
+        out[[paste0("q0_", tm)]] <- re_q0_mat[spars_match, tm]
+      }
+      if (!is.null(re_alpha_mat) && tm %in% colnames(re_alpha_mat)) {
+        out[[paste0("alpha_", tm)]] <- re_alpha_mat[spars_match, tm]
+      }
+    }
+  }
+
   out$Q0 <- Q0
   out$alpha <- alpha
   out$Pmax <- omax_pmax$pmax_model
@@ -2362,7 +2495,17 @@ VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
   # ("sigma_b (Q0 RE SD)" -> "Q0", "sigma_e (Residual SD)" -> "Residual"),
   # de-duplicated for factor-expanded fits with repeated terms.
   param <- sub("^.*\\(([A-Za-z0-9]+)\\b.*$", "\\1", vc$Component)
-  rn <- make.unique(param, sep = ".")
+  # TICKET-051: when a component is a named continuous RE slope
+  # ("sigma_b[dose_c] (Q0 RE SD)"), suffix the row name with the term so the
+  # slope is identifiable. Positional ("sigma_b[1]") and bracket-free
+  # intercept-only labels keep the historical de-duplicated names.
+  bracket <- sub("^sigma_[bc]\\[(.*)\\] .*$", "\\1", vc$Component)
+  bracket_term <- sub("^block[0-9]+ ", "", bracket)
+  named <- grepl("^sigma_[bc]\\[", vc$Component) &
+           bracket != vc$Component &
+           is.na(suppressWarnings(as.integer(bracket_term)))
+  rn <- ifelse(named, paste0(param, ".", bracket_term), param)
+  rn <- make.unique(rn, sep = ".")
 
   variance <- sd_vals^2
 
