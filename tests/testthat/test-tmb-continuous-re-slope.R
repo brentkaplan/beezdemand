@@ -229,7 +229,7 @@ test_that("logsigma starts are base for intercept-only and factor fits (additivi
 test_that("continuous RE slope recovers fixed slopes + RE SDs on simplified (SND)", {
   skip_on_cran()
   dat <- beezdemand:::.simulate_continuous_re_demand(
-    n_subjects = 60, doses = c(-2, -1, 0, 1, 2),
+    n_subjects = 44, doses = c(-2, -1, 0, 1, 2),
     prices = c(0, 1, 2, 4, 8, 16),
     log_q0_pop = log(20), log_alpha_pop = log(0.006),
     b1_q0 = 0.10, b1_alpha = -0.15,
@@ -272,7 +272,7 @@ test_that("continuous RE slope recovers fixed slopes + RE SDs on simplified (SND
 test_that("fixed dose-response slope requires continuous_covariates AND the RE slope", {
   skip_on_cran()
   dat <- beezdemand:::.simulate_continuous_re_demand(
-    n_subjects = 50, doses = c(-2, -1, 0, 1, 2),
+    n_subjects = 40, doses = c(-2, -1, 0, 1, 2),
     prices = c(0, 1, 2, 4, 8, 16),
     b1_q0 = 0.10, b1_alpha = -0.15, seed = 99
   )
@@ -302,7 +302,7 @@ test_that("fixed dose-response slope requires continuous_covariates AND the RE s
 test_that("continuous RE slope fits, converges, and reports the slope on all four equations", {
   skip_on_cran()
   base <- beezdemand:::.simulate_continuous_re_demand(
-    n_subjects = 30, doses = c(-2, -1, 0, 1, 2),
+    n_subjects = 18, doses = c(-2, -1, 0, 1, 2),
     prices = c(0, 1, 2, 4, 8, 16),
     b1_q0 = 0.10, b1_alpha = -0.15, seed = 4242
   )
@@ -339,7 +339,7 @@ test_that("continuous RE slope fits, converges, and reports the slope on all fou
 test_that("TMB continuous RE slope agrees with the nlme oracle (fit_demand_mixed)", {
   skip_on_cran()
   dat <- beezdemand:::.simulate_continuous_re_demand(
-    n_subjects = 50, doses = c(-2, -1, 0, 1, 2),
+    n_subjects = 40, doses = c(-2, -1, 0, 1, 2),
     prices = c(0, 1, 2, 4, 8, 16),
     b1_q0 = 0.10, b1_alpha = -0.15, seed = 313
   )
@@ -382,18 +382,30 @@ test_that("TMB continuous RE slope agrees with the nlme oracle (fit_demand_mixed
 # Phase 2 reporting: subject-level slope exposure + at/newdata reconciliation
 # ---------------------------------------------------------------------------
 
-.fit_cont_re <- function(seed = 808, n = 30) {
+# Memoized so the ~half-dozen reporting/label/diagnostic tests that need a
+# standard continuous-RE fit share ONE fit rather than refitting identically.
+# This keeps the number of TMB ADFun objects created in this file's subprocess
+# low -- many fits per process intermittently trip a TMB heap double-free on
+# Linux glibc (see the repo's "trim heaviest TMB test files" CI lesson). Callers
+# only read the fit (the near-singular test mutates a copy), so sharing is safe.
+.cont_re_fit_cache <- new.env(parent = emptyenv())
+.fit_cont_re <- function(seed = 808, n = 24) {
+  key <- paste(seed, n, sep = "_")
+  cached <- .cont_re_fit_cache[[key]]
+  if (!is.null(cached)) return(cached)
   dat <- beezdemand:::.simulate_continuous_re_demand(
     n_subjects = n, doses = c(-2, -1, 0, 1, 2),
     prices = c(0, 1, 2, 4, 8, 16),
     b1_q0 = 0.10, b1_alpha = -0.15, seed = seed
   )
-  suppressWarnings(suppressMessages(fit_demand_tmb(
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
     dat, equation = "simplified",
     continuous_covariates = "dose_c",
     random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c),
     multi_start = FALSE, verbose = 0
   )))
+  .cont_re_fit_cache[[key]] <- fit
+  fit
 }
 
 test_that("get_subject_pars surfaces per-subject slope columns and finite Q0/alpha", {
@@ -614,7 +626,7 @@ test_that("guard validates the exponential equation's positive-consumption rows"
 
 test_that("predict(type='parameters') surfaces slopes even with validate_subject_pars = FALSE", {
   skip_on_cran()
-  dat <- beezdemand:::.simulate_continuous_re_demand(n_subjects = 30, seed = 55)
+  dat <- beezdemand:::.simulate_continuous_re_demand(n_subjects = 24, seed = 55)
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
     dat, equation = "simplified", continuous_covariates = "dose_c",
     random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c),
@@ -629,7 +641,7 @@ test_that("get_subject_pars default conditions a continuous slope at the subject
   skip_on_cran()
   # Uncentered dose ladder: subject mean = 2, NOT the reference 0.
   dat <- beezdemand:::.simulate_continuous_re_demand(
-    n_subjects = 40, doses = c(0, 1, 2, 3, 4),
+    n_subjects = 32, doses = c(0, 1, 2, 3, 4),
     prices = c(0, 1, 2, 4, 8), seed = 7
   )
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
@@ -646,7 +658,7 @@ test_that("get_subject_pars default conditions a continuous slope at the subject
 
 test_that("near-singular message is generic for a slope-only block (no false intercept claim)", {
   skip_on_cran()
-  dat <- beezdemand:::.simulate_continuous_re_demand(n_subjects = 30, seed = 909)
+  dat <- beezdemand:::.simulate_continuous_re_demand(n_subjects = 24, seed = 909)
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
     dat, equation = "simplified", continuous_covariates = "dose_c",
     random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c - 1),  # slopes only, no RE intercept
