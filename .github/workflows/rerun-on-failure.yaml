@@ -1,0 +1,39 @@
+# Auto-rerun the R-CMD-check workflow once when its first attempt fails, to
+# self-heal the stochastic hosted-runner SIGTERM (exit 143) flake during the
+# silent, CPU-bound `checking tests` phase (see project_ci_oom_diagnosis).
+#
+# An in-step retry cannot rescue this: the SIGTERM is delivered to the whole
+# job/runner, so recovery requires a fresh runner -> a run-level rerun.
+#
+# NOTE: workflow_run workflows only trigger from the copy on the repository's
+# DEFAULT branch. This file must be on the default branch (master) to fire; it
+# then handles R-CMD-check runs on any branch.
+name: Rerun failed CI on flake
+
+on:
+  workflow_run:
+    workflows: ["R-CMD-check"]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  rerun:
+    # Only the FIRST failed attempt is auto-retried (run_attempt < 2); a second
+    # failure is treated as genuine and left red. Scoped to gating pushes (and
+    # manual dispatch) on the branches we gate on -- not PR runs that merely
+    # happen to share a head-branch name.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.run_attempt < 2 &&
+      contains(fromJSON('["push","workflow_dispatch"]'), github.event.workflow_run.event) &&
+      contains(fromJSON('["master","main","develop"]'), github.event.workflow_run.head_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rerun only the failed jobs (one bounded retry)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: gh run rerun "$RUN_ID" --failed
