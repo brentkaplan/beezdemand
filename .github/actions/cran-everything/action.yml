@@ -58,6 +58,26 @@ runs:
         needs: website
         extra-packages: any::pkgdown local::.
 
+    - name: Rebuild TMB from source against libomp (macOS)
+      # macOS arm64 runners' prebuilt CRAN TMB binary fails to load with "symbol not
+      # found in flat namespace '_omp_get_max_threads'" (it references OpenMP but links
+      # no libomp). Install libomp and rebuild TMB from source so TMB.so links a real
+      # libomp.dylib. Mirrors the same fix in R-CMD-check.yaml; the pkgdown job runs on
+      # Linux so this only fires in the macOS check legs.
+      if: ${{ runner.os == 'macOS' }}
+      run: |
+        set -euxo pipefail
+        brew install libomp
+        LOMP="$(brew --prefix libomp)"
+        mkdir -p ~/.R
+        {
+          echo "CPPFLAGS += -Xclang -fopenmp -I${LOMP}/include"
+          echo "LDFLAGS += -L${LOMP}/lib -lomp -Wl,-rpath,${LOMP}/lib"
+        } >> ~/.R/Makevars
+        Rscript -e 'install.packages("TMB", type = "source", repos = "https://cloud.r-project.org", lib = .libPaths()[1])'
+        Rscript -e 'so <- system.file("libs", "TMB.so", package = "TMB"); cat("TMB.so:", so, "\n"); cat(system2("otool", c("-L", so), stdout = TRUE), sep = "\n"); library(TMB); cat("TMB", as.character(packageVersion("TMB")), "loads OK\n")'
+      shell: bash
+
     - name: Session info
       if: ${{ inputs.mode == 'check' || inputs.mode == 'pkgdown' }}
       run: |

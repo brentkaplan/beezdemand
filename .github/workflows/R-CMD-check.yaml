@@ -21,7 +21,14 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macos-latest,   r: 'release'}
+          # Cover both GA macOS arm64 images (macos-15 and macos-26) explicitly during
+          # GitHub's macos-latest migration window -- macos-latest is heterogeneous
+          # mid-migration. The prebuilt CRAN TMB binary intermittently fails to load on
+          # BOTH images with "symbol not found in flat namespace '_omp_get_max_threads'"
+          # (it references OpenMP but nothing links libomp), so the "Rebuild TMB from
+          # source against libomp" step below repairs every macOS leg.
+          - {os: macos-15,       r: 'release'}
+          - {os: macos-26,       r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,  r: 'release'}
@@ -62,6 +69,27 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Rebuild TMB from source against libomp (macOS)
+        # The prebuilt CRAN TMB binary intermittently fails to load on the macOS arm64
+        # runners with "symbol not found in flat namespace '_omp_get_max_threads'" -- it
+        # references OpenMP but nothing links/loads libomp. Install libomp and rebuild
+        # TMB from source so TMB.so carries a real libomp dependency. Runs on every macOS
+        # leg (15 and 26). OMP_NUM_THREADS=1 (above) keeps it single-threaded.
+        if: runner.os == 'macOS'
+        run: |
+          set -euxo pipefail
+          brew install libomp
+          LOMP="$(brew --prefix libomp)"
+          mkdir -p ~/.R
+          {
+            echo "CPPFLAGS += -Xclang -fopenmp -I${LOMP}/include"
+            echo "LDFLAGS += -L${LOMP}/lib -lomp -Wl,-rpath,${LOMP}/lib"
+          } >> ~/.R/Makevars
+          Rscript -e 'install.packages("TMB", type = "source", repos = "https://cloud.r-project.org", lib = .libPaths()[1])'
+          # Confirm TMB.so now links libomp and actually loads (fail fast otherwise).
+          Rscript -e 'so <- system.file("libs", "TMB.so", package = "TMB"); cat("TMB.so:", so, "\n"); cat(system2("otool", c("-L", so), stdout = TRUE), sep = "\n"); library(TMB); cat("TMB", as.character(packageVersion("TMB")), "loads OK\n")'
+        shell: bash
 
       - uses: r-lib/actions/check-r-package@v2
         with:
