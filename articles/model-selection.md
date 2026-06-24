@@ -16,12 +16,12 @@ Pmax (price at maximum expenditure) and Omax (maximum expenditure)
 
 ### Quick Decision Guide
 
-| Your Situation                       | Recommended Approach | Function                                                                                         |
-|--------------------------------------|----------------------|--------------------------------------------------------------------------------------------------|
-| Individual curves, quick exploration | Fixed-effects NLS    | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   |
-| Group comparisons, repeated measures | Mixed-effects        | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   |
-| Many zeros, two-part modeling        | Hurdle model         | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
-| Cross-commodity substitution         | Cross-price models   | `fit_cp_*()`                                                                                     |
+| Your Situation | Recommended Approach | Function |
+|----|----|----|
+| Individual curves, quick exploration | Fixed-effects NLS | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) |
+| Group comparisons, repeated measures | Mixed-effects | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) |
+| Many zeros, two-part modeling | Hurdle model | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
+| Cross-commodity substitution | Cross-price models | `fit_cp_*()` |
 
 ------------------------------------------------------------------------
 
@@ -31,6 +31,7 @@ Before fitting any model, always check your data for systematic
 responding.
 
 ``` r
+
 # Check for systematic demand
 systematic_check <- check_systematic_demand(apt)
 head(systematic_check$results)
@@ -87,6 +88,7 @@ when you want:
 ### Complete Example
 
 ``` r
+
 # Fit individual demand curves using the Hursh & Silberberg equation
 fit_fixed <- fit_demand_fixed(
   data = apt,
@@ -132,6 +134,7 @@ glance(fit_fixed)
 ```
 
 ``` r
+
 # Plot individual curves
 plot(fit_fixed, type = "individual", ids = c("19", "51"))
 ```
@@ -142,6 +145,7 @@ participants.](model-selection_files/figure-html/fixed-plot-1.png)
 Individual demand curves for two example participants.
 
 ``` r
+
 # Basic diagnostics
 check_demand_model(fit_fixed)
 #> 
@@ -185,6 +189,7 @@ your consumption data using the LL4 (log-log with 4-parameter
 adjustment):
 
 ``` r
+
 # Transform consumption using LL4
 apt_ll4 <- apt |>
   dplyr::mutate(y_ll4 = ll4(y))
@@ -198,6 +203,7 @@ apt_ll4 |>
 ### Complete Example
 
 ``` r
+
 # Fit mixed-effects model
 fit_mixed <- fit_demand_mixed(
   data = apt_ll4,
@@ -222,6 +228,7 @@ For experimental designs with factors, you can use `emmeans` for
 post-hoc comparisons:
 
 ``` r
+
 # For a model with factors (example with ko dataset):
 data(ko)
 
@@ -273,6 +280,7 @@ The hurdle model separates:
 ### Complete Example
 
 ``` r
+
 # Fit hurdle model with 3 random effects
 fit_hurdle <- fit_demand_hurdle(
   data = apt,
@@ -302,6 +310,7 @@ plot_qq(fit_hurdle)
 Compare nested models using likelihood ratio tests:
 
 ``` r
+
 # Fit full model (3 random effects)
 fit_hurdle3 <- fit_demand_hurdle(
   data = apt,
@@ -335,11 +344,11 @@ The `equation` argument determines the functional form of the demand
 curve. Each equation has trade-offs in terms of flexibility, zero
 handling, and comparability across studies.
 
-| Equation       | Function                  | Handles Zeros | k Required | Best For                                                  |
-|----------------|---------------------------|:-------------:|:----------:|-----------------------------------------------------------|
-| `"hs"`         | Hursh & Silberberg (2008) |      No       |    Yes     | Traditional analyses, compatibility with older literature |
-| `"koff"`       | Koffarnus et al. (2015)   |      No       |    Yes     | Modified exponential, widely used in applied research     |
-| `"simplified"` | Rzeszutek et al. (2025)   |      Yes      |     No     | Modern analyses; avoids k-dependency and zero issues      |
+| Equation | Function | Handles Zeros | k Required | Best For |
+|----|----|:--:|:--:|----|
+| `"hs"` | Hursh & Silberberg (2008) | No | Yes | Traditional analyses, compatibility with older literature |
+| `"koff"` | Koffarnus et al. (2015) | No | Yes | Modified exponential, widely used in applied research |
+| `"simplified"` | Rzeszutek et al. (2025) | Yes | No | Modern analyses; avoids k-dependency and zero issues |
 
 **Recommendations:**
 
@@ -368,6 +377,7 @@ curve:
 - **`k = "share"`**: Fit a single k shared across all participants
 
 ``` r
+
 # Different k specifications
 fit_k2 <- fit_demand_fixed(apt, k = 2)          # Fixed at 2
 fit_kind <- fit_demand_fixed(apt, k = "ind")    # Individual
@@ -429,11 +439,11 @@ fit_kshare <- fit_demand_fixed(apt, k = "share") # Shared across participants
 
 ## Summary
 
-| Approach                                                                                         | Best For                             | Key Features                        | Handles Zeros     |
-|--------------------------------------------------------------------------------------------------|--------------------------------------|-------------------------------------|-------------------|
-| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)   | Individual curves, quick analysis    | Simple, per-subject estimates       | Excludes          |
-| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)   | Group comparisons, repeated measures | Random effects, emmeans integration | LL4 transform     |
-| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Data with many zeros                 | Two-part model, TMB backend         | Explicitly models |
+| Approach | Best For | Key Features | Handles Zeros |
+|----|----|----|----|
+| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) | Individual curves, quick analysis | Simple, per-subject estimates | Excludes |
+| [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) | Group comparisons, repeated measures | Random effects, emmeans integration | LL4 transform |
+| [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Data with many zeros | Two-part model, TMB backend | Explicitly models |
 
 ### Next Steps
 

@@ -26,6 +26,7 @@ for cross-price modeling.
 ## Data Structure
 
 ``` r
+
 glimpse(etm)
 #> Rows: 240
 #> Columns: 5
@@ -62,6 +63,7 @@ price (`alt`).
 ### Loading the cp Dataset
 
 ``` r
+
 # Load the cross-price example dataset
 data("cp", package = "beezdemand")
 
@@ -99,6 +101,7 @@ First, we fit a standard demand curve to the target commodity when the
 alternative is absent:
 
 ``` r
+
 # Filter to alone condition
 alone_data <- cp |>
     dplyr::filter(target == "alone")
@@ -132,6 +135,7 @@ Next, fit the same demand model to target consumption when the
 alternative is present:
 
 ``` r
+
 # Filter to own condition
 own_data <- cp |>
     dplyr::filter(target == "own")
@@ -165,6 +169,7 @@ Finally, fit the cross-price model to alternative consumption as a
 function of target price:
 
 ``` r
+
 # Filter to alt condition
 alt_data <- cp |>
     dplyr::filter(target == "alt")
@@ -225,6 +230,7 @@ predictions may also include `y_pred_log10`.
 ### Comparing Results Across Conditions
 
 ``` r
+
 # Extract key parameters for each condition
 coef_alone <- coef(fit_alone)
 Q0_alone <- coef_alone$estimate[coef_alone$term == "q0"]
@@ -265,6 +271,7 @@ comparison
 ### Combined Visualization
 
 ``` r
+
 # Create prediction data
 x_seq <- seq(0.01, max(cp$x), length.out = 100)
 
@@ -302,6 +309,7 @@ ggplot() +
 ## Checking Unsystematic Data
 
 ``` r
+
 etm |>
     dplyr::filter(group %in% "E-Cigarettes" & id %in% 1)
 #> # A tibble: 6 × 5
@@ -346,6 +354,7 @@ unsys_one_lnic$results
 ```
 
 ``` r
+
 unsys_all <- etm |>
     group_by(id, group) |>
     nest() |>
@@ -358,6 +367,7 @@ unsys_all <- etm |>
 ```
 
 ``` r
+
 knitr::kable(
     unsys_all |>
         group_by(group) |>
@@ -377,13 +387,14 @@ knitr::kable(
 | E-Cigarettes     |         10 |             80 |
 | Non-Combustibles |         10 |             90 |
 
-Systematicity check by product group (ETM dataset)
+Systematicity check by product group (ETM dataset) {.table}
 
 ### Demonstration from Rzeszutek et al. (2025)
 
 #### Low Nicotine Study (Kaplan et al., 2018)
 
 ``` r
+
 unsys_all_lnic <- lnic |>
     filter(target == "fixed") |>
     group_by(id, condition) |>
@@ -401,6 +412,7 @@ unsys_all_lnic <- lnic |>
 ```
 
 ``` r
+
 knitr::kable(
     unsys_all_lnic |>
         group_by(condition) |>
@@ -420,11 +432,12 @@ knitr::kable(
 | 2% NegFrame |         59 |           91.5 |
 
 Systematicity check by condition (Low Nicotine study, Kaplan et al.,
-2018)
+2018) {.table}
 
 #### Unpublished Cannabis and Cigarette Data
 
 ``` r
+
 unsys_all_can_cig <- can_cig |>
     filter(target %in% c("cannabisFix", "cigarettesFix")) |>
     group_by(id, target) |>
@@ -439,6 +452,7 @@ unsys_all_can_cig <- can_cig |>
 ```
 
 ``` r
+
 knitr::kable(
     unsys_all_can_cig |>
         group_by(target) |>
@@ -457,10 +471,12 @@ knitr::kable(
 | cigarettesFix |         99 |           77.8 |
 
 Systematicity check by target (Cannabis/Cigarettes, unpublished data)
+{.table}
 
 #### In Progress Experimental Tobacco Marketplace Data
 
 ``` r
+
 unsys_all_ongoing_etm <- ongoing_etm |>
     # one person is doubled up
     distinct() |>
@@ -476,6 +492,7 @@ unsys_all_ongoing_etm <- ongoing_etm |>
 ```
 
 ``` r
+
 knitr::kable(
     unsys_all_ongoing_etm |>
         group_by(target) |>
@@ -493,13 +510,14 @@ knitr::kable(
 | ECig   |         47 |           83.0 |
 | FixCig |         47 |           89.4 |
 
-Systematicity check by target (Ongoing ETM data)
+Systematicity check by target (Ongoing ETM data) {.table}
 
 ## Nonlinear Model Fitting
 
 ### Two Stage
 
 ``` r
+
 fit_one <- etm |>
     dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
     fit_cp_nls(
@@ -551,6 +569,7 @@ plot(fit_one, x_trans = "log10")
 ![](cross-price-models_files/figure-html/unnamed-chunk-3-1.png)
 
 ``` r
+
 fit_all <- etm |>
     group_by(id, group) |>
     nest() |>
@@ -565,6 +584,7 @@ fit_all <- etm |>
 ```
 
 ``` r
+
 # Show parameter estimates for first 3 subjects only
 knitr::kable(
     fit_all |>
@@ -699,9 +719,10 @@ knitr::kable(
 |  10 | Non-Combustibles | I            | -8.492300e+01 | 1.419310e+02 |
 |  10 | Non-Combustibles | log10_beta   |  3.090000e-01 | 1.500000e-01 |
 
-Example parameter estimates (first 3 subjects)
+Example parameter estimates (first 3 subjects) {.table}
 
 ``` r
+
 
 # Show one example plot
 fit_all$plot[[2]]
@@ -712,6 +733,7 @@ fit_all$plot[[2]]
 ### Fit to Group (pooled by group)
 
 ``` r
+
 fit_pooled <- etm |>
     group_by(group) |>
     nest() |>
@@ -726,6 +748,7 @@ fit_pooled <- etm |>
 ```
 
 ``` r
+
 # Show tidy results instead of summary
 knitr::kable(
     fit_pooled |>
@@ -751,9 +774,10 @@ knitr::kable(
 | Non-Combustibles | I            |   -4.148 |    19.320 |
 | Non-Combustibles | log10_beta   |   -0.271 |     0.904 |
 
-Pooled model parameter estimates by product group
+Pooled model parameter estimates by product group {.table}
 
 ``` r
+
 
 # Show one plot example
 fit_pooled |>
@@ -767,6 +791,7 @@ fit_pooled |>
 ### Fit to Group (mean)
 
 ``` r
+
 fit_mean <- etm |>
     group_by(group, x) |>
     summarise(
@@ -786,6 +811,7 @@ fit_mean <- etm |>
 ```
 
 ``` r
+
 # Show tidy results
 knitr::kable(
     fit_mean |>
@@ -811,9 +837,10 @@ knitr::kable(
 | Non-Combustibles | I            |   -4.148 |     0.992 |
 | Non-Combustibles | log10_beta   |   -0.271 |     0.046 |
 
-Mean model parameter estimates by product group
+Mean model parameter estimates by product group {.table}
 
 ``` r
+
 
 # Show parameter estimates plot
 fit_mean |>
@@ -833,6 +860,7 @@ fit_mean |>
 
 ``` r
 
+
 # Show one example plot
 fit_mean |>
     dplyr::filter(group %in% "E-Cigarettes") |>
@@ -845,6 +873,7 @@ fit_mean |>
 ## Linear Model Fitting
 
 ``` r
+
 fit_one_linear <- etm |>
     dplyr::filter(group %in% "E-Cigarettes" & id %in% 1) |>
     fit_cp_linear(
@@ -876,6 +905,7 @@ plot(fit_one_linear, x_trans = "log10")
 ## Linear Mixed-Effects Model
 
 ``` r
+
 fit_mixed <- fit_cp_linear(
     etm,
     type = "mixed",
@@ -924,6 +954,7 @@ plot(fit_mixed, x_trans = "log10", pred_type = "fixed")
 
 ``` r
 
+
 # plot random effects only
 plot(fit_mixed, x_trans = "log10", pred_type = "random")
 ```
@@ -931,6 +962,7 @@ plot(fit_mixed, x_trans = "log10", pred_type = "random")
 ![](cross-price-models_files/figure-html/unnamed-chunk-5-2.png)
 
 ``` r
+
 
 # plot both fixed and random effects
 plot(fit_mixed, x_trans = "log10", pred_type = "all")
@@ -941,6 +973,7 @@ plot(fit_mixed, x_trans = "log10", pred_type = "all")
 ## Extracting Model Coefficients
 
 ``` r
+
 glance(fit_one)
 #> # A tibble: 1 × 6
 #>   r.squared   aic   bic equation      method        transform
@@ -956,6 +989,7 @@ tidy(fit_one)
 ```
 
 ``` r
+
 extract_coefficients(fit_mixed)
 #> $fixed
 #>                    (Intercept)                       log10(x) 
@@ -1026,6 +1060,7 @@ extract_coefficients(fit_mixed)
 ## Post-hoc Estimated Marginal Means and Comparisons
 
 ``` r
+
 cp_posthoc_slopes(fit_mixed)
 #> Slope Estimates and Comparisons 
 #> =============================== 

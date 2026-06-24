@@ -9,12 +9,14 @@ models.
 From CRAN:
 
 ``` r
+
 install.packages("beezdemand")
 ```
 
 Development version:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("brentkaplan/beezdemand")
 ```
@@ -22,6 +24,7 @@ pak::pak("brentkaplan/beezdemand")
 ## 1-minute example
 
 ``` r
+
 library(beezdemand)
 
 fit <- fit_demand_fixed(apt, id_var = "id", x_var = "price", y_var = "consumption")

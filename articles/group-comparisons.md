@@ -28,6 +28,7 @@ We will use the built-in `apt` dataset and manufacture random groupings
 for demonstration purposes.
 
 ``` r
+
 ## setting the seed initializes the random number generator so results will be
 ## reproducible
 set.seed(1234)
@@ -73,6 +74,7 @@ better than multiple \alphas or Q_0s. A resulting *F* statistic will be
 reported along with a *p* value.
 
 ``` r
+
 ## in order for this to run, you will have had to run the code immediately
 ## preceeding (i.e., the code to generate the groups)
 ef <- ExtraF(dat = apt, equation = "koff", k = 2, groupcol = "group", verbose = TRUE)
@@ -92,7 +94,7 @@ access this summary table using `ef$dfres`:
 | a          | 8.503442 |   2 | 0.6448801 | 0.0040518 |
 | b          | 5.822075 |   2 | 0.5242825 | 0.0039376 |
 
-Fitted Measures
+Fitted Measures {.table}
 
 | Group      |   N |    AbsSS |    SdRes |
 |:-----------|----:|---------:|---------:|
@@ -103,7 +105,7 @@ Fitted Measures
 | a          |  80 | 249.2764 | 1.787695 |
 | b          |  80 | 137.7440 | 1.328890 |
 
-Uncertainty and Model Information
+Uncertainty and Model Information {.table}
 
 | Group      |        EV |    Omaxd |     Pmaxd |
 |:-----------|----------:|---------:|----------:|
@@ -114,7 +116,7 @@ Uncertainty and Model Information
 | a          | 0.8725741 | 22.45260 |  8.373320 |
 | b          | 0.8978945 | 23.10414 | 12.584550 |
 
-Derived Measures
+Derived Measures {.table}
 
 | Group      |    Omaxa | Notes     |
 |:-----------|---------:|:----------|
@@ -125,7 +127,7 @@ Derived Measures
 | a          | 22.45291 | converged |
 | b          | 23.10445 | converged |
 
-Convergence and Summary Information
+Convergence and Summary Information {.table}
 
 ### Visualizing Group Comparisons
 
@@ -138,6 +140,7 @@ of y given we used Koffarnus et al. (2015)’s equation fitted to the
 data.
 
 ``` r
+
 ## be sure that you've loaded the tidyverse package (e.g., library(tidyverse))
 ggplot(apt, aes(x = x, y = y, group = group)) +
   ## the predicted lines from the sum of squares f-test can be used in subsequent

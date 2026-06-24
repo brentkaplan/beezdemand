@@ -96,6 +96,7 @@ beezdemand follows semantic versioning:
 ### 1. Preparation
 
 ``` r
+
 # Update version in DESCRIPTION
 # Update NEWS.md with release date
 devtools::document()
@@ -105,6 +106,7 @@ devtools::check()
 ### 2. Final Verification
 
 ``` r
+
 # Full check with CRAN settings
 devtools::check(remote = TRUE, manual = TRUE)
 
@@ -118,6 +120,7 @@ devtools::build_vignettes()
 ### 3. Submit to CRAN
 
 ``` r
+
 devtools::release()
 ```
 
