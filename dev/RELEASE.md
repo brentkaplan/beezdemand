@@ -17,8 +17,7 @@ passes (all tests green)
 
 `lintr::lint_package()` reports no critical issues
 
-Test coverage is adequate (check with
-[`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md))
+Test coverage is adequate (check with `covr::package_coverage()`)
 
 ### Documentation
 
