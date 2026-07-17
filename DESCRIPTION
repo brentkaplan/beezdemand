@@ -51,6 +51,7 @@ Suggests:
     tidyverse,
     rmarkdown,
     purrr,
+    pwr,
     conflicted,
     devtools,
     here,

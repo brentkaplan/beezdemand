@@ -59,6 +59,10 @@ navbar:
         - text: Cross-Price Models
           href: articles/cross-price-models.html
         - text: "---"
+        - text: Study Planning
+        - text: Power Analysis
+          href: articles/power-analysis.html
+        - text: "---"
         - text: Troubleshooting
         - text: Understanding Convergence
           href: articles/convergence-guide.html
@@ -204,6 +208,14 @@ reference:
       - run_hurdle_monte_carlo
       - print_mc_summary
       - GetValsForSim
+
+  - title: Power Analysis
+    desc: >
+      Monte Carlo power estimation and sample-size search for within-subject
+      demand designs.
+    contents:
+      - power_demand
+      - find_n_demand
 
   - title: Summary Methods
     desc: Summary functions for parameter exploration.
