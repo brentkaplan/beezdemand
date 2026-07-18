@@ -15,9 +15,10 @@ find_n_demand(
   df = NULL,
   seed = NULL,
   equation = "simplified",
-  random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+  random_effects = NULL,
   multi_start = FALSE,
   verbose = TRUE,
+  design_type = c("within", "between"),
   ...
 )
 }
@@ -49,8 +50,10 @@ adaptive rule adds batches where the verdict is close.}
 \item{alpha}{Nominal two-sided test level.}
 
 \item{df}{Degrees of freedom for the Wald test's t reference. \code{NULL}
-(default) tracks the evaluated sample size as \code{n - 1}; a numeric value
-(or \code{Inf} for the asymptotic z-test) is used at every evaluated N.}
+(default) tracks the evaluated sample size as \code{n - 1} for \code{design_type = "within"} and \code{n - 2} for \code{design_type = "between"}; a numeric value
+(or \code{Inf} for the asymptotic z-test) is used at every evaluated N. With
+the default \code{df} and \code{design_type = "between"}, \code{n_range[1]} must be
+\verb{>= 3} (df = n - 2 needs n >= 3).}
 
 \item{seed}{Optional integer seed; identical seeds give identical
 results. The caller's RNG state is restored on exit.}
@@ -67,15 +70,29 @@ different estimand -- their contrasts are not on the scale of the
 simulated delta.}
 
 \item{random_effects}{Random-effects specification passed to
-\code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. The default \code{nlme::pdDiag(Q0 + alpha ~ condition - 1)}
-(independent per-condition subject effects on both parameters) matches
-the simulator's data-generating process when \code{rho_bd = 0}.}
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. \code{NULL} (default) resolves to a specification matching
+\code{design_type}: \code{nlme::pdDiag(Q0 + alpha ~ condition - 1)} for
+\code{"within"} (independent per-condition subject effects on both parameters,
+matching the simulator's data-generating process when \code{rho_bd = 0}), and
+\code{nlme::pdDiag(Q0 + alpha ~ 1)} for \code{"between"} (per-subject intercepts,
+which are correctly specified because each subject appears in only one
+condition). Supply a specification to override.}
 
 \item{multi_start}{Passed to \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. Defaults to \code{FALSE} for
 speed (roughly 3x fewer optimizations); non-convergent replicates are
 excluded and surfaced rather than biasing the estimate.}
 
 \item{verbose}{Logical; report each evaluation.}
+
+\item{design_type}{Either \code{"within"} (default) or \code{"between"}. \code{"within"}
+simulates the two-condition within-subject design (every subject observed
+at every price in both conditions) and tests the within-subject condition
+contrast. \code{"between"} assigns each subject to exactly one of two arms
+(\code{ceiling(n/2)} to condition 1, the rest to condition 2) and tests the
+group difference; the two-arm dataset is composed from the same simulator
+run once per arm with a single condition, so no new data-generating
+process is introduced (see Details). The \code{df} and \code{random_effects}
+defaults track \code{design_type}.}
 
 \item{...}{Additional arguments passed to \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}.}
 }

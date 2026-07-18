@@ -2,7 +2,7 @@
 % Please edit documentation in R/power-demand.R
 \name{power_demand}
 \alias{power_demand}
-\title{Monte Carlo power analysis for within-subject demand designs}
+\title{Monte Carlo power analysis for two-condition demand designs}
 \usage{
 power_demand(
   n_subjects,
@@ -13,15 +13,19 @@ power_demand(
   df = NULL,
   seed = NULL,
   equation = "simplified",
-  random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+  random_effects = NULL,
   multi_start = FALSE,
   verbose = TRUE,
+  design_type = c("within", "between"),
   ...
 )
 }
 \arguments{
-\item{n_subjects}{Number of simulated subjects per replicate (each subject
-is observed at every price in both conditions).}
+\item{n_subjects}{Number of simulated subjects per replicate. For
+\code{design_type = "within"} each subject is observed at every price in both
+conditions; for \code{"between"} this is the \emph{total} sample, split
+\code{ceiling(n_subjects / 2)} to condition 1 and the rest to condition 2
+(an odd total therefore gives arms differing by one subject).}
 
 \item{effect}{Named list supplying exactly one of \code{delta_q0} or
 \code{delta_alpha}: the true condition shift on natural-log Q0 (or natural-log
@@ -42,14 +46,14 @@ for interactive exploration; use 2000+ for grant-quality precision (see
 \item{alpha}{Nominal two-sided test level.}
 
 \item{df}{Degrees of freedom for the Wald test's t reference
-distribution. \code{NULL} (default) uses \code{n_subjects - 1}. This is an
-\emph{empirically calibrated} small-sample correction, not a model-derived
-df (the TMB fit has no exact t sampling theory): the asymptotic z-test
-was measurably anticonservative in the package's Type I calibration
-battery (empirical rate 0.089 at nominal .05 with 15 subjects), while
-the \code{n - 1} reference passes the battery's null checks across the
-tested sample sizes, target parameters, and residual-SD settings. \code{Inf}
-gives the asymptotic z-test.}
+distribution. \code{NULL} (default) uses \code{n_subjects - 1} for \code{design_type = "within"} and \code{n_subjects - 2} for \code{design_type = "between"} (the
+two-sample df). This is an \emph{empirically calibrated} small-sample
+correction, not a model-derived df (the TMB fit has no exact t sampling
+theory): the asymptotic z-test was measurably anticonservative in the
+package's Type I calibration battery (empirical rate 0.089 at nominal
+.05 with 15 subjects), while the t reference passes the battery's null
+checks across the tested sample sizes, target parameters, residual-SD
+settings, and both designs. \code{Inf} gives the asymptotic z-test.}
 
 \item{seed}{Optional integer seed; identical seeds give identical
 results. The caller's RNG state is restored on exit.}
@@ -66,15 +70,29 @@ different estimand -- their contrasts are not on the scale of the
 simulated delta.}
 
 \item{random_effects}{Random-effects specification passed to
-\code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. The default \code{nlme::pdDiag(Q0 + alpha ~ condition - 1)}
-(independent per-condition subject effects on both parameters) matches
-the simulator's data-generating process when \code{rho_bd = 0}.}
+\code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. \code{NULL} (default) resolves to a specification matching
+\code{design_type}: \code{nlme::pdDiag(Q0 + alpha ~ condition - 1)} for
+\code{"within"} (independent per-condition subject effects on both parameters,
+matching the simulator's data-generating process when \code{rho_bd = 0}), and
+\code{nlme::pdDiag(Q0 + alpha ~ 1)} for \code{"between"} (per-subject intercepts,
+which are correctly specified because each subject appears in only one
+condition). Supply a specification to override.}
 
 \item{multi_start}{Passed to \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}. Defaults to \code{FALSE} for
 speed (roughly 3x fewer optimizations); non-convergent replicates are
 excluded and surfaced rather than biasing the estimate.}
 
 \item{verbose}{Logical; show a progress bar.}
+
+\item{design_type}{Either \code{"within"} (default) or \code{"between"}. \code{"within"}
+simulates the two-condition within-subject design (every subject observed
+at every price in both conditions) and tests the within-subject condition
+contrast. \code{"between"} assigns each subject to exactly one of two arms
+(\code{ceiling(n/2)} to condition 1, the rest to condition 2) and tests the
+group difference; the two-arm dataset is composed from the same simulator
+run once per arm with a single condition, so no new data-generating
+process is introduced (see Details). The \code{df} and \code{random_effects}
+defaults track \code{design_type}.}
 
 \item{...}{Additional arguments passed to \code{\link[=fit_demand_tmb]{fit_demand_tmb()}} (e.g.
 \code{tmb_control}).}
@@ -98,7 +116,8 @@ the same SE and t reference; both reported).}
 positive-definite Hessian, finite SE).}
 \item{alpha}{Nominal test level.}
 \item{df}{Degrees of freedom of the t reference distribution actually
-used (\code{n_subjects - 1} unless overridden).}
+used (\code{n_subjects - 1} for \code{"within"}, \code{n_subjects - 2} for
+\code{"between"}, unless overridden).}
 \item{effect}{The validated effect specification (name and delta).}
 \item{target_term}{The tested coefficient (e.g. \code{"Q0:conditionC2"}).}
 \item{design}{The merged design list actually used.}
@@ -110,23 +129,23 @@ used (\code{n_subjects - 1} unless overridden).}
 and \code{message} (error text, if any). Estimates are on the natural-log
 scale of the simulated delta.}
 \item{seed}{As supplied.}
-\item{settings}{List of \code{equation}, \code{multi_start}, and the deparsed
-random-effects specification.}
+\item{settings}{List of \code{equation}, \code{design_type}, \code{multi_start}, and
+the deparsed random-effects specification.}
 \item{call}{The matched call.}
 }
 }
 \description{
 Estimates statistical power to detect a single fixed-effect difference in a
-demand parameter (\code{Q0} or \code{alpha}) between two within-subject conditions,
-by simulation: each replicate (1) simulates a two-condition within-subject
-dataset from the mixed-effects demand model in
-\code{.simulate_within_subject_demand()} under assumed population parameters
-plus the effect \code{delta}, (2) refits it with \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}, and (3)
-tests the condition contrast on the estimation (natural log) scale with a
-Wald test at level \code{alpha}, referred to a t distribution with \code{df}
-degrees of freedom (see the \code{df} argument). Power is the proportion of
-\emph{usable} fits (converged, positive-definite Hessian, finite standard
-error) that reject.
+demand parameter (\code{Q0} or \code{alpha}) between two conditions, by simulation:
+each replicate (1) simulates a two-condition dataset from the mixed-effects
+demand model in \code{.simulate_within_subject_demand()} under assumed
+population parameters plus the effect \code{delta} -- either a within-subject
+design (every subject observed in both conditions) or, with \code{design_type = "between"}, a two-arm between-subject design (each subject in one
+condition) -- (2) refits it with \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}, and (3) tests the
+condition contrast on the estimation (natural log) scale with a Wald test
+at level \code{alpha}, referred to a t distribution with \code{df} degrees of freedom
+(see the \code{df} argument). Power is the proportion of \emph{usable} fits
+(converged, positive-definite Hessian, finite standard error) that reject.
 
 Because the power estimate is a proportion from finitely many replicates,
 it is reported with a Wilson score confidence interval (\code{power_mc_ci}).
@@ -144,11 +163,19 @@ an unpredictable direction. A warning is issued when fewer than 95\% of
 replicates are usable, since power conditional on convergence can be
 selected when convergence depends on the realized data.
 
-The v1 scope is a single fixed-effect delta under the package's existing
-within-subject simulator (two conditions, every subject observed at every
-price in both). Joint Q0 + alpha effects, power for derived measures
-(Pmax, Omax), and arbitrary designs are out of scope; see
-\code{vignette("power-analysis")}.
+The v1 scope is a single fixed-effect delta. Joint Q0 + alpha effects,
+power for derived measures (Pmax, Omax), and arbitrary designs are out of
+scope; see \code{vignette("power-analysis")}.
+
+For \code{design_type = "between"}, the two arms are composed by running the
+within-subject simulator once per arm with a single condition, then binding
+the arms and refitting with per-subject intercept random effects. Because
+each subject appears in only one condition, that random-effects \emph{structure}
+matches the composed data-generating process exactly -- unlike the
+within-subject default's per-condition effects. The additive-Gaussian
+residual likelihood remains a \emph{working model} for the simulator's
+multiplicative-lognormal errors in both designs (closest at small
+\code{sigma_e}). Type I error is calibrated by the test suite for both designs.
 }
 \examples{
 \donttest{
@@ -159,6 +186,15 @@ res <- power_demand(
   n_sim = 20, seed = 1, verbose = FALSE
 )
 print(res)
+
+# Between-subject design: group difference in Q0 across two arms
+res_b <- power_demand(
+  n_subjects = 40,
+  effect = list(delta_q0 = log(1.5)),
+  design_type = "between",
+  n_sim = 20, seed = 1, verbose = FALSE
+)
+print(res_b)
 }
 
 }

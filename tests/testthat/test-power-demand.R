@@ -640,6 +640,273 @@ test_that("power decreases as random-effect SD grows", {
 })
 
 # -----------------------------------------------------------------------------
+# Between-subject design (design_type = "between"): each subject is assigned
+# to ONE condition (first ceiling(n/2) to C1, rest to C2); the simulator is
+# the same DGP with n_conditions = 1 per arm, so per-(subject, condition)
+# REs degenerate to per-subject REs and the intercept-only RE refit is
+# correctly specified. Wald df default is n - 2 (two-sample design).
+# Preregistered seeds/bands fixed before the first run, as for the
+# within-subject battery.
+# -----------------------------------------------------------------------------
+
+test_that(".simulate_between_subject_demand composes two arms correctly", {
+  # Direct structural check of the load-bearing composition helper (no fit):
+  # odd N splits ceiling/floor, each subject sits in exactly one arm, ids are
+  # unique 1:n, and condition is a C1/C2 factor.
+  prices <- c(0.1, 0.5, 1, 2, 5, 10)
+  design <- utils::modifyList(
+    .power_demand_design_defaults(),
+    list(prices = prices)
+  )
+  set.seed(99)
+  sim <- .simulate_between_subject_demand(
+    n_subjects = 5,
+    target_param = "Q0",
+    delta = 0.6,
+    design = design
+  )
+  expect_setequal(as.character(sim$id), as.character(1:5))
+  expect_identical(levels(sim$condition), c("C1", "C2"))
+  expect_equal(nrow(sim), 5 * length(prices))
+  # Each subject appears in exactly one condition.
+  per_id <- tapply(as.character(sim$condition), sim$id, function(x) {
+    length(unique(x))
+  })
+  expect_true(all(per_id == 1))
+  # ceiling(5/2) = 3 subjects in C1, floor = 2 in C2.
+  arm_sizes <- tapply(
+    sim$id,
+    sim$condition,
+    function(x) length(unique(x))
+  )
+  expect_equal(as.integer(arm_sizes[["C1"]]), 3L)
+  expect_equal(as.integer(arm_sizes[["C2"]]), 2L)
+})
+
+test_that("design_type = 'between' returns the documented structure", {
+  skip_on_cran()
+  res <- power_demand(
+    n_subjects = 12,
+    effect = list(delta_q0 = 0.8),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 6,
+    seed = 601,
+    verbose = FALSE
+  )
+  expect_s3_class(res, "beezdemand_power")
+  expect_equal(res$df, 10)
+  expect_equal(res$target_term, "Q0:conditionC2")
+  expect_equal(res$settings$design_type, "between")
+  used <- res$replicates[res$replicates$status == "ok", ]
+  expect_equal(used$hit_p, used$hit_ci)
+})
+
+test_that("design_type = 'between' recovers the group delta on the log scale", {
+  skip_on_cran()
+  delta <- 0.6
+  res <- power_demand(
+    n_subjects = 50,
+    effect = list(delta_q0 = delta),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 12,
+    seed = 602,
+    verbose = FALSE
+  )
+  used <- res$replicates[res$replicates$status == "ok", ]
+  expect_gt(nrow(used), 6)
+  expect_equal(mean(used$estimate), delta, tolerance = 0.15)
+})
+
+test_that("design_type = 'between' is exactly reproducible under a seed", {
+  skip_on_cran()
+  res1 <- power_demand(
+    n_subjects = 10,
+    effect = list(delta_alpha = 0.8),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 4,
+    seed = 603,
+    verbose = FALSE
+  )
+  res2 <- power_demand(
+    n_subjects = 10,
+    effect = list(delta_alpha = 0.8),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 4,
+    seed = 603,
+    verbose = FALSE
+  )
+  expect_identical(res1$replicates, res2$replicates)
+})
+
+test_that("between-design default df is rejected when n_subjects is too small", {
+  expect_error(
+    power_demand(
+      n_subjects = 2,
+      effect = list(delta_q0 = 0.5),
+      design_type = "between"
+    ),
+    "df"
+  )
+})
+
+test_that("Type I error is calibrated for the between-subject design", {
+  skip_on_cran()
+  # Same band derivation as the within-subject calibration ([.03, .07] at
+  # n_sim = 1200); n = 30 total (15 per condition); seed 20260725, fixed
+  # before the first run.
+  res <- power_demand(
+    n_subjects = 30,
+    effect = list(delta_q0 = 0),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 1200,
+    seed = 20260725,
+    verbose = FALSE
+  )
+  expect_gte(res$n_used / res$n_sim, 0.95)
+  expect_gte(res$hit_rate_p, 0.03)
+  expect_lte(res$hit_rate_p, 0.07)
+})
+
+test_that("between-design Type I error holds at a larger N on the alpha target", {
+  skip_on_cran()
+  # Band: .05 +/- 3.18 * sqrt(.05 * .95 / 400) = [.015, .085]; seed 20260726.
+  res <- power_demand(
+    n_subjects = 60,
+    effect = list(delta_alpha = 0),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 400,
+    seed = 20260726,
+    verbose = FALSE
+  )
+  expect_gte(res$n_used / res$n_sim, 0.95)
+  expect_gte(res$hit_rate_p, 0.015)
+  expect_lte(res$hit_rate_p, 0.085)
+})
+
+test_that("between-design Monte Carlo power matches analytic two-sample power", {
+  skip_on_cran()
+  skip_if_not_installed("pwr")
+  # With sigma_e and sigma_d tiny, per-subject log-Q0 is observed nearly
+  # exactly and the design reduces to a two-sample comparison of log Q0
+  # with sd = sigma_b and equal groups (even N). Tolerance fixed before the
+  # run at 0.10 (3 MC SDs at n_sim = 400 plus working-model slack); the
+  # engine's t(n - 2) reference matches pwr.t.test's two-sample df exactly.
+  n_subj <- 30
+  sigma_b <- 0.35
+  delta <- 0.34
+  analytic <- pwr::pwr.t.test(
+    n = n_subj / 2,
+    d = delta / sigma_b,
+    sig.level = 0.05,
+    type = "two.sample"
+  )$power
+
+  res <- power_demand(
+    n_subjects = n_subj,
+    effect = list(delta_q0 = delta),
+    design = power_test_design(
+      sigma_b = sigma_b,
+      sigma_d = 0.05,
+      sigma_e = 0.05
+    ),
+    design_type = "between",
+    n_sim = 400,
+    seed = 20260727,
+    verbose = FALSE
+  )
+  expect_gte(res$n_used / res$n_sim, 0.95)
+  expect_equal(res$power, analytic, tolerance = 0.10)
+})
+
+test_that("between-design power increases with n_subjects and effect size", {
+  skip_on_cran()
+  p_small_n <- power_demand(
+    n_subjects = 10,
+    effect = list(delta_q0 = 0.5),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 100,
+    seed = 604,
+    verbose = FALSE
+  )$power
+  p_large_n <- power_demand(
+    n_subjects = 40,
+    effect = list(delta_q0 = 0.5),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 100,
+    seed = 605,
+    verbose = FALSE
+  )$power
+  expect_gt(p_large_n, p_small_n)
+
+  p_small_d <- power_demand(
+    n_subjects = 20,
+    effect = list(delta_q0 = 0.2),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 100,
+    seed = 606,
+    verbose = FALSE
+  )$power
+  p_large_d <- power_demand(
+    n_subjects = 20,
+    effect = list(delta_q0 = 0.8),
+    design = power_test_design(),
+    design_type = "between",
+    n_sim = 100,
+    seed = 607,
+    verbose = FALSE
+  )$power
+  expect_gt(p_large_d, p_small_d)
+})
+
+test_that("find_n_demand supports the between-subject design", {
+  skip_on_cran()
+  res <- find_n_demand(
+    target_power = 0.8,
+    effect = list(delta_q0 = 1.2),
+    design = power_test_design(),
+    design_type = "between",
+    n_range = c(6, 40),
+    n_sim = 40,
+    seed = 608,
+    verbose = FALSE
+  )
+  expect_s3_class(res, "beezdemand_power_n")
+  expect_gte(res$n, 6)
+  expect_lte(res$n, 40)
+  # Well-formed range whose lower bound is too small for df = n - 2: the
+  # design-specific guard fires.
+  expect_error(
+    find_n_demand(
+      target_power = 0.8,
+      effect = list(delta_q0 = 0.5),
+      design_type = "between",
+      n_range = c(2, 10)
+    ),
+    "n_range"
+  )
+  # A malformed range with lower bound 2 must still error on n_range, but via
+  # the search's own (more precise) validation rather than the design guard.
+  expect_error(
+    find_n_demand(
+      target_power = 0.8,
+      effect = list(delta_q0 = 0.5),
+      design_type = "between",
+      n_range = c(2, 1)
+    ),
+    "n_range"
+  )
+})
+
+# -----------------------------------------------------------------------------
 # find_n_demand
 # -----------------------------------------------------------------------------
 

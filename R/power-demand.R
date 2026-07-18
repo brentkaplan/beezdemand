@@ -21,6 +21,25 @@
   )
 }
 
+#' Resolve the default random-effects specification for a design type
+#'
+#' Returns the user-supplied specification unchanged, or the design-appropriate
+#' default when `random_effects` is `NULL`: per-condition subject effects for
+#' the within-subject design, per-subject intercepts for the between-subject
+#' design (each subject appears in only one condition there).
+#' @keywords internal
+#' @noRd
+.power_resolve_random_effects <- function(random_effects, design_type) {
+  if (!is.null(random_effects)) {
+    return(random_effects)
+  }
+  if (design_type == "between") {
+    nlme::pdDiag(Q0 + alpha ~ 1)
+  } else {
+    nlme::pdDiag(Q0 + alpha ~ condition - 1)
+  }
+}
+
 #' Wilson score interval for a binomial proportion
 #'
 #' @param x Number of successes.
@@ -325,10 +344,68 @@
   invisible(NULL)
 }
 
+#' Compose a between-subject two-arm demand dataset
+#'
+#' Builds a between-subject design by calling
+#' `.simulate_within_subject_demand()` **once per arm with `n_conditions = 1`**:
+#' each subject is assigned to exactly one arm/condition, so the simulator's
+#' per-(subject, condition) random effects degenerate to plain per-subject
+#' random effects (`sigma_b`/`sigma_d` keep their meaning) and no new
+#' data-generating process is introduced. Arm 1 (`ceiling(n/2)` subjects,
+#' condition `"C1"`) carries no shift; arm 2 (`floor(n/2)` subjects, condition
+#' `"C2"`) carries the single `delta` on the target parameter. Arm-2 subject
+#' ids are offset so ids are unique across arms.
+#'
+#' @param n_subjects Total number of subjects across the two arms.
+#' @param target_param `"Q0"` or `"alpha"`; the parameter the group difference
+#'   acts on.
+#' @param delta The condition-2 shift on natural-log Q0 (or log alpha).
+#' @param design Merged design list (see `.power_demand_design_defaults`).
+#' @return A long-format tibble (`id`, `condition`, `x`, `y`) with `condition`
+#'   a factor with levels `c("C1", "C2")`.
+#' @keywords internal
+#' @noRd
+.simulate_between_subject_demand <- function(
+  n_subjects,
+  target_param,
+  delta,
+  design
+) {
+  n1 <- ceiling(n_subjects / 2)
+  n2 <- n_subjects - n1
+  sim_arm <- function(n, d, label) {
+    sim <- .simulate_within_subject_demand(
+      n_subjects = n,
+      n_conditions = 1,
+      prices = design$prices,
+      log_q0_pop = design$log_q0_pop,
+      log_alpha_pop = design$log_alpha_pop,
+      delta_q0 = if (target_param == "Q0") d else 0,
+      delta_alpha = if (target_param == "alpha") d else 0,
+      sigma_b = design$sigma_b,
+      sigma_d = design$sigma_d,
+      rho_bd = design$rho_bd,
+      sigma_e = design$sigma_e,
+      seed = NULL
+    )
+    sim$condition <- label
+    sim
+  }
+  arm1 <- sim_arm(n1, 0, "C1")
+  arm2 <- sim_arm(n2, delta, "C2")
+  arm2$id <- factor(as.integer(arm2$id) + n1)
+  out <- dplyr::bind_rows(arm1, arm2)
+  out$id <- factor(out$id)
+  out$condition <- factor(out$condition, levels = c("C1", "C2"))
+  out
+}
+
 #' Run the demand Monte Carlo replicate loop
 #'
-#' Each replicate simulates a two-condition within-subject dataset, refits it,
-#' and extracts the target contrast on the estimation (natural log) scale via
+#' Each replicate simulates a two-condition dataset (within-subject when
+#' `design_type = "within"`, two independent between-subject arms when
+#' `design_type = "between"`), refits it, and extracts the target contrast on
+#' the estimation (natural log) scale via
 #' `tidy(fit, report_space = "internal")`. Replicate-level errors are caught
 #' and recorded as `status = "error"`, never propagated.
 #'
@@ -346,6 +423,7 @@
   random_effects,
   multi_start,
   fit_args,
+  design_type = "within",
   sim_offset = 0L,
   verbose = FALSE
 ) {
@@ -368,20 +446,29 @@
   for (i in seq_len(n_sim)) {
     rows[[i]] <- tryCatch(
       {
-        sim <- .simulate_within_subject_demand(
-          n_subjects = n_subjects,
-          n_conditions = 2,
-          prices = design$prices,
-          log_q0_pop = design$log_q0_pop,
-          log_alpha_pop = design$log_alpha_pop,
-          delta_q0 = if (target_param == "Q0") c(0, delta) else c(0, 0),
-          delta_alpha = if (target_param == "alpha") c(0, delta) else c(0, 0),
-          sigma_b = design$sigma_b,
-          sigma_d = design$sigma_d,
-          rho_bd = design$rho_bd,
-          sigma_e = design$sigma_e,
-          seed = NULL
-        )
+        sim <- if (design_type == "between") {
+          .simulate_between_subject_demand(
+            n_subjects = n_subjects,
+            target_param = target_param,
+            delta = delta,
+            design = design
+          )
+        } else {
+          .simulate_within_subject_demand(
+            n_subjects = n_subjects,
+            n_conditions = 2,
+            prices = design$prices,
+            log_q0_pop = design$log_q0_pop,
+            log_alpha_pop = design$log_alpha_pop,
+            delta_q0 = if (target_param == "Q0") c(0, delta) else c(0, 0),
+            delta_alpha = if (target_param == "alpha") c(0, delta) else c(0, 0),
+            sigma_b = design$sigma_b,
+            sigma_d = design$sigma_d,
+            rho_bd = design$rho_bd,
+            sigma_e = design$sigma_e,
+            seed = NULL
+          )
+        }
         fit <- suppressWarnings(suppressMessages(do.call(
           fit_demand_tmb,
           c(
@@ -527,20 +614,21 @@
   invisible(NULL)
 }
 
-#' Monte Carlo power analysis for within-subject demand designs
+#' Monte Carlo power analysis for two-condition demand designs
 #'
 #' @description
 #' Estimates statistical power to detect a single fixed-effect difference in a
-#' demand parameter (`Q0` or `alpha`) between two within-subject conditions,
-#' by simulation: each replicate (1) simulates a two-condition within-subject
-#' dataset from the mixed-effects demand model in
-#' `.simulate_within_subject_demand()` under assumed population parameters
-#' plus the effect `delta`, (2) refits it with [fit_demand_tmb()], and (3)
-#' tests the condition contrast on the estimation (natural log) scale with a
-#' Wald test at level `alpha`, referred to a t distribution with `df`
-#' degrees of freedom (see the `df` argument). Power is the proportion of
-#' *usable* fits (converged, positive-definite Hessian, finite standard
-#' error) that reject.
+#' demand parameter (`Q0` or `alpha`) between two conditions, by simulation:
+#' each replicate (1) simulates a two-condition dataset from the mixed-effects
+#' demand model in `.simulate_within_subject_demand()` under assumed
+#' population parameters plus the effect `delta` -- either a within-subject
+#' design (every subject observed in both conditions) or, with `design_type =
+#' "between"`, a two-arm between-subject design (each subject in one
+#' condition) -- (2) refits it with [fit_demand_tmb()], and (3) tests the
+#' condition contrast on the estimation (natural log) scale with a Wald test
+#' at level `alpha`, referred to a t distribution with `df` degrees of freedom
+#' (see the `df` argument). Power is the proportion of *usable* fits
+#' (converged, positive-definite Hessian, finite standard error) that reject.
 #'
 #' Because the power estimate is a proportion from finitely many replicates,
 #' it is reported with a Wilson score confidence interval (`power_mc_ci`).
@@ -549,8 +637,11 @@
 #' standard error and reference distribution, so they coincide by
 #' construction, and both rates are returned.
 #'
-#' @param n_subjects Number of simulated subjects per replicate (each subject
-#'   is observed at every price in both conditions).
+#' @param n_subjects Number of simulated subjects per replicate. For
+#'   `design_type = "within"` each subject is observed at every price in both
+#'   conditions; for `"between"` this is the *total* sample, split
+#'   `ceiling(n_subjects / 2)` to condition 1 and the rest to condition 2
+#'   (an odd total therefore gives arms differing by one subject).
 #' @param effect Named list supplying exactly one of `delta_q0` or
 #'   `delta_alpha`: the true condition shift on natural-log Q0 (or natural-log
 #'   alpha) for condition 2 relative to condition 1. `0` is allowed (useful
@@ -566,14 +657,15 @@
 #'   `vignette("power-analysis")`).
 #' @param alpha Nominal two-sided test level.
 #' @param df Degrees of freedom for the Wald test's t reference
-#'   distribution. `NULL` (default) uses `n_subjects - 1`. This is an
-#'   *empirically calibrated* small-sample correction, not a model-derived
-#'   df (the TMB fit has no exact t sampling theory): the asymptotic z-test
-#'   was measurably anticonservative in the package's Type I calibration
-#'   battery (empirical rate 0.089 at nominal .05 with 15 subjects), while
-#'   the `n - 1` reference passes the battery's null checks across the
-#'   tested sample sizes, target parameters, and residual-SD settings. `Inf`
-#'   gives the asymptotic z-test.
+#'   distribution. `NULL` (default) uses `n_subjects - 1` for `design_type =
+#'   "within"` and `n_subjects - 2` for `design_type = "between"` (the
+#'   two-sample df). This is an *empirically calibrated* small-sample
+#'   correction, not a model-derived df (the TMB fit has no exact t sampling
+#'   theory): the asymptotic z-test was measurably anticonservative in the
+#'   package's Type I calibration battery (empirical rate 0.089 at nominal
+#'   .05 with 15 subjects), while the t reference passes the battery's null
+#'   checks across the tested sample sizes, target parameters, residual-SD
+#'   settings, and both designs. `Inf` gives the asymptotic z-test.
 #' @param seed Optional integer seed; identical seeds give identical
 #'   results. The caller's RNG state is restored on exit.
 #' @param equation Demand equation passed to [fit_demand_tmb()]. The default
@@ -586,10 +678,23 @@
 #'   3x-larger `sigma_e`. Other equations are sensitivity analyses with a
 #'   different estimand -- their contrasts are not on the scale of the
 #'   simulated delta.
+#' @param design_type Either `"within"` (default) or `"between"`. `"within"`
+#'   simulates the two-condition within-subject design (every subject observed
+#'   at every price in both conditions) and tests the within-subject condition
+#'   contrast. `"between"` assigns each subject to exactly one of two arms
+#'   (`ceiling(n/2)` to condition 1, the rest to condition 2) and tests the
+#'   group difference; the two-arm dataset is composed from the same simulator
+#'   run once per arm with a single condition, so no new data-generating
+#'   process is introduced (see Details). The `df` and `random_effects`
+#'   defaults track `design_type`.
 #' @param random_effects Random-effects specification passed to
-#'   [fit_demand_tmb()]. The default `nlme::pdDiag(Q0 + alpha ~ condition - 1)`
-#'   (independent per-condition subject effects on both parameters) matches
-#'   the simulator's data-generating process when `rho_bd = 0`.
+#'   [fit_demand_tmb()]. `NULL` (default) resolves to a specification matching
+#'   `design_type`: `nlme::pdDiag(Q0 + alpha ~ condition - 1)` for
+#'   `"within"` (independent per-condition subject effects on both parameters,
+#'   matching the simulator's data-generating process when `rho_bd = 0`), and
+#'   `nlme::pdDiag(Q0 + alpha ~ 1)` for `"between"` (per-subject intercepts,
+#'   which are correctly specified because each subject appears in only one
+#'   condition). Supply a specification to override.
 #' @param multi_start Passed to [fit_demand_tmb()]. Defaults to `FALSE` for
 #'   speed (roughly 3x fewer optimizations); non-convergent replicates are
 #'   excluded and surfaced rather than biasing the estimate.
@@ -615,7 +720,8 @@
 #'       positive-definite Hessian, finite SE).}
 #'     \item{alpha}{Nominal test level.}
 #'     \item{df}{Degrees of freedom of the t reference distribution actually
-#'       used (`n_subjects - 1` unless overridden).}
+#'       used (`n_subjects - 1` for `"within"`, `n_subjects - 2` for
+#'       `"between"`, unless overridden).}
 #'     \item{effect}{The validated effect specification (name and delta).}
 #'     \item{target_term}{The tested coefficient (e.g. `"Q0:conditionC2"`).}
 #'     \item{design}{The merged design list actually used.}
@@ -627,8 +733,8 @@
 #'       and `message` (error text, if any). Estimates are on the natural-log
 #'       scale of the simulated delta.}
 #'     \item{seed}{As supplied.}
-#'     \item{settings}{List of `equation`, `multi_start`, and the deparsed
-#'       random-effects specification.}
+#'     \item{settings}{List of `equation`, `design_type`, `multi_start`, and
+#'       the deparsed random-effects specification.}
 #'     \item{call}{The matched call.}
 #'   }
 #'
@@ -641,11 +747,19 @@
 #' replicates are usable, since power conditional on convergence can be
 #' selected when convergence depends on the realized data.
 #'
-#' The v1 scope is a single fixed-effect delta under the package's existing
-#' within-subject simulator (two conditions, every subject observed at every
-#' price in both). Joint Q0 + alpha effects, power for derived measures
-#' (Pmax, Omax), and arbitrary designs are out of scope; see
-#' `vignette("power-analysis")`.
+#' The v1 scope is a single fixed-effect delta. Joint Q0 + alpha effects,
+#' power for derived measures (Pmax, Omax), and arbitrary designs are out of
+#' scope; see `vignette("power-analysis")`.
+#'
+#' For `design_type = "between"`, the two arms are composed by running the
+#' within-subject simulator once per arm with a single condition, then binding
+#' the arms and refitting with per-subject intercept random effects. Because
+#' each subject appears in only one condition, that random-effects *structure*
+#' matches the composed data-generating process exactly -- unlike the
+#' within-subject default's per-condition effects. The additive-Gaussian
+#' residual likelihood remains a *working model* for the simulator's
+#' multiplicative-lognormal errors in both designs (closest at small
+#' `sigma_e`). Type I error is calibrated by the test suite for both designs.
 #'
 #' @examples
 #' \donttest{
@@ -656,6 +770,15 @@
 #'   n_sim = 20, seed = 1, verbose = FALSE
 #' )
 #' print(res)
+#'
+#' # Between-subject design: group difference in Q0 across two arms
+#' res_b <- power_demand(
+#'   n_subjects = 40,
+#'   effect = list(delta_q0 = log(1.5)),
+#'   design_type = "between",
+#'   n_sim = 20, seed = 1, verbose = FALSE
+#' )
+#' print(res_b)
 #' }
 #'
 #' @seealso [find_n_demand()] to search for the smallest adequate sample
@@ -671,17 +794,23 @@ power_demand <- function(
   df = NULL,
   seed = NULL,
   equation = "simplified",
-  random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+  random_effects = NULL,
   multi_start = FALSE,
   verbose = TRUE,
+  design_type = c("within", "between"),
   ...
 ) {
   cl <- match.call()
+  design_type <- match.arg(design_type)
   eff <- .power_validate_effect(effect, c("delta_q0", "delta_alpha"))
   design <- .power_validate_design(design, .power_demand_design_defaults())
   .power_validate_scalars(n_subjects, n_sim, alpha)
   .power_validate_seed(seed)
-  df <- .power_validate_df(df, n_subjects - 1)
+  df <- .power_validate_df(
+    df,
+    n_subjects - if (design_type == "within") 1L else 2L
+  )
+  random_effects <- .power_resolve_random_effects(random_effects, design_type)
   fit_args <- .power_check_fit_args(list(...))
 
   target_param <- if (eff$name == "delta_q0") "Q0" else "alpha"
@@ -713,6 +842,7 @@ power_demand <- function(
     random_effects = random_effects,
     multi_start = multi_start,
     fit_args = fit_args,
+    design_type = design_type,
     verbose = verbose
   )
   s <- .power_summarize(replicates)
@@ -732,6 +862,7 @@ power_demand <- function(
         seed = seed,
         settings = list(
           equation = equation,
+          design_type = design_type,
           multi_start = multi_start,
           random_effects = paste(deparse(random_effects), collapse = " ")
         ),
@@ -772,6 +903,11 @@ power_demand <- function(
 #' @export
 print.beezdemand_power <- function(x, ...) {
   cat("Monte Carlo power analysis (beezdemand)\n")
+  design_type <- x$settings$design_type %||% "within"
+  cat(sprintf(
+    "  Design: %s-subject (2 conditions)\n",
+    design_type
+  ))
   cat(sprintf(
     "  Target: %s (%s = %.4g), two-sided alpha = %g, t reference (df = %g)\n",
     x$target_term,
@@ -877,6 +1013,22 @@ print.beezdemand_power <- function(x, ...) {
   )
 }
 
+#' Is `n_range` a well-formed sample-size search bracket?
+#'
+#' Two whole numbers with `2 <= n_range[1] < n_range[2]`. Shared by the
+#' search's own validation and the between-design lower-bound guard so the two
+#' predicates never drift apart.
+#' @keywords internal
+#' @noRd
+.power_n_range_wellformed <- function(n_range) {
+  is.numeric(n_range) &&
+    length(n_range) == 2 &&
+    all(is.finite(n_range)) &&
+    all(n_range == round(n_range)) &&
+    n_range[1] >= 2 &&
+    n_range[1] < n_range[2]
+}
+
 #' Shared bisection search over n_subjects
 #' @keywords internal
 #' @noRd
@@ -888,14 +1040,7 @@ print.beezdemand_power <- function(x, ...) {
   n_sim_max,
   verbose
 ) {
-  if (
-    !is.numeric(n_range) ||
-      length(n_range) != 2 ||
-      any(!is.finite(n_range)) ||
-      any(n_range != round(n_range)) ||
-      n_range[1] < 2 ||
-      n_range[1] >= n_range[2]
-  ) {
+  if (!.power_n_range_wellformed(n_range)) {
     cli::cli_abort(
       "{.arg n_range} must be two whole numbers with 2 <= n_range[1] < n_range[2]."
     )
@@ -1017,8 +1162,11 @@ print.beezdemand_power <- function(x, ...) {
 #'   adaptive rule adds batches where the verdict is close.
 #' @param n_sim_max Maximum replicates per evaluated N (default `4 * n_sim`).
 #' @param df Degrees of freedom for the Wald test's t reference. `NULL`
-#'   (default) tracks the evaluated sample size as `n - 1`; a numeric value
-#'   (or `Inf` for the asymptotic z-test) is used at every evaluated N.
+#'   (default) tracks the evaluated sample size as `n - 1` for `design_type =
+#'   "within"` and `n - 2` for `design_type = "between"`; a numeric value
+#'   (or `Inf` for the asymptotic z-test) is used at every evaluated N. With
+#'   the default `df` and `design_type = "between"`, `n_range[1]` must be
+#'   `>= 3` (df = n - 2 needs n >= 3).
 #' @param verbose Logical; report each evaluation.
 #' @param ... Additional arguments passed to [fit_demand_tmb()].
 #'
@@ -1073,12 +1221,14 @@ find_n_demand <- function(
   df = NULL,
   seed = NULL,
   equation = "simplified",
-  random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+  random_effects = NULL,
   multi_start = FALSE,
   verbose = TRUE,
+  design_type = c("within", "between"),
   ...
 ) {
   cl <- match.call()
+  design_type <- match.arg(design_type)
   eff <- .power_validate_effect(effect, c("delta_q0", "delta_alpha"))
   design <- .power_validate_design(design, .power_demand_design_defaults())
   .power_validate_scalars(n_subjects = 2, n_sim = n_sim, alpha = alpha)
@@ -1086,6 +1236,24 @@ find_n_demand <- function(
   if (!is.null(df)) {
     .power_validate_df(df, NULL)
   }
+  # With the default df (n - 2 for the between-subject design) the search must
+  # not evaluate n < 3. Fire this design-specific guard only for an otherwise
+  # well-formed range whose lower bound is too small (a range that would
+  # otherwise pass the search's general check); a malformed n_range is left to
+  # the search's own dedicated validation, which reports the precise problem.
+  # Both call sites share `.power_n_range_wellformed()` so they cannot drift.
+  if (
+    design_type == "between" &&
+      is.null(df) &&
+      .power_n_range_wellformed(n_range) &&
+      n_range[1] < 3
+  ) {
+    cli::cli_abort(
+      "{.code n_range[1]} must be >= 3 for a between-subject design when
+       {.arg df} is NULL (the default df is n - 2)."
+    )
+  }
+  random_effects <- .power_resolve_random_effects(random_effects, design_type)
   if (
     !is.numeric(n_sim_max) ||
       length(n_sim_max) != 1 ||
@@ -1116,6 +1284,7 @@ find_n_demand <- function(
     set.seed(seed)
   }
 
+  default_df_offset <- if (design_type == "within") 1 else 2
   run_batch <- function(n, batch_size, sim_offset) {
     .power_demand_replicates(
       n_subjects = n,
@@ -1124,11 +1293,12 @@ find_n_demand <- function(
       design = design,
       n_sim = batch_size,
       alpha = alpha,
-      df = if (is.null(df)) n - 1 else df,
+      df = if (is.null(df)) n - default_df_offset else df,
       equation = equation,
       random_effects = random_effects,
       multi_start = multi_start,
       fit_args = fit_args,
+      design_type = design_type,
       sim_offset = sim_offset,
       verbose = FALSE
     )
@@ -1158,6 +1328,7 @@ find_n_demand <- function(
         seed = seed,
         settings = list(
           equation = equation,
+          design_type = design_type,
           multi_start = multi_start,
           random_effects = paste(deparse(random_effects), collapse = " ")
         ),
@@ -1171,6 +1342,10 @@ find_n_demand <- function(
 #' @export
 print.beezdemand_power_n <- function(x, ...) {
   cat("Sample-size search (Monte Carlo power)\n")
+  cat(sprintf(
+    "  Design: %s-subject (2 conditions)\n",
+    x$settings$design_type %||% "within"
+  ))
   cat(sprintf(
     "  Target power %.2f for %s = %.4g at alpha = %g\n",
     x$target_power,
