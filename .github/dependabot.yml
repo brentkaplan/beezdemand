@@ -1,0 +1,47 @@
+# Dependabot configuration for beezdemand.
+#
+# Scope: GitHub Actions only.
+#
+# R package dependencies are deliberately absent. CRAN/renv is not a Dependabot
+# ecosystem, so Dependabot can never update DESCRIPTION or renv.lock -- adding a
+# block for them would silently do nothing. There is no Node toolchain in this
+# package, so no npm block either (that is a shinybeez concern, not one here).
+#
+# target-branch: develop
+#   Dependabot reads this file from the repository's default branch (master),
+#   but scans manifests on -- and opens pull requests against -- target-branch.
+#
+#   Both branches carry the full workflow set, so unlike beezdiscounting this is
+#   an integration-policy choice rather than a necessity: develop is where work
+#   integrates and where a CI bump should be reviewed, and master is the release
+#   branch. Note the two have genuinely diverged -- master is NOT an ancestor of
+#   develop -- so this file only starts working once it reaches master, which
+#   requires reconciling that divergence.
+#
+#   Trade-off: GitHub's documentation states that for a configuration to be used
+#   for security updates "you should not specify a target-branch"; security
+#   updates remain default-branch-only. So this block governs scheduled version
+#   updates only. Dependabot security *alerts* are unaffected -- they are a
+#   repository-level setting, not driven by this file -- and the weekly version
+#   updates cover the same upgrades with at most a week's lag.
+#
+# Grouping: all GitHub Actions bumps arrive as a single "ci-actions" pull
+# request rather than one per action, which keeps the review surface to one CI
+# run instead of five.
+#
+# Not covered: the composite action at .github/actions/cran-everything/action.yml.
+# For the github-actions ecosystem Dependabot scans .github/workflows and only a
+# root-level action.yml/action.yaml, so nested composite actions are not
+# updated. Its pins are currently r-lib/actions/*@v2 (up to date) -- check them
+# by hand when bumping a major.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+    groups:
+      ci-actions:
+        patterns:
+          - "*"
