@@ -81,8 +81,3 @@ tests/testthat/Rplot[0-9]*.png
 #############################################################################
 /tmb-*.png
 /nlme-*.png
-
-# Arg-matrix (development only, not ready for merge) #
-#######################################################
-R/arg-matrix.R
-tests/testthat/test-arg-matrix.R

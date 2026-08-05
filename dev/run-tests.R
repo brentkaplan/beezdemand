@@ -45,6 +45,15 @@ smoke_files <- c(
   "equation-audit"
 )
 
+# The filter below interpolates these names straight into a regex, so keep them
+# to characters that mean themselves. "foo.v2" would overmatch; "foo+bar" would
+# fail to match its own file.
+unsafe_names <- smoke_files[grepl("[^A-Za-z0-9_-]", smoke_files)]
+if (length(unsafe_names) > 0L) {
+  stop("run-tests.R: smoke_files names must be [A-Za-z0-9_-] only; got: ",
+       paste(unsafe_names, collapse = ", "), call. = FALSE)
+}
+
 if (identical(mode, "smoke")) {
   # Guard against drift: every curated entry must map to a real test file.
   # A renamed or deleted file would otherwise just stop matching, silently
@@ -55,6 +64,13 @@ if (identical(mode, "smoke")) {
     stop("run-tests.R: smoke_files entries with no matching test file: ",
          paste(missing, collapse = ", "), call. = FALSE)
   }
+
+  # An empty selection would build the filter "^()$", match nothing, and report
+  # success -- the same silent-shrink failure the drift guard exists to prevent.
+  if (length(smoke_files) == 0L) {
+    stop("run-tests.R: no smoke tests selected.", call. = FALSE)
+  }
+
   # Anchored alternation so e.g. "systematic" does not also match
   # "systematic-wrappers" unless it is listed explicitly.
   filter <- paste0("^(", paste(smoke_files, collapse = "|"), ")$")
