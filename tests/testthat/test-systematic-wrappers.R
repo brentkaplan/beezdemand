@@ -39,6 +39,13 @@ test_that("check_systematic_demand respects thresholds", {
 
   # Stricter threshold should catch more unsystematic patterns
   expect_true(check_strict$n_unsystematic >= check_lenient$n_unsystematic)
+
+  # The >= above passes even if trend_threshold is ignored entirely, so also
+  # assert the value actually propagates into the per-id results
+  # (harvested from the retired arg-matrix harness, TICKET-071).
+  expect_true("trend_threshold" %in% names(check_strict$results))
+  expect_true(all(check_strict$results$trend_threshold == 0.1))
+  expect_true(all(check_lenient$results$trend_threshold == 0.01))
 })
 
 
