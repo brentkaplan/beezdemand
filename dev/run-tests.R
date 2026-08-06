@@ -25,7 +25,6 @@ if (is.na(ncores) || ncores < 2L) ncores <- 2L
 options(Ncpus = max(2L, ncores - 1L))
 
 smoke_files <- c(
-  "arg-matrix",
   "error-handling-classes",
   "alpha_star",
   "tmb-z-matrix-builder",
