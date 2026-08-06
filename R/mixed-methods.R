@@ -610,17 +610,40 @@ get_demand_param_emms.beezdemand_nlme <- function(
       # We need LCL and UCL of alpha_param_log10 from combined_estimates
       # These were already calculated and stored in emm_alpha and then joined
 
+      # Mirror analyze.R's two EV conventions exactly (do not conflate them):
+      #   - k-bearing forms (NLME's only k-form is "exponentiated"; k is the
+      #     user-supplied/calculated span constant, mirroring analyze.R's
+      #     literature EV): EV = 1 / (100 * alpha_natural * k^1.5).
+      #   - k-free forms ("zben"/"simplified", the SND equation): analyze.R's
+      #     own "simplified" branch has no k term and no /100 -- EV = 1 / alpha_natural.
+      eq_form <- fit_obj$formula_details$equation_form_selected
+      has_k <- identical(eq_form, "exponentiated")
+
+      combined_estimates <- if (has_k) {
+        k_val <- fit_obj$param_info$k
+        combined_estimates |>
+          dplyr::mutate(
+            # EV = 1 / (100 * alpha_natural * k^1.5); alpha_natural was
+            # already back-transformed from alpha_param_log10.
+            EV = 1 / (100 * .data$alpha_natural * (k_val^1.5)),
+            # For CIs of EV: transformation is f(x) = 1/(100*x*k^1.5) where
+            # x = alpha_natural (k fixed). This is decreasing in x, so
+            # EV_LCL uses alpha_natural_UCL, and EV_UCL uses alpha_natural_LCL.
+            LCL_EV = 1 / (100 * .data[[paste0("UCL_alpha_natural")]] * (k_val^1.5)),
+            UCL_EV = 1 / (100 * .data[[paste0("LCL_alpha_natural")]] * (k_val^1.5))
+          )
+      } else {
+        combined_estimates |>
+          dplyr::mutate(
+            # EV = 1 / alpha_natural (no k term, no /100 -- matches
+            # analyze.R's "simplified" branch exactly).
+            EV = 1 / .data$alpha_natural,
+            LCL_EV = 1 / .data[[paste0("UCL_alpha_natural")]],
+            UCL_EV = 1 / .data[[paste0("LCL_alpha_natural")]]
+          )
+      }
+
       combined_estimates <- combined_estimates |>
-        dplyr::mutate(
-          # EV = 1 / (100 * alpha_natural)
-          # alpha_natural was 10^alpha_param_log10
-          # So, EV = 1 / (100 * (10^alpha_param_log10))
-          EV = 1 / (100 * .data$alpha_natural), # Use the already back-transformed alpha_natural
-          # For CIs of EV: transformation is f(x) = 1/(100*x) where x = alpha_natural. This is decreasing.
-          # So EV_LCL uses alpha_natural_UCL, and EV_UCL uses alpha_natural_LCL.
-          LCL_EV = 1 / (100 * .data[[paste0("UCL_alpha_natural")]]), # Use the UCL of alpha_natural
-          UCL_EV = 1 / (100 * .data[[paste0("LCL_alpha_natural")]]) # Use the LCL of alpha_natural
-        ) |>
         # Ensure LCL_EV is indeed less than UCL_EV after transformation
         dplyr::mutate(
           temp_LCL_EV = pmin(.data$LCL_EV, .data$UCL_EV, na.rm = TRUE),

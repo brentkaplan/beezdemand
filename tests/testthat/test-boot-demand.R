@@ -127,22 +127,51 @@ test_that("boot_demand is reproducible with seed; differs without", {
 })
 
 # --- 6. EV canonical name + formula (intercept-only -> unambiguous alpha) -----
+# EV mirrors analyze.R's two conventions: k-bearing forms use the literature
+# (Hursh & Silberberg) 1/(100*alpha*k^1.5); k-free SND/"simplified" forms use
+# analyze.R's own "simplified"-branch formula, 1/alpha (no k, no /100). The
+# historical bug computed 1/(100*alpha) everywhere -- wrong for both cases.
 
-test_that("boot_demand EV uses 1/(100*alpha) and rejects 'essential_value'", {
+test_that("boot_demand EV uses 1/(100*alpha*k^1.5) for k-bearing fits and rejects 'essential_value'", {
   skip_on_cran()
   skip_if_not_installed("TMB")
   fit <- .bd_int_fit()
   res <- boot_demand(fit, statistics = "EV", R = 200, seed = 42)
 
   alpha_pt <- exp(fit$model$coefficients[["beta_alpha"]])
+  k_pt <- beezdemand:::.tmb_get_k(fit)
   expect_equal(
-    res$estimate[res$statistic == "EV"], 1 / (100 * alpha_pt),
+    res$estimate[res$statistic == "EV"], 1 / (100 * alpha_pt * (k_pt^1.5)),
     tolerance = 1e-6
   )
+  # Guard against the historical dropped-k bug: 1/(100*alpha) (no k) must NOT
+  # be what's produced now that k is available.
+  expect_false(isTRUE(all.equal(
+    res$estimate[res$statistic == "EV"], 1 / (100 * alpha_pt)
+  )))
   expect_error(
     boot_demand(fit, statistics = "essential_value", R = 200),
     "should be one of"
   )
+})
+
+test_that("boot_demand EV uses 1/alpha (no k, no /100) for the k-free SND ('simplified') form", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit_snd <- fit_demand_tmb(apt, equation = "simplified", verbose = 0)
+  res <- boot_demand(fit_snd, statistics = "EV", R = 200, seed = 42)
+
+  alpha_pt <- exp(fit_snd$model$coefficients[["beta_alpha"]])
+  expect_equal(
+    res$estimate[res$statistic == "EV"], 1 / alpha_pt,
+    tolerance = 1e-6
+  )
+  # Guard against the historical bug: a spurious /100 must not appear for the
+  # k-free SND form.
+  expect_false(isTRUE(all.equal(
+    res$estimate[res$statistic == "EV"], 1 / (100 * alpha_pt)
+  )))
 })
 
 # --- 7. validation -----------------------------------------------------------

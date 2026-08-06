@@ -193,11 +193,20 @@ boot_demand <- function(
     pt <- beezdemand_calc_pmax_omax(
       model_type = model_type, params = pt_params, param_scales = param_scales
     )
+    # EV mirrors analyze.R's two conventions exactly: k-bearing forms use the
+    # literature (Hursh & Silberberg) formula 1/(100*alpha*k^1.5); the k-free
+    # SND/"simplified" form has no k term at all, so analyze.R's own
+    # "simplified" branch uses 1/alpha (no /100). Do not conflate the two.
+    ev_pt <- if (has_k) {
+      1 / (100 * alpha_pt * (k_point^1.5))
+    } else {
+      1 / alpha_pt
+    }
     point_vals <- c(
       Pmax = pt$pmax_model,
       Omax = pt$omax_model,
       Qmax = pt$q_at_pmax_model,
-      EV = 1 / (100 * alpha_pt),
+      EV = ev_pt,
       elasticity_at_pmax = pt$elasticity_at_pmax_model
     )
 
@@ -212,7 +221,11 @@ boot_demand <- function(
     md <- beezdemand_calc_pmax_omax_vec(
       pdf, model_type = model_type, param_scales = param_scales
     )
-    ev_draws <- 1 / (100 * alpha_draws)
+    ev_draws <- if (has_k) {
+      1 / (100 * alpha_draws * (k_draw^1.5))
+    } else {
+      1 / alpha_draws
+    }
 
     for (s in statistics) {
       draw_vec <- if (s == "EV") ev_draws else md[[stat_col[[s]]]]
