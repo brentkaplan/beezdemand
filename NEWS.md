@@ -69,14 +69,25 @@ exactly, pin the previous release:
   coupling, which does not hold for `zben`'s LL4-scale exponential decay;
   stored `Pmax` was up to ~3.4x too small at the median and rank-inverted
   relative to the true expenditure-maximizing price. All four call sites now
-  numerically optimize expenditure on the back-transformed
-  (`ll4_inv()`-ed) natural-scale curve via
-  `beezdemand_calc_pmax_omax(model_type = "zben")`, which reports
-  `method_model = "numerical_optimize_observed_domain"` so the numerical
-  origin is visible to callers. Condition under which output differs:
-  `equation = "zben"` fits only; `Pmax`/`Omax`/`Qmax`/`elasticity_at_pmax`
-  from `get_subject_pars()`, `calc_group_metrics()`, and `boot_demand()`. All
-  other equation forms are unchanged (#19).
+  numerically optimize expenditure on the back-transformed (`ll4_inv()`-ed)
+  natural-scale curve via `beezdemand_calc_pmax_omax(model_type = "zben")`.
+  That numerical search also adaptively expands beyond the observed price
+  domain (up to 6 decades) when the true expenditure-maximizing price lies
+  outside it, rather than silently returning the domain edge as `Pmax` (the
+  fix as first landed still had this domain-truncation defect; two curves
+  observed through different price ranges could report different `Pmax` for
+  an otherwise-identical fitted curve). `get_subject_pars()` and
+  `calc_group_metrics()` gain a `pmax_at_bound` field/column, `TRUE` only
+  when the search's expansion cap was hit without finding the true
+  (interior) maximum, in which case `Pmax`/`Omax` are a lower-bound
+  estimate rather than a converged value; `boot_demand()` does not gain a
+  `pmax_at_bound` column (its output schema is unchanged) but emits a
+  `cli::cli_warn()` naming the count of affected bootstrap draws when any
+  occur among a requested `Pmax`/`Omax`/`Qmax`/`elasticity_at_pmax`
+  statistic. Condition under which output differs: `equation = "zben"` fits
+  only; `Pmax`, `Omax`, and (where reported) `Qmax` and
+  `elasticity_at_pmax` from `get_subject_pars()`, `calc_group_metrics()`,
+  and `boot_demand()`. All other equation forms are unchanged (#19).
 
 * **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
   engine).** Two interacting defects in the per-subject loop: (1) the default

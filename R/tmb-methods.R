@@ -1911,6 +1911,10 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
   out$alpha <- alpha
   out$Pmax <- omax_pmax$pmax_model
   out$Omax <- omax_pmax$omax_model
+  # Codex review of GH #19 (BLOCKING follow-up): surface the numerical
+  # zben Pmax search's expansion-cap flag (see .tmb_compute_subject_pars()
+  # for the fit-time/wide-shape counterpart of this column).
+  out$pmax_at_bound <- omax_pmax$is_boundary_model
 
   out
 }
@@ -4386,6 +4390,11 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
     Qmax = result$q_at_pmax_model,
     elasticity_at_pmax = result$elasticity_at_pmax_model,
     method = result$method_model,
+    # Codex review of GH #19 (BLOCKING follow-up): TRUE only for zben fits
+    # whose numerical Pmax search hit its domain-expansion cap without
+    # finding the true (interior) maximum; FALSE for analytic (hs/snd)
+    # fits, which never reach that path.
+    pmax_at_bound = isTRUE(result$is_boundary_model),
     conditioned_on = conditioned_on
   )
 }

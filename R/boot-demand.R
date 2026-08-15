@@ -187,6 +187,12 @@ boot_demand <- function(
   )
 
   nf_vec <- integer(0)
+  # Codex review of GH #19 (BLOCKING follow-up): count zben bootstrap draws
+  # whose numerical Pmax search hit the engine's domain-expansion cap
+  # without finding the true (interior) maximum. Surfaced as a warning
+  # (not attached per-draw to the returned tibble, which has a fixed,
+  # already-documented schema) naming how many draws were affected.
+  n_boundary_draws <- 0L
   rows <- list()
   for (i in seq_len(n_cell)) {
     xq <- cells$X_q0[i, ]
@@ -238,6 +244,10 @@ boot_demand <- function(
       pdf, model_type = model_type, param_scales = param_scales,
       price_list = price_list_boot
     )
+    if (is_zben) {
+      n_boundary_draws <- n_boundary_draws +
+        sum(md$is_boundary_model, na.rm = TRUE)
+    }
     ev_draws <- if (has_k) {
       1 / (100 * alpha_draws * (k_draw^1.5))
     } else {
@@ -257,6 +267,18 @@ boot_demand <- function(
         level     = ci_level
       )
     }
+  }
+
+  # Codex review of GH #19 (BLOCKING follow-up): warn (rather than silently
+  # returning underestimated Pmax/Omax/Qmax/elasticity_at_pmax) when zben
+  # bootstrap draws hit the numerical Pmax search's domain-expansion cap.
+  pmax_derived_stats <- c("Pmax", "Omax", "Qmax", "elasticity_at_pmax")
+  if (is_zben && n_boundary_draws > 0L && any(statistics %in% pmax_derived_stats)) {
+    cli::cli_warn(c(
+      "!" = "{n_boundary_draws} zben bootstrap draw{?s} hit the Pmax search's domain-expansion cap without finding the true (interior) maximum.",
+      "i" = "Affected draws' Pmax/Omax/Qmax/elasticity_at_pmax are underestimated (lower-bound only); the reported CI may be too narrow.",
+      "i" = "See {.field pmax_at_bound} in {.fn get_subject_pars} / {.fn calc_group_metrics} for the point-estimate diagnostic."
+    ))
   }
 
   result <- tibble::as_tibble(do.call(rbind, rows))

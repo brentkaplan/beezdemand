@@ -1207,6 +1207,18 @@ NULL
     )
   }
 
+  # Codex review of GH #19 (BLOCKING follow-up): for zben, the numerical
+  # Pmax search adaptively expands the domain and flags is_boundary_model
+  # TRUE only when its expansion cap is hit without finding the true
+  # (interior) maximum -- i.e. the stored Pmax is a lower-bound estimate,
+  # not a converged answer. Surface that per-subject so downstream
+  # consumers can see it. FALSE/analytic fits (hs/snd) never hit this path,
+  # so the column is FALSE there by construction.
+  pmax_at_bound <- omax_pmax$is_boundary_model
+  if (is.null(pmax_at_bound)) {
+    pmax_at_bound <- rep(NA, n_subjects)
+  }
+
   # NA out derived parameters for subjects flagged by the within-id check;
   # b_i / c_i remain populated because they are well-defined per subject
   # regardless of fixed-effect design-column variation within id.
@@ -1215,6 +1227,7 @@ NULL
     subj_alpha[affected_subjects] <- NA_real_
     omax_pmax$pmax_model[affected_subjects] <- NA_real_
     omax_pmax$omax_model[affected_subjects] <- NA_real_
+    pmax_at_bound[affected_subjects] <- NA
   }
 
   # Build output. For backward compat, populate `b_i` (and `c_i` if alpha
@@ -1230,6 +1243,7 @@ NULL
     alpha = subj_alpha,
     Pmax = omax_pmax$pmax_model,
     Omax = omax_pmax$omax_model,
+    pmax_at_bound = pmax_at_bound,
     stringsAsFactors = FALSE
   )
 
@@ -1243,7 +1257,7 @@ NULL
   cols_order <- c("id")
   if ("b_i" %in% names(out)) cols_order <- c(cols_order, "b_i")
   if ("c_i" %in% names(out)) cols_order <- c(cols_order, "c_i")
-  cols_order <- c(cols_order, "Q0", "alpha", "Pmax", "Omax")
+  cols_order <- c(cols_order, "Q0", "alpha", "Pmax", "Omax", "pmax_at_bound")
   out <- out[, cols_order]
 
   # Attach the full per-block RE matrices as attributes for downstream
