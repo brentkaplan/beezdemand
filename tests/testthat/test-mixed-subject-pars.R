@@ -7,6 +7,24 @@
 # All cases fit NLME models => heavy; skip_on_cran() and excluded from the
 # pre-commit smoke subset. Fits are memoized in a file-local cache so each
 # spec is fit at most once per test run.
+#
+# TICKET-064 (F11): the memoized `.fit_nlme_within()` / `.fit_nlme_intercept()`
+# fixtures below organically produce a non-finite apVar (a real weak fit,
+# not a bug in this file) -- get_subject_pars() now warns once about that,
+# which is orthogonal to what these tests exercise (column shape / NA-fill
+# behavior). `.muffle_conv_gate()` mutes only that one classed warning so
+# the rest of a test's warning-content assertions are unaffected.
+
+.muffle_conv_gate <- function(expr) {
+  withCallingHandlers(
+    expr,
+    warning = function(w) {
+      if (inherits(w, "beezdemand_nlme_convergence_warning")) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
 
 # --------------------------------------------------------------------------
 # Memoized fixtures
@@ -137,7 +155,7 @@ test_that("auto-detect on within-id pdBlocked returns long per-(subject, conditi
   fit <- .fit_nlme_within()
   skip_if(is.null(fit$model), "nlme within-subject fit did not converge")
 
-  sp <- expect_no_warning(get_subject_pars(fit))
+  sp <- expect_no_warning(.muffle_conv_gate(get_subject_pars(fit)))
   n_subj <- length(unique(sp$id))
   n_cond <- length(unique(sp$condition))
   expect_equal(nrow(sp), n_subj * n_cond)
@@ -155,7 +173,7 @@ test_that("auto-detect on intercept-only fit returns wide one-row-per-subject", 
   fit <- .fit_nlme_intercept()
   skip_if(is.null(fit$model), "nlme intercept-only fit did not converge")
 
-  sp <- expect_no_warning(get_subject_pars(fit))
+  sp <- expect_no_warning(.muffle_conv_gate(get_subject_pars(fit)))
   expect_equal(nrow(sp), length(unique(sp$id)))
   expect_false("condition" %in% names(sp))
   expect_true(all(c("id", "b_i", "c_i", "Q0", "alpha", "Pmax", "Omax") %in% names(sp)))
@@ -183,7 +201,12 @@ test_that("explicit expanded = FALSE on within-id fit returns wide NA-fill with 
   sp <- withCallingHandlers(
     get_subject_pars(fit, expanded = FALSE),
     warning = function(w) {
-      warnings <<- c(warnings, conditionMessage(w))
+      # TICKET-064: this fixture also organically trips the convergence
+      # gate; that warning is orthogonal to the expanded=FALSE NA-fill
+      # warning under test here, so it's muffled without being collected.
+      if (!inherits(w, "beezdemand_nlme_convergence_warning")) {
+        warnings <<- c(warnings, conditionMessage(w))
+      }
       invokeRestart("muffleWarning")
     }
   )
@@ -206,7 +229,7 @@ test_that("explicit expanded = FALSE on intercept-only fit is wide with no warni
   fit <- .fit_nlme_intercept()
   skip_if(is.null(fit$model), "fit did not converge")
 
-  sp <- expect_no_warning(get_subject_pars(fit, expanded = FALSE))
+  sp <- expect_no_warning(.muffle_conv_gate(get_subject_pars(fit, expanded = FALSE)))
   expect_equal(nrow(sp), length(unique(sp$id)))
   expect_true(all(is.finite(sp$Q0)))
 })
@@ -216,7 +239,7 @@ test_that("expanded = TRUE on intercept-only fit silently returns wide", {
   fit <- .fit_nlme_intercept()
   skip_if(is.null(fit$model), "fit did not converge")
 
-  sp <- expect_no_warning(get_subject_pars(fit, expanded = TRUE))
+  sp <- expect_no_warning(.muffle_conv_gate(get_subject_pars(fit, expanded = TRUE)))
   expect_equal(nrow(sp), length(unique(sp$id)))
   expect_true(all(is.finite(sp$Q0)))
 })

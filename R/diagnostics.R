@@ -979,6 +979,42 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 }
 
 
+#' Warn once when an NLME inference surface consumes a non-converged fit
+#'
+#' `.check_nlme_convergence()` is the operational convergence gate (final-fit
+#' apVar validity + recorded iteration warnings); `summary()`, `glance()`, and
+#' `check_demand_model()` already consult it, but every surface that computes
+#' *new* inference (emms, comparisons, confint, subject pars, tidy, individual
+#' coefficients, anova) predates the gate and bypasses it (TICKET-064, F11).
+#' Pass a `guard` environment to dedupe the warning across an internal call
+#' chain (mirrors `.tmb_quiet_sdreport()` / `.tmb_warn_if_hessian_not_pd()`);
+#' with `guard = NULL` (the default, for a direct top-level call) the check
+#' always fires when non-converged.
+#' @param object A `beezdemand_nlme` fit.
+#' @param guard Optional dedup environment with a `warned` flag.
+#' @keywords internal
+#' @noRd
+.nlme_warn_if_not_converged <- function(object, guard = NULL) {
+  if (!is.null(guard) && isTRUE(guard$warned)) {
+    return(invisible(NULL))
+  }
+  conv <- .check_nlme_convergence(object)
+  if (!isTRUE(conv$converged)) {
+    cli::cli_warn(
+      c(
+        "!" = "NLME fit did not pass the convergence gate; standard errors,
+               intervals, and derived quantities may be unreliable.",
+        "i" = conv$message %||%
+          "See {.fn summary} / {.fn check_demand_model} for diagnostics."
+      ),
+      class = c("beezdemand_nlme_convergence_warning", "beezdemand_warning")
+    )
+    if (!is.null(guard)) guard$warned <- TRUE
+  }
+  invisible(NULL)
+}
+
+
 .check_nlme_random_effects <- function(object) {
   variances <- NULL
   near_zero <- NULL

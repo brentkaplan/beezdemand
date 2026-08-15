@@ -119,3 +119,106 @@ test_that("a terminal error_message forces final_fit_ok FALSE despite a finite a
   expect_false(res$converged)
   expect_match(res$message, "optimizer failed")
 })
+
+
+# --- TICKET-064 (F11): inference surfaces honour .check_nlme_convergence() -
+
+test_that("get_demand_param_emms.beezdemand_nlme warns once on a non-converged fit", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  fit <- .weak_conv_nlme_fit()
+  expect_false(glance(fit)$converged)
+  warns <- testthat::capture_warnings(get_demand_param_emms(fit, param = "Q0"))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme warns once on a non-converged fit", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(
+    get_demand_comparisons(fit, param = "Q0")
+  )
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("confint.beezdemand_nlme warns once on a non-converged fit", {
+  skip_on_cran()
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(ci <- confint(fit))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("get_subject_pars.beezdemand_nlme warns once on a non-converged fit", {
+  skip_on_cran()
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(sp <- get_subject_pars(fit))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("tidy.beezdemand_nlme warns once on a non-converged fit", {
+  skip_on_cran()
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(td <- tidy(fit))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("get_individual_coefficients warns once on a non-converged fit", {
+  skip_on_cran()
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(ic <- get_individual_coefficients(fit))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("calc_group_metrics.beezdemand_nlme warns exactly once (not once per Q0/alpha call)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  fit <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(cm <- calc_group_metrics(fit))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("anova.beezdemand_nlme warns once per non-converged model in the comparison", {
+  skip_on_cran()
+  # Same dataset as .weak_conv_nlme_fit() (nlme::anova.lme() requires equal
+  # N across compared fits); fit1 is a healthy Q0-only-RE baseline, fit2 is
+  # the injected-apVar-failure fixture on the identical data.
+  set.seed(11)
+  d <- expand.grid(id = factor(1:6), x = c(0.1, 0.5, 1, 2.5, 5, 10, 20))
+  q0i <- 10 * exp(rnorm(6, 0, 0.4))
+  ali <- 0.01 * exp(rnorm(6, 0, 0.6))
+  d$y <- pmax(0, q0i[d$id] * exp(-ali[d$id] * q0i[d$id] * d$x) + rnorm(nrow(d), 0, 2.5))
+  d$y_ll4 <- ll4(d$y, lambda = 4)
+  fit1 <- fit_demand_mixed(d, y_var = "y_ll4", x_var = "x", id_var = "id",
+                           equation_form = "zben", random_effects = Q0 ~ 1)
+  fit2 <- .weak_conv_nlme_fit()
+  warns <- testthat::capture_warnings(a <- anova(fit1, fit2))
+  gate_warns <- grepl("convergence gate", warns, ignore.case = TRUE)
+  expect_identical(sum(gate_warns), 1L)
+})
+
+test_that("NLME inference surfaces: healthy fit raises no convergence-gate warning", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  set.seed(3)
+  d <- expand.grid(id = factor(1:20), x = c(0.1, 0.5, 1, 2.5, 5, 10, 20))
+  q0i <- 10 * exp(rnorm(20, 0, 0.3)); ali <- 0.01 * exp(rnorm(20, 0, 0.4))
+  d$y <- pmax(0, q0i[d$id] * exp(-ali[d$id] * q0i[d$id] * d$x) + rnorm(nrow(d), 0, 1.5))
+  fit <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                          equation_form = "simplified")
+  expect_true(glance(fit)$converged)
+  expect_no_warning(get_demand_param_emms(fit, param = "Q0"))
+  expect_no_warning(confint(fit))
+  expect_no_warning(get_subject_pars(fit))
+  expect_no_warning(tidy(fit))
+  expect_no_warning(get_individual_coefficients(fit))
+  expect_no_warning(calc_group_metrics(fit))
+})

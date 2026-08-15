@@ -194,6 +194,14 @@ get_demand_param_emms.beezdemand_nlme <- function(
 ) {
   param <- match.arg(param)
 
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence
+  # gate. calc_group_metrics.beezdemand_nlme() calls this twice internally
+  # (Q0 + alpha) and already warns once itself; it muffles the duplicate
+  # `beezdemand_nlme_convergence_warning` from these nested calls via
+  # .nlme_muffle_group_metrics_emms_noise() rather than suppressing it here,
+  # so a direct call always warns on a non-converged fit.
+  .nlme_warn_if_not_converged(fit_obj)
+
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -890,6 +898,39 @@ get_observed_demand_param_emms <- function(
   }
 }
 
+#' Targeted muffling for calc_group_metrics()'s nested get_demand_param_emms() calls
+#'
+#' TICKET-064 (F12): the previous `suppressWarnings(suppressMessages(...))`
+#' around these calls silenced EVERY condition, including the
+#' estimate-column-guess fallback warning (the one warning that flags
+#' possibly-wrong Pmax/Omax) and the new hessian/convergence-gate warning's
+#' duplicate. This muffles only two known-benign, specifically-matched
+#' conditions and lets everything else -- including that fallback warning --
+#' propagate.
+#' @keywords internal
+#' @noRd
+.nlme_muffle_group_metrics_emms_noise <- function(expr) {
+  withCallingHandlers(
+    expr,
+    message = function(m) {
+      if (identical(
+        trimws(conditionMessage(m)),
+        "No factors specified or found in model. Reporting global parameter estimates."
+      )) {
+        invokeRestart("muffleMessage")
+      }
+    },
+    warning = function(w) {
+      # calc_group_metrics.beezdemand_nlme() already raised this warning
+      # once at its own top level; muffle the duplicate raised by each
+      # nested get_demand_param_emms(Q0/alpha) call.
+      if (inherits(w, "beezdemand_nlme_convergence_warning")) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
+
 #' Population-level demand metrics for a mixed-effects NLME fit
 #'
 #' Computes parameter-first-marginalized Pmax, Omax, Qmax, and
@@ -932,6 +973,12 @@ get_observed_demand_param_emms <- function(
 #' @export
 #' @keywords internal
 calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
+  # TICKET-064 (F11): warn once for the whole call before the two nested
+  # get_demand_param_emms() calls below (which would otherwise each warn
+  # again for the same non-convergence; muffled via
+  # .nlme_muffle_group_metrics_emms_noise()).
+  .nlme_warn_if_not_converged(object)
+
   pinfo <- object$param_info
   all_factors <- unique(c(pinfo$factors, pinfo$factors_Q0, pinfo$factors_alpha))
   all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
@@ -990,10 +1037,10 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
   # geometric mean, and abort if a parameter has no usable cells. emmeans
   # SE-related warnings are irrelevant (only point estimates are used), so they
   # are suppressed for silence-parity with the TMB method.
-  emm_q0 <- suppressWarnings(suppressMessages(get_demand_param_emms(
-    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE)))
-  emm_alpha <- suppressWarnings(suppressMessages(get_demand_param_emms(
-    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE)))
+  emm_q0 <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
+    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE))
+  emm_alpha <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
+    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE))
 
   .marginal_geom_mean <- function(vals, lbl) {
     vals <- vals[is.finite(vals) & vals > 0]
@@ -1167,6 +1214,9 @@ get_demand_comparisons.beezdemand_nlme <- function(
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     stop("Package 'emmeans' is required.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(fit_obj)
 
   nlme_model <- fit_obj$model
   model_data <- fit_obj$data
@@ -2078,9 +2128,15 @@ get_demand_param_trends <- function(
   })
 
   out_list <- list()
+  # TICKET-064 (F13): a failed (param, covariate) combination was previously
+  # dropped with `next` and no condition -- only a fully-empty result table
+  # warned. Track each dropped combo (and its cause, when known) so the
+  # caller sees a table that silently lost rows.
+  failed_combos <- character(0)
 
   for (param_name in params) {
     for (cv in covariates) {
+      fail_reason <- NULL
       tr_obj <- tryCatch(
         emmeans::emtrends(
           nlme_model,
@@ -2093,7 +2149,10 @@ get_demand_param_trends <- function(
           level = ci_level,
           ...
         ),
-        error = function(e) NULL
+        error = function(e) {
+          fail_reason <<- conditionMessage(e)
+          NULL
+        }
       )
 
       # Fallback: build ref_grid then emtrends, which can be more reliable for nlme params
@@ -2105,7 +2164,10 @@ get_demand_param_trends <- function(
             data = model_data,
             at = at
           ),
-          error = function(e) NULL
+          error = function(e) {
+            fail_reason <<- conditionMessage(e)
+            NULL
+          }
         )
         if (!is.null(rg)) {
           tr_obj <- tryCatch(
@@ -2117,19 +2179,33 @@ get_demand_param_trends <- function(
               level = ci_level,
               ...
             ),
-            error = function(e) NULL
+            error = function(e) {
+              fail_reason <<- conditionMessage(e)
+              NULL
+            }
           )
         }
       }
       if (is.null(tr_obj)) {
+        failed_combos <- c(failed_combos, sprintf(
+          "%s x %s%s", param_name, cv,
+          if (!is.null(fail_reason)) paste0(" (", fail_reason, ")") else ""
+        ))
         next
       }
 
       tr_sum <- tryCatch(
         summary(tr_obj, infer = TRUE, level = ci_level),
-        error = function(e) NULL
+        error = function(e) {
+          fail_reason <<- conditionMessage(e)
+          NULL
+        }
       )
       if (is.null(tr_sum)) {
+        failed_combos <- c(failed_combos, sprintf(
+          "%s x %s%s", param_name, cv,
+          if (!is.null(fail_reason)) paste0(" (", fail_reason, ")") else ""
+        ))
         next
       }
 
@@ -2178,6 +2254,17 @@ get_demand_param_trends <- function(
       "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
     )
     return(tibble::as_tibble(data.frame()))
+  }
+  if (length(failed_combos) > 0) {
+    cli::cli_warn(
+      c(
+        "!" = "{length(failed_combos)} (parameter, covariate) combination{?s}
+               could not be computed and {?was/were} dropped from the trends
+               table:",
+        "i" = "{failed_combos}"
+      ),
+      class = c("beezdemand_trends_dropped_combo_warning", "beezdemand_warning")
+    )
   }
   dplyr::bind_rows(out_list)
 }
@@ -2597,6 +2684,9 @@ tidy.beezdemand_nlme <- function(
     return(beezdemand_empty_coefficients())
   }
 
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(x)
+
   effects <- match.arg(effects, several.ok = TRUE)
   result <- tibble::tibble()
   internal_space <- x$param_space %||% x$param_info$param_space %||% "log10"
@@ -2808,6 +2898,9 @@ confint.beezdemand_nlme <- function(
       component = character()
     ))
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(object)
 
   if (method == "profile") {
     # Use nlme::intervals() for profile-based intervals
@@ -3507,6 +3600,9 @@ get_subject_pars.beezdemand_nlme <- function(object, expanded = NULL, ...) {
   if (is.null(object$model)) {
     cli::cli_abort("No fitted model found in the object; fitting may have failed.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(object)
 
   pinfo <- object$param_info
   internal_space <- object$param_space %||% pinfo$param_space %||% "log10"
@@ -4617,6 +4713,9 @@ get_individual_coefficients <- function(
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(fit_obj)
 
   format <- match.arg(format)
   params <- match.arg(params, choices = c("Q0", "alpha"), several.ok = TRUE)

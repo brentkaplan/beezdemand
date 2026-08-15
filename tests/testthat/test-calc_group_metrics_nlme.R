@@ -261,3 +261,56 @@ test_that("calc_group_metrics.beezdemand_nlme honors at = covariate value", {
   cm_at <- calc_group_metrics(fit, at = list(age = 30))
   expect_equal(cm_at$conditioned_on$covariates[["age"]], 30)
 })
+
+# ---------------------------------------------------------------------------
+# 10. TICKET-064 (F12): targeted muffling, not blanket suppression.
+# ---------------------------------------------------------------------------
+test_that("calc_group_metrics.beezdemand_nlme propagates a real emms warning (estimate-column fallback)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  d <- .cgm_nlme_subsample()
+  fit <- fit_demand_mixed(
+    d, equation_form = "zben",
+    y_var = "y_ll4", x_var = "x", id_var = "id")
+
+  # Directly injecting the "Could not reliably identify estimate column"
+  # warning is impractical to trigger organically (it needs a malformed
+  # emmeans summary shape); instead verify the muffle helper's contract at
+  # the unit level: a non-benign, non-gate warning raised inside the wrapped
+  # expression is NOT muffled.
+  warn_fn <- function() {
+    warning("Could not reliably identify estimate column for log10 scale of Q0. Using 'x'.")
+    1
+  }
+  warns <- testthat::capture_warnings(
+    beezdemand:::.nlme_muffle_group_metrics_emms_noise(warn_fn())
+  )
+  expect_true(any(grepl("Could not reliably identify estimate column", warns)))
+})
+
+test_that(".nlme_muffle_group_metrics_emms_noise mutes only the benign message + the convergence-gate duplicate", {
+  msg_fn <- function() {
+    message("No factors specified or found in model. Reporting global parameter estimates.")
+    1
+  }
+  expect_no_message(beezdemand:::.nlme_muffle_group_metrics_emms_noise(msg_fn()))
+
+  other_msg_fn <- function() {
+    message("some other message")
+    1
+  }
+  expect_message(
+    beezdemand:::.nlme_muffle_group_metrics_emms_noise(other_msg_fn()),
+    "some other message"
+  )
+
+  gate_warn_fn <- function() {
+    warning(structure(
+      class = c("beezdemand_nlme_convergence_warning", "beezdemand_warning", "warning", "condition"),
+      list(message = "gate warning", call = NULL)
+    ))
+    1
+  }
+  expect_no_warning(beezdemand:::.nlme_muffle_group_metrics_emms_noise(gate_warn_fn()))
+})

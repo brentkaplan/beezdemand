@@ -239,6 +239,26 @@ still return the same numbers.
   `boot_demand()` directly received unreliable intervals with no indication
   anything was wrong. Values are unchanged; healthy (PD-Hessian) fits emit no
   new conditions.
+* **NLME inference surfaces now honour `.check_nlme_convergence()`.**
+  `summary()`, `glance()`, and `check_demand_model()` already gated on
+  whether an NLME fit's final apVar inverted cleanly; `get_demand_param_emms()`,
+  `get_demand_comparisons()`, `calc_group_metrics()`, `confint()`,
+  `get_subject_pars()`, `tidy()`, `get_individual_coefficients()`, and
+  `anova()` (per compared model) now each emit one classed warning
+  (`beezdemand_nlme_convergence_warning` / `beezdemand_warning`) on a
+  non-converged fit instead of computing inference silently.
+  `calc_group_metrics()` also replaces a blanket
+  `suppressWarnings(suppressMessages(...))` around its internal Q0/alpha
+  EMM calls with targeted muffling of two specifically-matched benign
+  conditions, so a real warning raised inside those calls (e.g. the
+  estimate-column-guess fallback, which flags a possibly-wrong Pmax/Omax)
+  now reaches the caller instead of being silently dropped.
+  `get_demand_param_trends()` now warns once, naming every dropped
+  `(parameter, covariate)` combination and its cause, instead of silently
+  shrinking the returned table. Values are unchanged; converged fits emit
+  no new conditions. See also the `get_demand_param_emms()` /
+  `param_space = "natural"` bullet below, which fixes a related but
+  distinct back-transformation bug on the same NLME surface.
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
