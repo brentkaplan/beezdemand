@@ -6,8 +6,9 @@
 # inherits(p, "ggplot") -- and by vignettes/cross-price-models.Rmd, which
 # aborts the build on error but makes no assertions.
 #
-# Deliberately no skip_on_cran(): neither CI workflow sets NOT_CRAN, so a skip
-# here would put these straight back out of CI (TICKET-070).
+# Deliberately no skip_on_cran(): these are cheap and should run everywhere,
+# including the CRAN-mimicking cran-everything workflow (R-CMD-check and
+# test-coverage set NOT_CRAN=true since TICKET-070).
 
 cp_plot_linear_data <- function(n_subjects = 20, seed = 42) {
   withr::local_seed(seed)

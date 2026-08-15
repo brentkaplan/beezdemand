@@ -13,7 +13,8 @@
 # The fixture below uses real apt_full data and converges in well under a
 # second, so every assertion here is made against a fit that actually happened.
 #
-# No skip_on_cran(): neither CI workflow sets NOT_CRAN (TICKET-070).
+# No skip_on_cran(): these fits are fast enough to run everywhere, CRAN
+# included (CI sets NOT_CRAN=true since TICKET-070; cran-everything does not).
 
 nlme_factor_data <- function(n_ids = 60, seed = 1) {
   data(apt_full, package = "beezdemand", envir = environment())
