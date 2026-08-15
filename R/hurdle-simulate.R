@@ -28,6 +28,23 @@
 #'   subject once zero consumption is observed. This means subjects will have
 #'   varying numbers of observations. Set to FALSE to generate all prices for
 #'   all subjects. Default is TRUE.
+#' @param part2 Character. Positive-part (Part II) generator: `"koff"` (the
+#'   original Zhao et al. (2016) / Koffarnus-style generator; default,
+#'   backward compatible) or `"snd"` (TICKET-044; matches
+#'   `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly --
+#'   see Details).
+#' @param rho_ab_raw Only used when `part2 = "snd"`. Pre-`tanh()` raw value
+#'   for the a/b random-effect correlation, mirroring the TMB model's own
+#'   `rho_ab_raw` coefficient (actual correlation is `tanh(rho_ab_raw)`).
+#'   Default `NULL` uses `atanh(0.3)` (actual correlation 0.3, matching the
+#'   `"koff"` generator's default `rho_ab`).
+#' @param rho_ac_raw Only used when `part2 = "snd"` and `n_random_effects =
+#'   3`. Pre-`tanh()` raw value for the a/c random-effect correlation.
+#'   Default `NULL` uses `0` (actual correlation 0).
+#' @param rho_bc_raw Only used when `part2 = "snd"` and `n_random_effects =
+#'   3`. Raw value for the b/c *partial* correlation (see Details); the
+#'   actual b/c correlation is NOT `tanh(rho_bc_raw)` directly. Default
+#'   `NULL` uses `0` (actual correlation 0).
 #' @param seed Optional random seed for reproducibility.
 #'
 #' @return A data frame with columns:
@@ -42,16 +59,38 @@
 #' }
 #'
 #' @details
-#' The simulation follows Zhao et al. (2016):
-#'
-#' \strong{Part I (Zero vs Positive):}
+#' \strong{Part I (Zero vs Positive), shared by both `part2` generators:}
 #' \deqn{logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i}
 #'
-#' \strong{Part II (Positive Consumption):}
+#' \strong{Part II, `part2 = "koff"` (Zhao et al., 2016):}
 #' \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
 #'
+#' \strong{Part II, `part2 = "snd"` (TICKET-044; exactly mirrors
+#' `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h`, i.e. a
+#' log-linear/SND mean with lognormal errors and no `k`):}
+#' \deqn{Q_{0,i} = \exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)}
+#' \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) - \alpha_i Q_{0,i} \cdot price + \epsilon}
+#' with \eqn{\epsilon \sim N(0, \sigma_e^2)} (residual on the log-consumption
+#' scale) in both generators. When `n_random_effects = 2`, `c_i = 0` for
+#' every subject in both generators, so `alpha_i` reduces to the fixed
+#' population `alpha`.
+#'
 #' Random effects \eqn{(a_i, b_i)} or \eqn{(a_i, b_i, c_i)} are drawn from a
-#' multivariate normal distribution with the specified variances and correlations.
+#' multivariate normal distribution with mean zero and covariance built from
+#' `sigma_a`, `sigma_b`, `sigma_c` (SDs, natural scale) and the specified
+#' correlations. For `part2 = "koff"` (unchanged from previous releases),
+#' `rho_ab`, `rho_ac`, `rho_bc` are the actual (final) correlations, checked
+#' for a jointly positive-definite covariance matrix. For `part2 = "snd"`,
+#' correlations instead mirror the TMB model's own raw-parameter -> actual
+#' correlation mapping exactly (any raw values are guaranteed to give a
+#' valid PD matrix, so no PD check is needed): `rho_ab = tanh(rho_ab_raw)`,
+#' `rho_ac = tanh(rho_ac_raw)`, and `rho_bc` via the LKJ-Cholesky
+#' partial-correlation transform
+#' \deqn{\rho_{bc} = \rho_{ab}\rho_{ac} + \tanh(\rho_{bc,raw}) \sqrt{(1 -
+#' \rho_{ab}^2)(1 - \rho_{ac}^2)}.}
+#' This lets a user plug a fitted `part2 = "snd"` model's own
+#' `rho_ab_raw`/`rho_ac_raw`/`rho_bc_raw` coefficients directly into the
+#' simulator for a parametric bootstrap or recovery study.
 #'
 #' @examples
 #' # Simulate with default parameters (2 RE model)
@@ -101,8 +140,14 @@ simulate_hurdle_data <- function(
   epsilon = 0.001,
   n_random_effects = 2,
   stop_at_zero = TRUE,
+  part2 = c("koff", "snd"),
+  rho_ab_raw = NULL,
+  rho_ac_raw = NULL,
+  rho_bc_raw = NULL,
   seed = NULL
 ) {
+  part2 <- match.arg(part2)
+
   if (!is.null(seed)) {
     set.seed(seed)
   }
@@ -122,8 +167,57 @@ simulate_hurdle_data <- function(
     stop("n_random_effects must be 2 or 3")
   }
 
-  # Build covariance matrix for random effects
-  if (n_random_effects == 2) {
+  # Build covariance matrix for random effects.
+  #
+  # part2 = "koff" (unchanged from previous releases): rho_ab/rho_ac/rho_bc
+  # are ACTUAL correlations, plugged in directly; PD is checked below.
+  #
+  # part2 = "snd" (TICKET-044): rho_ab_raw/rho_ac_raw/rho_bc_raw mirror the
+  # TMB model's own raw-parameter -> correlation mapping exactly
+  # (src/HurdleDemand3RE_SND.h / HurdleDemand2RE_SND.h): rho_ab = tanh(raw),
+  # rho_ac = tanh(raw), rho_bc via the LKJ-Cholesky partial-correlation
+  # recurrence -- any raw values give a guaranteed-PD matrix.
+  if (identical(part2, "snd")) {
+    rho_ab_raw <- rho_ab_raw %||% atanh(0.3)
+    rho_ac_raw <- rho_ac_raw %||% 0
+    rho_bc_raw <- rho_bc_raw %||% 0
+
+    rho_ab_snd <- tanh(rho_ab_raw)
+    rho_ac_snd <- tanh(rho_ac_raw)
+    rho_bc_snd <- if (n_random_effects == 3) {
+      rho_ab_snd * rho_ac_snd +
+        tanh(rho_bc_raw) * sqrt((1 - rho_ab_snd^2) * (1 - rho_ac_snd^2))
+    } else {
+      0
+    }
+
+    Sigma <- if (n_random_effects == 2) {
+      matrix(
+        c(
+          sigma_a^2,
+          sigma_a * sigma_b * rho_ab_snd,
+          sigma_a * sigma_b * rho_ab_snd,
+          sigma_b^2
+        ),
+        nrow = 2
+      )
+    } else {
+      matrix(
+        c(
+          sigma_a^2,
+          sigma_a * sigma_b * rho_ab_snd,
+          sigma_a * sigma_c * rho_ac_snd,
+          sigma_a * sigma_b * rho_ab_snd,
+          sigma_b^2,
+          sigma_b * sigma_c * rho_bc_snd,
+          sigma_a * sigma_c * rho_ac_snd,
+          sigma_b * sigma_c * rho_bc_snd,
+          sigma_c^2
+        ),
+        nrow = 3
+      )
+    }
+  } else if (n_random_effects == 2) {
     Sigma <- matrix(
       c(
         sigma_a^2,
@@ -150,7 +244,8 @@ simulate_hurdle_data <- function(
     )
   }
 
-  # Check positive definiteness
+  # Check positive definiteness (guaranteed for the "snd" LKJ-style
+  # construction above, but cheap to verify defensively for both paths).
   eig <- eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values
   if (any(eig <= 0)) {
     stop(
@@ -192,8 +287,16 @@ simulate_hurdle_data <- function(
       if (is_zero == 1) {
         y <- 0
         stopped <- TRUE
+      } else if (identical(part2, "snd")) {
+        # Part II (SND, TICKET-044): log-linear mean, no k -- exactly
+        # src/HurdleDemand3RE_SND.h / HurdleDemand2RE_SND.h.
+        q0_i <- exp(log_q0 + b_i[i])
+        alpha_i <- exp(log(alpha) + c_i[i])
+        mu <- (log_q0 + b_i[i]) - alpha_i * q0_i * p
+        log_y <- rnorm(1, mean = mu, sd = sigma_e)
+        y <- exp(log_y)
       } else {
-        # Part II: Positive consumption
+        # Part II (koff/Zhao et al., 2016): unchanged from previous releases.
         alpha_i <- alpha + c_i[i]
         mu <- (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
         log_y <- rnorm(1, mean = mu, sd = sigma_e)
@@ -234,21 +337,44 @@ simulate_hurdle_data <- function(
   sim_data$id <- factor(sim_data$id)
 
   # Add attributes with true parameters
-  attr(sim_data, "true_params") <- list(
-    beta0 = beta0,
-    beta1 = beta1,
-    log_q0 = log_q0,
-    k = k,
-    alpha = alpha,
-    sigma_a = sigma_a,
-    sigma_b = sigma_b,
-    sigma_c = sigma_c,
-    rho_ab = rho_ab,
-    rho_ac = rho_ac,
-    rho_bc = rho_bc,
-    sigma_e = sigma_e,
-    n_random_effects = n_random_effects
-  )
+  attr(sim_data, "true_params") <- if (identical(part2, "snd")) {
+    list(
+      part2 = part2,
+      beta0 = beta0,
+      beta1 = beta1,
+      log_q0 = log_q0,
+      alpha = alpha,
+      sigma_a = sigma_a,
+      sigma_b = sigma_b,
+      sigma_c = sigma_c,
+      rho_ab_raw = rho_ab_raw,
+      rho_ac_raw = rho_ac_raw,
+      rho_bc_raw = rho_bc_raw,
+      rho_ab = rho_ab_snd,
+      rho_ac = rho_ac_snd,
+      rho_bc = rho_bc_snd,
+      sigma_e = sigma_e,
+      n_random_effects = n_random_effects
+    )
+  } else {
+    # part2 = "koff": this list is UNCHANGED from previous releases
+    # (byte-identical, TICKET-044 requirement) -- no `part2` key added.
+    list(
+      beta0 = beta0,
+      beta1 = beta1,
+      log_q0 = log_q0,
+      k = k,
+      alpha = alpha,
+      sigma_a = sigma_a,
+      sigma_b = sigma_b,
+      sigma_c = sigma_c,
+      rho_ab = rho_ab,
+      rho_ac = rho_ac,
+      rho_bc = rho_bc,
+      sigma_e = sigma_e,
+      n_random_effects = n_random_effects
+    )
+  }
 
   sim_data
 }

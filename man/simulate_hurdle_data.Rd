@@ -23,6 +23,10 @@ simulate_hurdle_data(
   epsilon = 0.001,
   n_random_effects = 2,
   stop_at_zero = TRUE,
+  part2 = c("koff", "snd"),
+  rho_ab_raw = NULL,
+  rho_ac_raw = NULL,
+  rho_bc_raw = NULL,
   seed = NULL
 )
 }
@@ -69,6 +73,25 @@ subject once zero consumption is observed. This means subjects will have
 varying numbers of observations. Set to FALSE to generate all prices for
 all subjects. Default is TRUE.}
 
+\item{part2}{Character. Positive-part (Part II) generator: \code{"koff"} (the
+original Zhao et al. (2016) / Koffarnus-style generator; default,
+backward compatible) or \code{"snd"} (TICKET-044; matches
+\code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h} exactly --
+see Details).}
+
+\item{rho_ab_raw}{Only used when \code{part2 = "snd"}. Pre-\code{tanh()} raw value
+for the a/b random-effect correlation, mirroring the TMB model's own
+\code{rho_ab_raw} coefficient (actual correlation is \code{tanh(rho_ab_raw)}).
+Default \code{NULL} uses \code{atanh(0.3)} (actual correlation 0.3, matching the
+\code{"koff"} generator's default \code{rho_ab}).}
+
+\item{rho_ac_raw}{Only used when \code{part2 = "snd"} and \code{n_random_effects = 3}. Pre-\code{tanh()} raw value for the a/c random-effect correlation.
+Default \code{NULL} uses \code{0} (actual correlation 0).}
+
+\item{rho_bc_raw}{Only used when \code{part2 = "snd"} and \code{n_random_effects = 3}. Raw value for the b/c \emph{partial} correlation (see Details); the
+actual b/c correlation is NOT \code{tanh(rho_bc_raw)} directly. Default
+\code{NULL} uses \code{0} (actual correlation 0).}
+
 \item{seed}{Optional random seed for reproducibility.}
 }
 \value{
@@ -88,16 +111,38 @@ Generates simulated demand data from the two-part hurdle model.
 Useful for Monte Carlo simulation studies, power analyses, and model validation.
 }
 \details{
-The simulation follows Zhao et al. (2016):
-
-\strong{Part I (Zero vs Positive):}
+\strong{Part I (Zero vs Positive), shared by both \code{part2} generators:}
 \deqn{logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i}
 
-\strong{Part II (Positive Consumption):}
+\strong{Part II, \code{part2 = "koff"} (Zhao et al., 2016):}
 \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
 
+\strong{Part II, \code{part2 = "snd"} (TICKET-044; exactly mirrors
+\code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h}, i.e. a
+log-linear/SND mean with lognormal errors and no \code{k}):}
+\deqn{Q_{0,i} = \exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)}
+\deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) - \alpha_i Q_{0,i} \cdot price + \epsilon}
+with \eqn{\epsilon \sim N(0, \sigma_e^2)} (residual on the log-consumption
+scale) in both generators. When \code{n_random_effects = 2}, \code{c_i = 0} for
+every subject in both generators, so \code{alpha_i} reduces to the fixed
+population \code{alpha}.
+
 Random effects \eqn{(a_i, b_i)} or \eqn{(a_i, b_i, c_i)} are drawn from a
-multivariate normal distribution with the specified variances and correlations.
+multivariate normal distribution with mean zero and covariance built from
+\code{sigma_a}, \code{sigma_b}, \code{sigma_c} (SDs, natural scale) and the specified
+correlations. For \code{part2 = "koff"} (unchanged from previous releases),
+\code{rho_ab}, \code{rho_ac}, \code{rho_bc} are the actual (final) correlations, checked
+for a jointly positive-definite covariance matrix. For \code{part2 = "snd"},
+correlations instead mirror the TMB model's own raw-parameter -> actual
+correlation mapping exactly (any raw values are guaranteed to give a
+valid PD matrix, so no PD check is needed): \code{rho_ab = tanh(rho_ab_raw)},
+\code{rho_ac = tanh(rho_ac_raw)}, and \code{rho_bc} via the LKJ-Cholesky
+partial-correlation transform
+\deqn{\rho_{bc} = \rho_{ab}\rho_{ac} + \tanh(\rho_{bc,raw}) \sqrt{(1 -
+\rho_{ab}^2)(1 - \rho_{ac}^2)}.}
+This lets a user plug a fitted \code{part2 = "snd"} model's own
+\code{rho_ab_raw}/\code{rho_ac_raw}/\code{rho_bc_raw} coefficients directly into the
+simulator for a parametric bootstrap or recovery study.
 }
 \examples{
 # Simulate with default parameters (2 RE model)

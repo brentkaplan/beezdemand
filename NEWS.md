@@ -238,6 +238,22 @@ exactly, pin the previous release:
   informative sentinel instead of proceeding into a nonsensical
   single-group contrast.
 
+## New features
+
+* **`simulate_hurdle_data(part2 = "snd")` (TICKET-044).** Adds an SND
+  positive-part generator to the hurdle simulator, matching
+  `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly: a
+  log-linear (no `k`) mean with lognormal errors on the positive part, and
+  the same zero-inflation logistic as the existing (now `part2 = "koff"`)
+  generator. Random-effect correlations for `part2 = "snd"` are specified
+  via `rho_ab_raw`/`rho_ac_raw`/`rho_bc_raw`, mirroring the TMB model's own
+  raw-parameter coefficients exactly (`rho_ab = tanh(rho_ab_raw)`, `rho_ac
+  = tanh(rho_ac_raw)`, `rho_bc` via the LKJ-Cholesky partial-correlation
+  transform), so a fitted `fit_demand_hurdle(part2 = "snd")` model's own
+  coefficients can be plugged directly into the simulator for a parametric
+  bootstrap or recovery study. `part2` defaults to `"koff"`, and its output
+  is byte-identical to previous releases.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a
