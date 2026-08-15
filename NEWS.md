@@ -257,8 +257,11 @@ exactly, pin the previous release:
   non-converged `nlsLM`/`nls.multstart` fit produced a clean-looking
   coefficient table with zero warnings. `fit_cp_nls()` now returns a
   `convergence` field (`isConv`, `finIter`, `stopCode`, `stopMessage` for the
-  winning backend; `isConv = NA` for `wrapnlsr`, which reports no such
-  diagnostic). `summary()` and `confint()` now emit a classed warning
+  winning backend, read from `model$convInfo`; populated for `nls`/`nlsLM`
+  fits and for `nlsr::wrapnlsr()` fits too when it returns a plain
+  `nls`-class object, its usual successful case; `isConv = NA` only when the
+  winning fit carries no `convInfo` at all). `summary()` and `confint()` now
+  emit a classed warning
   (`beezdemand_cp_nls_nonconverged_warning`) when `isConv` is explicitly
   `FALSE`. Separately, `nlsLM_fit` is now `NULL` (never the caught error
   condition) in the branch where `wrapnlsr` won after `nlsLM` failed

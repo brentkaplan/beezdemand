@@ -644,6 +644,48 @@ test_that("fit_cp_nls records convergence info for a healthy fit (real fixture)"
   )
 })
 
+# Codex 2D review (recommended #4): nlsr::wrapnlsr() DOES populate
+# `convInfo` when it returns a plain `nls`-class object (its usual
+# successful case) -- .cp_extract_convergence() already reads it generically
+# via `model$convInfo`, but the docs/NEWS wrongly claimed isConv is always
+# NA for wrapnlsr, and no test actually forced control to reach that branch.
+# Force nls.multstart AND nlsLM to fail so wrapnlsr is the winning backend,
+# then assert non-NA convergence fields.
+test_that("fit_cp_nls extracts real (non-NA) convergence info when wrapnlsr wins", {
+  skip_if_not_installed("nls.multstart")
+  skip_if_not_installed("minpack.lm")
+  skip_if_not_installed("nlsr")
+
+  data("cp", package = "beezdemand", envir = environment())
+  data <- cp[cp$target == "alone" & cp$group == "cigarettes", c("x", "y")]
+  # Start values close to a known-good solution (from an unmocked fit) so
+  # wrapnlsr, working from them, genuinely converges.
+  starts <- list(log10_qalone = 0.079, I = 1.30, log10_beta = -0.25)
+
+  testthat::local_mocked_bindings(
+    nls_multstart = function(...) stop("forced multstart failure"),
+    .package = "nls.multstart"
+  )
+  testthat::local_mocked_bindings(
+    nlsLM = function(...) stop("forced nlsLM failure"),
+    .package = "minpack.lm"
+  )
+
+  fit <- suppressWarnings(fit_cp_nls(
+    data,
+    equation = "exponentiated",
+    start_values = starts,
+    fallback_to_nlsr = TRUE
+  ))
+
+  expect_equal(fit$method, "wrapnlsr")
+  expect_true(inherits(fit$model, "nls"))
+  expect_false(is.na(fit$convergence$isConv))
+  expect_true(isTRUE(fit$convergence$isConv))
+  expect_false(is.na(fit$convergence$stopCode))
+  expect_false(is.na(fit$convergence$stopMessage))
+})
+
 test_that("fit_cp_nls$nlsLM_fit is never a condition object when wrapnlsr wins (F15)", {
   # Force nls.multstart AND nlsLM to fail with bad start values / unfittable
   # data, so control reaches the wrapnlsr branch; nlsLM_fit must be NULL

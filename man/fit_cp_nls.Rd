@@ -58,8 +58,10 @@ If \code{return_all = TRUE} (default): a list of class \code{"cp_model_nls"}:
 stage was not reached, or was attempted but did not itself produce a fit).
 \item \code{data}: the 2-column data frame actually fit.
 \item \code{convergence}: list with \code{isConv}, \code{finIter}, \code{stopCode}, \code{stopMessage} for the
-WINNING backend (from \code{model$convInfo} for \code{nls}/\code{nlsLM}-class fits; \code{isConv = NA}
-for \code{wrapnlsr}, which reports no such diagnostic).
+WINNING backend, read from \code{model$convInfo} -- populated for \code{nls}/\code{nlsLM}-class
+fits, and for \code{nlsr::wrapnlsr()} fits too when it returns a plain \code{nls}-class
+object (its usual successful case); \code{isConv = NA} only when the winning fit
+carries no \code{convInfo} at all.
 }
 If \code{return_all = FALSE}: the fitted model object from the successful backend.
 }
@@ -129,7 +131,8 @@ print/summary/plot methods.
 \itemize{
 \item \code{summary()} and \code{confint()} on the returned object emit a classed warning
 (\code{beezdemand_cp_nls_nonconverged_warning}) when \code{convergence$isConv} is explicitly
-\code{FALSE} for the winning fit; unreported convergence (\code{NA}, e.g. \code{wrapnlsr}) is silent.
+\code{FALSE} for the winning fit; unreported convergence (\code{NA}, when the winning object
+carries no \code{convInfo}) is silent.
 \item Poor scaling or extreme \code{y} dispersion can make parameters weakly identified.
 \item For \code{"exponential"}, the model fits on the \eqn{\log_{10}(y)} scale internally.
 }

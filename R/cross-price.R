@@ -1,11 +1,15 @@
 #' Extract Backend Convergence Info from an NLS-family Fit
 #'
 #' @description
-#' Internal helper (TICKET-065). Reads `model$convInfo` (present on `nls`/
-#' `nlsLM`-class fits) into a plain list. `nlsr::wrapnlsr()` fits carry no
-#' such diagnostic, so `isConv` is `NA` (unknown), not `FALSE` -- the two
-#' must stay distinguishable so downstream gates only warn on an explicit,
-#' known non-convergence.
+#' Internal helper (TICKET-065). Reads `model$convInfo` into a plain list.
+#' This works generically for any backend that populates `convInfo` --
+#' `nls`/`nlsLM`-class fits always do, and `nlsr::wrapnlsr()` fits do too
+#' when `wrapnlsr()` returns a plain `nls`-class object (its usual successful
+#' case; Codex 2D review folded 2026-08-15, verified via
+#' `nlsr::wrapnlsr(y ~ a*exp(-b*x), ...)$convInfo`). `isConv` is only `NA`
+#' (unknown), not `FALSE`, when the winning object carries no `convInfo` at
+#' all -- the two must stay distinguishable so downstream gates only warn on
+#' an explicit, known non-convergence.
 #'
 #' @param model A fitted model object (`nls`, `nlsLM`, `nlsr`, or similar).
 #'
@@ -125,15 +129,18 @@
 #'         stage was not reached, or was attempted but did not itself produce a fit).
 #'   \item `data`: the 2-column data frame actually fit.
 #'   \item `convergence`: list with `isConv`, `finIter`, `stopCode`, `stopMessage` for the
-#'         WINNING backend (from `model$convInfo` for `nls`/`nlsLM`-class fits; `isConv = NA`
-#'         for `wrapnlsr`, which reports no such diagnostic).
+#'         WINNING backend, read from `model$convInfo` -- populated for `nls`/`nlsLM`-class
+#'         fits, and for `nlsr::wrapnlsr()` fits too when it returns a plain `nls`-class
+#'         object (its usual successful case); `isConv = NA` only when the winning fit
+#'         carries no `convInfo` at all.
 #' }
 #' If `return_all = FALSE`: the fitted model object from the successful backend.
 #'
 #' @section Convergence & warnings:
 #' - `summary()` and `confint()` on the returned object emit a classed warning
 #'   (`beezdemand_cp_nls_nonconverged_warning`) when `convergence$isConv` is explicitly
-#'   `FALSE` for the winning fit; unreported convergence (`NA`, e.g. `wrapnlsr`) is silent.
+#'   `FALSE` for the winning fit; unreported convergence (`NA`, when the winning object
+#'   carries no `convInfo`) is silent.
 #' - Poor scaling or extreme `y` dispersion can make parameters weakly identified.
 #' - For `"exponential"`, the model fits on the \eqn{\log_{10}(y)} scale internally.
 #'
