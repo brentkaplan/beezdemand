@@ -1,3 +1,35 @@
+#' Extract Backend Convergence Info from an NLS-family Fit
+#'
+#' @description
+#' Internal helper (TICKET-065). Reads `model$convInfo` (present on `nls`/
+#' `nlsLM`-class fits) into a plain list. `nlsr::wrapnlsr()` fits carry no
+#' such diagnostic, so `isConv` is `NA` (unknown), not `FALSE` -- the two
+#' must stay distinguishable so downstream gates only warn on an explicit,
+#' known non-convergence.
+#'
+#' @param model A fitted model object (`nls`, `nlsLM`, `nlsr`, or similar).
+#'
+#' @return A list with `isConv`, `finIter`, `stopCode`, `stopMessage`.
+#' @keywords internal
+.cp_extract_convergence <- function(model) {
+  ci <- tryCatch(model$convInfo, error = function(e) NULL)
+  if (is.null(ci)) {
+    return(list(
+      isConv = NA,
+      finIter = NA_integer_,
+      stopCode = NA_integer_,
+      stopMessage = NA_character_
+    ))
+  }
+  list(
+    isConv = if (!is.null(ci$isConv)) isTRUE(ci$isConv) else NA,
+    finIter = if (!is.null(ci$finIter)) as.integer(ci$finIter) else NA_integer_,
+    stopCode = if (!is.null(ci$stopCode)) as.integer(ci$stopCode) else NA_integer_,
+    stopMessage = if (!is.null(ci$stopMessage)) as.character(ci$stopMessage) else NA_character_
+  )
+}
+
+
 #' Fit cross-price demand with NLS (+ robust fallbacks)
 #'
 #' @description
@@ -89,13 +121,19 @@
 #'   \item `method`: one of `"nls_multstart"`, `"nlsLM"`, or `"wrapnlsr"`.
 #'   \item `equation`: the model family used.
 #'   \item `start_vals`: named list of starting values (final used; kept for backward compatibility).
-#'   \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
+#'   \item `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted; `NULL` when that
+#'         stage was not reached, or was attempted but did not itself produce a fit).
 #'   \item `data`: the 2-column data frame actually fit.
+#'   \item `convergence`: list with `isConv`, `finIter`, `stopCode`, `stopMessage` for the
+#'         WINNING backend (from `model$convInfo` for `nls`/`nlsLM`-class fits; `isConv = NA`
+#'         for `wrapnlsr`, which reports no such diagnostic).
 #' }
 #' If `return_all = FALSE`: the fitted model object from the successful backend.
 #'
 #' @section Convergence & warnings:
-#' - Check convergence codes and residual diagnostics from the underlying fit.
+#' - `summary()` and `confint()` on the returned object emit a classed warning
+#'   (`beezdemand_cp_nls_nonconverged_warning`) when `convergence$isConv` is explicitly
+#'   `FALSE` for the winning fit; unreported convergence (`NA`, e.g. `wrapnlsr`) is silent.
 #' - Poor scaling or extreme `y` dispersion can make parameters weakly identified.
 #' - For `"exponential"`, the model fits on the \eqn{\log_{10}(y)} scale internally.
 #'
@@ -252,7 +290,8 @@ fit_cp_nls <- function(
           start_vals = as.list(coef(nls_multi_fit)),
           nlsLM_fit = NULL,
           nlsr_fit = NULL,
-          data = data
+          data = data,
+          convergence = .cp_extract_convergence(nls_multi_fit)
         )
         class(result) <- "cp_model_nls"
         return(result)
@@ -298,7 +337,8 @@ fit_cp_nls <- function(
           start_vals = start_values,
           nlsLM_fit = nlsLM_fit,
           nlsr_fit = NULL,
-          data = data
+          data = data,
+          convergence = .cp_extract_convergence(nlsLM_fit)
         )
         class(result) <- "cp_model_nls"
         return(result)
@@ -334,14 +374,20 @@ fit_cp_nls <- function(
 
       if (!inherits(nlsr_fit, "error")) {
         used_method <- "wrapnlsr"
+        # F15 (TICKET-065): nlsLM_fit reaches here only when the earlier
+        # nlsLM attempt FAILED, so it currently holds the caught error
+        # condition, not a fit -- store NULL instead (the docs say this
+        # field holds "fits from later stages (if attempted)").
+        nlsLM_fit_out <- if (inherits(nlsLM_fit, "error")) NULL else nlsLM_fit
         result <- list(
           model = nlsr_fit,
           method = used_method,
           equation = equation,
           start_vals = start_values,
-          nlsLM_fit = nlsLM_fit,
+          nlsLM_fit = nlsLM_fit_out,
           nlsr_fit = nlsr_fit,
-          data = data
+          data = data,
+          convergence = .cp_extract_convergence(nlsr_fit)
         )
         class(result) <- "cp_model_nls"
         return(result)

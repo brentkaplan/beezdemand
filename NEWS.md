@@ -251,6 +251,19 @@ exactly, pin the previous release:
   count when this happens. **This changes `$summary` output** for any prior
   run that had converged-but-non-PD-Hessian replicates (TICKET-062).
 
+* **`fit_cp_nls()` discarded all backend convergence diagnostics, and
+  `summary.cp_model_nls()`/`confint.cp_model_nls()` reported SEs, p-values,
+  and CIs with no convergence gate.** A maxiter-capped or otherwise
+  non-converged `nlsLM`/`nls.multstart` fit produced a clean-looking
+  coefficient table with zero warnings. `fit_cp_nls()` now returns a
+  `convergence` field (`isConv`, `finIter`, `stopCode`, `stopMessage` for the
+  winning backend; `isConv = NA` for `wrapnlsr`, which reports no such
+  diagnostic). `summary()` and `confint()` now emit a classed warning
+  (`beezdemand_cp_nls_nonconverged_warning`) when `isConv` is explicitly
+  `FALSE`. Separately, `nlsLM_fit` is now `NULL` (never the caught error
+  condition) in the branch where `wrapnlsr` won after `nlsLM` failed
+  (TICKET-065).
+
 ## Legacy fitter robustness (batch failures)
 
 * `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =

@@ -54,8 +54,12 @@ If \code{return_all = TRUE} (default): a list of class \code{"cp_model_nls"}:
 \item \code{method}: one of \code{"nls_multstart"}, \code{"nlsLM"}, or \code{"wrapnlsr"}.
 \item \code{equation}: the model family used.
 \item \code{start_vals}: named list of starting values (final used; kept for backward compatibility).
-\item \code{nlsLM_fit}, \code{nlsr_fit}: fits from later stages (if attempted).
+\item \code{nlsLM_fit}, \code{nlsr_fit}: fits from later stages (if attempted; \code{NULL} when that
+stage was not reached, or was attempted but did not itself produce a fit).
 \item \code{data}: the 2-column data frame actually fit.
+\item \code{convergence}: list with \code{isConv}, \code{finIter}, \code{stopCode}, \code{stopMessage} for the
+WINNING backend (from \code{model$convInfo} for \code{nls}/\code{nlsLM}-class fits; \code{isConv = NA}
+for \code{wrapnlsr}, which reports no such diagnostic).
 }
 If \code{return_all = FALSE}: the fitted model object from the successful backend.
 }
@@ -123,7 +127,9 @@ print/summary/plot methods.
 \section{Convergence & warnings}{
 
 \itemize{
-\item Check convergence codes and residual diagnostics from the underlying fit.
+\item \code{summary()} and \code{confint()} on the returned object emit a classed warning
+(\code{beezdemand_cp_nls_nonconverged_warning}) when \code{convergence$isConv} is explicitly
+\code{FALSE} for the winning fit; unreported convergence (\code{NA}, e.g. \code{wrapnlsr}) is silent.
 \item Poor scaling or extreme \code{y} dispersion can make parameters weakly identified.
 \item For \code{"exponential"}, the model fits on the \eqn{\log_{10}(y)} scale internally.
 }

@@ -7,6 +7,30 @@ utils::globalVariables(c(
   "y_pred"
 ))
 
+#' Warn When a cp_model_nls Fit's Winning Backend Did Not Converge
+#'
+#' @description
+#' Internal helper (TICKET-065). `object$convergence$isConv` is `FALSE` only
+#' when the winning backend explicitly reported non-convergence (`nls`/
+#' `nlsLM`-class `convInfo`); it is `NA` when no such diagnostic exists
+#' (`wrapnlsr`) or the object predates this field. Only the explicit `FALSE`
+#' case warns -- an unknown convergence status is not itself an error.
+#'
+#' @param object A `cp_model_nls` object.
+#' @return Invisible `NULL`; called for the warning side effect.
+#' @keywords internal
+.cp_warn_if_nonconverged <- function(object) {
+  conv <- object$convergence
+  if (!is.null(conv) && identical(conv$isConv, FALSE)) {
+    cli::cli_warn(c(
+      "!" = "The winning fit ({.val {object$method}}) did not converge (isConv = FALSE).",
+      "i" = if (!is.na(conv$stopMessage)) "Backend message: {conv$stopMessage}",
+      "i" = "Standard errors, p-values, and confidence intervals from this fit may be unreliable."
+    ), class = c("beezdemand_cp_nls_nonconverged_warning", "beezdemand_warning"))
+  }
+  invisible(NULL)
+}
+
 #-------------------------------------------------------------------------------
 # Summarize Nonlinear Model (cp_model_nls)
 #' Summarize a Cross-Price Demand Model (Nonlinear)
@@ -33,6 +57,13 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
   model <- object$model
   equation <- object$equation
   method <- object$method
+
+  # TICKET-065: warn (once) when the winning fit explicitly failed to
+  # converge -- otherwise SE/p-value coefficients below are reported with
+  # zero indication that they come from a non-converged optimizer.
+  if (!is.null(model)) {
+    .cp_warn_if_nonconverged(object)
+  }
 
   # Check if model is NULL and return an informative message
   if (is.null(model)) {
@@ -871,6 +902,10 @@ confint.cp_model_nls <- function(
       method = character()
     ))
   }
+
+  # TICKET-065: warn (once) when the winning fit explicitly failed to
+  # converge -- CIs computed below would otherwise carry no such indication.
+  .cp_warn_if_nonconverged(object)
 
   # Get estimates
   coefs <- stats::coef(object$model)
