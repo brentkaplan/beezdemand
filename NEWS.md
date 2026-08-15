@@ -313,6 +313,22 @@ still return the same numbers.
     extraction with a cryptic `no 'dimnames' attribute for array` (the only
     output a `verbose = 0` caller saw). Healthy fits are unaffected; no
     numeric output changes.
+* **`print()`/`summary()` for `beezdemand_hurdle` fits now surface a
+  false-converged 3-random-effect fit prominently.** The 3RE spec
+  (`random_effects = c("zeros", "q0", "alpha")`) can converge according to
+  `nlminb()`'s reported code while the Hessian is not positive definite on
+  real purchase task data (weak identification of the alpha random effect,
+  not a broken spec); `fit$opt$message`/`fit$opt$convergence` and
+  `fit$hessian_pd` already existed but were easy to miss. Both print methods
+  now show a warning block (quoting the optimizer message) whenever
+  `converged` is `FALSE` or `hessian_pd` is `FALSE`, naming the recommended
+  stability check: refit with `random_effects = c("zeros", "q0")` and
+  compare empirical-Bayes subject parameters.
+  `summary.beezdemand_hurdle()`'s `notes` field (previously computed but
+  never printed by `print.summary.beezdemand_hurdle()`) now reaches the
+  console. Converged, PD-Hessian fits print byte-identically to before. No
+  change to `converged`/`hessian_pd` semantics, EB parameter extraction, or
+  the TMB templates/likelihoods.
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 

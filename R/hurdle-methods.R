@@ -1,3 +1,63 @@
+#' Build convergence/hessian_pd warning note lines for a hurdle fit (TICKET-056)
+#'
+#' Shared by `summary.beezdemand_hurdle()` (feeds `notes`) and
+#' `print.beezdemand_hurdle()` (prints directly), so the wording is
+#' identical from both entry points. Returns `character(0)` for a clean fit
+#' (no notes, no printed block).
+#' @keywords internal
+#' @noRd
+.hurdle_convergence_warning_notes <- function(converged, hessian_pd,
+                                              opt_message, opt_convergence) {
+  notes <- character(0)
+  if (!isTRUE(converged)) {
+    notes <- c(notes, sprintf(
+      "Warning: Optimizer did not converge (code %s: \"%s\").",
+      opt_convergence %||% NA_integer_, opt_message %||% "unknown"
+    ))
+  }
+  if (isFALSE(hessian_pd)) {
+    notes <- c(notes,
+      "Warning: Hessian not positive definite — standard errors may be unreliable."
+    )
+  }
+  if (!isTRUE(converged) || isFALSE(hessian_pd)) {
+    notes <- c(notes, paste(
+      "Recommended stability check: refit with",
+      "random_effects = c(\"zeros\", \"q0\") (dropping the alpha random",
+      "effect) and compare empirical-Bayes subject parameters."
+    ))
+  }
+  notes
+}
+
+#' Print a prominent banner for the convergence/hessian_pd notes (TICKET-056)
+#' @keywords internal
+#' @noRd
+.print_hurdle_warning_block <- function(notes) {
+  if (length(notes) == 0L) {
+    return(invisible(NULL))
+  }
+  cat(strrep("!", 60), "\n", sep = "")
+  cat("WARNING: this fit did not pass the convergence/Hessian gate.\n")
+  for (n in notes) cat("  ", n, "\n", sep = "")
+  cat(strrep("!", 60), "\n", sep = "")
+  invisible(NULL)
+}
+
+#' Print the convergence/hessian_pd warning block for a beezdemand_hurdle fit object (TICKET-056)
+#' @keywords internal
+#' @noRd
+.print_hurdle_convergence_warning <- function(x) {
+  notes <- .hurdle_convergence_warning_notes(
+    converged = x$converged,
+    hessian_pd = x$hessian_pd,
+    opt_message = x$opt$message,
+    opt_convergence = x$opt$convergence
+  )
+  .print_hurdle_warning_block(notes)
+}
+
+
 #' Print Method for Hurdle Demand Model
 #'
 #' @param x An object of class \code{beezdemand_hurdle}.
@@ -11,6 +71,7 @@ print.beezdemand_hurdle <- function(x, ...) {
   print(x$call)
   cat("\n")
   cat("Convergence:", ifelse(x$converged, "Yes", "No"), "\n")
+  .print_hurdle_convergence_warning(x)
   cat("Number of subjects:", x$param_info$n_subjects, "\n")
   cat("Number of observations:", x$param_info$n_obs, "\n")
   cat(
@@ -201,12 +262,15 @@ summary.beezdemand_hurdle <- function(
   )
 
   # Strategy B alpha* (normalized alpha; depends on alpha and k)
-  notes <- character(0)
-  if (isFALSE(object$hessian_pd)) {
-    notes <- c(notes,
-      "Warning: Hessian not positive definite \u2014 standard errors may be unreliable."
-    )
-  }
+  # TICKET-056: make a false-converged fit hard to miss and name the
+  # recommended stability check. `opt$message`/`opt$convergence` (nlminb's
+  # own fields) were already stored on `object$opt`; no new fields needed.
+  notes <- .hurdle_convergence_warning_notes(
+    converged = object$converged,
+    hessian_pd = object$hessian_pd,
+    opt_message = object$opt$message,
+    opt_convergence = object$opt$convergence
+  )
   part2 <- object$param_info$part2 %||% "zhao_exponential"
   if (!identical(part2, "simplified_exponential") &&
     all(c("log_alpha", "log_k") %in% names(coefs))) {
@@ -320,6 +384,13 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
   cat("\n")
 
   cat("Convergence:", ifelse(x$converged, "Yes", "No"), "\n")
+  # TICKET-056: print the same convergence/hessian_pd warning notes
+  # summary.beezdemand_hurdle() already computed into x$notes -- previously
+  # stored but never printed by this method.
+  .print_hurdle_warning_block(grep(
+    "^Warning: Optimizer|^Warning: Hessian|^Recommended stability",
+    x$notes, value = TRUE
+  ))
   cat("Number of subjects:", x$n_subjects, "\n")
   cat("Number of observations:", x$nobs, "\n")
   cat(

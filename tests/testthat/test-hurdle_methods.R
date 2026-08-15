@@ -357,3 +357,69 @@ test_that("confint.beezdemand_hurdle: healthy fit raises no hessian_pd warning",
   )
   expect_no_warning(confint(fit))
 })
+
+
+# --- TICKET-056: surface optimizer diagnostics for false-converged fits ---
+
+test_that("TICKET-056: non-converged/non-PD hurdle fit prints optimizer diagnostics and the 2RE recommendation", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  # Mock a false-converged 3RE-style state (AI INSTRUCTIONS: a synthetic /
+  # mocked non-converged fit is acceptable; real false-convergence is
+  # dataset-dependent per the ticket's discovery record).
+  fit$converged <- FALSE
+  fit$hessian_pd <- FALSE
+  fit$opt$convergence <- 1L
+  fit$opt$message <- "false convergence (8)"
+
+  expect_output(print(fit), "false convergence")
+  expect_output(print(fit), "zeros.*q0")
+
+  s <- summary(fit)
+  expect_output(print(s), "false convergence")
+  expect_output(print(s), "zeros.*q0")
+  expect_true(any(grepl("false convergence", s$notes)))
+  expect_true(any(grepl("zeros.*q0", s$notes)))
+})
+
+test_that("TICKET-056: converged fit print/summary output is unchanged", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(fit$converged)
+  expect_true(isTRUE(fit$hessian_pd))
+
+  out <- testthat::capture_output_lines(print(fit))
+  expect_false(any(grepl("WARNING: this fit did not pass", out, fixed = TRUE)))
+  expect_false(any(grepl("Recommended stability check", out, fixed = TRUE)))
+
+  s <- summary(fit)
+  expect_false(any(grepl("^Warning: Optimizer|^Warning: Hessian|^Recommended stability", s$notes)))
+  out_s <- testthat::capture_output_lines(print(s))
+  expect_false(any(grepl("WARNING: this fit did not pass", out_s, fixed = TRUE)))
+})
+
+test_that("TICKET-056: opt$message and opt$convergence are retrievable from the fit object", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(is.character(fit$opt$message))
+  expect_true(nchar(fit$opt$message) > 0)
+  expect_true(is.numeric(fit$opt$convergence))
+})
