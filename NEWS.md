@@ -132,6 +132,21 @@ exactly, pin the previous release:
   The extraction is now wrapped end-to-end so a mid-extraction failure
   (`summary()`, `nlstools::confint2()`, `deviance()`) also degrades
   gracefully rather than only the initial `coef()` call.
+* `ExtraF()` now reports which group's per-group fit failed
+  (`"ExtraF: unable to fit group '<name>': ..."`) instead of an opaque
+  `no applicable method for 'predict' applied to an object of class
+  "try-error"`. `GetSharedK()`'s shared-k search (start-value grid
+  construction and the final `nlxb()` fit, neither of which was previously
+  guarded) is now wrapped so any internal failure reaches its designed
+  sentinel return (`"Unable to find a shared k."`) instead of escaping raw;
+  `FitCurves(k = "share")` can therefore actually reach its documented
+  fallback to `GetK()` with a warning, which previously could not fire
+  because the sentinel path was unreachable (the final `nlxb()` call was
+  never wrapped in `try()`, so the `inherits(fit, "try-error")` check after
+  it could never be true). A shared-k group set that drops below 2 usable
+  groups (after the existing <3-row-per-group drop) now returns an
+  informative sentinel instead of proceeding into a nonsensical
+  single-group contrast.
 
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 

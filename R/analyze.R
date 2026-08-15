@@ -1812,6 +1812,21 @@ ExtraF <- function(
       ),
       silent = TRUE
     )
+    # TICKET-059 (F3): an omnibus F-test cannot degrade a single failed
+    # group to an NA row the way per-subject FitCurves() can -- fail fast
+    # with an informative error naming the group, rather than letting the
+    # unguarded predict()/resid()/df.residual() calls below raise an opaque
+    # "no applicable method ... class try-error" error.
+    if (inherits(lstfits[[i]], what = "try-error")) {
+      stop(
+        sprintf(
+          "ExtraF: unable to fit group '%s': %s",
+          grps[i],
+          trim.leading(strsplit(lstfits[[i]][1], "\n")[[1]][2])
+        ),
+        call. = FALSE
+      )
+    }
     if (equation == "hs") {
       newdat[newdat$group == grps[i], "y"] <- 10^predict(
         lstfits[[i]],
@@ -2118,13 +2133,36 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     dat[dat[, sharecol] == i, "ref"] <- j
     j <- j + 1
   }
+  # TICKET-059 (F4): revalidate the usable group count after the <3-row
+  # drop above -- the initial "only one dataset" check at the top of this
+  # function cannot see this drop, so a call that started with 2+ groups can
+  # silently end up with 0 or 1 usable group by this point, which would
+  # otherwise proceed into a nonsensical single-group contrast.
+  if (length(unique(dat[, sharecol])) < 2) {
+    return(
+      "Unable to find a shared k: fewer than 2 groups have >= 3 rows after filtering."
+    )
+  }
+
   dat$ref <- as.factor(dat$ref)
 
   ## create contrasts
   dat2 <- cbind(dat, model.matrix(~ 0 + ref, dat))
   nparams <- length(unique(dat2$ref))
 
-  if (equation == "hs") {
+  # TICKET-059 (F4): the start-value grid construction below (log() of
+  # possibly-non-positive quantities -> seq() with a non-finite endpoint)
+  # and the final nlxb() fit were both unguarded -- nlxb() in particular was
+  # never wrapped in try(), so the "if (!inherits(fit, 'try-error'))" check
+  # a few lines below it could never actually fire; any internal failure
+  # escaped raw instead of reaching the designed sentinel return. Wrapping
+  # the whole search in tryCatch() guarantees GetSharedK() always returns
+  # either a numeric k or the character sentinel -- never raises -- so both
+  # ExtraF()'s try()-wrapped caller and FitCurves(k = "share")'s bare,
+  # unwrapped caller can rely on `is.character(k)` to detect failure.
+  tryCatch(
+    {
+      if (equation == "hs") {
     paramslogq0 <- paste(
       sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams),
       collapse = "+"
@@ -2404,7 +2442,10 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       sharedk <- "Unable to find a shared k."
       return(sharedk)
     }
-  }
+      }
+    },
+    error = function(e) "Unable to find a shared k."
+  )
 }
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range
