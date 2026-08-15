@@ -130,7 +130,15 @@ SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn 
 
 ##' Gets values used in SimulateDemand
 ##'
-##' Gets values used in SimulateDemand
+##' Gets values used in SimulateDemand. Per-subject residuals are matched to
+##' the returned \code{x} price columns by EXACT identity
+##' (\code{make.names(as.character(x))} -- no numeric tolerance), so a
+##' subject's price values must match the global price set bit-for-bit. A
+##' subject missing a price contributes \code{NA} for that price (tolerated
+##' by \code{sdindex}'s \code{na.rm = TRUE}); a subject with a duplicated
+##' price is rejected with an informative error naming the subject and the
+##' duplicated price(s), since duplicate rows have no well-defined single
+##' residual to place in that column.
 ##' @title Get Values for SimulateDemand
 ##' @param dat Dataframe (long form)
 ##' @return List of 3: setaparams, sdindex, x
@@ -161,6 +169,25 @@ GetValsForSim <- function(dat) {
         adf <- NULL
         adf <- dat[dat$id == participants[i], ]
         adf[, "k"] <- k
+
+        ## Codex 2B-review fold (TICKET-060 follow-up): a subject with
+        ## duplicated prices (two rows at the same x) has no well-defined
+        ## single residual per price column -- the residual-by-value
+        ## assignment below would silently overwrite one cell with the
+        ## other, corrupting sdindex with no error. Reject explicitly,
+        ## naming the subject and the duplicated price(s), rather than
+        ## silently producing a wrong sdindex.
+        if (anyDuplicated(adf$x)) {
+            dup_prices <- unique(adf$x[duplicated(adf$x)])
+            stop(
+                sprintf(
+                    "GetValsForSim: participant '%s' has duplicated price(s) %s -- residual-to-price alignment requires exactly one row per price.",
+                    participants[i],
+                    paste(dup_prices, collapse = ", ")
+                ),
+                call. = FALSE
+            )
+        }
 
         fit <- NULL
         fit <- try(nlsr::wrapnlsr(data = adf,
