@@ -7,6 +7,29 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## Monte Carlo power analysis
+
+* `power_demand()` estimates statistical power for detecting a condition
+  difference in `Q0` or `alpha`, by simulating from the package's
+  mixed-effects demand model and refitting each replicate with
+  `fit_demand_tmb()`. Supports both a two-condition within-subject design
+  (default) and, via `design_type = "between"`, a two-arm between-subject
+  design testing the group difference; the between design composes the two
+  arms from the same simulator (one condition per arm), uses `df = n - 2`,
+  and refits per-subject intercept random effects that match its
+  data-generating process exactly. Reports the power estimate with a Wilson
+  Monte Carlo confidence interval, p-value and CI-exclusion hit rates, and
+  convergence diagnostics; non-usable fits are excluded from the denominator
+  and surfaced, never counted as misses.
+* `find_n_demand()` searches for the smallest `n_subjects` reaching a target
+  power via bisection, adding replicates adaptively where the Monte Carlo
+  verdict is ambiguous and re-confirming the selected N before reporting.
+  Also takes `design_type`.
+* Type I error calibration (both designs), convergence handling, closed-form
+  benchmarks against `pwr::pwr.t.test()` (one- and two-sample), monotonicity,
+  and seed reproducibility are verified in the test suite; see
+  `vignette("power-analysis")` for scope and validity notes.
+
 ## Bug fixes that can change estimates
 
 The fixes in this subsection correct wrong numbers rather than add features, so
