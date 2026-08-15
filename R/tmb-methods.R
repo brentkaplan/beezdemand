@@ -2585,9 +2585,18 @@ VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
   if (scale == "model" && equation == "exponential") {
     # Model is on log scale; y_obs is natural. Zero rows are NA on log scale.
     y_on_scale <- ifelse(y_obs > 0, log(y_obs), NA_real_)
+  } else if (scale == "natural" && equation == "zben") {
+    # y_var for zben is LL4-transformed at fit time (the caller supplies
+    # ll4(y, lambda = 4)); back-transform it here so natural-scale residuals
+    # subtract two genuinely natural-scale quantities. Without this, y_obs
+    # stays on the LL4 scale while fitted_vals has already been
+    # back-transformed by predict(..., scale = "natural"), producing a
+    # scale-mixed residual (GH #18).
+    y_on_scale <- ll4_inv(y_obs)
   } else {
-    # exponentiated/simplified/zben on model scale (already natural), OR
-    # any equation on the natural scale.
+    # exponentiated/simplified on model scale (already natural), zben on
+    # model scale (LL4, matches y_obs as-is), OR any equation on the natural
+    # scale that needs no back-transform of y_obs.
     y_on_scale <- y_obs
   }
   list(.fitted = fitted_vals, .resid = y_on_scale - fitted_vals)

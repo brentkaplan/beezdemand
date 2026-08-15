@@ -51,6 +51,16 @@ exactly, pin the previous release:
   NLME fits built with a `custom_model_formula` the equation form is unknown,
   so `get_demand_param_emms()` now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with
   a warning instead of applying a guessed formula.
+* **`residuals(fit, scale = "natural")` was scale-mixed for `equation =
+  "zben"` in the TMB tier.** `zben`'s `y_var` is the caller-supplied
+  LL4-transformed response (`ll4(y, lambda = 4)`); the natural-scale residual
+  subtracted the natural-scale fitted value from that still-LL4-transformed
+  `y_var` instead of from `ll4_inv(y_var)`, so the "natural" residual was
+  really `LL4(y) - Q_hat_natural`. Condition under which output differs:
+  `equation = "zben"` fits only, and only `residuals(fit, scale =
+  "natural")`; `scale = "model"` (the default), `fitted()`, `predict()`, and
+  `augment()` were already correct. All other equation forms are unchanged
+  (#18).
 
 * **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
   engine).** Two interacting defects in the per-subject loop: (1) the default
