@@ -37,6 +37,10 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # TICKET-070: without this, testthat::skip_on_cran() skips ~490 call
+      # sites in every non-interactive run (CI included). cran-everything.yaml
+      # deliberately does NOT set it -- that workflow reproduces CRAN.
+      NOT_CRAN: true
       # Cap thread fan-out so the parallel testthat workers don't oversubscribe the
       # runner's cores and starve the GitHub runner agent of CPU (the documented
       # "lost-communication"/SIGTERM cause). See project_ci_oom_diagnosis.
