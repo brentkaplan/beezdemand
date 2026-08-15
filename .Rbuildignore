@@ -63,8 +63,6 @@
 ^\.env$
 ^\.vscode$
 ^\.playwright-mcp$
-^R/arg-matrix\.R$
-^tests/testthat/test-arg-matrix\.R$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$

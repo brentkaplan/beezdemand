@@ -31,6 +31,14 @@ test_that("predict default is type = 'demand' with a one-time transition message
   expect_identical(p_default$.fitted, p_demand$.fitted)
   expect_identical(p_demand$.fitted, p_demand$expected_consumption)
 
+  # the price column travels with the predictions -- the frame is unusable for
+  # plotting or scoring without it (harvested from arg-matrix, TICKET-071)
+  expect_true(all(
+    c("id", "x", ".fitted", "prob_zero", "expected_consumption") %in%
+      names(p_demand)
+  ))
+  expect_true(all(is.finite(p_demand$x)))
+
   # "response" keeps the conditional positive mean (math unchanged), and the
   # within-call marginal identity holds: demand = (1 - p0) * response
   p_resp <- predict(fit, type = "response")

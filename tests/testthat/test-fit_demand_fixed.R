@@ -214,6 +214,63 @@ test_that("fit_demand_fixed handles column name remapping", {
 
   expect_s3_class(fit, "beezdemand_fixed")
   expect_true(fit$n_total > 0)
+
+  # The remap must be recorded on the object, not just honoured during the fit
+  # -- downstream methods read these back to label output.
+  expect_identical(fit$x_var, "price")
+  expect_identical(fit$y_var, "consumption")
+  expect_identical(fit$id_var, "subject")
+})
+
+
+# Object-metadata contracts harvested from the retired arg-matrix harness
+# (TICKET-071). Each was previously asserted only there.
+
+test_that("fit_demand_fixed records agg and defaults the *_var fields", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small, agg = "Mean", k = 2)
+
+  expect_identical(fit$agg, "Mean")
+  expect_identical(fit$x_var, "x")
+  expect_identical(fit$y_var, "y")
+  expect_identical(fit$id_var, "id")
+})
+
+test_that("fit_demand_fixed results carry a converged column", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small, k = 2)
+
+  expect_true(is.data.frame(fit$results))
+  expect_true("converged" %in% names(fit$results))
+  expect_type(fit$results$converged, "logical")
+  expect_equal(nrow(fit$results), 3)
+})
+
+test_that("fit_demand_fixed fits the default HS equation in log10 param space", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+
+  fit <- fit_demand_fixed(apt_small, k = 2, param_space = "log10")
+
+  expect_s3_class(fit, "beezdemand_fixed")
+  expect_identical(fit$param_space, "log10")
+  expect_identical(fit$equation, "hs")
+  expect_equal(nrow(fit$results), 3)
+  expect_true(all(fit$results$converged))
+
+  # predict() must retain the price column alongside the fitted values.
+  # Assert rows exist first -- an empty frame would satisfy
+  # all(is.finite(numeric(0))) and pass vacuously.
+  preds <- predict(fit)
+  expect_true(all(c("x", ".fitted") %in% names(preds)))
+  expect_gt(nrow(preds), 0)
+  expect_equal(nrow(preds), nrow(apt_small))
+  expect_equal(length(unique(preds$id)), 3)
+  expect_true(all(is.finite(preds$.fitted)))
 })
 
 
