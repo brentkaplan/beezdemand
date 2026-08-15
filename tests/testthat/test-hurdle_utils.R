@@ -215,3 +215,29 @@ test_that("zhao_exponential Pmax values are finite and positive (3-RE)", {
   expect_true(all(is.finite(pars$Omax)), info = "All 3-RE Omax values should be finite")
   expect_true(all(pars$Omax > 0), info = "All 3-RE Omax values should be positive")
 })
+
+# TICKET-061: .hurdle_chol_or_fallback() must warn (classed) when it falls
+# back to an uncorrelated diagonal covariance, and stay silent when Sigma is
+# genuinely positive definite.
+
+test_that(".hurdle_chol_or_fallback warns once when Sigma is not PD", {
+  # Jointly-impossible pairwise correlations (audit mechanism repro,
+  # TICKET-061): eigenvalues 1.9, 1.9, -0.8 -> chol() errors.
+  Sigma <- matrix(c(1, .9, .9, .9, 1, -.9, .9, -.9, 1), nrow = 3)
+  sigma_diag <- c(1, 1, 1)
+
+  expect_warning(
+    L <- beezdemand:::.hurdle_chol_or_fallback(Sigma, sigma_diag),
+    class = "beezdemand_hurdle_chol_fallback_warning"
+  )
+  # Fallback is the Cholesky factor of the diagonal fallback: L'L == identity.
+  expect_equal(unname(t(L) %*% L), diag(sigma_diag), tolerance = 1e-10)
+})
+
+test_that(".hurdle_chol_or_fallback is silent for a positive-definite Sigma", {
+  Sigma <- matrix(c(1, .3, .3, 1), nrow = 2)
+  sigma_diag <- c(1, 1)
+
+  expect_no_warning(L <- beezdemand:::.hurdle_chol_or_fallback(Sigma, sigma_diag))
+  expect_equal(unname(t(L) %*% L), Sigma, tolerance = 1e-10)
+})

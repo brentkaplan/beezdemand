@@ -842,19 +842,16 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
     )
   }
 
-  # Cholesky decomposition for correlated MVN draws
-  L <- tryCatch(
-    chol(Sigma),
-    error = function(e) {
-      # Fall back to diagonal if Sigma is not PD (shouldn't happen with
-      # partial-correlation parametrization, but guard defensively)
-      if (n_re == 3) {
-        chol(diag(c(sigma_a^2, sigma_b^2, sigma_c^2)))
-      } else {
-        chol(diag(c(sigma_a^2, sigma_b^2)))
-      }
-    }
-  )
+  # Cholesky decomposition for correlated MVN draws. Sigma is not PD only
+  # in near-boundary/overflow cases (partial-correlation parametrization
+  # guarantees PD for finite raws); .hurdle_chol_or_fallback() warns and
+  # substitutes an uncorrelated covariance when it fires (TICKET-061).
+  sigma_diag <- if (n_re == 3) {
+    c(sigma_a^2, sigma_b^2, sigma_c^2)
+  } else {
+    c(sigma_a^2, sigma_b^2)
+  }
+  L <- .hurdle_chol_or_fallback(Sigma, sigma_diag)
 
   # Draw correlated random effects via Z %*% L where Z ~ iid N(0,1)
   draw_fn <- function() {

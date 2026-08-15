@@ -6,6 +6,41 @@ NULL
 # Internal Helper Functions for Hurdle Models
 # ==============================================================================
 
+#' Cholesky Decomposition with Non-PD Fallback
+#'
+#' @description
+#' Internal helper shared by the RE-transform and marginal-prediction code
+#' paths. Attempts `chol(Sigma)`; if `Sigma` is not positive definite (`chol()`
+#' errors — near-boundary rhos, overflow, or `tanh(raw)` rounding to exactly
+#' +/-1), falls back to the Cholesky factor of an uncorrelated diagonal
+#' covariance built from `sigma_diag` and emits ONE classed warning, since the
+#' returned/reported correlation estimates no longer describe the transformed
+#' random effects or marginal draws that result (TICKET-061).
+#'
+#' @param Sigma A candidate covariance matrix.
+#' @param sigma_diag Numeric vector of per-RE variances for the diagonal
+#'   fallback (length must equal `nrow(Sigma)`).
+#'
+#' @return The upper-triangular Cholesky factor of `Sigma`, or of the
+#'   diagonal fallback when `Sigma` is not positive definite.
+#' @keywords internal
+.hurdle_chol_or_fallback <- function(Sigma, sigma_diag) {
+  tryCatch(
+    chol(Sigma),
+    error = function(e) {
+      cli::cli_warn(c(
+        "!" = "Estimated random-effects covariance is not positive definite.",
+        "i" = paste(
+          "Falling back to an uncorrelated approximation for subject-level",
+          "effects / marginal predictions."
+        ),
+        "i" = "Reported correlation estimates do not apply to these outputs."
+      ), class = c("beezdemand_hurdle_chol_fallback_warning", "beezdemand_warning"))
+      chol(diag(sigma_diag, nrow = length(sigma_diag)))
+    }
+  )
+}
+
 #' Prepare Hurdle Model Data
 #'
 #' @description
@@ -326,13 +361,7 @@ NULL
       nrow = 3
     )
 
-    L <- tryCatch(
-      t(chol(Sigma)),
-      error = function(e) {
-        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2, sigma_c^2), nrow = 3)
-        t(chol(Sigma_fallback))
-      }
-    )
+    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2, sigma_c^2)))
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
   } else {
@@ -346,13 +375,7 @@ NULL
       nrow = 2
     )
 
-    L <- tryCatch(
-      t(chol(Sigma)),
-      error = function(e) {
-        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2), nrow = 2)
-        t(chol(Sigma_fallback))
-      }
-    )
+    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2)))
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i")
   }
@@ -984,15 +1007,11 @@ fit_demand_hurdle <- function(
       nrow = 3
     )
 
-    L <- tryCatch(
-      t(chol(Sigma)),
-      error = function(e) {
-        # Numeric stability: rho parameters can imply a non-PD correlation matrix.
-        # Fall back to an uncorrelated covariance to allow downstream reporting.
-        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2, sigma_c^2), nrow = 3)
-        t(chol(Sigma_fallback))
-      }
-    )
+    # Numeric stability: rho parameters can imply a non-PD correlation matrix
+    # (near-boundary rhos, overflow, tanh() rounding to +/-1). On failure,
+    # .hurdle_chol_or_fallback() warns and substitutes an uncorrelated
+    # covariance so downstream reporting can proceed (TICKET-061).
+    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2, sigma_c^2)))
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
 
@@ -1095,13 +1114,7 @@ fit_demand_hurdle <- function(
       nrow = 2
     )
 
-    L <- tryCatch(
-      t(chol(Sigma)),
-      error = function(e) {
-        Sigma_fallback <- diag(c(sigma_a^2, sigma_b^2), nrow = 2)
-        t(chol(Sigma_fallback))
-      }
-    )
+    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2)))
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i")
 

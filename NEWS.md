@@ -213,6 +213,23 @@ exactly, pin the previous release:
   never touched the RNG (`RunOneSim()` previously read `.Random.seed`
   unconditionally, which does not exist until the RNG has been used once).
 
+## Silent-failure fixes (hurdle, cross-price, extractors, plots)
+
+* **Hurdle random-effects covariance `chol()` failure silently substituted an
+  uncorrelated diagonal Sigma at five sites** (the RE-transform helpers, the
+  live `fit_demand_hurdle()` inline path for 2- and 3-RE models, and
+  `.compute_marginal_demand()`'s Monte Carlo draws). When the assembled
+  covariance was not positive definite (near-boundary rhos, overflow, or
+  `tanh(raw)` rounding to exactly +/-1), subject-level effects and marginal
+  demand curves were silently computed from zeroed correlations while the
+  reported `correlations`/summary rho estimates continued to show the fitted
+  values. All five sites now share `.hurdle_chol_or_fallback()`, which emits
+  one classed warning (`beezdemand_hurdle_chol_fallback_warning`) when the
+  fallback fires. Condition under which output differs: only calls where the
+  assembled Sigma is not positive definite (rare given the partial-correlation
+  parameterization); healthy (PD) fits are bit-identical and silent
+  (TICKET-061).
+
 ## Legacy fitter robustness (batch failures)
 
 * `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =
