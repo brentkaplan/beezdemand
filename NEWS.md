@@ -7,6 +7,28 @@ and group-metrics conditioning. The "TMB mixed-effects modeling tier"
 section below is the original 0.3.0 introduction; subsequent sections
 cover TICKET-011 phase work added under this development cycle.
 
+## Bug fixes that can change estimates
+
+The fixes in this subsection correct wrong numbers rather than add features, so
+outputs can differ from 0.2.0 under the stated conditions. Single-subject fits
+and paths that were already correct are unchanged. To reproduce the old numbers
+exactly, pin the previous release:
+`remotes::install_version("beezdemand", "0.2.0")`.
+
+* **Essential value (EV) in `boot_demand()` and `get_demand_param_emms()`.**
+  The TMB and NLME tiers computed `EV = 1 / (100 * alpha)` for every equation
+  form, silently dropping the `k^1.5` term for k-bearing forms and applying a
+  spurious factor of 100 to the k-free SND form. Both now mirror `analyze.R`
+  exactly: `EV = 1 / (100 * alpha * k^1.5)` for k-bearing forms (exponential /
+  exponentiated, with `k` fixed or fitted) and `EV = 1 / alpha` for the SND
+  ("simplified" / `zben`) form. Condition under which output differs: every
+  `EV` point estimate, CI, and bootstrap draw from these two functions; `Pmax`,
+  `Omax`, `Qmax`, and `elasticity_at_pmax` are unaffected. `FitCurves()` /
+  `fit_demand_fixed()` EV values were already correct and do not change. For
+  NLME fits built with a `custom_model_formula` the equation form is unknown,
+  so `get_demand_param_emms()` now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with
+  a warning instead of applying a guessed formula.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a

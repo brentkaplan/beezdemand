@@ -245,13 +245,43 @@ test_that("boot_demand runs on k-fixed and k-estimated fits", {
   fit_kfix <- fit_demand_tmb(
     apt, equation = "exponential", estimate_k = FALSE, k = 2, verbose = 0
   )
-  r_kest <- boot_demand(fit_kest, statistics = c("Pmax", "Omax"), R = 200, seed = 1)
-  r_kfix <- boot_demand(fit_kfix, statistics = c("Pmax", "Omax"), R = 200, seed = 1)
+  r_kest <- boot_demand(fit_kest, statistics = c("Pmax", "Omax", "EV"), R = 200, seed = 1)
+  r_kfix <- boot_demand(fit_kfix, statistics = c("Pmax", "Omax", "EV"), R = 200, seed = 1)
 
   expect_true(all(is.finite(r_kest$conf.low)))
   expect_true(all(is.finite(r_kest$conf.high)))
   expect_true(all(is.finite(r_kfix$conf.low)))
   expect_true(all(is.finite(r_kfix$conf.high)))
+
+  # EV pinned INDEPENDENTLY of the production helpers: k-fixed uses the k that
+  # was supplied (2), k-estimated uses exp(log_k) straight from the coefficient
+  # vector; alpha is exp(beta_alpha) (intercept-only fits). Point estimates AND
+  # the empirical-quantile bounds are recomputed from the same parametric draws
+  # so the draw-level k_draw^1.5 term is checked, not just the point value.
+  ev_of <- function(alpha, k) 1 / (100 * alpha * k^1.5)
+  a_kfix <- exp(fit_kfix$model$coefficients[["beta_alpha"]])
+  expect_equal(r_kfix$estimate[r_kfix$statistic == "EV"], ev_of(a_kfix, 2),
+               tolerance = 1e-8)
+  a_kest <- exp(fit_kest$model$coefficients[["beta_alpha"]])
+  k_kest <- exp(fit_kest$model$coefficients[["log_k"]])
+  expect_equal(r_kest$estimate[r_kest$statistic == "EV"], ev_of(a_kest, k_kest),
+               tolerance = 1e-8)
+
+  d_kfix <- beezdemand:::.tmb_parametric_draws(fit_kfix, R = 200, seed = 1)
+  ev_draws_kfix <- ev_of(exp(d_kfix[, "beta_alpha"]), 2)
+  q_kfix <- stats::quantile(ev_draws_kfix, c(0.025, 0.975), names = FALSE)
+  expect_equal(r_kfix$conf.low[r_kfix$statistic == "EV"], q_kfix[1], tolerance = 1e-8)
+  expect_equal(r_kfix$conf.high[r_kfix$statistic == "EV"], q_kfix[2], tolerance = 1e-8)
+
+  d_kest <- beezdemand:::.tmb_parametric_draws(fit_kest, R = 200, seed = 1)
+  ev_draws_kest <- ev_of(exp(d_kest[, "beta_alpha"]), exp(d_kest[, "log_k"]))
+  q_kest <- stats::quantile(ev_draws_kest, c(0.025, 0.975), names = FALSE)
+  expect_equal(r_kest$conf.low[r_kest$statistic == "EV"], q_kest[1], tolerance = 1e-8)
+  expect_equal(r_kest$conf.high[r_kest$statistic == "EV"], q_kest[2], tolerance = 1e-8)
+  # k-estimated and k-fixed must NOT coincide (they use different k)
+  expect_false(isTRUE(all.equal(
+    r_kest$estimate[r_kest$statistic == "EV"], r_kfix$estimate[r_kfix$statistic == "EV"]
+  )))
 })
 
 # --- 10. at = filters to a single condition ----------------------------------

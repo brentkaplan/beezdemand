@@ -618,8 +618,21 @@ get_demand_param_emms.beezdemand_nlme <- function(
       #     own "simplified" branch has no k term and no /100 -- EV = 1 / alpha_natural.
       eq_form <- fit_obj$formula_details$equation_form_selected
       has_k <- identical(eq_form, "exponentiated")
+      # A user-supplied `custom_model_formula` overrides the built-in equation
+      # while `equation_form_selected` keeps its (default) value, so the EV
+      # branch cannot know whether the fitted model is k-bearing. Report NA
+      # rather than a guessed formula.
+      custom_formula_used <- !is.null(fit_obj$call$custom_model_formula)
 
-      combined_estimates <- if (has_k) {
+      combined_estimates <- if (custom_formula_used) {
+        warning(
+          "EV is not computed for fits with a `custom_model_formula` ",
+          "(equation form unknown); EV, LCL_EV and UCL_EV are NA.",
+          call. = FALSE
+        )
+        combined_estimates |>
+          dplyr::mutate(EV = NA_real_, LCL_EV = NA_real_, UCL_EV = NA_real_)
+      } else if (has_k) {
         k_val <- fit_obj$param_info$k
         combined_estimates |>
           dplyr::mutate(
