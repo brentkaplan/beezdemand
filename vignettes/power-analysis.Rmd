@@ -106,7 +106,13 @@ table(res$replicates$status)
 for the smallest N whose estimated power reaches the target. The search is
 aware of Monte Carlo noise: at each candidate N it adds replicates until the
 Wilson interval falls clearly above or below the target (up to `n_sim_max`),
-and it re-evaluates the selected N and its lower neighbor before reporting.
+and it re-evaluates the selected N and its lower neighbor (or the lower bound
+itself, when the target is already met there) before reporting. Bisection
+assumes power is monotone in N; because each N is judged from independent
+replicates, a fluctuation at a lower N can hide a crossing the search never
+revisits. Evaluated N that contradict monotonicity demote the status to
+`uncertain`, but never-visited N cannot be checked -- so treat the result as
+an estimate and confirm it with a large `n_sim` at the chosen N.
 
 ```{r find-n}
 search <- find_n_demand(

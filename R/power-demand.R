@@ -1108,6 +1108,14 @@ print.beezdemand_power <- function(x, ...) {
 
   ev_lo <- eval_n(lo)
   if (ev_lo$above) {
+    # The lower bound gets the same fresh-replicate reconfirmation as any
+    # selected N: a single look that happened to clear the target is not
+    # evidence enough to report it. No lower neighbour exists inside
+    # `n_range`, so minimality is NOT claimed ("at_lower_bound").
+    conf_lo <- eval_n(lo)
+    if (!conf_lo$above) {
+      return(finish(NA_integer_, "unresolved", TRUE))
+    }
     return(finish(lo, "at_lower_bound", any_uncertain))
   }
 
@@ -1130,7 +1138,21 @@ print.beezdemand_power <- function(x, ...) {
     return(finish(NA_integer_, "unresolved", TRUE))
   }
   conf_lo_above <- if (hi - 1 >= n_range[1]) eval_n(hi - 1)$above else FALSE
-  status <- if (conf_lo_above || any_uncertain) "uncertain" else "confirmed"
+  # Bisection assumes power is monotone in N. Each N is judged from its own
+  # independent replicates, so an evaluated N below the selected one that
+  # nevertheless read "above" contradicts the assumption -- the search may
+  # have stepped past a lower crossing. Report that as uncertain rather than
+  # confirmed. (Only evaluated N can be checked; N never visited cannot be.)
+  evaluated <- dplyr::bind_rows(evals)
+  lower_above <- any(
+    evaluated$n_subjects < hi &
+      evaluated$decision %in% c("above", "ambiguous_above")
+  )
+  status <- if (conf_lo_above || lower_above || any_uncertain) {
+    "uncertain"
+  } else {
+    "confirmed"
+  }
 
   finish(hi, status, any_uncertain || status != "confirmed")
 }
@@ -1151,6 +1173,18 @@ print.beezdemand_power <- function(x, ...) {
 #' not an exact bound. For grant-quality reporting, rerun [power_demand()] at
 #' the returned `n` with a large `n_sim` (2000+) and report that estimate
 #' with its Monte Carlo confidence interval.
+#'
+#' **Monotonicity assumption.** Bisection presumes that power is
+#' non-decreasing in `n_subjects`. Because every evaluated N is judged from
+#' its own independent replicates (and a convergence-conditioned
+#' denominator), a Monte Carlo fluctuation can make a lower N read "below"
+#' when its true power is above the target, so the search may step past a
+#' lower crossing that it never revisits. Evaluated N that contradict the
+#' assumption (a lower N reading "above" the selected N) demote the status to
+#' `"uncertain"`; N that were never evaluated cannot be checked. Widen
+#' `n_sim`/`n_sim_max` when the reported `n` matters. When the target is
+#' already met at `n_range[1]`, that bound is likewise re-evaluated with
+#' fresh replicates before `"at_lower_bound"` is reported.
 #'
 #' @param target_power Target power in (0, 1).
 #' @inheritParams power_demand
@@ -1178,10 +1212,12 @@ print.beezdemand_power <- function(x, ...) {
 #'     \item{target_power}{As supplied.}
 #'     \item{status}{`"confirmed"` (selected N re-confirmed above target and
 #'       N - 1 below), `"uncertain"` (a decision relied on a point estimate,
-#'       or N - 1 also cleared the target on reconfirmation so the returned
-#'       N may not be minimal), `"unresolved"` (the selected N failed its
+#'       N - 1 also cleared the target on reconfirmation, or an evaluated
+#'       lower N read above the target -- so the returned N may not be
+#'       minimal), `"unresolved"` (the selected N failed its
 #'       own reconfirmation; `n` is `NA`), or `"at_lower_bound"` (the target
-#'       was already met at `n_range[1]`; smaller N was not explored). These
+#'       was already met at `n_range[1]` on two independent looks; smaller N
+#'       was not explored -- widen `n_range` downward if that matters). These
 #'       labels describe a heuristic Monte Carlo decision rule -- repeated
 #'       looks at ordinary Wilson intervals across several N -- not a formal
 #'       sequential error guarantee.}

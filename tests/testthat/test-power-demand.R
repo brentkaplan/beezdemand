@@ -949,6 +949,10 @@ test_that("find_n_demand finds a plausible minimum N for a large effect", {
   # MC noise.
   sel <- res$evaluations[res$evaluations$n_subjects == res$n, ]
   expect_gte(max(sel$power), 0.7)
+  # The final (confirmation) look at the selected N must have cleared the
+  # target -- decisively, or by point estimate when flagged uncertain.
+  expect_true(sel$decision[nrow(sel)] %in% c("above", "ambiguous_above"))
+  if (!res$uncertain) expect_equal(sel$decision[nrow(sel)], "above")
   expect_output(print(res), "Monte Carlo uncertainty|minimum")
 })
 
@@ -1084,6 +1088,48 @@ test_that("a failed confirmation returns NA with status unresolved", {
       }
     }
     base(n, batch_size, sim_offset)
+  }
+  res <- suppressWarnings(beezdemand:::.power_find_n_search(
+    stateful,
+    target_power = 0.8,
+    n_range = c(4, 12),
+    n_sim = 200,
+    n_sim_max = 400,
+    verbose = FALSE
+  ))
+  expect_equal(res$n, NA_integer_)
+  expect_equal(res$status, "unresolved")
+  expect_equal(res$uncertain, TRUE)
+})
+
+test_that("the lower bound is reconfirmed with fresh replicates before at_lower_bound", {
+  # Both hi and lo clear the target: the search must re-evaluate lo (a
+  # second row for n_subjects == 4) rather than trust a single look, so the
+  # "re-confirmed before reporting" claim in the docs holds for this exit too.
+  res <- beezdemand:::.power_find_n_search(
+    fake_batch(list(`4` = 0.99, `12` = 0.99)),
+    target_power = 0.8,
+    n_range = c(4, 12),
+    n_sim = 200,
+    n_sim_max = 400,
+    verbose = FALSE
+  )
+  expect_equal(res$n, 4)
+  expect_equal(res$status, "at_lower_bound")
+  expect_equal(res$uncertain, FALSE)
+  expect_equal(sum(res$evaluations$n_subjects == 4), 2L)
+})
+
+test_that("a lower bound that fails reconfirmation returns NA / unresolved", {
+  calls <- new.env()
+  calls$n4 <- 0L
+  stateful <- function(n, batch_size, sim_offset) {
+    if (n == 4) {
+      calls$n4 <- calls$n4 + 1L
+      rate <- if (calls$n4 > 1L) 0.1 else 0.99
+      return(fake_batch(setNames(list(rate), "4"))(n, batch_size, sim_offset))
+    }
+    fake_batch(list(`12` = 0.99))(n, batch_size, sim_offset)
   }
   res <- suppressWarnings(beezdemand:::.power_find_n_search(
     stateful,
