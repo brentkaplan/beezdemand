@@ -156,7 +156,7 @@ test_that("get_demand_param_emms returns correct types for all columns", {
 })
 
 
-test_that("get_demand_param_emms includes EV when requested", {
+test_that("get_demand_param_emms includes EV when requested (k-free 'simplified' form: EV = 1/alpha)", {
   skip_on_cran()
 
   test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
@@ -184,6 +184,90 @@ test_that("get_demand_param_emms includes EV when requested", {
   # EV should be numeric and positive
   expect_true(all(is.numeric(emms$EV)))
   expect_true(all(emms$EV > 0))
+
+  # "simplified" is a k-free (SND) equation form: EV must match analyze.R's
+  # own "simplified"-branch formula, 1/alpha (no k, no /100) -- NOT the
+  # historical buggy 1/(100*alpha).
+  expect_equal(emms$EV, 1 / emms$alpha_natural, tolerance = 1e-8)
+  expect_false(isTRUE(all.equal(emms$EV, 1 / (100 * emms$alpha_natural))))
+})
+
+
+test_that("get_demand_param_emms EV matches analyze.R's literature formula for the k-bearing 'exponentiated' form", {
+  skip_on_cran()
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  k_supplied <- 3
+
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "exponentiated",
+    k = k_supplied
+  )
+
+  emms <- get_demand_param_emms(
+    fit,
+    factors_in_emm = "factor1",
+    include_ev = TRUE
+  )
+
+  expect_true("EV" %in% names(emms))
+  expect_equal(fit$param_info$k, k_supplied)
+
+  # k-bearing form: EV must match analyze.R's literature (Hursh & Silberberg)
+  # formula, 1/(100*alpha*k^1.5) -- NOT the historical dropped-k 1/(100*alpha).
+  expect_equal(
+    emms$EV, 1 / (100 * emms$alpha_natural * (k_supplied^1.5)),
+    tolerance = 1e-8
+  )
+  expect_false(isTRUE(all.equal(emms$EV, 1 / (100 * emms$alpha_natural))))
+
+  # CI bounds: EV is decreasing in alpha (k fixed), so the bounds swap exactly.
+  expect_equal(
+    emms$LCL_EV, 1 / (100 * emms$UCL_alpha_natural * (k_supplied^1.5)),
+    tolerance = 1e-8
+  )
+  expect_equal(
+    emms$UCL_EV, 1 / (100 * emms$LCL_alpha_natural * (k_supplied^1.5)),
+    tolerance = 1e-8
+  )
+  expect_true(all(emms$LCL_EV <= emms$EV & emms$EV <= emms$UCL_EV))
+})
+
+
+test_that("get_demand_param_emms EV is NA (with a warning) for custom_model_formula fits", {
+  skip_on_cran()
+
+  # A custom formula makes the equation form unknowable to the EV branch:
+  # `equation_form_selected` keeps its default ("zben") even though the fitted
+  # model may be k-bearing. The honest output is NA, not a guessed formula.
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 2)
+  test_data$y_ll4 <- ll4(test_data$y)
+  fit <- fit_demand_mixed(
+    data = test_data,
+    y_var = "y_ll4",
+    x_var = "x",
+    id_var = "id",
+    factors = "factor1",
+    equation_form = "zben",
+    custom_model_formula = "y_ll4 ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)"
+  )
+  skip_if(inherits(fit$model, "try-error") || is.null(fit$model), "custom-formula NLME fit failed")
+
+  expect_warning(
+    emms <- get_demand_param_emms(fit, factors_in_emm = "factor1", include_ev = TRUE),
+    "custom_model_formula"
+  )
+  expect_true("EV" %in% names(emms))
+  expect_true(all(is.na(emms$EV)))
+  expect_true(all(is.na(emms$LCL_EV)))
+  expect_true(all(is.na(emms$UCL_EV)))
+  # alpha itself is still reported
+  expect_true(all(is.finite(emms$alpha_natural)))
 })
 
 
