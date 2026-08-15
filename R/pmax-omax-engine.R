@@ -474,6 +474,103 @@ NULL
   )
 }
 
+#' Numerical Pmax via Optimization with Adaptive Domain Expansion
+#'
+#' @description
+#' Some demand curves -- notably zben's LL4-scale exponential decay
+#' back-transformed to the natural expenditure curve -- can have an
+#' unconstrained expenditure-maximizing price well beyond the subject's
+#' observed price range. [.pmax_numerical()] alone then silently returns the
+#' domain edge as "Pmax": not the curve's true maximizer, and not stable
+#' across subjects/fits observed through different price ranges (Codex
+#' review of GH #19). This wraps [.pmax_numerical()] with an adaptive,
+#' doubling-decade search: starting from `price_range`, if the optimum sits
+#' within 1% of the current upper bound, the upper bound is multiplied by
+#' 10 and the search repeated, up to `max_expansions` times.
+#'
+#' A wider search interval is only ever adopted when it does not regress
+#' `omax` relative to the best result found so far. This guards against a
+#' known `stats::optimize()` failure mode on this curve shape: when the
+#' search interval becomes very large relative to the true (interior) peak,
+#' golden-section search can converge to the interval's right edge with a
+#' near-zero objective instead of the real peak, which would otherwise look
+#' identical to "boundary, keep expanding" and drive the search away from
+#' the already-found correct answer.
+#'
+#' @param expenditure_fn Function E(p) returning expenditure at price p.
+#' @param price_range Numeric vector c(min, max); the observed/starting
+#'   domain.
+#' @param max_expansions Integer; maximum number of 10x expansions of the
+#'   upper bound (default 6, i.e. up to a 10^6 increase over the starting
+#'   upper bound).
+#' @return List with pmax, omax, method, is_boundary, success, note, and
+#'   n_expansions (count of 10x expansions actually adopted/attempted).
+#'   `method` is `"numerical_optimize_expanded"` whenever at least one
+#'   expansion was attempted; `is_boundary` is TRUE only when the maximum
+#'   number of expansions was reached and the optimum still sits at the
+#'   (expanded) upper bound, i.e. the true maximizer was not found.
+#' @keywords internal
+.pmax_numerical_expand <- function(expenditure_fn, price_range,
+                                   max_expansions = 6L) {
+  if (is.null(price_range) || length(price_range) < 2 || anyNA(price_range)) {
+    result <- .pmax_numerical(expenditure_fn, price_range)
+    result$n_expansions <- 0L
+    return(result)
+  }
+
+  lower <- price_range[1]
+  upper <- price_range[2]
+
+  best <- .pmax_numerical(expenditure_fn, c(lower, upper))
+  if (!isTRUE(best$success)) {
+    best$n_expansions <- 0L
+    return(best)
+  }
+
+  best_upper <- upper
+  n_expansions <- 0L
+
+  repeat {
+    near_upper <- isTRUE((best_upper - best$pmax) <= 0.01 * best_upper)
+    if (!near_upper || n_expansions >= max_expansions) break
+
+    upper <- upper * 10
+    n_expansions <- n_expansions + 1L
+    candidate <- .pmax_numerical(expenditure_fn, c(lower, upper))
+
+    if (isTRUE(candidate$success) &&
+          (!is.finite(best$omax) || candidate$omax >= best$omax - 1e-8)) {
+      best <- candidate
+      best_upper <- upper
+    } else {
+      # The wider interval did not improve on the previous best (or the
+      # search failed outright) -- keep the previous, narrower result and
+      # stop expanding rather than chase a numerically unstable optimize()
+      # call on an over-wide interval.
+      break
+    }
+  }
+
+  near_upper_final <- isTRUE((best_upper - best$pmax) <= 0.01 * best_upper)
+  best$is_boundary <- near_upper_final && n_expansions >= max_expansions
+  if (n_expansions > 0L) {
+    best$method <- "numerical_optimize_expanded"
+  }
+  best$n_expansions <- n_expansions
+  best$note <- if (isTRUE(best$is_boundary)) {
+    sprintf(
+      paste0(
+        "Maximum not found after expanding the search domain up to %sx ",
+        "the starting upper bound; Pmax/Omax may be underestimated."
+      ),
+      format(10^max_expansions, scientific = FALSE)
+    )
+  } else {
+    NULL
+  }
+  best
+}
+
 # ==============================================================================
 # ELASTICITY CALCULATION
 # ==============================================================================
@@ -620,12 +717,16 @@ NULL
 #' (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
 #' observed (row-wise) metrics. Handles parameter-space conversions transparently.
 #'
-#' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd", "simplified", or NULL
+#' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd",
+#'   "simplified", "zben", or NULL
 #' @param params Named list of parameters. Names depend on model_type:
 #'   - hs/koff: alpha, q0, k
 #'   - hurdle: alpha, q0, k (note: hurdle uses different formula)
 #'   - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 #'   - snd/simplified: alpha, q0
+#'   - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
+#'     only -- requires `price_obs` / `price_range` for the numerical search
+#'     domain; see [.pmax_numerical()])
 #' @param param_scales Named list mapping parameter names to their input scales:
 #'   "natural", "log", or "log10". Default assumes all natural.
 #' @param expenditure_fn Optional function E(p) for numerical fallback. If NULL
@@ -907,17 +1008,42 @@ beezdemand_calc_pmax_omax <- function(
         demand_fn <- function(p) {
           q0_nat * exp(-alpha_nat * q0_nat * p)
         }
+      } else if (model_type_lower == "zben") {
+        # zben (zero-bounded exponential, TMB tier): the fitted curve is an
+        # exponential decay on the LL4-transformed response,
+        #   y_ll4(p) = log10(Q0) * exp(-rate * p), rate = (alpha/log10(Q0))*Q0
+        # (matching eqn_type == 3 in src/MixedDemand.h and
+        # .tmb_predict_equation()'s "zben" branch). Its (Q0, alpha) coupling
+        # differs from SND, and there is no closed-form Pmax/Omax on the
+        # natural (back-transformed) expenditure curve, so this always falls
+        # through to the numerical fallback below (GH #19). The same
+        # positive-minimum clamp used at fit/predict time guards against the
+        # Q0_log10 -> 0 singularity.
+        demand_fn <- function(p) {
+          q0_log10 <- pmax(log10(q0_nat), 1e-3)
+          rate <- (alpha_nat / q0_log10) * q0_nat
+          ll4_inv(q0_log10 * exp(-rate * p))
+        }
       }
-      
+
       if (!is.null(demand_fn)) {
         expenditure_fn <- function(p) p * demand_fn(p)
       }
     }
     
-    # Use numerical optimization
+    # Use numerical optimization. zben's unconstrained expenditure maximum
+    # can sit well beyond the observed price domain (Codex review of GH
+    # #19); its numerical search adaptively expands the domain instead of
+    # silently returning the observed-domain edge as Pmax. Other model
+    # types reaching this fallback (e.g. hurdle when analytic fails) keep
+    # the plain observed-domain search, unchanged from before.
     if (!is.null(expenditure_fn) && !is.null(price_range)) {
-      num_result <- .pmax_numerical(expenditure_fn, price_range)
-      
+      num_result <- if (identical(model_type_lower, "zben")) {
+        .pmax_numerical_expand(expenditure_fn, price_range)
+      } else {
+        .pmax_numerical(expenditure_fn, price_range)
+      }
+
       if (num_result$success) {
         result$pmax_model <- num_result$pmax
         result$omax_model <- num_result$omax

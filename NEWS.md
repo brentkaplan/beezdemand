@@ -51,6 +51,43 @@ exactly, pin the previous release:
   NLME fits built with a `custom_model_formula` the equation form is unknown,
   so `get_demand_param_emms()` now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with
   a warning instead of applying a guessed formula.
+* **`residuals(fit, scale = "natural")` was scale-mixed for `equation =
+  "zben"` in the TMB tier.** `zben`'s `y_var` is the caller-supplied
+  LL4-transformed response (`ll4(y, lambda = 4)`); the natural-scale residual
+  subtracted the natural-scale fitted value from that still-LL4-transformed
+  `y_var` instead of from `ll4_inv(y_var)`, so the "natural" residual was
+  really `LL4(y) - Q_hat_natural`. Condition under which output differs:
+  `equation = "zben"` fits only, and only `residuals(fit, scale =
+  "natural")`; `scale = "model"` (the default), `fitted()`, `predict()`, and
+  `augment()` were already correct. All other equation forms are unchanged
+  (#18).
+* **`equation = "zben"` per-subject and group `Pmax`/`Omax` used the SND
+  closed form in the TMB tier.** `get_subject_pars()` (both the fit-time and
+  the `expanded = TRUE` computation), `calc_group_metrics()`, and
+  `boot_demand()` passed `zben` fits through `model_type = "snd"`, i.e.
+  `Pmax = 1 / (alpha * Q0)`. That closed form assumes SND's `(Q0, alpha)`
+  coupling, which does not hold for `zben`'s LL4-scale exponential decay;
+  stored `Pmax` was up to ~3.4x too small at the median and rank-inverted
+  relative to the true expenditure-maximizing price. All four call sites now
+  numerically optimize expenditure on the back-transformed (`ll4_inv()`-ed)
+  natural-scale curve via `beezdemand_calc_pmax_omax(model_type = "zben")`.
+  That numerical search also adaptively expands beyond the observed price
+  domain (up to 6 decades) when the true expenditure-maximizing price lies
+  outside it, rather than silently returning the domain edge as `Pmax` (the
+  fix as first landed still had this domain-truncation defect; two curves
+  observed through different price ranges could report different `Pmax` for
+  an otherwise-identical fitted curve). `get_subject_pars()` and
+  `calc_group_metrics()` gain a `pmax_at_bound` field/column, `TRUE` only
+  when the search's expansion cap was hit without finding the true
+  (interior) maximum, in which case `Pmax`/`Omax` are a lower-bound
+  estimate rather than a converged value; `boot_demand()` does not gain a
+  `pmax_at_bound` column (its output schema is unchanged) but emits a
+  `cli::cli_warn()` naming the count of affected bootstrap draws when any
+  occur among a requested `Pmax`/`Omax`/`Qmax`/`elasticity_at_pmax`
+  statistic. Condition under which output differs: `equation = "zben"` fits
+  only; `Pmax`, `Omax`, and (where reported) `Qmax` and
+  `elasticity_at_pmax` from `get_subject_pars()`, `calc_group_metrics()`,
+  and `boot_demand()`. All other equation forms are unchanged (#19).
 
 * **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
   engine).** Two interacting defects in the per-subject loop: (1) the default

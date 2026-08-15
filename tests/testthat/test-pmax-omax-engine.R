@@ -520,3 +520,88 @@ test_that("Analytic Pmax succeeds above threshold and is NA below threshold", {
   expect_false(.pmax_analytic_hurdle(0.5, hu_thr)$success)
   expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr)$success)
 })
+
+# --- zben adaptive domain expansion (Codex review of GH #19, BLOCKING) ------
+#
+# zben's numerical fallback searched only the observed price domain. A
+# curve whose true (unconstrained) expenditure-maximizing price lies beyond
+# that domain then silently reported the domain boundary as "Pmax" --
+# different observed ranges for the identical underlying curve produced
+# different stored Pmax. The engine now adaptively expands the search
+# domain (10x per step, up to a fixed cap) when the optimum sits at the
+# current upper bound.
+#
+# .zben_expenditure_natural() / .zben_truth() are defined in
+# helper-zben-truth.R (shared with test-fit_demand_tmb.R and
+# test-boot-demand.R).
+
+test_that("zben Pmax expands beyond a domain-truncating observed range to the true maximum", {
+  q0 <- 10
+  alpha <- 0.001
+
+  truth <- .zben_truth(q0, alpha, upper = 1e5)
+
+  res_narrow <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = alpha, q0 = q0),
+    param_scales = list(alpha = "natural", q0 = "natural"),
+    price_obs = c(0, 20)
+  )
+
+  expect_equal(res_narrow$pmax_model, truth$maximum, tolerance = 1e-2)
+  expect_equal(res_narrow$omax_model, truth$objective, tolerance = 1e-2)
+
+  # Regression guard for the pre-fix bug: the domain-truncated boundary
+  # value (~20) must NOT be what is returned.
+  expect_false(isTRUE(all.equal(res_narrow$pmax_model, 20, tolerance = 1e-2)))
+})
+
+test_that("zben Pmax is invariant to the observed price domain for the same curve", {
+  q0 <- 10
+  alpha <- 0.001
+
+  res_20 <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = alpha, q0 = q0),
+    param_scales = list(alpha = "natural", q0 = "natural"),
+    price_obs = c(0, 20)
+  )
+  res_100 <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = alpha, q0 = q0),
+    param_scales = list(alpha = "natural", q0 = "natural"),
+    price_obs = c(0, 100)
+  )
+
+  # Pre-fix bug: these returned 20 and 100 respectively (the two different
+  # domain boundaries) for the identical underlying curve.
+  expect_equal(res_20$pmax_model, res_100$pmax_model, tolerance = 1e-2)
+  expect_equal(res_20$omax_model, res_100$omax_model, tolerance = 1e-2)
+  expect_false(isTRUE(all.equal(res_20$pmax_model, 20, tolerance = 1e-2)))
+  expect_false(isTRUE(all.equal(res_100$pmax_model, 100, tolerance = 1e-2)))
+})
+
+test_that("zben Pmax reports method_model = numerical_optimize_expanded and is_boundary_model FALSE when the true max is found", {
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = 0.001, q0 = 10),
+    param_scales = list(alpha = "natural", q0 = "natural"),
+    price_obs = c(0, 20)
+  )
+  expect_identical(res$method_model, "numerical_optimize_expanded")
+  expect_false(isTRUE(res$is_boundary_model))
+})
+
+test_that("zben Pmax flags is_boundary_model TRUE when the expansion cap is hit", {
+  # alpha this small pushes the true (unconstrained) expenditure-maximizing
+  # price to ~3.5e6; starting from a narrow observed domain [0, 1], six 10x
+  # expansions only reach 1e6 -- short of the true peak -- so the cap must
+  # be hit and the result flagged as domain-bound rather than silently
+  # returned as a converged interior optimum.
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = 1e-7, q0 = 10),
+    param_scales = list(alpha = "natural", q0 = "natural"),
+    price_obs = c(0, 1)
+  )
+  expect_true(isTRUE(res$is_boundary_model))
+  expect_identical(res$method_model, "numerical_optimize_expanded")
+  expect_true(is.finite(res$pmax_model))
+  # The capped value is a lower bound on the true maximizer, not the answer.
+  expect_lt(res$pmax_model, 3.5e6)
+})

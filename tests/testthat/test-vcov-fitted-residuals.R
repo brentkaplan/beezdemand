@@ -86,6 +86,77 @@ test_that("residuals(type='pearson', scale='natural') falls back with a message"
   expect_equal(length(r), nobs(fit))
 })
 
+test_that("residuals(scale='natural') for zben back-transforms y before differencing (#18)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  r_nat <- residuals(fit, scale = "natural")
+  fitted_nat <- fitted(fit, scale = "natural")
+  y_natural <- ll4_inv(fit$data$y_ll4)
+
+  expect_equal(r_nat, y_natural - fitted_nat, tolerance = 1e-10)
+
+  # Regression guard: the pre-fix bug subtracted natural-scale fitted values
+  # from the raw (still LL4-transformed) y_var, i.e. LL4(y) - fitted_natural.
+  # Confirm the current output is NOT that scale-mixed quantity.
+  wrong_resid <- fit$data$y_ll4 - fitted_nat
+  expect_false(isTRUE(all.equal(r_nat, wrong_resid, tolerance = 1e-6)))
+
+  # Mean natural-scale residual bias at price 0 should be small (the
+  # scale-mixed bug produced a bias of roughly -6.5 drinks there).
+  at_zero <- fit$data$x == 0
+  expect_true(any(at_zero))
+  expect_lt(abs(mean(r_nat[at_zero])), 1)
+})
+
+test_that("residuals(scale='model') for zben is unaffected by the natural-scale fix (#18)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  r_model <- residuals(fit, scale = "model")
+  fitted_model <- fitted(fit, scale = "model")
+  expect_equal(r_model, fit$data$y_ll4 - fitted_model, tolerance = 1e-10)
+})
+
+test_that("residuals(scale='natural', level='population') for zben back-transforms y before differencing (#18)", {
+  # Codex review of GH #19 batch (Recommended #3): the subject-level identity
+  # test above did not confirm the fix also holds at level = "population"
+  # (random effects zeroed, population-mean fitted values). Same fix
+  # (.tmb_fitted_resid()'s scale/equation branch), same expected identity;
+  # this closes that coverage gap.
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  r_nat_pop <- residuals(fit, scale = "natural", level = "population")
+  fitted_nat_pop <- fitted(fit, scale = "natural", level = "population")
+  y_natural <- ll4_inv(fit$data$y_ll4)
+
+  expect_equal(r_nat_pop, y_natural - fitted_nat_pop, tolerance = 1e-10)
+
+  # Regression guard, mirroring the subject-level test: must not be the
+  # scale-mixed pre-fix quantity.
+  wrong_resid <- fit$data$y_ll4 - fitted_nat_pop
+  expect_false(isTRUE(all.equal(r_nat_pop, wrong_resid, tolerance = 1e-6)))
+})
+
 test_that("vcov.beezdemand_hurdle has component-prefixed dim names", {
   skip_on_cran()
   skip_if_not_installed("TMB")

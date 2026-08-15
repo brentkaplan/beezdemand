@@ -326,3 +326,133 @@ test_that("boot_demand errors on collapse_levels (divergent Q0/alpha factors) in
     "collapse_levels|not support|divergent"
   )
 })
+
+# --- 13. zben Pmax/Omax route through the numerical engine (#19) -------------
+
+test_that("boot_demand computes finite zben Pmax CIs via the numerical path, not SND", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit_zben <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  res <- boot_demand(fit_zben, statistics = c("Pmax", "Omax"), R = 200, seed = 7)
+
+  pmax_row <- res[res$statistic == "Pmax", ]
+  omax_row <- res[res$statistic == "Omax", ]
+  expect_true(is.finite(pmax_row$estimate))
+  expect_true(is.finite(pmax_row$conf.low))
+  expect_true(is.finite(pmax_row$conf.high))
+  expect_true(is.finite(omax_row$estimate))
+
+  # Regression guard: the pre-fix bug's Pmax point estimate for a k-free fit
+  # was the SND closed form 1/(alpha*Q0). Confirm the returned zben value is
+  # NOT that.
+  alpha_pt <- exp(fit_zben$model$coefficients[["beta_alpha"]])
+  q0_pt <- exp(fit_zben$model$coefficients[["beta_q0"]])
+  snd_pmax <- 1 / (alpha_pt * q0_pt)
+  expect_false(isTRUE(all.equal(pmax_row$estimate, unname(snd_pmax), tolerance = 1e-2)))
+})
+
+test_that("boot_demand zben Pmax bootstrap draws match an independent per-draw computation (#19 Codex review Recommended #3)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit_zben <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  R <- 300L
+  seed <- 11L
+
+  res <- boot_demand(fit_zben, statistics = "Pmax", R = R, seed = seed)
+  pmax_row <- res[res$statistic == "Pmax", ]
+
+  # Recompute the same draws boot_demand() used internally: same fit, R,
+  # and seed give bit-identical draws from .tmb_parametric_draws() (it
+  # reseeds internally via set.seed(seed) and restores the caller's RNG
+  # state on exit, so calling it again here is fully reproducible).
+  draws <- beezdemand:::.tmb_parametric_draws(fit_zben, R = R, seed = seed)
+  bq0 <- draws[, colnames(draws) == "beta_q0", drop = FALSE]
+  ba  <- draws[, colnames(draws) == "beta_alpha", drop = FALSE]
+  # Intercept-only fit: the cell design column is a constant 1, matching
+  # .boot_demand_cells()'s intercept-only path.
+  q0_draws <- exp(as.numeric(bq0[, 1]))
+  alpha_draws <- exp(as.numeric(ba[, 1]))
+
+  # Independent per-draw expenditure maximization (not calling
+  # beezdemand_calc_pmax_omax()/_vec() or any package Pmax helper): the
+  # same grid-then-refine ground-truth finder used by the other GH #19
+  # tests, applied to every draw.
+  pmax_draws_indep <- vapply(seq_len(R), function(j) {
+    .zben_truth(q0_draws[j], alpha_draws[j], upper = 2000)$maximum
+  }, numeric(1))
+
+  expected_ci <- stats::quantile(pmax_draws_indep, probs = c(0.025, 0.975),
+                                 names = FALSE)
+  expect_equal(c(pmax_row$conf.low, pmax_row$conf.high), expected_ci,
+              tolerance = 1e-2)
+  expect_equal(
+    pmax_row$estimate,
+    .zben_truth(exp(fit_zben$model$coefficients[["beta_q0"]]),
+               exp(fit_zben$model$coefficients[["beta_alpha"]]),
+               upper = 2000)$maximum,
+    tolerance = 1e-2
+  )
+
+  # Regression guard: the draws must not follow the SND closed form
+  # Pmax = 1 / (alpha * Q0) -- neither pointwise nor in aggregate.
+  snd_draws <- 1 / (alpha_draws * q0_draws)
+  snd_ci <- stats::quantile(snd_draws, probs = c(0.025, 0.975), names = FALSE)
+  expect_false(isTRUE(all.equal(expected_ci, snd_ci, tolerance = 1e-2)))
+  expect_gt(mean(abs(pmax_draws_indep - snd_draws) / pmax_draws_indep), 0.05)
+})
+
+test_that("boot_demand warns naming the count of zben draws that hit the Pmax expansion cap", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit_zben <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  # Mock the per-draw engine call so a controlled fraction of "draws"
+  # report is_boundary_model = TRUE (the domain-expansion cap was hit),
+  # without needing to engineer a real fit whose bootstrap draws happen to
+  # land in that regime. The point-estimate call (beezdemand_calc_pmax_omax,
+  # singular) is untouched, so `estimate` still reflects the real fit.
+  testthat::local_mocked_bindings(
+    beezdemand_calc_pmax_omax_vec = function(params_df, model_type,
+                                             param_scales = NULL,
+                                             price_list = NULL, ...) {
+      n <- nrow(params_df)
+      data.frame(
+        pmax_model = rep(50, n), omax_model = rep(10, n),
+        q_at_pmax_model = rep(1, n),
+        method_model = rep("numerical_optimize_expanded", n),
+        is_boundary_model = rep(c(TRUE, FALSE, FALSE), length.out = n),
+        elasticity_at_pmax_model = rep(-1, n),
+        unit_elasticity_pass_model = rep(TRUE, n),
+        pmax_unconditional = NA_real_, omax_unconditional = NA_real_,
+        q_at_pmax_unconditional = NA_real_, p_zero_at_pmax = NA_real_,
+        method_unconditional = NA_character_, is_boundary_unconditional = NA,
+        pmax_obs = NA_real_, omax_obs = NA_real_,
+        has_duplicate_prices = NA, n_max_ties = NA_integer_,
+        stringsAsFactors = FALSE
+      )
+    },
+    .package = "beezdemand"
+  )
+
+  expect_warning(
+    boot_demand(fit_zben, statistics = "Pmax", R = 300, seed = 5),
+    "boundary|expansion cap|domain"
+  )
+})

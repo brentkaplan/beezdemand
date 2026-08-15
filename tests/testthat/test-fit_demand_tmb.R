@@ -34,6 +34,20 @@
   .fdt_cache$simplified
 }
 
+.fdt_zben <- function() {
+  if (is.null(.fdt_cache$zben)) {
+    data(apt, package = "beezdemand")
+    apt$y_ll4 <- ll4(apt$y)
+    .fdt_cache$zben <- fit_demand_tmb(apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+                                      equation = "zben", verbose = 0)
+  }
+  .fdt_cache$zben
+}
+
+# .zben_truth() (ground-truth finder for the zben expenditure curve) is
+# defined in helper-zben-truth.R, shared with test-pmax-omax-engine.R and
+# test-boot-demand.R.
+
 # Small apt_full fixture for the factor/covariate tests, which only check
 # structure (design columns, collapse_info, warnings) — not data-dependent
 # values. Cap Female/Male at 5 subjects each and keep the rare
@@ -992,6 +1006,116 @@ test_that("simplified Pmax/Omax use SND model type", {
   gm <- calc_group_metrics(fit)
   expect_true(is.finite(gm$Pmax))
   expect_true(is.finite(gm$Omax))
+})
+
+test_that("zben Pmax/Omax are computed numerically, not via the SND closed form (#19)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  fit <- .fdt_zben()
+
+  spars <- get_subject_pars(fit)
+  expect_true(all(is.finite(spars$Pmax)))
+  expect_true(all(is.finite(spars$Omax)))
+  expect_true(all(spars$Pmax > 0))
+  expect_true(all(spars$Omax > 0))
+
+  # Codex review of GH #19 (BLOCKING follow-up): pmax_at_bound propagates
+  # the engine's domain-expansion-cap flag into subject_pars. This fit's
+  # (Q0, alpha) values do not require hitting the cap (verified by the
+  # independent check below finding an interior maximum), so it must read
+  # FALSE here.
+  expect_true("pmax_at_bound" %in% names(spars))
+  expect_type(spars$pmax_at_bound, "logical")
+  expect_false(any(spars$pmax_at_bound))
+
+  price_range <- range(fit$data$x, na.rm = TRUE)
+
+  # Independent numerical check (not calling beezdemand_calc_pmax_omax() or
+  # any package helper): re-derive Pmax/Omax for one subject via the
+  # grid-then-refine .zben_truth() ground-truth finder defined above.
+  i <- 1L
+  Q0_i <- spars$Q0[i]
+  alpha_i <- spars$alpha[i]
+  opt <- .zben_truth(Q0_i, alpha_i, upper = price_range[2] * 1000)
+  expect_equal(spars$Pmax[i], opt$maximum, tolerance = 1e-2)
+  expect_equal(spars$Omax[i], opt$objective, tolerance = 1e-2)
+
+  # Regression guard for the domain-truncation bug: the naive
+  # observed-domain-only boundary value must NOT be what is returned.
+  expect_false(isTRUE(all.equal(spars$Pmax[i], price_range[2], tolerance = 1e-2)))
+
+  # Regression guard: the pre-fix bug returned the SND closed form
+  # Pmax = 1 / (alpha * Q0), which does not apply to zben's LL4-scale decay.
+  # Confirm the stored value is NOT that (rules out silently falling back).
+  snd_pmax <- 1 / (alpha_i * Q0_i)
+  expect_false(isTRUE(all.equal(spars$Pmax[i], snd_pmax, tolerance = 1e-2)))
+
+  # calc_group_metrics() must also route through the numerical path.
+  gm <- calc_group_metrics(fit)
+  expect_true(is.finite(gm$Pmax))
+  expect_true(is.finite(gm$Omax))
+  expect_false(is.null(gm$method))
+  expect_match(gm$method, "numerical")
+  expect_true("pmax_at_bound" %in% names(gm))
+  expect_false(isTRUE(gm$pmax_at_bound))
+})
+
+test_that("zben get_subject_pars(expanded = TRUE) recomputes Pmax/Omax for a within-subject fixture (#19)", {
+  # Codex review of GH #19 (Recommended #2): an intercept-only fixture's
+  # expanded = TRUE call short-circuits to the cached (fit-time) subject_pars
+  # (R/tmb-methods.R ~1752, "no within-id variation -> return spars as-is")
+  # and never reaches the recomputation path this ticket changed
+  # (R/tmb-methods.R ~1845-1883). A within-subject factor forces genuine
+  # recomputation.
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim <- .simulate_within_subject_demand(
+    n_subjects = 15,
+    n_conditions = 2,
+    prices = c(0.25, 0.5, 1, 2, 4, 8, 16, 32),
+    log_q0_pop = log(15),
+    log_alpha_pop = log(0.0015),
+    delta_q0 = c(0, -0.4),
+    delta_alpha = c(0, 0.2),
+    sigma_b = 0.25,
+    sigma_d = 0.25,
+    seed = 2019
+  )
+  sim$id <- factor(sim$id)
+  sim$condition <- factor(sim$condition)
+  sim$y_ll4 <- ll4(sim$y)
+
+  fit <- suppressWarnings(fit_demand_tmb(
+    sim, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben",
+    random_effects = nlme::pdDiag(Q0 + alpha ~ condition - 1),
+    multi_start = FALSE, verbose = 0
+  ))
+
+  spars_expanded <- get_subject_pars(fit, expanded = TRUE)
+
+  n_subj <- length(unique(spars_expanded$id))
+  n_cond <- length(levels(spars_expanded$condition))
+  expect_equal(nrow(spars_expanded), n_subj * n_cond)
+  expect_true(all(c("Q0", "alpha", "Pmax", "Omax", "pmax_at_bound") %in% names(spars_expanded)))
+  expect_true(all(is.finite(spars_expanded$Q0)))
+  expect_true(all(is.finite(spars_expanded$alpha)))
+  expect_true(all(is.finite(spars_expanded$Pmax)))
+  expect_true(all(is.finite(spars_expanded$Omax)))
+
+  # Independent check for one (subject, condition) row via the
+  # grid-then-refine .zben_truth() ground-truth finder: not the SND closed
+  # form, and matches a fresh, robust computation written out here (not
+  # calling beezdemand_calc_pmax_omax() or any package Pmax/Omax helper).
+  j <- 1L
+  Q0_j <- spars_expanded$Q0[j]
+  alpha_j <- spars_expanded$alpha[j]
+  price_range <- range(sim$x, na.rm = TRUE)
+  opt_j <- .zben_truth(Q0_j, alpha_j, upper = price_range[2] * 1000)
+  expect_equal(spars_expanded$Pmax[j], opt_j$maximum, tolerance = 1e-2)
+  snd_pmax_j <- 1 / (alpha_j * Q0_j)
+  expect_false(isTRUE(all.equal(spars_expanded$Pmax[j], snd_pmax_j, tolerance = 1e-2)))
 })
 
 

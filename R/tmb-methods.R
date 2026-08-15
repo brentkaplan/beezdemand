@@ -1859,7 +1859,9 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
     params_df <- data.frame(alpha = alpha, q0 = Q0, k = rep(k_val, length(Q0)))
     param_scales <- list(alpha = "natural", q0 = "natural", k = "natural")
   } else {
-    model_type <- "snd"
+    # zben has no SND closed form (its LL4-scale decay differs from SND);
+    # route through the engine's numerical fallback instead (GH #19).
+    model_type <- if (identical(pinfo$equation, "zben")) "zben" else "snd"
     params_df <- data.frame(alpha = alpha, q0 = Q0)
     param_scales <- list(alpha = "natural", q0 = "natural")
   }
@@ -1909,6 +1911,10 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
   out$alpha <- alpha
   out$Pmax <- omax_pmax$pmax_model
   out$Omax <- omax_pmax$omax_model
+  # Codex review of GH #19 (BLOCKING follow-up): surface the numerical
+  # zben Pmax search's expansion-cap flag (see .tmb_compute_subject_pars()
+  # for the fit-time/wide-shape counterpart of this column).
+  out$pmax_at_bound <- omax_pmax$is_boundary_model
 
   out
 }
@@ -2585,9 +2591,18 @@ VarCorr.beezdemand_tmb <- function(x, sigma = 1, rdig = 3, ...) {
   if (scale == "model" && equation == "exponential") {
     # Model is on log scale; y_obs is natural. Zero rows are NA on log scale.
     y_on_scale <- ifelse(y_obs > 0, log(y_obs), NA_real_)
+  } else if (scale == "natural" && equation == "zben") {
+    # y_var for zben is LL4-transformed at fit time (the caller supplies
+    # ll4(y, lambda = 4)); back-transform it here so natural-scale residuals
+    # subtract two genuinely natural-scale quantities. Without this, y_obs
+    # stays on the LL4 scale while fitted_vals has already been
+    # back-transformed by predict(..., scale = "natural"), producing a
+    # scale-mixed residual (GH #18).
+    y_on_scale <- ll4_inv(y_obs)
   } else {
-    # exponentiated/simplified/zben on model scale (already natural), OR
-    # any equation on the natural scale.
+    # exponentiated/simplified on model scale (already natural), zben on
+    # model scale (LL4, matches y_obs as-is), OR any equation on the natural
+    # scale that needs no back-transform of y_obs.
     y_on_scale <- y_obs
   }
   list(.fitted = fitted_vals, .resid = y_on_scale - fitted_vals)
@@ -4352,6 +4367,15 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
       params = list(alpha = alpha_val, q0 = Q0, k = k_val),
       param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
     )
+  } else if (identical(object$param_info$equation, "zben")) {
+    # zben has no SND closed form; route through the engine's numerical
+    # fallback instead (GH #19), which needs a price domain to search over.
+    result <- beezdemand_calc_pmax_omax(
+      model_type = "zben",
+      params = list(alpha = alpha_val, q0 = Q0),
+      param_scales = list(alpha = "natural", q0 = "natural"),
+      price_obs = object$data[[object$param_info$x_var]]
+    )
   } else {
     result <- beezdemand_calc_pmax_omax(
       model_type = "snd",
@@ -4366,6 +4390,11 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
     Qmax = result$q_at_pmax_model,
     elasticity_at_pmax = result$elasticity_at_pmax_model,
     method = result$method_model,
+    # Codex review of GH #19 (BLOCKING follow-up): TRUE only for zben fits
+    # whose numerical Pmax search hit its domain-expansion cap without
+    # finding the true (interior) maximum; FALSE for analytic (hs/snd)
+    # fits, which never reach that path.
+    pmax_at_bound = isTRUE(result$is_boundary_model),
     conditioned_on = conditioned_on
   )
 }

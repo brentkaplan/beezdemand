@@ -120,7 +120,18 @@ test_that("calc_group_metrics nlme and tmb share field + conditioned_on shape", 
 
   cm_nlme <- calc_group_metrics(fit_nlme)
   cm_tmb <- calc_group_metrics(fit_tmb)
-  expect_equal(sort(names(cm_nlme)), sort(names(cm_tmb)))
+  # `pmax_at_bound` (Codex review of GH #19, TMB tier) is TMB-only: it flags
+  # when the zben numerical Pmax search hits its domain-expansion cap, which
+  # has no NLME counterpart (NLME zben Pmax/Omax are out of scope for that
+  # ticket). Checked for presence explicitly instead of folding it into the
+  # blanket name-set comparison, so the rest of the shape parity stays a
+  # real (not weakened) equality check.
+  expect_true("pmax_at_bound" %in% names(cm_tmb))
+  expect_false("pmax_at_bound" %in% names(cm_nlme))
+  expect_equal(
+    sort(setdiff(names(cm_nlme), "pmax_at_bound")),
+    sort(setdiff(names(cm_tmb), "pmax_at_bound"))
+  )
   expect_equal(sort(names(cm_nlme$conditioned_on)),
                sort(names(cm_tmb$conditioned_on)))
   expect_equal(sort(names(cm_nlme$conditioned_on$factors)),
