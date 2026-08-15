@@ -264,6 +264,27 @@ exactly, pin the previous release:
   condition) in the branch where `wrapnlsr` won after `nlsLM` failed
   (TICKET-065).
 
+* **Requested plot annotations, extractor rows, and a summary CI section
+  disappeared with no condition when their computation errored.**
+  `plot_expenditure()` (hurdle and TMB): with `show_pmax = TRUE` /
+  `show_omax = TRUE` explicitly requested, a `calc_group_metrics()` error
+  silently omitted the annotation; now warns
+  (`beezdemand_plot_annotation_warning`) naming the cause, matching the
+  existing pattern used by `plot_compare()`. `coef.beezdemand_fixed()`:
+  subject rows for a stored `try-error`/`NULL` fit, or one whose `coef()`
+  call failed, were dropped with no way to tell "subject absent" from
+  "subject failed"; now warns (`beezdemand_fixed_coef_omitted_warning`)
+  naming the dropped ids. `augment.cp_model_nls()` /
+  `augment.cp_model_lm()` / `augment.cp_model_lmer()`: the documented
+  `.fitted`/`.resid`/`.fixed` columns vanished on a `fitted()`/
+  `residuals()`/`predict()` error or a length mismatch with no indication;
+  now warn (`beezdemand_cp_augment_omitted_warning`) naming the omitted
+  column(s). `summary.cp_model_nls()`: a genuine `nlstools::confint2()`
+  error (as opposed to `nlstools` simply not being installed, which stays
+  silent) silently dropped the confidence-interval section; now warns
+  (`beezdemand_cp_summary_ci_omitted_warning`). Healthy paths are
+  unaffected and remain silent throughout (TICKET-068).
+
 ## Legacy fitter robustness (batch failures)
 
 * `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =

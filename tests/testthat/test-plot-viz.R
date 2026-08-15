@@ -1017,3 +1017,36 @@ test_that("plot_loss_profile type='marginal' works for both parameters", {
                          type = "marginal")
   expect_true(inherits(p, "gg") || inherits(p, "patchwork"))
 })
+
+
+# ==============================================================================
+# TICKET-068 (E2): when show_pmax/show_omax are explicitly requested and
+# calc_group_metrics() errors, plot_expenditure() must warn naming the
+# omission rather than silently dropping the annotation.
+# ==============================================================================
+
+test_that("plot_expenditure.beezdemand_hurdle warns when Pmax/Omax metrics fail", {
+  testthat::local_mocked_bindings(
+    calc_group_metrics = function(...) stop("forced metrics failure")
+  )
+
+  expect_warning(
+    p <- plot_expenditure(fit_hurdle, show_pmax = TRUE, show_omax = TRUE),
+    class = "beezdemand_plot_annotation_warning"
+  )
+  expect_s3_class(p, "gg")
+})
+
+test_that("plot_expenditure.beezdemand_tmb warns when Pmax/Omax metrics fail", {
+  skip_if(is.null(fit_tmb), "TMB model fitting failed")
+
+  testthat::local_mocked_bindings(
+    calc_group_metrics = function(...) stop("forced metrics failure")
+  )
+
+  expect_warning(
+    p <- plot_expenditure(fit_tmb, show_pmax = TRUE, show_omax = TRUE),
+    class = "beezdemand_plot_annotation_warning"
+  )
+  expect_s3_class(p, "gg")
+})

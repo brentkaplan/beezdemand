@@ -651,3 +651,54 @@ describe("predictions preserve original participant IDs", {
     }
   })
 })
+
+# ==============================================================================
+# TICKET-068 (E5a): coef.beezdemand_fixed() must not silently drop rows for
+# subjects whose stored fit is try-error/NULL, or whose coef() call fails --
+# these must be named in a warning, not indistinguishable from "absent".
+# ==============================================================================
+
+test_that("coef.beezdemand_fixed warns naming ids dropped due to failed/missing fits (E5a)", {
+  good_fit <- lm(y ~ x, data.frame(x = 1:5, y = (1:5) * 2 + 1))
+  fits <- vector("list", 4)
+  names(fits) <- c("good", "dropped_null", "dropped_tryerror", "dropped_coefnull")
+  fits[["good"]] <- good_fit
+  fits["dropped_null"] <- list(NULL)
+  fits[["dropped_tryerror"]] <- structure("boom", class = "try-error")
+  fits[["dropped_coefnull"]] <- structure(list(), class = "junk")
+
+  obj <- structure(
+    list(fits = fits, results = data.frame(), param_space = "natural"),
+    class = "beezdemand_fixed"
+  )
+
+  warned_msg <- NULL
+  out <- withCallingHandlers(
+    coef(obj),
+    beezdemand_fixed_coef_omitted_warning = function(w) {
+      warned_msg <<- conditionMessage(w)
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_false(is.null(warned_msg))
+  expect_match(warned_msg, "dropped_null")
+  expect_match(warned_msg, "dropped_tryerror")
+  expect_match(warned_msg, "dropped_coefnull")
+
+  expect_true("good" %in% out$id)
+  expect_false(any(
+    c("dropped_null", "dropped_tryerror", "dropped_coefnull") %in% out$id
+  ))
+})
+
+test_that("coef.beezdemand_fixed is silent when all fits are usable (real fixture)", {
+  data(apt, package = "beezdemand")
+  apt_small <- apt[apt$id %in% unique(apt$id)[1:3], ]
+  fit <- fit_demand_fixed(apt_small)
+
+  expect_no_warning(
+    coef(fit),
+    class = "beezdemand_fixed_coef_omitted_warning"
+  )
+})

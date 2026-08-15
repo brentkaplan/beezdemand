@@ -711,3 +711,44 @@ test_that("summary.cp_model_nls warns when the winning fit did not converge (rea
     class = "beezdemand_cp_nls_nonconverged_warning"
   )
 })
+
+# ==============================================================================
+# TICKET-068 (E5b): summary.cp_model_nls()'s CI section must warn (not stay
+# silently absent) when nlstools::confint2() genuinely errors -- as opposed
+# to nlstools simply not being installed, which stays silent.
+# ==============================================================================
+
+test_that("summary.cp_model_nls warns when confint2() fails (mocked failure, real fit)", {
+  skip_if_not_installed("nlstools")
+  skip_if_not_installed("nls.multstart")
+
+  data("cp", package = "beezdemand", envir = environment())
+  data <- cp[cp$target == "alone" & cp$group == "cigarettes", c("x", "y")]
+  fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE, iter = 50)
+
+  testthat::local_mocked_bindings(
+    confint2 = function(...) stop("forced confint2 failure"),
+    .package = "nlstools"
+  )
+
+  expect_warning(
+    summ <- summary(fit),
+    class = "beezdemand_cp_summary_ci_omitted_warning"
+  )
+  expect_null(summ$conf_int)
+})
+
+test_that("summary.cp_model_nls includes a CI section without warning on a healthy fit (real fixture)", {
+  skip_if_not_installed("nlstools")
+  skip_if_not_installed("nls.multstart")
+
+  data("cp", package = "beezdemand", envir = environment())
+  data <- cp[cp$target == "alone" & cp$group == "cigarettes", c("x", "y")]
+  fit <- fit_cp_nls(data, equation = "exponentiated", return_all = TRUE, iter = 50)
+
+  expect_no_warning(
+    summ <- summary(fit),
+    class = "beezdemand_cp_summary_ci_omitted_warning"
+  )
+  expect_false(is.null(summ$conf_int))
+})

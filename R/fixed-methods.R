@@ -753,14 +753,20 @@ coef.beezdemand_fixed <- function(
   }
 
   ids <- names(object$fits)
+  # TICKET-068 (E5a): track which subjects' rows are dropped (and why), so
+  # the caller can distinguish "subject absent" from "subject failed" rather
+  # than the two looking identical in the returned tibble.
+  omitted_ids <- character(0)
   rows <- lapply(seq_along(object$fits), function(i) {
     fit <- object$fits[[i]]
     id <- if (!is.null(ids) && length(ids) >= i) ids[[i]] else NA_character_
     if (inherits(fit, "try-error") || is.null(fit)) {
+      omitted_ids[[length(omitted_ids) + 1]] <<- as.character(id)
       return(NULL)
     }
     cf <- tryCatch(stats::coef(fit), error = function(e) NULL)
     if (is.null(cf)) {
+      omitted_ids[[length(omitted_ids) + 1]] <<- as.character(id)
       return(NULL)
     }
     tibble::tibble(
@@ -769,6 +775,13 @@ coef.beezdemand_fixed <- function(
       estimate = as.numeric(cf)
     )
   })
+
+  if (length(omitted_ids) > 0) {
+    cli::cli_warn(
+      "Dropped {length(omitted_ids)} subject row{?s} from {.fn coef} (no usable fit or {.fn coef} failed): {.val {omitted_ids}}.",
+      class = c("beezdemand_fixed_coef_omitted_warning", "beezdemand_warning")
+    )
+  }
 
   out <- dplyr::bind_rows(rows)
   if (!nrow(out)) {

@@ -2354,7 +2354,16 @@ plot_expenditure.beezdemand_hurdle <- function(
 
   # Add Pmax/Omax — pull the metric set that matches the displayed curve.
   if (show_pmax || show_omax) {
-    metrics <- tryCatch(calc_group_metrics(object), error = function(e) NULL)
+    metrics <- tryCatch(
+      calc_group_metrics(object),
+      error = function(e) {
+        cli::cli_warn(
+          "Pmax/Omax annotations omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
+          class = c("beezdemand_plot_annotation_warning", "beezdemand_warning")
+        )
+        NULL
+      }
+    )
     if (!is.null(metrics)) {
       pmax_val <- if (demand_type == "unconditional") {
         metrics$Pmax_unconditional %||% metrics$Pmax
@@ -2471,7 +2480,16 @@ plot_expenditure.beezdemand_tmb <- function(
     theme_beezdemand(style = style)
 
   if (show_pmax || show_omax) {
-    metrics <- tryCatch(calc_group_metrics(object), error = function(e) NULL)
+    metrics <- tryCatch(
+      calc_group_metrics(object),
+      error = function(e) {
+        cli::cli_warn(
+          "Pmax/Omax annotations omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
+          class = c("beezdemand_plot_annotation_warning", "beezdemand_warning")
+        )
+        NULL
+      }
+    )
     if (!is.null(metrics)) {
       if (show_pmax && !is.null(metrics$Pmax) && is.finite(metrics$Pmax)) {
         p <- p + ggplot2::geom_vline(
