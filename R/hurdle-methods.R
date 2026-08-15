@@ -565,6 +565,7 @@ nobs.beezdemand_hurdle <- function(object, ...) {
 #' @seealso [coef.beezdemand_hurdle()], [confint.beezdemand_hurdle()].
 #' @export
 vcov.beezdemand_hurdle <- function(object, ...) {
+  .tmb_warn_if_hessian_not_pd(object)
   sdr <- object$sdr
   if (is.null(sdr) || is.null(sdr$cov.fixed)) {
     cli::cli_abort(
@@ -2315,6 +2316,10 @@ confint.beezdemand_hurdle <- function(
   if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
     cli::cli_abort("`level` must be a single number between 0 and 1.")
   }
+
+  # Reads model$se (derived from sdr$cov.fixed) directly, not via vcov(), so
+  # it needs its own explicit hessian_pd check (TICKET-063).
+  .tmb_warn_if_hessian_not_pd(object)
 
   coefs <- object$model$coefficients
   se_vec <- object$model$se

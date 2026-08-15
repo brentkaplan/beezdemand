@@ -292,3 +292,68 @@ test_that("BIC.beezdemand_hurdle is unchanged by this ticket (characterization)"
   )
   expect_true(is.finite(BIC(fit)))
 })
+
+
+# --- TICKET-063: hessian_pd gate on hurdle inference surfaces --------------
+# Real non-PD hurdle fits are dataset-dependent (TICKET-056 notes); the
+# object's `hessian_pd` field is forced to FALSE here for a deterministic,
+# fast regression test (real weak-fit coverage lives in the TMB-side tests
+# in test-tmb-broom-contracts.R / test_emms_comparisons.R / test-boot-demand.R).
+
+test_that("vcov.beezdemand_hurdle warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  fit$hessian_pd <- FALSE
+
+  warns <- testthat::capture_warnings(V <- vcov(fit))
+  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  expect_true(isSymmetric(V))
+})
+
+test_that("vcov.beezdemand_hurdle: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(vcov(fit))
+})
+
+test_that("confint.beezdemand_hurdle warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  fit$hessian_pd <- FALSE
+
+  warns <- testthat::capture_warnings(ci <- confint(fit))
+  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_hurdle: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_no_warning(confint(fit))
+})

@@ -1111,3 +1111,60 @@ test_that("get_demand_comparisons agrees with EMM differences under `at`", {
   expected_diff_log10 <- (emms_at$estimate_log[1] - emms_at$estimate_log[2]) / log(10)
   expect_equal(td_at$estimate, expected_diff_log10, tolerance = 1e-8)
 })
+
+
+# --- TICKET-063: hessian_pd gate on TMB emms/comparisons surfaces ----------
+
+test_that("get_demand_param_emms.beezdemand_tmb warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(e <- get_demand_param_emms(fit, param = "Q0"))
+  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
+  expect_identical(sum(pd_warns), 1L)
+  expect_true(nrow(e) > 0)
+})
+
+test_that("get_demand_param_emms.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(get_demand_param_emms(fit, param = "Q0"))
+})
+
+test_that("get_demand_comparisons.beezdemand_tmb warns exactly once per call (not once per param)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(
+    res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
+  )
+  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
+  expect_identical(sum(pd_warns), 1L)
+})
+
+test_that("get_demand_comparisons.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ids_g <- unique(d$id[d$gender == g])
+    head(ids_g[order(ids_g)], 25)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential", factors = "gender", verbose = 0)
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(get_demand_comparisons(fit, param = "Q0"))
+})

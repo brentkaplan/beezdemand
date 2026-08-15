@@ -456,3 +456,21 @@ test_that("boot_demand warns naming the count of zben draws that hit the Pmax ex
     "boundary|expansion cap|domain"
   )
 })
+
+
+# --- TICKET-063: hessian_pd gate on boot_demand -----------------------------
+
+test_that("boot_demand warns exactly once when hessian_pd is FALSE (dedup through draws->vcov)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(
+    res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)
+  )
+  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
+  expect_identical(sum(pd_warns), 1L)
+})

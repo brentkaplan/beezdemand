@@ -185,3 +185,89 @@ test_that("augment exponential handles data with zeros without -Inf", {
                 info = "Zero observations should have NA residuals for exponential")
   }
 })
+
+
+# --- TICKET-063: hessian_pd gate on TMB inference surfaces ------------------
+
+test_that("vcov.beezdemand_tmb warns once when hessian_pd is FALSE (weak fit)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(V <- vcov(fit))
+  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  expect_true(is.matrix(V) && nrow(V) == ncol(V))
+})
+
+test_that("vcov.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(vcov(fit))
+})
+
+test_that("confint.beezdemand_tmb (wald) warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(ci <- confint(fit))
+  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_tmb (simulate) warns exactly once (dedup through draws->vcov)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(
+    ci <- confint(fit, method = "simulate", R = 100, seed = 1)
+  )
+  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
+  expect_identical(sum(pd_warns), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_tmb: healthy fit raises no hessian_pd warning (wald + simulate)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(confint(fit))
+  expect_no_warning(confint(fit, method = "simulate", R = 100, seed = 1))
+})
+
+test_that("anova.beezdemand_tmb (single-fit Wald) warns exactly once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  warns <- testthat::capture_warnings(a <- anova(fit, group_by = "parameter"))
+  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
+  expect_identical(sum(pd_warns), 1L)
+})
+
+test_that("anova.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(anova(fit, group_by = "parameter"))
+})

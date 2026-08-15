@@ -2643,6 +2643,32 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 
 # --- vcov / fitted / residuals (TICKET-026) ---
 
+#' Warn once when an inference surface consumes a non-PD-Hessian covariance
+#'
+#' `sdr$cov.fixed` for a fit with `hessian_pd == FALSE` is a pseudo-inverse of
+#' an indefinite Hessian -- SEs/CIs/p-values/draws computed from it are
+#' unreliable even though the point estimates (and `converged`) are fine.
+#' Shared by both TMB-backed classes (`beezdemand_tmb`, `beezdemand_hurdle`);
+#' called once per user-facing entry point that reads `cov.fixed` (TICKET-063).
+#' `isFALSE()` treats `NA`/`NULL` (unknown / old objects) as "no warning".
+#' @param object A `beezdemand_tmb` or `beezdemand_hurdle` fit.
+#' @return `NULL`, invisibly.
+#' @keywords internal
+#' @noRd
+.tmb_warn_if_hessian_not_pd <- function(object) {
+  if (isFALSE(object$hessian_pd)) {
+    cli::cli_warn(
+      c(
+        "!" = "Hessian is not positive definite; standard errors, intervals,
+               and draws are unreliable.",
+        "i" = "See {.fn summary} / {.fn check_demand_model} for diagnostics."
+      ),
+      class = c("beezdemand_hessian_not_pd_warning", "beezdemand_warning")
+    )
+  }
+  invisible(NULL)
+}
+
 #' Variance-covariance matrix for a beezdemand_tmb fit
 #'
 #' Returns the fixed-effect VCOV from the TMB sdreport, i.e., the inverse of
@@ -2663,6 +2689,7 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' }
 #' @export
 vcov.beezdemand_tmb <- function(object, ...) {
+  .tmb_warn_if_hessian_not_pd(object)
   sdr <- object$sdr
   if (is.null(sdr) || is.null(sdr$cov.fixed)) {
     cli::cli_abort(
@@ -2946,6 +2973,10 @@ confint.beezdemand_tmb <- function(
   estimates <- coefs
 
   if (method == "wald") {
+    # method = "simulate" routes through .tmb_parametric_draws() -> vcov(),
+    # which already warns once; only the wald branch needs its own explicit
+    # check (it reads model$se directly, never calling vcov()).
+    .tmb_warn_if_hessian_not_pd(object)
     z <- stats::qnorm((1 + level) / 2)
     conf_low <- coefs - z * se_vec
     conf_high <- coefs + z * se_vec
@@ -3610,6 +3641,10 @@ get_demand_param_emms.beezdemand_tmb <- function(
 ) {
   param <- match.arg(param)
 
+  # Reads sdr$cov.fixed directly (not via vcov()), so it needs its own
+  # explicit hessian_pd check (TICKET-063).
+  .tmb_warn_if_hessian_not_pd(fit_obj)
+
   coefs <- fit_obj$model$coefficients
   sdr <- fit_obj$sdr
 
@@ -3894,6 +3929,11 @@ get_demand_comparisons.beezdemand_tmb <- function(
 
   # Validate `at` once at the public boundary (single multi-value warning).
   .tmb_validate_at(fit_obj, at)
+
+  # .tmb_compare_one_param() reads sdr$cov.fixed directly (not via vcov()),
+  # once per requested param -- warn once here, before the loop, rather than
+  # once per param (TICKET-063).
+  .tmb_warn_if_hessian_not_pd(fit_obj)
 
   results_list <- stats::setNames(
     lapply(param, function(p) {

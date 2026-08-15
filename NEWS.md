@@ -218,6 +218,28 @@ exactly, pin the previous release:
   non-positive-definite Hessian are no longer counted as valid Monte Carlo
   evidence in `$summary`'s bias/coverage calculations.
 
+## Inference gates and diagnostic honesty
+
+The fixes in this subsection change *status/diagnostic* output (warnings,
+issue lists) rather than point estimates -- fits that were correct before
+still return the same numbers.
+
+* **TMB and hurdle inference surfaces now honour `hessian_pd`.** When
+  `TMB::sdreport()` reports a non-positive-definite Hessian
+  (`fit$hessian_pd == FALSE`), `sdr$cov.fixed` is a pseudo-inverse of an
+  indefinite matrix -- standard errors, confidence intervals, p-values, and
+  parametric draws computed from it are unreliable even though the point
+  estimates are unaffected. `vcov()`, `confint()`, `anova()` (single-fit
+  Wald test), `get_demand_param_emms()`, `get_demand_comparisons()`, and
+  `boot_demand()` now each emit one classed warning
+  (`beezdemand_hessian_not_pd_warning` / `beezdemand_warning`) the first time
+  they consume such a covariance, for both the `beezdemand_tmb` and
+  `beezdemand_hurdle` classes. Previously only `summary()`'s print method and
+  `check_demand_model()` surfaced this; a user calling `confint()` or
+  `boot_demand()` directly received unreliable intervals with no indication
+  anything was wrong. Values are unchanged; healthy (PD-Hessian) fits emit no
+  new conditions.
+
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
 * **Hurdle random-effects covariance `chol()` failure silently substituted an
