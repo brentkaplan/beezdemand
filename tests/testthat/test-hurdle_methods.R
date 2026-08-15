@@ -387,7 +387,7 @@ test_that("TICKET-056: non-converged/non-PD hurdle fit prints optimizer diagnost
   expect_true(any(grepl("zeros.*q0", s$notes)))
 })
 
-test_that("TICKET-056: converged fit print/summary output is unchanged", {
+test_that("TICKET-056: converged fit print/summary output is unchanged (Codex 2C review fold RECOMMENDED 6, pinned)", {
   skip_on_cran()
   skip_if_not_installed("TMB")
 
@@ -400,12 +400,28 @@ test_that("TICKET-056: converged fit print/summary output is unchanged", {
   expect_true(isTRUE(fit$hessian_pd))
 
   out <- testthat::capture_output_lines(print(fit))
-  expect_false(any(grepl("WARNING: this fit did not pass", out, fixed = TRUE)))
-  expect_false(any(grepl("Recommended stability check", out, fixed = TRUE)))
-
   s <- summary(fit)
-  expect_false(any(grepl("^Warning: Optimizer|^Warning: Hessian|^Recommended stability", s$notes)))
   out_s <- testthat::capture_output_lines(print(s))
+
+  # Pinned by capturing this exact output with the PRE-TICKET-056 code
+  # (git worktree at commit 7711de6, immediately before the TICKET-056
+  # commit 71d0875) and confirming identical() against the post-fold
+  # output -- a real byte-identity claim, not an inference from "the new
+  # code path shouldn't fire on a healthy fit".
+  expected_print <- c(
+    "", "Two-Part Mixed Effects Hurdle Demand Model", "", "Call:",
+    "fit_demand_hurdle(data = sim_data, y_var = \"y\", x_var = \"x\", ",
+    "    id_var = \"id\", random_effects = c(\"zeros\", \"q0\"), verbose = 0)",
+    "", "Convergence: Yes ", "Number of subjects: 30 ", "Number of observations: 187 ",
+    "Random effects: 2 (zeros, q0) ", "", "Fixed Effects:",
+    "     beta0      beta1     log_q0      log_k  log_alpha logsigma_a logsigma_b ",
+    "   -2.2517     1.6040     2.3622     0.7904    -0.8579    -0.1615    -0.7342 ",
+    "logsigma_e rho_ab_raw ", "   -1.2675    -0.3724 ", "", "Use summary() for full results."
+  )
+  expect_identical(out, expected_print)
+
+  expect_identical(s$notes, character(0))
+  expect_false(any(grepl("^Warning: Optimizer|^Warning: Hessian|^Recommended stability", s$notes)))
   expect_false(any(grepl("WARNING: this fit did not pass", out_s, fixed = TRUE)))
 })
 
