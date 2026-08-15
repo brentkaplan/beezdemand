@@ -257,3 +257,153 @@ test_that("FitCurves() is untouched by the multi-start protocol", {
   legacy <- suppressWarnings(suppressMessages(FitCurves(apt, equation = "hs", k = 2)))
   expect_false(any(c("n_starts_tried", "n_starts_converged", "start_source") %in% names(legacy)))
 })
+
+# =============================================================================
+# Codex 2F review fold (TICKET-047): blocking + recommended + optional items
+# =============================================================================
+
+test_that("(h) item 1: positional calls with an arg after `by` are unaffected", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  # Pre-fold, `multistart`/`S` were inserted BEFORE `by`, so this 9th
+  # positional argument ("gender") would have bound to `multistart` instead
+  # of `by`, silently making the fit ungrouped.
+  fit <- suppressWarnings(fit_demand_fixed(
+    apt_full, "hs", 2, NULL, "x", "y", "id", "natural", "gender"
+  ))
+  expect_s3_class(fit, "beezdemand_fixed_grouped")
+  expect_identical(fit$by_var, "gender")
+  expect_true(length(fit$groups) >= 2)
+})
+
+test_that("(i) item 3: k = 'range' rescue reuses the production dataset-wide K (no per-subject recompute)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  sub <- apt[apt$id %in% c(19, 30, 38), ]
+
+  base <- suppressWarnings(fit_demand_fixed(sub, equation = "koff", k = "range", multistart = FALSE))
+  k_production <- unique(round(base$results$K, 8))
+  expect_length(k_production, 1)
+
+  set.seed(1)
+  rescued <- suppressWarnings(fit_demand_fixed(
+    sub, equation = "koff", k = "range", startq0 = 1e-8, startalpha = 500
+  ))
+  expect_true(any(rescued$results$start_source == "sampled"))
+  # every row (production or rescued) must share the SAME dataset-wide K --
+  # a per-subject GetK() recompute would give a different value.
+  expect_equal(unique(round(rescued$results$K, 8)), k_production)
+})
+
+test_that("(j) item 3: k = 'share' rescue reuses the production shared K (no crash)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  sub <- apt[apt$id %in% c(19, 30, 38), ]
+
+  base <- suppressWarnings(fit_demand_fixed(sub, equation = "koff", k = "share", multistart = FALSE))
+  k_production <- unique(round(base$results$K[is.finite(base$results$K)], 8))
+  expect_length(k_production, 1)
+
+  set.seed(1)
+  rescued <- suppressWarnings(fit_demand_fixed(
+    sub, equation = "koff", k = "share", startq0 = 1e-8, startalpha = 500
+  ))
+  # GetSharedK() hard-stops on a single-subject dataset ("Cannot find a
+  # shared k value with only one dataset!"); pre-fold this made every
+  # rescue attempt error out (silently, via try()), so nothing ever got
+  # rescued even though `k` was perfectly well-defined at the dataset
+  # level. Post-fold, the rescue reuses the resolved production K.
+  expect_true(any(rescued$results$start_source == "sampled"))
+  rescued_k <- unique(round(rescued$results$K[is.finite(rescued$results$K)], 8))
+  expect_equal(rescued_k, k_production)
+})
+
+test_that("(k) item 3: agg = 'pooled' rescue does not crash (GetEmpirical duplicate-id guard)", {
+  skip_on_cran()
+  q0_true <- 10
+  alpha_true <- 0.05
+  x <- c(0, 0.5, 1, 2, 4, 8, 16)
+  y <- round(q0_true * exp(-alpha_true * q0_true * x), 4)
+  d <- rbind(
+    data.frame(id = "s1", x = x, y = y),
+    data.frame(id = "s2", x = x, y = y)
+  )
+
+  set.seed(1)
+  rescued <- suppressWarnings(fit_demand_fixed(
+    d, equation = "simplified", agg = "pooled", startq0 = 1e-8, startalpha = 500
+  ))
+  expect_identical(nrow(rescued$results), 1L)
+  expect_true(isTRUE(rescued$results$converged_strict))
+  expect_identical(rescued$results$start_source, "sampled")
+  expect_equal(rescued$results$Q0d, q0_true, tolerance = 1e-2)
+})
+
+test_that("(l) item 4: rescue candidates must be domain-valid (Q0 > 0, Alpha > 0)", {
+  skip_on_cran()
+  # The TICKET-069 pathological fixture (26 orders of magnitude, wildly
+  # non-monotonic): pre-fold, the default multistart budget could "rescue"
+  # this to a numerically strict-converged but domain-invalid (negative
+  # alpha) fit. Post-fold, domain-invalid candidates are never accepted, so
+  # this subject stays non-converged under the DEFAULT protocol (no
+  # multistart = FALSE workaround needed).
+  d <- data.frame(
+    id = rep(c("s1", "s2"), each = 6),
+    x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
+    y  = c(10, 8, 6, 4, 2, 1, 4e8, 1e7, 5e5, 1e13, 2e27, 60)
+  )
+  f <- suppressWarnings(fit_demand_fixed(
+    d, equation = "simplified", x_var = "x", y_var = "y", id_var = "id"
+  ))
+  s2 <- f$results[f$results$id == "s2", ]
+  expect_false(isTRUE(s2$converged))
+  expect_false(isTRUE(s2$converged_strict))
+})
+
+test_that("(m) item 6: S is validated (single finite integer >= 1)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  sub <- apt[apt$id %in% c(19, 30), ]
+
+  expect_error(
+    fit_demand_fixed(sub, equation = "hs", k = 2, S = NA),
+    "S"
+  )
+  expect_error(
+    fit_demand_fixed(sub, equation = "hs", k = 2, S = 1.9),
+    "S"
+  )
+  expect_error(
+    fit_demand_fixed(sub, equation = "hs", k = 2, S = c(2, 3)),
+    "S"
+  )
+  expect_error(
+    fit_demand_fixed(sub, equation = "hs", k = 2, S = 0),
+    "S"
+  )
+  # valid values do not error
+  expect_no_error(fit_demand_fixed(sub, equation = "hs", k = 2, S = 4))
+})
+
+test_that("(n) item 5: low-k mapping is an explicit stochastic sampler, not a silent SND reuse", {
+  skip_on_cran()
+  q0 <- c(5, 10, 20)
+  pmax <- c(1, 2, 4)
+  k_low <- 1  # below exp(1)/log(10) ~= 1.18 -- no real interior Pmax for hs/koff
+
+  set.seed(11)
+  a1 <- beezdemand:::.fixed_multistart_qp_to_alpha("hs", k_low, q0, pmax)
+  expect_true(all(is.finite(a1)))
+  expect_true(all(a1 > 0))
+
+  # Deterministic SND-style reuse would give IDENTICAL output regardless of
+  # RNG state; the fix draws alpha independently, so a different seed must
+  # give a DIFFERENT result.
+  set.seed(22)
+  a2 <- beezdemand:::.fixed_multistart_qp_to_alpha("hs", k_low, q0, pmax)
+  expect_false(isTRUE(all.equal(a1, a2)))
+
+  # And it must not silently equal the plain SND point formula either.
+  snd_formula <- 1 / (pmax * q0)
+  expect_false(isTRUE(all.equal(a1, snd_formula)))
+})

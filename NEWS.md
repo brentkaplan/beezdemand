@@ -53,9 +53,14 @@ exactly, pin the previous release:
   bound — some previously non-converged/`NA` rows may now report a
   converged fit. Subjects whose production fit was already
   strict-converged are **never** refit and are byte-identical (this is
-  guaranteed by construction, not just tested). `fit_demand_fixed(...,
-  multistart = FALSE)` or `S = 1` restores the exact legacy single-start
-  behavior. `FitCurves()` itself is completely unchanged.
+  guaranteed by construction, not just tested). A sampled starting value is
+  only ever accepted as a rescue if it is BOTH strict-converged AND
+  domain-valid (natural-scale `Q0 > 0` and `Alpha > 0`); a sampled start
+  that only "succeeds" by landing in a domain-invalid region (e.g.
+  negative alpha) is never preferred over leaving the subject
+  non-converged. `fit_demand_fixed(..., multistart = FALSE)` or `S = 1`
+  restores the exact legacy single-start behavior. `FitCurves()` itself is
+  completely unchanged.
 
 * **Essential value (EV) in `boot_demand()` and `get_demand_param_emms()`.**
   The TMB and NLME tiers computed `EV = 1 / (100 * alpha)` for every equation

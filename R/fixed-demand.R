@@ -26,6 +26,11 @@ NULL
 #' @param param_space Character. Parameterization used for fitting. One of:
 #'   - `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
 #'   - `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)
+#' @param by Optional character vector of column names to group by.
+#'   When supplied, fits are run separately within each unique
+#'   combination of the `by` columns. Returns a
+#'   `beezdemand_fixed_grouped` object with per-group child fits.
+#'   Default `NULL` (no grouping).
 #' @param multistart Logical. If `TRUE` (the default), subjects whose
 #'   production-heuristic fit is not strict-converged (`converged_strict`;
 #'   see Details) are automatically re-fit from `S - 1` additional sampled
@@ -38,12 +43,14 @@ NULL
 #'   (including the production start), when `multistart = TRUE`. Default
 #'   `NULL` uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
 #'   with a fixed `k`), 32 when `k = "fit"`. Ignored for `equation =
-#'   "linear"`.
-#' @param by Optional character vector of column names to group by.
-#'   When supplied, fits are run separately within each unique
-#'   combination of the `by` columns. Returns a
-#'   `beezdemand_fixed_grouped` object with per-group child fits.
-#'   Default `NULL` (no grouping).
+#'   "linear"`. If supplied, must be a single finite integer `>= 1`.
+#'
+#'   Note: `multistart` and `S` were added AFTER `by` in the argument list
+#'   (Codex 2F review fold, TICKET-047 item 1) specifically so that
+#'   pre-existing positional calls -- e.g.
+#'   `fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural",
+#'   "group_col")`, where the 9th positional argument is `by` -- continue to
+#'   bind correctly. Always pass `multistart`/`S` by name.
 #' @param ... Additional arguments passed to the underlying `FitCurves()` engine.
 #'
 #' @return An object of class `beezdemand_fixed` with components:
@@ -133,15 +140,32 @@ fit_demand_fixed <- function(
   y_var = "y",
   id_var = "id",
   param_space = c("natural", "log10"),
+  by = NULL,
   multistart = TRUE,
   S = NULL,
-  by = NULL,
   ...
 ) {
   equation <- match.arg(equation)
   equation <- normalize_equation(equation)
   param_space <- match.arg(param_space)
   call <- match.call()
+
+  # TICKET-047 Codex 2F fold, item 6: fail fast on a malformed S rather than
+  # silently misbehaving deep inside the rescue loop.
+  if (!is.null(S)) {
+    if (
+      !is.numeric(S) || length(S) != 1 || is.na(S) || !is.finite(S) ||
+        S != as.integer(S) || S < 1
+    ) {
+      stop(
+        "`S` must be NULL or a single finite integer >= 1 (got: ",
+        paste(deparse(S), collapse = " "),
+        ").",
+        call. = FALSE
+      )
+    }
+    S <- as.integer(S)
+  }
 
   # Warn if user explicitly passes k with simplified equation
   if (equation == "simplified" && !missing(k)) {
@@ -263,6 +287,7 @@ fit_demand_fixed <- function(
       data_used = data_used,
       equation = equation,
       k = k,
+      agg = agg,
       param_space = param_space,
       multistart = multistart,
       S = S,

@@ -102,11 +102,17 @@ NULL
 #' `"simplified"`/SND uses `.pmax_analytic_snd()`'s closed form:
 #' `Pmax = 1 / (alpha * Q0) => alpha = 1 / (Pmax * Q0)`.
 #'
-#' If `k` is too small for a real principal-branch Lambert-W solution to
-#' exist at this scale (`k <= exp(1) / log(10)`, mirroring
-#' `.pmax_analytic_hs()`'s own existence check) the function falls back to
-#' the SND-style direct mapping so a sampler always returns a usable (if
-#' less precise) starting alpha rather than failing outright.
+#' Low-k fallback (Codex 2F review fold, item 5): if `k` is too small for a
+#' real principal-branch Lambert-W solution to exist at this scale (`k <=
+#' exp(1) / log(10)`, mirroring `.pmax_analytic_hs()`'s own existence check,
+#' or if `lambertW()` itself fails), hs/koff have no interior Pmax at all --
+#' the sampled Pmax is not achievable by ANY alpha via the closed form. The
+#' function does NOT silently fall back to the (unrelated) SND point
+#' formula `alpha = 1 / (Pmax * Q0)` in this case. Instead it draws alpha
+#' directly and independently, log-uniform over a range implied by the same
+#' sampled (Q0, Pmax) bounds -- an explicit, documented, genuinely
+#' stochastic low-k/degenerate-k sampler (two calls with the same inputs
+#' but different RNG state give different alpha).
 #'
 #' @param equation `"hs"`, `"koff"`, or `"simplified"`.
 #' @param k_nat Natural-scale `k` (ignored for `"simplified"`).
@@ -120,19 +126,41 @@ NULL
   }
 
   threshold <- exp(1) / log(10)
-  if (!is.finite(k_nat) || k_nat <= threshold) {
-    return(1 / (pmax * q0))
+  if (is.finite(k_nat) && k_nat > threshold) {
+    w_val <- tryCatch(
+      lambertW(z = -1 / (k_nat * log(10))),
+      error = function(e) NA_real_
+    )
+    if (is.finite(w_val)) {
+      return(-w_val / (pmax * q0))
+    }
   }
 
-  w_val <- tryCatch(
-    lambertW(z = -1 / (k_nat * log(10))),
-    error = function(e) NA_real_
-  )
-  if (!is.finite(w_val)) {
-    return(1 / (pmax * q0))
-  }
+  .fixed_multistart_sample_alpha_low_k(q0, pmax)
+}
 
-  -w_val / (pmax * q0)
+#' Explicit alpha sampler for the low-k / no-interior-Pmax case
+#'
+#' Draws alpha log-uniformly over a range implied by the sampled (Q0, Pmax)
+#' bounds, independent of any particular (Q0, Pmax) pair -- see
+#' `.fixed_multistart_qp_to_alpha()` Details for why this is a distinct
+#' code path from the SND point-mapping formula.
+#'
+#' @param q0 Numeric vector (or scalar) of sampled/fixed Q0.
+#' @param pmax Numeric vector of sampled Pmax.
+#' @return Numeric vector of alpha starting values (same length as `pmax`).
+#' @keywords internal
+.fixed_multistart_sample_alpha_low_k <- function(q0, pmax) {
+  n <- length(pmax)
+  alpha_lo <- 1 / (4 * max(q0, na.rm = TRUE) * max(pmax, na.rm = TRUE))
+  alpha_hi <- 4 / (min(q0, na.rm = TRUE) * min(pmax, na.rm = TRUE))
+  if (!is.finite(alpha_lo) || alpha_lo <= 0) {
+    alpha_lo <- 1e-6
+  }
+  if (!is.finite(alpha_hi) || alpha_hi <= alpha_lo) {
+    alpha_hi <- alpha_lo * 1e4
+  }
+  exp(stats::runif(n, log(alpha_lo), log(alpha_hi)))
 }
 
 #' Resolve a natural-scale k value for the (Q0, Pmax) -> alpha mapping
@@ -163,6 +191,90 @@ NULL
   tryCatch(GetK(adf), error = function(e) NA_real_)
 }
 
+#' Resolve the `k` value to pass to each rescue `FitCurves()` call
+#'
+#' Codex 2F review fold, TICKET-047 item 3: the production `k` argument
+#' (`"share"`, `"range"`, `"fit"`, `"ind"`, or a plain number) means
+#' different things and CANNOT simply be re-passed unchanged to a rescue
+#' call that fits a single subject at a time:
+#'
+#' - `"share"`: `GetSharedK()` requires 2+ groups and hard-stops
+#'   ("Cannot find a shared k value with only one dataset!") on a
+#'   single-subject dataset -- every rescue attempt would silently fail via
+#'   `try()`, never actually rescuing anything.
+#' - `"range"`: `GetK()` is dataset-wide in production (computed ONCE, before
+#'   the per-subject loop); re-passing `"range"` would recompute a
+#'   DIFFERENT, subject-specific K for the rescue, silently fitting a
+#'   different model than production used for every other subject.
+#' - `"fit"`: k is a genuinely free parameter refit per subject already, so
+#'   `"fit"` is safe to pass through unchanged. Its *starting* value
+#'   (`kstart`) is recomputed internally by `FitCurves()` from the
+#'   single-subject slice, which is NOT the same starting value production
+#'   used (production's `kstart` comes from `GetK()` on the full dataset) --
+#'   this is a known, accepted, and documented limitation: only the Q0/alpha
+#'   starts are actually sampled by the multi-start protocol for `k =
+#'   "fit"`, not the k start.
+#' - `"ind"` or a plain number: already resolved per-subject (or globally)
+#'   in exactly the way a single-subject rescue call would resolve it too,
+#'   so passing through unchanged is correct.
+#'
+#' For `"share"`/`"range"`, this first tries to read the actual numeric K
+#' production used from the (dataset-wide, therefore identical across all
+#' rows) `K` column of the production results -- fast, and exact by
+#' construction. If NO row recorded a K (e.g. every single subject's own
+#' nls fit failed, which can happen independently of the dataset-wide k
+#' itself being perfectly well-defined), it falls back to recomputing K
+#' directly via the SAME function `FitCurves()` used internally
+#' (`GetK()`/`GetSharedK()`) on the SAME combined data (the union of all
+#' `data_used` slices reconstructs exactly the post-`CheckCols()`/zero-drop
+#' dataset `FitCurves()` originally computed K from) -- so this is exact,
+#' never an approximation, and never a different model than production.
+#'
+#' @param k_arg The `k` argument as supplied to `fit_demand_fixed()`.
+#' @param results The (pre-rescue) production `dfres` data frame.
+#' @param data_used The (pre-rescue) production `adfs` list.
+#' @param equation Canonical equation name (needed by `GetSharedK()`).
+#' @return A list with `value` (the `k` to pass to rescue `FitCurves()`
+#'   calls -- numeric for `"share"`/`"range"`, unchanged otherwise) and
+#'   `resolvable` (`FALSE` only when `k_arg` is `"share"`/`"range"` and the
+#'   dataset-wide k is genuinely unknowable from this run -- callers must
+#'   skip rescue entirely rather than fit a different, unreproducible
+#'   model).
+#' @keywords internal
+.fixed_multistart_resolve_k <- function(k_arg, results, data_used, equation) {
+  is_dataset_wide <- is.character(k_arg) && length(k_arg) == 1 &&
+    k_arg %in% c("share", "range")
+  if (!is_dataset_wide) {
+    return(list(value = k_arg, resolvable = TRUE, dataset_wide = FALSE))
+  }
+
+  k_vals <- if ("K" %in% names(results)) results$K else numeric(0)
+  k_vals <- k_vals[is.finite(k_vals)]
+  if (length(k_vals) > 0) {
+    return(list(value = as.numeric(k_vals[1]), resolvable = TRUE, dataset_wide = TRUE))
+  }
+
+  combined <- tryCatch(
+    do.call(rbind, lapply(data_used, function(d) d[, c("id", "x", "y")])),
+    error = function(e) NULL
+  )
+  if (is.null(combined) || nrow(combined) == 0) {
+    return(list(value = k_arg, resolvable = FALSE, dataset_wide = TRUE))
+  }
+  resolved <- tryCatch(
+    if (identical(k_arg, "range")) {
+      GetK(combined)
+    } else {
+      GetSharedK(combined, equation, sharecol = "id")
+    },
+    error = function(e) NA_real_
+  )
+  if (!is.numeric(resolved) || length(resolved) != 1 || !is.finite(resolved)) {
+    return(list(value = k_arg, resolvable = FALSE, dataset_wide = TRUE))
+  }
+  list(value = as.numeric(resolved), resolvable = TRUE, dataset_wide = TRUE)
+}
+
 #' Apply the multi-start rescue protocol to a completed FitCurves() run
 #'
 #' Called from `fit_demand_fixed()` after the production `FitCurves()` call
@@ -176,6 +288,14 @@ NULL
 #' @param data_used `adfs` list from the production call.
 #' @param equation Canonical (post `normalize_equation()`) equation name.
 #' @param k The `k` argument as supplied to `fit_demand_fixed()`.
+#' @param agg The `agg` argument as supplied to `fit_demand_fixed()`
+#'   (`NULL`, `"Mean"`, or `"Pooled"`). Codex 2F review fold, item 3: this
+#'   MUST be passed through unchanged to each rescue `FitCurves()` call
+#'   (never hard-coded to `NULL`) -- for `agg = "Pooled"`, `data_used[[i]]`
+#'   is the raw (duplicated-price) stacked data, and `FitCurves()`'s own
+#'   `agg = "Pooled"` handling is what builds the deduplicated table
+#'   `GetEmpirical()` needs; without it, `GetEmpirical()` hard-errors on
+#'   "Duplicates found where id = pooled".
 #' @param param_space `"natural"` or `"log10"`.
 #' @param multistart Logical; multi-start on/off.
 #' @param S Integer budget, or `NULL` to use the tiered default.
@@ -196,6 +316,7 @@ NULL
   data_used,
   equation,
   k,
+  agg = NULL,
   param_space,
   multistart,
   S,
@@ -247,7 +368,18 @@ NULL
   n_starts_converged <- as.integer(base_conv)
   start_source <- ifelse(base_conv, "production", "none")
 
-  do_rescue <- eligible && isTRUE(multistart) && S_resolved > 1L
+  # Codex 2F review fold, TICKET-047 item 3: resolve the k the rescue
+  # FitCurves() calls should use ONCE, up front -- see
+  # .fixed_multistart_resolve_k() for why "share"/"range" cannot simply be
+  # re-passed unchanged to a single-subject rescue call. If k is
+  # dataset-wide ("share"/"range") and unresolvable from this production
+  # run (no row recorded a usable K at all), skip rescue ENTIRELY rather
+  # than silently fit a different, unreproducible model.
+  k_resolution <- .fixed_multistart_resolve_k(k, results, data_used, equation)
+  k_for_rescue <- k_resolution$value
+
+  do_rescue <- eligible && isTRUE(multistart) && S_resolved > 1L &&
+    k_resolution$resolvable
 
   if (do_rescue) {
     constrainq0 <- dots$constrainq0 %||% NULL
@@ -269,7 +401,11 @@ NULL
         next
       }
 
-      k_nat <- .fixed_multistart_k_nat(results$K[i], k, adf)
+      k_nat <- if (k_resolution$dataset_wide) {
+        k_for_rescue
+      } else {
+        .fixed_multistart_k_nat(results$K[i], k_for_rescue, adf)
+      }
       qp <- .fixed_multistart_sample_qp(adf$x, adf$y, S_resolved - 1L)
       n_attempt <- length(qp$q0)
       if (n_attempt == 0L) {
@@ -307,8 +443,13 @@ NULL
           list(
             dat = adf[, c("id", "x", "y"), drop = FALSE],
             equation = equation,
-            k = k,
-            agg = NULL,
+            k = k_for_rescue,
+            # Codex 2F review fold, item 3: pass through the production agg
+            # unchanged (never hard-coded NULL) -- for agg = "Pooled",
+            # data_used[[i]] is the raw duplicated-price stacked data, and
+            # FitCurves()'s own agg = "Pooled" handling is what builds the
+            # deduplicated table GetEmpirical() needs.
+            agg = agg,
             detailed = TRUE,
             xcol = "x",
             ycol = "y",
@@ -328,7 +469,19 @@ NULL
           next
         }
         row_j <- legacy_j$dfres[1, , drop = FALSE]
-        if (!isTRUE(row_j$converged_strict)) {
+
+        # Codex 2F review fold, item 4: a sampled start is a valid rescue
+        # CANDIDATE only if it is strict-converged AND domain-valid
+        # (natural-scale Q0 > 0 and Alpha > 0). TICKET-069/Taboo-4 already
+        # allows a domain-invalid fit to be reported (with a warning) when
+        # the PRODUCTION start itself lands there -- that contract is
+        # unchanged. But a *sampled* rescue start that only "succeeds" by
+        # wandering into a domain-invalid region (e.g. negative alpha) is
+        # not a genuine rescue and must never be preferred over leaving the
+        # subject non-converged.
+        domain_valid <- isTRUE(is.finite(row_j$Q0d) && row_j$Q0d > 0) &&
+          isTRUE(is.finite(row_j$Alpha) && row_j$Alpha > 0)
+        if (!isTRUE(row_j$converged_strict) || !domain_valid) {
           next
         }
 

@@ -11,6 +11,7 @@
   data_used,
   equation,
   k,
+  agg = NULL,
   param_space,
   multistart,
   S,
@@ -29,6 +30,15 @@
 \item{equation}{Canonical (post \code{normalize_equation()}) equation name.}
 
 \item{k}{The \code{k} argument as supplied to \code{fit_demand_fixed()}.}
+
+\item{agg}{The \code{agg} argument as supplied to \code{fit_demand_fixed()}
+(\code{NULL}, \code{"Mean"}, or \code{"Pooled"}). Codex 2F review fold, item 3: this
+MUST be passed through unchanged to each rescue \code{FitCurves()} call
+(never hard-coded to \code{NULL}) -- for \code{agg = "Pooled"}, \code{data_used[[i]]}
+is the raw (duplicated-price) stacked data, and \code{FitCurves()}'s own
+\code{agg = "Pooled"} handling is what builds the deduplicated table
+\code{GetEmpirical()} needs; without it, \code{GetEmpirical()} hard-errors on
+"Duplicates found where id = pooled".}
 
 \item{param_space}{\code{"natural"} or \code{"log10"}.}
 

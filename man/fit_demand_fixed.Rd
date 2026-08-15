@@ -13,9 +13,9 @@ fit_demand_fixed(
   y_var = "y",
   id_var = "id",
   param_space = c("natural", "log10"),
+  by = NULL,
   multistart = TRUE,
   S = NULL,
-  by = NULL,
   ...
 )
 }
@@ -46,6 +46,12 @@ for individual fits. Default \code{NULL}.}
 \item \code{"log10"}: fit \code{log10(Q0)}, \code{log10(alpha)} (and \code{log10(k)} if \code{k = "fit"})
 }}
 
+\item{by}{Optional character vector of column names to group by.
+When supplied, fits are run separately within each unique
+combination of the \code{by} columns. Returns a
+\code{beezdemand_fixed_grouped} object with per-group child fits.
+Default \code{NULL} (no grouping).}
+
 \item{multistart}{Logical. If \code{TRUE} (the default), subjects whose
 production-heuristic fit is not strict-converged (\code{converged_strict};
 see Details) are automatically re-fit from \code{S - 1} additional sampled
@@ -58,13 +64,13 @@ reproduce the legacy single-start behavior exactly. Not applicable to
 \item{S}{Integer or \code{NULL}. Total number of starts to try per subject
 (including the production start), when \code{multistart = TRUE}. Default
 \code{NULL} uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
-with a fixed \code{k}), 32 when \code{k = "fit"}. Ignored for \code{equation = "linear"}.}
+with a fixed \code{k}), 32 when \code{k = "fit"}. Ignored for \code{equation = "linear"}. If supplied, must be a single finite integer \verb{>= 1}.
 
-\item{by}{Optional character vector of column names to group by.
-When supplied, fits are run separately within each unique
-combination of the \code{by} columns. Returns a
-\code{beezdemand_fixed_grouped} object with per-group child fits.
-Default \code{NULL} (no grouping).}
+Note: \code{multistart} and \code{S} were added AFTER \code{by} in the argument list
+(Codex 2F review fold, TICKET-047 item 1) specifically so that
+pre-existing positional calls -- e.g.
+\code{fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")}, where the 9th positional argument is \code{by} -- continue to
+bind correctly. Always pass \code{multistart}/\code{S} by name.}
 
 \item{...}{Additional arguments passed to the underlying \code{FitCurves()} engine.}
 }

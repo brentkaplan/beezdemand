@@ -30,10 +30,15 @@ different scales) and share the Lambert-W relation used by
 \verb{Pmax = 1 / (alpha * Q0) => alpha = 1 / (Pmax * Q0)}.
 }
 \details{
-If \code{k} is too small for a real principal-branch Lambert-W solution to
-exist at this scale (\code{k <= exp(1) / log(10)}, mirroring
-\code{.pmax_analytic_hs()}'s own existence check) the function falls back to
-the SND-style direct mapping so a sampler always returns a usable (if
-less precise) starting alpha rather than failing outright.
+Low-k fallback (Codex 2F review fold, item 5): if \code{k} is too small for a
+real principal-branch Lambert-W solution to exist at this scale (\code{k <= exp(1) / log(10)}, mirroring \code{.pmax_analytic_hs()}'s own existence check,
+or if \code{lambertW()} itself fails), hs/koff have no interior Pmax at all --
+the sampled Pmax is not achievable by ANY alpha via the closed form. The
+function does NOT silently fall back to the (unrelated) SND point
+formula \code{alpha = 1 / (Pmax * Q0)} in this case. Instead it draws alpha
+directly and independently, log-uniform over a range implied by the same
+sampled (Q0, Pmax) bounds -- an explicit, documented, genuinely
+stochastic low-k/degenerate-k sampler (two calls with the same inputs
+but different RNG state give different alpha).
 }
 \keyword{internal}
