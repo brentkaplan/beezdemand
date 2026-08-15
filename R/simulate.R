@@ -44,6 +44,13 @@
 ##' @export
 SimulateDemand <- function(nruns = 10, setparams, sdindex, x, outdir = NULL, fn = NULL) {
     RunOneSim <- function(run = 1, setparams, sdindex, x) {
+        ## TICKET-060: in a fresh R session the RNG state has never been
+        ## initialized, so .Random.seed does not exist yet -- touch the RNG
+        ## once to force its creation before reading it (documented base-R
+        ## idiom).
+        if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+            stats::runif(1)
+        }
         ## Save inSate seed
         inState <- .Random.seed
         ## Initialize vector for simulation parameters
@@ -158,12 +165,36 @@ GetValsForSim <- function(dat) {
         fit <- NULL
         fit <- try(nlsr::wrapnlsr(data = adf,
                                   y ~ q0 * 10^(k * (exp(-alpha * q0 * x) - 1)),
-                                  start = list(q0 = 10, alpha = 0.01)), 
+                                  start = list(q0 = 10, alpha = 0.01)),
                    silent = TRUE)
 
         if (!inherits(fit, "try-error")) {
             dfres[i, c("Q0", "Alpha")] <- as.numeric(coef(fit)[c("q0", "alpha")])
-            dfres[i, 4:NCOL(dfres)] <- resid(fit)
+            ## TICKET-060: residual columns are the GLOBAL price set
+            ## (`prices`, in `unique(dat$x)` order); resid(fit) is in this
+            ## subject's own row order, which need not match `prices` order
+            ## and need not include every price. Assigning by position
+            ## (dfres[i, 4:NCOL(dfres)] <- resid(fit)) either errors when a
+            ## subject is missing a price row ("replacement has N items,
+            ## need M") or, worse, silently places a residual under the
+            ## WRONG price column when a subject's row order differs from
+            ## `prices` order -- corrupting sdindex with no warning. Match
+            ## by price VALUE instead; missing prices are left NA, which
+            ## sdindex already tolerates via na.rm = TRUE. data.frame()
+            ## mangled the numeric price column names via make.names()
+            ## (e.g. 0.5 -> "X0.5") when dfres was constructed above, so
+            ## apply the same transform when looking columns up by price.
+            price_cols <- make.names(as.character(adf$x))
+            dfres[i, price_cols] <- resid(fit)
+        } else {
+            warning(
+                sprintf(
+                    "GetValsForSim: fit failed for participant '%s': %s",
+                    participants[i],
+                    trim.leading(strsplit(fit[1], "\n")[[1]][2])
+                ),
+                call. = FALSE
+            )
         }
     }
 

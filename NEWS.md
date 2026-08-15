@@ -118,6 +118,32 @@ exactly, pin the previous release:
   converge cleanly on the first `wrapnlsr` attempt with positive Q0/Alpha
   are unchanged.
 
+* **`GetValsForSim()` (used by `SimulateDemand()`'s Koffarnus et al., 2015
+  simulation workflow) misaligned or dropped per-price residuals.** Residual
+  columns are keyed to the global price set (`unique(dat$x)` order);
+  `resid(fit)` is returned in the fitted subject's own row order. The old
+  code assigned residuals to price columns by POSITION
+  (`dfres[i, 4:NCOL(dfres)] <- resid(fit)`), which either errored ("replacement
+  has N items, need M") when a subject was missing a price row, or — when a
+  subject had a full but differently-ordered price grid — silently placed
+  residuals under the wrong price column with no error. Since `sdindex`
+  (per-price residual SD, which directly controls simulated variance) is
+  computed from these columns, a subject whose row order didn't match
+  `unique(dat$x)` order silently corrupted `sdindex` without any warning.
+  Residuals are now matched to price columns by price VALUE
+  (`adf$x`, tolerating a missing price as `NA`, which `sdindex`'s existing
+  `na.rm = TRUE` already handles) instead of by position. A subject whose
+  fit fails now also raises a `warning()` naming the subject and cause
+  instead of silently contributing an all-NA row. Condition under which
+  output differs from 0.2.0: any call where a subject's row order (within
+  that subject) doesn't match `unique(dat$x)` order, or a subject is missing
+  one or more price rows (previously miscomputed `sdindex` or crashed
+  outright; now computed correctly, with `NA` for missing price cells).
+  Subjects with a complete price grid in canonical order are unchanged.
+  Separately, `SimulateDemand()` now works in a fresh R session that has
+  never touched the RNG (`RunOneSim()` previously read `.Random.seed`
+  unconditionally, which does not exist until the RNG has been used once).
+
 ## Legacy fitter robustness (batch failures)
 
 * `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =
