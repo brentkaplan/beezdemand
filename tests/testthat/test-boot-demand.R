@@ -468,9 +468,8 @@ test_that("boot_demand warns exactly once when hessian_pd is FALSE (dedup throug
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(
+  conds <- .capture_warning_conditions(
     res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)
   )
-  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
-  expect_identical(sum(pd_warns), 1L)
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
 })

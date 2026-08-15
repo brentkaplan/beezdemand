@@ -188,6 +188,12 @@ test_that("augment exponential handles data with zeros without -Inf", {
 
 
 # --- TICKET-063: hessian_pd gate on TMB inference surfaces ------------------
+# Codex 2C review fold (RECOMMENDED 5): assert on the
+# `beezdemand_hessian_not_pd_warning` CLASS (via `.capture_warning_conditions()`
+# / `.n_hessian_pd_warnings()`, helper-hessian-pd.R), not on warning text --
+# `testthat::capture_warnings()` discards condition class, so a text
+# `grepl("not positive definite", ...)` match can't tell this warning apart
+# from any other warning that happens to contain the same phrase.
 
 test_that("vcov.beezdemand_tmb warns once when hessian_pd is FALSE (weak fit)", {
   skip_on_cran()
@@ -197,9 +203,8 @@ test_that("vcov.beezdemand_tmb warns once when hessian_pd is FALSE (weak fit)", 
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(V <- vcov(fit))
-  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
-  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  conds <- .capture_warning_conditions(V <- vcov(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(is.matrix(V) && nrow(V) == ncol(V))
 })
 
@@ -220,9 +225,8 @@ test_that("confint.beezdemand_tmb (wald) warns once when hessian_pd is FALSE", {
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(ci <- confint(fit))
-  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
-  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  conds <- .capture_warning_conditions(ci <- confint(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(nrow(ci) > 0)
 })
 
@@ -234,11 +238,10 @@ test_that("confint.beezdemand_tmb (simulate) warns exactly once (dedup through d
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(
+  conds <- .capture_warning_conditions(
     ci <- confint(fit, method = "simulate", R = 100, seed = 1)
   )
-  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
-  expect_identical(sum(pd_warns), 1L)
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(nrow(ci) > 0)
 })
 
@@ -259,9 +262,8 @@ test_that("anova.beezdemand_tmb (single-fit Wald) warns exactly once when hessia
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(a <- anova(fit, group_by = "parameter"))
-  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
-  expect_identical(sum(pd_warns), 1L)
+  conds <- .capture_warning_conditions(a <- anova(fit, group_by = "parameter"))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
 })
 
 test_that("anova.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
@@ -270,6 +272,28 @@ test_that("anova.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
   expect_no_warning(anova(fit, group_by = "parameter"))
+})
+
+test_that(".tmb_parametric_draws() (direct call): healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(
+    draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
+  )
+  expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+})
+
+test_that("boot_demand(): healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(
+    res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)
+  )
+  expect_true(nrow(res) > 0)
 })
 
 

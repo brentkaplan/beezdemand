@@ -214,9 +214,9 @@ test_that(".tmb_parametric_draws-backed confint(simulate) surfaces the hessian_p
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(
+  conds <- .capture_warning_conditions(
     draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
   )
-  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
 })

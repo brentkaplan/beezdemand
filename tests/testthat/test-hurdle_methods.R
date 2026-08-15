@@ -311,8 +311,8 @@ test_that("vcov.beezdemand_hurdle warns once when hessian_pd is FALSE", {
   )
   fit$hessian_pd <- FALSE
 
-  warns <- testthat::capture_warnings(V <- vcov(fit))
-  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
+  conds <- .capture_warning_conditions(V <- vcov(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(isSymmetric(V))
 })
 
@@ -340,9 +340,8 @@ test_that("confint.beezdemand_hurdle warns once when hessian_pd is FALSE", {
   )
   fit$hessian_pd <- FALSE
 
-  warns <- testthat::capture_warnings(ci <- confint(fit))
-  expect_true(any(grepl("not positive definite", warns, ignore.case = TRUE)))
-  expect_identical(sum(grepl("not positive definite", warns, ignore.case = TRUE)), 1L)
+  conds <- .capture_warning_conditions(ci <- confint(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(nrow(ci) > 0)
 })
 

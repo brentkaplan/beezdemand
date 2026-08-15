@@ -20,3 +20,25 @@
     verbose = 0
   ))
 }
+
+# Codex 2C review fold (RECOMMENDED 5, TICKET-063): `testthat::capture_warnings()`
+# discards condition class (it returns `get_messages()` of the captured
+# stack, character only), so text-based `grepl("not positive definite",
+# ...)` assertions can't distinguish the `beezdemand_hessian_not_pd_warning`
+# class from any other warning that happens to contain that phrase. This
+# collects the actual condition objects so tests can assert on class.
+.capture_warning_conditions <- function(expr) {
+  conds <- list()
+  withCallingHandlers(
+    expr,
+    warning = function(w) {
+      conds[[length(conds) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  conds
+}
+
+.n_hessian_pd_warnings <- function(conds) {
+  sum(vapply(conds, inherits, logical(1), "beezdemand_hessian_not_pd_warning"))
+}

@@ -1123,9 +1123,8 @@ test_that("get_demand_param_emms.beezdemand_tmb warns once when hessian_pd is FA
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(e <- get_demand_param_emms(fit, param = "Q0"))
-  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
-  expect_identical(sum(pd_warns), 1L)
+  conds <- .capture_warning_conditions(e <- get_demand_param_emms(fit, param = "Q0"))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_true(nrow(e) > 0)
 })
 
@@ -1145,11 +1144,10 @@ test_that("get_demand_comparisons.beezdemand_tmb warns exactly once per call (no
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
 
-  warns <- testthat::capture_warnings(
+  conds <- .capture_warning_conditions(
     res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
   )
-  pd_warns <- grepl("not positive definite", warns, ignore.case = TRUE)
-  expect_identical(sum(pd_warns), 1L)
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
 })
 
 test_that("get_demand_comparisons.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
