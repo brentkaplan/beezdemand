@@ -1168,3 +1168,80 @@ test_that("get_demand_comparisons.beezdemand_tmb: healthy fit raises no hessian_
   expect_true(isTRUE(fit$hessian_pd))
   expect_no_warning(get_demand_comparisons(fit, param = "Q0"))
 })
+
+
+# --- TICKET-074: NLME EMMs back-transform correctly for param_space="natural" -
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space fit agrees with log10-space fit (simplified)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+
+  f_nat <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "simplified", param_space = "natural")
+  f_log <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "simplified", param_space = "log10")
+
+  e_nat <- get_demand_param_emms(f_nat, include_ev = TRUE)
+  e_log <- get_demand_param_emms(f_log, include_ev = TRUE)
+
+  # Two independently-optimized NLME parameterizations of the same data
+  # (natural vs. log10) converge to slightly different optima; ~8% tolerance
+  # confirms they agree in magnitude (the bug produced errors of orders of
+  # magnitude -- see this ticket's RED evidence), not bit-identity.
+  expect_equal(e_nat$alpha_natural, e_log$alpha_natural, tolerance = 0.08)
+  expect_equal(e_nat$Q0_natural, e_log$Q0_natural, tolerance = 0.08)
+  expect_equal(e_nat$EV, e_log$EV, tolerance = 0.08)
+
+  expect_true(e_nat$LCL_alpha_natural <= e_nat$alpha_natural)
+  expect_true(e_nat$alpha_natural <= e_nat$UCL_alpha_natural)
+  expect_true(e_nat$LCL_Q0_natural <= e_nat$Q0_natural)
+  expect_true(e_nat$Q0_natural <= e_nat$UCL_Q0_natural)
+
+  # EV = 1/alpha_natural exactly for the k-free SND ("simplified") form
+  expect_equal(e_nat$EV, 1 / e_nat$alpha_natural, tolerance = 1e-8)
+
+  # param_log10 columns still present and consistent (log10 of the natural values)
+  expect_equal(e_nat$alpha_param_log10, log10(e_nat$alpha_natural), tolerance = 1e-8)
+  expect_equal(e_nat$Q0_param_log10, log10(e_nat$Q0_natural), tolerance = 1e-8)
+})
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space exponentiated fit computes EV with k", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+
+  f_nat <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "exponentiated", k = 3,
+                            param_space = "natural")
+  e_nat <- get_demand_param_emms(f_nat, include_ev = TRUE)
+
+  expect_equal(e_nat$EV, 1 / (100 * e_nat$alpha_natural * (3^1.5)), tolerance = 1e-8)
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: natural-space fit does not error and agrees in sign with log10 fit", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+
+  fit_nat <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "natural"
+  )
+  fit_log <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "log10"
+  )
+
+  comps_nat <- get_demand_comparisons(fit_nat, compare_specs = ~factor1, param = "Q0")
+  comps_log <- get_demand_comparisons(fit_log, compare_specs = ~factor1, param = "Q0")
+
+  expect_equal(nrow(comps_nat$Q0$contrasts_log10), nrow(comps_log$Q0$contrasts_log10))
+  expect_equal(
+    sign(comps_nat$Q0$contrasts_log10$estimate),
+    sign(comps_log$Q0$contrasts_log10$estimate)
+  )
+})

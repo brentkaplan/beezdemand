@@ -202,6 +202,14 @@ get_demand_param_emms.beezdemand_nlme <- function(
   # so a direct call always warns on a non-converged fit.
   .nlme_warn_if_not_converged(fit_obj)
 
+  # TICKET-074: for a param_space = "natural" fit, the model itself
+  # (and hence emmeans' ref_grid summary) is already on the natural scale --
+  # NOT log10(Q0)/log10(alpha) -- so unconditionally exponentiating with
+  # `10^` below (the param_space = "log10" case) would be wrong by orders of
+  # magnitude. Resolve the space once, the same way every other NLME surface
+  # does (mixed-methods.R: summary/tidy/confint/get_subject_pars).
+  internal_space <- fit_obj$param_space %||% fit_obj$param_info$param_space %||% "log10"
+
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
@@ -402,12 +410,33 @@ get_demand_param_emms.beezdemand_nlme <- function(
             )
         }
 
+        # TICKET-074: `df_log_scale_summary`'s "log10" columns are the raw
+        # emmeans ref_grid summary on the model's *internal* scale -- for a
+        # param_space = "natural" fit that scale already IS natural (Q0/alpha
+        # are the model parameters directly, not log10(Q0)/log10(alpha)).
+        # Keep the emitted column set identical across both spaces (other
+        # NLME surfaces select by these exact names) by filling
+        # `param_log10_*` with log10() of the natural values instead of
+        # dropping them.
+        emm_table_combined <- if (identical(internal_space, "natural")) {
+          emm_table_combined |>
+            dplyr::mutate(
+              param_natural_estimate = .data$param_log10_estimate,
+              param_natural_LCL = .data$param_log10_LCL,
+              param_natural_UCL = .data$param_log10_UCL,
+              param_log10_estimate = log10(.data$param_log10_estimate),
+              param_log10_LCL = log10(.data$param_log10_LCL),
+              param_log10_UCL = log10(.data$param_log10_UCL)
+            )
+        } else {
+          emm_table_combined |>
+            dplyr::mutate(
+              param_natural_estimate = 10^.data$param_log10_estimate,
+              param_natural_LCL = 10^.data$param_log10_LCL,
+              param_natural_UCL = 10^.data$param_log10_UCL
+            )
+        }
         emm_table_combined <- emm_table_combined |>
-          dplyr::mutate(
-            param_natural_estimate = 10^.data$param_log10_estimate,
-            param_natural_LCL = 10^.data$param_log10_LCL,
-            param_natural_UCL = 10^.data$param_log10_UCL
-          ) |>
           dplyr::rename_with(
             ~ gsub(
               "param_log10_estimate",

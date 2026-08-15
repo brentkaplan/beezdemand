@@ -259,6 +259,22 @@ still return the same numbers.
   no new conditions. See also the `get_demand_param_emms()` /
   `param_space = "natural"` bullet below, which fixes a related but
   distinct back-transformation bug on the same NLME surface.
+* **`get_demand_param_emms()` back-transformed with `10^` unconditionally,
+  giving wrong `*_natural` columns (and `EV`) for NLME fits made with
+  `param_space = "natural"`.** `fit_demand_mixed(..., param_space =
+  "natural")` fits Q0/alpha directly on the natural scale (supported for
+  `equation_form = "simplified"`/`"exponentiated"`), so the raw emmeans
+  summary is already natural-scale; exponentiating it again with `10^`
+  inflated `Q0_natural`/`alpha_natural` by orders of magnitude and
+  propagated into `EV`, with no warning. `get_demand_param_emms()` now
+  resolves `param_space` the same way every other NLME surface does and,
+  for a natural-space fit, uses the emmeans summary directly for the
+  `*_natural` columns and fills `*_param_log10` with `log10()` of those
+  values (keeping the same column set across both spaces). Condition under
+  which output differs from 0.2.0: `beezdemand_nlme` fits made with
+  `param_space = "natural"`, only in `get_demand_param_emms()` (and
+  anything built on its EV branch). `param_space = "log10"` fits (the
+  default) and the TMB tier (already space-aware) are unaffected.
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
