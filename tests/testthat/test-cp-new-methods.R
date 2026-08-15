@@ -97,6 +97,162 @@ test_that("augment methods on NULL model return empty tibble (no error)", {
   expect_equal(nrow(aug), 0)
 })
 
+# TICKET-068 (E5c): documented .fitted/.resid/.fixed columns must not
+# disappear silently when fitted()/residuals()/predict() error or the
+# result's length doesn't match the augmented data.
+
+test_that("augment.cp_model_nls warns when .fitted/.resid are omitted (real fixture + failure)", {
+  d <- data.frame(x = 1:6, y = c(2, 4, 5, 8, 11, 13))
+  real_model <- stats::nls(y ~ a + b * x, data = d, start = list(a = 0, b = 2))
+
+  # Length mismatch: real fitted() output, but `data` has an extra row.
+  obj_mismatch <- structure(
+    list(model = real_model, data = rbind(d, d[1, ])),
+    class = "cp_model_nls"
+  )
+  expect_warning(
+    out_mismatch <- augment(obj_mismatch),
+    class = "beezdemand_cp_augment_omitted_warning",
+    regexp = "fitted\\(\\).*length mismatch"
+  )
+  expect_false(".fitted" %in% names(out_mismatch))
+  expect_false(".resid" %in% names(out_mismatch))
+
+  # fitted() genuinely produces nothing usable (length-0 -> mismatch path).
+  obj_fail <- structure(list(model = list(), data = d), class = "cp_model_nls")
+  expect_warning(
+    out_fail <- augment(obj_fail),
+    class = "beezdemand_cp_augment_omitted_warning"
+  )
+  expect_false(".fitted" %in% names(out_fail))
+})
+
+# Codex 2D review (blocking #1): the warning must carry conditionMessage(e),
+# not just "fitted()/residuals() failed". A class-specific S3 method defined
+# at test-file scope is NOT visible to UseMethod() dispatch happening inside
+# the package's own namespace (fitted.<class> here would never be found), so
+# force the error at the generic itself via local_mocked_bindings(.package=
+# "stats") -- this really does make stats::fitted() throw, giving a genuine
+# caught condition, not a fabricated one.
+test_that("augment.cp_model_nls warning includes conditionMessage(e) from a real fitted() error", {
+  d <- data.frame(x = 1:6, y = c(2, 4, 5, 8, 11, 13))
+  real_model <- stats::nls(y ~ a + b * x, data = d, start = list(a = 0, b = 2))
+  obj <- structure(list(model = real_model, data = d), class = "cp_model_nls")
+
+  testthat::local_mocked_bindings(
+    fitted = function(...) stop("custom nls fitted boom"),
+    .package = "stats"
+  )
+
+  expect_warning(
+    out <- augment(obj),
+    class = "beezdemand_cp_augment_omitted_warning",
+    regexp = "fitted\\(\\) failed: custom nls fitted boom"
+  )
+  expect_false(".fitted" %in% names(out))
+})
+
+test_that("augment.cp_model_lm warns when .fitted/.resid are omitted (length mismatch)", {
+  d <- data.frame(x = 1:6, y = c(2, 4, 5, 8, 11, 13))
+  real_model <- stats::lm(y ~ x, data = d)
+
+  obj_mismatch <- structure(
+    list(model = real_model, data = rbind(d, d[1, ])),
+    class = "cp_model_lm"
+  )
+  expect_warning(
+    out <- augment(obj_mismatch),
+    class = "beezdemand_cp_augment_omitted_warning",
+    regexp = "\\.fitted: fitted\\(\\) length mismatch"
+  )
+  expect_false(".fitted" %in% names(out))
+  expect_false(".resid" %in% names(out))
+})
+
+# Codex 2D review (blocking #1): same conditionMessage requirement for lm.
+test_that("augment.cp_model_lm warning includes conditionMessage(e) from a real fitted() error", {
+  d <- data.frame(x = 1:6, y = c(2, 4, 5, 8, 11, 13))
+  real_model <- stats::lm(y ~ x, data = d)
+  obj <- structure(list(model = real_model, data = d), class = "cp_model_lm")
+
+  testthat::local_mocked_bindings(
+    fitted = function(...) stop("custom lm fitted boom"),
+    .package = "stats"
+  )
+
+  expect_warning(
+    out <- augment(obj),
+    class = "beezdemand_cp_augment_omitted_warning",
+    regexp = "\\.fitted: fitted\\(\\) failed: custom lm fitted boom"
+  )
+  expect_false(".fitted" %in% names(out))
+})
+
+test_that("augment.cp_model_lmer warns when .fitted/.resid are omitted (length mismatch)", {
+  skip_if_not_installed("lme4")
+  d <- data.frame(
+    x = rep(1:6, 2),
+    y = c(2, 4, 5, 8, 11, 13, 3, 5, 6, 9, 12, 14),
+    id = factor(rep(c("a", "b"), each = 6))
+  )
+  real_model <- lme4::lmer(y ~ x + (1 | id), data = d)
+
+  # Extra row: fitted()/residuals() (length 12, from the original model)
+  # mismatch nrow(out) = 13; predict(newdata = x$data, ...) legitimately
+  # produces 13 values, so .fixed is unaffected by THIS mismatch -- the
+  # .fixed-omission path is exercised separately below.
+  obj_mismatch <- structure(
+    list(model = real_model, data = rbind(d, d[1, ])),
+    class = "cp_model_lmer"
+  )
+  expect_warning(
+    out <- augment(obj_mismatch),
+    class = "beezdemand_cp_augment_omitted_warning"
+  )
+  expect_false(".fitted" %in% names(out))
+  expect_false(".resid" %in% names(out))
+})
+
+test_that("augment.cp_model_lmer warns when .fixed is omitted (predict() failure)", {
+  skip_if_not_installed("lme4")
+  d <- data.frame(
+    x = rep(1:6, 2),
+    y = c(2, 4, 5, 8, 11, 13, 3, 5, 6, 9, 12, 14),
+    id = factor(rep(c("a", "b"), each = 6))
+  )
+  real_model <- lme4::lmer(y ~ x + (1 | id), data = d)
+
+  # `data` lacks the `x` predictor the fitted formula needs ->
+  # predict(newdata=...) errors ("object 'x' not found").
+  obj_bad <- structure(
+    list(model = real_model, data = d[, "y", drop = FALSE]),
+    class = "cp_model_lmer"
+  )
+  expect_warning(
+    out <- augment(obj_bad),
+    class = "beezdemand_cp_augment_omitted_warning",
+    regexp = "\\.fixed: predict\\(\\) failed:.*object 'x' not found"
+  )
+  expect_false(".fixed" %in% names(out))
+})
+
+test_that("augment methods are silent when everything succeeds (real fixture)", {
+  skip_on_cran()
+  fits <- make_fits()
+  expect_no_warning(
+    augment(fits$nls),
+    class = "beezdemand_cp_augment_omitted_warning"
+  )
+  expect_no_warning(
+    augment(fits$lm),
+    class = "beezdemand_cp_augment_omitted_warning"
+  )
+  expect_no_warning(
+    augment(fits$lmer),
+    class = "beezdemand_cp_augment_omitted_warning"
+  )
+})
+
 # --- confint methods --------------------------------------------------------
 
 test_that("confint.cp_model_lm returns the expected tibble shape", {

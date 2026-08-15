@@ -215,3 +215,114 @@ test_that("zhao_exponential Pmax values are finite and positive (3-RE)", {
   expect_true(all(is.finite(pars$Omax)), info = "All 3-RE Omax values should be finite")
   expect_true(all(pars$Omax > 0), info = "All 3-RE Omax values should be positive")
 })
+
+# TICKET-061: .hurdle_chol_or_fallback() must warn (classed) when it falls
+# back to an uncorrelated diagonal covariance, and stay silent when Sigma is
+# genuinely positive definite.
+
+test_that(".hurdle_chol_or_fallback warns once when Sigma is not PD", {
+  # Jointly-impossible pairwise correlations (audit mechanism repro,
+  # TICKET-061): eigenvalues 1.9, 1.9, -0.8 -> chol() errors.
+  Sigma <- matrix(c(1, .9, .9, .9, 1, -.9, .9, -.9, 1), nrow = 3)
+  sigma_diag <- c(1, 1, 1)
+
+  expect_warning(
+    L <- beezdemand:::.hurdle_chol_or_fallback(Sigma, sigma_diag),
+    class = "beezdemand_hurdle_chol_fallback_warning"
+  )
+  # Fallback is the Cholesky factor of the diagonal fallback: L'L == identity.
+  expect_equal(unname(t(L) %*% L), diag(sigma_diag), tolerance = 1e-10)
+})
+
+test_that(".hurdle_chol_or_fallback is silent for a positive-definite Sigma", {
+  Sigma <- matrix(c(1, .3, .3, 1), nrow = 2)
+  sigma_diag <- c(1, 1)
+
+  expect_no_warning(L <- beezdemand:::.hurdle_chol_or_fallback(Sigma, sigma_diag))
+  expect_equal(unname(t(L) %*% L), Sigma, tolerance = 1e-10)
+})
+
+# Codex 2D review (blocking #2): add a REAL-fixture integration test for
+# TICKET-061 -- a small real hurdle fit whose Sigma is forced non-PD by
+# mocking base::chol() (the single lowest-level primitive
+# .hurdle_chol_or_fallback() wraps), scoped only around the predict() call
+# so the fit itself (and its RE simulation, which also calls chol()) is
+# unaffected. Asserts exactly ONE beezdemand_hurdle_chol_fallback_warning
+# fires from predict(marginal = TRUE) -> .compute_marginal_demand(), and
+# that the returned marginal predictions equal those from an equivalent
+# real fit whose Sigma is GENUINELY diagonal (rho_ab_raw = 0, so chol()
+# succeeds normally) -- i.e., the forced fallback produces exactly the
+# values a diagonal-Sigma model would, not an ad hoc/wrong substitute.
+test_that("forcing chol() to fail during predict() on a real hurdle fit: exactly one warning, output matches a genuinely-diagonal-Sigma fit", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 20, seed = 2026, stop_at_zero = FALSE)
+  fit <- fit_demand_hurdle(
+    sim_data,
+    y_var = "y",
+    x_var = "x",
+    id_var = "id",
+    random_effects = c("zeros", "q0"),
+    verbose = 0
+  )
+  skip_if(is.null(fit), "hurdle fit failed")
+
+  # A second, otherwise-identical fit object whose Sigma is FORCED to be
+  # exactly diagonal by zeroing the correlation parameter -- chol() succeeds
+  # normally on this one (no mock needed), so its marginal predictions are
+  # the ground truth for "what the diagonal fallback should produce".
+  fit_diag <- fit
+  fit_diag$model$coefficients[["rho_ab_raw"]] <- 0
+
+  prices <- c(0, 1, 2, 5)
+
+  # Capture the REAL chol() before mocking it, so the mock can throw only
+  # for the fit's actual (correlated) Sigma while still letting
+  # .hurdle_chol_or_fallback()'s OWN internal fallback call --
+  # chol(diag(sigma_diag)), which is genuinely diagonal/PD -- succeed via
+  # the real implementation. Otherwise the mock would also break the
+  # fallback path itself.
+  real_chol <- chol
+
+  # with_mocked_bindings() scopes the mock to ONLY the `code =` block below
+  # (unlike local_mocked_bindings(), which would persist to the end of the
+  # test_that() block and also corrupt the fit_diag predict() call further
+  # down) -- so the fit above, and the fit_diag predict() call below, both
+  # use the real base::chol().
+  n_fallback_warnings <- 0L
+  pred_forced <- withCallingHandlers(
+    testthat::with_mocked_bindings(
+      chol = function(x, ...) {
+        if (isTRUE(all.equal(unname(x), diag(diag(x)), check.attributes = FALSE))) {
+          real_chol(x, ...)
+        } else {
+          stop("forced non-PD for TICKET-061 real-fixture integration test")
+        }
+      },
+      .package = "base",
+      code = predict(
+        fit, prices = prices, type = "demand", marginal = TRUE,
+        correction = FALSE, seed = 99L
+      )
+    ),
+    beezdemand_hurdle_chol_fallback_warning = function(w) {
+      n_fallback_warnings <<- n_fallback_warnings + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_equal(n_fallback_warnings, 1L)
+
+  n_diag_warnings <- 0L
+  pred_diag <- withCallingHandlers(
+    predict(fit_diag, prices = prices, type = "demand", marginal = TRUE, correction = FALSE, seed = 99L),
+    beezdemand_hurdle_chol_fallback_warning = function(w) {
+      n_diag_warnings <<- n_diag_warnings + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_diag_warnings, 0L)
+
+  expect_equal(pred_forced$.fitted, pred_diag$.fitted, tolerance = 1e-10)
+})

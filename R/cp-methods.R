@@ -7,6 +7,79 @@ utils::globalVariables(c(
   "y_pred"
 ))
 
+#' Warn When a cp_model_nls Fit's Winning Backend Did Not Converge
+#'
+#' @description
+#' Internal helper (TICKET-065). `object$convergence$isConv` is `FALSE` only
+#' when the winning backend explicitly reported non-convergence (`nls`/
+#' `nlsLM`-class `convInfo`); it is `NA` when no such diagnostic exists
+#' (`wrapnlsr`) or the object predates this field. Only the explicit `FALSE`
+#' case warns -- an unknown convergence status is not itself an error.
+#'
+#' @param object A `cp_model_nls` object.
+#' @return Invisible `NULL`; called for the warning side effect.
+#' @keywords internal
+.cp_warn_if_nonconverged <- function(object) {
+  conv <- object$convergence
+  if (!is.null(conv) && identical(conv$isConv, FALSE)) {
+    cli::cli_warn(c(
+      "!" = "The winning fit ({.val {object$method}}) did not converge (isConv = FALSE).",
+      "i" = if (!is.na(conv$stopMessage)) "Backend message: {conv$stopMessage}",
+      "i" = "Standard errors, p-values, and confidence intervals from this fit may be unreliable."
+    ), class = c("beezdemand_cp_nls_nonconverged_warning", "beezdemand_warning"))
+  }
+  invisible(NULL)
+}
+
+#' Warn When augment.cp_model_*() Omits a Documented Column
+#'
+#' @description
+#' Internal helper (TICKET-068, E5c). The `augment.cp_model_*()` methods
+#' document `.fitted`/`.resid`/`.fixed` as always-present columns; when the
+#' underlying `fitted()`/`residuals()`/`predict()` call errors, or its
+#' result's length doesn't match the augmented data, the column was
+#' previously dropped with no indication -- indistinguishable from "not
+#' applicable". Codex 2D review (blocking #1): the warning must name which
+#' call failed and include `conditionMessage(e)`, not just the column name.
+#'
+#' @param details Character vector, one fully-composed detail string per
+#'   omitted column (e.g. `".fitted: fitted() failed: <message>"`).
+#' @return Invisible `NULL`; called for the warning side effect.
+#' @keywords internal
+.cp_warn_augment_omitted <- function(details) {
+  cli::cli_warn(
+    "Column{?s} omitted from augment() output: {paste(details, collapse = '; ')}.",
+    class = c("beezdemand_cp_augment_omitted_warning", "beezdemand_warning")
+  )
+  invisible(NULL)
+}
+
+#' Describe Why an Augment Column Was Omitted
+#'
+#' @description
+#' Internal helper (TICKET-068, E5c). Builds the "colname: reason" detail
+#' string for `.cp_warn_augment_omitted()` from either a caught condition or
+#' a length mismatch against the expected row count.
+#'
+#' @param col Column name (e.g. `".fitted"`).
+#' @param fn_label Human name of the failing call (e.g. `"fitted()"`).
+#' @param res Either the successful result, or a condition object caught via
+#'   `tryCatch(..., error = function(e) e)`.
+#' @param n_expected Expected length (number of rows in the augmented data).
+#' @return Character string.
+#' @keywords internal
+.cp_augment_omit_reason <- function(col, fn_label, res, n_expected) {
+  if (inherits(res, "condition")) {
+    return(sprintf("%s: %s failed: %s", col, fn_label, conditionMessage(res)))
+  }
+  sprintf(
+    "%s: %s length mismatch (%d value%s vs %d row%s)",
+    col, fn_label,
+    length(res), if (length(res) == 1) "" else "s",
+    n_expected, if (n_expected == 1) "" else "s"
+  )
+}
+
 #-------------------------------------------------------------------------------
 # Summarize Nonlinear Model (cp_model_nls)
 #' Summarize a Cross-Price Demand Model (Nonlinear)
@@ -33,6 +106,13 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
   model <- object$model
   equation <- object$equation
   method <- object$method
+
+  # TICKET-065: warn (once) when the winning fit explicitly failed to
+  # converge -- otherwise SE/p-value coefficients below are reported with
+  # zero indication that they come from a non-converged optimizer.
+  if (!is.null(model)) {
+    .cp_warn_if_nonconverged(object)
+  }
 
   # Check if model is NULL and return an informative message
   if (is.null(model)) {
@@ -144,17 +224,23 @@ summary.cp_model_nls <- function(object, inv_fun = identity, inverse_fun = depre
     "Unknown equation type"
   )
 
-  conf_int <- tryCatch(
-    {
-      if (requireNamespace("nlstools", quietly = TRUE)) {
-        ci <- nlstools::confint2(model)
-        as.data.frame(ci)
-      } else {
+  # TICKET-068 (E5b): distinguish "nlstools not installed" (silent, expected)
+  # from "confint2() errored" (warn -- the CI section disappears from the
+  # printed summary otherwise with zero indication).
+  conf_int <- if (requireNamespace("nlstools", quietly = TRUE)) {
+    tryCatch(
+      as.data.frame(nlstools::confint2(model)),
+      error = function(e) {
+        cli::cli_warn(
+          "Confidence interval section omitted from summary(): {.fn confint2} failed with {conditionMessage(e)}.",
+          class = c("beezdemand_cp_summary_ci_omitted_warning", "beezdemand_warning")
+        )
         NULL
       }
-    },
-    error = function(e) NULL
-  )
+    )
+  } else {
+    NULL
+  }
 
   if (inherits(object, "cp_model_nls") && !is.null(data)) {
     coefs <- coef(model)
@@ -871,6 +957,10 @@ confint.cp_model_nls <- function(
       method = character()
     ))
   }
+
+  # TICKET-065: warn (once) when the winning fit explicitly failed to
+  # converge -- CIs computed below would otherwise carry no such indication.
+  .cp_warn_if_nonconverged(object)
 
   # Get estimates
   coefs <- stats::coef(object$model)
@@ -2049,14 +2139,22 @@ augment.cp_model_nls <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
-  if (is.null(fitted_vals)) {
-    return(tibble::as_tibble(x$data))
-  }
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
+  if (inherits(fitted_res, "condition")) {
+    .cp_warn_augment_omitted(
+      .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_res, nrow(out))
+    )
+    return(out)
+  }
+  fitted_vals <- fitted_res
   if (nrow(out) == length(fitted_vals)) {
     out$.fitted <- as.numeric(fitted_vals)
     out$.resid <- if ("y" %in% names(out)) out$y - out$.fitted else NA_real_
+  } else {
+    .cp_warn_augment_omitted(
+      .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_vals, nrow(out))
+    )
   }
   out
 }
@@ -2072,14 +2170,23 @@ augment.cp_model_lm <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
-  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
+  resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
-  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
-    out$.fitted <- as.numeric(fitted_vals)
+  omitted <- character(0)
+
+  if (!inherits(fitted_res, "condition") && nrow(out) == length(fitted_res)) {
+    out$.fitted <- as.numeric(fitted_res)
+  } else {
+    omitted <- c(omitted, .cp_augment_omit_reason(".fitted", "fitted()", fitted_res, nrow(out)))
   }
-  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
-    out$.resid <- as.numeric(resid_vals)
+  if (!inherits(resid_res, "condition") && nrow(out) == length(resid_res)) {
+    out$.resid <- as.numeric(resid_res)
+  } else {
+    omitted <- c(omitted, .cp_augment_omit_reason(".resid", "residuals()", resid_res, nrow(out)))
+  }
+  if (length(omitted) > 0) {
+    .cp_warn_augment_omitted(omitted)
   }
   out
 }
@@ -2096,21 +2203,34 @@ augment.cp_model_lmer <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
-  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
+  resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
-  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
-    out$.fitted <- as.numeric(fitted_vals)
+  omitted <- character(0)
+
+  if (!inherits(fitted_res, "condition") && nrow(out) == length(fitted_res)) {
+    out$.fitted <- as.numeric(fitted_res)
+  } else {
+    omitted <- c(omitted, .cp_augment_omit_reason(".fitted", "fitted()", fitted_res, nrow(out)))
   }
-  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
-    out$.resid <- as.numeric(resid_vals)
+  if (!inherits(resid_res, "condition") && nrow(out) == length(resid_res)) {
+    out$.resid <- as.numeric(resid_res)
+  } else {
+    omitted <- c(omitted, .cp_augment_omit_reason(".resid", "residuals()", resid_res, nrow(out)))
   }
-  fixed_vals <- tryCatch(
+
+  fixed_res <- tryCatch(
     stats::predict(x$model, newdata = x$data, re.form = NA),
-    error = function(e) NULL
+    error = function(e) e
   )
-  if (!is.null(fixed_vals) && nrow(out) == length(fixed_vals)) {
-    out$.fixed <- as.numeric(fixed_vals)
+  if (!inherits(fixed_res, "condition") && nrow(out) == length(fixed_res)) {
+    out$.fixed <- as.numeric(fixed_res)
+  } else {
+    omitted <- c(omitted, .cp_augment_omit_reason(".fixed", "predict()", fixed_res, nrow(out)))
+  }
+
+  if (length(omitted) > 0) {
+    .cp_warn_augment_omitted(omitted)
   }
   out
 }

@@ -213,6 +213,85 @@ exactly, pin the previous release:
   never touched the RNG (`RunOneSim()` previously read `.Random.seed`
   unconditionally, which does not exist until the RNG has been used once).
 
+* **`run_hurdle_monte_carlo()` summary statistics can change.** See
+  "Silent-failure fixes" below (TICKET-062): converged replicates with a
+  non-positive-definite Hessian are no longer counted as valid Monte Carlo
+  evidence in `$summary`'s bias/coverage calculations.
+
+## Silent-failure fixes (hurdle, cross-price, extractors, plots)
+
+* **Hurdle random-effects covariance `chol()` failure silently substituted an
+  uncorrelated diagonal Sigma at five sites** (the RE-transform helpers, the
+  live `fit_demand_hurdle()` inline path for 2- and 3-RE models, and
+  `.compute_marginal_demand()`'s Monte Carlo draws). When the assembled
+  covariance was not positive definite (near-boundary rhos, overflow, or
+  `tanh(raw)` rounding to exactly +/-1), subject-level effects and marginal
+  demand curves were silently computed from zeroed correlations while the
+  reported `correlations`/summary rho estimates continued to show the fitted
+  values. All five sites now share `.hurdle_chol_or_fallback()`, which emits
+  one classed warning (`beezdemand_hurdle_chol_fallback_warning`) when the
+  fallback fires. Condition under which output differs: only calls where the
+  assembled Sigma is not positive definite (rare given the partial-correlation
+  parameterization); healthy (PD) fits are bit-identical and silent
+  (TICKET-061).
+
+* **`run_hurdle_monte_carlo()` discarded per-replicate diagnostics and
+  counted non-PD-Hessian fits as valid Monte Carlo evidence.** Failed and
+  non-converged replicates collapsed to `NULL` with no record of why; the
+  return value carried no per-replicate status at all. Separately, a
+  replicate that converged with `hessian_pd = FALSE` passed the same filter
+  as a clean fit and contributed its (unreliable) estimate and SE to the
+  bias/coverage summary. The return value now includes `$diagnostics` (one
+  row per replicate: `sim_id`, `status` -- `"error"`, `"nonconverged"`,
+  `"converged_non_pd"`, `"converged_hessian_unavailable"`, or `"clean"` --
+  `converged`, `hessian_pd`, `opt_convergence`, `opt_message`) and
+  `$n_hessian_not_pd`/`$n_hessian_unavailable`; `$estimates` gains a
+  `hessian_pd` column. `hessian_pd = NA` (i.e. `sdreport()` itself failed) is
+  kept distinct from an explicit `hessian_pd = FALSE`, since they are
+  different conditions, though both are excluded from `$summary` the same
+  way. A classed warning (`beezdemand_hurdle_mc_hessian_excluded_warning`)
+  fires naming both excluded counts (e.g. "1 non-PD, 1 Hessian unavailable")
+  when either happens. **This changes `$summary` output** for any prior run
+  that had converged-but-non-PD-Hessian or Hessian-unavailable replicates
+  (TICKET-062).
+
+* **`fit_cp_nls()` discarded all backend convergence diagnostics, and
+  `summary.cp_model_nls()`/`confint.cp_model_nls()` reported SEs, p-values,
+  and CIs with no convergence gate.** A maxiter-capped or otherwise
+  non-converged `nlsLM`/`nls.multstart` fit produced a clean-looking
+  coefficient table with zero warnings. `fit_cp_nls()` now returns a
+  `convergence` field (`isConv`, `finIter`, `stopCode`, `stopMessage` for the
+  winning backend, read from `model$convInfo`; populated for `nls`/`nlsLM`
+  fits and for `nlsr::wrapnlsr()` fits too when it returns a plain
+  `nls`-class object, its usual successful case; `isConv = NA` only when the
+  winning fit carries no `convInfo` at all). `summary()` and `confint()` now
+  emit a classed warning
+  (`beezdemand_cp_nls_nonconverged_warning`) when `isConv` is explicitly
+  `FALSE`. Separately, `nlsLM_fit` is now `NULL` (never the caught error
+  condition) in the branch where `wrapnlsr` won after `nlsLM` failed
+  (TICKET-065).
+
+* **Requested plot annotations, extractor rows, and a summary CI section
+  disappeared with no condition when their computation errored.**
+  `plot_expenditure()` (hurdle and TMB): with `show_pmax = TRUE` /
+  `show_omax = TRUE` explicitly requested, a `calc_group_metrics()` error
+  silently omitted the annotation; now warns
+  (`beezdemand_plot_annotation_warning`) naming the cause, matching the
+  existing pattern used by `plot_compare()`. `coef.beezdemand_fixed()`:
+  subject rows for a stored `try-error`/`NULL` fit, or one whose `coef()`
+  call failed, were dropped with no way to tell "subject absent" from
+  "subject failed"; now warns (`beezdemand_fixed_coef_omitted_warning`)
+  naming the dropped ids. `augment.cp_model_nls()` /
+  `augment.cp_model_lm()` / `augment.cp_model_lmer()`: the documented
+  `.fitted`/`.resid`/`.fixed` columns vanished on a `fitted()`/
+  `residuals()`/`predict()` error or a length mismatch with no indication;
+  now warn (`beezdemand_cp_augment_omitted_warning`) naming the omitted
+  column(s). `summary.cp_model_nls()`: a genuine `nlstools::confint2()`
+  error (as opposed to `nlstools` simply not being installed, which stays
+  silent) silently dropped the confidence-interval section; now warns
+  (`beezdemand_cp_summary_ci_omitted_warning`). Healthy paths are
+  unaffected and remain silent throughout (TICKET-068).
+
 ## Legacy fitter robustness (batch failures)
 
 * `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =
