@@ -2244,7 +2244,18 @@ plot.beezdemand_tmb <- function(
 #'   estimate) is additionally present whenever `effects` includes
 #'   `"fixed"`. Fixed-effect rows carry `component == "fixed"` (matching
 #'   [tidy.beezdemand_nlme()] and the nlme/lme4 convention);
-#'   variance-component rows carry `component == "variance"`.
+#'   variance-component rows carry `component == "variance"`. A
+#'   `hessian_warning` attribute (character scalar, or absent) is attached
+#'   depending on `x$hessian_pd`: absent (no attribute) when `hessian_pd`
+#'   is `TRUE` or `NULL` (the field is missing on a legacy fit object --
+#'   nothing to say); a message noting the Hessian is not positive definite
+#'   when `hessian_pd` is `FALSE`; a message noting
+#'   positive-definiteness is unknown (because `TMB::sdreport()` failed
+#'   entirely, so SEs/CIs are unavailable, not merely unreliable) when
+#'   `hessian_pd` is `NA`. This attribute is not printed by an ordinary
+#'   tibble print -- see [summary.beezdemand_tmb()] or
+#'   [check_demand_model()] for the surfaced versions of the same
+#'   diagnostic.
 #'
 #' @details
 #' Variance-component rows (`effects = "ran_pars"`) are exactly the rows of
@@ -2356,12 +2367,18 @@ tidy.beezdemand_tmb <- function(
     result <- dplyr::bind_rows(result, ran)
   }
 
-  if (isFALSE(x$hessian_pd)) {
+  # Codex 2C review fold (BLOCKING 1, TICKET-067): `hessian_pd` may be NULL
+  # on a fit predating this field (an older saved object) or on a
+  # deliberately-stripped object; `is.na(NULL)` is length-0, so calling
+  # `if()` on it directly errors ("argument is of length zero"). Read it
+  # into a local first and gate on `length(hp) == 1L` before `is.na()`.
+  hp <- x$hessian_pd
+  if (isFALSE(hp)) {
     attr(result, "hessian_warning") <- paste0(
       "Hessian is not positive definite (pdHess = FALSE). ",
       "Standard errors, p-values, and confidence intervals may be unreliable."
     )
-  } else if (is.na(x$hessian_pd)) {
+  } else if (length(hp) == 1L && is.na(hp)) {
     # TICKET-067 (E4): hessian_pd = NA means "unknowable" -- TMB::sdreport()
     # failed entirely, not that it succeeded and reported a non-PD Hessian.
     # summary()'s se_available note already distinguishes this case; tidy()
@@ -2371,6 +2388,7 @@ tidy.beezdemand_tmb <- function(
       "Standard errors, p-values, and confidence intervals are unavailable."
     )
   }
+  # hp NULL (field absent on a legacy object): no attribute, no warning.
 
   result
 }

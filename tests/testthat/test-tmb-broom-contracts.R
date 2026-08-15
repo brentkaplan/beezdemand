@@ -271,3 +271,20 @@ test_that("anova.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
   fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
   expect_no_warning(anova(fit, group_by = "parameter"))
 })
+
+
+# --- Codex 2C review fold: BLOCKING 1 (TICKET-067) --------------------------
+# tidy()'s `else if (is.na(x$hessian_pd))` branch used `if()` directly on
+# `is.na(x$hessian_pd)`, which is length-0 (errors: "argument is of length
+# zero") when `hessian_pd` is NULL -- an older saved fit predating the field.
+
+test_that("tidy.beezdemand_tmb: a legacy fit with no hessian_pd field works with no attribute/warning", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit$hessian_pd <- NULL
+
+  td <- expect_no_warning(tidy(fit))
+  expect_s3_class(td, "tbl_df")
+  expect_null(attr(td, "hessian_warning"))
+})
