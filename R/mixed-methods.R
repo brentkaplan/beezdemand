@@ -1193,10 +1193,22 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #' @param ... Additional arguments passed to `emmeans::emmeans()` or `emmeans::contrast()`.
 #'
 #' @return A list named by parameter. Each element contains:
-#'   \item{emmeans}{Tibble of EMMs (log10 scale) with CIs.}
-#'   \item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
-#'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of comparisons
-#'     as ratios (natural scale), with CIs for ratios.}
+#'   \item{emmeans}{Tibble of EMMs (internal scale -- log10 for
+#'     `param_space = "log10"` fits, natural for `param_space = "natural"`
+#'     fits) with CIs.}
+#'   \item{contrasts_log10}{Tibble of comparisons (differences on the fit's
+#'     internal scale, despite the name -- see the Details on
+#'     `param_space = "natural"`) with CIs and p-values.}
+#'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of
+#'     comparisons with the same column shape (`ratio_estimate`, `LCL_ratio`,
+#'     `UCL_ratio`) for both spaces, but different CONTENT (TICKET-075): for
+#'     `param_space = "log10"` fits, a multiplicative ratio
+#'     (`10^difference`, fold-change on the natural scale); for
+#'     `param_space = "natural"` fits, the difference again (unchanged from
+#'     `contrasts_log10`) -- there is no log-scale quantity to exponentiate
+#'     for an already-natural-scale difference. The returned object's
+#'     `contrasts_ratio_scale` attribute is `"ratio"` or `"difference"`
+#'     accordingly.}
 #'   S3 class `beezdemand_comparison` is assigned. When `contrast_by` is active,
 #'   the nested contrast tables carry leading by-column(s) named with the
 #'   user-requested *original* factor name (e.g. `dose`, not the
@@ -1268,6 +1280,14 @@ get_demand_comparisons.beezdemand_nlme <- function(
 
   # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
   .nlme_warn_if_not_converged(fit_obj)
+
+  # TICKET-075: for a param_space = "natural" fit the emmeans contrast
+  # estimate/CI computed below are already NATURAL-scale differences (the
+  # model parameterizes Q0/alpha directly), not log10-scale differences --
+  # exponentiating them again with 10^ (as the log10-space $contrasts_ratio
+  # block does) is meaningless. Resolve the space the same way
+  # get_demand_param_emms.beezdemand_nlme() does (TICKET-074).
+  internal_space <- fit_obj$param_space %||% fit_obj$param_info$param_space %||% "log10"
 
   nlme_model <- fit_obj$model
   model_data <- fit_obj$data
@@ -1784,20 +1804,48 @@ get_demand_comparisons.beezdemand_nlme <- function(
               )
 
             if (report_ratios) {
-              current_param_results$contrasts_ratio <- current_param_results$contrasts_log10 |>
-                dplyr::mutate(
-                  ratio_estimate = 10^.data$estimate,
-                  LCL_ratio = 10^.data$lower.CL,
-                  UCL_ratio = 10^.data$upper.CL
-                ) |>
-                dplyr::select(
-                  dplyr::any_of(by_vars_in_summary),
-                  "contrast_definition",
-                  "ratio_estimate",
-                  "LCL_ratio",
-                  "UCL_ratio",
-                  "p.value"
-                )
+              # TICKET-075: for param_space = "log10" fits, `estimate`/
+              # `lower.CL`/`upper.CL` above are log10-scale differences, so
+              # 10^ converts them to a multiplicative ratio (fold-change) --
+              # unchanged, byte-identical to pre-fold output. For
+              # param_space = "natural" fits they are ALREADY natural-scale
+              # differences; there is no log-scale quantity to exponentiate,
+              # so 10^ of a natural-scale difference is meaningless. Report
+              # the difference again instead (same column names/shape, so
+              # nothing downstream that selects `$contrasts_ratio` by name
+              # breaks); `attr(., "contrasts_ratio_scale")` on the returned
+              # object (set once, object-level, below) distinguishes the two.
+              current_param_results$contrasts_ratio <- if (identical(internal_space, "natural")) {
+                current_param_results$contrasts_log10 |>
+                  dplyr::mutate(
+                    ratio_estimate = .data$estimate,
+                    LCL_ratio = .data$lower.CL,
+                    UCL_ratio = .data$upper.CL
+                  ) |>
+                  dplyr::select(
+                    dplyr::any_of(by_vars_in_summary),
+                    "contrast_definition",
+                    "ratio_estimate",
+                    "LCL_ratio",
+                    "UCL_ratio",
+                    "p.value"
+                  )
+              } else {
+                current_param_results$contrasts_log10 |>
+                  dplyr::mutate(
+                    ratio_estimate = 10^.data$estimate,
+                    LCL_ratio = 10^.data$lower.CL,
+                    UCL_ratio = 10^.data$upper.CL
+                  ) |>
+                  dplyr::select(
+                    dplyr::any_of(by_vars_in_summary),
+                    "contrast_definition",
+                    "ratio_estimate",
+                    "LCL_ratio",
+                    "UCL_ratio",
+                    "p.value"
+                  )
+              }
             }
 
             # TICKET-033: rename the nested by-column(s) from the EFFECTIVE
@@ -1891,6 +1939,17 @@ get_demand_comparisons.beezdemand_nlme <- function(
     "all fitted factors"
   }
   attr(results_list, "contrast_type_used") <- contrast_type
+  # TICKET-075: report_ratios' shape ($contrasts_ratio: ratio_estimate/
+  # LCL_ratio/UCL_ratio) is the same for both spaces, but its CONTENT is a
+  # multiplicative ratio (10^difference) only for param_space = "log10"
+  # fits; for param_space = "natural" fits it is the natural-scale
+  # difference again (no log-scale quantity exists to exponentiate). This
+  # attribute lets a caller/print method tell which one they got.
+  attr(results_list, "contrasts_ratio_scale") <- if (identical(internal_space, "natural")) {
+    "difference"
+  } else {
+    "ratio"
+  }
   # `contrast_by_used` reports the user-requested ORIGINAL name(s) (TICKET-032),
   # so it survives collapse-mapping and is consistent across backends -- but
   # only when by-grouping was actually applied for at least one parameter,

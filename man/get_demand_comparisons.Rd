@@ -66,10 +66,22 @@ instead (deprecated in 0.3.0 to harmonize with the TMB backend).}
 }
 \value{
 A list named by parameter. Each element contains:
-\item{emmeans}{Tibble of EMMs (log10 scale) with CIs.}
-\item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
-\item{contrasts_ratio}{(If \code{report_ratios=TRUE} and successful) Tibble of comparisons
-as ratios (natural scale), with CIs for ratios.}
+\item{emmeans}{Tibble of EMMs (internal scale -- log10 for
+\code{param_space = "log10"} fits, natural for \code{param_space = "natural"}
+fits) with CIs.}
+\item{contrasts_log10}{Tibble of comparisons (differences on the fit's
+internal scale, despite the name -- see the Details on
+\code{param_space = "natural"}) with CIs and p-values.}
+\item{contrasts_ratio}{(If \code{report_ratios=TRUE} and successful) Tibble of
+comparisons with the same column shape (\code{ratio_estimate}, \code{LCL_ratio},
+\code{UCL_ratio}) for both spaces, but different CONTENT (TICKET-075): for
+\code{param_space = "log10"} fits, a multiplicative ratio
+(\code{10^difference}, fold-change on the natural scale); for
+\code{param_space = "natural"} fits, the difference again (unchanged from
+\code{contrasts_log10}) -- there is no log-scale quantity to exponentiate
+for an already-natural-scale difference. The returned object's
+\code{contrasts_ratio_scale} attribute is \code{"ratio"} or \code{"difference"}
+accordingly.}
 S3 class \code{beezdemand_comparison} is assigned. When \code{contrast_by} is active,
 the nested contrast tables carry leading by-column(s) named with the
 user-requested \emph{original} factor name (e.g. \code{dose}, not the

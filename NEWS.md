@@ -284,6 +284,22 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   fits made with `param_space = "natural"`, only in `get_demand_param_emms()`
   (and anything built on its EV branch). `param_space = "log10"` fits (the
   default) and the TMB tier (already space-aware) are unaffected.
+* **`get_demand_comparisons()` (NLME) had the same `param_space = "natural"`
+  gap as the bullet above, in `$contrasts_ratio`.** (TICKET-075.)
+  `emmeans::contrast()`'s `estimate`/CI in `$contrasts_log10` are on the
+  fit's internal scale (log10 for `param_space = "log10"`, natural for
+  `param_space = "natural"`); `$contrasts_ratio` always computed
+  `ratio_estimate = 10^estimate` to turn a log10-scale difference into a
+  multiplicative fold-change -- meaningless for an already-natural-scale
+  difference. For `param_space = "natural"` fits, `$contrasts_ratio` now
+  reports the difference again (same column names/shape:
+  `ratio_estimate`/`LCL_ratio`/`UCL_ratio`) instead of exponentiating it a
+  second time; the returned object's new `contrasts_ratio_scale` attribute
+  (`"ratio"` or `"difference"`) says which content a given call got.
+  `$contrasts_log10` itself was already correct (unaffected); only
+  `$contrasts_ratio`'s *content* for natural-space fits changes, from a
+  previously-meaningless number to a documented, correct one.
+  `param_space = "log10"` fits (the default) are unaffected.
 * **`check_demand_model()` no longer reports a failed internal check as a
   passing one.** The fixed and hurdle residual sub-checks, and the NLME
   random-effects sub-check, converted an internal `augment()` / `VarCorr()`

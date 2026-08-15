@@ -1306,3 +1306,87 @@ test_that("get_demand_param_emms.beezdemand_nlme: log10-space (default) fit outp
   # real regression from this fold would differ by orders of magnitude.
   expect_equal(as.list(e)[names(expected)], expected, tolerance = 1e-8)
 })
+
+
+# --- Codex 2C review fold: NEW TICKET-075 -----------------------------------
+# get_demand_comparisons.beezdemand_nlme()'s $contrasts_ratio block
+# unconditionally computed ratio_estimate = 10^estimate. For a
+# param_space = "natural" fit, `estimate` is already a natural-scale
+# difference (not log10-scale), so 10^estimate is meaningless.
+
+.ticket075_natural_fit <- function() {
+  set.seed(42)
+  prices <- 10^seq(-1, 1.5, length.out = 6)
+  d <- expand.grid(id = seq_len(8), x = prices, factor1 = paste0("level", 1:3))
+  d$id <- factor(paste0(d$id, "_", d$factor1))
+  d$y <- pmax(0.01, 8 * exp(-0.01 * d$x) + rnorm(nrow(d), 0, 2))
+  suppressWarnings(fit_demand_mixed(
+    d, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "natural"
+  ))
+}
+
+test_that("get_demand_comparisons.beezdemand_nlme: natural-space contrasts_ratio reports the DIFFERENCE, not 10^difference", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  fit <- .ticket075_natural_fit()
+  skip_if(is.null(fit$model), "fit did not converge")
+
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  expect_identical(attr(res, "contrasts_ratio_scale"), "difference")
+  expect_equal(
+    res$Q0$contrasts_ratio$ratio_estimate,
+    res$Q0$contrasts_log10$estimate
+  )
+  expect_equal(res$Q0$contrasts_ratio$LCL_ratio, res$Q0$contrasts_log10$lower.CL)
+  expect_equal(res$Q0$contrasts_ratio$UCL_ratio, res$Q0$contrasts_log10$upper.CL)
+  # the old (wrong) computation would have given 10^estimate here instead
+  expect_false(isTRUE(all.equal(
+    res$Q0$contrasts_ratio$ratio_estimate,
+    10^res$Q0$contrasts_log10$estimate
+  )))
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: log10-space (default) fit contrasts_ratio_scale is 'ratio' and ratio_estimate is 10^difference", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified"
+  )
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  expect_identical(attr(res, "contrasts_ratio_scale"), "ratio")
+  expect_equal(res$Q0$contrasts_ratio$ratio_estimate, 10^res$Q0$contrasts_log10$estimate)
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: log10-space contrasts_ratio output is byte-identical to the pre-fold value", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified"
+  )
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  # Pinned via git stash against the pre-fold committed code (commit
+  # d6d5a40, i.e. before TICKET-075's internal_space branch); the
+  # log10-space path is the untouched `else` branch, so this must match.
+  expected <- list(
+    ratio_estimate = c(1.0010081365038, 1.01206922238537, 1.01104994602762),
+    LCL_ratio = c(0.965477826227737, 0.975931875394098, 0.974936730322645),
+    UCL_ratio = c(1.03784598892534, 1.04954468311235, 1.04850085299807)
+  )
+  actual <- list(
+    ratio_estimate = res$Q0$contrasts_ratio$ratio_estimate,
+    LCL_ratio = res$Q0$contrasts_ratio$LCL_ratio,
+    UCL_ratio = res$Q0$contrasts_ratio$UCL_ratio
+  )
+  expect_equal(actual, expected, tolerance = 1e-6)
+})
