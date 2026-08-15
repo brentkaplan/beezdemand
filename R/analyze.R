@@ -19,6 +19,53 @@
 ## R script for analysis functions
 ##
 
+# Verifies a nlxb() fallback endpoint by refitting with a genuine iterative
+# optimizer (stats::nls(algorithm = "port")) started from that endpoint.
+# TICKET-069: the old fallback used nls2::nls2(..., algorithm = "brute-force")
+# with a single-point start, which returns exactly that point as a
+# fitted-looking object without ever verifying it -- whatever nlxb stalled at
+# was reported as "the estimate". This refit requires a genuine
+# convInfo$isConv verdict before an endpoint is trusted.
+# nlxb_fit Result of nlsr::nlxb() (possibly a try-error)
+# fo Model formula
+# adf Per-subject data frame
+# lower,upper Bounds vectors matching fo's parameters
+# Returns list(fit, verified): fit is either a verified "nls" object (with
+# attr "beez_fallback_verified" = TRUE) or a try-error carrying an
+# "endpoint unverified" message; verified is the corresponding logical.
+##' @noRd
+.legacy_fallback_refit <- function(nlxb_fit, fo, adf, lower, upper) {
+  if (inherits(nlxb_fit, what = "try-error")) {
+    return(list(fit = nlxb_fit, verified = FALSE))
+  }
+  start <- as.list(nlxb_fit$coefficients)
+  refit <- suppressWarnings(try(
+    stats::nls(
+      formula = fo,
+      data = adf,
+      start = start,
+      algorithm = "port",
+      lower = lower,
+      upper = upper,
+      control = stats::nls.control(warnOnly = TRUE, maxiter = 200)
+    ),
+    silent = TRUE
+  ))
+  if (
+    inherits(refit, what = "try-error") ||
+      is.null(refit$convInfo$isConv) ||
+      !isTRUE(refit$convInfo$isConv)
+  ) {
+    failure <- structure(
+      "Error in fallback refit : \n  endpoint unverified: fallback refit did not converge\n",
+      class = "try-error"
+    )
+    return(list(fit = failure, verified = FALSE))
+  }
+  attr(refit, "beez_fallback_verified") <- TRUE
+  list(fit = refit, verified = TRUE)
+}
+
 ##' Analyzes purchase task data
 ##'
 ##' `r lifecycle::badge("superseded")`
@@ -151,7 +198,9 @@ FitCurves <- function(
     "Pmaxd",
     "Omaxa",
     "Pmaxa",
-    "Notes"
+    "Notes",
+    "converged",
+    "converged_strict"
   )
 
   if (!is.null(agg)) {
@@ -375,21 +424,8 @@ FitCurves <- function(
               silent = TRUE
             )
           )
-          suppressWarnings(
-            fit <- try(nls2::nls2(
-              fo,
-              data = adf,
-              start = fit$coefficients,
-              algorithm = "brute-force"
-            ))
-          )
-          if (!inherits(fit, what = "try-error")) {
-            attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-              c("nls", "nls2", "error")
-            } else {
-              c("nls", "nls2")
-            }
-          }
+          refit_result <- .legacy_fallback_refit(fit, fo, adf, c(lower), c(upper))
+          fit <- refit_result$fit
         }
       } else if (!is.null(constrainq0)) {
         suppressWarnings(
@@ -417,21 +453,10 @@ FitCurves <- function(
               silent = TRUE
             )
           )
-          suppressWarnings(
-            fit <- try(nls2::nls2(
-              fo,
-              data = adf,
-              start = fit$coefficients,
-              algorithm = "brute-force"
-            ))
+          refit_result <- .legacy_fallback_refit(
+            fit, fo, adf, c(lower[2]), c(upper[2])
           )
-          if (!inherits(fit, what = "try-error")) {
-            attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-              c("nls", "nls2", "error")
-            } else {
-              c("nls", "nls2")
-            }
-          }
+          fit <- refit_result$fit
         }
       }
     } else {
@@ -463,21 +488,8 @@ FitCurves <- function(
             silent = TRUE
           )
         )
-        suppressWarnings(
-          fit <- try(nls2::nls2(
-            fo,
-            data = adf,
-            start = fit$coefficients,
-            algorithm = "brute-force"
-          ))
-        )
-        if (!inherits(fit, what = "try-error")) {
-          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-            c("nls", "nls2", "error")
-          } else {
-            c("nls", "nls2")
-          }
-        }
+        refit_result <- .legacy_fallback_refit(fit, fo, adf, c(lower), c(upper))
+        fit <- refit_result$fit
       }
     }
 
@@ -492,7 +504,9 @@ FitCurves <- function(
       cols = colnames(dfres),
       kest = kest,
       constrainq0 = constrainq0,
-      param_space = param_space
+      param_space = param_space,
+      lower = lower,
+      upper = upper
     )
 
     newdat <- NULL
@@ -742,7 +756,9 @@ ExtractCoefs <- function(
   cols,
   kest,
   constrainq0,
-  param_space
+  param_space,
+  lower = NULL,
+  upper = NULL
 ) {
   dfrow <- data.frame(
     matrix(vector(), 1, length(cols), dimnames = list(c(), c(cols))),
@@ -752,6 +768,8 @@ ExtractCoefs <- function(
   if (inherits(fit, what = "try-error")) {
     dfrow[["Notes"]] <- fit[1]
     dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
+    dfrow[1, "converged"] <- FALSE
+    dfrow[1, "converged_strict"] <- FALSE
   } else {
     dfrow[1, "N"] <- length(adf$k)
     dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
@@ -794,8 +812,16 @@ ExtractCoefs <- function(
       }
       dfrow[1, c("Alpha")] <- alpha_hat
     }
-    dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
-      "wrapnls failed to converge, reverted to nlxb"
+    # TICKET-069: convergence verdict comes from the optimizer's own
+    # convInfo$isConv (never from string-matching Notes/class). Both a
+    # first-stage wrapnlsr success and a verified fallback refit
+    # (.legacy_fallback_refit()) are plain "nls" objects with a real
+    # convInfo; a fallback endpoint that failed verification never reaches
+    # this branch (it stays a try-error and is handled above).
+    is_rescued <- isTRUE(attr(fit, "beez_fallback_verified"))
+    is_conv <- isTRUE(fit$convInfo$isConv)
+    dfrow[1, "Notes"] <- if (is_rescued) {
+      "rescued by fallback (verified)"
     } else {
       fit$convInfo$stopMessage
     }
@@ -810,6 +836,60 @@ ExtractCoefs <- function(
       k_hat <- 10^k_hat
     }
     dfrow[1, "K"] <- k_hat
+
+    # TICKET-069: converged_strict additionally requires finite coefficients
+    # and objective, and that the fit did not land on a user-supplied bound
+    # (a raw optimizer isConv verdict alone does not establish either).
+    fit_coefs <- if (is.null(coef(fit))) fit$m$getPars() else coef(fit)
+    finite_ok <- is.finite(dfrow[1, "AbsSS"]) && all(is.finite(fit_coefs))
+    at_bound <- FALSE
+    if (!is.null(lower) && !is.null(upper) && !is.null(names(fit_coefs))) {
+      nm <- intersect(names(fit_coefs), intersect(names(lower), names(upper)))
+      if (length(nm) > 0) {
+        at_bound <- any(vapply(nm, function(n) {
+          v <- fit_coefs[[n]]
+          lo <- lower[[n]]
+          hi <- upper[[n]]
+          (is.finite(lo) && isTRUE(all.equal(v, lo, tolerance = 1e-6))) ||
+            (is.finite(hi) && isTRUE(all.equal(v, hi, tolerance = 1e-6)))
+        }, logical(1)))
+      }
+    }
+    dfrow[1, "converged"] <- is_conv
+    dfrow[1, "converged_strict"] <- is_conv && finite_ok && !at_bound
+
+    # Domain validity is distinct from numerical convergence: a fit can
+    # numerically converge (isConv TRUE) at a physiologically impossible
+    # point (Q0 <= 0 or Alpha <= 0). Only reachable in natural param_space --
+    # log10 parameterization back-transforms via 10^x, which is always > 0.
+    q0_check <- dfrow[1, "Q0d"]
+    alpha_check <- dfrow[1, "Alpha"]
+    if (
+      isTRUE(dfrow[1, "converged"]) &&
+        ((!is.na(q0_check) && q0_check <= 0) ||
+          (!is.na(alpha_check) && alpha_check <= 0))
+    ) {
+      warning(
+        sprintf(
+          paste0(
+            "FitCurves: subject '%s' reported as converged with a ",
+            "non-positive Q0 and/or Alpha (Q0d = %s, Alpha = %s); ",
+            "treat this estimate as domain-invalid."
+          ),
+          pid,
+          format(q0_check),
+          format(alpha_check)
+        ),
+        call. = FALSE
+      )
+      dfrow[1, "Notes"] <- paste(
+        dfrow[1, "Notes"],
+        "domain-invalid (Q0<=0 or Alpha<=0)",
+        sep = "; "
+      )
+      dfrow[1, "converged_strict"] <- FALSE
+    }
+
     if (!inherits(fit, what = "error")) {
       if (is.null(constrainq0)) {
         se_q0 <- coef(summary(fit))["q0", "Std. Error"]

@@ -83,6 +83,41 @@ exactly, pin the previous release:
   NaN-started). Natural-space and fixed/individual/shared-k paths are
   unaffected.
 
+* **`FitCurves()` / `fit_demand_fixed()` reported unverified fallback
+  endpoints as estimates, with no way to tell a genuine fit from a stalled
+  one.** When `wrapnlsr` failed and the chain fell back to `nlxb`, the old
+  code re-fit that endpoint with `nls2::nls2(..., algorithm = "brute-force")`
+  and a single-point start — this is a snapshot, not a fit; it always
+  "succeeds" and reports whatever point `nlxb` stalled at, including points
+  with a singular Jacobian, as `Notes = "wrapnls failed to converge,
+  reverted to nlxb"` (indistinguishable from a genuine rescue). Separately,
+  a numerically converged fit could still land on a physiologically
+  impossible point (`Q0 <= 0` or `Alpha <= 0`, e.g. for flat or otherwise
+  degenerate data) and be reported as `Notes = "converged"` with no flag.
+  The fallback endpoint is now verified with a genuine iterative refit
+  (`stats::nls(algorithm = "port")`) that must itself report
+  `convInfo$isConv`; an endpoint that fails this verification is recorded as
+  a non-converged row (`Notes = "endpoint unverified: fallback refit did
+  not converge"`) instead of being reported as an estimate. Results now
+  carry `converged` (the optimizer's own `isConv` verdict) and
+  `converged_strict` (`isConv` AND finite coefficients/objective AND not at
+  a user-supplied bound) columns; a "converged" fit with non-positive Q0
+  and/or Alpha now also raises a `warning()`, appends
+  `"domain-invalid (Q0<=0 or Alpha<=0)"` to `Notes`, and sets
+  `converged_strict = FALSE` (only reachable in `param_space = "natural"` —
+  the log10 parameterization's `10^x` back-transform is always positive).
+  `fit_demand_fixed()$results$converged` now derives from
+  `converged_strict` instead of grepping `Notes` for failure keywords.
+  Default bounds are unchanged (still `c(-Inf, -Inf)`/`c(Inf, Inf)` unless
+  `lobound`/`hibound` are supplied — this release does not add default
+  non-negativity bounds). Condition under which output differs from 0.2.0:
+  any subject whose `wrapnlsr` fit fails and falls back to `nlxb` (now
+  either genuinely verified or reported as non-converged, not a raw
+  snapshot), and any subject reported "converged" with a non-positive Q0 or
+  Alpha (now warned and flagged `converged_strict = FALSE`). Subjects that
+  converge cleanly on the first `wrapnlsr` attempt with positive Q0/Alpha
+  are unchanged.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a

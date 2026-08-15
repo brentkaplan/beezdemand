@@ -361,3 +361,58 @@ test_that("TICKET-057: k='fit' + param_space='log10' batch matches subject-alone
     expect_equal(batch$K[batch$id == s], alone$K, tolerance = 1e-4)
   }
 })
+
+# =============================================================================
+# TICKET-069: FitCurves() reports unverified optimizer endpoints as
+# estimates -- no convergence gate on the fallback chain
+# =============================================================================
+
+test_that("TICKET-069: flat data 'converges' but is flagged domain-invalid", {
+  skip_on_cran()
+  flat <- data.frame(id = "flat", x = c(0.1, 0.5, 1, 3, 6, 12, 24), y = rep(7, 7))
+  expect_warning(
+    result <- FitCurves(flat, equation = "koff", k = 2),
+    "domain-invalid"
+  )
+  expect_true(all(c("converged", "converged_strict") %in% names(result)))
+  expect_true(isTRUE(result$converged))
+  expect_false(isTRUE(result$converged_strict))
+  expect_true(grepl("domain-invalid", result$Notes))
+})
+
+test_that("TICKET-069: a fully unverifiable fallback endpoint is not reported as an estimate", {
+  skip_on_cran()
+  d <- data.frame(
+    id = rep(c("s1", "s2"), each = 6),
+    x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
+    y  = c(10, 8, 6, 4, 2, 1, 4e8, 1e7, 5e5, 1e13, 2e27, 60)
+  )
+  result <- suppressWarnings(FitCurves(
+    d, equation = "simplified", xcol = "x", ycol = "y", idcol = "id"
+  ))
+  s2 <- result[result$id == "s2", ]
+  expect_true(is.na(s2$Q0d))
+  expect_true(is.na(s2$Alpha))
+  expect_false(isTRUE(s2$converged))
+  expect_false(isTRUE(s2$converged_strict))
+  expect_true(grepl("unverified", s2$Notes, ignore.case = TRUE))
+})
+
+test_that("TICKET-069: healthy fits are converged and converged_strict", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  apt_test <- apt[apt$id %in% c(19, 30, 38), ]
+  result <- suppressMessages(suppressWarnings(
+    FitCurves(apt_test, equation = "hs", k = 2)
+  ))
+  expect_true(all(result$converged))
+  expect_true(all(result$converged_strict))
+  expect_true(all(result$Notes == "converged"))
+})
+
+test_that("TICKET-069: fit_demand_fixed()$results$converged derives from converged_strict", {
+  skip_on_cran()
+  flat <- data.frame(id = "flat", x = c(0.1, 0.5, 1, 3, 6, 12, 24), y = rep(7, 7))
+  f <- suppressWarnings(fit_demand_fixed(flat, equation = "koff", k = 2))
+  expect_false(isTRUE(f$results$converged))
+})
