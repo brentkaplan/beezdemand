@@ -28,6 +28,7 @@
 #'   subject once zero consumption is observed. This means subjects will have
 #'   varying numbers of observations. Set to FALSE to generate all prices for
 #'   all subjects. Default is TRUE.
+#' @param seed Optional random seed for reproducibility.
 #' @param part2 Character. Positive-part (Part II) generator: `"koff"` (the
 #'   original Zhao et al. (2016) / Koffarnus-style generator; default,
 #'   backward compatible) or `"snd"` (TICKET-044; matches
@@ -45,7 +46,13 @@
 #'   3`. Raw value for the b/c *partial* correlation (see Details); the
 #'   actual b/c correlation is NOT `tanh(rho_bc_raw)` directly. Default
 #'   `NULL` uses `0` (actual correlation 0).
-#' @param seed Optional random seed for reproducibility.
+#'
+#'   Note: `part2` and `rho_*_raw` were added AFTER `seed` in the argument
+#'   list (Codex 2F review fold, TICKET-044 item 2) specifically so that
+#'   pre-existing positional calls -- whose 19th (and last, pre-TICKET-044)
+#'   positional argument is `seed` -- continue to bind correctly instead of
+#'   landing on `part2` (where `match.arg()` would error). Always pass
+#'   `part2`/`rho_*_raw` by name.
 #'
 #' @return A data frame with columns:
 #' \describe{
@@ -140,11 +147,11 @@ simulate_hurdle_data <- function(
   epsilon = 0.001,
   n_random_effects = 2,
   stop_at_zero = TRUE,
+  seed = NULL,
   part2 = c("koff", "snd"),
   rho_ab_raw = NULL,
   rho_ac_raw = NULL,
-  rho_bc_raw = NULL,
-  seed = NULL
+  rho_bc_raw = NULL
 ) {
   part2 <- match.arg(part2)
 

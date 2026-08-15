@@ -283,16 +283,23 @@ test_that("(c) identity check: fit_demand_hurdle(part2 = 'snd') recovers populat
   skip_on_cran()
   skip_if_not_installed("TMB")
 
+  # Codex 2F review fold, item 7: exercise NONZERO raw correlations (not
+  # just the rho_ac_raw = rho_bc_raw = 0 defaults) and add RE-SD/
+  # correlation recovery assertions, loose tolerances (correlations are the
+  # hardest population quantities to recover at this N).
   truth <- list(
     beta0 = -2, beta1 = 1, log_q0 = log(10), alpha = 0.5,
-    sigma_a = 1, sigma_b = 0.5, sigma_c = 0.1, sigma_e = 0.3
+    sigma_a = 1, sigma_b = 0.5, sigma_c = 0.1, sigma_e = 0.3,
+    rho_ab_raw = atanh(0.3), rho_ac_raw = atanh(0.15), rho_bc_raw = atanh(0.1)
   )
   d <- simulate_hurdle_data(
     n_subjects = 300, prices = seq(0, 11, by = 1), seed = 20260817,
     part2 = "snd", n_random_effects = 3,
     beta0 = truth$beta0, beta1 = truth$beta1, log_q0 = truth$log_q0,
     alpha = truth$alpha, sigma_a = truth$sigma_a, sigma_b = truth$sigma_b,
-    sigma_c = truth$sigma_c, sigma_e = truth$sigma_e, stop_at_zero = FALSE
+    sigma_c = truth$sigma_c, sigma_e = truth$sigma_e,
+    rho_ab_raw = truth$rho_ab_raw, rho_ac_raw = truth$rho_ac_raw,
+    rho_bc_raw = truth$rho_bc_raw, stop_at_zero = FALSE
   )
 
   fit <- fit_demand_hurdle(
@@ -308,6 +315,19 @@ test_that("(c) identity check: fit_demand_hurdle(part2 = 'snd') recovers populat
   expect_equal(unname(co[["log_q0"]]), truth$log_q0, tolerance = 0.3)
   expect_equal(unname(co[["log_alpha"]]), log(truth$alpha), tolerance = 0.3)
   expect_equal(exp(unname(co[["logsigma_e"]])), truth$sigma_e, tolerance = 0.15)
+
+  # RE-SD recovery (natural scale, loose tolerances)
+  expect_equal(exp(unname(co[["logsigma_a"]])), truth$sigma_a, tolerance = 0.5)
+  expect_equal(exp(unname(co[["logsigma_b"]])), truth$sigma_b, tolerance = 0.3)
+  expect_equal(exp(unname(co[["logsigma_c"]])), truth$sigma_c, tolerance = 0.3)
+
+  # Raw-correlation recovery: truth values are small in magnitude, so use
+  # an ABSOLUTE tolerance (expect_equal()'s default relative tolerance
+  # would be unreasonably tight near zero) -- very loose, correlations are
+  # the hardest population quantities to recover here.
+  expect_lt(abs(unname(co[["rho_ab_raw"]]) - truth$rho_ab_raw), 0.6)
+  expect_lt(abs(unname(co[["rho_ac_raw"]]) - truth$rho_ac_raw), 0.6)
+  expect_lt(abs(unname(co[["rho_bc_raw"]]) - truth$rho_bc_raw), 0.6)
 })
 
 test_that("(d) part2 = 'koff' output is byte-identical to before TICKET-044", {
@@ -345,4 +365,45 @@ test_that("(d) part2 = 'koff' output is byte-identical to before TICKET-044", {
       "sigma_c", "rho_ab", "rho_ac", "rho_bc", "sigma_e", "n_random_effects"
     )
   )
+})
+
+test_that("(d) item 7: part2 = 'koff' is FULLY byte-identical to before TICKET-044 (rds fixture)", {
+  # Codex 2F review fold, item 7: the rounded spot-checks above only cover
+  # `y`/`x`/`id`; this compares the ENTIRE unrounded data frame (all
+  # columns, all attributes, including "delta"/"a_i"/"b_i" and the full
+  # true_params list) via identical() against a golden fixture regenerated
+  # from the actual pre-TICKET-044 simulate_hurdle_data() source (`git show
+  # 6861cdc:R/hurdle-simulate.R`, sourced standalone and run with the exact
+  # same n_subjects = 5 / seed = 123 call) -- not hand-transcribed values.
+  golden <- readRDS(test_path("fixtures", "golden-hurdle-koff-n5-seed123.rds"))
+  current <- simulate_hurdle_data(n_subjects = 5, seed = 123)
+  expect_identical(current, golden)
+})
+
+# =============================================================================
+# Codex 2F review fold (TICKET-044): blocking item 2
+# =============================================================================
+
+test_that("item 2: positional calls through `seed` are unaffected by the new part2/rho_*_raw args", {
+  # Pre-fold, part2/rho_ab_raw/rho_ac_raw/rho_bc_raw were inserted BEFORE
+  # seed, so an old positional call's 19th argument (seed) would bind to
+  # part2 instead, and match.arg() would error (or silently misbehave).
+  golden_y <- c(
+    24.23241845, 0, 14.19131998, 6.54532277, 0, 8.02330741, 4.36619251,
+    2.72977581, 2.25459211, 0, 5.25848878, 3.87925532, 3.17401286,
+    2.65461189, 2.52639435, 1.98675426, 1.28650758, 1.81582762, 0,
+    10.1350845, 2.01136935, 3.42356896, 1.98971329, 2.18757744, 1.88370644,
+    0
+  )
+
+  d_positional <- simulate_hurdle_data(
+    5, seq(0, 11, by = 0.5), -2, 1, log(10), lifecycle::deprecated(), 2, 0.5,
+    1, 0.5, 0.1, 0.3, 0, 0, 0.3, 0.001, 2, TRUE, 123
+  )
+
+  expect_equal(nrow(d_positional), 26)
+  expect_equal(round(d_positional$y, 8), golden_y)
+
+  d_named <- simulate_hurdle_data(n_subjects = 5, seed = 123)
+  expect_identical(d_positional, d_named)
 })

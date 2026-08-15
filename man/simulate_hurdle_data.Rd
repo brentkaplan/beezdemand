@@ -23,11 +23,11 @@ simulate_hurdle_data(
   epsilon = 0.001,
   n_random_effects = 2,
   stop_at_zero = TRUE,
+  seed = NULL,
   part2 = c("koff", "snd"),
   rho_ab_raw = NULL,
   rho_ac_raw = NULL,
-  rho_bc_raw = NULL,
-  seed = NULL
+  rho_bc_raw = NULL
 )
 }
 \arguments{
@@ -73,6 +73,8 @@ subject once zero consumption is observed. This means subjects will have
 varying numbers of observations. Set to FALSE to generate all prices for
 all subjects. Default is TRUE.}
 
+\item{seed}{Optional random seed for reproducibility.}
+
 \item{part2}{Character. Positive-part (Part II) generator: \code{"koff"} (the
 original Zhao et al. (2016) / Koffarnus-style generator; default,
 backward compatible) or \code{"snd"} (TICKET-044; matches
@@ -90,9 +92,14 @@ Default \code{NULL} uses \code{0} (actual correlation 0).}
 
 \item{rho_bc_raw}{Only used when \code{part2 = "snd"} and \code{n_random_effects = 3}. Raw value for the b/c \emph{partial} correlation (see Details); the
 actual b/c correlation is NOT \code{tanh(rho_bc_raw)} directly. Default
-\code{NULL} uses \code{0} (actual correlation 0).}
+\code{NULL} uses \code{0} (actual correlation 0).
 
-\item{seed}{Optional random seed for reproducibility.}
+Note: \code{part2} and \verb{rho_*_raw} were added AFTER \code{seed} in the argument
+list (Codex 2F review fold, TICKET-044 item 2) specifically so that
+pre-existing positional calls -- whose 19th (and last, pre-TICKET-044)
+positional argument is \code{seed} -- continue to bind correctly instead of
+landing on \code{part2} (where \code{match.arg()} would error). Always pass
+\code{part2}/\verb{rho_*_raw} by name.}
 }
 \value{
 A data frame with columns:
