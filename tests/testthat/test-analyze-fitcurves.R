@@ -425,13 +425,21 @@ test_that("TICKET-069: healthy fits are converged and converged_strict", {
 test_that("TICKET-069: fit_demand_fixed()$results$converged derives from converged_strict", {
   skip_on_cran()
   # A subject with a full fallback-verification failure IS flagged.
+  # TICKET-047: multistart = FALSE pins this to the single production
+  # start this test is actually about -- under the TICKET-047 default
+  # budget, s2's pathological (non-monotonic, 26-orders-of-magnitude)
+  # data can be "rescued" to a domain-invalid (negative alpha) but
+  # numerically strict-converged fit, which is orthogonal to what this
+  # test checks (see test-fixed-multistart.R for multistart-specific
+  # coverage, including the domain-invalid-but-converged contract).
   d <- data.frame(
     id = rep(c("s1", "s2"), each = 6),
     x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
     y  = c(10, 8, 6, 4, 2, 1, 4e8, 1e7, 5e5, 1e13, 2e27, 60)
   )
   f <- suppressWarnings(fit_demand_fixed(
-    d, equation = "simplified", x_var = "x", y_var = "y", id_var = "id"
+    d, equation = "simplified", x_var = "x", y_var = "y", id_var = "id",
+    multistart = FALSE
   ))
   expect_false(isTRUE(f$results$converged[f$results$id == "s2"]))
 })

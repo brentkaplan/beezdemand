@@ -38,6 +38,25 @@ and paths that were already correct are unchanged. To reproduce the old numbers
 exactly, pin the previous release:
 `remotes::install_version("beezdemand", "0.2.0")`.
 
+* **Multi-start is now the default fitting protocol in `fit_demand_fixed()`
+  (TICKET-047).** Previously each subject was fit from a single
+  production-heuristic starting value; a subject whose start led to a
+  failed or at-a-bound fit was simply reported as non-converged. Now, any
+  subject whose production-heuristic fit is not strict-converged
+  (`converged_strict`: optimizer convergence AND finite coefficients/
+  objective AND not sitting on a user-supplied bound) is automatically
+  re-fit from several additional sampled starting values (8 for
+  2-parameter equations `hs`/`koff`/`simplified` with a fixed `k`, 32 when
+  `k = "fit"`), and the best strict-converged result is kept. Condition
+  under which output differs from 0.2.0: **only** subjects whose
+  production-heuristic fit previously failed to converge or landed on a
+  bound — some previously non-converged/`NA` rows may now report a
+  converged fit. Subjects whose production fit was already
+  strict-converged are **never** refit and are byte-identical (this is
+  guaranteed by construction, not just tested). `fit_demand_fixed(...,
+  multistart = FALSE)` or `S = 1` restores the exact legacy single-start
+  behavior. `FitCurves()` itself is completely unchanged.
+
 * **Essential value (EV) in `boot_demand()` and `get_demand_param_emms()`.**
   The TMB and NLME tiers computed `EV = 1 / (100 * alpha)` for every equation
   form, silently dropping the `k^1.5` term for k-bearing forms and applying a

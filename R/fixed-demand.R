@@ -26,6 +26,19 @@ NULL
 #' @param param_space Character. Parameterization used for fitting. One of:
 #'   - `"natural"`: fit `Q0`, `alpha` (and `k` if `k = "fit"`) on their natural scale
 #'   - `"log10"`: fit `log10(Q0)`, `log10(alpha)` (and `log10(k)` if `k = "fit"`)
+#' @param multistart Logical. If `TRUE` (the default), subjects whose
+#'   production-heuristic fit is not strict-converged (`converged_strict`;
+#'   see Details) are automatically re-fit from `S - 1` additional sampled
+#'   starting values. Subjects that strict-converge on the production start
+#'   are never refit, so their results are byte-identical whether
+#'   `multistart` is `TRUE` or `FALSE`. Set to `FALSE` (or `S = 1`) to
+#'   reproduce the legacy single-start behavior exactly. Not applicable to
+#'   `equation = "linear"` (closed-form; never multistarted).
+#' @param S Integer or `NULL`. Total number of starts to try per subject
+#'   (including the production start), when `multistart = TRUE`. Default
+#'   `NULL` uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
+#'   with a fixed `k`), 32 when `k = "fit"`. Ignored for `equation =
+#'   "linear"`.
 #' @param by Optional character vector of column names to group by.
 #'   When supplied, fits are run separately within each unique
 #'   combination of the `by` columns. Returns a
@@ -35,10 +48,17 @@ NULL
 #'
 #' @return An object of class `beezdemand_fixed` with components:
 #'   \describe{
-#'     \item{results}{Data frame of fitted parameters for each subject}
+#'     \item{results}{Data frame of fitted parameters for each subject.
+#'       Gains `n_starts_tried`, `n_starts_converged`, and `start_source`
+#'       (`"production"`, `"sampled"`, or `"none"`) from the multi-start
+#'       protocol; see Details.}
 #'     \item{fits}{List of model fit objects (if `detailed = TRUE` internally)}
 #'     \item{predictions}{List of prediction data frames}
 #'     \item{data_used}{List of data frames used for each fit}
+#'     \item{multistart}{List describing the multi-start protocol: `multistart`,
+#'       `S` (resolved budget), `equation`, `eligible` (whether this equation
+#'       supports rescue), and `summary` (per-subject start metadata, or
+#'       `NULL` when not applicable)}
 #'     \item{call}{The original function call}
 #'     \item{equation}{The equation form used}
 #'     \item{k_spec}{Description of k specification}
@@ -52,6 +72,28 @@ NULL
 #' This function is a modern wrapper around the legacy `FitCurves()` function.
 #' It provides the same fitting capabilities but returns a structured S3 object
 #' with standardized methods for model interrogation.
+#'
+#' ## Multi-start rescue protocol (TICKET-047)
+#'
+#' `fit_demand_fixed()` always runs `FitCurves()`'s existing heuristic start
+#' exactly as before -- the "production start". A subject whose production
+#' fit is strict-converged (`converged_strict`: the optimizer's own
+#' convergence flag AND finite coefficients/objective AND not sitting on a
+#' user-supplied bound) is accepted immediately; no sampled starts are ever
+#' run for it, so its row, fitted model, predictions, and data are
+#' byte-identical to the `multistart = FALSE` / `S = 1` protocol by
+#' construction. Only subjects whose production fit is NOT strict-converged
+#' are re-fit from `S - 1` additional starts, sampled log-uniformly in
+#' interpretable (Q0, Pmax) coordinates and mapped to each equation's native
+#' (Q0, alpha) parameterization via the same closed forms used by
+#' `beezdemand_calc_pmax_omax()`. Among the sampled attempts that themselves
+#' strict-converge, the minimum-residual-SS start wins (ties broken by draw
+#' order). If none of the sampled starts strict-converge, the original
+#' (non-converged) production row is kept. `equation = "linear"` is a
+#' closed-form fit and is never multistarted. `FitCurves()` itself is
+#' unchanged; sampling draws from the ambient RNG stream (call `set.seed()`
+#' before `fit_demand_fixed()` for reproducibility -- the helpers never call
+#' `set.seed()` themselves).
 #'
 #' @examples
 #' \donttest{
@@ -91,6 +133,8 @@ fit_demand_fixed <- function(
   y_var = "y",
   id_var = "id",
   param_space = c("natural", "log10"),
+  multistart = TRUE,
+  S = NULL,
   by = NULL,
   ...
 ) {
@@ -119,6 +163,8 @@ fit_demand_fixed <- function(
         y_var = y_var,
         id_var = id_var,
         param_space = param_space,
+        multistart = multistart,
+        S = S,
         by = NULL,
         ...
       )
@@ -204,6 +250,31 @@ fit_demand_fixed <- function(
     data_used <- NULL
   }
 
+  # TICKET-047: multi-start rescue protocol. Runs on the production-start
+  # results/fits/predictions/data_used above; only subjects that are NOT
+  # strict-converged get refit. Inserted BEFORE the success/failure
+  # bookkeeping below so it sees the post-rescue converged_strict verdicts.
+  multistart_info <- NULL
+  if (is.data.frame(results) && nrow(results) > 0) {
+    ms <- .fixed_multistart_apply(
+      results = results,
+      fits = fits,
+      predictions = predictions,
+      data_used = data_used,
+      equation = equation,
+      k = k,
+      param_space = param_space,
+      multistart = multistart,
+      S = S,
+      dots = list(...)
+    )
+    results <- ms$results
+    fits <- ms$fits
+    predictions <- ms$predictions
+    data_used <- ms$data_used
+    multistart_info <- ms$multistart_info
+  }
+
   # Count successes/failures.
 
   if (is.data.frame(results) && nrow(results) > 0) {
@@ -269,6 +340,7 @@ fit_demand_fixed <- function(
       fits = fits,
       predictions = predictions,
       data_used = data_used,
+      multistart = multistart_info,
       legacy_warnings = unique(legacy_warnings),
       call = call,
       equation = equation,
