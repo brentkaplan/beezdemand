@@ -14,6 +14,8 @@ fit_demand_fixed(
   id_var = "id",
   param_space = c("natural", "log10"),
   by = NULL,
+  multistart = TRUE,
+  S = NULL,
   ...
 )
 }
@@ -50,15 +52,42 @@ combination of the \code{by} columns. Returns a
 \code{beezdemand_fixed_grouped} object with per-group child fits.
 Default \code{NULL} (no grouping).}
 
+\item{multistart}{Logical. If \code{TRUE} (the default), subjects whose
+production-heuristic fit is not strict-converged (\code{converged_strict};
+see Details) are automatically re-fit from \code{S - 1} additional sampled
+starting values. Subjects that strict-converge on the production start
+are never refit, so their results are byte-identical whether
+\code{multistart} is \code{TRUE} or \code{FALSE}. Set to \code{FALSE} (or \code{S = 1}) to
+reproduce the legacy single-start behavior exactly. Not applicable to
+\code{equation = "linear"} (closed-form; never multistarted).}
+
+\item{S}{Integer or \code{NULL}. Total number of starts to try per subject
+(including the production start), when \code{multistart = TRUE}. Default
+\code{NULL} uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
+with a fixed \code{k}), 32 when \code{k = "fit"}. Ignored for \code{equation = "linear"}. If supplied, must be a single finite integer \verb{>= 1}.
+
+Note: \code{multistart} and \code{S} were added AFTER \code{by} in the argument list
+(Codex 2F review fold, TICKET-047 item 1) specifically so that
+pre-existing positional calls -- e.g.
+\code{fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")}, where the 9th positional argument is \code{by} -- continue to
+bind correctly. Always pass \code{multistart}/\code{S} by name.}
+
 \item{...}{Additional arguments passed to the underlying \code{FitCurves()} engine.}
 }
 \value{
 An object of class \code{beezdemand_fixed} with components:
 \describe{
-\item{results}{Data frame of fitted parameters for each subject}
+\item{results}{Data frame of fitted parameters for each subject.
+Gains \code{n_starts_tried}, \code{n_starts_converged}, and \code{start_source}
+(\code{"production"}, \code{"sampled"}, or \code{"none"}) from the multi-start
+protocol; see Details.}
 \item{fits}{List of model fit objects (if \code{detailed = TRUE} internally)}
 \item{predictions}{List of prediction data frames}
 \item{data_used}{List of data frames used for each fit}
+\item{multistart}{List describing the multi-start protocol: \code{multistart},
+\code{S} (resolved budget), \code{equation}, \code{eligible} (whether this equation
+supports rescue), and \code{summary} (per-subject start metadata, or
+\code{NULL} when not applicable)}
 \item{call}{The original function call}
 \item{equation}{The equation form used}
 \item{k_spec}{Description of k specification}
@@ -77,6 +106,28 @@ including \code{summary()}, \code{tidy()}, and \code{glance()}.
 This function is a modern wrapper around the legacy \code{FitCurves()} function.
 It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.
+\subsection{Multi-start rescue protocol (TICKET-047)}{
+
+\code{fit_demand_fixed()} always runs \code{FitCurves()}'s existing heuristic start
+exactly as before -- the "production start". A subject whose production
+fit is strict-converged (\code{converged_strict}: the optimizer's own
+convergence flag AND finite coefficients/objective AND not sitting on a
+user-supplied bound) is accepted immediately; no sampled starts are ever
+run for it, so its row, fitted model, predictions, and data are
+byte-identical to the \code{multistart = FALSE} / \code{S = 1} protocol by
+construction. Only subjects whose production fit is NOT strict-converged
+are re-fit from \code{S - 1} additional starts, sampled log-uniformly in
+interpretable (Q0, Pmax) coordinates and mapped to each equation's native
+(Q0, alpha) parameterization via the same closed forms used by
+\code{beezdemand_calc_pmax_omax()}. Among the sampled attempts that themselves
+strict-converge, the minimum-residual-SS start wins (ties broken by draw
+order). If none of the sampled starts strict-converge, the original
+(non-converged) production row is kept. \code{equation = "linear"} is a
+closed-form fit and is never multistarted. \code{FitCurves()} itself is
+unchanged; sampling draws from the ambient RNG stream (call \code{set.seed()}
+before \code{fit_demand_fixed()} for reproducibility -- the helpers never call
+\code{set.seed()} themselves).
+}
 }
 \examples{
 \donttest{

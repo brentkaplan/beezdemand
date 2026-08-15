@@ -425,6 +425,13 @@ test_that("TICKET-069: healthy fits are converged and converged_strict", {
 test_that("TICKET-069: fit_demand_fixed()$results$converged derives from converged_strict", {
   skip_on_cran()
   # A subject with a full fallback-verification failure IS flagged.
+  # TICKET-047 (Codex 2F fold, item 4): the multi-start rescue protocol
+  # only accepts DOMAIN-VALID (Q0 > 0, Alpha > 0) strict-converged sampled
+  # starts as rescue candidates, so s2's pathological (non-monotonic,
+  # 26-orders-of-magnitude) data stays non-converged under the DEFAULT
+  # multistart budget too -- no multistart = FALSE workaround needed. See
+  # test-fixed-multistart.R for dedicated multistart/domain-validity
+  # coverage.
   d <- data.frame(
     id = rep(c("s1", "s2"), each = 6),
     x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
