@@ -19,6 +19,53 @@
 ## R script for analysis functions
 ##
 
+# Verifies a nlxb() fallback endpoint by refitting with a genuine iterative
+# optimizer (stats::nls(algorithm = "port")) started from that endpoint.
+# TICKET-069: the old fallback used nls2::nls2(..., algorithm = "brute-force")
+# with a single-point start, which returns exactly that point as a
+# fitted-looking object without ever verifying it -- whatever nlxb stalled at
+# was reported as "the estimate". This refit requires a genuine
+# convInfo$isConv verdict before an endpoint is trusted.
+# nlxb_fit Result of nlsr::nlxb() (possibly a try-error)
+# fo Model formula
+# adf Per-subject data frame
+# lower,upper Bounds vectors matching fo's parameters
+# Returns list(fit, verified): fit is either a verified "nls" object (with
+# attr "beez_fallback_verified" = TRUE) or a try-error carrying an
+# "endpoint unverified" message; verified is the corresponding logical.
+##' @noRd
+.legacy_fallback_refit <- function(nlxb_fit, fo, adf, lower, upper) {
+  if (inherits(nlxb_fit, what = "try-error")) {
+    return(list(fit = nlxb_fit, verified = FALSE))
+  }
+  start <- as.list(nlxb_fit$coefficients)
+  refit <- suppressWarnings(try(
+    stats::nls(
+      formula = fo,
+      data = adf,
+      start = start,
+      algorithm = "port",
+      lower = lower,
+      upper = upper,
+      control = stats::nls.control(warnOnly = TRUE, maxiter = 200)
+    ),
+    silent = TRUE
+  ))
+  if (
+    inherits(refit, what = "try-error") ||
+      is.null(refit$convInfo$isConv) ||
+      !isTRUE(refit$convInfo$isConv)
+  ) {
+    failure <- structure(
+      "Error in fallback refit : \n  endpoint unverified: fallback refit did not converge\n",
+      class = "try-error"
+    )
+    return(list(fit = failure, verified = FALSE))
+  }
+  attr(refit, "beez_fallback_verified") <- TRUE
+  list(fit = refit, verified = TRUE)
+}
+
 ##' Analyzes purchase task data
 ##'
 ##' `r lifecycle::badge("superseded")`
@@ -151,7 +198,9 @@ FitCurves <- function(
     "Pmaxd",
     "Omaxa",
     "Pmaxa",
-    "Notes"
+    "Notes",
+    "converged",
+    "converged_strict"
   )
 
   if (!is.null(agg)) {
@@ -207,6 +256,9 @@ FitCurves <- function(
     if (k == "fit") {
       kest <- "fit"
       kstart <- GetK(dat)
+      if (param_space == "log10") {
+        kstart <- log10(kstart)
+      }
     } else if (k == "ind") {
       kest <- "ind"
     } else if (k == "share") {
@@ -334,11 +386,15 @@ FitCurves <- function(
       }
     }
 
-    if (is.null(startq0)) {
-      startq0 <- if (param_space == "log10") log10(max(adf$y)) else max(adf$y)
+    startq0_i <- if (is.null(startq0)) {
+      if (param_space == "log10") log10(max(adf$y)) else max(adf$y)
+    } else {
+      startq0
     }
-    if (is.null(startalpha)) {
-      startalpha <- if (param_space == "log10") log10(0.01) else 0.01
+    startalpha_i <- if (is.null(startalpha)) {
+      if (param_space == "log10") log10(0.01) else 0.01
+    } else {
+      startalpha
     }
 
     if (!kest == "fit") {
@@ -347,7 +403,7 @@ FitCurves <- function(
           fit <- try(
             nlsr::wrapnlsr(
               formula = fo,
-              start = list(q0 = startq0, alpha = startalpha),
+              start = list(q0 = startq0_i, alpha = startalpha_i),
               lower = c(lower),
               upper = c(upper),
               data = adf
@@ -360,7 +416,7 @@ FitCurves <- function(
             fit <- try(
               nlsr::nlxb(
                 formula = fo,
-                start = list(q0 = startq0, alpha = startalpha),
+                start = list(q0 = startq0_i, alpha = startalpha_i),
                 lower = c(lower),
                 upper = c(upper),
                 data = adf
@@ -368,26 +424,15 @@ FitCurves <- function(
               silent = TRUE
             )
           )
-          suppressWarnings(
-            fit <- try(nls2::nls2(
-              fo,
-              data = adf,
-              start = fit$coefficients,
-              algorithm = "brute-force"
-            ))
-          )
-          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-            c("nls", "nls2", "error")
-          } else {
-            c("nls", "nls2")
-          }
+          refit_result <- .legacy_fallback_refit(fit, fo, adf, c(lower), c(upper))
+          fit <- refit_result$fit
         }
       } else if (!is.null(constrainq0)) {
         suppressWarnings(
           fit <- try(
             nlsr::wrapnlsr(
               formula = fo,
-              start = list(alpha = startalpha),
+              start = list(alpha = startalpha_i),
               lower = c(lower[2]),
               upper = c(upper[2]),
               data = adf
@@ -400,7 +445,7 @@ FitCurves <- function(
             fit <- try(
               nlsr::nlxb(
                 formula = fo,
-                start = list(alpha = startalpha),
+                start = list(alpha = startalpha_i),
                 lower = c(lower[2]),
                 upper = c(upper[2]),
                 data = adf
@@ -408,30 +453,21 @@ FitCurves <- function(
               silent = TRUE
             )
           )
-          suppressWarnings(
-            fit <- try(nls2::nls2(
-              fo,
-              data = adf,
-              start = fit$coefficients,
-              algorithm = "brute-force"
-            ))
+          refit_result <- .legacy_fallback_refit(
+            fit, fo, adf, c(lower[2]), c(upper[2])
           )
-          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-            c("nls", "nls2", "error")
-          } else {
-            c("nls", "nls2")
-          }
+          fit <- refit_result$fit
         }
       }
     } else {
-      if (param_space == "log10") {
-        kstart <- log10(kstart)
-      }
+      # NOTE: kstart's log10() transform is applied ONCE, before this loop
+      # (see kest <- "fit" handling above) -- do not re-transform it here
+      # (TICKET-057: re-applying it per iteration compounded across subjects).
       suppressWarnings(
         fit <- try(
           nlsr::wrapnlsr(
             formula = fo,
-            start = list(q0 = startq0, k = kstart, alpha = startalpha),
+            start = list(q0 = startq0_i, k = kstart, alpha = startalpha_i),
             lower = c(lower),
             upper = c(upper),
             data = adf
@@ -444,7 +480,7 @@ FitCurves <- function(
           fit <- try(
             nlsr::nlxb(
               formula = fo,
-              start = list(q0 = startq0, k = kstart, alpha = startalpha),
+              start = list(q0 = startq0_i, k = kstart, alpha = startalpha_i),
               lower = c(lower),
               upper = c(upper),
               data = adf
@@ -452,19 +488,8 @@ FitCurves <- function(
             silent = TRUE
           )
         )
-        suppressWarnings(
-          fit <- try(nls2::nls2(
-            fo,
-            data = adf,
-            start = fit$coefficients,
-            algorithm = "brute-force"
-          ))
-        )
-        attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-          c("nls", "nls2", "error")
-        } else {
-          c("nls", "nls2")
-        }
+        refit_result <- .legacy_fallback_refit(fit, fo, adf, c(lower), c(upper))
+        fit <- refit_result$fit
       }
     }
 
@@ -479,7 +504,9 @@ FitCurves <- function(
       cols = colnames(dfres),
       kest = kest,
       constrainq0 = constrainq0,
-      param_space = param_space
+      param_space = param_space,
+      lower = lower,
+      upper = upper
     )
 
     newdat <- NULL
@@ -681,36 +708,65 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
   )
   dfrow[["id"]] <- pid
   dfrow[1, "N"] <- nrow(adf)
-  dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
-  dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(coef(summary(fit))[c(1:3), 2])
-  dfrow[1, "R2"] <- 1.0 -
-    (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
-  dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
-  dfrow[1, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
-  dfrow[1, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
-  ## Calculates mean elasticity based on individual range of x
-  pbar <- mean(unique(adf$x))
-  dfrow[1, "MeanElasticity"] <- dfrow[1, "b"] - (dfrow[1, "a"] * pbar)
-  dfrow[1, "Pmaxd"] <- (1 + dfrow[1, "b"]) / dfrow[1, "a"]
-  dfrow[1, "Omaxd"] <- (dfrow[1, "L"] * dfrow[1, "Pmaxd"]^dfrow[1, "b"]) /
-    exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) *
-    dfrow[1, "Pmaxd"]
-  dfrow[1, "N"] <- nrow(adf)
-  dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
-    fit$m$deviance()
-  } else {
-    deviance(fit)
+
+  # TICKET-058: ExtractCoefs() (the nonlinear sibling) starts with a
+  # try-error guard so a failed fit degrades to an NA row + Notes instead of
+  # crashing the batch; this extractor was missing that guard entirely, and
+  # even a nominally successful-but-degenerate fit can still fail partway
+  # through (summary()/confint2()/deviance()/fit$m$getPars()). Wrap the
+  # whole extraction in tryCatch() so ANY failure -- a try-error `fit`, or a
+  # mid-extraction error -- degrades to the same NA-row + Notes contract.
+  if (inherits(fit, what = "try-error")) {
+    dfrow[["Notes"]] <- fit[1]
+    dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
+    return(dfrow)
   }
-  dfrow[1, "SdRes"] <- sqrt(
-    dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
+
+  tryCatch(
+    {
+      dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
+      dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(
+        coef(summary(fit))[c(1:3), 2]
+      )
+      dfrow[1, "R2"] <- 1.0 -
+        (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
+      dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
+      dfrow[1, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
+      dfrow[1, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
+      ## Calculates mean elasticity based on individual range of x
+      pbar <- mean(unique(adf$x))
+      dfrow[1, "MeanElasticity"] <- dfrow[1, "b"] - (dfrow[1, "a"] * pbar)
+      dfrow[1, "Pmaxd"] <- (1 + dfrow[1, "b"]) / dfrow[1, "a"]
+      dfrow[1, "Omaxd"] <- (dfrow[1, "L"] * dfrow[1, "Pmaxd"]^dfrow[1, "b"]) /
+        exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) *
+        dfrow[1, "Pmaxd"]
+      dfrow[1, "N"] <- nrow(adf)
+      dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
+        fit$m$deviance()
+      } else {
+        deviance(fit)
+      }
+      dfrow[1, "SdRes"] <- sqrt(
+        dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
+      )
+      # Codex 2B-review fold: FitCurves.linear() has no nlxb/nls2 fallback
+      # chain (it only ever calls wrapnlsr() once), so this branch's
+      # inherits(fit, "nls2") condition was always FALSE (dead code) --
+      # Notes always comes from the fit's own convInfo$stopMessage.
+      dfrow[1, "Notes"] <- trim.leading(fit$convInfo$stopMessage)
+      dfrow
+    },
+    error = function(e) {
+      failrow <- data.frame(
+        matrix(vector(), 1, length(cols), dimnames = list(c(), c(cols))),
+        stringsAsFactors = FALSE
+      )
+      failrow[["id"]] <- pid
+      failrow[1, "N"] <- nrow(adf)
+      failrow[["Notes"]] <- conditionMessage(e)
+      failrow
+    }
   )
-  dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
-    "wrapnls failed to converge, reverted to nlxb"
-  } else {
-    fit$convInfo$stopMessage
-  }
-  dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
-  dfrow
 }
 
 # Populates a single row of a dataframe consisting of important information from fits, etc.
@@ -729,7 +785,9 @@ ExtractCoefs <- function(
   cols,
   kest,
   constrainq0,
-  param_space
+  param_space,
+  lower = NULL,
+  upper = NULL
 ) {
   dfrow <- data.frame(
     matrix(vector(), 1, length(cols), dimnames = list(c(), c(cols))),
@@ -739,6 +797,8 @@ ExtractCoefs <- function(
   if (inherits(fit, what = "try-error")) {
     dfrow[["Notes"]] <- fit[1]
     dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
+    dfrow[1, "converged"] <- FALSE
+    dfrow[1, "converged_strict"] <- FALSE
   } else {
     dfrow[1, "N"] <- length(adf$k)
     dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
@@ -781,8 +841,16 @@ ExtractCoefs <- function(
       }
       dfrow[1, c("Alpha")] <- alpha_hat
     }
-    dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
-      "wrapnls failed to converge, reverted to nlxb"
+    # TICKET-069: convergence verdict comes from the optimizer's own
+    # convInfo$isConv (never from string-matching Notes/class). Both a
+    # first-stage wrapnlsr success and a verified fallback refit
+    # (.legacy_fallback_refit()) are plain "nls" objects with a real
+    # convInfo; a fallback endpoint that failed verification never reaches
+    # this branch (it stays a try-error and is handled above).
+    is_rescued <- isTRUE(attr(fit, "beez_fallback_verified"))
+    is_conv <- isTRUE(fit$convInfo$isConv)
+    dfrow[1, "Notes"] <- if (is_rescued) {
+      "wrapnls failed to converge; nlxb endpoint verified by port refit"
     } else {
       fit$convInfo$stopMessage
     }
@@ -797,6 +865,67 @@ ExtractCoefs <- function(
       k_hat <- 10^k_hat
     }
     dfrow[1, "K"] <- k_hat
+
+    # TICKET-069: converged_strict additionally requires finite coefficients
+    # and objective, and that the fit did not land on a user-supplied bound
+    # (a raw optimizer isConv verdict alone does not establish either).
+    fit_coefs <- if (is.null(coef(fit))) fit$m$getPars() else coef(fit)
+    finite_ok <- is.finite(dfrow[1, "AbsSS"]) && all(is.finite(fit_coefs))
+    at_bound <- FALSE
+    if (!is.null(lower) && !is.null(upper) && !is.null(names(fit_coefs))) {
+      nm <- intersect(names(fit_coefs), intersect(names(lower), names(upper)))
+      if (length(nm) > 0) {
+        at_bound <- any(vapply(nm, function(n) {
+          v <- fit_coefs[[n]]
+          lo <- lower[[n]]
+          hi <- upper[[n]]
+          (is.finite(lo) && isTRUE(all.equal(v, lo, tolerance = 1e-6))) ||
+            (is.finite(hi) && isTRUE(all.equal(v, hi, tolerance = 1e-6)))
+        }, logical(1)))
+      }
+    }
+    dfrow[1, "converged"] <- is_conv
+    dfrow[1, "converged_strict"] <- is_conv && finite_ok && !at_bound
+
+    # Domain validity is distinct from numerical convergence: a fit can
+    # numerically converge (isConv TRUE) at a physiologically impossible
+    # point (Q0 <= 0 or Alpha <= 0). Only reachable in natural param_space --
+    # log10 parameterization back-transforms via 10^x, which is always > 0.
+    #
+    # Codex 2B-review fold (decision Q5a): domain validity is signalled
+    # ONLY by a warning() naming the subject and the offending parameter(s)
+    # -- it must NOT modify Notes or demote converged_strict. Taboo 4: a
+    # single subject that converges on the first wrapnlsr attempt must keep
+    # Notes byte-identical to develop (e.g. exactly "converged"), and
+    # converged_strict stays the literal isConv && finite_ok && !at_bound
+    # verdict computed above -- domain-invalid estimates are still reported
+    # (with their real numbers) so downstream callers can inspect them; only
+    # the warning flags the problem.
+    q0_check <- dfrow[1, "Q0d"]
+    alpha_check <- dfrow[1, "Alpha"]
+    q0_bad <- !is.na(q0_check) && q0_check <= 0
+    alpha_bad <- !is.na(alpha_check) && alpha_check <= 0
+    if (isTRUE(dfrow[1, "converged"]) && (q0_bad || alpha_bad)) {
+      offending <- paste(
+        c(if (q0_bad) "Q0", if (alpha_bad) "Alpha"),
+        collapse = " and "
+      )
+      warning(
+        sprintf(
+          paste0(
+            "FitCurves: subject '%s' reported as converged with a ",
+            "non-positive %s (Q0d = %s, Alpha = %s); this estimate may be ",
+            "domain-invalid -- inspect before use."
+          ),
+          pid,
+          offending,
+          format(q0_check),
+          format(alpha_check)
+        ),
+        call. = FALSE
+      )
+    }
+
     if (!inherits(fit, what = "error")) {
       if (is.null(constrainq0)) {
         se_q0 <- coef(summary(fit))["q0", "Std. Error"]
@@ -1689,6 +1818,21 @@ ExtraF <- function(
       ),
       silent = TRUE
     )
+    # TICKET-059 (F3): an omnibus F-test cannot degrade a single failed
+    # group to an NA row the way per-subject FitCurves() can -- fail fast
+    # with an informative error naming the group, rather than letting the
+    # unguarded predict()/resid()/df.residual() calls below raise an opaque
+    # "no applicable method ... class try-error" error.
+    if (inherits(lstfits[[i]], what = "try-error")) {
+      stop(
+        sprintf(
+          "ExtraF: unable to fit group '%s': %s",
+          grps[i],
+          trim.leading(strsplit(lstfits[[i]][1], "\n")[[1]][2])
+        ),
+        call. = FALSE
+      )
+    }
     if (equation == "hs") {
       newdat[newdat$group == grps[i], "y"] <- 10^predict(
         lstfits[[i]],
@@ -1995,13 +2139,36 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
     dat[dat[, sharecol] == i, "ref"] <- j
     j <- j + 1
   }
+  # TICKET-059 (F4): revalidate the usable group count after the <3-row
+  # drop above -- the initial "only one dataset" check at the top of this
+  # function cannot see this drop, so a call that started with 2+ groups can
+  # silently end up with 0 or 1 usable group by this point, which would
+  # otherwise proceed into a nonsensical single-group contrast.
+  if (length(unique(dat[, sharecol])) < 2) {
+    return(
+      "Unable to find a shared k: fewer than 2 groups have >= 3 rows after filtering."
+    )
+  }
+
   dat$ref <- as.factor(dat$ref)
 
   ## create contrasts
   dat2 <- cbind(dat, model.matrix(~ 0 + ref, dat))
   nparams <- length(unique(dat2$ref))
 
-  if (equation == "hs") {
+  # TICKET-059 (F4): the start-value grid construction below (log() of
+  # possibly-non-positive quantities -> seq() with a non-finite endpoint)
+  # and the final nlxb() fit were both unguarded -- nlxb() in particular was
+  # never wrapped in try(), so the "if (!inherits(fit, 'try-error'))" check
+  # a few lines below it could never actually fire; any internal failure
+  # escaped raw instead of reaching the designed sentinel return. Wrapping
+  # the whole search in tryCatch() guarantees GetSharedK() always returns
+  # either a numeric k or the character sentinel -- never raises -- so both
+  # ExtraF()'s try()-wrapped caller and FitCurves(k = "share")'s bare,
+  # unwrapped caller can rely on `is.character(k)` to detect failure.
+  tryCatch(
+    {
+      if (equation == "hs") {
     paramslogq0 <- paste(
       sprintf("log(q0%d)/log(10)*ref%d", 1:nparams, 1:nparams),
       collapse = "+"
@@ -2281,7 +2448,10 @@ GetSharedK <- function(dat, equation, sharecol = "group") {
       sharedk <- "Unable to find a shared k."
       return(sharedk)
     }
-  }
+      }
+    },
+    error = function(e) "Unable to find a shared k."
+  )
 }
 
 ##' Calculates a k value by looking for the max/min consumption across entire dataset and adds .5 to that range

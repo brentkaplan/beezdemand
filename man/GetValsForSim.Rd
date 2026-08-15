@@ -16,7 +16,15 @@ List of 3: setaparams, sdindex, x
 Gets values used in SimulateDemand
 }
 \details{
-Gets values used in SimulateDemand
+Gets values used in SimulateDemand. Per-subject residuals are matched to
+the returned \code{x} price columns by EXACT identity
+(\code{make.names(as.character(x))} -- no numeric tolerance), so a
+subject's price values must match the global price set bit-for-bit. A
+subject missing a price contributes \code{NA} for that price (tolerated
+by \code{sdindex}'s \code{na.rm = TRUE}); a subject with a duplicated
+price is rejected with an informative error naming the subject and the
+duplicated price(s), since duplicate rows have no well-defined single
+residual to place in that column.
 }
 \examples{
 GetValsForSim(apt)

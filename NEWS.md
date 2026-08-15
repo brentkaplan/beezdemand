@@ -52,6 +52,136 @@ exactly, pin the previous release:
   so `get_demand_param_emms()` now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with
   a warning instead of applying a guessed formula.
 
+* **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
+  engine).** Two interacting defects in the per-subject loop: (1) the default
+  Q0/alpha start values were computed once from the first subject's data and
+  then reused (sticky) for every subsequent subject instead of being
+  recomputed per subject, silently making batch estimates order- and
+  scale-dependent; (2) when the entire nls fallback chain (`wrapnlsr` →
+  `nlxb` → `nls2` brute-force) failed for a subject, an unguarded
+  `fit$m$Rmat()` dereference on the resulting try-error crashed the whole
+  batch call instead of recording that subject as non-converged. Condition
+  under which output differs from 0.2.0: any batch call (2+ subjects) where
+  a subject after the first has a different consumption scale, or where any
+  subject's nls fallback chain fully fails. A batch that previously crashed
+  now returns one row per subject with the failing subject(s) flagged
+  non-converged; a batch that previously "succeeded" but silently used a
+  wrong start value for subjects 2..N may now report different (correct,
+  order-invariant) estimates for those subjects. Single-subject calls are
+  unchanged (they never had a sticky prior subject to inherit from).
+
+* **`FitCurves()` / `fit_demand_fixed()` with `k = "fit"` and
+  `param_space = "log10"`.** The k start value's `log10()` transform was
+  applied inside the per-subject loop instead of once before it, so the
+  transform compounded on every iteration: subject 1 started from
+  `log10(K)` (correct), subject 2 from `log10(log10(K))` (silently wrong for
+  typical `K < 10`), and subject 3+ from `log10(<negative>)` = `NaN`,
+  producing non-converged rows for later subjects. Condition under which
+  output differs from 0.2.0: batch calls with `k = "fit"`,
+  `param_space = "log10"`, and 2 or more subjects — subject 1's estimates
+  are unchanged, subjects 2+ now converge (previously mis-started or
+  NaN-started). Natural-space and fixed/individual/shared-k paths are
+  unaffected.
+
+* **`FitCurves()` / `fit_demand_fixed()` reported unverified fallback
+  endpoints as estimates, with no way to tell a genuine fit from a stalled
+  one.** When `wrapnlsr` failed and the chain fell back to `nlxb`, the old
+  code re-fit that endpoint with `nls2::nls2(..., algorithm = "brute-force")`
+  and a single-point start — this is a snapshot, not a fit; it always
+  "succeeds" and reports whatever point `nlxb` stalled at, including points
+  with a singular Jacobian, as `Notes = "wrapnls failed to converge,
+  reverted to nlxb"` (indistinguishable from a genuine rescue). Separately,
+  a numerically converged fit could still land on a physiologically
+  impossible point (`Q0 <= 0` or `Alpha <= 0`, e.g. for flat or otherwise
+  degenerate data) and be reported as `Notes = "converged"` with no flag.
+  The fallback endpoint is now verified with a genuine iterative refit
+  (`stats::nls(algorithm = "port")`) that must itself report
+  `convInfo$isConv`; an endpoint that fails this verification is recorded as
+  a non-converged row (`Notes = "endpoint unverified: fallback refit did
+  not converge"`) instead of being reported as an estimate; a verified
+  rescue is recorded as `Notes = "wrapnls failed to converge; nlxb endpoint
+  verified by port refit"`. Results now carry `converged` (the optimizer's
+  own `isConv` verdict) and `converged_strict` (`isConv` AND finite
+  coefficients/objective AND not at a user-supplied bound) columns. A
+  "converged" fit with non-positive Q0 and/or Alpha now also raises a
+  `warning()` naming the subject and which parameter is non-positive —
+  domain validity is signalled **only** by that warning: `Notes` is never
+  modified and `converged_strict` is never demoted for a domain-invalid
+  estimate (it is only reachable in `param_space = "natural"` — the log10
+  parameterization's `10^x` back-transform is always positive), so a single
+  subject that converges on the first `wrapnlsr` attempt keeps byte-identical
+  `Notes`/`converged`/`converged_strict` regardless of domain validity.
+  `fit_demand_fixed()$results$converged` now derives from
+  `converged_strict` instead of grepping `Notes` for failure keywords —
+  including for domain-invalid-but-numerically-converged fits, which are
+  therefore reported as `converged = TRUE` (flagged only by the warning,
+  not excluded from downstream success counts). Default bounds are
+  unchanged (still `c(-Inf, -Inf)`/`c(Inf, Inf)` unless `lobound`/`hibound`
+  are supplied — this release does not add default non-negativity bounds).
+  Condition under which output differs from 0.2.0: any subject whose
+  `wrapnlsr` fit fails and falls back to `nlxb` (now either genuinely
+  verified or reported as non-converged, not a raw snapshot), and any
+  subject reported "converged" with a non-positive Q0 or Alpha (now also
+  raises a warning; `Notes`, `converged`, and `converged_strict` are
+  otherwise unaffected). Subjects that converge cleanly on the first
+  `wrapnlsr` attempt are unchanged.
+
+* **`GetValsForSim()` (used by `SimulateDemand()`'s Koffarnus et al., 2015
+  simulation workflow) misaligned or dropped per-price residuals.** Residual
+  columns are keyed to the global price set (`unique(dat$x)` order);
+  `resid(fit)` is returned in the fitted subject's own row order. The old
+  code assigned residuals to price columns by POSITION
+  (`dfres[i, 4:NCOL(dfres)] <- resid(fit)`), which either errored ("replacement
+  has N items, need M") when a subject was missing a price row, or — when a
+  subject had a full but differently-ordered price grid — silently placed
+  residuals under the wrong price column with no error. Since `sdindex`
+  (per-price residual SD, which directly controls simulated variance) is
+  computed from these columns, a subject whose row order didn't match
+  `unique(dat$x)` order silently corrupted `sdindex` without any warning.
+  Residuals are now matched to price columns by price VALUE
+  (`adf$x`, tolerating a missing price as `NA`, which `sdindex`'s existing
+  `na.rm = TRUE` already handles) instead of by position. A subject whose
+  fit fails now also raises a `warning()` naming the subject and cause
+  instead of silently contributing an all-NA row. Condition under which
+  output differs from 0.2.0: any call where a subject's row order (within
+  that subject) doesn't match `unique(dat$x)` order, or a subject is missing
+  one or more price rows (previously miscomputed `sdindex` or crashed
+  outright; now computed correctly, with `NA` for missing price cells).
+  Subjects with a complete price grid in canonical order are unchanged.
+  Separately, `SimulateDemand()` now works in a fresh R session that has
+  never touched the RNG (`RunOneSim()` previously read `.Random.seed`
+  unconditionally, which does not exist until the RNG has been used once).
+
+## Legacy fitter robustness (batch failures)
+
+* `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =
+  "linear")`) now degrades a per-subject fit failure to an NA-parameter row
+  with an informative `Notes` message instead of crashing. The linear
+  extractor (`ExtractCoefs.linear()`) was missing the try-error guard its
+  nonlinear sibling (`ExtractCoefs()`) already has; on a failed `wrapnlsr`
+  fit it dereferenced the resulting try-error immediately
+  (`coef(fit)[c("l", "b", "a")]`), which raised `$ operator is invalid for
+  atomic vectors` and aborted the entire batch with no per-subject failure
+  record -- reproducible even for a single unfittable subject called alone.
+  The extraction is now wrapped end-to-end so a mid-extraction failure
+  (`summary()`, `nlstools::confint2()`, `deviance()`) also degrades
+  gracefully rather than only the initial `coef()` call.
+* `ExtraF()` now reports which group's per-group fit failed
+  (`"ExtraF: unable to fit group '<name>': ..."`) instead of an opaque
+  `no applicable method for 'predict' applied to an object of class
+  "try-error"`. `GetSharedK()`'s shared-k search (start-value grid
+  construction and the final `nlxb()` fit, neither of which was previously
+  guarded) is now wrapped so any internal failure reaches its designed
+  sentinel return (`"Unable to find a shared k."`) instead of escaping raw;
+  `FitCurves(k = "share")` can therefore actually reach its documented
+  fallback to `GetK()` with a warning, which previously could not fire
+  because the sentinel path was unreachable (the final `nlxb()` call was
+  never wrapped in `try()`, so the `inherits(fit, "try-error")` check after
+  it could never be true). A shared-k group set that drops below 2 usable
+  groups (after the existing <3-row-per-group drop) now returns an
+  informative sentinel instead of proceeding into a nonsensical
+  single-group contrast.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a

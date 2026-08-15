@@ -204,48 +204,60 @@ fit_demand_fixed <- function(
     data_used <- NULL
   }
 
-  # Count successes/failures based on Notes column and parameter validity
+  # Count successes/failures.
 
   if (is.data.frame(results) && nrow(results) > 0) {
     n_total <- nrow(results)
-    success_flag <- rep(TRUE, n_total)
 
-    # Check Notes column for convergence failures
-    if ("Notes" %in% names(results)) {
-      notes_lower <- tolower(results$Notes)
-      # Mark as failed if Notes indicates convergence issues
-      failed_notes <- grepl("failed|reverted|singular|error", notes_lower)
-      success_flag <- success_flag & !failed_notes
-    }
+    if ("converged_strict" %in% names(results)) {
+      # TICKET-069: the nonlinear (hs/koff/simplified) legacy engine now
+      # records a per-fit verdict derived from the optimizer's own
+      # convInfo$isConv (plus finite coefficients/objective and
+      # not-at-a-bound, and demoted on domain-invalid Q0<=0/Alpha<=0) --
+      # use that instead of string-matching Notes, which cannot distinguish
+      # a numerically-converged-but-degenerate fit from a genuine one.
+      success_flag <- results$converged_strict
+      success_flag[is.na(success_flag)] <- FALSE
+    } else {
+      # Linear equation (no fallback-verification chain / no recorded
+      # verdict): fall back to the Notes-grep + parameter-validity heuristic.
+      success_flag <- rep(TRUE, n_total)
 
-    # Check for NA parameters
-    if ("Alpha" %in% names(results)) {
-      success_flag <- success_flag & !is.na(results$Alpha)
-    }
-    if ("Q0d" %in% names(results)) {
-      success_flag <- success_flag & !is.na(results$Q0d)
-    }
+      if ("Notes" %in% names(results)) {
+        notes_lower <- tolower(results$Notes)
+        failed_notes <- grepl("failed|reverted|singular|error", notes_lower)
+        success_flag <- success_flag & !failed_notes
+      }
 
-    # Check for physiologically implausible values (negative Q0 or alpha)
-    if ("Q0d" %in% names(results)) {
-      success_flag <- success_flag & (is.na(results$Q0d) | results$Q0d >= 0)
-    }
-    if ("Alpha" %in% names(results)) {
-      success_flag <- success_flag & (is.na(results$Alpha) | results$Alpha >= 0)
-    }
+      if ("Alpha" %in% names(results)) {
+        success_flag <- success_flag & !is.na(results$Alpha)
+      }
+      if ("Q0d" %in% names(results)) {
+        success_flag <- success_flag & !is.na(results$Q0d)
+      }
 
-    # Handle linear equation parameters
-    if (all(c("L", "b", "a") %in% names(results))) {
-      success_flag <- success_flag &
-        !is.na(results$L) &
-        !is.na(results$b) &
-        !is.na(results$a)
+      # Check for physiologically implausible values (negative Q0 or alpha)
+      if ("Q0d" %in% names(results)) {
+        success_flag <- success_flag & (is.na(results$Q0d) | results$Q0d >= 0)
+      }
+      if ("Alpha" %in% names(results)) {
+        success_flag <- success_flag & (is.na(results$Alpha) | results$Alpha >= 0)
+      }
+
+      # Handle linear equation parameters
+      if (all(c("L", "b", "a") %in% names(results))) {
+        success_flag <- success_flag &
+          !is.na(results$L) &
+          !is.na(results$b) &
+          !is.na(results$a)
+      }
     }
 
     n_success <- sum(success_flag)
     n_fail <- n_total - n_success
 
-    # Add a converged column to results for downstream use
+    # Add/overwrite the converged column with the derived verdict for
+    # downstream use.
     results$converged <- success_flag
   } else {
     n_total <- n_success <- n_fail <- NA_integer_
