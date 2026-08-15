@@ -753,32 +753,50 @@ coef.beezdemand_fixed <- function(
   }
 
   ids <- names(object$fits)
-  # TICKET-068 (E5a): track which subjects' rows are dropped (and why), so
-  # the caller can distinguish "subject absent" from "subject failed" rather
-  # than the two looking identical in the returned tibble.
-  omitted_ids <- character(0)
+  # TICKET-068 (E5a): track which subjects' rows are dropped and WHY (Codex
+  # 2D review, blocking #1: name the failing call and include
+  # conditionMessage(e), not just the id), so the caller can distinguish
+  # "subject absent" from "subject failed" rather than the two looking
+  # identical in the returned tibble.
+  omitted <- character(0)
   rows <- lapply(seq_along(object$fits), function(i) {
     fit <- object$fits[[i]]
     id <- if (!is.null(ids) && length(ids) >= i) ids[[i]] else NA_character_
-    if (inherits(fit, "try-error") || is.null(fit)) {
-      omitted_ids[[length(omitted_ids) + 1]] <<- as.character(id)
+    id_chr <- as.character(id)
+
+    if (inherits(fit, "try-error")) {
+      cond <- attr(fit, "condition")
+      msg <- if (!is.null(cond)) conditionMessage(cond) else trimws(as.character(fit))
+      omitted[[length(omitted) + 1]] <<- sprintf(
+        "%s (stored fit is a try-error: %s)", id_chr, msg
+      )
       return(NULL)
     }
-    cf <- tryCatch(stats::coef(fit), error = function(e) NULL)
+    if (is.null(fit)) {
+      omitted[[length(omitted) + 1]] <<- sprintf("%s (no fit stored)", id_chr)
+      return(NULL)
+    }
+    cf <- tryCatch(stats::coef(fit), error = function(e) e)
+    if (inherits(cf, "condition")) {
+      omitted[[length(omitted) + 1]] <<- sprintf(
+        "%s (coef() failed: %s)", id_chr, conditionMessage(cf)
+      )
+      return(NULL)
+    }
     if (is.null(cf)) {
-      omitted_ids[[length(omitted_ids) + 1]] <<- as.character(id)
+      omitted[[length(omitted) + 1]] <<- sprintf("%s (coef() returned NULL)", id_chr)
       return(NULL)
     }
     tibble::tibble(
-      id = as.character(id),
+      id = id_chr,
       term = names(cf),
       estimate = as.numeric(cf)
     )
   })
 
-  if (length(omitted_ids) > 0) {
+  if (length(omitted) > 0) {
     cli::cli_warn(
-      "Dropped {length(omitted_ids)} subject row{?s} from {.fn coef} (no usable fit or {.fn coef} failed): {.val {omitted_ids}}.",
+      "Dropped {length(omitted)} subject row{?s} from {.fn coef}: {paste(omitted, collapse = '; ')}.",
       class = c("beezdemand_fixed_coef_omitted_warning", "beezdemand_warning")
     )
   }

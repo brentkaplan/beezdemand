@@ -39,18 +39,45 @@ utils::globalVariables(c(
 #' underlying `fitted()`/`residuals()`/`predict()` call errors, or its
 #' result's length doesn't match the augmented data, the column was
 #' previously dropped with no indication -- indistinguishable from "not
-#' applicable".
+#' applicable". Codex 2D review (blocking #1): the warning must name which
+#' call failed and include `conditionMessage(e)`, not just the column name.
 #'
-#' @param cols Character vector of omitted column names.
-#' @param reason Character string describing why.
+#' @param details Character vector, one fully-composed detail string per
+#'   omitted column (e.g. `".fitted: fitted() failed: <message>"`).
 #' @return Invisible `NULL`; called for the warning side effect.
 #' @keywords internal
-.cp_warn_augment_omitted <- function(cols, reason) {
+.cp_warn_augment_omitted <- function(details) {
   cli::cli_warn(
-    "{.val {cols}} column{?s} omitted from augment() output: {reason}.",
+    "Column{?s} omitted from augment() output: {paste(details, collapse = '; ')}.",
     class = c("beezdemand_cp_augment_omitted_warning", "beezdemand_warning")
   )
   invisible(NULL)
+}
+
+#' Describe Why an Augment Column Was Omitted
+#'
+#' @description
+#' Internal helper (TICKET-068, E5c). Builds the "colname: reason" detail
+#' string for `.cp_warn_augment_omitted()` from either a caught condition or
+#' a length mismatch against the expected row count.
+#'
+#' @param col Column name (e.g. `".fitted"`).
+#' @param fn_label Human name of the failing call (e.g. `"fitted()"`).
+#' @param res Either the successful result, or a condition object caught via
+#'   `tryCatch(..., error = function(e) e)`.
+#' @param n_expected Expected length (number of rows in the augmented data).
+#' @return Character string.
+#' @keywords internal
+.cp_augment_omit_reason <- function(col, fn_label, res, n_expected) {
+  if (inherits(res, "condition")) {
+    return(sprintf("%s: %s failed: %s", col, fn_label, conditionMessage(res)))
+  }
+  sprintf(
+    "%s: %s length mismatch (%d value%s vs %d row%s)",
+    col, fn_label,
+    length(res), if (length(res) == 1) "" else "s",
+    n_expected, if (n_expected == 1) "" else "s"
+  )
 }
 
 #-------------------------------------------------------------------------------
@@ -2112,23 +2139,21 @@ augment.cp_model_nls <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
-  if (is.null(fitted_vals)) {
-    .cp_warn_augment_omitted(c(".fitted", ".resid"), "fitted() failed")
+  if (inherits(fitted_res, "condition")) {
+    .cp_warn_augment_omitted(
+      .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_res, nrow(out))
+    )
     return(out)
   }
+  fitted_vals <- fitted_res
   if (nrow(out) == length(fitted_vals)) {
     out$.fitted <- as.numeric(fitted_vals)
     out$.resid <- if ("y" %in% names(out)) out$y - out$.fitted else NA_real_
   } else {
     .cp_warn_augment_omitted(
-      c(".fitted", ".resid"),
-      sprintf(
-        "length mismatch (%d fitted value%s vs %d row%s)",
-        length(fitted_vals), if (length(fitted_vals) == 1) "" else "s",
-        nrow(out), if (nrow(out) == 1) "" else "s"
-      )
+      .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_vals, nrow(out))
     )
   }
   out
@@ -2145,22 +2170,23 @@ augment.cp_model_lm <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
-  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
+  resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
   omitted <- character(0)
-  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
-    out$.fitted <- as.numeric(fitted_vals)
+
+  if (!inherits(fitted_res, "condition") && nrow(out) == length(fitted_res)) {
+    out$.fitted <- as.numeric(fitted_res)
   } else {
-    omitted <- c(omitted, ".fitted")
+    omitted <- c(omitted, .cp_augment_omit_reason(".fitted", "fitted()", fitted_res, nrow(out)))
   }
-  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
-    out$.resid <- as.numeric(resid_vals)
+  if (!inherits(resid_res, "condition") && nrow(out) == length(resid_res)) {
+    out$.resid <- as.numeric(resid_res)
   } else {
-    omitted <- c(omitted, ".resid")
+    omitted <- c(omitted, .cp_augment_omit_reason(".resid", "residuals()", resid_res, nrow(out)))
   }
   if (length(omitted) > 0) {
-    .cp_warn_augment_omitted(omitted, "fitted()/residuals() failed or its length didn't match the data")
+    .cp_warn_augment_omitted(omitted)
   }
   out
 }
@@ -2177,34 +2203,34 @@ augment.cp_model_lmer <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
     return(tibble::as_tibble(data.frame()))
   }
-  fitted_vals <- tryCatch(stats::fitted(x$model), error = function(e) NULL)
-  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
+  fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
+  resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
   omitted <- character(0)
-  if (!is.null(fitted_vals) && nrow(out) == length(fitted_vals)) {
-    out$.fitted <- as.numeric(fitted_vals)
+
+  if (!inherits(fitted_res, "condition") && nrow(out) == length(fitted_res)) {
+    out$.fitted <- as.numeric(fitted_res)
   } else {
-    omitted <- c(omitted, ".fitted")
+    omitted <- c(omitted, .cp_augment_omit_reason(".fitted", "fitted()", fitted_res, nrow(out)))
   }
-  if (!is.null(resid_vals) && nrow(out) == length(resid_vals)) {
-    out$.resid <- as.numeric(resid_vals)
+  if (!inherits(resid_res, "condition") && nrow(out) == length(resid_res)) {
+    out$.resid <- as.numeric(resid_res)
   } else {
-    omitted <- c(omitted, ".resid")
+    omitted <- c(omitted, .cp_augment_omit_reason(".resid", "residuals()", resid_res, nrow(out)))
   }
-  fixed_vals <- tryCatch(
+
+  fixed_res <- tryCatch(
     stats::predict(x$model, newdata = x$data, re.form = NA),
-    error = function(e) NULL
+    error = function(e) e
   )
-  if (!is.null(fixed_vals) && nrow(out) == length(fixed_vals)) {
-    out$.fixed <- as.numeric(fixed_vals)
+  if (!inherits(fixed_res, "condition") && nrow(out) == length(fixed_res)) {
+    out$.fixed <- as.numeric(fixed_res)
   } else {
-    omitted <- c(omitted, ".fixed")
+    omitted <- c(omitted, .cp_augment_omit_reason(".fixed", "predict()", fixed_res, nrow(out)))
   }
+
   if (length(omitted) > 0) {
-    .cp_warn_augment_omitted(
-      omitted,
-      "fitted()/residuals()/predict() failed or its length didn't match the data"
-    )
+    .cp_warn_augment_omitted(omitted)
   }
   out
 }

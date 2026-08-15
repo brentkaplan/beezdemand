@@ -2354,11 +2354,20 @@ plot_expenditure.beezdemand_hurdle <- function(
 
   # Add Pmax/Omax — pull the metric set that matches the displayed curve.
   if (show_pmax || show_omax) {
+    # Codex 2D review (optional): name only the annotation(s) actually
+    # requested, not always "Pmax/Omax".
+    requested_annotations <- c(if (show_pmax) "Pmax", if (show_omax) "Omax")
+    annotation_label <- paste(requested_annotations, collapse = "/")
+    annotation_noun <- if (length(requested_annotations) == 1) {
+      "annotation"
+    } else {
+      "annotations"
+    }
     metrics <- tryCatch(
       calc_group_metrics(object),
       error = function(e) {
         cli::cli_warn(
-          "Pmax/Omax annotations omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
+          "{annotation_label} {annotation_noun} omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
           class = c("beezdemand_plot_annotation_warning", "beezdemand_warning")
         )
         NULL
@@ -2480,11 +2489,20 @@ plot_expenditure.beezdemand_tmb <- function(
     theme_beezdemand(style = style)
 
   if (show_pmax || show_omax) {
+    # Codex 2D review (optional): name only the annotation(s) actually
+    # requested, not always "Pmax/Omax".
+    requested_annotations <- c(if (show_pmax) "Pmax", if (show_omax) "Omax")
+    annotation_label <- paste(requested_annotations, collapse = "/")
+    annotation_noun <- if (length(requested_annotations) == 1) {
+      "annotation"
+    } else {
+      "annotations"
+    }
     metrics <- tryCatch(
       calc_group_metrics(object),
       error = function(e) {
         cli::cli_warn(
-          "Pmax/Omax annotations omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
+          "{annotation_label} {annotation_noun} omitted: {.fn calc_group_metrics} failed with {conditionMessage(e)}",
           class = c("beezdemand_plot_annotation_warning", "beezdemand_warning")
         )
         NULL

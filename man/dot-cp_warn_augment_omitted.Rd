@@ -4,12 +4,11 @@
 \alias{.cp_warn_augment_omitted}
 \title{Warn When augment.cp_model_*() Omits a Documented Column}
 \usage{
-.cp_warn_augment_omitted(cols, reason)
+.cp_warn_augment_omitted(details)
 }
 \arguments{
-\item{cols}{Character vector of omitted column names.}
-
-\item{reason}{Character string describing why.}
+\item{details}{Character vector, one fully-composed detail string per
+omitted column (e.g. \code{".fitted: fitted() failed: <message>"}).}
 }
 \value{
 Invisible \code{NULL}; called for the warning side effect.
@@ -20,6 +19,7 @@ document \code{.fitted}/\code{.resid}/\code{.fixed} as always-present columns; w
 underlying \code{fitted()}/\code{residuals()}/\code{predict()} call errors, or its
 result's length doesn't match the augmented data, the column was
 previously dropped with no indication -- indistinguishable from "not
-applicable".
+applicable". Codex 2D review (blocking #1): the warning must name which
+call failed and include \code{conditionMessage(e)}, not just the column name.
 }
 \keyword{internal}

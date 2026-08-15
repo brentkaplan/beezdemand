@@ -1050,3 +1050,29 @@ test_that("plot_expenditure.beezdemand_tmb warns when Pmax/Omax metrics fail", {
   )
   expect_s3_class(p, "gg")
 })
+
+# Codex 2D review (optional): the warning should name only the annotation(s)
+# actually requested, not always "Pmax/Omax".
+test_that("plot_expenditure warning names only the requested annotation (Pmax only)", {
+  testthat::local_mocked_bindings(
+    calc_group_metrics = function(...) stop("forced metrics failure")
+  )
+
+  expect_warning(
+    plot_expenditure(fit_hurdle, show_pmax = TRUE, show_omax = FALSE),
+    class = "beezdemand_plot_annotation_warning",
+    regexp = "^Pmax annotation omitted"
+  )
+})
+
+test_that("plot_expenditure warning names only the requested annotation (Omax only)", {
+  testthat::local_mocked_bindings(
+    calc_group_metrics = function(...) stop("forced metrics failure")
+  )
+
+  expect_warning(
+    plot_expenditure(fit_hurdle, show_pmax = FALSE, show_omax = TRUE),
+    class = "beezdemand_plot_annotation_warning",
+    regexp = "^Omax annotation omitted"
+  )
+})
