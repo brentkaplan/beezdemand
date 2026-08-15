@@ -116,6 +116,96 @@ test_that("run_hurdle_monte_carlo completes without error", {
   expect_true("n_sim" %in% names(mc_results))
 })
 
+# TICKET-062: run_hurdle_monte_carlo() must retain per-replicate diagnostics
+# (rather than collapsing failures to NULL) and must exclude converged-but-
+# non-PD-Hessian replicates from the SE-dependent summary statistics.
+
+test_that("run_hurdle_monte_carlo returns a per-replicate diagnostics table (real fixture)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  mc_results <- run_hurdle_monte_carlo(
+    n_sim = 3,
+    n_subjects = 30,
+    n_random_effects = 2,
+    verbose = FALSE,
+    seed = 123
+  )
+
+  expect_true("diagnostics" %in% names(mc_results))
+  expect_true("n_hessian_not_pd" %in% names(mc_results))
+  expect_equal(nrow(mc_results$diagnostics), 3)
+  expect_true(all(
+    c("sim_id", "status", "converged", "hessian_pd", "opt_convergence", "opt_message") %in%
+      names(mc_results$diagnostics)
+  ))
+  expect_true(all(
+    mc_results$diagnostics$status %in%
+      c("error", "nonconverged", "converged_non_pd", "clean")
+  ))
+})
+
+test_that("run_hurdle_monte_carlo distinguishes error/nonconverged/non-PD/clean replicates and excludes non-PD from the summary", {
+  call_id <- 0L
+  mock_coefs <- c(
+    beta0 = -2, beta1 = 1, log_q0 = log(10), k = 2, alpha = 0.5,
+    logsigma_a = 0, logsigma_b = 0, logsigma_e = 0, rho_ab_raw = 0
+  )
+
+  testthat::local_mocked_bindings(
+    fit_demand_hurdle = function(...) {
+      call_id <<- call_id + 1L
+      if (call_id == 1L) {
+        stop("forced fit error")
+      } else if (call_id == 2L) {
+        list(
+          converged = FALSE,
+          hessian_pd = NA,
+          opt = list(convergence = 1L, message = "forced nonconvergence"),
+          model = list(coefficients = mock_coefs, se = rep(NA_real_, 9))
+        )
+      } else if (call_id == 3L) {
+        list(
+          converged = TRUE,
+          hessian_pd = FALSE,
+          opt = list(convergence = 0L, message = "relative convergence (4)"),
+          model = list(coefficients = mock_coefs, se = rep(0.1, 9))
+        )
+      } else {
+        list(
+          converged = TRUE,
+          hessian_pd = TRUE,
+          opt = list(convergence = 0L, message = "relative convergence (4)"),
+          model = list(coefficients = mock_coefs, se = rep(0.1, 9))
+        )
+      }
+    }
+  )
+
+  expect_warning(
+    mc <- run_hurdle_monte_carlo(
+      n_sim = 4,
+      n_subjects = 10,
+      n_random_effects = 2,
+      verbose = FALSE,
+      seed = 1
+    ),
+    class = "beezdemand_hurdle_mc_hessian_excluded_warning"
+  )
+
+  expect_equal(nrow(mc$diagnostics), 4)
+  expect_setequal(
+    mc$diagnostics$status,
+    c("error", "nonconverged", "converged_non_pd", "clean")
+  )
+  expect_equal(mc$n_converged, 2L)
+  expect_equal(mc$n_hessian_not_pd, 1L)
+
+  # Only sim 4 (clean) may contribute to the SE-dependent summary; sim 3's
+  # non-PD-Hessian estimate/SE must be excluded.
+  expect_true(all(mc$summary$n_valid <= 1))
+})
+
 test_that("run_hurdle_monte_carlo summary has expected columns", {
   skip_on_cran()
   skip_if_not_installed("TMB")

@@ -37,11 +37,23 @@ zero. Default is TRUE.}
 \value{
 A list with:
 \describe{
-\item{estimates}{Data frame of parameter estimates from each simulation}
+\item{estimates}{Data frame of parameter estimates from each converged
+simulation (includes non-PD-Hessian replicates, flagged via a
+\code{hessian_pd} column, for callers that want them)}
 \item{true_params}{True parameter values used}
-\item{summary}{Summary statistics including bias, SE ratio, and coverage}
-\item{n_converged}{Number of simulations that converged}
+\item{summary}{Summary statistics including bias, SE ratio, and coverage,
+computed only from replicates that converged with a positive-definite
+Hessian (\code{diagnostics$status == "clean"}); converged-but-non-PD
+replicates are excluded (TICKET-062) since their SEs are unreliable}
+\item{n_converged}{Number of simulations that converged (regardless of
+Hessian positive-definiteness; unchanged definition)}
 \item{n_sim}{Total number of simulations attempted}
+\item{diagnostics}{Data frame with one row per simulation: \code{sim_id},
+\code{status} (\code{"error"}, \code{"nonconverged"}, \code{"converged_non_pd"}, or
+\code{"clean"}), \code{converged}, \code{hessian_pd}, \code{opt_convergence}, and
+\code{opt_message}}
+\item{n_hessian_not_pd}{Number of converged replicates excluded from
+\code{summary} because \code{hessian_pd} was \code{FALSE}}
 }
 }
 \description{

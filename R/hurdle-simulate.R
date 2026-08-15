@@ -406,11 +406,23 @@ simulate_hurdle_data <- function(
 #'
 #' @return A list with:
 #' \describe{
-#'   \item{estimates}{Data frame of parameter estimates from each simulation}
+#'   \item{estimates}{Data frame of parameter estimates from each converged
+#'     simulation (includes non-PD-Hessian replicates, flagged via a
+#'     `hessian_pd` column, for callers that want them)}
 #'   \item{true_params}{True parameter values used}
-#'   \item{summary}{Summary statistics including bias, SE ratio, and coverage}
-#'   \item{n_converged}{Number of simulations that converged}
+#'   \item{summary}{Summary statistics including bias, SE ratio, and coverage,
+#'     computed only from replicates that converged with a positive-definite
+#'     Hessian (`diagnostics$status == "clean"`); converged-but-non-PD
+#'     replicates are excluded (TICKET-062) since their SEs are unreliable}
+#'   \item{n_converged}{Number of simulations that converged (regardless of
+#'     Hessian positive-definiteness; unchanged definition)}
 #'   \item{n_sim}{Total number of simulations attempted}
+#'   \item{diagnostics}{Data frame with one row per simulation: `sim_id`,
+#'     `status` (`"error"`, `"nonconverged"`, `"converged_non_pd"`, or
+#'     `"clean"`), `converged`, `hessian_pd`, `opt_convergence`, and
+#'     `opt_message`}
+#'   \item{n_hessian_not_pd}{Number of converged replicates excluded from
+#'     `summary` because `hessian_pd` was `FALSE`}
 #' }
 #'
 #' @examples
@@ -525,37 +537,92 @@ run_hurdle_monte_carlo <- function(
       c("zeros", "q0", "alpha")
     }
 
-    fit <- tryCatch(
-      {
-        fit_demand_hurdle(
-          sim_data,
-          y_var = "y",
-          x_var = "x",
-          id_var = "id",
-          random_effects = re_spec,
-          verbose = 0,
-          tmb_control = list(max_iter = 300)
-        )
-      },
-      error = function(e) NULL
+    # TICKET-062: retain per-replicate diagnostics instead of collapsing
+    # every failure/non-convergence to NULL, and distinguish a converged fit
+    # with a non-positive-definite Hessian (unreliable SEs) from a clean one.
+    fit_or_err <- tryCatch(
+      fit_demand_hurdle(
+        sim_data,
+        y_var = "y",
+        x_var = "x",
+        id_var = "id",
+        random_effects = re_spec,
+        verbose = 0,
+        tmb_control = list(max_iter = 300)
+      ),
+      error = function(e) e
     )
 
-    if (is.null(fit) || !fit$converged) {
-      return(NULL)
+    if (inherits(fit_or_err, "condition")) {
+      return(list(
+        estimates = NULL,
+        diag = data.frame(
+          sim_id = sim_id,
+          status = "error",
+          converged = NA,
+          hessian_pd = NA,
+          opt_convergence = NA_integer_,
+          opt_message = conditionMessage(fit_or_err),
+          stringsAsFactors = FALSE
+        )
+      ))
+    }
+
+    fit <- fit_or_err
+    converged <- isTRUE(fit$converged)
+    hessian_pd <- isTRUE(fit$hessian_pd)
+    opt_convergence <- tryCatch(
+      {
+        val <- as.integer(fit$opt$convergence)
+        if (length(val) == 1) val else NA_integer_
+      },
+      error = function(e) NA_integer_
+    )
+    opt_message <- tryCatch(
+      {
+        val <- as.character(fit$opt$message)[1]
+        if (length(val) == 1 && !is.na(val)) val else NA_character_
+      },
+      error = function(e) NA_character_
+    )
+
+    status <- if (!converged) {
+      "nonconverged"
+    } else if (!hessian_pd) {
+      "converged_non_pd"
+    } else {
+      "clean"
+    }
+
+    diag_row <- data.frame(
+      sim_id = sim_id,
+      status = status,
+      converged = converged,
+      hessian_pd = hessian_pd,
+      opt_convergence = opt_convergence,
+      opt_message = opt_message,
+      stringsAsFactors = FALSE
+    )
+
+    if (!converged) {
+      return(list(estimates = NULL, diag = diag_row))
     }
 
     # Extract estimates
     est <- fit$model$coefficients[param_names]
     se <- fit$model$se[param_names]
 
-    data.frame(
+    est_df <- data.frame(
       sim_id = sim_id,
       parameter = param_names,
       estimate = as.numeric(est),
       se = as.numeric(se),
-      converged = fit$converged,
+      converged = converged,
+      hessian_pd = hessian_pd,
       stringsAsFactors = FALSE
     )
+
+    list(estimates = est_df, diag = diag_row)
   }
 
   # Run simulations
@@ -571,9 +638,14 @@ run_hurdle_monte_carlo <- function(
     results_list[[i]] <- run_one_sim(i)
   }
 
-  # Combine results
-  non_null_results <- results_list[!vapply(results_list, is.null, logical(1))]
-  n_converged <- length(non_null_results)
+  # Combine results. Every replicate contributes a diagnostics row (even
+  # errored/non-converged ones); only converged replicates contribute an
+  # estimates data frame (TICKET-062).
+  diagnostics <- do.call(rbind, lapply(results_list, `[[`, "diag"))
+  rownames(diagnostics) <- NULL
+
+  n_converged <- sum(diagnostics$status %in% c("converged_non_pd", "clean"))
+  n_hessian_not_pd <- sum(diagnostics$status == "converged_non_pd")
 
   if (n_converged == 0) {
     warning("No simulations converged. Check simulation parameters.")
@@ -582,11 +654,25 @@ run_hurdle_monte_carlo <- function(
       true_params = true_params,
       summary = NULL,
       n_converged = 0,
-      n_sim = n_sim
+      n_sim = n_sim,
+      diagnostics = diagnostics,
+      n_hessian_not_pd = n_hessian_not_pd
     ))
   }
 
+  est_list <- lapply(results_list, `[[`, "estimates")
+  non_null_results <- est_list[!vapply(est_list, is.null, logical(1))]
   estimates <- do.call(rbind, non_null_results)
+
+  if (n_hessian_not_pd > 0) {
+    cli::cli_warn(c(
+      "!" = "{n_hessian_not_pd} converged replicate{?s} had a non-positive-definite Hessian.",
+      "i" = paste(
+        "Excluded from {.field summary} (unreliable standard errors); see",
+        "{.code $diagnostics} for the per-replicate status."
+      )
+    ), class = c("beezdemand_hurdle_mc_hessian_excluded_warning", "beezdemand_warning"))
+  }
 
   # Transform true parameters to estimation scale
   true_values <- c(
@@ -608,7 +694,11 @@ run_hurdle_monte_carlo <- function(
   summary_df <- do.call(
     rbind,
     lapply(param_names, function(p) {
-      est_p <- estimates[estimates$parameter == p, ]
+      # TICKET-062: exclude converged-but-non-PD-Hessian replicates -- their
+      # SEs (and hence bias/coverage) are not reliable Monte Carlo evidence.
+      est_p <- estimates[
+        estimates$parameter == p & estimates$hessian_pd %in% TRUE,
+      ]
       est_vals <- est_p$estimate
       se_vals <- est_p$se
       true_val <- true_values[p]
@@ -678,7 +768,9 @@ run_hurdle_monte_carlo <- function(
     true_params = true_params,
     summary = summary_df,
     n_converged = n_converged,
-    n_sim = n_sim
+    n_sim = n_sim,
+    diagnostics = diagnostics,
+    n_hessian_not_pd = n_hessian_not_pd
   )
 }
 

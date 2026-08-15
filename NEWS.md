@@ -213,6 +213,11 @@ exactly, pin the previous release:
   never touched the RNG (`RunOneSim()` previously read `.Random.seed`
   unconditionally, which does not exist until the RNG has been used once).
 
+* **`run_hurdle_monte_carlo()` summary statistics can change.** See
+  "Silent-failure fixes" below (TICKET-062): converged replicates with a
+  non-positive-definite Hessian are no longer counted as valid Monte Carlo
+  evidence in `$summary`'s bias/coverage calculations.
+
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
 * **Hurdle random-effects covariance `chol()` failure silently substituted an
@@ -229,6 +234,22 @@ exactly, pin the previous release:
   assembled Sigma is not positive definite (rare given the partial-correlation
   parameterization); healthy (PD) fits are bit-identical and silent
   (TICKET-061).
+
+* **`run_hurdle_monte_carlo()` discarded per-replicate diagnostics and
+  counted non-PD-Hessian fits as valid Monte Carlo evidence.** Failed and
+  non-converged replicates collapsed to `NULL` with no record of why; the
+  return value carried no per-replicate status at all. Separately, a
+  replicate that converged with `hessian_pd = FALSE` passed the same filter
+  as a clean fit and contributed its (unreliable) estimate and SE to the
+  bias/coverage summary. The return value now includes `$diagnostics` (one
+  row per replicate: `sim_id`, `status` -- `"error"`, `"nonconverged"`,
+  `"converged_non_pd"`, or `"clean"` -- `converged`, `hessian_pd`,
+  `opt_convergence`, `opt_message`) and `$n_hessian_not_pd`; `$estimates`
+  gains a `hessian_pd` column. `$summary` now excludes `"converged_non_pd"`
+  replicates and a classed warning
+  (`beezdemand_hurdle_mc_hessian_excluded_warning`) fires naming the excluded
+  count when this happens. **This changes `$summary` output** for any prior
+  run that had converged-but-non-PD-Hessian replicates (TICKET-062).
 
 ## Legacy fitter robustness (batch failures)
 
