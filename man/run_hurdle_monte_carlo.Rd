@@ -43,17 +43,23 @@ simulation (includes non-PD-Hessian replicates, flagged via a
 \item{true_params}{True parameter values used}
 \item{summary}{Summary statistics including bias, SE ratio, and coverage,
 computed only from replicates that converged with a positive-definite
-Hessian (\code{diagnostics$status == "clean"}); converged-but-non-PD
-replicates are excluded (TICKET-062) since their SEs are unreliable}
+Hessian (\code{diagnostics$status == "clean"}); converged-but-non-PD and
+converged-but-Hessian-unavailable replicates are excluded (TICKET-062)
+since their SEs are unreliable or unknown}
 \item{n_converged}{Number of simulations that converged (regardless of
-Hessian positive-definiteness; unchanged definition)}
+Hessian positive-definiteness/availability; unchanged definition)}
 \item{n_sim}{Total number of simulations attempted}
 \item{diagnostics}{Data frame with one row per simulation: \code{sim_id},
-\code{status} (\code{"error"}, \code{"nonconverged"}, \code{"converged_non_pd"}, or
-\code{"clean"}), \code{converged}, \code{hessian_pd}, \code{opt_convergence}, and
-\code{opt_message}}
+\code{status} (\code{"error"}, \code{"nonconverged"}, \code{"converged_non_pd"},
+\code{"converged_hessian_unavailable"}, or \code{"clean"}), \code{converged},
+\code{hessian_pd} (\code{TRUE}/\code{FALSE}/\code{NA} -- \code{NA} means \code{sdreport()} itself
+failed, a different condition from an explicit non-PD Hessian),
+\code{opt_convergence}, and \code{opt_message}}
 \item{n_hessian_not_pd}{Number of converged replicates excluded from
-\code{summary} because \code{hessian_pd} was \code{FALSE}}
+\code{summary} because \code{hessian_pd} was explicitly \code{FALSE}}
+\item{n_hessian_unavailable}{Number of converged replicates excluded
+from \code{summary} because \code{hessian_pd} was \code{NA} (Hessian PD status
+unavailable)}
 }
 }
 \description{

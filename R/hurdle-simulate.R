@@ -412,17 +412,23 @@ simulate_hurdle_data <- function(
 #'   \item{true_params}{True parameter values used}
 #'   \item{summary}{Summary statistics including bias, SE ratio, and coverage,
 #'     computed only from replicates that converged with a positive-definite
-#'     Hessian (`diagnostics$status == "clean"`); converged-but-non-PD
-#'     replicates are excluded (TICKET-062) since their SEs are unreliable}
+#'     Hessian (`diagnostics$status == "clean"`); converged-but-non-PD and
+#'     converged-but-Hessian-unavailable replicates are excluded (TICKET-062)
+#'     since their SEs are unreliable or unknown}
 #'   \item{n_converged}{Number of simulations that converged (regardless of
-#'     Hessian positive-definiteness; unchanged definition)}
+#'     Hessian positive-definiteness/availability; unchanged definition)}
 #'   \item{n_sim}{Total number of simulations attempted}
 #'   \item{diagnostics}{Data frame with one row per simulation: `sim_id`,
-#'     `status` (`"error"`, `"nonconverged"`, `"converged_non_pd"`, or
-#'     `"clean"`), `converged`, `hessian_pd`, `opt_convergence`, and
-#'     `opt_message`}
+#'     `status` (`"error"`, `"nonconverged"`, `"converged_non_pd"`,
+#'     `"converged_hessian_unavailable"`, or `"clean"`), `converged`,
+#'     `hessian_pd` (`TRUE`/`FALSE`/`NA` -- `NA` means `sdreport()` itself
+#'     failed, a different condition from an explicit non-PD Hessian),
+#'     `opt_convergence`, and `opt_message`}
 #'   \item{n_hessian_not_pd}{Number of converged replicates excluded from
-#'     `summary` because `hessian_pd` was `FALSE`}
+#'     `summary` because `hessian_pd` was explicitly `FALSE`}
+#'   \item{n_hessian_unavailable}{Number of converged replicates excluded
+#'     from `summary` because `hessian_pd` was `NA` (Hessian PD status
+#'     unavailable)}
 #' }
 #'
 #' @examples
@@ -570,7 +576,19 @@ run_hurdle_monte_carlo <- function(
 
     fit <- fit_or_err
     converged <- isTRUE(fit$converged)
-    hessian_pd <- isTRUE(fit$hessian_pd)
+    # Codex 2D review (recommended #3): fit$hessian_pd can be NA when
+    # sdreport() itself failed (see hurdle-demand.R's `hessian_pd <- NA`
+    # default) -- that is a DIFFERENT condition from an explicit
+    # non-positive-definite Hessian and must stay distinguishable, not get
+    # coerced to FALSE by isTRUE().
+    hessian_pd_raw <- fit$hessian_pd
+    hessian_pd <- if (isTRUE(hessian_pd_raw)) {
+      TRUE
+    } else if (isFALSE(hessian_pd_raw)) {
+      FALSE
+    } else {
+      NA
+    }
     opt_convergence <- tryCatch(
       {
         val <- as.integer(fit$opt$convergence)
@@ -588,10 +606,12 @@ run_hurdle_monte_carlo <- function(
 
     status <- if (!converged) {
       "nonconverged"
-    } else if (!hessian_pd) {
+    } else if (isTRUE(hessian_pd)) {
+      "clean"
+    } else if (isFALSE(hessian_pd)) {
       "converged_non_pd"
     } else {
-      "clean"
+      "converged_hessian_unavailable"
     }
 
     diag_row <- data.frame(
@@ -644,8 +664,16 @@ run_hurdle_monte_carlo <- function(
   diagnostics <- do.call(rbind, lapply(results_list, `[[`, "diag"))
   rownames(diagnostics) <- NULL
 
-  n_converged <- sum(diagnostics$status %in% c("converged_non_pd", "clean"))
+  n_converged <- sum(
+    diagnostics$status %in%
+      c("converged_non_pd", "clean", "converged_hessian_unavailable")
+  )
   n_hessian_not_pd <- sum(diagnostics$status == "converged_non_pd")
+  # Codex 2D review (recommended #3): counted separately from n_hessian_not_pd
+  # -- "Hessian unavailable" (sdreport() itself failed) is a different
+  # condition from an explicit non-PD Hessian, though both are excluded from
+  # the SE-dependent summary the same way.
+  n_hessian_unavailable <- sum(diagnostics$status == "converged_hessian_unavailable")
 
   if (n_converged == 0) {
     warning("No simulations converged. Check simulation parameters.")
@@ -656,7 +684,8 @@ run_hurdle_monte_carlo <- function(
       n_converged = 0,
       n_sim = n_sim,
       diagnostics = diagnostics,
-      n_hessian_not_pd = n_hessian_not_pd
+      n_hessian_not_pd = n_hessian_not_pd,
+      n_hessian_unavailable = n_hessian_unavailable
     ))
   }
 
@@ -664,11 +693,15 @@ run_hurdle_monte_carlo <- function(
   non_null_results <- est_list[!vapply(est_list, is.null, logical(1))]
   estimates <- do.call(rbind, non_null_results)
 
-  if (n_hessian_not_pd > 0) {
+  if (n_hessian_not_pd > 0 || n_hessian_unavailable > 0) {
+    excluded_parts <- c(
+      if (n_hessian_not_pd > 0) sprintf("%d non-PD", n_hessian_not_pd),
+      if (n_hessian_unavailable > 0) sprintf("%d Hessian unavailable", n_hessian_unavailable)
+    )
     cli::cli_warn(c(
-      "!" = "{n_hessian_not_pd} converged replicate{?s} had a non-positive-definite Hessian.",
+      "!" = "{n_hessian_not_pd + n_hessian_unavailable} converged replicate{?s} excluded from summary ({paste(excluded_parts, collapse = ', ')}).",
       "i" = paste(
-        "Excluded from {.field summary} (unreliable standard errors); see",
+        "Unreliable or unavailable standard errors; see",
         "{.code $diagnostics} for the per-replicate status."
       )
     ), class = c("beezdemand_hurdle_mc_hessian_excluded_warning", "beezdemand_warning"))
@@ -770,7 +803,8 @@ run_hurdle_monte_carlo <- function(
     n_converged = n_converged,
     n_sim = n_sim,
     diagnostics = diagnostics,
-    n_hessian_not_pd = n_hessian_not_pd
+    n_hessian_not_pd = n_hessian_not_pd,
+    n_hessian_unavailable = n_hessian_unavailable
   )
 }
 

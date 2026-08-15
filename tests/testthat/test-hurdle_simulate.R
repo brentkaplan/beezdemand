@@ -141,16 +141,42 @@ test_that("run_hurdle_monte_carlo returns a per-replicate diagnostics table (rea
   ))
   expect_true(all(
     mc_results$diagnostics$status %in%
-      c("error", "nonconverged", "converged_non_pd", "clean")
+      c("error", "nonconverged", "converged_non_pd", "converged_hessian_unavailable", "clean")
   ))
 })
 
+# Codex 2D review (blocking #2): the original version of this test used
+# UNNAMED `se` vectors, so `se[param_names]` silently returned all-NA and
+# `valid_idx <- !is.na(est_vals) & !is.na(se_vals)` was FALSE for every
+# replicate regardless of hessian_pd -- the exclusion assertion
+# (`n_valid <= 1`) passed vacuously, not because exclusion actually worked.
+# Rewritten with NAMED coefficient/se vectors, two DISTINCT clean replicates
+# (so n_valid == n_clean == 2, not the degenerate n = 1 case where
+# empirical_se is NA), and a by-hand recomputation of the summary row from
+# only the clean estimates.
 test_that("run_hurdle_monte_carlo distinguishes error/nonconverged/non-PD/clean replicates and excludes non-PD from the summary", {
   call_id <- 0L
-  mock_coefs <- c(
-    beta0 = -2, beta1 = 1, log_q0 = log(10), k = 2, alpha = 0.5,
-    logsigma_a = 0, logsigma_b = 0, logsigma_e = 0, rho_ab_raw = 0
+  param_names_2re <- c(
+    "beta0", "beta1", "log_q0", "k", "alpha",
+    "logsigma_a", "logsigma_b", "logsigma_e", "rho_ab_raw"
   )
+  mock_coefs <- stats::setNames(
+    c(-2, 1, log(10), 2, 0.5, 0, 0, 0, 0),
+    param_names_2re
+  )
+  se_named <- stats::setNames(rep(0.2, length(mock_coefs)), param_names_2re)
+
+  # Two clean replicates with DIFFERENT beta0 estimates so bias/empirical_se
+  # can be recomputed by hand from exactly these two values.
+  clean_a <- mock_coefs
+  clean_a["beta0"] <- -1.5 # deviation from true (-2): +0.5
+  clean_b <- mock_coefs
+  clean_b["beta0"] <- -1.9 # deviation from true (-2): +0.1
+
+  # Non-PD replicate: a wildly different beta0 so if it were wrongly
+  # INCLUDED the bias/mean_estimate would be detectably contaminated.
+  nonpd_bad <- mock_coefs
+  nonpd_bad["beta0"] <- 999
 
   testthat::local_mocked_bindings(
     fit_demand_hurdle = function(...) {
@@ -162,48 +188,166 @@ test_that("run_hurdle_monte_carlo distinguishes error/nonconverged/non-PD/clean 
           converged = FALSE,
           hessian_pd = NA,
           opt = list(convergence = 1L, message = "forced nonconvergence"),
-          model = list(coefficients = mock_coefs, se = rep(NA_real_, 9))
+          model = list(coefficients = mock_coefs, se = se_named)
         )
       } else if (call_id == 3L) {
         list(
           converged = TRUE,
           hessian_pd = FALSE,
           opt = list(convergence = 0L, message = "relative convergence (4)"),
-          model = list(coefficients = mock_coefs, se = rep(0.1, 9))
+          model = list(coefficients = nonpd_bad, se = se_named)
+        )
+      } else if (call_id == 4L) {
+        list(
+          converged = TRUE,
+          hessian_pd = TRUE,
+          opt = list(convergence = 0L, message = "relative convergence (4)"),
+          model = list(coefficients = clean_a, se = se_named)
         )
       } else {
         list(
           converged = TRUE,
           hessian_pd = TRUE,
           opt = list(convergence = 0L, message = "relative convergence (4)"),
-          model = list(coefficients = mock_coefs, se = rep(0.1, 9))
+          model = list(coefficients = clean_b, se = se_named)
         )
       }
     }
   )
 
-  expect_warning(
-    mc <- run_hurdle_monte_carlo(
-      n_sim = 4,
+  warned_msg <- NULL
+  mc <- withCallingHandlers(
+    run_hurdle_monte_carlo(
+      n_sim = 5,
       n_subjects = 10,
       n_random_effects = 2,
       verbose = FALSE,
       seed = 1
     ),
-    class = "beezdemand_hurdle_mc_hessian_excluded_warning"
+    beezdemand_hurdle_mc_hessian_excluded_warning = function(w) {
+      warned_msg <<- conditionMessage(w)
+      invokeRestart("muffleWarning")
+    }
   )
 
-  expect_equal(nrow(mc$diagnostics), 4)
+  expect_equal(nrow(mc$diagnostics), 5)
   expect_setequal(
     mc$diagnostics$status,
     c("error", "nonconverged", "converged_non_pd", "clean")
   )
-  expect_equal(mc$n_converged, 2L)
-  expect_equal(mc$n_hessian_not_pd, 1L)
+  expect_equal(mc$n_converged, 3L) # sims 3, 4, 5 converged
+  expect_equal(mc$n_hessian_not_pd, 1L) # sim 3
+  n_clean <- sum(mc$diagnostics$status == "clean")
+  expect_equal(n_clean, 2L) # sims 4, 5
 
-  # Only sim 4 (clean) may contribute to the SE-dependent summary; sim 3's
-  # non-PD-Hessian estimate/SE must be excluded.
-  expect_true(all(mc$summary$n_valid <= 1))
+  # (c) excluded count is named in the warning.
+  expect_false(is.null(warned_msg))
+  expect_match(warned_msg, "1 converged replicate")
+  expect_match(warned_msg, "1 non-PD")
+
+  beta0_row <- mc$summary[mc$summary$parameter == "beta0", ]
+
+  # (a) n_valid == n_clean EXACTLY -- not just "<= 1", which the original
+  # (broken) assertion allowed to pass vacuously.
+  expect_equal(beta0_row$n_valid, n_clean)
+
+  # (b) the summary statistics for beta0 match a by-hand computation from
+  # ONLY the two clean estimates (clean_a, clean_b); the excluded
+  # non-PD replicate's beta0 = 999 must NOT appear anywhere in this
+  # computation.
+  hand_est <- c(unname(clean_a["beta0"]), unname(clean_b["beta0"]))
+  hand_se <- rep(unname(se_named["beta0"]), 2)
+  hand_true <- -2
+  hand_bias <- mean(hand_est) - hand_true
+  hand_emp_se <- sd(hand_est)
+  hand_mean_se <- mean(hand_se)
+  hand_lower <- hand_est - 1.96 * hand_se
+  hand_upper <- hand_est + 1.96 * hand_se
+  hand_coverage <- mean(hand_lower <= hand_true & hand_true <= hand_upper)
+
+  expect_equal(unname(beta0_row$mean_estimate), mean(hand_est))
+  expect_equal(unname(beta0_row$bias), hand_bias)
+  expect_equal(unname(beta0_row$empirical_se), hand_emp_se)
+  expect_equal(unname(beta0_row$mean_se), hand_mean_se)
+  expect_equal(unname(beta0_row$se_ratio), hand_mean_se / hand_emp_se)
+  expect_equal(unname(beta0_row$coverage_95), hand_coverage)
+})
+
+# Codex 2D review (recommended #3): hessian_pd = NA (sdreport() itself
+# failed) must be preserved as its own status, not coerced to
+# "converged_non_pd" -- it is excluded from the summary the same way, but
+# counted and reported separately.
+test_that("run_hurdle_monte_carlo distinguishes hessian_pd = NA from hessian_pd = FALSE", {
+  call_id <- 0L
+  param_names_2re <- c(
+    "beta0", "beta1", "log_q0", "k", "alpha",
+    "logsigma_a", "logsigma_b", "logsigma_e", "rho_ab_raw"
+  )
+  mock_coefs <- stats::setNames(
+    c(-2, 1, log(10), 2, 0.5, 0, 0, 0, 0),
+    param_names_2re
+  )
+  se_named <- stats::setNames(rep(0.2, length(mock_coefs)), param_names_2re)
+
+  testthat::local_mocked_bindings(
+    fit_demand_hurdle = function(...) {
+      call_id <<- call_id + 1L
+      if (call_id == 1L) {
+        list(
+          converged = TRUE,
+          hessian_pd = FALSE,
+          opt = list(convergence = 0L, message = "ok"),
+          model = list(coefficients = mock_coefs, se = se_named)
+        )
+      } else if (call_id == 2L) {
+        list(
+          converged = TRUE,
+          hessian_pd = NA,
+          opt = list(convergence = 0L, message = "ok, but sdreport failed"),
+          model = list(coefficients = mock_coefs, se = se_named)
+        )
+      } else {
+        list(
+          converged = TRUE,
+          hessian_pd = TRUE,
+          opt = list(convergence = 0L, message = "ok"),
+          model = list(coefficients = mock_coefs, se = se_named)
+        )
+      }
+    }
+  )
+
+  warned_msg <- NULL
+  mc <- withCallingHandlers(
+    run_hurdle_monte_carlo(
+      n_sim = 3,
+      n_subjects = 10,
+      n_random_effects = 2,
+      verbose = FALSE,
+      seed = 1
+    ),
+    beezdemand_hurdle_mc_hessian_excluded_warning = function(w) {
+      warned_msg <<- conditionMessage(w)
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_setequal(
+    mc$diagnostics$status,
+    c("converged_non_pd", "converged_hessian_unavailable", "clean")
+  )
+  expect_true(is.na(mc$diagnostics$hessian_pd[mc$diagnostics$status == "converged_hessian_unavailable"]))
+  expect_equal(mc$n_converged, 3L)
+  expect_equal(mc$n_hessian_not_pd, 1L)
+  expect_equal(mc$n_hessian_unavailable, 1L)
+
+  expect_false(is.null(warned_msg))
+  expect_match(warned_msg, "1 non-PD")
+  expect_match(warned_msg, "1 Hessian unavailable")
+
+  # Only the clean (call 3) replicate contributes to the summary.
+  beta0_row <- mc$summary[mc$summary$parameter == "beta0", ]
+  expect_equal(beta0_row$n_valid, 1L)
 })
 
 test_that("run_hurdle_monte_carlo summary has expected columns", {

@@ -243,13 +243,17 @@ exactly, pin the previous release:
   as a clean fit and contributed its (unreliable) estimate and SE to the
   bias/coverage summary. The return value now includes `$diagnostics` (one
   row per replicate: `sim_id`, `status` -- `"error"`, `"nonconverged"`,
-  `"converged_non_pd"`, or `"clean"` -- `converged`, `hessian_pd`,
-  `opt_convergence`, `opt_message`) and `$n_hessian_not_pd`; `$estimates`
-  gains a `hessian_pd` column. `$summary` now excludes `"converged_non_pd"`
-  replicates and a classed warning
-  (`beezdemand_hurdle_mc_hessian_excluded_warning`) fires naming the excluded
-  count when this happens. **This changes `$summary` output** for any prior
-  run that had converged-but-non-PD-Hessian replicates (TICKET-062).
+  `"converged_non_pd"`, `"converged_hessian_unavailable"`, or `"clean"` --
+  `converged`, `hessian_pd`, `opt_convergence`, `opt_message`) and
+  `$n_hessian_not_pd`/`$n_hessian_unavailable`; `$estimates` gains a
+  `hessian_pd` column. `hessian_pd = NA` (i.e. `sdreport()` itself failed) is
+  kept distinct from an explicit `hessian_pd = FALSE`, since they are
+  different conditions, though both are excluded from `$summary` the same
+  way. A classed warning (`beezdemand_hurdle_mc_hessian_excluded_warning`)
+  fires naming both excluded counts (e.g. "1 non-PD, 1 Hessian unavailable")
+  when either happens. **This changes `$summary` output** for any prior run
+  that had converged-but-non-PD-Hessian or Hessian-unavailable replicates
+  (TICKET-062).
 
 * **`fit_cp_nls()` discarded all backend convergence diagnostics, and
   `summary.cp_model_nls()`/`confint.cp_model_nls()` reported SEs, p-values,
