@@ -289,6 +289,30 @@ still return the same numbers.
   pattern the TMB tier's residual check already used. Healthy fits are
   byte-identical; only fits where one of these internal checks errors are
   affected.
+* **`fit_demand_tmb()` failure paths now name their causes.** Three gaps on
+  the failure/error-reporting side of the TMB fitter:
+  - The multi-start terminal abort ("All starting value sets failed.")
+    previously discarded every per-start cause (hard errors were `message()`d
+    only at `verbose >= 2`; optimizer-sentinel causes in `opt$message` were
+    never re-read once a start was rejected). It now appends a `Causes:`
+    section naming at least one underlying cause per failed start,
+    regardless of verbosity.
+  - Total `TMB::sdreport()` failure now warns regardless of `verbose`
+    (previously gated on `verbose >= 1`, so a `verbose = 0` fit failed
+    completely silently); the warning includes the fallback attempt's
+    message when it differs from the first; the same classed warning now
+    also fires on ADREPORT/variance-component extraction failure (a
+    previously fully silent path); and `hessian_pd = NA` (meaning
+    "unknowable because sdreport failed") is now explained via `tidy()`'s
+    `hessian_warning` attribute, not just `summary()`'s print note.
+  - Data whose rows are entirely dropped by `equation = "exponential"`'s
+    zero-consumption filter (e.g. all-zero `y`) now aborts immediately with
+    an informative message naming the equation and the dropped-row count,
+    instead of proceeding to "fit" a 0-observation model, reporting a
+    spurious "Converged (NLL = 0.00)", and then crashing during SE
+    extraction with a cryptic `no 'dimnames' attribute for array` (the only
+    output a `verbose = 0` caller saw). Healthy fits are unaffected; no
+    numeric output changes.
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 

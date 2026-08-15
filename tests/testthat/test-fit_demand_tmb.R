@@ -1200,3 +1200,118 @@ test_that("fit_demand_tmb drops NAs in continuous_covariates", {
     "Removed"
   )
 })
+
+
+# ==============================================================================
+# TICKET-067: fit_demand_tmb() failure-path cause reporting (E3, E4, E6)
+# ==============================================================================
+
+test_that("E3: multi-start terminal abort names at least one per-start cause", {
+  skip_on_cran()
+  # Extreme-magnitude data: every start set's optimizer produces NA/NaN
+  # gradient evaluations, so all starting value sets fail (organic repro).
+  d <- data.frame(
+    id = factor(rep(1, 4)),
+    x = c(1e300, 2e300, 3e300, 4e300),
+    y = c(1e300, 1e299, 1e298, 1e297)
+  )
+  err <- tryCatch(
+    fit_demand_tmb(d, equation = "exponential", verbose = 1),
+    error = function(e) e
+  )
+  expect_true(inherits(err, "error"))
+  msg <- conditionMessage(err)
+  expect_match(msg, "All starting value sets failed", fixed = TRUE)
+  # at least one underlying cause is named, at default verbosity
+  expect_match(msg, "Causes:", fixed = TRUE)
+  expect_match(msg, "start 1:")
+})
+
+test_that("E3: healthy fits are unaffected (no Causes: text, still converge)", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_true(fit$converged)
+})
+
+test_that("E6: all-zero consumption with equation='exponential' aborts informatively before optimizing", {
+  skip_on_cran()
+  d0 <- expand.grid(id = factor(1:3), x = c(0.1, 1, 5, 20))
+  d0$y <- 0
+
+  err0 <- tryCatch(
+    fit_demand_tmb(d0, equation = "exponential", verbose = 0),
+    error = function(e) e
+  )
+  expect_true(inherits(err0, "error"))
+  expect_match(conditionMessage(err0), "No usable observations remain")
+  expect_no_match(conditionMessage(err0), "dimnames", fixed = TRUE)
+
+  err1 <- tryCatch(
+    fit_demand_tmb(d0, equation = "exponential", verbose = 1),
+    error = function(e) e
+  )
+  expect_true(inherits(err1, "error"))
+  expect_match(conditionMessage(err1), "No usable observations remain")
+})
+
+test_that("E6: healthy exponential fits with some zero rows are unaffected", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_true(fit$converged)
+  expect_true(fit$param_info$n_dropped > 0)
+})
+
+test_that("E4: total sdreport failure raises exactly one classed warning regardless of verbose", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  # Mock TMB::sdreport() to always error, forcing the total-failure branch
+  # of .tmb_extract_estimates() at both verbose levels.
+  data(apt, package = "beezdemand")
+
+  testthat::local_mocked_bindings(
+    sdreport = function(...) stop("mocked sdreport failure"),
+    .package = "TMB"
+  )
+
+  warns0 <- testthat::capture_warnings(
+    fit0 <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  )
+  se_warns0 <- grepl("Standard error computation failed", warns0, fixed = TRUE)
+  expect_identical(sum(se_warns0), 1L)
+  expect_true(is.na(fit0$hessian_pd))
+
+  warns1 <- testthat::capture_warnings(
+    fit1 <- fit_demand_tmb(apt, equation = "exponential", verbose = 1)
+  )
+  se_warns1 <- grepl("Standard error computation failed", warns1, fixed = TRUE)
+  expect_identical(sum(se_warns1), 1L)
+})
+
+test_that("E4: tidy() attaches a hessian_warning note when hessian_pd is NA (sdreport totally failed)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+
+  testthat::local_mocked_bindings(
+    sdreport = function(...) stop("mocked sdreport failure"),
+    .package = "TMB"
+  )
+  fit <- suppressWarnings(fit_demand_tmb(apt, equation = "exponential", verbose = 0))
+  expect_true(is.na(fit$hessian_pd))
+  td <- tidy(fit)
+  hw <- attr(td, "hessian_warning")
+  expect_false(is.null(hw))
+  expect_match(hw, "unknown", ignore.case = TRUE)
+})
+
+test_that("E4: healthy fits attach no hessian_warning and raise no sdreport-failure warning", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  expect_no_warning(fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0))
+  expect_true(isTRUE(fit$hessian_pd))
+  td <- tidy(fit)
+  expect_null(attr(td, "hessian_warning"))
+})

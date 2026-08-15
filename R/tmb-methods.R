@@ -2361,6 +2361,15 @@ tidy.beezdemand_tmb <- function(
       "Hessian is not positive definite (pdHess = FALSE). ",
       "Standard errors, p-values, and confidence intervals may be unreliable."
     )
+  } else if (is.na(x$hessian_pd)) {
+    # TICKET-067 (E4): hessian_pd = NA means "unknowable" -- TMB::sdreport()
+    # failed entirely, not that it succeeded and reported a non-PD Hessian.
+    # summary()'s se_available note already distinguishes this case; tidy()
+    # previously attached nothing.
+    attr(result, "hessian_warning") <- paste0(
+      "Hessian positive-definiteness is unknown (TMB::sdreport() failed). ",
+      "Standard errors, p-values, and confidence intervals are unavailable."
+    )
   }
 
   result
