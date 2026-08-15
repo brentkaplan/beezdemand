@@ -153,6 +153,16 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #'   the requested parameter (plus factor columns and, for `"alpha"`, the EV
 #'   block) are returned.
 #'
+#'   For a `param_space = "natural"` fit (see [fit_demand_mixed()]), the
+#'   emmeans reference-grid summary IS already natural-scale, so
+#'   `*_natural` columns are populated directly and `*_param_log10` columns
+#'   are filled with `log10()` of them for column-set parity with
+#'   `param_space = "log10"` fits. Because that fit is an unconstrained
+#'   parameterization, a Wald CI bound (or, rarely, the point estimate
+#'   itself) can be non-positive; `*_param_log10` is `NA` wherever the
+#'   corresponding `*_natural` value is `<= 0` (log10 is undefined there),
+#'   without raising a warning. `*_natural` itself is never `NA` from this.
+#'
 #' @examples
 #' \donttest{
 #' data(ko, package = "beezdemand")
@@ -419,14 +429,26 @@ get_demand_param_emms.beezdemand_nlme <- function(
         # `param_log10_*` with log10() of the natural values instead of
         # dropping them.
         emm_table_combined <- if (identical(internal_space, "natural")) {
+          # Codex 2C review fold (BLOCKING 2, TICKET-074): a converged
+          # natural-space fit is fit with an UNCONSTRAINED parameterization
+          # -- the point estimate is typically positive but a Wald CI bound
+          # (or, rarely, the point estimate itself for a near-zero/negative
+          # parameter) can be <= 0. Unconditional log10() of such a value
+          # emits a raw, unclassed "NaNs produced" warning and silently
+          # returns NaN. Use an explicit, warning-free predicate: NA_real_
+          # for any non-positive value (log10 is undefined there), a real
+          # number otherwise. This is a display-column-only relaxation --
+          # `param_natural_*` (what get_demand_param_emms()'s alpha_natural /
+          # EV consume) is never NA from this branch.
+          .safe_log10 <- function(v) ifelse(v > 0, log10(v), NA_real_)
           emm_table_combined |>
             dplyr::mutate(
               param_natural_estimate = .data$param_log10_estimate,
               param_natural_LCL = .data$param_log10_LCL,
               param_natural_UCL = .data$param_log10_UCL,
-              param_log10_estimate = log10(.data$param_log10_estimate),
-              param_log10_LCL = log10(.data$param_log10_LCL),
-              param_log10_UCL = log10(.data$param_log10_UCL)
+              param_log10_estimate = .safe_log10(.data$param_log10_estimate),
+              param_log10_LCL = .safe_log10(.data$param_log10_LCL),
+              param_log10_UCL = .safe_log10(.data$param_log10_UCL)
             )
         } else {
           emm_table_combined |>

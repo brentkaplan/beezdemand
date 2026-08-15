@@ -56,6 +56,16 @@ with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.
 When \code{param = "Q0"} or \code{param = "alpha"}, only the columns associated with
 the requested parameter (plus factor columns and, for \code{"alpha"}, the EV
 block) are returned.
+
+For a \code{param_space = "natural"} fit (see \code{\link[=fit_demand_mixed]{fit_demand_mixed()}}), the
+emmeans reference-grid summary IS already natural-scale, so
+\verb{*_natural} columns are populated directly and \verb{*_param_log10} columns
+are filled with \code{log10()} of them for column-set parity with
+\code{param_space = "log10"} fits. Because that fit is an unconstrained
+parameterization, a Wald CI bound (or, rarely, the point estimate
+itself) can be non-positive; \verb{*_param_log10} is \code{NA} wherever the
+corresponding \verb{*_natural} value is \verb{<= 0} (log10 is undefined there),
+without raising a warning. \verb{*_natural} itself is never \code{NA} from this.
 }
 \description{
 Calculates Estimated Marginal Means (EMMs) for Q0 and alpha parameters

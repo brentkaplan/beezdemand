@@ -1245,3 +1245,64 @@ test_that("get_demand_comparisons.beezdemand_nlme: natural-space fit does not er
     sign(comps_log$Q0$contrasts_log10$estimate)
   )
 })
+
+
+# --- Codex 2C review fold: BLOCKING 2 (TICKET-074) --------------------------
+# A converged param_space = "natural" fit is an unconstrained parameterization
+# -- a Wald CI bound (here, alpha's lower bound) can be non-positive. Before
+# the fold, unconditional log10() of that bound raised a raw "NaNs produced"
+# warning and returned NaN instead of NA.
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space fit with a non-positive Wald bound emits no warning and reports NA (not NaN) in *_param_log10", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  set.seed(7)
+  d <- expand.grid(id = factor(1:5), x = c(0.1, 1, 5, 20, 50))
+  d$y <- pmax(0, 8 * exp(-0.005 * d$x) + rnorm(nrow(d), 0, 3))
+  fit <- fit_demand_mixed(
+    d, y_var = "y", x_var = "x", id_var = "id",
+    equation_form = "simplified", param_space = "natural"
+  )
+  skip_if(is.null(fit$model), "fit did not converge")
+
+  e <- expect_no_warning(get_demand_param_emms(fit, include_ev = TRUE))
+
+  # organic fixture: alpha's lower Wald bound on the natural scale is <= 0
+  expect_true(e$LCL_alpha_natural <= 0)
+  expect_true(is.na(e$LCL_alpha_param_log10))
+  expect_false(is.nan(e$LCL_alpha_param_log10))  # NA_real_, not NaN
+  # the natural-scale columns (what alpha_natural/EV consume) are unaffected
+  expect_true(is.finite(e$alpha_natural))
+  expect_true(is.finite(e$EV))
+})
+
+test_that("get_demand_param_emms.beezdemand_nlme: log10-space (default) fit output is byte-identical to the pre-fold value (RECOMMENDED 6)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+  fit <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                          equation_form = "simplified")
+  e <- get_demand_param_emms(fit, include_ev = TRUE)
+
+  # Pinned by computing with git stash against the pre-fold committed code
+  # (commit 59240f9, i.e. before the BLOCKING-2 .safe_log10() change) --
+  # the log10-space branch is untouched by that change, so this must be
+  # byte-identical.
+  expected <- list(
+    Q0_param_log10 = 0.815617163829254, LCL_Q0_param_log10 = 0.711179527637501,
+    UCL_Q0_param_log10 = 0.920054800021007, Q0_natural = 6.54059358134015,
+    LCL_Q0_natural = 5.14256189671449, UCL_Q0_natural = 8.31868731100721,
+    alpha_param_log10 = -1.799340469525, LCL_alpha_param_log10 = -1.91475032312893,
+    UCL_alpha_param_log10 = -1.68393061592107, alpha_natural = 0.0158730187943233,
+    LCL_alpha_natural = 0.0121688538972499, UCL_alpha_natural = 0.0207047210667786,
+    EV = 62.999988405333, LCL_EV = 48.2981633403664, UCL_EV = 82.1770076659395
+  )
+  # expect_equal at a tight tolerance rather than expect_identical: this
+  # NLME fit is reproducible to ~1e-12 relative but not bit-identical
+  # across repeated runs (optimizer/BLAS summation-order noise), while a
+  # real regression from this fold would differ by orders of magnitude.
+  expect_equal(as.list(e)[names(expected)], expected, tolerance = 1e-8)
+})

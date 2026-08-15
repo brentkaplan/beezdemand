@@ -222,7 +222,12 @@ exactly, pin the previous release:
 
 The fixes in this subsection change *status/diagnostic* output (warnings,
 issue lists) rather than point estimates -- fits that were correct before
-still return the same numbers.
+still return the same numbers. Two exceptions, both scoped to NLME
+`param_space = "natural"` fits: the `get_demand_param_emms()` bullet below
+fixes a wrong-by-orders-of-magnitude back-transformation, and the
+`get_demand_comparisons()` bullet (TICKET-075) changes what a natural-space
+contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
+= "log10"` fits (the default) are unaffected by both.
 
 * **TMB and hurdle inference surfaces now honour `hessian_pd`.** When
   `TMB::sdreport()` reports a non-positive-definite Hessian
@@ -270,10 +275,14 @@ still return the same numbers.
   resolves `param_space` the same way every other NLME surface does and,
   for a natural-space fit, uses the emmeans summary directly for the
   `*_natural` columns and fills `*_param_log10` with `log10()` of those
-  values (keeping the same column set across both spaces). Condition under
-  which output differs from 0.2.0: `beezdemand_nlme` fits made with
-  `param_space = "natural"`, only in `get_demand_param_emms()` (and
-  anything built on its EV branch). `param_space = "log10"` fits (the
+  values (keeping the same column set across both spaces). Because a
+  natural-space fit is an unconstrained parameterization, a Wald CI bound
+  (or, rarely, the point estimate) can be non-positive; `*_param_log10` is
+  `NA` (not `NaN`, and without a raw "NaNs produced" warning) wherever the
+  corresponding `*_natural` value is `<= 0` -- `*_natural` itself is never
+  affected. Condition under which output differs from 0.2.0: `beezdemand_nlme`
+  fits made with `param_space = "natural"`, only in `get_demand_param_emms()`
+  (and anything built on its EV branch). `param_space = "log10"` fits (the
   default) and the TMB tier (already space-aware) are unaffected.
 * **`check_demand_model()` no longer reports a failed internal check as a
   passing one.** The fixed and hurdle residual sub-checks, and the NLME
