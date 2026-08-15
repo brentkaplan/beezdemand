@@ -207,6 +207,9 @@ FitCurves <- function(
     if (k == "fit") {
       kest <- "fit"
       kstart <- GetK(dat)
+      if (param_space == "log10") {
+        kstart <- log10(kstart)
+      }
     } else if (k == "ind") {
       kest <- "ind"
     } else if (k == "share") {
@@ -432,9 +435,9 @@ FitCurves <- function(
         }
       }
     } else {
-      if (param_space == "log10") {
-        kstart <- log10(kstart)
-      }
+      # NOTE: kstart's log10() transform is applied ONCE, before this loop
+      # (see kest <- "fit" handling above) -- do not re-transform it here
+      # (TICKET-057: re-applying it per iteration compounded across subjects).
       suppressWarnings(
         fit <- try(
           nlsr::wrapnlsr(

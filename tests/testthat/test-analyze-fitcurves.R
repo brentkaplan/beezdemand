@@ -335,3 +335,29 @@ test_that("TICKET-055: all-zero and single-positive subjects yield rows, not err
   ))
   expect_equal(nrow(f), 3L)
 })
+
+# =============================================================================
+# TICKET-057: k="fit" + param_space="log10" re-applies log10() to kstart
+# each iteration, compounding across subjects
+# =============================================================================
+
+test_that("TICKET-057: k='fit' + param_space='log10' batch matches subject-alone fits", {
+  skip_on_cran()
+  mk_subj <- function(id, q0 = 10, alpha = 0.005, k = 2,
+                       x = c(0.1, 0.5, 1, 3, 6, 12, 24)) {
+    y <- q0 * 10^(k * (exp(-alpha * q0 * x) - 1))
+    data.frame(id = id, x = x, y = round(y, 3))
+  }
+  d3 <- rbind(mk_subj("s1"), mk_subj("s2", q0 = 12), mk_subj("s3", q0 = 8))
+
+  batch <- suppressWarnings(suppressMessages(
+    FitCurves(d3, "hs", k = "fit", param_space = "log10")
+  ))
+  expect_equal(nrow(batch), 3L)
+  for (s in unique(d3$id)) {
+    alone <- suppressWarnings(suppressMessages(
+      FitCurves(d3[d3$id == s, ], "hs", k = "fit", param_space = "log10")
+    ))
+    expect_equal(batch$K[batch$id == s], alone$K, tolerance = 1e-4)
+  }
+})

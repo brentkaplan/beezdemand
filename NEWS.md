@@ -70,6 +70,19 @@ exactly, pin the previous release:
   order-invariant) estimates for those subjects. Single-subject calls are
   unchanged (they never had a sticky prior subject to inherit from).
 
+* **`FitCurves()` / `fit_demand_fixed()` with `k = "fit"` and
+  `param_space = "log10"`.** The k start value's `log10()` transform was
+  applied inside the per-subject loop instead of once before it, so the
+  transform compounded on every iteration: subject 1 started from
+  `log10(K)` (correct), subject 2 from `log10(log10(K))` (silently wrong for
+  typical `K < 10`), and subject 3+ from `log10(<negative>)` = `NaN`,
+  producing non-converged rows for later subjects. Condition under which
+  output differs from 0.2.0: batch calls with `k = "fit"`,
+  `param_space = "log10"`, and 2 or more subjects — subject 1's estimates
+  are unchanged, subjects 2+ now converge (previously mis-started or
+  NaN-started). Natural-space and fixed/individual/shared-k paths are
+  unaffected.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a
