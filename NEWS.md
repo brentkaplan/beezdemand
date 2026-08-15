@@ -98,25 +98,33 @@ exactly, pin the previous release:
   (`stats::nls(algorithm = "port")`) that must itself report
   `convInfo$isConv`; an endpoint that fails this verification is recorded as
   a non-converged row (`Notes = "endpoint unverified: fallback refit did
-  not converge"`) instead of being reported as an estimate. Results now
-  carry `converged` (the optimizer's own `isConv` verdict) and
-  `converged_strict` (`isConv` AND finite coefficients/objective AND not at
-  a user-supplied bound) columns; a "converged" fit with non-positive Q0
-  and/or Alpha now also raises a `warning()`, appends
-  `"domain-invalid (Q0<=0 or Alpha<=0)"` to `Notes`, and sets
-  `converged_strict = FALSE` (only reachable in `param_space = "natural"` —
-  the log10 parameterization's `10^x` back-transform is always positive).
+  not converge"`) instead of being reported as an estimate; a verified
+  rescue is recorded as `Notes = "wrapnls failed to converge; nlxb endpoint
+  verified by port refit"`. Results now carry `converged` (the optimizer's
+  own `isConv` verdict) and `converged_strict` (`isConv` AND finite
+  coefficients/objective AND not at a user-supplied bound) columns. A
+  "converged" fit with non-positive Q0 and/or Alpha now also raises a
+  `warning()` naming the subject and which parameter is non-positive —
+  domain validity is signalled **only** by that warning: `Notes` is never
+  modified and `converged_strict` is never demoted for a domain-invalid
+  estimate (it is only reachable in `param_space = "natural"` — the log10
+  parameterization's `10^x` back-transform is always positive), so a single
+  subject that converges on the first `wrapnlsr` attempt keeps byte-identical
+  `Notes`/`converged`/`converged_strict` regardless of domain validity.
   `fit_demand_fixed()$results$converged` now derives from
-  `converged_strict` instead of grepping `Notes` for failure keywords.
-  Default bounds are unchanged (still `c(-Inf, -Inf)`/`c(Inf, Inf)` unless
-  `lobound`/`hibound` are supplied — this release does not add default
-  non-negativity bounds). Condition under which output differs from 0.2.0:
-  any subject whose `wrapnlsr` fit fails and falls back to `nlxb` (now
-  either genuinely verified or reported as non-converged, not a raw
-  snapshot), and any subject reported "converged" with a non-positive Q0 or
-  Alpha (now warned and flagged `converged_strict = FALSE`). Subjects that
-  converge cleanly on the first `wrapnlsr` attempt with positive Q0/Alpha
-  are unchanged.
+  `converged_strict` instead of grepping `Notes` for failure keywords —
+  including for domain-invalid-but-numerically-converged fits, which are
+  therefore reported as `converged = TRUE` (flagged only by the warning,
+  not excluded from downstream success counts). Default bounds are
+  unchanged (still `c(-Inf, -Inf)`/`c(Inf, Inf)` unless `lobound`/`hibound`
+  are supplied — this release does not add default non-negativity bounds).
+  Condition under which output differs from 0.2.0: any subject whose
+  `wrapnlsr` fit fails and falls back to `nlxb` (now either genuinely
+  verified or reported as non-converged, not a raw snapshot), and any
+  subject reported "converged" with a non-positive Q0 or Alpha (now also
+  raises a warning; `Notes`, `converged`, and `converged_strict` are
+  otherwise unaffected). Subjects that converge cleanly on the first
+  `wrapnlsr` attempt are unchanged.
 
 * **`GetValsForSim()` (used by `SimulateDemand()`'s Koffarnus et al., 2015
   simulation workflow) misaligned or dropped per-price residuals.** Residual

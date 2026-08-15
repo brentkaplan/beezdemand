@@ -749,12 +749,11 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
       dfrow[1, "SdRes"] <- sqrt(
         dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
       )
-      dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
-        "wrapnls failed to converge, reverted to nlxb"
-      } else {
-        fit$convInfo$stopMessage
-      }
-      dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
+      # Codex 2B-review fold: FitCurves.linear() has no nlxb/nls2 fallback
+      # chain (it only ever calls wrapnlsr() once), so this branch's
+      # inherits(fit, "nls2") condition was always FALSE (dead code) --
+      # Notes always comes from the fit's own convInfo$stopMessage.
+      dfrow[1, "Notes"] <- trim.leading(fit$convInfo$stopMessage)
       dfrow
     },
     error = function(e) {
@@ -851,7 +850,7 @@ ExtractCoefs <- function(
     is_rescued <- isTRUE(attr(fit, "beez_fallback_verified"))
     is_conv <- isTRUE(fit$convInfo$isConv)
     dfrow[1, "Notes"] <- if (is_rescued) {
-      "rescued by fallback (verified)"
+      "wrapnls failed to converge; nlxb endpoint verified by port refit"
     } else {
       fit$convInfo$stopMessage
     }
@@ -892,32 +891,39 @@ ExtractCoefs <- function(
     # numerically converge (isConv TRUE) at a physiologically impossible
     # point (Q0 <= 0 or Alpha <= 0). Only reachable in natural param_space --
     # log10 parameterization back-transforms via 10^x, which is always > 0.
+    #
+    # Codex 2B-review fold (decision Q5a): domain validity is signalled
+    # ONLY by a warning() naming the subject and the offending parameter(s)
+    # -- it must NOT modify Notes or demote converged_strict. Taboo 4: a
+    # single subject that converges on the first wrapnlsr attempt must keep
+    # Notes byte-identical to develop (e.g. exactly "converged"), and
+    # converged_strict stays the literal isConv && finite_ok && !at_bound
+    # verdict computed above -- domain-invalid estimates are still reported
+    # (with their real numbers) so downstream callers can inspect them; only
+    # the warning flags the problem.
     q0_check <- dfrow[1, "Q0d"]
     alpha_check <- dfrow[1, "Alpha"]
-    if (
-      isTRUE(dfrow[1, "converged"]) &&
-        ((!is.na(q0_check) && q0_check <= 0) ||
-          (!is.na(alpha_check) && alpha_check <= 0))
-    ) {
+    q0_bad <- !is.na(q0_check) && q0_check <= 0
+    alpha_bad <- !is.na(alpha_check) && alpha_check <= 0
+    if (isTRUE(dfrow[1, "converged"]) && (q0_bad || alpha_bad)) {
+      offending <- paste(
+        c(if (q0_bad) "Q0", if (alpha_bad) "Alpha"),
+        collapse = " and "
+      )
       warning(
         sprintf(
           paste0(
             "FitCurves: subject '%s' reported as converged with a ",
-            "non-positive Q0 and/or Alpha (Q0d = %s, Alpha = %s); ",
-            "treat this estimate as domain-invalid."
+            "non-positive %s (Q0d = %s, Alpha = %s); this estimate may be ",
+            "domain-invalid -- inspect before use."
           ),
           pid,
+          offending,
           format(q0_check),
           format(alpha_check)
         ),
         call. = FALSE
       )
-      dfrow[1, "Notes"] <- paste(
-        dfrow[1, "Notes"],
-        "domain-invalid (Q0<=0 or Alpha<=0)",
-        sep = "; "
-      )
-      dfrow[1, "converged_strict"] <- FALSE
     }
 
     if (!inherits(fit, what = "error")) {

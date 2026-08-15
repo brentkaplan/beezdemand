@@ -23,7 +23,6 @@ Depends:
 Imports:
     nlsr,
     nlstools,
-    nls2,
     ggplot2,
     stats,
     optimx,
