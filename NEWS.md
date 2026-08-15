@@ -275,6 +275,20 @@ still return the same numbers.
   `param_space = "natural"`, only in `get_demand_param_emms()` (and
   anything built on its EV branch). `param_space = "log10"` fits (the
   default) and the TMB tier (already space-aware) are unaffected.
+* **`check_demand_model()` no longer reports a failed internal check as a
+  passing one.** The fixed and hurdle residual sub-checks, and the NLME
+  random-effects sub-check, converted an internal `augment()` / `VarCorr()`
+  error (or a missing/all-NA `.resid` column) into the same clean-looking
+  "no outliers found" / "nothing near zero" result the check returns when it
+  actually ran and found nothing -- so a report that never examined
+  residuals or random-effect variances printed "No issues detected"
+  indistinguishably from one that genuinely checked and passed. Each
+  sub-check now sets an explicit `computation_failed` flag, raises one
+  classed warning naming the cause, and `check_demand_model()` adds a
+  "...could not be computed" issue instead of silently passing. Mirrors the
+  pattern the TMB tier's residual check already used. Healthy fits are
+  byte-identical; only fits where one of these internal checks errors are
+  affected.
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
