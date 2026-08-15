@@ -126,3 +126,21 @@ test_that("get_demand_param_trends: all-valid covariates raise no dropped-combo 
     )
   )
 })
+
+# --- Codex 2C review fold: RECOMMENDED 4 (TICKET-064 F13) -------------------
+
+test_that("get_demand_param_trends: all-bogus covariates still name every dropped combination (not just the generic message)", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+
+  warns <- testthat::capture_warnings(
+    result <- get_demand_param_trends(
+      setup$fit, params = "Q0",
+      covariates = c("not_a_real_covariate1", "not_a_real_covariate2"),
+      specs = ~drug
+    )
+  )
+  expect_true(any(grepl("not_a_real_covariate1", warns, fixed = TRUE)))
+  expect_true(any(grepl("not_a_real_covariate2", warns, fixed = TRUE)))
+  expect_equal(nrow(result), 0)
+})

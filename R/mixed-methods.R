@@ -2360,9 +2360,25 @@ get_demand_param_trends <- function(
   }
 
   if (length(out_list) == 0) {
-    warning(
-      "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
-    )
+    # Codex 2C review fold (RECOMMENDED 4, TICKET-064 F13): this early
+    # return previously discarded the per-combination causes already
+    # accumulated in `failed_combos` -- NEWS claims "naming every dropped
+    # combination", which this generic message did not do when ALL
+    # combinations failed (only the partial-failure path below did).
+    if (length(failed_combos) > 0) {
+      cli::cli_warn(
+        c(
+          "!" = "No trends could be calculated -- all {length(failed_combos)}
+                 (parameter, covariate) combination{?s} failed:",
+          "i" = "{failed_combos}"
+        ),
+        class = c("beezdemand_trends_dropped_combo_warning", "beezdemand_warning")
+      )
+    } else {
+      warning(
+        "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
+      )
+    }
     return(tibble::as_tibble(data.frame()))
   }
   if (length(failed_combos) > 0) {
