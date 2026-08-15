@@ -1113,10 +1113,13 @@ print.beezdemand_power <- function(x, ...) {
     # evidence enough to report it. No lower neighbour exists inside
     # `n_range`, so minimality is NOT claimed ("at_lower_bound").
     conf_lo <- eval_n(lo)
-    if (!conf_lo$above) {
-      return(finish(NA_integer_, "unresolved", TRUE))
+    if (conf_lo$above) {
+      return(finish(lo, "at_lower_bound", any_uncertain))
     }
-    return(finish(lo, "at_lower_bound", any_uncertain))
+    # Reconfirmation failed: `lo` is not reliably above the target, which is
+    # exactly the bracket condition bisection needs -- keep `lo` as the lower
+    # end and search upward. (The first look at `lo` stays in $evaluations and
+    # marks the final status "uncertain" via the monotonicity check below.)
   }
 
   while (hi - lo > 1) {
@@ -1184,7 +1187,9 @@ print.beezdemand_power <- function(x, ...) {
 #' `"uncertain"`; N that were never evaluated cannot be checked. Widen
 #' `n_sim`/`n_sim_max` when the reported `n` matters. When the target is
 #' already met at `n_range[1]`, that bound is likewise re-evaluated with
-#' fresh replicates before `"at_lower_bound"` is reported.
+#' fresh replicates before `"at_lower_bound"` is reported; if the second look
+#' does not clear the target the bound is treated as below and the bisection
+#' proceeds upward.
 #'
 #' @param target_power Target power in (0, 1).
 #' @inheritParams power_demand

@@ -150,7 +150,9 @@ assumption (a lower N reading "above" the selected N) demote the status to
 \code{"uncertain"}; N that were never evaluated cannot be checked. Widen
 \code{n_sim}/\code{n_sim_max} when the reported \code{n} matters. When the target is
 already met at \code{n_range[1]}, that bound is likewise re-evaluated with
-fresh replicates before \code{"at_lower_bound"} is reported.
+fresh replicates before \code{"at_lower_bound"} is reported; if the second look
+does not clear the target the bound is treated as below and the bisection
+proceeds upward.
 }
 \examples{
 \donttest{

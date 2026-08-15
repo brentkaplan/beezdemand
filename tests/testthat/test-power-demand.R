@@ -1120,7 +1120,11 @@ test_that("the lower bound is reconfirmed with fresh replicates before at_lower_
   expect_equal(sum(res$evaluations$n_subjects == 4), 2L)
 })
 
-test_that("a lower bound that fails reconfirmation returns NA / unresolved", {
+test_that("a lower bound that fails reconfirmation is bisected past, not reported", {
+  # First look at 4 reads above, the fresh look reads below: 4 is not
+  # reliably above, so [4, 12] is a valid bracket and the search continues
+  # upward. The contradictory first look stays in $evaluations and demotes
+  # the final status to "uncertain" (a lower N once read above).
   calls <- new.env()
   calls$n4 <- 0L
   stateful <- function(n, batch_size, sim_offset) {
@@ -1139,9 +1143,11 @@ test_that("a lower bound that fails reconfirmation returns NA / unresolved", {
     n_sim_max = 400,
     verbose = FALSE
   ))
-  expect_equal(res$n, NA_integer_)
-  expect_equal(res$status, "unresolved")
+  expect_equal(res$n, 12)
+  expect_equal(res$status, "uncertain")
   expect_equal(res$uncertain, TRUE)
+  expect_equal(sum(res$evaluations$n_subjects == 4), 2L)
+  expect_true(any(res$evaluations$n_subjects %in% c(8, 10, 11)))
 })
 
 test_that("a lower neighbor clearing the target on confirmation yields uncertain", {
