@@ -61,6 +61,22 @@ exactly, pin the previous release:
   "natural")`; `scale = "model"` (the default), `fitted()`, `predict()`, and
   `augment()` were already correct. All other equation forms are unchanged
   (#18).
+* **`equation = "zben"` per-subject and group `Pmax`/`Omax` used the SND
+  closed form in the TMB tier.** `get_subject_pars()` (both the fit-time and
+  the `expanded = TRUE` computation), `calc_group_metrics()`, and
+  `boot_demand()` passed `zben` fits through `model_type = "snd"`, i.e.
+  `Pmax = 1 / (alpha * Q0)`. That closed form assumes SND's `(Q0, alpha)`
+  coupling, which does not hold for `zben`'s LL4-scale exponential decay;
+  stored `Pmax` was up to ~3.4x too small at the median and rank-inverted
+  relative to the true expenditure-maximizing price. All four call sites now
+  numerically optimize expenditure on the back-transformed
+  (`ll4_inv()`-ed) natural-scale curve via
+  `beezdemand_calc_pmax_omax(model_type = "zben")`, which reports
+  `method_model = "numerical_optimize_observed_domain"` so the numerical
+  origin is visible to callers. Condition under which output differs:
+  `equation = "zben"` fits only; `Pmax`/`Omax`/`Qmax`/`elasticity_at_pmax`
+  from `get_subject_pars()`, `calc_group_metrics()`, and `boot_demand()`. All
+  other equation forms are unchanged (#19).
 
 * **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
   engine).** Two interacting defects in the per-subject loop: (1) the default

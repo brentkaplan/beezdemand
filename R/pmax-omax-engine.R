@@ -620,12 +620,16 @@ NULL
 #' (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
 #' observed (row-wise) metrics. Handles parameter-space conversions transparently.
 #'
-#' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd", "simplified", or NULL
+#' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd",
+#'   "simplified", "zben", or NULL
 #' @param params Named list of parameters. Names depend on model_type:
 #'   - hs/koff: alpha, q0, k
 #'   - hurdle: alpha, q0, k (note: hurdle uses different formula)
 #'   - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 #'   - snd/simplified: alpha, q0
+#'   - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
+#'     only -- requires `price_obs` / `price_range` for the numerical search
+#'     domain; see [.pmax_numerical()])
 #' @param param_scales Named list mapping parameter names to their input scales:
 #'   "natural", "log", or "log10". Default assumes all natural.
 #' @param expenditure_fn Optional function E(p) for numerical fallback. If NULL
@@ -907,8 +911,24 @@ beezdemand_calc_pmax_omax <- function(
         demand_fn <- function(p) {
           q0_nat * exp(-alpha_nat * q0_nat * p)
         }
+      } else if (model_type_lower == "zben") {
+        # zben (zero-bounded exponential, TMB tier): the fitted curve is an
+        # exponential decay on the LL4-transformed response,
+        #   y_ll4(p) = log10(Q0) * exp(-rate * p), rate = (alpha/log10(Q0))*Q0
+        # (matching eqn_type == 3 in src/MixedDemand.h and
+        # .tmb_predict_equation()'s "zben" branch). Its (Q0, alpha) coupling
+        # differs from SND, and there is no closed-form Pmax/Omax on the
+        # natural (back-transformed) expenditure curve, so this always falls
+        # through to the numerical fallback below (GH #19). The same
+        # positive-minimum clamp used at fit/predict time guards against the
+        # Q0_log10 -> 0 singularity.
+        demand_fn <- function(p) {
+          q0_log10 <- pmax(log10(q0_nat), 1e-3)
+          rate <- (alpha_nat / q0_log10) * q0_nat
+          ll4_inv(q0_log10 * exp(-rate * p))
+        }
       }
-      
+
       if (!is.null(demand_fn)) {
         expenditure_fn <- function(p) p * demand_fn(p)
       }

@@ -132,11 +132,21 @@ boot_demand <- function(
   }
 
   has_k <- isTRUE(fit$param_info$has_k)
-  model_type <- if (has_k) "hs" else "snd"
+  is_zben <- identical(fit$param_info$equation, "zben")
+  # zben (no k, LL4-scale decay) has no SND closed form; routed through the
+  # engine's numerical fallback instead (GH #19). Needs a price domain for
+  # the numerical search, which "hs"/"snd" do not (both have analytic
+  # closed-form Pmax).
+  model_type <- if (has_k) "hs" else if (is_zben) "zben" else "snd"
   param_scales <- if (has_k) {
     list(alpha = "natural", q0 = "natural", k = "natural")
   } else {
     list(alpha = "natural", q0 = "natural")
+  }
+  price_range_boot <- if (is_zben) {
+    range(fit$data[[fit$param_info$x_var]], na.rm = TRUE)
+  } else {
+    NULL
   }
 
   # ---- cells (validate `at` once, then build aligned Q0/alpha designs) -----
@@ -191,7 +201,8 @@ boot_demand <- function(
       list(alpha = alpha_pt, q0 = q0_pt)
     }
     pt <- beezdemand_calc_pmax_omax(
-      model_type = model_type, params = pt_params, param_scales = param_scales
+      model_type = model_type, params = pt_params, param_scales = param_scales,
+      price_obs = price_range_boot
     )
     # EV mirrors analyze.R's two conventions exactly: k-bearing forms use the
     # literature (Hursh & Silberberg) formula 1/(100*alpha*k^1.5); the k-free
@@ -218,8 +229,14 @@ boot_demand <- function(
     } else {
       data.frame(q0 = q0_draws, alpha = alpha_draws)
     }
+    price_list_boot <- if (is_zben) {
+      replicate(R, price_range_boot, simplify = FALSE)
+    } else {
+      NULL
+    }
     md <- beezdemand_calc_pmax_omax_vec(
-      pdf, model_type = model_type, param_scales = param_scales
+      pdf, model_type = model_type, param_scales = param_scales,
+      price_list = price_list_boot
     )
     ev_draws <- if (has_k) {
       1 / (100 * alpha_draws * (k_draw^1.5))

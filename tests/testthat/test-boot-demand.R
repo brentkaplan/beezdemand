@@ -326,3 +326,33 @@ test_that("boot_demand errors on collapse_levels (divergent Q0/alpha factors) in
     "collapse_levels|not support|divergent"
   )
 })
+
+# --- 13. zben Pmax/Omax route through the numerical engine (#19) -------------
+
+test_that("boot_demand computes finite zben Pmax CIs via the numerical path, not SND", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit_zben <- fit_demand_tmb(
+    apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+    equation = "zben", verbose = 0
+  )
+
+  res <- boot_demand(fit_zben, statistics = c("Pmax", "Omax"), R = 200, seed = 7)
+
+  pmax_row <- res[res$statistic == "Pmax", ]
+  omax_row <- res[res$statistic == "Omax", ]
+  expect_true(is.finite(pmax_row$estimate))
+  expect_true(is.finite(pmax_row$conf.low))
+  expect_true(is.finite(pmax_row$conf.high))
+  expect_true(is.finite(omax_row$estimate))
+
+  # Regression guard: the pre-fix bug's Pmax point estimate for a k-free fit
+  # was the SND closed form 1/(alpha*Q0). Confirm the returned zben value is
+  # NOT that.
+  alpha_pt <- exp(fit_zben$model$coefficients[["beta_alpha"]])
+  q0_pt <- exp(fit_zben$model$coefficients[["beta_q0"]])
+  snd_pmax <- 1 / (alpha_pt * q0_pt)
+  expect_false(isTRUE(all.equal(pmax_row$estimate, unname(snd_pmax), tolerance = 1e-2)))
+})

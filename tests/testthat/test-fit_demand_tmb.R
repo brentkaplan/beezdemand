@@ -34,6 +34,16 @@
   .fdt_cache$simplified
 }
 
+.fdt_zben <- function() {
+  if (is.null(.fdt_cache$zben)) {
+    data(apt, package = "beezdemand")
+    apt$y_ll4 <- ll4(apt$y)
+    .fdt_cache$zben <- fit_demand_tmb(apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+                                      equation = "zben", verbose = 0)
+  }
+  .fdt_cache$zben
+}
+
 # Small apt_full fixture for the factor/covariate tests, which only check
 # structure (design columns, collapse_info, warnings) — not data-dependent
 # values. Cap Female/Male at 5 subjects each and keep the rare
@@ -992,6 +1002,56 @@ test_that("simplified Pmax/Omax use SND model type", {
   gm <- calc_group_metrics(fit)
   expect_true(is.finite(gm$Pmax))
   expect_true(is.finite(gm$Omax))
+})
+
+test_that("zben Pmax/Omax are computed numerically, not via the SND closed form (#19)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  fit <- .fdt_zben()
+
+  spars <- get_subject_pars(fit)
+  expect_true(all(is.finite(spars$Pmax)))
+  expect_true(all(is.finite(spars$Omax)))
+  expect_true(all(spars$Pmax > 0))
+  expect_true(all(spars$Omax > 0))
+
+  price_range <- range(fit$data$x, na.rm = TRUE)
+
+  # Independent numerical check (not calling beezdemand_calc_pmax_omax() or
+  # any package helper): re-derive Pmax/Omax for one subject directly from
+  # the zben curve (LL4-scale exponential decay, back-transformed to the
+  # natural consumption scale via ll4_inv()) using a fresh optimize() call
+  # written out here.
+  i <- 1L
+  Q0_i <- spars$Q0[i]
+  alpha_i <- spars$alpha[i]
+  Q0_log10_i <- max(log10(Q0_i), 1e-3)
+  rate_i <- (alpha_i / Q0_log10_i) * Q0_i
+  expenditure_natural <- function(p) {
+    y_ll4 <- Q0_log10_i * exp(-rate_i * p)
+    p * ll4_inv(y_ll4)
+  }
+  opt <- stats::optimize(expenditure_natural, interval = price_range, maximum = TRUE)
+  expect_equal(spars$Pmax[i], opt$maximum, tolerance = 1e-2)
+  expect_equal(spars$Omax[i], opt$objective, tolerance = 1e-2)
+
+  # Regression guard: the pre-fix bug returned the SND closed form
+  # Pmax = 1 / (alpha * Q0), which does not apply to zben's LL4-scale decay.
+  # Confirm the stored value is NOT that (rules out silently falling back).
+  snd_pmax <- 1 / (alpha_i * Q0_i)
+  expect_false(isTRUE(all.equal(spars$Pmax[i], snd_pmax, tolerance = 1e-2)))
+
+  # Same check on the expanded get_subject_pars() path (separate call site).
+  spars_expanded <- get_subject_pars(fit, expanded = TRUE)
+  expect_true(all(is.finite(spars_expanded$Pmax)))
+  expect_equal(spars_expanded$Pmax[i], opt$maximum, tolerance = 1e-2)
+
+  # calc_group_metrics() must also route through the numerical path.
+  gm <- calc_group_metrics(fit)
+  expect_true(is.finite(gm$Pmax))
+  expect_true(is.finite(gm$Omax))
+  expect_false(is.null(gm$method))
+  expect_match(gm$method, "numerical")
 })
 
 

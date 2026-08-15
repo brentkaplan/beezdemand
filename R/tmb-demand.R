@@ -1186,7 +1186,9 @@ NULL
       compute_observed = FALSE
     )
   } else {
-    # simplified/zben: no k
+    # simplified: SND closed form. zben: no closed form (its (Q0, alpha)
+    # coupling and LL4-scale decay differ from SND) -- route through the
+    # engine's numerical fallback instead (GH #19).
     price_split <- split(price, subject_id)
     price_list <- lapply(seq_len(n_subjects), function(i) {
       ps <- price_split[[as.character(i - 1L)]]
@@ -1198,7 +1200,7 @@ NULL
         alpha = subj_alpha,
         q0 = subj_Q0
       ),
-      model_type = "snd",
+      model_type = if (identical(equation, "zben")) "zben" else "snd",
       param_scales = list(alpha = "natural", q0 = "natural"),
       price_list = price_list,
       compute_observed = FALSE

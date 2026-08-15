@@ -1859,7 +1859,9 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
     params_df <- data.frame(alpha = alpha, q0 = Q0, k = rep(k_val, length(Q0)))
     param_scales <- list(alpha = "natural", q0 = "natural", k = "natural")
   } else {
-    model_type <- "snd"
+    # zben has no SND closed form (its LL4-scale decay differs from SND);
+    # route through the engine's numerical fallback instead (GH #19).
+    model_type <- if (identical(pinfo$equation, "zben")) "zben" else "snd"
     params_df <- data.frame(alpha = alpha, q0 = Q0)
     param_scales <- list(alpha = "natural", q0 = "natural")
   }
@@ -4360,6 +4362,15 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
       model_type = "hs",
       params = list(alpha = alpha_val, q0 = Q0, k = k_val),
       param_scales = list(alpha = "natural", q0 = "natural", k = "natural")
+    )
+  } else if (identical(object$param_info$equation, "zben")) {
+    # zben has no SND closed form; route through the engine's numerical
+    # fallback instead (GH #19), which needs a price domain to search over.
+    result <- beezdemand_calc_pmax_omax(
+      model_type = "zben",
+      params = list(alpha = alpha_val, q0 = Q0),
+      param_scales = list(alpha = "natural", q0 = "natural"),
+      price_obs = object$data[[object$param_info$x_var]]
     )
   } else {
     result <- beezdemand_calc_pmax_omax(
