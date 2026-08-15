@@ -708,36 +708,66 @@ ExtractCoefs.linear <- function(pid, adf, fit, eq, cols) {
   )
   dfrow[["id"]] <- pid
   dfrow[1, "N"] <- nrow(adf)
-  dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
-  dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(coef(summary(fit))[c(1:3), 2])
-  dfrow[1, "R2"] <- 1.0 -
-    (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
-  dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
-  dfrow[1, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
-  dfrow[1, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
-  ## Calculates mean elasticity based on individual range of x
-  pbar <- mean(unique(adf$x))
-  dfrow[1, "MeanElasticity"] <- dfrow[1, "b"] - (dfrow[1, "a"] * pbar)
-  dfrow[1, "Pmaxd"] <- (1 + dfrow[1, "b"]) / dfrow[1, "a"]
-  dfrow[1, "Omaxd"] <- (dfrow[1, "L"] * dfrow[1, "Pmaxd"]^dfrow[1, "b"]) /
-    exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) *
-    dfrow[1, "Pmaxd"]
-  dfrow[1, "N"] <- nrow(adf)
-  dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
-    fit$m$deviance()
-  } else {
-    deviance(fit)
+
+  # TICKET-058: ExtractCoefs() (the nonlinear sibling) starts with a
+  # try-error guard so a failed fit degrades to an NA row + Notes instead of
+  # crashing the batch; this extractor was missing that guard entirely, and
+  # even a nominally successful-but-degenerate fit can still fail partway
+  # through (summary()/confint2()/deviance()/fit$m$getPars()). Wrap the
+  # whole extraction in tryCatch() so ANY failure -- a try-error `fit`, or a
+  # mid-extraction error -- degrades to the same NA-row + Notes contract.
+  if (inherits(fit, what = "try-error")) {
+    dfrow[["Notes"]] <- fit[1]
+    dfrow[["Notes"]] <- strsplit(dfrow[1, "Notes"], "\n")[[1]][2]
+    return(dfrow)
   }
-  dfrow[1, "SdRes"] <- sqrt(
-    dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
+
+  tryCatch(
+    {
+      dfrow[1, c("L", "b", "a")] <- as.numeric(coef(fit)[c("l", "b", "a")])
+      dfrow[1, c("Lse", "bse", "ase")] <- as.numeric(
+        coef(summary(fit))[c(1:3), 2]
+      )
+      dfrow[1, "R2"] <- 1.0 -
+        (deviance(fit) / sum((log(adf$y) - mean(log(adf$y)))^2))
+      dfrow[1, c("LLow", "LHigh")] <- nlstools::confint2(fit)[c(1, 4)]
+      dfrow[1, c("bLow", "bHigh")] <- nlstools::confint2(fit)[c(2, 5)]
+      dfrow[1, c("aLow", "aHigh")] <- nlstools::confint2(fit)[c(3, 6)]
+      ## Calculates mean elasticity based on individual range of x
+      pbar <- mean(unique(adf$x))
+      dfrow[1, "MeanElasticity"] <- dfrow[1, "b"] - (dfrow[1, "a"] * pbar)
+      dfrow[1, "Pmaxd"] <- (1 + dfrow[1, "b"]) / dfrow[1, "a"]
+      dfrow[1, "Omaxd"] <- (dfrow[1, "L"] * dfrow[1, "Pmaxd"]^dfrow[1, "b"]) /
+        exp(dfrow[1, "a"] * dfrow[1, "Pmaxd"]) *
+        dfrow[1, "Pmaxd"]
+      dfrow[1, "N"] <- nrow(adf)
+      dfrow[1, "AbsSS"] <- if (is.null(deviance(fit))) {
+        fit$m$deviance()
+      } else {
+        deviance(fit)
+      }
+      dfrow[1, "SdRes"] <- sqrt(
+        dfrow[1, "AbsSS"] / (nrow(adf) - length(fit$m$getPars()))
+      )
+      dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
+        "wrapnls failed to converge, reverted to nlxb"
+      } else {
+        fit$convInfo$stopMessage
+      }
+      dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
+      dfrow
+    },
+    error = function(e) {
+      failrow <- data.frame(
+        matrix(vector(), 1, length(cols), dimnames = list(c(), c(cols))),
+        stringsAsFactors = FALSE
+      )
+      failrow[["id"]] <- pid
+      failrow[1, "N"] <- nrow(adf)
+      failrow[["Notes"]] <- conditionMessage(e)
+      failrow
+    }
   )
-  dfrow[1, "Notes"] <- if (inherits(fit, "nls2")) {
-    "wrapnls failed to converge, reverted to nlxb"
-  } else {
-    fit$convInfo$stopMessage
-  }
-  dfrow[1, "Notes"] <- trim.leading(dfrow[1, "Notes"])
-  dfrow
 }
 
 # Populates a single row of a dataframe consisting of important information from fits, etc.

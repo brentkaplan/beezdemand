@@ -118,6 +118,21 @@ exactly, pin the previous release:
   converge cleanly on the first `wrapnlsr` attempt with positive Q0/Alpha
   are unchanged.
 
+## Legacy fitter robustness (batch failures)
+
+* `FitCurves(equation = "linear")` (and `fit_demand_fixed(equation =
+  "linear")`) now degrades a per-subject fit failure to an NA-parameter row
+  with an informative `Notes` message instead of crashing. The linear
+  extractor (`ExtractCoefs.linear()`) was missing the try-error guard its
+  nonlinear sibling (`ExtractCoefs()`) already has; on a failed `wrapnlsr`
+  fit it dereferenced the resulting try-error immediately
+  (`coef(fit)[c("l", "b", "a")]`), which raised `$ operator is invalid for
+  atomic vectors` and aborted the entire batch with no per-subject failure
+  record -- reproducible even for a single unfittable subject called alone.
+  The extraction is now wrapped end-to-end so a mid-extraction failure
+  (`summary()`, `nlstools::confint2()`, `deviance()`) also degrades
+  gracefully rather than only the initial `coef()` call.
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a

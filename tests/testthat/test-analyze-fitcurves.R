@@ -416,3 +416,29 @@ test_that("TICKET-069: fit_demand_fixed()$results$converged derives from converg
   f <- suppressWarnings(fit_demand_fixed(flat, equation = "koff", k = 2))
   expect_false(isTRUE(f$results$converged))
 })
+
+# =============================================================================
+# TICKET-058: ExtractCoefs.linear() lacks the try-error guard its sibling has
+# =============================================================================
+
+test_that("TICKET-058: linear batch degrades per-subject on fit failure", {
+  skip_on_cran()
+  good <- data.frame(
+    id = "good", x = c(0.1, 0.5, 1, 3, 6, 12, 24),
+    y = c(9.977, 9.885, 9.771, 9.32, 8.66, 7.42, 5.4)
+  )
+  bad <- data.frame(id = "bad", x = c(1, 10), y = c(5, 3))  # too few rows to fit
+  res <- suppressWarnings(FitCurves(rbind(good, bad), equation = "linear"))
+  expect_equal(nrow(res), 2L)
+  expect_true(is.na(res$L[res$id == "bad"]))
+  expect_false(is.na(res$L[res$id == "good"]))
+})
+
+test_that("TICKET-058: linear fit failure alone returns a 1-row NA/Notes result, no error", {
+  skip_on_cran()
+  bad <- data.frame(id = "bad", x = c(1, 10), y = c(5, 3))
+  res <- suppressWarnings(FitCurves(bad, equation = "linear"))
+  expect_equal(nrow(res), 1L)
+  expect_true(is.na(res$L))
+  expect_true(is.character(res$Notes) && !is.na(res$Notes) && nzchar(res$Notes))
+})
