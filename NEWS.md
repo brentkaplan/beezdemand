@@ -52,6 +52,24 @@ exactly, pin the previous release:
   so `get_demand_param_emms()` now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with
   a warning instead of applying a guessed formula.
 
+* **`FitCurves()` / `fit_demand_fixed()` batch fitting (legacy fixed-effect
+  engine).** Two interacting defects in the per-subject loop: (1) the default
+  Q0/alpha start values were computed once from the first subject's data and
+  then reused (sticky) for every subsequent subject instead of being
+  recomputed per subject, silently making batch estimates order- and
+  scale-dependent; (2) when the entire nls fallback chain (`wrapnlsr` →
+  `nlxb` → `nls2` brute-force) failed for a subject, an unguarded
+  `fit$m$Rmat()` dereference on the resulting try-error crashed the whole
+  batch call instead of recording that subject as non-converged. Condition
+  under which output differs from 0.2.0: any batch call (2+ subjects) where
+  a subject after the first has a different consumption scale, or where any
+  subject's nls fallback chain fully fails. A batch that previously crashed
+  now returns one row per subject with the failing subject(s) flagged
+  non-converged; a batch that previously "succeeded" but silently used a
+  wrong start value for subjects 2..N may now report different (correct,
+  order-invariant) estimates for those subjects. Single-subject calls are
+  unchanged (they never had a sticky prior subject to inherit from).
+
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
 * `fit_demand_tmb()` now treats a continuous within-subject covariate as a

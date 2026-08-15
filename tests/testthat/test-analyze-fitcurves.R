@@ -284,3 +284,54 @@ test_that("FitCurves handles data with no zeros (koff equation)", {
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 1)
 })
+
+# =============================================================================
+# TICKET-055: sticky start values + unguarded fit$m$Rmat() in nls fallback
+# =============================================================================
+
+test_that("TICKET-055: batch fit survives an unfittable subject", {
+  skip_on_cran()
+  d <- data.frame(
+    id = rep(c("s1", "s2"), each = 6),
+    x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
+    y  = c(10, 8, 6, 4, 2, 1, 4e8, 1e7, 5e5, 1e13, 2e27, 60)
+  )
+  f <- suppressWarnings(FitCurves(
+    d, equation = "simplified", xcol = "x", ycol = "y", idcol = "id"
+  ))
+  expect_equal(nrow(f), 2L)
+})
+
+test_that("TICKET-055: batch start values are per-subject (order-invariant)", {
+  skip_on_cran()
+  # two well-behaved subjects at very different consumption scales
+  d <- data.frame(
+    id = rep(c("a", "b"), each = 6),
+    x  = rep(c(0, 0.5, 1, 2, 4, 8), 2),
+    y  = c(10, 8, 6, 4, 2, 1, 1000, 800, 600, 400, 200, 100)
+  )
+  d_rev <- d[order(match(d$id, c("b", "a"))), ]
+  f1 <- suppressWarnings(FitCurves(d,     equation = "simplified",
+    xcol = "x", ycol = "y", idcol = "id"))
+  f2 <- suppressWarnings(FitCurves(d_rev, equation = "simplified",
+    xcol = "x", ycol = "y", idcol = "id"))
+  r1 <- f1[order(f1$id), ]
+  r2 <- f2[order(f2$id), ]
+  expect_equal(r1$Alpha, r2$Alpha, tolerance = 1e-8)
+  expect_equal(r1$Q0d,   r2$Q0d,   tolerance = 1e-8)
+})
+
+test_that("TICKET-055: all-zero and single-positive subjects yield rows, not errors", {
+  skip_on_cran()
+  d <- data.frame(
+    id = rep(c("normal", "allzero", "onepos"), each = 6),
+    x  = rep(c(0, 0.5, 1, 2, 4, 8), 3),
+    y  = c(10, 8, 6, 4, 2, 1,      # normal
+           0, 0, 0, 0, 0, 0,       # all-zero
+           0, 0, 0, 0, 0, 5)       # one positive
+  )
+  f <- suppressWarnings(FitCurves(
+    d, equation = "simplified", xcol = "x", ycol = "y", idcol = "id"
+  ))
+  expect_equal(nrow(f), 3L)
+})

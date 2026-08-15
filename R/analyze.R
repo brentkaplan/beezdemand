@@ -334,11 +334,15 @@ FitCurves <- function(
       }
     }
 
-    if (is.null(startq0)) {
-      startq0 <- if (param_space == "log10") log10(max(adf$y)) else max(adf$y)
+    startq0_i <- if (is.null(startq0)) {
+      if (param_space == "log10") log10(max(adf$y)) else max(adf$y)
+    } else {
+      startq0
     }
-    if (is.null(startalpha)) {
-      startalpha <- if (param_space == "log10") log10(0.01) else 0.01
+    startalpha_i <- if (is.null(startalpha)) {
+      if (param_space == "log10") log10(0.01) else 0.01
+    } else {
+      startalpha
     }
 
     if (!kest == "fit") {
@@ -347,7 +351,7 @@ FitCurves <- function(
           fit <- try(
             nlsr::wrapnlsr(
               formula = fo,
-              start = list(q0 = startq0, alpha = startalpha),
+              start = list(q0 = startq0_i, alpha = startalpha_i),
               lower = c(lower),
               upper = c(upper),
               data = adf
@@ -360,7 +364,7 @@ FitCurves <- function(
             fit <- try(
               nlsr::nlxb(
                 formula = fo,
-                start = list(q0 = startq0, alpha = startalpha),
+                start = list(q0 = startq0_i, alpha = startalpha_i),
                 lower = c(lower),
                 upper = c(upper),
                 data = adf
@@ -376,10 +380,12 @@ FitCurves <- function(
               algorithm = "brute-force"
             ))
           )
-          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-            c("nls", "nls2", "error")
-          } else {
-            c("nls", "nls2")
+          if (!inherits(fit, what = "try-error")) {
+            attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
+              c("nls", "nls2", "error")
+            } else {
+              c("nls", "nls2")
+            }
           }
         }
       } else if (!is.null(constrainq0)) {
@@ -387,7 +393,7 @@ FitCurves <- function(
           fit <- try(
             nlsr::wrapnlsr(
               formula = fo,
-              start = list(alpha = startalpha),
+              start = list(alpha = startalpha_i),
               lower = c(lower[2]),
               upper = c(upper[2]),
               data = adf
@@ -400,7 +406,7 @@ FitCurves <- function(
             fit <- try(
               nlsr::nlxb(
                 formula = fo,
-                start = list(alpha = startalpha),
+                start = list(alpha = startalpha_i),
                 lower = c(lower[2]),
                 upper = c(upper[2]),
                 data = adf
@@ -416,10 +422,12 @@ FitCurves <- function(
               algorithm = "brute-force"
             ))
           )
-          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-            c("nls", "nls2", "error")
-          } else {
-            c("nls", "nls2")
+          if (!inherits(fit, what = "try-error")) {
+            attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
+              c("nls", "nls2", "error")
+            } else {
+              c("nls", "nls2")
+            }
           }
         }
       }
@@ -431,7 +439,7 @@ FitCurves <- function(
         fit <- try(
           nlsr::wrapnlsr(
             formula = fo,
-            start = list(q0 = startq0, k = kstart, alpha = startalpha),
+            start = list(q0 = startq0_i, k = kstart, alpha = startalpha_i),
             lower = c(lower),
             upper = c(upper),
             data = adf
@@ -444,7 +452,7 @@ FitCurves <- function(
           fit <- try(
             nlsr::nlxb(
               formula = fo,
-              start = list(q0 = startq0, k = kstart, alpha = startalpha),
+              start = list(q0 = startq0_i, k = kstart, alpha = startalpha_i),
               lower = c(lower),
               upper = c(upper),
               data = adf
@@ -460,10 +468,12 @@ FitCurves <- function(
             algorithm = "brute-force"
           ))
         )
-        attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
-          c("nls", "nls2", "error")
-        } else {
-          c("nls", "nls2")
+        if (!inherits(fit, what = "try-error")) {
+          attributes(fit)$class <- if (fit$m$Rmat()[2, 2] == 0) {
+            c("nls", "nls2", "error")
+          } else {
+            c("nls", "nls2")
+          }
         }
       }
     }
