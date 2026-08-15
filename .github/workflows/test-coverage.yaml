@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # TICKET-070: without this, testthat::skip_on_cran() skips ~490 call
+      # sites in every non-interactive run (CI included). cran-everything.yaml
+      # deliberately does NOT set it -- that workflow reproduces CRAN.
+      NOT_CRAN: true
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       # Match R-CMD-check: cap thread fan-out to avoid CPU oversubscription /
       # runner-agent starvation during the full-suite covr run.
