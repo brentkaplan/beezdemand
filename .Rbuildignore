@@ -74,3 +74,4 @@
 ^tools$
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/precompile\.R$
+^_win-builder$

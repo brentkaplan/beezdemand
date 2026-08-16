@@ -17,15 +17,23 @@
 
 ## R CMD check results
 
-Local (`R CMD check --as-cran --run-donttest`, final tarball):
-0 errors | 0 warnings | 1 note -- PENDING: replace with the final-tarball
-result and NOTE text.
+Local (`R CMD check --as-cran --run-donttest`, macOS/arm64, R 4.5.2):
+0 errors | 1 warning | 1 note. The warning is environmental
+(`-Wfixed-enum-extension` raised from R's own `R_ext/Boolean.h` under a
+very recent Apple clang, not package code; it does not appear on other
+platforms). The note is the CRAN incoming feasibility check (see below).
 
-win-builder R-devel / R-release: PENDING.
+win-builder R-release (R 4.6.1 ucrt, Windows Server 2022, 2026-08-16):
+0 errors | 0 warnings | 1 note (CRAN incoming feasibility: pkgdown article
+URLs, see below). One test that pinned a simulation fixture bit-for-bit
+against a macOS-generated `.rds` failed at the 1e-16 relative level on
+Windows; that comparison now uses a 1e-12 tolerance (test-only change).
+win-builder R-devel: PENDING.
 R-hub linux / macos-arm64 / windows / clang-asan / valgrind: PENDING.
 
-The expected NOTE is the CRAN incoming feasibility check (maintainer email,
-installed size; see the package size note below).
+The expected NOTE is the CRAN incoming feasibility check (maintainer email;
+possibly-invalid URLs for the package's own pkgdown article pages, which are
+rebuilt from the release branch immediately before submission).
 
 ## Submission comments
 
