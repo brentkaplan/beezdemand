@@ -60,6 +60,14 @@ jobs:
         with:
           token: ${{ secrets.RHUB_TOKEN }}
           job-config: ${{ matrix.config.job-config }}
+      # The valgrind (Fedora) image's prebuilt nloptr binary links
+      # libflexiblas.so.3, which the image does not ship, so optimx (an
+      # Import) fails to install. Provide the runtime library up front
+      # (same fix as beezdiscounting af65649; its valgrind leg then passed).
+      - name: System BLAS shim for the valgrind image
+        if: ${{ contains(matrix.config.label, 'valgrind') }}
+        run: dnf install -y flexiblas || yum install -y flexiblas || true
+        shell: bash
       - uses: r-hub/actions/setup-deps@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
