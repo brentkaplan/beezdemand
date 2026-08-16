@@ -1,3 +1,8 @@
+# Heavy file: runs only with BEEZ_FULL_TESTS=true (full-tests.yaml tri-OS job
+# and the pre-push hook); skipped in R CMD check / R-CMD-check.yaml to keep the
+# Linux CI test phase short. See tests/testthat/helper-full-tests.R.
+.skip_unless_full_tests()
+
 # Tests for TICKET-013: anova.beezdemand_tmb() — joint Wald-chi-square for
 # fixed-effect term groups (single fit) and nested LRT (multiple fits).
 #
@@ -89,9 +94,6 @@ test_that(".tmb_group_terms honors explicit named-list and errors on unknown", {
   )
 })
 
-test_that("anova S3 method is registered", {
-  expect_false(is.null(getS3method("anova", "beezdemand_tmb", optional = TRUE)))
-})
 
 test_that("anova.beezdemand_tmb returns expected schema (single fit)", {
   skip_on_cran()

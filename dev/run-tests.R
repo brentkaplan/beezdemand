@@ -76,6 +76,10 @@ if (identical(mode, "smoke")) {
   filter <- paste0("^(", paste(smoke_files, collapse = "|"), ")$")
   res <- as.data.frame(devtools::test(filter = filter))
 } else {
+  # Full mode is the local gate for EVERYTHING, including the heavy files that
+  # CI R-CMD-check skips (BEEZ_FULL_TESTS gate; see
+  # tests/testthat/helper-full-tests.R and .github/workflows/full-tests.yaml).
+  Sys.setenv(BEEZ_FULL_TESTS = "true")
   res <- as.data.frame(devtools::test())
 }
 
