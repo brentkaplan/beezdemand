@@ -892,7 +892,7 @@ ExtractCoefs <- function(
     # point (Q0 <= 0 or Alpha <= 0). Only reachable in natural param_space --
     # log10 parameterization back-transforms via 10^x, which is always > 0.
     #
-    # Codex 2B-review fold (decision Q5a): domain validity is signalled
+    # Codex 2B-review fold (decision Q5a): domain validity is signaled
     # ONLY by a warning() naming the subject and the offending parameter(s)
     # -- it must NOT modify Notes or demote converged_strict. Taboo 4: a
     # single subject that converges on the first wrapnlsr attempt must keep

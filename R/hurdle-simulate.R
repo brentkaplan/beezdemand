@@ -155,7 +155,10 @@ simulate_hurdle_data <- function(
 ) {
   part2 <- match.arg(part2)
 
+  # Seed locally: restore the caller's RNG stream on exit (release 0.3.0
+  # whole-release review fold; same guarantee as power_demand()/boot_demand()).
   if (!is.null(seed)) {
+    .local_seed_restore_on_exit()
     set.seed(seed)
   }
 
@@ -433,8 +436,9 @@ simulate_hurdle_data <- function(
 #'
 #' @examples
 #' \donttest{
-#' # Run small simulation study (for demonstration)
-#' mc_results <- run_hurdle_monte_carlo(n_sim = 10, n_subjects = 50, seed = 123)
+#' # Tiny simulation study for demonstration (use n_sim >= 200 in practice)
+#' mc_results <- run_hurdle_monte_carlo(n_sim = 5, n_subjects = 30, seed = 123,
+#'                                      verbose = FALSE)
 #'
 #' # View summary
 #' print(mc_results$summary)
@@ -458,6 +462,7 @@ run_hurdle_monte_carlo <- function(
   seed = NULL
 ) {
   if (!is.null(seed)) {
+    .local_seed_restore_on_exit()
     set.seed(seed)
   }
 
@@ -820,7 +825,9 @@ run_hurdle_monte_carlo <- function(
 #' @return Invisibly returns the input \code{mc_results} object.
 #' @examples
 #' \donttest{
-#' mc_results <- run_hurdle_monte_carlo(n_sim = 50, n_subjects = 100, seed = 123)
+#' # Tiny run for illustration (use n_sim >= 200 for a real calibration study)
+#' mc_results <- run_hurdle_monte_carlo(n_sim = 5, n_subjects = 30, seed = 123,
+#'                                      verbose = FALSE)
 #' print_mc_summary(mc_results)
 #' }
 #'
@@ -869,4 +876,35 @@ print_mc_summary <- function(mc_results, digits = 3) {
   cat("- Relative bias < 5% is generally acceptable\n")
 
   invisible(mc_results)
+}
+
+
+# Register an on.exit() handler IN THE CALLER that restores the global RNG
+# state (`.Random.seed`) as it was on entry -- or removes it if none existed --
+# so a function that calls set.seed(seed) for reproducibility leaves the
+# caller's random stream untouched. Call BEFORE set.seed().
+#' @keywords internal
+#' @noRd
+.local_seed_restore_on_exit <- function(envir = parent.frame()) {
+  had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  old_seed <- if (had_seed) {
+    get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  } else {
+    NULL
+  }
+  restore <- function() {
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = globalenv())
+    } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }
+  }
+  # The registered expression embeds the closure itself, so nothing needs to
+  # be visible by name in the caller's frame when the handler fires.
+  do.call(
+    on.exit,
+    list(as.call(list(restore)), add = TRUE),
+    envir = envir
+  )
+  invisible(NULL)
 }

@@ -244,9 +244,13 @@ plot(fit)
 fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponentiated")
 
-# With covariates
+# With covariates (a 30-per-gender subset keeps the example fast)
 data(apt_full)
-fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender \%in\% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 30))
+dat <- apt_full[apt_full$id \%in\% keep, ]
+fit3 <- fit_demand_tmb(dat, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponential", factors = "gender")
 get_demand_param_emms(fit3, param = "alpha")
 }

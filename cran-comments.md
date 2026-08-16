@@ -1,20 +1,31 @@
 ## Test environments
-* Local: macOS (Apple Silicon), R 4.5.x (release), `R CMD check --as-cran`
-  on the built tarball with `--run-donttest`.
+* Local: macOS 26 (Apple Silicon), R 4.5.2 (release), `R CMD check --as-cran
+  --run-donttest` on the built tarball (`NOT_CRAN=true`, so the full test
+  suite runs inside the check).
 * GitHub Actions: Ubuntu-latest (R devel, release, oldrel-1), macOS-latest
   (R release), Windows-latest (R release) -- all `R CMD check --as-cran`.
-* win-builder: R-devel and R-release (results summarised below once run).
+* win-builder: R-devel and R-release.
 * R-hub v2: linux, macos-arm64, windows, clang-asan, valgrind (the package
   ships TMB C++ templates in `src/`; sanitizer/valgrind legs are run
   because those templates changed since 0.2.0).
 
-## R CMD check results
-0 errors | 0 warnings | 1 note
+<!-- RELEASE-TRAIN NOTE (not shipped; this file is .Rbuildignore'd): the
+     win-builder and R-hub legs run on the FINAL develop SHA after the
+     Codex whole-release fold; their results are pasted into the section
+     below before `devtools::release()`. Do not submit while the
+     "PENDING" markers are present. -->
 
-The single NOTE is the CRAN incoming feasibility check (maintainer email,
-installed size; see the package size note below). Links to the package's
-own pkgdown article pages for vignettes new in this release resolve once the
-documentation site is rebuilt on acceptance.
+## R CMD check results
+
+Local (`R CMD check --as-cran --run-donttest`, final tarball):
+0 errors | 0 warnings | 1 note -- PENDING: replace with the final-tarball
+result and NOTE text.
+
+win-builder R-devel / R-release: PENDING.
+R-hub linux / macos-arm64 / windows / clang-asan / valgrind: PENDING.
+
+The expected NOTE is the CRAN incoming feasibility check (maintainer email,
+installed size; see the package size note below).
 
 ## Submission comments
 
@@ -58,8 +69,10 @@ expected:
 
 * Links to the package's own pkgdown article pages
   (`https://brentkaplan.github.io/beezdemand/articles/...`) for vignettes
-  added in this release. These resolve once the accompanying documentation
-  site is rebuilt on acceptance.
+  added in this release. The documentation site is rebuilt from the release
+  branch immediately before submission, so these resolve at submission time;
+  they 404 only against the previous release's site while the candidate is
+  still under review locally.
 * A few `https://doi.org/...` reference links return 403 to automated
   checkers because the publishers block bots; the DOIs are valid and resolve
   in a browser.

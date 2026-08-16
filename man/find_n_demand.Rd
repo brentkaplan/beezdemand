@@ -161,7 +161,7 @@ proceeds upward.
 res <- find_n_demand(
   target_power = 0.8,
   effect = list(delta_q0 = log(2.5)),
-  n_range = c(4, 10), n_sim = 5, seed = 1, verbose = FALSE
+  n_range = c(4, 8), n_sim = 5, n_sim_max = 10, seed = 1, verbose = FALSE
 )
 print(res)
 }

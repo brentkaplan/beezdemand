@@ -641,3 +641,38 @@ test_that("item 2: positional calls through `seed` are unaffected by the new par
   d_named <- simulate_hurdle_data(n_subjects = 5, seed = 123)
   expect_identical(d_positional, d_named)
 })
+
+# Release 0.3.0 Codex whole-release fold: supplying `seed` must not overwrite
+# the caller's RNG stream (same guarantee power_demand()/boot_demand() give).
+test_that("simulate_hurdle_data(seed = ) restores the caller's RNG state", {
+  set.seed(999)
+  before <- .Random.seed
+  d1 <- simulate_hurdle_data(n_subjects = 3, seed = 42)
+  expect_identical(.Random.seed, before)
+  # Same seed reproduces; and the caller's stream continues where it was.
+  d2 <- simulate_hurdle_data(n_subjects = 3, seed = 42)
+  expect_identical(d1, d2)
+  set.seed(999)
+  x_ref <- runif(1)
+  set.seed(999)
+  invisible(simulate_hurdle_data(n_subjects = 3, seed = 42))
+  expect_identical(runif(1), x_ref)
+})
+
+test_that("simulate_hurdle_data(seed = ) leaves no RNG state when none existed", {
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    rm(".Random.seed", envir = globalenv())
+  }
+  invisible(simulate_hurdle_data(n_subjects = 3, seed = 42))
+  expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+})
+
+test_that("run_hurdle_monte_carlo(seed = ) restores the caller's RNG state", {
+  skip_on_cran()
+  set.seed(999)
+  before <- .Random.seed
+  suppressWarnings(run_hurdle_monte_carlo(
+    n_sim = 1, n_subjects = 30, n_random_effects = 2, seed = 42, verbose = FALSE
+  ))
+  expect_identical(.Random.seed, before)
+})

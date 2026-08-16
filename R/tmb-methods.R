@@ -2862,7 +2862,12 @@ residuals.beezdemand_tmb <- function(object,
 #' @examples
 #' \donttest{
 #' data(apt_full)
-#' fit <- fit_demand_tmb(apt_full, equation = "exponential",
+#' # 40 subjects per gender keep the example fast; use the full data in practice
+#' ids <- unique(apt_full[c("id", "gender")])
+#' ids <- ids[ids$gender %in% c("Male", "Female"), ]
+#' keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+#' dat <- apt_full[apt_full$id %in% keep, ]
+#' fit <- fit_demand_tmb(dat, equation = "exponential",
 #'                       factors = "gender", verbose = 0)
 #' anova(fit)
 #' anova(fit, group_by = "parameter")
@@ -3650,7 +3655,11 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 #' @examples
 #' \donttest{
 #' data(apt_full)
-#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' # 40 subjects per gender keep the example fast; use the full data in practice
+#' ids <- unique(apt_full[c("id", "gender")])
+#' ids <- ids[ids$gender %in% c("Male", "Female"), ]
+#' keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+#' dat <- apt_full[apt_full$id %in% keep, ]
 #' fit <- fit_demand_tmb(dat, equation = "exponential",
 #'                       factors = "gender", verbose = 0)
 #' get_demand_param_emms(fit, param = "Q0")
@@ -3862,7 +3871,11 @@ get_demand_param_emms.beezdemand_tmb <- function(
 #' @examples
 #' \donttest{
 #' data(apt_full)
-#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' # 40 subjects per gender keep the example fast; use the full data in practice
+#' ids <- unique(apt_full[c("id", "gender")])
+#' ids <- ids[ids$gender %in% c("Male", "Female"), ]
+#' keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+#' dat <- apt_full[apt_full$id %in% keep, ]
 #' fit <- fit_demand_tmb(dat, equation = "exponential",
 #'                       factors = "gender", verbose = 0)
 #' res <- get_demand_comparisons(fit, param = "Q0")

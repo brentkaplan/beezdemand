@@ -111,9 +111,13 @@ NULL
 #' tidy(fit)
 #' glance(fit)
 #'
-#' # Grouped analysis — fit separately by gender
+#' # Grouped analysis -- fit separately by gender (subset keeps it fast)
 #' data(apt_full)
-#' fit_g <- fit_demand_fixed(apt_full, equation = "hs", k = 2, by = "gender")
+#' ids <- unique(apt_full[c("id", "gender")])
+#' ids <- ids[ids$gender %in% c("Male", "Female"), ]
+#' keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+#' dat <- apt_full[apt_full$id %in% keep, ]
+#' fit_g <- fit_demand_fixed(dat, equation = "hs", k = 2, by = "gender")
 #' tidy(fit_g)   # group column prepended
 #' glance(fit_g)  # one row per group
 #' }

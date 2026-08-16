@@ -2095,7 +2095,11 @@ get_demand_comparisons.beezdemand_nlme <- function(
 #' @examples
 #' \donttest{
 #' data(apt_full)
-#' dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+#' # 40 subjects per gender keep the example fast; use the full data in practice
+#' ids <- unique(apt_full[c("id", "gender")])
+#' ids <- ids[ids$gender %in% c("Male", "Female"), ]
+#' keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+#' dat <- apt_full[apt_full$id %in% keep, ]
 #' fit <- fit_demand_tmb(dat, equation = "exponential",
 #'                       factors = "gender", verbose = 0)
 #' res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))

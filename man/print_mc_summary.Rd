@@ -19,7 +19,9 @@ Prints a formatted summary of Monte Carlo simulation results.
 }
 \examples{
 \donttest{
-mc_results <- run_hurdle_monte_carlo(n_sim = 50, n_subjects = 100, seed = 123)
+# Tiny run for illustration (use n_sim >= 200 for a real calibration study)
+mc_results <- run_hurdle_monte_carlo(n_sim = 5, n_subjects = 30, seed = 123,
+                                     verbose = FALSE)
 print_mc_summary(mc_results)
 }
 

@@ -68,8 +68,9 @@ including bias, standard error estimates, and confidence interval coverage.
 }
 \examples{
 \donttest{
-# Run small simulation study (for demonstration)
-mc_results <- run_hurdle_monte_carlo(n_sim = 10, n_subjects = 50, seed = 123)
+# Tiny simulation study for demonstration (use n_sim >= 200 in practice)
+mc_results <- run_hurdle_monte_carlo(n_sim = 5, n_subjects = 30, seed = 123,
+                                     verbose = FALSE)
 
 # View summary
 print(mc_results$summary)

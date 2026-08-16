@@ -185,7 +185,7 @@ exactly, pin the previous release:
   coefficients/objective AND not at a user-supplied bound) columns. A
   "converged" fit with non-positive Q0 and/or Alpha now also raises a
   `warning()` naming the subject and which parameter is non-positive —
-  domain validity is signalled **only** by that warning: `Notes` is never
+  domain validity is signaled **only** by that warning: `Notes` is never
   modified and `converged_strict` is never demoted for a domain-invalid
   estimate (it is only reachable in `param_space = "natural"` — the log10
   parameterization's `10^x` back-transform is always positive), so a single
@@ -250,7 +250,7 @@ fixes a wrong-by-orders-of-magnitude back-transformation, and the
 contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 = "log10"` fits (the default) are unaffected by both.
 
-* **TMB and hurdle inference surfaces now honour `hessian_pd`.** When
+* **TMB and hurdle inference surfaces now honor `hessian_pd`.** When
   `TMB::sdreport()` reports a non-positive-definite Hessian
   (`fit$hessian_pd == FALSE`), `sdr$cov.fixed` is a pseudo-inverse of an
   indefinite matrix -- standard errors, confidence intervals, p-values, and
@@ -265,7 +265,7 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   `boot_demand()` directly received unreliable intervals with no indication
   anything was wrong. Values are unchanged; healthy (PD-Hessian) fits emit no
   new conditions.
-* **NLME inference surfaces now honour `.check_nlme_convergence()`.**
+* **NLME inference surfaces now honor `.check_nlme_convergence()`.**
   `summary()`, `glance()`, and `check_demand_model()` already gated on
   whether an NLME fit's final apVar inverted cleanly; `get_demand_param_emms()`,
   `get_demand_comparisons()`, `calc_group_metrics()`, `confint()`,
@@ -495,6 +495,12 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   coefficients can be plugged directly into the simulator for a parametric
   bootstrap or recovery study. `part2` defaults to `"koff"`, and its output
   is byte-identical to previous releases.
+
+* `simulate_hurdle_data(seed = )` and `run_hurdle_monte_carlo(seed = )` no
+  longer overwrite the caller's RNG stream: the global `.Random.seed` is
+  restored on exit (or removed if none existed), matching what
+  `power_demand()`, `boot_demand()` and the TMB parametric-draw helpers
+  already guaranteed. Simulated outputs for a given `seed` are unchanged.
 
 ## Continuous within-subject random slopes in `fit_demand_tmb()`
 
@@ -758,7 +764,7 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 * **Deprecation (NLME):** `get_demand_comparisons(params_to_compare = )` is
   deprecated in favor of `param`. Supplying both is an error.
 
-* Developer-facing (unreleased TMB API):
+* TMB API (new in this release, so no released code is affected):
   `get_demand_comparisons.beezdemand_tmb()` renames `p_adjust` to `adjust`
   (no alias) and validates it against `stats::p.adjust.methods`; emmeans-only
   methods (e.g. `"tukey"`, `"sidak"`) are rejected.
@@ -1251,8 +1257,9 @@ needs no dispatch glue.
 
 * **Breaking change.** `glance(fit_tmb)$equation` is renamed to
   `equation_form`, matching `glance(fit_nlme)`. There is no aliased
-  `equation` column. The `fit_demand_tmb()` API is unreleased (0.3.0
-  development), so no released code depends on the old name.
+  `equation` column. The `fit_demand_tmb()` API is new in 0.3.0 (this
+  rename happened during its development), so no released code depends on
+  the old name.
 * **Breaking change.** `tidy(fit_tmb)` labels fixed-effect rows
   `component == "fixed"` instead of `"consumption"`, matching
   `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering TMB
@@ -1332,7 +1339,9 @@ TICKET-011 phases above were added under the same 0.3.0 development cycle.
   `get_demand_comparisons`, and visualization (`plot`, `plot_qq`,
   `plot_loss_surface`, `plot_loss_profile`, `plot_re_diagnostics`,
   `plot_alpha_distribution`, `plot_elasticity`, `plot_expenditure`,
-  `plot_demand_overlay`).
+  `plot_demand_overlay`, and the cross-model forest plot
+  `plot_model_comparison()`, which compares parameter estimates and CIs
+  across any fitted demand models via their `tidy()` methods).
 
 * `vignettes/tmb-mixed-effects.Rmd` walks through the full TMB workflow
   (equations, random-effect structures, diagnostics) with cache-aware

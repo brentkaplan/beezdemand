@@ -56,7 +56,12 @@ column labels them \code{Model1}, \code{Model2}, ... in that order.
 \examples{
 \donttest{
 data(apt_full)
-fit <- fit_demand_tmb(apt_full, equation = "exponential",
+# 40 subjects per gender keep the example fast; use the full data in practice
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender \%in\% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+dat <- apt_full[apt_full$id \%in\% keep, ]
+fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
 anova(fit)
 anova(fit, group_by = "parameter")
