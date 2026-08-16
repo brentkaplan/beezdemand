@@ -27,20 +27,28 @@ jobs:
           # BOTH images with "symbol not found in flat namespace '_omp_get_max_threads'"
           # (it references OpenMP but nothing links libomp), so the "Rebuild TMB from
           # source against libomp" step below repairs every macOS leg.
-          - {os: macos-15,       r: 'release'}
-          - {os: macos-26,       r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,  r: 'release'}
-          - {os: ubuntu-latest,  r: 'oldrel-1'}
+          # `not-cran` = the NOT_CRAN value for the check step (TICKET-070 /
+          # release-train Q14a, option 1, 2026-08-16): the full suite runs on
+          # macOS x2 + Windows; the hosted ubuntu runners kill the 2-worker
+          # `checking tests` phase of the full suite ~6 min in ("runner
+          # received a shutdown signal", 11/12 legs on 2026-08-16, unrelated
+          # to package code -- covr and every CRAN-mode Linux run survive), so
+          # the ubuntu legs run in CRAN mode, exactly as they did before 070.
+          # The heaviest files additionally run tri-OS in full-tests.yaml.
+          - {os: macos-15,       r: 'release',  not-cran: 'true'}
+          - {os: macos-26,       r: 'release',  not-cran: 'true'}
+          - {os: windows-latest, r: 'release',  not-cran: 'true'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release', not-cran: 'false'}
+          - {os: ubuntu-latest,  r: 'release',  not-cran: 'false'}
+          - {os: ubuntu-latest,  r: 'oldrel-1', not-cran: 'false'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      # TICKET-070: without this, testthat::skip_on_cran() skips ~490 call
-      # sites in every non-interactive run (CI included). cran-everything.yaml
-      # deliberately does NOT set it -- that workflow reproduces CRAN.
-      NOT_CRAN: true
+      # TICKET-070: NOT_CRAN is set PER LEG on the check step below (see the
+      # matrix `not-cran` values). Note r-lib/actions/setup-r exports
+      # NOT_CRAN=true via GITHUB_ENV, which overrides job-level env -- only a
+      # STEP-level env wins, hence the placement.
       # Cap thread fan-out so the parallel testthat workers don't oversubscribe the
       # runner's cores and starve the GitHub runner agent of CPU (the documented
       # "lost-communication"/SIGTERM cause). See project_ci_oom_diagnosis.
@@ -96,6 +104,8 @@ jobs:
         shell: bash
 
       - uses: r-lib/actions/check-r-package@v2
+        env:
+          NOT_CRAN: ${{ matrix.config.not-cran }}
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

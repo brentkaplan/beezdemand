@@ -146,6 +146,10 @@ runs:
         # is covered by the urlchecker step, win-builder and the local
         # gauntlet; keep the local half.
         _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+        # This workflow reproduces CRAN, where skip_on_cran() is ACTIVE.
+        # r-lib/actions/setup-r exports NOT_CRAN=true via GITHUB_ENV (which
+        # beats job-level env), so it must be overridden here at step level.
+        NOT_CRAN: "false"
 
     - name: Build pkgdown site
       if: ${{ inputs.mode == 'pkgdown' }}
