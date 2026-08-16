@@ -72,3 +72,5 @@
 ^inst/llm$
 ^dev$
 ^tools$
+^vignettes/.*\.Rmd\.orig$
+^vignettes/precompile\.R$

@@ -408,7 +408,7 @@ advanced workflows:
 
 ## Free `beezdemand` Alternative with Graphical User Interface
 
-If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out [shinybeez](https://github.com/brentkaplan/shinybeez), a free open source Shiny app for demand curve analysis (see the companion article [here](https://pubmed.ncbi.nlm.nih.gov/40103003/)).
+If you are interested in using open source software for analyzing demand curve data but don't know `R`, please check out [shinybeez](https://github.com/brentkaplan/shinybeez), a free open source Shiny app for demand curve analysis (see the companion article [here](https://doi.org/10.1002/jeab.70000)).
 
 ## Acknowledgments
 

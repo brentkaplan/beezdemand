@@ -179,20 +179,21 @@ multiplicative-lognormal errors in both designs (closest at small
 }
 \examples{
 \donttest{
-# Quick exploratory run (use n_sim >= 500 for real planning)
+# Tiny illustrative run (use n_sim >= 500 for real planning; the
+# Monte Carlo interval at n_sim = 5 is uninformative by design)
 res <- power_demand(
-  n_subjects = 20,
+  n_subjects = 12,
   effect = list(delta_q0 = log(1.5)),
-  n_sim = 20, seed = 1, verbose = FALSE
+  n_sim = 5, seed = 1, verbose = FALSE
 )
 print(res)
 
 # Between-subject design: group difference in Q0 across two arms
 res_b <- power_demand(
-  n_subjects = 40,
+  n_subjects = 16,
   effect = list(delta_q0 = log(1.5)),
   design_type = "between",
-  n_sim = 20, seed = 1, verbose = FALSE
+  n_sim = 5, seed = 1, verbose = FALSE
 )
 print(res_b)
 }

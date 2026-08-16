@@ -1,11 +1,30 @@
 # beezdemand 0.3.0
 
-This release ships the TMB mixed-effects modeling tier
-(`fit_demand_tmb()`) along with TICKET-011 — factor-expanded and
-multi-block random-effects support, expanded subject-level reporting,
-and group-metrics conditioning. The "TMB mixed-effects modeling tier"
-section below is the original 0.3.0 introduction; subsequent sections
-cover TICKET-011 phase work added under this development cycle.
+Feature release covering everything since 0.2.0. Headline changes:
+
+* **TMB mixed-effects modeling tier** (`fit_demand_tmb()`) with automatic
+  differentiation, a Laplace approximation, multi-start optimization,
+  optional estimation of `k`, factor-expanded / multi-block (`pdBlocked`)
+  and continuous within-subject random-slope structures, and the full
+  post-hoc surface (EMMs, contrasts, subject-level parameters, parametric
+  bootstrap CIs, diagnostics).
+* **Monte Carlo power analysis** (`power_demand()`, `find_n_demand()`) for
+  within- and between-subject designs.
+* **Multi-start rescue is the default in `fit_demand_fixed()`** and the zben
+  `Pmax`/`Omax` are computed numerically -- see "Bug fixes that can change
+  estimates" for exactly which outputs can differ from 0.2.0 and how to pin
+  the old numbers.
+* **Inference gates and diagnostic honesty**: TMB/hurdle/NLME inference
+  surfaces now refuse or flag results from non-converged or non-PD fits
+  instead of reporting them silently; `check_demand_model()` no longer
+  reports failed checks as passing.
+* **Silent-failure fixes** in the hurdle covariance path, cross-price
+  fitters, extractors and plots, plus legacy-fitter batch robustness.
+* A hurdle-SND data simulator (`simulate_hurdle_data(part2 = "snd")`), a
+  breaking `predict.beezdemand_hurdle()` default (`type = "demand"`), and
+  the harmonized `get_demand_comparisons()` / EMM API across backends.
+
+The subsections below give the per-change detail, oldest at the bottom.
 
 ## Monte Carlo power analysis
 
@@ -186,6 +205,8 @@ exactly, pin the previous release:
   raises a warning; `Notes`, `converged`, and `converged_strict` are
   otherwise unaffected). Subjects that converge cleanly on the first
   `wrapnlsr` attempt are unchanged.
+  With the brute-force refit gone, `nls2` is no longer used anywhere in the
+  package and has been dropped from `Imports`.
 
 * **`GetValsForSim()` (used by `SimulateDemand()`'s Koffarnus et al., 2015
   simulation workflow) misaligned or dropped per-price residuals.** Residual

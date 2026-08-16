@@ -156,11 +156,12 @@ proceeds upward.
 }
 \examples{
 \donttest{
-# Small search for demonstration (use larger n_sim for real planning)
+# Tiny search for demonstration only (use n_sim >= 200 and a wide
+# n_range for real planning; see vignette("power-analysis"))
 res <- find_n_demand(
   target_power = 0.8,
   effect = list(delta_q0 = log(2.5)),
-  n_range = c(4, 30), n_sim = 30, seed = 1, verbose = FALSE
+  n_range = c(4, 10), n_sim = 5, seed = 1, verbose = FALSE
 )
 print(res)
 }

@@ -4,23 +4,67 @@ All notable changes to this project will be documented in this file.
 
 The format follows Keep a Changelog and this project adheres to Semantic Versioning.
 
-## [0.3.0]
+## [0.3.0] - 2026-08-16
 
-Major feature release. See `NEWS.md` for the complete, detailed changelog
-(TMB mixed-effects tier `fit_demand_tmb()`, factor-expanded/multi-block random
-effects, cross-backend EMM/contrast harmonization, parametric bootstrap CIs).
+Major feature release. See `NEWS.md` for the complete, detailed changelog.
+
+### Added
+- **TMB mixed-effects tier** `fit_demand_tmb()`: automatic differentiation,
+  Laplace approximation, multi-start optimization, optional estimation of `k`,
+  factor-expanded / multi-block (`pdBlocked`) random effects, continuous
+  within-subject random slopes, and the full post-hoc surface (EMMs, contrasts,
+  `get_subject_pars()`, `VarCorr()`, `boot_demand()` / `confint(method =
+  "simulate")` parametric-bootstrap CIs, diagnostics).
+- **Monte Carlo power analysis**: `power_demand()` and `find_n_demand()` for
+  within-subject and (`design_type = "between"`) between-subject designs.
+- `simulate_hurdle_data(part2 = "snd")` hurdle-SND data generator.
+- `get_subject_pars()` method for `beezdemand_nlme` fits.
+- Vignettes: TMB mixed-effects, advanced random-effects structures,
+  convergence troubleshooting, power analysis (precomputed).
 
 ### Changed
+- **Bug fixes that can change estimates** (see the NEWS subsection of that
+  name; pin 0.2.0 with `remotes::install_version()` to reproduce old numbers):
+  `fit_demand_fixed()` now uses multi-start rescue by default for subjects whose
+  production-heuristic fit is not strict-converged; `zben` per-subject and
+  group `Pmax`/`Omax` are computed numerically on the natural scale (adaptive
+  domain, `pmax_at_bound` flag) instead of via the SND closed form; the EV
+  `k^1.5` exponent fix in `get_demand_param_emms()`; legacy `FitCurves()` /
+  `fit_demand_fixed()` batch fixes (per-subject start values no longer sticky
+  across subjects, `k = "fit"` log10 start no longer compounds per subject,
+  unverified `nlxb` fallback endpoints are now verified by a port refit and
+  flagged, `converged`/`converged_strict` columns added); `GetValsForSim()`
+  residual-to-price alignment.
 - **Reporting (broom convention).** `summary()` and `tidy()` report the Wald
   `statistic`/`p.value` on the estimation (log/log10) scale for every
   `report_space` (including the default `"natural"`); only `estimate`/`std.error`
-  are back-transformed. This changes the default reported test statistic/p-value
-  for the core demand parameters (Q0/alpha/k).
+  are back-transformed.
+- **Breaking:** `predict.beezdemand_hurdle()` defaults to `type = "demand"`
+  (marginal expectation) instead of `type = "response"`.
+- Natural-space NLME `get_demand_comparisons()` contrasts are reported as
+  differences (with a `contrasts_ratio_scale` attribute) rather than a
+  `10^`-exponentiated ratio; `get_demand_param_emms()` back-transforms only
+  `param_space = "log10"` fits.
+- `nls2` dropped from Imports (unused).
 
 ### Fixed
-- `get_demand_comparisons()` now filters emmeans grid to observed factor
-  combinations before computing contrasts, preventing phantom comparisons
-  in unbalanced multi-factor designs.
+- **Inference gates**: TMB and hurdle inference surfaces (`confint()`,
+  `boot_demand()`, EMMs, contrasts, trends) honour `hessian_pd`; NLME surfaces
+  route through the convergence check; `check_demand_model()` no longer reports
+  a failed internal check as passing; failure paths in `fit_demand_tmb()` and
+  hurdle sdreport now name their cause.
+- Hurdle random-effects covariance `chol()` failures no longer silently
+  substitute a diagonal Sigma; cross-price fitters, extractors and plot methods
+  no longer swallow errors.
+- Legacy fitter robustness: `FitCurves(equation = "linear")`, `ExtraF()`,
+  `GetSharedK()` degrade per-subject/group failures gracefully instead of
+  aborting the batch; a failed subject no longer crashes the whole batch.
+- `get_demand_comparisons()` now filters the emmeans grid to observed factor
+  combinations before computing contrasts, preventing phantom comparisons in
+  unbalanced multi-factor designs.
+- NLME summary/tidy reporting (df-aware p-values shared between `summary()` and
+  `tidy()`; convergence status aligned with `glance()`); TMB `VarCorr()`
+  multi-block correlation placement; sdreport warning hygiene.
 
 ## [0.2.0] - 2026-03-03
 

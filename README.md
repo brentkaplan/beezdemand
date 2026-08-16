@@ -35,6 +35,7 @@ me](mailto:bkaplan.ku@gmail.com).
 | Group comparisons / random effects (classic NLME backend) | `fit_demand_mixed()` | [Mixed demand](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html) |
 | Many zeros, two-part modeling needed | `fit_demand_hurdle()` | [Hurdle models](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.html) |
 | Cross-commodity substitution | `fit_cp_*()` functions | [Cross-price models](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.html) |
+| Planning a study: sample size / power | `power_demand()`, `find_n_demand()` | [Power analysis](https://brentkaplan.github.io/beezdemand/articles/power-analysis.html) |
 
 `beezdemand` provides a **five-tier modeling framework**: legacy NLS
 (`FitCurves()`, maintained for backward compatibility), modern
@@ -44,7 +45,9 @@ fixed-effect NLS (`fit_demand_fixed()`), nonlinear mixed-effects via
 work), and two-part hurdle models (`fit_demand_hurdle()`). The TMB and
 NLME tiers fit the same hierarchical demand models; `fit_demand_tmb()`
 adds automatic differentiation, a Laplace approximation, multi-start
-optimization, and the option to estimate `k`.
+optimization, and the option to estimate `k`. Monte Carlo power analysis
+(`power_demand()`, `find_n_demand()`) sits on top of the TMB tier for
+planning within- and between-subject designs.
 
 For detailed guidance on choosing the right modeling approach, see the
 [model selection
@@ -513,11 +516,11 @@ head(coef(fit_hs))
 | 38 | Q0 | 4.497456 | 0.2146862 | NA | NA | fixed | natural | Q0 | 4.497456 |
 | 60 | Q0 | 9.924274 | 0.4591683 | NA | NA | fixed | natural | Q0 | 9.924274 |
 | 68 | Q0 | 10.390384 | 0.3290277 | NA | NA | fixed | natural | Q0 | 10.390384 |
-| 106 | Q0 | 5.683566 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683566 |
-| 113 | Q0 | 6.195949 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195949 |
+| 106 | Q0 | 5.683567 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683567 |
+| 113 | Q0 | 6.195948 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195948 |
 | 142 | Q0 | 6.171990 | 0.6408575 | NA | NA | fixed | natural | Q0 | 6.171990 |
-| 156 | Q0 | 8.348973 | 0.4105617 | NA | NA | fixed | natural | Q0 | 8.348973 |
-| 188 | Q0 | 6.303639 | 0.5636959 | NA | NA | fixed | natural | Q0 | 6.303639 |
+| 156 | Q0 | 8.348975 | 0.4105618 | NA | NA | fixed | natural | Q0 | 8.348975 |
+| 188 | Q0 | 6.303638 | 0.5636957 | NA | NA | fixed | natural | Q0 | 6.303638 |
 
 #### Koffarnus equation
 
