@@ -347,6 +347,7 @@ fits (the default) are unaffected by both.
   directly received unreliable intervals with no indication anything was
   wrong. Values are unchanged; healthy (PD-Hessian) fits emit no new
   conditions.
+
 - **NLME inference surfaces now honor `.check_nlme_convergence()`.**
   [`summary()`](https://rdrr.io/r/base/summary.html),
   [`glance()`](https://generics.r-lib.org/reference/glance.html), and
@@ -378,6 +379,7 @@ fits (the default) are unaffected by both.
   [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
   / `param_space = "natural"` bullet below, which fixes a related but
   distinct back-transformation bug on the same NLME surface.
+
 - **[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
   back-transformed with `10^` unconditionally, giving wrong `*_natural`
   columns (and `EV`) for NLME fits made with
@@ -403,6 +405,7 @@ fits (the default) are unaffected by both.
   [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
   (and anything built on its EV branch). `param_space = "log10"` fits
   (the default) and the TMB tier (already space-aware) are unaffected.
+
 - **[`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
   (NLME) had the same `param_space = "natural"` gap as the bullet above,
   in `$contrasts_ratio`.** (TICKET-075.)
@@ -421,6 +424,7 @@ fits (the default) are unaffected by both.
   only `$contrasts_ratio`’s *content* for natural-space fits changes,
   from a previously-meaningless number to a documented, correct one.
   `param_space = "log10"` fits (the default) are unaffected.
+
 - **[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
   no longer reports a failed internal check as a passing one.** The
   fixed and hurdle residual sub-checks, and the NLME random-effects
@@ -439,9 +443,11 @@ fits (the default) are unaffected by both.
   Mirrors the pattern the TMB tier’s residual check already used.
   Healthy fits are byte-identical; only fits where one of these internal
   checks errors are affected.
+
 - **[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
   failure paths now name their causes.** Three gaps on the
   failure/error-reporting side of the TMB fitter:
+
   - The multi-start terminal abort (“All starting value sets failed.”)
     previously discarded every per-start cause (hard errors were
     [`message()`](https://rdrr.io/r/base/message.html)d only at
@@ -468,6 +474,7 @@ fits (the default) are unaffected by both.
     during SE extraction with a cryptic
     `no 'dimnames' attribute for array` (the only output a `verbose = 0`
     caller saw). Healthy fits are unaffected; no numeric output changes.
+
 - **[`print()`](https://rdrr.io/r/base/print.html)/[`summary()`](https://rdrr.io/r/base/summary.html)
   for `beezdemand_hurdle` fits now surface a false-converged
   3-random-effect fit prominently.** The 3RE spec
@@ -487,6 +494,17 @@ fits (the default) are unaffected by both.
   now reaches the console. Converged, PD-Hessian fits print
   byte-identically to before. No change to `converged`/`hessian_pd`
   semantics, EB parameter extraction, or the TMB templates/likelihoods.
+
+- `confint(fit, method = "simulate")` and
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  on a TMB fit whose sdreport covariance contains non-finite values
+  (non-PD Hessian / non-converged fit, platform-dependent) now stop with
+  a classed, informative error (`beezdemand_nonfinite_vcov_error`)
+  pointing at
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  and `fit$hessian_pd`, instead of an opaque
+  [`eigen()`](https://rdrr.io/r/base/eigen.html) “infinite or missing
+  values in ‘x’” failure.
 
 ### Silent-failure fixes (hurdle, cross-price, extractors, plots)
 

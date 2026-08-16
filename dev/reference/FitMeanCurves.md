@@ -123,7 +123,7 @@ FitMeanCurves(apt[sample(apt$id, 5), ], "hs", k = 2, method = "Mean")
 #>     id Intensity BP0 BP1 Omaxe Pmaxe Equation      Q0d K         R2
 #> 1 Mean         3  NA   8    24     8       hs 3.484307 2 0.09703333
 #>          Alpha      Q0se     Alphase N       AbsSS     SdRes     Q0Low   Q0High
-#> 1 0.0008824051 0.7316713 0.002603444 3 0.009396685 0.0969365 -5.812458 12.78107
-#>      AlphaLow AlphaHigh       EV    Omaxd    Pmaxd    Omaxa    Pmaxa     Notes
-#> 1 -0.03219749 0.0339623 4.006702 103.0983 93.83412 103.0997 94.41449 converged
+#> 1 0.0008824051 0.7316715 0.002603445 3 0.009396685 0.0969365 -5.812461 12.78107
+#>      AlphaLow  AlphaHigh       EV    Omaxd    Pmaxd    Omaxa    Pmaxa     Notes
+#> 1 -0.03219751 0.03396232 4.006702 103.0983 93.83412 103.0997 94.41449 converged
 ```

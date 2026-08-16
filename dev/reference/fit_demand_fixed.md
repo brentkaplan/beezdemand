@@ -368,8 +368,6 @@ fit_g <- fit_demand_fixed(dat, equation = "hs", k = 2, by = "gender")
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Data casted as data.frame
 #> Warning: FitCurves: subject '11' reported as converged with a non-positive Alpha (Q0d = 5, Alpha = -4.345028e-10); this estimate may be domain-invalid -- inspect before use.
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -395,7 +393,7 @@ glance(fit_g)  # one row per group
 #> # A tibble: 2 × 13
 #>   gender model_class   backend equation k_spec  nobs n_subjects n_success n_fail
 #>   <chr>  <chr>         <chr>   <chr>    <chr>  <int>      <int>     <int>  <int>
-#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        33      5
+#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        34      4
 #> 2 Male   beezdemand_f… legacy  hs       fixed…   481         39        38      1
 #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 # }
