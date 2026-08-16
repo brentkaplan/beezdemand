@@ -46,7 +46,7 @@ Legacy API tests pass (test-legacy-\*.R files)
 
 ### CRAN Compliance
 
-[`urlchecker::url_check()`](https://rdrr.io/pkg/urlchecker/man/url_check.html)
+[`urlchecker::url_check()`](https://urlchecker.r-lib.org/reference/url_check.html)
 passes
 
 No non-standard files in package root

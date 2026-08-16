@@ -499,7 +499,7 @@ If you encounter issues during migration:
 ``` r
 
 sessionInfo()
-#> R version 4.6.0 (2026-04-24)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -523,29 +523,29 @@ sessionInfo()
 #> [1] dplyr_1.2.1      beezdemand_0.2.0
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.21         
-#>  [4] xfun_0.59           bslib_0.11.0        ggplot2_4.0.3      
-#>  [7] htmlwidgets_1.6.4   insight_1.5.1       lattice_0.22-9     
-#> [10] vctrs_0.7.3         tools_4.6.0         Rdpack_2.6.6       
+#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.23         
+#>  [4] xfun_0.60           bslib_0.12.0        ggplot2_4.0.3      
+#>  [7] htmlwidgets_1.6.4   insight_1.5.2       lattice_0.22-9     
+#> [10] vctrs_0.7.3         tools_4.6.1         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
 #> [16] Matrix_1.7-5        RColorBrewer_1.1-3  S7_0.2.2           
-#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.6.0     
+#> [19] desc_1.4.3          lifecycle_1.0.5     compiler_4.6.1     
 #> [22] farver_2.1.2        textshaping_1.0.5   minpack.lm_1.2-4   
 #> [25] nlstools_2.1-0      htmltools_0.5.9     sass_0.4.10        
-#> [28] yaml_2.3.12         pillar_1.11.1       pkgdown_2.2.0      
+#> [28] yaml_2.3.12         pillar_1.11.1       pkgdown_2.2.1      
 #> [31] nloptr_2.2.1        jquerylib_0.1.4     tidyr_1.3.2        
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
 #> [37] boot_1.3-32         nlme_3.1-169        tidyselect_1.2.1   
-#> [40] digest_0.6.39       performance_0.17.0  mvtnorm_1.4-1      
-#> [43] purrr_1.2.2         labeling_0.4.3      splines_4.6.0      
-#> [46] fastmap_1.2.0       grid_4.6.0          cli_3.6.6          
+#> [40] digest_0.6.39       performance_0.17.1  mvtnorm_1.4-2      
+#> [43] purrr_1.2.2         labeling_0.4.3      splines_4.6.1      
+#> [46] fastmap_1.2.0       grid_4.6.1          cli_3.6.6          
 #> [49] magrittr_2.0.5      utf8_1.2.6          broom_1.0.13       
 #> [52] withr_3.0.3         scales_1.4.0        backports_1.5.1    
-#> [55] estimability_1.5.1  rmarkdown_2.31      emmeans_2.0.3      
-#> [58] otel_0.2.0          lme4_2.0-1          ragg_1.5.2         
+#> [55] estimability_2.0.0  rmarkdown_2.31      emmeans_2.0.4      
+#> [58] otel_0.2.0          lme4_2.0-6          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         
-#> [64] rbibutils_2.4.1     mgcv_1.9-4          rlang_1.2.0        
-#> [67] Rcpp_1.1.1-1.1      xtable_1.8-8        glue_1.8.1         
+#> [64] rbibutils_2.4.1     mgcv_1.9-4          rlang_1.3.0        
+#> [67] Rcpp_1.1.2          xtable_1.8-8        glue_1.8.1         
 #> [70] nlsr_2026.4.29      minqa_1.2.8         jsonlite_2.0.0     
 #> [73] R6_2.6.1            systemfonts_1.3.2   fs_2.1.0
 ```
