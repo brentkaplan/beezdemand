@@ -609,9 +609,19 @@ test_that("(d) item 7: part2 = 'koff' is FULLY byte-identical to before TICKET-0
   # from the actual pre-TICKET-044 simulate_hurdle_data() source (`git show
   # 6861cdc:R/hurdle-simulate.R`, sourced standalone and run with the exact
   # same n_subjects = 5 / seed = 123 call) -- not hand-transcribed values.
+  # The fixture was generated on macOS/arm64. On other platforms (win-builder
+  # x86_64, R 4.6.1) the same seed reproduces every value to ~1e-16 relative
+  # but not bit-for-bit (libm / BLAS last-ulp differences in rnorm/chol), so
+  # the whole-object comparison uses a tight tolerance rather than
+  # identical(); structure, names, attributes and integer/character columns
+  # are still compared exactly by waldo.
   golden <- readRDS(test_path("fixtures", "golden-hurdle-koff-n5-seed123.rds"))
   current <- simulate_hurdle_data(n_subjects = 5, seed = 123)
-  expect_identical(current, golden)
+  expect_equal(current, golden, tolerance = 1e-12)
+  expect_identical(names(current), names(golden))
+  expect_identical(attr(current, "true_params"), attr(golden, "true_params"))
+  expect_identical(current$id, golden$id)
+  expect_identical(current$x, golden$x)
 })
 
 # =============================================================================
