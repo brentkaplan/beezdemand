@@ -376,6 +376,13 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   change to `converged`/`hessian_pd` semantics, EB parameter extraction, or
   the TMB templates/likelihoods.
 
+* `confint(fit, method = "simulate")` and `boot_demand()` on a TMB fit whose
+  sdreport covariance contains non-finite values (non-PD Hessian /
+  non-converged fit, platform-dependent) now stop with a classed,
+  informative error (`beezdemand_nonfinite_vcov_error`) pointing at
+  `check_demand_model()` and `fit$hessian_pd`, instead of an opaque
+  `eigen()` "infinite or missing values in 'x'" failure.
+
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
 * **Hurdle random-effects covariance `chol()` failure silently substituted an

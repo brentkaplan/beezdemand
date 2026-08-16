@@ -37,6 +37,19 @@
       "Coefficient vector ({length(mu)}) and covariance ({nrow(Sigma)} rows) are misaligned."
     )
   }
+  # A non-PD / unconverged fit can leave NaN or Inf in the sdreport
+  # covariance on some platforms; eigen() would then fail with an opaque
+  # "infinite or missing values in 'x'". Refuse it with a clear message.
+  if (!all(is.finite(Sigma))) {
+    cli::cli_abort(
+      c(
+        "Cannot draw from the fixed-effect covariance: it contains non-finite values.",
+        "i" = "This happens when the Hessian is not positive definite or the fit did not converge; see {.code check_demand_model(fit)} and {.code fit$hessian_pd}.",
+        "i" = "Parametric-bootstrap intervals are unavailable for this fit; refit (more data, fewer random effects, better starts) or fall back to {.code confint(fit, method = \"wald\")} with the same caveat."
+      ),
+      class = "beezdemand_nonfinite_vcov_error"
+    )
+  }
 
   if (!is.null(seed)) {
     if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {

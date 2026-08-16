@@ -467,6 +467,8 @@ test_that("boot_demand warns exactly once when hessian_pd is FALSE (dedup throug
   fit <- .weak_pd_tmb_fit()
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
+  skip_if(!all(is.finite(suppressWarnings(vcov(fit)))),
+          "weak fixture's covariance is non-finite on this platform (draws unavailable by design)")
 
   conds <- .capture_warning_conditions(
     res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)

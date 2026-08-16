@@ -213,10 +213,39 @@ test_that(".tmb_parametric_draws-backed confint(simulate) surfaces the hessian_p
   fit <- .weak_pd_tmb_fit()
   skip_if(!isFALSE(fit$hessian_pd),
           "platform numerics did not produce a non-PD Hessian")
+  skip_if(!all(is.finite(suppressWarnings(vcov(fit)))),
+          "weak fixture's covariance is non-finite on this platform (draws unavailable by design)")
 
   conds <- .capture_warning_conditions(
     draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
   )
   expect_identical(.n_hessian_pd_warnings(conds), 1L)
   expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+})
+
+# --- Release 0.3.0 CI fold: non-finite covariance -----------------------------
+# On some platforms (cran-everything macos-26 / R 4.6.1, run 31949621191) the
+# weak-fit fixture's sdreport covariance contains NaN/Inf; eigen() then dies
+# with the opaque "infinite or missing values in 'x'". The draws helper must
+# refuse such a covariance with a classed, informative error instead.
+
+test_that(".tmb_parametric_draws refuses a non-finite covariance with a classed error", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  fit <- .fit_apt_tmb()
+  bad <- fit
+  bad$sdr$cov.fixed[1, 1] <- NaN
+  expect_error(
+    suppressWarnings(beezdemand:::.tmb_parametric_draws(bad, R = 10, seed = 1)),
+    class = "beezdemand_nonfinite_vcov_error"
+  )
+  expect_error(
+    suppressWarnings(confint(bad, method = "simulate", R = 100, seed = 1)),
+    class = "beezdemand_nonfinite_vcov_error"
+  )
+  # A finite covariance still works (sanity for the injection approach).
+  expect_equal(
+    dim(beezdemand:::.tmb_parametric_draws(fit, R = 10, seed = 1)),
+    c(10, length(fit$model$coefficients))
+  )
 })
