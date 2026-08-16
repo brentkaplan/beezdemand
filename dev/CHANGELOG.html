@@ -32,6 +32,9 @@
     <li><a class="dropdown-item" href="articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -64,24 +67,49 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format follows Keep a Changelog and this project adheres to Semantic Versioning.</p>
 <div class="section level2">
-<h2 id="id_030"><a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0" class="external-link">0.3.0</a><a class="anchor" aria-label="anchor" href="#id_030"></a></h2>
-<p>Major feature release. See <code>NEWS.md</code> for the complete, detailed changelog (TMB mixed-effects tier <code><a href="reference/fit_demand_tmb.html">fit_demand_tmb()</a></code>, factor-expanded/multi-block random effects, cross-backend EMM/contrast harmonization, parametric bootstrap CIs).</p>
+<h2 id="id_030---2026-08-16">
+<a href="https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0" class="external-link">0.3.0</a> - 2026-08-16<a class="anchor" aria-label="anchor" href="#id_030---2026-08-16"></a></h2>
+<p>Major feature release. See <code>NEWS.md</code> for the complete, detailed changelog.</p>
+<div class="section level3">
+<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<ul><li>
+<strong>TMB mixed-effects tier</strong> <code><a href="reference/fit_demand_tmb.html">fit_demand_tmb()</a></code>: automatic differentiation, Laplace approximation, multi-start optimization, optional estimation of <code>k</code>, factor-expanded / multi-block (<code>pdBlocked</code>) random effects, continuous within-subject random slopes, and the full post-hoc surface (EMMs, contrasts, <code><a href="reference/get_subject_pars.html">get_subject_pars()</a></code>, <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr()</a></code>, <code><a href="reference/boot_demand.html">boot_demand()</a></code> / <code>confint(method = "simulate")</code> parametric-bootstrap CIs, diagnostics).</li>
+<li>
+<strong>Monte Carlo power analysis</strong>: <code><a href="reference/power_demand.html">power_demand()</a></code> and <code><a href="reference/find_n_demand.html">find_n_demand()</a></code> for within-subject and (<code>design_type = "between"</code>) between-subject designs.</li>
+<li>
+<code>simulate_hurdle_data(part2 = "snd")</code> hurdle-SND data generator.</li>
+<li>
+<code><a href="reference/get_subject_pars.html">get_subject_pars()</a></code> method for <code>beezdemand_nlme</code> fits.</li>
+<li>Vignettes: TMB mixed-effects, advanced random-effects structures, convergence troubleshooting, power analysis (precomputed).</li>
+</ul></div>
 <div class="section level3">
 <h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
 <ul><li>
-<strong>Reporting (broom convention).</strong> <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> report the Wald <code>statistic</code>/<code>p.value</code> on the estimation (log/log10) scale for every <code>report_space</code> (including the default <code>"natural"</code>); only <code>estimate</code>/<code>std.error</code> are back-transformed. This changes the default reported test statistic/p-value for the core demand parameters (Q0/alpha/k).</li>
+<strong>Bug fixes that can change estimates</strong> (see the NEWS subsection of that name; pin 0.2.0 with <code>remotes::install_version()</code> to reproduce old numbers): <code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> now uses multi-start rescue by default for subjects whose production-heuristic fit is not strict-converged; <code>zben</code> per-subject and group <code>Pmax</code>/<code>Omax</code> are computed numerically on the natural scale (adaptive domain, <code>pmax_at_bound</code> flag) instead of via the SND closed form; the EV <code>k^1.5</code> exponent fix in <code><a href="reference/get_demand_param_emms.html">get_demand_param_emms()</a></code>; legacy <code><a href="reference/FitCurves.html">FitCurves()</a></code> / <code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> batch fixes (per-subject start values no longer sticky across subjects, <code>k = "fit"</code> log10 start no longer compounds per subject, unverified <code>nlxb</code> fallback endpoints are now verified by a port refit and flagged, <code>converged</code>/<code>converged_strict</code> columns added); <code><a href="reference/GetValsForSim.html">GetValsForSim()</a></code> residual-to-price alignment.</li>
+<li>
+<strong>Reporting (broom convention).</strong> <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> report the Wald <code>statistic</code>/<code>p.value</code> on the estimation (log/log10) scale for every <code>report_space</code> (including the default <code>"natural"</code>); only <code>estimate</code>/<code>std.error</code> are back-transformed.</li>
+<li>
+<strong>Breaking:</strong> <code><a href="reference/predict.beezdemand_hurdle.html">predict.beezdemand_hurdle()</a></code> defaults to <code>type = "demand"</code> (marginal expectation) instead of <code>type = "response"</code>.</li>
+<li>Natural-space NLME <code><a href="reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> contrasts are reported as differences (with a <code>contrasts_ratio_scale</code> attribute) rather than a <code>10^</code>-exponentiated ratio; <code><a href="reference/get_demand_param_emms.html">get_demand_param_emms()</a></code> back-transforms only <code>param_space = "log10"</code> fits.</li>
+<li>
+<code>nls2</code> dropped from Imports (unused).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
 <ul><li>
-<code><a href="reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> now filters emmeans grid to observed factor combinations before computing contrasts, preventing phantom comparisons in unbalanced multi-factor designs.</li>
+<strong>Inference gates</strong>: TMB and hurdle inference surfaces (<code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code><a href="reference/boot_demand.html">boot_demand()</a></code>, EMMs, contrasts, trends) honour <code>hessian_pd</code>; NLME surfaces route through the convergence check; <code><a href="reference/check_demand_model.html">check_demand_model()</a></code> no longer reports a failed internal check as passing; failure paths in <code><a href="reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> and hurdle sdreport now name their cause.</li>
+<li>Hurdle random-effects covariance <code><a href="https://rdrr.io/r/base/chol.html" class="external-link">chol()</a></code> failures no longer silently substitute a diagonal Sigma; cross-price fitters, extractors and plot methods no longer swallow errors.</li>
+<li>Legacy fitter robustness: <code>FitCurves(equation = "linear")</code>, <code><a href="reference/ExtraF.html">ExtraF()</a></code>, <code><a href="reference/GetSharedK.html">GetSharedK()</a></code> degrade per-subject/group failures gracefully instead of aborting the batch; a failed subject no longer crashes the whole batch.</li>
+<li>
+<code><a href="reference/get_demand_comparisons.html">get_demand_comparisons()</a></code> now filters the emmeans grid to observed factor combinations before computing contrasts, preventing phantom comparisons in unbalanced multi-factor designs.</li>
+<li>NLME summary/tidy reporting (df-aware p-values shared between <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>; convergence status aligned with <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>); TMB <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr()</a></code> multi-block correlation placement; sdreport warning hygiene.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_020---2026-03-03">
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0" class="external-link">0.2.0</a> - 2026-03-03<a class="anchor" aria-label="anchor" href="#id_020---2026-03-03"></a></h2>
 <div class="section level3">
-<h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
+<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
 <ul><li>Four-tier modeling framework: legacy NLS, fixed-effect (<code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>), mixed-effects NLME (<code><a href="reference/fit_demand_mixed.html">fit_demand_mixed()</a></code>), and hurdle via TMB (<code><a href="reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code>).</li>
 <li>
 <code><a href="reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> modern S3 wrapper for individual NLS demand curves with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods.</li>
@@ -132,7 +160,7 @@
 <h2 id="id_013---2025-04-20">
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.2...v0.1.3" class="external-link">0.1.3</a> - 2025-04-20<a class="anchor" aria-label="anchor" href="#id_013---2025-04-20"></a></h2>
 <div class="section level3">
-<h3 id="added-1">Added<a class="anchor" aria-label="anchor" href="#added-1"></a></h3>
+<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
 <ul><li>Cross-price demand model suite:
 <ul><li>
 <code><a href="reference/check_unsystematic_cp.html">check_unsystematic_cp()</a></code> to detect unsystematic cross-price patterns.</li>
@@ -160,7 +188,7 @@
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.0...v0.1.2" class="external-link">0.1.2</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_012---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-2">Added<a class="anchor" aria-label="anchor" href="#added-2"></a></h3>
+<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
 <ul><li>
 <code><a href="reference/ExtraF.html">ExtraF()</a></code> gained the ability to specify a start value for alpha.</li>
 </ul></div>
@@ -180,7 +208,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.1.1%20tag%20exists.%20--">0.1.1</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_011---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-3">Added<a class="anchor" aria-label="anchor" href="#added-3"></a></h3>
+<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
 <ul><li>Experimental <code><a href="reference/FitCurves.html">FitCurves()</a></code> arguments:
 <ul><li>
 <code>constrainq0</code> to fit alpha with Q0 constrained.</li>
@@ -194,7 +222,7 @@
 <a href="https://github.com/brentkaplan/beezdemand/compare/v0.1.0...v0.1.0" class="external-link">0.1.0</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_010---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-4">Added<a class="anchor" aria-label="anchor" href="#added-4"></a></h3>
+<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
 <ul><li>Initial CRAN release.</li>
 </ul></div>
 </div>
@@ -236,7 +264,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.90%20tag%20exists.%20--">0.0.90</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0090---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-5">Added<a class="anchor" aria-label="anchor" href="#added-5"></a></h3>
+<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
 <ul><li>
 <code><a href="reference/ExtraF.html">ExtraF()</a></code> now compares both alpha and Q0.</li>
 <li>Functions now allow specifying column names where appropriate.</li>
@@ -247,7 +275,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.85%20tag%20exists.%20--">0.0.85</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0085---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-6">Added<a class="anchor" aria-label="anchor" href="#added-6"></a></h3>
+<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
 <ul><li>
 <code><a href="reference/FitCurves.html">FitCurves()</a></code> supports fitting mean/pooled data via <code>method</code> argument.</li>
 </ul></div>
@@ -269,7 +297,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.84%20tag%20exists.%20--">0.0.84</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_0084---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-7">Added<a class="anchor" aria-label="anchor" href="#added-7"></a></h3>
+<h3 id="added-8">Added<a class="anchor" aria-label="anchor" href="#added-8"></a></h3>
 <ul><li>
 <code><a href="reference/ChangeData.html">ChangeData()</a></code> introduced to replace <code><a href="reference/ReplaceZeros.html">ReplaceZeros()</a></code> and certain transformation arguments previously in <code><a href="reference/FitCurves.html">FitCurves()</a></code>.</li>
 </ul></div>
@@ -288,7 +316,7 @@
 <a href="!--%20TODO:%20Add%20compare%20link%20once%20a%20v0.0.6%20tag%20exists.%20--">0.0.6</a> - YYYY-MM-DD<a class="anchor" aria-label="anchor" href="#id_006---yyyy-mm-dd"></a></h2>
 <!-- TBD: Add actual release date -->
 <div class="section level3">
-<h3 id="added-8">Added<a class="anchor" aria-label="anchor" href="#added-8"></a></h3>
+<h3 id="added-9">Added<a class="anchor" aria-label="anchor" href="#added-9"></a></h3>
 <ul><li>
 <code><a href="reference/FitMeanCurves.html">FitMeanCurves()</a></code> for averaged or pooled data; can produce plots.</li>
 <li>

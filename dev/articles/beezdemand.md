@@ -416,11 +416,11 @@ fit_demand_fixed(data = apt, equation = "hs", k = 2)
 | 38 | Q0 | 4.497456 | 0.2146862 | NA | NA | fixed | natural | Q0 | 4.497456 |
 | 60 | Q0 | 9.924274 | 0.4591683 | NA | NA | fixed | natural | Q0 | 9.924274 |
 | 68 | Q0 | 10.390384 | 0.3290277 | NA | NA | fixed | natural | Q0 | 10.390384 |
-| 106 | Q0 | 5.683566 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683566 |
-| 113 | Q0 | 6.195949 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195949 |
+| 106 | Q0 | 5.683567 | 0.3002817 | NA | NA | fixed | natural | Q0 | 5.683567 |
+| 113 | Q0 | 6.195948 | 0.1744096 | NA | NA | fixed | natural | Q0 | 6.195948 |
 | 142 | Q0 | 6.171990 | 0.6408575 | NA | NA | fixed | natural | Q0 | 6.171990 |
-| 156 | Q0 | 8.348973 | 0.4105617 | NA | NA | fixed | natural | Q0 | 8.348973 |
-| 188 | Q0 | 6.303639 | 0.5636959 | NA | NA | fixed | natural | Q0 | 6.303639 |
+| 156 | Q0 | 8.348975 | 0.4105618 | NA | NA | fixed | natural | Q0 | 8.348975 |
+| 188 | Q0 | 6.303638 | 0.5636957 | NA | NA | fixed | natural | Q0 | 6.303638 |
 
 Parameter estimates
 ([`tidy()`](https://generics.r-lib.org/reference/tidy.html), first 10
@@ -438,14 +438,14 @@ style="width:100%;"}
 |:----|:-----|----------:|---------:|----------:|------:|
 | 19  | Q0   | 10.158665 | 9.632351 | 10.684978 |  0.95 |
 | 30  | Q0   |  2.807366 | 2.364853 |  3.249880 |  0.95 |
-| 38  | Q0   |  4.497456 | 4.076679 |  4.918233 |  0.95 |
-| 60  | Q0   |  9.924274 | 9.024320 | 10.824227 |  0.95 |
+| 38  | Q0   |  4.497456 | 4.076679 |  4.918234 |  0.95 |
+| 60  | Q0   |  9.924274 | 9.024321 | 10.824227 |  0.95 |
 | 68  | Q0   | 10.390384 | 9.745502 | 11.035267 |  0.95 |
-| 106 | Q0   |  5.683566 | 5.095025 |  6.272107 |  0.95 |
-| 113 | Q0   |  6.195949 | 5.854112 |  6.537785 |  0.95 |
-| 142 | Q0   |  6.171990 | 4.915932 |  7.428047 |  0.95 |
-| 156 | Q0   |  8.348973 | 7.544287 |  9.153660 |  0.95 |
-| 188 | Q0   |  6.303639 | 5.198816 |  7.408463 |  0.95 |
+| 106 | Q0   |  5.683567 | 5.095025 |  6.272108 |  0.95 |
+| 113 | Q0   |  6.195948 | 5.854111 |  6.537784 |  0.95 |
+| 142 | Q0   |  6.171990 | 4.915933 |  7.428048 |  0.95 |
+| 156 | Q0   |  8.348975 | 7.544289 |  9.153661 |  0.95 |
+| 188 | Q0   |  6.303638 | 5.198814 |  7.408461 |  0.95 |
 
 Confidence intervals
 ([`confint()`](https://rdrr.io/r/stats/confint.html), first 10 rows)
@@ -594,13 +594,13 @@ fit_demand_fixed(data = apt, equation = "hs", k = "share")
 | 19 | Q0 | 10.014576 | 0.2429150 | NA | NA | fixed | natural | Q0 | 10.014576 |
 | 30 | Q0 | 2.766313 | 0.2192797 | NA | NA | fixed | natural | Q0 | 2.766313 |
 | 38 | Q0 | 4.485810 | 0.2074990 | NA | NA | fixed | natural | Q0 | 4.485810 |
-| 60 | Q0 | 9.721379 | 0.4371060 | NA | NA | fixed | natural | Q0 | 9.721379 |
+| 60 | Q0 | 9.721379 | 0.4371061 | NA | NA | fixed | natural | Q0 | 9.721379 |
 | 68 | Q0 | 10.293139 | 0.3179671 | NA | NA | fixed | natural | Q0 | 10.293139 |
-| 106 | Q0 | 5.654329 | 0.2826797 | NA | NA | fixed | natural | Q0 | 5.654329 |
+| 106 | Q0 | 5.654330 | 0.2826797 | NA | NA | fixed | natural | Q0 | 5.654330 |
 | 113 | Q0 | 6.169268 | 0.1640778 | NA | NA | fixed | natural | Q0 | 6.169268 |
-| 142 | Q0 | 6.052017 | 0.6238319 | NA | NA | fixed | natural | Q0 | 6.052017 |
+| 142 | Q0 | 6.052016 | 0.6238319 | NA | NA | fixed | natural | Q0 | 6.052016 |
 | 156 | Q0 | 8.136417 | 0.3523684 | NA | NA | fixed | natural | Q0 | 8.136417 |
-| 188 | Q0 | 6.208328 | 0.4920853 | NA | NA | fixed | natural | Q0 | 6.208328 |
+| 188 | Q0 | 6.208329 | 0.4920854 | NA | NA | fixed | natural | Q0 | 6.208329 |
 
 Parameter estimates
 ([`tidy()`](https://generics.r-lib.org/reference/tidy.html), first 10
@@ -659,7 +659,7 @@ If you are interested in using open source software for analyzing demand
 curve data but don’t know `R`, please check out
 [shinybeez](https://github.com/brentkaplan/shinybeez), a free open
 source Shiny app for demand curve analysis (see the companion article
-[here](https://pubmed.ncbi.nlm.nih.gov/40103003/)).
+[here](https://doi.org/10.1002/jeab.70000)).
 
 ### Acknowledgments
 

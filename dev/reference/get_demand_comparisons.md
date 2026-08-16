@@ -113,16 +113,26 @@ A list named by parameter. Each element contains:
 
 - emmeans:
 
-  Tibble of EMMs (log10 scale) with CIs.
+  Tibble of EMMs (internal scale – log10 for `param_space = "log10"`
+  fits, natural for `param_space = "natural"` fits) with CIs.
 
 - contrasts_log10:
 
-  Tibble of comparisons (log10 differences) with CIs and p-values.
+  Tibble of comparisons (differences on the fit's internal scale,
+  despite the name – see the Details on `param_space = "natural"`) with
+  CIs and p-values.
 
 - contrasts_ratio:
 
-  (If `report_ratios=TRUE` and successful) Tibble of comparisons as
-  ratios (natural scale), with CIs for ratios.
+  (If `report_ratios=TRUE` and successful) Tibble of comparisons with
+  the same column shape (`ratio_estimate`, `LCL_ratio`, `UCL_ratio`) for
+  both spaces, but different CONTENT (TICKET-075): for
+  `param_space = "log10"` fits, a multiplicative ratio (`10^difference`,
+  fold-change on the natural scale); for `param_space = "natural"` fits,
+  the difference again (unchanged from `contrasts_log10`) – there is no
+  log-scale quantity to exponentiate for an already-natural-scale
+  difference. The returned object's `contrasts_ratio_scale` attribute is
+  `"ratio"` or `"difference"` accordingly.
 
 S3 class `beezdemand_comparison` is assigned. When `contrast_by` is
 active, the nested contrast tables carry leading by-column(s) named with
@@ -149,6 +159,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_demand_comparisons(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> Using default 'compare_specs': ~ dose for EMMs.
 #> 
 #> --- Processing comparisons for parameter: Q0 ---

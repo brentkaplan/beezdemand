@@ -36,6 +36,9 @@ observed (row-wise) metrics. Handles parameter-space conversions transparently."
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -91,7 +94,8 @@ observed (row-wise) metrics. Handles parameter-space conversions transparently.<
 
 
 <dl><dt id="arg-model-type">model_type<a class="anchor" aria-label="anchor" href="#arg-model-type"></a></dt>
-<dd><p>Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd", "simplified", or NULL</p></dd>
+<dd><p>Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd",
+"simplified", "zben", or NULL</p></dd>
 
 
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
@@ -99,6 +103,9 @@ observed (row-wise) metrics. Handles parameter-space conversions transparently.<
 <li><p>hurdle: alpha, q0, k (note: hurdle uses different formula)</p></li>
 <li><p>hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)</p></li>
 <li><p>snd/simplified: alpha, q0</p></li>
+<li><p>zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
+only – requires <code>price_obs</code> / <code>price_range</code> for the numerical search
+domain; see <code><a href="dot-pmax_numerical.html">.pmax_numerical()</a></code>)</p></li>
 </ul></dd>
 
 

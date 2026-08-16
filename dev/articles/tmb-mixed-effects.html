@@ -55,6 +55,9 @@
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -93,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-04</h4>
+            <h4 data-toc-skip class="date">2026-08-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -545,7 +548,14 @@ natural log of each RE SD, not the log10-scale SDs from
 <span><span class="co">#&gt; 3 33  0.6114842 -0.35230990 10.033098 0.007763911  6.675631 18.042997</span></span>
 <span><span class="co">#&gt; 4 40  0.1527007  0.50021504  6.341441 0.018210732  4.502903  7.692399</span></span>
 <span><span class="co">#&gt; 5 42  0.7378500 -0.89299758 11.384528 0.004521295 10.102527 30.983205</span></span>
-<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468  4.050155 0.016488790  7.786593  8.495724</span></span></code></pre></div>
+<span><span class="co">#&gt; 6 49 -0.2956502  0.40088468  4.050155 0.016488790  7.786593  8.495724</span></span>
+<span><span class="co">#&gt;   pmax_at_bound</span></span>
+<span><span class="co">#&gt; 1         FALSE</span></span>
+<span><span class="co">#&gt; 2         FALSE</span></span>
+<span><span class="co">#&gt; 3         FALSE</span></span>
+<span><span class="co">#&gt; 4         FALSE</span></span>
+<span><span class="co">#&gt; 5         FALSE</span></span>
+<span><span class="co">#&gt; 6         FALSE</span></span></code></pre></div>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spars</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">summarise</span><span class="op">(</span></span>
@@ -595,7 +605,7 @@ tiers.</p>
 <span>    Persistence_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">Persistence</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt;   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd</span></span>
-<span><span class="co">#&gt; 1   7.065932e-18    -2.846441e-18            1      0.8497968</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   7.050819e-17     -3.85976e-17            1      0.8497968</span></span></code></pre></div>
 <p>By construction, both factors are sample-standardized (mean 0, SD 1
 within the fitted dataset). For cross-sample comparisons, supply
 external <code>basis_means</code> and <code>basis_sds</code> so the
@@ -719,15 +729,15 @@ back-transform.</p>
 <code class="sourceCode R"><span><span class="co"># Subject-level parameter estimates (same as get_subject_pars)</span></span>
 <span><span class="va">pred_pars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_pars</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
-<span><span class="co">#&gt;   id        b_i     c_i    Q0   alpha  Pmax  Omax</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 16    -<span style="color: #BB0000;">0.855</span>   0.386   2.31 0.016<span style="text-decoration: underline;">2</span>  13.8   8.62</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 24     0.089<span style="text-decoration: underline;">2</span> -<span style="color: #BB0000;">0.048</span><span style="color: #BB0000; text-decoration: underline;">7</span>  5.95 0.010<span style="text-decoration: underline;">5</span>   8.31 13.3 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 33     0.611  -<span style="color: #BB0000;">0.352</span>  10.0  0.007<span style="text-decoration: underline;">76</span>  6.68 18.0 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 40     0.153   0.500   6.34 0.018<span style="text-decoration: underline;">2</span>   4.50  7.69</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 42     0.738  -<span style="color: #BB0000;">0.893</span>  11.4  0.004<span style="text-decoration: underline;">52</span> 10.1  31.0 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 49    -<span style="color: #BB0000;">0.296</span>   0.401   4.05 0.016<span style="text-decoration: underline;">5</span>   7.79  8.50</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 8</span></span></span>
+<span><span class="co">#&gt;   id        b_i     c_i    Q0   alpha  Pmax  Omax pmax_at_bound</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 16    -<span style="color: #BB0000;">0.855</span>   0.386   2.31 0.016<span style="text-decoration: underline;">2</span>  13.8   8.62 FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 24     0.089<span style="text-decoration: underline;">2</span> -<span style="color: #BB0000;">0.048</span><span style="color: #BB0000; text-decoration: underline;">7</span>  5.95 0.010<span style="text-decoration: underline;">5</span>   8.31 13.3  FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 33     0.611  -<span style="color: #BB0000;">0.352</span>  10.0  0.007<span style="text-decoration: underline;">76</span>  6.68 18.0  FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 40     0.153   0.500   6.34 0.018<span style="text-decoration: underline;">2</span>   4.50  7.69 FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 42     0.738  -<span style="color: #BB0000;">0.893</span>  11.4  0.004<span style="text-decoration: underline;">52</span> 10.1  31.0  FALSE        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 49    -<span style="color: #BB0000;">0.296</span>   0.401   4.05 0.016<span style="text-decoration: underline;">5</span>   7.79  8.50 FALSE</span></span></code></pre></div>
 <p>For <code>type = "response"</code>, the <code>level</code> argument
 controls whether predictions condition on subject random effects.
 <code>level = "subject"</code> (the default) conditions on each
@@ -797,6 +807,9 @@ curve (dark).
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $method</span></span>
 <span><span class="co">#&gt; [1] "analytic_lambert_w"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $pmax_at_bound</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $conditioned_on</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>

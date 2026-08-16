@@ -95,6 +95,18 @@ When `param = "Q0"` or `param = "alpha"`, only the columns associated
 with the requested parameter (plus factor columns and, for `"alpha"`,
 the EV block) are returned.
 
+For a `param_space = "natural"` fit (see
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)),
+the emmeans reference-grid summary IS already natural-scale, so
+`*_natural` columns are populated directly and `*_param_log10` columns
+are filled with [`log10()`](https://rdrr.io/r/base/Log.html) of them for
+column-set parity with `param_space = "log10"` fits. Because that fit is
+an unconstrained parameterization, a Wald CI bound (or, rarely, the
+point estimate itself) can be non-positive; `*_param_log10` is `NA`
+wherever the corresponding `*_natural` value is `<= 0` (log10 is
+undefined there), without raising a warning. `*_natural` itself is never
+`NA` from this.
+
 ## Examples
 
 ``` r
@@ -112,6 +124,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_demand_param_emms(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> # A tibble: 5 × 13
 #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
 #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
@@ -127,6 +142,9 @@ get_demand_param_emms(fit)
 
 # Request only Q0 columns — convenient for pivoting and plotting
 get_demand_param_emms(fit, param = "Q0")
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> # A tibble: 5 × 7
 #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
 #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>

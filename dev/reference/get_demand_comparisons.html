@@ -40,6 +40,9 @@ optionally, ratios (on the natural scale by applying 10^difference)."><meta prop
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -168,14 +171,26 @@ instead (deprecated in 0.3.0 to harmonize with the TMB backend).</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list named by parameter. Each element contains:</p>
 <dl><dt>emmeans</dt>
-<dd><p>Tibble of EMMs (log10 scale) with CIs.</p></dd>
+<dd><p>Tibble of EMMs (internal scale – log10 for
+<code>param_space = "log10"</code> fits, natural for <code>param_space = "natural"</code>
+fits) with CIs.</p></dd>
 
 <dt>contrasts_log10</dt>
-<dd><p>Tibble of comparisons (log10 differences) with CIs and p-values.</p></dd>
+<dd><p>Tibble of comparisons (differences on the fit's
+internal scale, despite the name – see the Details on
+<code>param_space = "natural"</code>) with CIs and p-values.</p></dd>
 
 <dt>contrasts_ratio</dt>
-<dd><p>(If <code>report_ratios=TRUE</code> and successful) Tibble of comparisons
-as ratios (natural scale), with CIs for ratios.</p></dd>
+<dd><p>(If <code>report_ratios=TRUE</code> and successful) Tibble of
+comparisons with the same column shape (<code>ratio_estimate</code>, <code>LCL_ratio</code>,
+<code>UCL_ratio</code>) for both spaces, but different CONTENT (TICKET-075): for
+<code>param_space = "log10"</code> fits, a multiplicative ratio
+(<code>10^difference</code>, fold-change on the natural scale); for
+<code>param_space = "natural"</code> fits, the difference again (unchanged from
+<code>contrasts_log10</code>) – there is no log-scale quantity to exponentiate
+for an already-natural-scale difference. The returned object's
+<code>contrasts_ratio_scale</code> attribute is <code>"ratio"</code> or <code>"difference"</code>
+accordingly.</p></dd>
 
 </dl><p>S3 class <code>beezdemand_comparison</code> is assigned. When <code>contrast_by</code> is active,
 the nested contrast tables carry leading by-column(s) named with the
@@ -200,6 +215,9 @@ collapse-mapped <code>dose_alpha</code>), harmonized with the TMB backend and th
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 10 (Q0: 5, alpha: 5)</span>
 <span class="r-in"><span><span class="fu">get_demand_comparisons</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> NLME fit did not pass the convergence gate; standard errors, intervals, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   derived quantities may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Hessian is not positive definite; variance estimates may be unreliable</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Using default 'compare_specs': ~ dose for EMMs.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> --- Processing comparisons for parameter: Q0 ---</span>

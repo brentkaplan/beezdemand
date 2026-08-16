@@ -146,8 +146,8 @@ boot_demand(fit, statistics = c("Pmax", "Omax", "EV"), R = 500, seed = 1)
 #> # A tibble: 3 × 6
 #>   statistic condition estimate conf.low conf.high level
 #>   <chr>     <chr>        <dbl>    <dbl>     <dbl> <dbl>
-#> 1 Pmax      NA           11.2      8.50      17.1  0.95
-#> 2 Omax      NA           23.9     18.1       32.6  0.95
-#> 3 EV        NA            3.31     1.01      11.4  0.95
+#> 1 Pmax      NA          11.2      8.50      17.1   0.95
+#> 2 Omax      NA          23.9     18.1       32.6   0.95
+#> 3 EV        NA           0.863    0.544      1.37  0.95
 # }
 ```

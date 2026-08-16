@@ -38,6 +38,9 @@ with how parameters are modeled."><meta property="og:image" content="https://bre
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -147,7 +150,12 @@ including columns for grouping factors (from <code>specs</code>), <code>paramete
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 6 (Q0: 3, alpha: 3)</span>
 <span class="r-in"><span><span class="va">trends</span> <span class="op">&lt;-</span> <span class="fu">get_demand_param_trends</span><span class="op">(</span><span class="va">fit</span>, covariates <span class="op">=</span> <span class="st">"dose_num"</span>,</span></span>
 <span class="r-in"><span>                                  specs <span class="op">=</span> <span class="op">~</span> <span class="va">drug</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>No trends could be calculated. Check 'covariates', 'specs', and 'at'.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> No trends could be calculated -- all 2 (parameter, covariate) combinations</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   failed:</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Q0 x dose_num (Can't handle an object of class “emmGrid” Use help("models",</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   package = "emmeans") for information on supported models.) and alpha x</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   dose_num (Can't handle an object of class “emmGrid” Use help("models",</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   package = "emmeans") for information on supported models.)</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

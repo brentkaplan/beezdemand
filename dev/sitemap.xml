@@ -14,6 +14,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/mixed-demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/model-selection.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/articles/power-analysis.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/tmb-advanced-random-effects.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/authors.html</loc></url>
@@ -98,9 +99,21 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-calc_alpha_star.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-calc_observed_pmax_omax.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-check_unit_elasticity.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-cp_augment_omit_reason.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-cp_extract_convergence.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-cp_warn_augment_omitted.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-cp_warn_if_nonconverged.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-elasticity_at_price.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-expand_bounds.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_apply.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_default_S.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_k_nat.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_qp_to_alpha.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_resolve_k.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_sample_alpha_low_k.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-fixed_multistart_sample_qp.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_build_tmb_data.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_chol_or_fallback.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_compute_subject_pars.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_default_starts.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_get_param_names.html</loc></url>
@@ -112,6 +125,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_hurdle_hs_stdq0.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_snd.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical_expand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_continuous_re_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-simulate_within_subject_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-standardize_params_to_natural.html</loc></url>
@@ -143,6 +157,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/dot-to_natural_scale.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/etm.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/extract_coefficients.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/find_n_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.html</loc></url>
@@ -152,6 +167,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fitted.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixed-demand.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/fixed-multistart.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_nlme.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.beezdemand_tmb.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/fixef.cp_model_lmer.html</loc></url>
@@ -226,6 +242,7 @@
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/plot_residuals.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/plot_subject.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/pmax-omax-engine.html</loc></url>
+<url><loc>https://brentkaplan.github.io/beezdemand/reference/power_demand.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_fixed.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.html</loc></url>
 <url><loc>https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_nlme.html</loc></url>

@@ -49,7 +49,20 @@ estimate) is additionally present whenever `effects` includes `"fixed"`.
 Fixed-effect rows carry `component == "fixed"` (matching
 [`tidy.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_nlme.md)
 and the nlme/lme4 convention); variance-component rows carry
-`component == "variance"`.
+`component == "variance"`. A `hessian_warning` attribute (character
+scalar, or absent) is attached depending on `x$hessian_pd`: absent (no
+attribute) when `hessian_pd` is `TRUE` or `NULL` (the field is missing
+on a legacy fit object – nothing to say); a message noting the Hessian
+is not positive definite when `hessian_pd` is `FALSE`; a message noting
+positive-definiteness is unknown (because
+[`TMB::sdreport()`](https://rdrr.io/pkg/TMB/man/sdreport.html) failed
+entirely, so SEs/CIs are unavailable, not merely unreliable) when
+`hessian_pd` is `NA`. This attribute is not printed by an ordinary
+tibble print – see
+[`summary.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md)
+or
+[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+for the surfaced versions of the same diagnostic.
 
 ## Details
 

@@ -32,6 +32,9 @@
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -83,7 +86,15 @@
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Gets values used in SimulateDemand</p>
+    <p>Gets values used in SimulateDemand. Per-subject residuals are matched to
+the returned <code>x</code> price columns by EXACT identity
+(<code>make.names(as.character(x))</code> – no numeric tolerance), so a
+subject's price values must match the global price set bit-for-bit. A
+subject missing a price contributes <code>NA</code> for that price (tolerated
+by <code>sdindex</code>'s <code>na.rm = TRUE</code>); a subject with a duplicated
+price is rejected with an informative error naming the subject and the
+duplicated price(s), since duplicate rows have no well-defined single
+residual to place in that column.</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>

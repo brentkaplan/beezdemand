@@ -2,13 +2,654 @@
 
 ## beezdemand 0.3.0
 
-This release ships the TMB mixed-effects modeling tier
-([`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md))
-along with TICKET-011 — factor-expanded and multi-block random-effects
-support, expanded subject-level reporting, and group-metrics
-conditioning. The “TMB mixed-effects modeling tier” section below is the
-original 0.3.0 introduction; subsequent sections cover TICKET-011 phase
-work added under this development cycle.
+Feature release covering everything since 0.2.0. Headline changes:
+
+- **TMB mixed-effects modeling tier**
+  ([`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md))
+  with automatic differentiation, a Laplace approximation, multi-start
+  optimization, optional estimation of `k`, factor-expanded /
+  multi-block (`pdBlocked`) and continuous within-subject random-slope
+  structures, and the full post-hoc surface (EMMs, contrasts,
+  subject-level parameters, parametric bootstrap CIs, diagnostics).
+- **Monte Carlo power analysis**
+  ([`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md),
+  [`find_n_demand()`](https://brentkaplan.github.io/beezdemand/reference/find_n_demand.md))
+  for within- and between-subject designs.
+- **Multi-start rescue is the default in
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)**
+  and the zben `Pmax`/`Omax` are computed numerically – see “Bug fixes
+  that can change estimates” for exactly which outputs can differ from
+  0.2.0 and how to pin the old numbers.
+- **Inference gates and diagnostic honesty**: TMB/hurdle/NLME inference
+  surfaces now refuse or flag results from non-converged or non-PD fits
+  instead of reporting them silently;
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  no longer reports failed checks as passing.
+- **Silent-failure fixes** in the hurdle covariance path, cross-price
+  fitters, extractors and plots, plus legacy-fitter batch robustness.
+- A hurdle-SND data simulator (`simulate_hurdle_data(part2 = "snd")`), a
+  breaking
+  [`predict.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+  default (`type = "demand"`), and the harmonized
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  / EMM API across backends.
+
+The subsections below give the per-change detail, oldest at the bottom.
+
+### Monte Carlo power analysis
+
+- [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md)
+  estimates statistical power for detecting a condition difference in
+  `Q0` or `alpha`, by simulating from the package’s mixed-effects demand
+  model and refitting each replicate with
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md).
+  Supports both a two-condition within-subject design (default) and, via
+  `design_type = "between"`, a two-arm between-subject design testing
+  the group difference; the between design composes the two arms from
+  the same simulator (one condition per arm), uses `df = n - 2`, and
+  refits per-subject intercept random effects that match its
+  data-generating process exactly. Reports the power estimate with a
+  Wilson Monte Carlo confidence interval, p-value and CI-exclusion hit
+  rates, and convergence diagnostics; non-usable fits are excluded from
+  the denominator and surfaced, never counted as misses.
+- [`find_n_demand()`](https://brentkaplan.github.io/beezdemand/reference/find_n_demand.md)
+  searches for the smallest `n_subjects` reaching a target power via
+  bisection, adding replicates adaptively where the Monte Carlo verdict
+  is ambiguous and re-confirming the selected N before reporting. Also
+  takes `design_type`.
+- Type I error calibration (both designs), convergence handling,
+  closed-form benchmarks against
+  [`pwr::pwr.t.test()`](https://rdrr.io/pkg/pwr/man/pwr.t.test.html)
+  (one- and two-sample), monotonicity, and seed reproducibility are
+  verified in the test suite; see
+  [`vignette("power-analysis")`](https://brentkaplan.github.io/beezdemand/articles/power-analysis.md)
+  for scope and validity notes.
+
+### Bug fixes that can change estimates
+
+The fixes in this subsection correct wrong numbers rather than add
+features, so outputs can differ from 0.2.0 under the stated conditions.
+Single-subject fits and paths that were already correct are unchanged.
+To reproduce the old numbers exactly, pin the previous release:
+`remotes::install_version("beezdemand", "0.2.0")`.
+
+- **Multi-start is now the default fitting protocol in
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  (TICKET-047).** Previously each subject was fit from a single
+  production-heuristic starting value; a subject whose start led to a
+  failed or at-a-bound fit was simply reported as non-converged. Now,
+  any subject whose production-heuristic fit is not strict-converged
+  (`converged_strict`: optimizer convergence AND finite coefficients/
+  objective AND not sitting on a user-supplied bound) is automatically
+  re-fit from several additional sampled starting values (8 for
+  2-parameter equations `hs`/`koff`/`simplified` with a fixed `k`, 32
+  when `k = "fit"`), and the best strict-converged result is kept.
+  Condition under which output differs from 0.2.0: **only** subjects
+  whose production-heuristic fit previously failed to converge or landed
+  on a bound — some previously non-converged/`NA` rows may now report a
+  converged fit. Subjects whose production fit was already
+  strict-converged are **never** refit and are byte-identical (this is
+  guaranteed by construction, not just tested). A sampled starting value
+  is only ever accepted as a rescue if it is BOTH strict-converged AND
+  domain-valid (natural-scale `Q0 > 0` and `Alpha > 0`); a sampled start
+  that only “succeeds” by landing in a domain-invalid region (e.g.
+  negative alpha) is never preferred over leaving the subject
+  non-converged. `fit_demand_fixed(..., multistart = FALSE)` or `S = 1`
+  restores the exact legacy single-start behavior.
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  itself is completely unchanged.
+
+- **Essential value (EV) in
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  and
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).**
+  The TMB and NLME tiers computed `EV = 1 / (100 * alpha)` for every
+  equation form, silently dropping the `k^1.5` term for k-bearing forms
+  and applying a spurious factor of 100 to the k-free SND form. Both now
+  mirror `analyze.R` exactly: `EV = 1 / (100 * alpha * k^1.5)` for
+  k-bearing forms (exponential / exponentiated, with `k` fixed or
+  fitted) and `EV = 1 / alpha` for the SND (“simplified” / `zben`) form.
+  Condition under which output differs: every `EV` point estimate, CI,
+  and bootstrap draw from these two functions; `Pmax`, `Omax`, `Qmax`,
+  and `elasticity_at_pmax` are unaffected.
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  EV values were already correct and do not change. For NLME fits built
+  with a `custom_model_formula` the equation form is unknown, so
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  now reports `EV`/`LCL_EV`/`UCL_EV` as `NA` with a warning instead of
+  applying a guessed formula.
+
+- **`residuals(fit, scale = "natural")` was scale-mixed for
+  `equation = "zben"` in the TMB tier.** `zben`’s `y_var` is the
+  caller-supplied LL4-transformed response (`ll4(y, lambda = 4)`); the
+  natural-scale residual subtracted the natural-scale fitted value from
+  that still-LL4-transformed `y_var` instead of from `ll4_inv(y_var)`,
+  so the “natural” residual was really `LL4(y) - Q_hat_natural`.
+  Condition under which output differs: `equation = "zben"` fits only,
+  and only `residuals(fit, scale = "natural")`; `scale = "model"` (the
+  default), [`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
+  [`predict()`](https://rdrr.io/r/stats/predict.html), and
+  [`augment()`](https://generics.r-lib.org/reference/augment.html) were
+  already correct. All other equation forms are unchanged
+  ([\#18](https://github.com/brentkaplan/beezdemand/issues/18)).
+
+- **`equation = "zben"` per-subject and group `Pmax`/`Omax` used the SND
+  closed form in the TMB tier.**
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  (both the fit-time and the `expanded = TRUE` computation),
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md),
+  and
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  passed `zben` fits through `model_type = "snd"`, i.e.
+  `Pmax = 1 / (alpha * Q0)`. That closed form assumes SND’s
+  `(Q0, alpha)` coupling, which does not hold for `zben`’s LL4-scale
+  exponential decay; stored `Pmax` was up to ~3.4x too small at the
+  median and rank-inverted relative to the true expenditure-maximizing
+  price. All four call sites now numerically optimize expenditure on the
+  back-transformed
+  ([`ll4_inv()`](https://brentkaplan.github.io/beezdemand/reference/ll4_inv.md)-ed)
+  natural-scale curve via
+  `beezdemand_calc_pmax_omax(model_type = "zben")`. That numerical
+  search also adaptively expands beyond the observed price domain (up to
+  6 decades) when the true expenditure-maximizing price lies outside it,
+  rather than silently returning the domain edge as `Pmax` (the fix as
+  first landed still had this domain-truncation defect; two curves
+  observed through different price ranges could report different `Pmax`
+  for an otherwise-identical fitted curve).
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  and
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  gain a `pmax_at_bound` field/column, `TRUE` only when the search’s
+  expansion cap was hit without finding the true (interior) maximum, in
+  which case `Pmax`/`Omax` are a lower-bound estimate rather than a
+  converged value;
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  does not gain a `pmax_at_bound` column (its output schema is
+  unchanged) but emits a
+  [`cli::cli_warn()`](https://cli.r-lib.org/reference/cli_abort.html)
+  naming the count of affected bootstrap draws when any occur among a
+  requested `Pmax`/`Omax`/`Qmax`/`elasticity_at_pmax` statistic.
+  Condition under which output differs: `equation = "zben"` fits only;
+  `Pmax`, `Omax`, and (where reported) `Qmax` and `elasticity_at_pmax`
+  from
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md),
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md),
+  and
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md).
+  All other equation forms are unchanged
+  ([\#19](https://github.com/brentkaplan/beezdemand/issues/19)).
+
+- **[`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  batch fitting (legacy fixed-effect engine).** Two interacting defects
+  in the per-subject loop: (1) the default Q0/alpha start values were
+  computed once from the first subject’s data and then reused (sticky)
+  for every subsequent subject instead of being recomputed per subject,
+  silently making batch estimates order- and scale-dependent; (2) when
+  the entire nls fallback chain (`wrapnlsr` → `nlxb` → `nls2`
+  brute-force) failed for a subject, an unguarded `fit$m$Rmat()`
+  dereference on the resulting try-error crashed the whole batch call
+  instead of recording that subject as non-converged. Condition under
+  which output differs from 0.2.0: any batch call (2+ subjects) where a
+  subject after the first has a different consumption scale, or where
+  any subject’s nls fallback chain fully fails. A batch that previously
+  crashed now returns one row per subject with the failing subject(s)
+  flagged non-converged; a batch that previously “succeeded” but
+  silently used a wrong start value for subjects 2..N may now report
+  different (correct, order-invariant) estimates for those subjects.
+  Single-subject calls are unchanged (they never had a sticky prior
+  subject to inherit from).
+
+- **[`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  with `k = "fit"` and `param_space = "log10"`.** The k start value’s
+  [`log10()`](https://rdrr.io/r/base/Log.html) transform was applied
+  inside the per-subject loop instead of once before it, so the
+  transform compounded on every iteration: subject 1 started from
+  `log10(K)` (correct), subject 2 from `log10(log10(K))` (silently wrong
+  for typical `K < 10`), and subject 3+ from `log10(<negative>)` =
+  `NaN`, producing non-converged rows for later subjects. Condition
+  under which output differs from 0.2.0: batch calls with `k = "fit"`,
+  `param_space = "log10"`, and 2 or more subjects — subject 1’s
+  estimates are unchanged, subjects 2+ now converge (previously
+  mis-started or NaN-started). Natural-space and
+  fixed/individual/shared-k paths are unaffected.
+
+- **[`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  reported unverified fallback endpoints as estimates, with no way to
+  tell a genuine fit from a stalled one.** When `wrapnlsr` failed and
+  the chain fell back to `nlxb`, the old code re-fit that endpoint with
+  `nls2::nls2(..., algorithm = "brute-force")` and a single-point start
+  — this is a snapshot, not a fit; it always “succeeds” and reports
+  whatever point `nlxb` stalled at, including points with a singular
+  Jacobian, as `Notes = "wrapnls failed to converge, reverted to nlxb"`
+  (indistinguishable from a genuine rescue). Separately, a numerically
+  converged fit could still land on a physiologically impossible point
+  (`Q0 <= 0` or `Alpha <= 0`, e.g. for flat or otherwise degenerate
+  data) and be reported as `Notes = "converged"` with no flag. The
+  fallback endpoint is now verified with a genuine iterative refit
+  (`stats::nls(algorithm = "port")`) that must itself report
+  `convInfo$isConv`; an endpoint that fails this verification is
+  recorded as a non-converged row
+  (`Notes = "endpoint unverified: fallback refit did not converge"`)
+  instead of being reported as an estimate; a verified rescue is
+  recorded as
+  `Notes = "wrapnls failed to converge; nlxb endpoint verified by port refit"`.
+  Results now carry `converged` (the optimizer’s own `isConv` verdict)
+  and `converged_strict` (`isConv` AND finite coefficients/objective AND
+  not at a user-supplied bound) columns. A “converged” fit with
+  non-positive Q0 and/or Alpha now also raises a
+  [`warning()`](https://rdrr.io/r/base/warning.html) naming the subject
+  and which parameter is non-positive — domain validity is signaled
+  **only** by that warning: `Notes` is never modified and
+  `converged_strict` is never demoted for a domain-invalid estimate (it
+  is only reachable in `param_space = "natural"` — the log10
+  parameterization’s `10^x` back-transform is always positive), so a
+  single subject that converges on the first `wrapnlsr` attempt keeps
+  byte-identical `Notes`/`converged`/`converged_strict` regardless of
+  domain validity. `fit_demand_fixed()$results$converged` now derives
+  from `converged_strict` instead of grepping `Notes` for failure
+  keywords — including for domain-invalid-but-numerically-converged
+  fits, which are therefore reported as `converged = TRUE` (flagged only
+  by the warning, not excluded from downstream success counts). Default
+  bounds are unchanged (still `c(-Inf, -Inf)`/`c(Inf, Inf)` unless
+  `lobound`/`hibound` are supplied — this release does not add default
+  non-negativity bounds). Condition under which output differs from
+  0.2.0: any subject whose `wrapnlsr` fit fails and falls back to `nlxb`
+  (now either genuinely verified or reported as non-converged, not a raw
+  snapshot), and any subject reported “converged” with a non-positive Q0
+  or Alpha (now also raises a warning; `Notes`, `converged`, and
+  `converged_strict` are otherwise unaffected). Subjects that converge
+  cleanly on the first `wrapnlsr` attempt are unchanged. With the
+  brute-force refit gone, `nls2` is no longer used anywhere in the
+  package and has been dropped from `Imports`.
+
+- **[`GetValsForSim()`](https://brentkaplan.github.io/beezdemand/reference/GetValsForSim.md)
+  (used by
+  [`SimulateDemand()`](https://brentkaplan.github.io/beezdemand/reference/SimulateDemand.md)’s
+  Koffarnus et al., 2015 simulation workflow) misaligned or dropped
+  per-price residuals.** Residual columns are keyed to the global price
+  set (`unique(dat$x)` order); `resid(fit)` is returned in the fitted
+  subject’s own row order. The old code assigned residuals to price
+  columns by POSITION (`dfres[i, 4:NCOL(dfres)] <- resid(fit)`), which
+  either errored (“replacement has N items, need M”) when a subject was
+  missing a price row, or — when a subject had a full but
+  differently-ordered price grid — silently placed residuals under the
+  wrong price column with no error. Since `sdindex` (per-price residual
+  SD, which directly controls simulated variance) is computed from these
+  columns, a subject whose row order didn’t match `unique(dat$x)` order
+  silently corrupted `sdindex` without any warning. Residuals are now
+  matched to price columns by price VALUE (`adf$x`, tolerating a missing
+  price as `NA`, which `sdindex`’s existing `na.rm = TRUE` already
+  handles) instead of by position. A subject whose fit fails now also
+  raises a [`warning()`](https://rdrr.io/r/base/warning.html) naming the
+  subject and cause instead of silently contributing an all-NA row.
+  Condition under which output differs from 0.2.0: any call where a
+  subject’s row order (within that subject) doesn’t match
+  `unique(dat$x)` order, or a subject is missing one or more price rows
+  (previously miscomputed `sdindex` or crashed outright; now computed
+  correctly, with `NA` for missing price cells). Subjects with a
+  complete price grid in canonical order are unchanged. Separately,
+  [`SimulateDemand()`](https://brentkaplan.github.io/beezdemand/reference/SimulateDemand.md)
+  now works in a fresh R session that has never touched the RNG
+  (`RunOneSim()` previously read `.Random.seed` unconditionally, which
+  does not exist until the RNG has been used once).
+
+- **[`run_hurdle_monte_carlo()`](https://brentkaplan.github.io/beezdemand/reference/run_hurdle_monte_carlo.md)
+  summary statistics can change.** See “Silent-failure fixes” below
+  (TICKET-062): converged replicates with a non-positive-definite
+  Hessian are no longer counted as valid Monte Carlo evidence in
+  `$summary`’s bias/coverage calculations.
+
+### Inference gates and diagnostic honesty
+
+The fixes in this subsection change *status/diagnostic* output
+(warnings, issue lists) rather than point estimates – fits that were
+correct before still return the same numbers. Two exceptions, both
+scoped to NLME `param_space = "natural"` fits: the
+[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+bullet below fixes a wrong-by-orders-of-magnitude back-transformation,
+and the
+[`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+bullet (TICKET-075) changes what a natural-space contrast reports (a
+difference, not a `10^`-exponentiated ratio); `param_space = "log10"`
+fits (the default) are unaffected by both.
+
+- **TMB and hurdle inference surfaces now honor `hessian_pd`.** When
+  [`TMB::sdreport()`](https://rdrr.io/pkg/TMB/man/sdreport.html) reports
+  a non-positive-definite Hessian (`fit$hessian_pd == FALSE`),
+  `sdr$cov.fixed` is a pseudo-inverse of an indefinite matrix – standard
+  errors, confidence intervals, p-values, and parametric draws computed
+  from it are unreliable even though the point estimates are unaffected.
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html),
+  [`confint()`](https://rdrr.io/r/stats/confint.html),
+  [`anova()`](https://rdrr.io/r/stats/anova.html) (single-fit Wald
+  test),
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md),
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md),
+  and
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  now each emit one classed warning (`beezdemand_hessian_not_pd_warning`
+  / `beezdemand_warning`) the first time they consume such a covariance,
+  for both the `beezdemand_tmb` and `beezdemand_hurdle` classes.
+  Previously only [`summary()`](https://rdrr.io/r/base/summary.html)’s
+  print method and
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  surfaced this; a user calling
+  [`confint()`](https://rdrr.io/r/stats/confint.html) or
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  directly received unreliable intervals with no indication anything was
+  wrong. Values are unchanged; healthy (PD-Hessian) fits emit no new
+  conditions.
+- **NLME inference surfaces now honor `.check_nlme_convergence()`.**
+  [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`glance()`](https://generics.r-lib.org/reference/glance.html), and
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  already gated on whether an NLME fit’s final apVar inverted cleanly;
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md),
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md),
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md),
+  [`confint()`](https://rdrr.io/r/stats/confint.html),
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+  [`get_individual_coefficients()`](https://brentkaplan.github.io/beezdemand/reference/get_individual_coefficients.md),
+  and [`anova()`](https://rdrr.io/r/stats/anova.html) (per compared
+  model) now each emit one classed warning
+  (`beezdemand_nlme_convergence_warning` / `beezdemand_warning`) on a
+  non-converged fit instead of computing inference silently.
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  also replaces a blanket `suppressWarnings(suppressMessages(...))`
+  around its internal Q0/alpha EMM calls with targeted muffling of two
+  specifically-matched benign conditions, so a real warning raised
+  inside those calls (e.g. the estimate-column-guess fallback, which
+  flags a possibly-wrong Pmax/Omax) now reaches the caller instead of
+  being silently dropped.
+  [`get_demand_param_trends()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_trends.md)
+  now warns once, naming every dropped `(parameter, covariate)`
+  combination and its cause, instead of silently shrinking the returned
+  table. Values are unchanged; converged fits emit no new conditions.
+  See also the
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  / `param_space = "natural"` bullet below, which fixes a related but
+  distinct back-transformation bug on the same NLME surface.
+- **[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  back-transformed with `10^` unconditionally, giving wrong `*_natural`
+  columns (and `EV`) for NLME fits made with
+  `param_space = "natural"`.**
+  `fit_demand_mixed(..., param_space = "natural")` fits Q0/alpha
+  directly on the natural scale (supported for
+  `equation_form = "simplified"`/`"exponentiated"`), so the raw emmeans
+  summary is already natural-scale; exponentiating it again with `10^`
+  inflated `Q0_natural`/`alpha_natural` by orders of magnitude and
+  propagated into `EV`, with no warning.
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  now resolves `param_space` the same way every other NLME surface does
+  and, for a natural-space fit, uses the emmeans summary directly for
+  the `*_natural` columns and fills `*_param_log10` with
+  [`log10()`](https://rdrr.io/r/base/Log.html) of those values (keeping
+  the same column set across both spaces). Because a natural-space fit
+  is an unconstrained parameterization, a Wald CI bound (or, rarely, the
+  point estimate) can be non-positive; `*_param_log10` is `NA` (not
+  `NaN`, and without a raw “NaNs produced” warning) wherever the
+  corresponding `*_natural` value is `<= 0` – `*_natural` itself is
+  never affected. Condition under which output differs from 0.2.0:
+  `beezdemand_nlme` fits made with `param_space = "natural"`, only in
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  (and anything built on its EV branch). `param_space = "log10"` fits
+  (the default) and the TMB tier (already space-aware) are unaffected.
+- **[`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  (NLME) had the same `param_space = "natural"` gap as the bullet above,
+  in `$contrasts_ratio`.** (TICKET-075.)
+  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html)’s
+  `estimate`/CI in `$contrasts_log10` are on the fit’s internal scale
+  (log10 for `param_space = "log10"`, natural for
+  `param_space = "natural"`); `$contrasts_ratio` always computed
+  `ratio_estimate = 10^estimate` to turn a log10-scale difference into a
+  multiplicative fold-change – meaningless for an already-natural-scale
+  difference. For `param_space = "natural"` fits, `$contrasts_ratio` now
+  reports the difference again (same column names/shape:
+  `ratio_estimate`/`LCL_ratio`/`UCL_ratio`) instead of exponentiating it
+  a second time; the returned object’s new `contrasts_ratio_scale`
+  attribute (`"ratio"` or `"difference"`) says which content a given
+  call got. `$contrasts_log10` itself was already correct (unaffected);
+  only `$contrasts_ratio`’s *content* for natural-space fits changes,
+  from a previously-meaningless number to a documented, correct one.
+  `param_space = "log10"` fits (the default) are unaffected.
+- **[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  no longer reports a failed internal check as a passing one.** The
+  fixed and hurdle residual sub-checks, and the NLME random-effects
+  sub-check, converted an internal
+  [`augment()`](https://generics.r-lib.org/reference/augment.html) /
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) error (or a
+  missing/all-NA `.resid` column) into the same clean-looking “no
+  outliers found” / “nothing near zero” result the check returns when it
+  actually ran and found nothing – so a report that never examined
+  residuals or random-effect variances printed “No issues detected”
+  indistinguishably from one that genuinely checked and passed. Each
+  sub-check now sets an explicit `computation_failed` flag, raises one
+  classed warning naming the cause, and
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  adds a “…could not be computed” issue instead of silently passing.
+  Mirrors the pattern the TMB tier’s residual check already used.
+  Healthy fits are byte-identical; only fits where one of these internal
+  checks errors are affected.
+- **[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  failure paths now name their causes.** Three gaps on the
+  failure/error-reporting side of the TMB fitter:
+  - The multi-start terminal abort (“All starting value sets failed.”)
+    previously discarded every per-start cause (hard errors were
+    [`message()`](https://rdrr.io/r/base/message.html)d only at
+    `verbose >= 2`; optimizer-sentinel causes in `opt$message` were
+    never re-read once a start was rejected). It now appends a `Causes:`
+    section naming at least one underlying cause per failed start,
+    regardless of verbosity.
+  - Total [`TMB::sdreport()`](https://rdrr.io/pkg/TMB/man/sdreport.html)
+    failure now warns regardless of `verbose` (previously gated on
+    `verbose >= 1`, so a `verbose = 0` fit failed completely silently);
+    the warning includes the fallback attempt’s message when it differs
+    from the first; the same classed warning now also fires on
+    ADREPORT/variance-component extraction failure (a previously fully
+    silent path); and `hessian_pd = NA` (meaning “unknowable because
+    sdreport failed”) is now explained via
+    [`tidy()`](https://generics.r-lib.org/reference/tidy.html)’s
+    `hessian_warning` attribute, not just
+    [`summary()`](https://rdrr.io/r/base/summary.html)’s print note.
+  - Data whose rows are entirely dropped by `equation = "exponential"`’s
+    zero-consumption filter (e.g. all-zero `y`) now aborts immediately
+    with an informative message naming the equation and the dropped-row
+    count, instead of proceeding to “fit” a 0-observation model,
+    reporting a spurious “Converged (NLL = 0.00)”, and then crashing
+    during SE extraction with a cryptic
+    `no 'dimnames' attribute for array` (the only output a `verbose = 0`
+    caller saw). Healthy fits are unaffected; no numeric output changes.
+- **[`print()`](https://rdrr.io/r/base/print.html)/[`summary()`](https://rdrr.io/r/base/summary.html)
+  for `beezdemand_hurdle` fits now surface a false-converged
+  3-random-effect fit prominently.** The 3RE spec
+  (`random_effects = c("zeros", "q0", "alpha")`) can converge according
+  to [`nlminb()`](https://rdrr.io/r/stats/nlminb.html)’s reported code
+  while the Hessian is not positive definite on real purchase task data
+  (weak identification of the alpha random effect, not a broken spec);
+  `fit$opt$message`/`fit$opt$convergence` and `fit$hessian_pd` already
+  existed but were easy to miss. Both print methods now show a warning
+  block (quoting the optimizer message) whenever `converged` is `FALSE`
+  or `hessian_pd` is `FALSE`, naming the recommended stability check:
+  refit with `random_effects = c("zeros", "q0")` and compare
+  empirical-Bayes subject parameters.
+  [`summary.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_hurdle.md)’s
+  `notes` field (previously computed but never printed by
+  [`print.summary.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/print.summary.beezdemand_hurdle.md))
+  now reaches the console. Converged, PD-Hessian fits print
+  byte-identically to before. No change to `converged`/`hessian_pd`
+  semantics, EB parameter extraction, or the TMB templates/likelihoods.
+
+### Silent-failure fixes (hurdle, cross-price, extractors, plots)
+
+- **Hurdle random-effects covariance
+  [`chol()`](https://rdrr.io/r/base/chol.html) failure silently
+  substituted an uncorrelated diagonal Sigma at five sites** (the
+  RE-transform helpers, the live
+  [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+  inline path for 2- and 3-RE models, and `.compute_marginal_demand()`’s
+  Monte Carlo draws). When the assembled covariance was not positive
+  definite (near-boundary rhos, overflow, or `tanh(raw)` rounding to
+  exactly +/-1), subject-level effects and marginal demand curves were
+  silently computed from zeroed correlations while the reported
+  `correlations`/summary rho estimates continued to show the fitted
+  values. All five sites now share
+  [`.hurdle_chol_or_fallback()`](https://brentkaplan.github.io/beezdemand/reference/dot-hurdle_chol_or_fallback.md),
+  which emits one classed warning
+  (`beezdemand_hurdle_chol_fallback_warning`) when the fallback fires.
+  Condition under which output differs: only calls where the assembled
+  Sigma is not positive definite (rare given the partial-correlation
+  parameterization); healthy (PD) fits are bit-identical and silent
+  (TICKET-061).
+
+- **[`run_hurdle_monte_carlo()`](https://brentkaplan.github.io/beezdemand/reference/run_hurdle_monte_carlo.md)
+  discarded per-replicate diagnostics and counted non-PD-Hessian fits as
+  valid Monte Carlo evidence.** Failed and non-converged replicates
+  collapsed to `NULL` with no record of why; the return value carried no
+  per-replicate status at all. Separately, a replicate that converged
+  with `hessian_pd = FALSE` passed the same filter as a clean fit and
+  contributed its (unreliable) estimate and SE to the bias/coverage
+  summary. The return value now includes `$diagnostics` (one row per
+  replicate: `sim_id`, `status` – `"error"`, `"nonconverged"`,
+  `"converged_non_pd"`, `"converged_hessian_unavailable"`, or `"clean"`
+  – `converged`, `hessian_pd`, `opt_convergence`, `opt_message`) and
+  `$n_hessian_not_pd`/`$n_hessian_unavailable`; `$estimates` gains a
+  `hessian_pd` column. `hessian_pd = NA` (i.e. `sdreport()` itself
+  failed) is kept distinct from an explicit `hessian_pd = FALSE`, since
+  they are different conditions, though both are excluded from
+  `$summary` the same way. A classed warning
+  (`beezdemand_hurdle_mc_hessian_excluded_warning`) fires naming both
+  excluded counts (e.g. “1 non-PD, 1 Hessian unavailable”) when either
+  happens. **This changes `$summary` output** for any prior run that had
+  converged-but-non-PD-Hessian or Hessian-unavailable replicates
+  (TICKET-062).
+
+- **[`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
+  discarded all backend convergence diagnostics, and
+  [`summary.cp_model_nls()`](https://brentkaplan.github.io/beezdemand/reference/summary.cp_model_nls.md)/[`confint.cp_model_nls()`](https://brentkaplan.github.io/beezdemand/reference/confint.cp_model_nls.md)
+  reported SEs, p-values, and CIs with no convergence gate.** A
+  maxiter-capped or otherwise non-converged `nlsLM`/`nls.multstart` fit
+  produced a clean-looking coefficient table with zero warnings.
+  [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
+  now returns a `convergence` field (`isConv`, `finIter`, `stopCode`,
+  `stopMessage` for the winning backend, read from `model$convInfo`;
+  populated for `nls`/`nlsLM` fits and for
+  [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html) fits
+  too when it returns a plain `nls`-class object, its usual successful
+  case; `isConv = NA` only when the winning fit carries no `convInfo` at
+  all). [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`confint()`](https://rdrr.io/r/stats/confint.html) now emit a classed
+  warning (`beezdemand_cp_nls_nonconverged_warning`) when `isConv` is
+  explicitly `FALSE`. Separately, `nlsLM_fit` is now `NULL` (never the
+  caught error condition) in the branch where `wrapnlsr` won after
+  `nlsLM` failed (TICKET-065).
+
+- **Requested plot annotations, extractor rows, and a summary CI section
+  disappeared with no condition when their computation errored.**
+  [`plot_expenditure()`](https://brentkaplan.github.io/beezdemand/reference/plot_expenditure.md)
+  (hurdle and TMB): with `show_pmax = TRUE` / `show_omax = TRUE`
+  explicitly requested, a
+  [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+  error silently omitted the annotation; now warns
+  (`beezdemand_plot_annotation_warning`) naming the cause, matching the
+  existing pattern used by `plot_compare()`.
+  [`coef.beezdemand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/coef.beezdemand_fixed.md):
+  subject rows for a stored `try-error`/`NULL` fit, or one whose
+  [`coef()`](https://rdrr.io/r/stats/coef.html) call failed, were
+  dropped with no way to tell “subject absent” from “subject failed”;
+  now warns (`beezdemand_fixed_coef_omitted_warning`) naming the dropped
+  ids.
+  [`augment.cp_model_nls()`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_nls.md)
+  /
+  [`augment.cp_model_lm()`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_lm.md)
+  /
+  [`augment.cp_model_lmer()`](https://brentkaplan.github.io/beezdemand/reference/augment.cp_model_lmer.md):
+  the documented `.fitted`/`.resid`/`.fixed` columns vanished on a
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html)/[`predict()`](https://rdrr.io/r/stats/predict.html)
+  error or a length mismatch with no indication; now warn
+  (`beezdemand_cp_augment_omitted_warning`) naming the omitted
+  column(s).
+  [`summary.cp_model_nls()`](https://brentkaplan.github.io/beezdemand/reference/summary.cp_model_nls.md):
+  a genuine
+  [`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html)
+  error (as opposed to `nlstools` simply not being installed, which
+  stays silent) silently dropped the confidence-interval section; now
+  warns (`beezdemand_cp_summary_ci_omitted_warning`). Healthy paths are
+  unaffected and remain silent throughout (TICKET-068).
+
+### Legacy fitter robustness (batch failures)
+
+- `FitCurves(equation = "linear")` (and
+  `fit_demand_fixed(equation = "linear")`) now degrades a per-subject
+  fit failure to an NA-parameter row with an informative `Notes` message
+  instead of crashing. The linear extractor (`ExtractCoefs.linear()`)
+  was missing the try-error guard its nonlinear sibling
+  (`ExtractCoefs()`) already has; on a failed `wrapnlsr` fit it
+  dereferenced the resulting try-error immediately
+  (`coef(fit)[c("l", "b", "a")]`), which raised
+  `$ operator is invalid for atomic vectors` and aborted the entire
+  batch with no per-subject failure record – reproducible even for a
+  single unfittable subject called alone. The extraction is now wrapped
+  end-to-end so a mid-extraction failure
+  ([`summary()`](https://rdrr.io/r/base/summary.html),
+  [`nlstools::confint2()`](https://rdrr.io/pkg/nlstools/man/confint2.html),
+  [`deviance()`](https://rdrr.io/r/stats/deviance.html)) also degrades
+  gracefully rather than only the initial
+  [`coef()`](https://rdrr.io/r/stats/coef.html) call.
+- [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md)
+  now reports which group’s per-group fit failed
+  (`"ExtraF: unable to fit group '<name>': ..."`) instead of an opaque
+  `no applicable method for 'predict' applied to an object of class "try-error"`.
+  [`GetSharedK()`](https://brentkaplan.github.io/beezdemand/reference/GetSharedK.md)’s
+  shared-k search (start-value grid construction and the final `nlxb()`
+  fit, neither of which was previously guarded) is now wrapped so any
+  internal failure reaches its designed sentinel return
+  (`"Unable to find a shared k."`) instead of escaping raw;
+  `FitCurves(k = "share")` can therefore actually reach its documented
+  fallback to
+  [`GetK()`](https://brentkaplan.github.io/beezdemand/reference/GetK.md)
+  with a warning, which previously could not fire because the sentinel
+  path was unreachable (the final `nlxb()` call was never wrapped in
+  [`try()`](https://rdrr.io/r/base/try.html), so the
+  `inherits(fit, "try-error")` check after it could never be true). A
+  shared-k group set that drops below 2 usable groups (after the
+  existing \<3-row-per-group drop) now returns an informative sentinel
+  instead of proceeding into a nonsensical single-group contrast.
+
+### New features
+
+- **`simulate_hurdle_data(part2 = "snd")` (TICKET-044).** Adds an SND
+  positive-part generator to the hurdle simulator, matching
+  `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly: a
+  log-linear (no `k`) mean with lognormal errors on the positive part,
+  and the same zero-inflation logistic as the existing (now
+  `part2 = "koff"`) generator. Random-effect correlations for
+  `part2 = "snd"` are specified via
+  `rho_ab_raw`/`rho_ac_raw`/`rho_bc_raw`, mirroring the TMB model’s own
+  raw-parameter coefficients exactly (`rho_ab = tanh(rho_ab_raw)`,
+  `rho_ac = tanh(rho_ac_raw)`, `rho_bc` via the LKJ-Cholesky
+  partial-correlation transform), so a fitted
+  `fit_demand_hurdle(part2 = "snd")` model’s own coefficients can be
+  plugged directly into the simulator for a parametric bootstrap or
+  recovery study. `part2` defaults to `"koff"`, and its output is
+  byte-identical to previous releases.
+
+- `simulate_hurdle_data(seed = )` and `run_hurdle_monte_carlo(seed = )`
+  no longer overwrite the caller’s RNG stream: the global `.Random.seed`
+  is restored on exit (or removed if none existed), matching what
+  [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md),
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  and the TMB parametric-draw helpers already guaranteed. Simulated
+  outputs for a given `seed` are unchanged.
 
 ### Continuous within-subject random slopes in `fit_demand_tmb()`
 
@@ -319,7 +960,7 @@ work added under this development cycle.
 - **Deprecation (NLME):** `get_demand_comparisons(params_to_compare = )`
   is deprecated in favor of `param`. Supplying both is an error.
 
-- Developer-facing (unreleased TMB API):
+- TMB API (new in this release, so no released code is affected):
   [`get_demand_comparisons.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md)
   renames `p_adjust` to `adjust` (no alias) and validates it against
   [`stats::p.adjust.methods`](https://rdrr.io/r/stats/p.adjust.html);
@@ -910,8 +1551,8 @@ glue.
   `equation_form`, matching `glance(fit_nlme)`. There is no aliased
   `equation` column. The
   [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
-  API is unreleased (0.3.0 development), so no released code depends on
-  the old name.
+  API is new in 0.3.0 (this rename happened during its development), so
+  no released code depends on the old name.
 - **Breaking change.** `tidy(fit_tmb)` labels fixed-effect rows
   `component == "fixed"` instead of `"consumption"`, matching
   `tidy(fit_nlme)` and the `nlme` / `lme4` convention. Code filtering
@@ -1003,7 +1644,11 @@ development cycle.
   `get_demand_comparisons`, and visualization (`plot`, `plot_qq`,
   `plot_loss_surface`, `plot_loss_profile`, `plot_re_diagnostics`,
   `plot_alpha_distribution`, `plot_elasticity`, `plot_expenditure`,
-  `plot_demand_overlay`).
+  `plot_demand_overlay`, and the cross-model forest plot
+  [`plot_model_comparison()`](https://brentkaplan.github.io/beezdemand/reference/plot_model_comparison.md),
+  which compares parameter estimates and CIs across any fitted demand
+  models via their
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) methods).
 
 - `vignettes/tmb-mixed-effects.Rmd` walks through the full TMB workflow
   (equations, random-effect structures, diagnostics) with cache-aware

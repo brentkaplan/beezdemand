@@ -48,27 +48,26 @@ backend, by design).
 ``` r
 # \donttest{
 data(apt_full)
-dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+# 40 subjects per gender keep the example fast; use the full data in practice
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender %in% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+dat <- apt_full[apt_full$id %in% keep, ]
 fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
-#>   equation='exponential': Dropped 5839 zero-consumption observations (12827 remaining).
-#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
-#>   `TMB::sdreport()`).
-#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
-#>   `summary()` diagnostics.
+#>   equation='exponential': Dropped 501 zero-consumption observations (859 remaining).
 res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
-#> Warning: NaNs produced
 tidy(res)
 #> # A tibble: 2 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - … -0.105      0.0177    -5.89    Inf  -0.139    -0.0697 3.84e-9
-#> 2 alpha Female - …  0.00626    0.0213     0.295   Inf  -0.0354    0.0480 7.68e-1
+#> 1 Q0    Female - …  -0.236     0.0686    -3.45    Inf   -0.371    -0.102 5.69e-4
+#> 2 alpha Female - …   0.0358    0.0849     0.422   Inf   -0.131     0.202 6.73e-1
 tidy(res, exponentiate = TRUE)
 #> # A tibble: 2 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - …    0.786        NA    -5.89    Inf    0.726     0.852 3.84e-9
-#> 2 alpha Female - …    1.01         NA     0.295   Inf    0.922     1.12  7.68e-1
+#> 1 Q0    Female - …    0.580        NA    -3.45    Inf    0.426     0.791 5.69e-4
+#> 2 alpha Female - …    1.09         NA     0.422   Inf    0.740     1.59  6.73e-1
 # }
 ```

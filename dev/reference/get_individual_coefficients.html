@@ -38,6 +38,9 @@ structure and calculates coefficients for each individual and factor level."><me
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -147,6 +150,9 @@ For models with factors, both intercept and factor-level coefficients are provid
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 6 (Q0: 3, alpha: 3)</span>
 <span class="r-in"><span><span class="va">individual_coefs</span> <span class="op">&lt;-</span> <span class="fu">get_individual_coefficients</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> NLME fit did not pass the convergence gate; standard errors, intervals, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   derived quantities may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Hessian is not positive definite; variance estimates may be unreliable</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">individual_coefs</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   id estimated_Q0_intercept estimated_Q0_drugFentanyl</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  A               2.133994                  1.969328</span>

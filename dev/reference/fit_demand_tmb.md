@@ -457,7 +457,7 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 171.10 (start set 2 of 3)
+#>   Multi-start: best NLL = 170.93 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
@@ -471,28 +471,31 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   `summary()` diagnostics.
 #> Done.
 
-# With covariates
+# With covariates (a 30-per-gender subset keeps the example fast)
 data(apt_full)
-fit3 <- fit_demand_tmb(apt_full, y_var = "y", x_var = "x", id_var = "id",
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender %in% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 30))
+dat <- apt_full[apt_full$id %in% keep, ]
+fit3 <- fit_demand_tmb(dat, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponential", factors = "gender")
 #> Fitting TMB mixed-effects demand model...
 #>   Equation: exponential
-#>   equation='exponential': Dropped 5861 zero-consumption observations (12839 remaining).
-#>   Subjects: 1090, Observations: 12839
+#>   equation='exponential': Dropped 370 zero-consumption observations (650 remaining).
+#>   Subjects: 59, Observations: 650
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
-#>   Design matrices: X_q0 [12839 x 3], X_alpha [12839 x 3]
+#>   Design matrices: X_q0 [650 x 2], X_alpha [650 x 2]
 #>   Optimizing...
-#>   Multi-start: best NLL = 3301.57 (start set 1 of 3)
-#>   Converged (NLL = 3301.57)
+#>   Multi-start: best NLL = 175.98 (start set 3 of 3)
+#>   Converged (NLL = 175.98)
 #>   Computing standard errors...
 #> Done.
 get_demand_param_emms(fit3, param = "alpha")
-#> # A tibble: 3 × 6
-#>   level                       estimate estimate_log std.error conf.low conf.high
-#>   <chr>                          <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female                0.00739        -4.91    0.0456  6.76e-3   0.00808
-#> 2 gender=Male                  0.00626        -5.07    0.0475  5.70e-3   0.00687
-#> 3 gender=Would rather not say  0.00290        -5.84    2.92    9.43e-6   0.890  
+#> # A tibble: 2 × 6
+#>   level         estimate estimate_log std.error conf.low conf.high
+#>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
+#> 1 gender=Female  0.00811        -4.81     0.202  0.00546    0.0121
+#> 2 gender=Male    0.00835        -4.79     0.183  0.00583    0.0119
 # }
 
 # Factor-expanded random slopes on a within-subject factor are supported

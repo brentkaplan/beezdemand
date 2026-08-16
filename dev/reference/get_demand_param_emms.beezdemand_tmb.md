@@ -72,27 +72,25 @@ vector equals averaging the per-cell parameter predictions.
 ``` r
 # \donttest{
 data(apt_full)
-dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+# 40 subjects per gender keep the example fast; use the full data in practice
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender %in% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+dat <- apt_full[apt_full$id %in% keep, ]
 fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
-#>   equation='exponential': Dropped 5839 zero-consumption observations (12827 remaining).
-#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
-#>   `TMB::sdreport()`).
-#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
-#>   `summary()` diagnostics.
+#>   equation='exponential': Dropped 501 zero-consumption observations (859 remaining).
 get_demand_param_emms(fit, param = "Q0")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female     5.03         1.62    0.0270     4.77      5.30
-#> 2 gender=Male       6.40         1.86    0.0310     6.02      6.80
+#> 1 gender=Female     4.49         1.50     0.113     3.59      5.61
+#> 2 gender=Male       7.74         2.05     0.110     6.24      9.60
 get_demand_param_emms(fit, param = "alpha")
-#> Warning: NaNs produced
-#> Warning: NaNs produced
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female  0.00320        -5.74       NaN      NaN       NaN
-#> 2 gender=Male    0.00316        -5.76       NaN      NaN       NaN
+#> 1 gender=Female  0.0102         -4.59     0.169  0.00730    0.0142
+#> 2 gender=Male    0.00937        -4.67     0.154  0.00693    0.0127
 # }
 ```

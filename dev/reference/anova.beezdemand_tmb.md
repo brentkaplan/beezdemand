@@ -76,20 +76,25 @@ that order.
 ``` r
 # \donttest{
 data(apt_full)
-fit <- fit_demand_tmb(apt_full, equation = "exponential",
+# 40 subjects per gender keep the example fast; use the full data in practice
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender %in% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+dat <- apt_full[apt_full$id %in% keep, ]
+fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
-#>   equation='exponential': Dropped 5861 zero-consumption observations (12839 remaining).
+#>   equation='exponential': Dropped 501 zero-consumption observations (859 remaining).
 anova(fit)
 #> # A tibble: 2 × 4
-#>   Group          Chisq    df  p.value
-#>   <chr>          <dbl> <int>    <dbl>
-#> 1 Q0 ~ gender     46.0     2 1.04e-10
-#> 2 alpha ~ gender  10.1     2 6.35e- 3
+#>   Group           Chisq    df  p.value
+#>   <chr>           <dbl> <int>    <dbl>
+#> 1 Q0 ~ gender    11.9       1 0.000569
+#> 2 alpha ~ gender  0.178     1 0.673   
 anova(fit, group_by = "parameter")
 #> # A tibble: 2 × 4
-#>   Group  Chisq    df p.value
-#>   <chr>  <dbl> <int>   <dbl>
-#> 1 Q0     6339.     3       0
-#> 2 alpha 16872.     3       0
+#>   Group Chisq    df   p.value
+#>   <chr> <dbl> <int>     <dbl>
+#> 1 Q0     521.     2 9.15e-114
+#> 2 alpha 1305.     2 3.47e-284
 # }
 ```

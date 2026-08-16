@@ -402,6 +402,16 @@ Functions for simulating demand data.
 - [`GetValsForSim()`](https://brentkaplan.github.io/beezdemand/reference/GetValsForSim.md)
   : Get Values for SimulateDemand
 
+## Power Analysis
+
+Monte Carlo power estimation and sample-size search for within-subject
+demand designs.
+
+- [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md)
+  : Monte Carlo power analysis for two-condition demand designs
+- [`find_n_demand()`](https://brentkaplan.github.io/beezdemand/reference/find_n_demand.md)
+  : Find the smallest sample size reaching a target power (demand)
+
 ## Summary Methods
 
 Summary functions for parameter exploration.

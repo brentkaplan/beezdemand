@@ -120,19 +120,19 @@ for the backend-agnostic frame.
 ``` r
 # \donttest{
 data(apt_full)
-dat <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+# 40 subjects per gender keep the example fast; use the full data in practice
+ids <- unique(apt_full[c("id", "gender")])
+ids <- ids[ids$gender %in% c("Male", "Female"), ]
+keep <- unlist(lapply(split(ids$id, ids$gender), head, 40))
+dat <- apt_full[apt_full$id %in% keep, ]
 fit <- fit_demand_tmb(dat, equation = "exponential",
                       factors = "gender", verbose = 0)
-#>   equation='exponential': Dropped 5839 zero-consumption observations (12827 remaining).
-#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
-#>   `TMB::sdreport()`).
-#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
-#>   `summary()` diagnostics.
+#>   equation='exponential': Dropped 501 zero-consumption observations (859 remaining).
 res <- get_demand_comparisons(fit, param = "Q0")
 tidy(res)
 #> # A tibble: 1 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - …   -0.105    0.0177     -5.89   Inf   -0.139   -0.0697 3.84e-9
+#> 1 Q0    Female - …   -0.236    0.0686     -3.45   Inf   -0.371    -0.102 5.69e-4
 # }
 ```

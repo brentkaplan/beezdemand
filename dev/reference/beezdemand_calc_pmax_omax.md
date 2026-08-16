@@ -27,7 +27,7 @@ beezdemand_calc_pmax_omax(
 - model_type:
 
   Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd",
-  "simplified", or NULL
+  "simplified", "zben", or NULL
 
 - params:
 
@@ -40,6 +40,11 @@ beezdemand_calc_pmax_omax(
   - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 
   - snd/simplified: alpha, q0
+
+  - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical
+    fallback only – requires `price_obs` / `price_range` for the
+    numerical search domain; see
+    [`.pmax_numerical()`](https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.md))
 
 - param_scales:
 

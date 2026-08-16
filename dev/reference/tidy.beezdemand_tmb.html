@@ -32,6 +32,9 @@
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -110,7 +113,18 @@ and <code>term_display</code>. An <code>estimate_internal</code> column (the pre
 estimate) is additionally present whenever <code>effects</code> includes
 <code>"fixed"</code>. Fixed-effect rows carry <code>component == "fixed"</code> (matching
 <code><a href="tidy.beezdemand_nlme.html">tidy.beezdemand_nlme()</a></code> and the nlme/lme4 convention);
-variance-component rows carry <code>component == "variance"</code>.</p>
+variance-component rows carry <code>component == "variance"</code>. A
+<code>hessian_warning</code> attribute (character scalar, or absent) is attached
+depending on <code>x$hessian_pd</code>: absent (no attribute) when <code>hessian_pd</code>
+is <code>TRUE</code> or <code>NULL</code> (the field is missing on a legacy fit object –
+nothing to say); a message noting the Hessian is not positive definite
+when <code>hessian_pd</code> is <code>FALSE</code>; a message noting
+positive-definiteness is unknown (because <code><a href="https://rdrr.io/pkg/TMB/man/sdreport.html" class="external-link">TMB::sdreport()</a></code> failed
+entirely, so SEs/CIs are unavailable, not merely unreliable) when
+<code>hessian_pd</code> is <code>NA</code>. This attribute is not printed by an ordinary
+tibble print – see <code><a href="summary.beezdemand_tmb.html">summary.beezdemand_tmb()</a></code> or
+<code><a href="check_demand_model.html">check_demand_model()</a></code> for the surfaced versions of the same
+diagnostic.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

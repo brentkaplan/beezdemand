@@ -38,6 +38,9 @@ natural, back-transformed scale. Optionally includes Essential Value (EV)."><met
     <li><a class="dropdown-item" href="../articles/hurdle-demand-models.html">Hurdle Demand Models</a></li>
     <li><a class="dropdown-item" href="../articles/cross-price-models.html">Cross-Price Models</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Study Planning</h6></li>
+    <li><a class="dropdown-item" href="../articles/power-analysis.html">Power Analysis</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Troubleshooting</h6></li>
     <li><a class="dropdown-item" href="../articles/convergence-guide.html">Understanding Convergence</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -154,6 +157,15 @@ with their respective confidence intervals (LCL_Q0_natural, UCL_Q0_natural, etc.
 </dl><p>When <code>param = "Q0"</code> or <code>param = "alpha"</code>, only the columns associated with
 the requested parameter (plus factor columns and, for <code>"alpha"</code>, the EV
 block) are returned.</p>
+<p>For a <code>param_space = "natural"</code> fit (see <code><a href="fit_demand_mixed.html">fit_demand_mixed()</a></code>), the
+emmeans reference-grid summary IS already natural-scale, so
+<code>*_natural</code> columns are populated directly and <code>*_param_log10</code> columns
+are filled with <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10()</a></code> of them for column-set parity with
+<code>param_space = "log10"</code> fits. Because that fit is an unconstrained
+parameterization, a Wald CI bound (or, rarely, the point estimate
+itself) can be non-positive; <code>*_param_log10</code> is <code>NA</code> wherever the
+corresponding <code>*_natural</code> value is <code>&lt;= 0</code> (log10 is undefined there),
+without raising a warning. <code>*_natural</code> itself is never <code>NA</code> from this.</p>
     </div>
 
     <div class="section level2">
@@ -172,6 +184,9 @@ block) are returned.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Start values (first few): Q0_int=2.27, alpha_int=-3</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Number of fixed parameters: 10 (Q0: 5, alpha: 5)</span>
 <span class="r-in"><span><span class="fu">get_demand_param_emms</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> NLME fit did not pass the convergence gate; standard errors, intervals, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   derived quantities may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Hessian is not positive definite; variance estimates may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
@@ -187,6 +202,9 @@ block) are returned.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Request only Q0 columns — convenient for pivoting and plotting</span></span></span>
 <span class="r-in"><span><span class="fu">get_demand_param_emms</span><span class="op">(</span><span class="va">fit</span>, param <span class="op">=</span> <span class="st">"Q0"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> NLME fit did not pass the convergence gate; standard errors, intervals, and</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   derived quantities may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Hessian is not positive definite; variance estimates may be unreliable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>

@@ -89,6 +89,9 @@ calc_group_metrics(fit)
 #> $method
 #> [1] "analytic_lambert_w"
 #> 
+#> $pmax_at_bound
+#> [1] FALSE
+#> 
 #> $conditioned_on
 #> NULL
 #> 

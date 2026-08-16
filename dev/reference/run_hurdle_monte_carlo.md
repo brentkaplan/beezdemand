@@ -61,7 +61,9 @@ A list with:
 
 - estimates:
 
-  Data frame of parameter estimates from each simulation
+  Data frame of parameter estimates from each converged simulation
+  (includes non-PD-Hessian replicates, flagged via a `hessian_pd`
+  column, for callers that want them)
 
 - true_params:
 
@@ -69,15 +71,39 @@ A list with:
 
 - summary:
 
-  Summary statistics including bias, SE ratio, and coverage
+  Summary statistics including bias, SE ratio, and coverage, computed
+  only from replicates that converged with a positive-definite Hessian
+  (`diagnostics$status == "clean"`); converged-but-non-PD and
+  converged-but-Hessian-unavailable replicates are excluded (TICKET-062)
+  since their SEs are unreliable or unknown
 
 - n_converged:
 
-  Number of simulations that converged
+  Number of simulations that converged (regardless of Hessian
+  positive-definiteness/availability; unchanged definition)
 
 - n_sim:
 
   Total number of simulations attempted
+
+- diagnostics:
+
+  Data frame with one row per simulation: `sim_id`, `status` (`"error"`,
+  `"nonconverged"`, `"converged_non_pd"`,
+  `"converged_hessian_unavailable"`, or `"clean"`), `converged`,
+  `hessian_pd` (`TRUE`/`FALSE`/`NA` – `NA` means `sdreport()` itself
+  failed, a different condition from an explicit non-PD Hessian),
+  `opt_convergence`, and `opt_message`
+
+- n_hessian_not_pd:
+
+  Number of converged replicates excluded from `summary` because
+  `hessian_pd` was explicitly `FALSE`
+
+- n_hessian_unavailable:
+
+  Number of converged replicates excluded from `summary` because
+  `hessian_pd` was `NA` (Hessian PD status unavailable)
 
 ## See also
 
@@ -88,34 +114,32 @@ A list with:
 
 ``` r
 # \donttest{
-# Run small simulation study (for demonstration)
-mc_results <- run_hurdle_monte_carlo(n_sim = 10, n_subjects = 50, seed = 123)
-#> Running 10 Monte Carlo simulations...
-#>   Simulation 10/10
-#> Done. 10/10 simulations converged (100.0%).
+# Tiny simulation study for demonstration (use n_sim >= 200 in practice)
+mc_results <- run_hurdle_monte_carlo(n_sim = 5, n_subjects = 30, seed = 123,
+                                     verbose = FALSE)
 
 # View summary
 print(mc_results$summary)
-#>             parameter true_value mean_estimate          bias relative_bias_pct
-#> beta0           beta0 -2.0000000    -1.9943656  0.0056343897        0.28171948
-#> beta1           beta1  1.0000000     0.9563567 -0.0436432966       -4.36432966
-#> log_q0         log_q0  2.3025851     2.3060416  0.0034565568        0.15011636
-#> k                   k  2.0000000            NA            NA                NA
-#> alpha           alpha  0.5000000            NA            NA                NA
-#> logsigma_a logsigma_a  0.0000000    -0.8292708 -0.8292707526                NA
-#> logsigma_b logsigma_b -0.6931472    -0.7515787 -0.0584315206       -8.42988650
-#> logsigma_e logsigma_e -1.2039728    -1.2031988  0.0007740471        0.06429108
-#> rho_ab_raw rho_ab_raw  0.3095196     3.3914059  3.0818862996      995.69987094
+#>             parameter true_value mean_estimate        bias relative_bias_pct
+#> beta0           beta0 -2.0000000    -2.2871469 -0.28714691        -14.357346
+#> beta1           beta1  1.0000000     1.3025973  0.30259730         30.259730
+#> log_q0         log_q0  2.3025851     2.3161793  0.01359416          0.590387
+#> k                   k  2.0000000            NA          NA                NA
+#> alpha           alpha  0.5000000            NA          NA                NA
+#> logsigma_a logsigma_a  0.0000000    -0.6157705 -0.61577047                NA
+#> logsigma_b logsigma_b -0.6931472    -0.6506238  0.04252333          6.134820
+#> logsigma_e logsigma_e -1.2039728    -1.2691137 -0.06514086         -5.410493
+#> rho_ab_raw rho_ab_raw  0.3095196     1.4204457  1.11092607        358.919452
 #>            empirical_se      mean_se    se_ratio coverage_95 n_valid
-#> beta0        0.17283314 2.928410e-01   1.6943567           1      10
-#> beta1        0.32768830 4.440363e-01   1.3550569           1      10
-#> log_q0       0.05897284 7.716464e-02   1.3084777           1      10
+#> beta0        0.30483277   0.50790202   1.6661661         1.0       5
+#> beta1        0.34516913   0.79426872   2.3011001         1.0       5
+#> log_q0       0.07302744   0.10642173   1.4572841         1.0       5
 #> k                    NA           NA          NA          NA       0
 #> alpha                NA           NA          NA          NA       0
-#> logsigma_a   1.02444987 1.095008e+00   1.0688738           1      10
-#> logsigma_b   0.07955811 1.110739e-01   1.3961355           1      10
-#> logsigma_e   0.05163320 4.697075e-02   0.9097006           1      10
-#> rho_ab_raw   4.07800960 1.152679e+03 282.6573410           1      10
+#> logsigma_a   1.36074207   1.42004301   1.0435799         1.0       5
+#> logsigma_b   0.09177586   0.13790528   1.5026314         1.0       5
+#> logsigma_e   0.09265646   0.05896088   0.6363386         0.6       5
+#> rho_ab_raw   3.00042161 834.73811178 278.2069392         1.0       5
 
 # Check convergence rate
 cat("Convergence rate:", mc_results$n_converged / mc_results$n_sim, "\n")

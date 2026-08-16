@@ -26,4 +26,4 @@ nobs(object, ...)
 
 ## Value
 
-Integer scalar — the number of observations the model was fit on.
+Integer scalar – the number of observations the model was fit on.

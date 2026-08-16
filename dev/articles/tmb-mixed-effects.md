@@ -449,6 +449,13 @@ head(spars)
 #> 4 40  0.1527007  0.50021504  6.341441 0.018210732  4.502903  7.692399
 #> 5 42  0.7378500 -0.89299758 11.384528 0.004521295 10.102527 30.983205
 #> 6 49 -0.2956502  0.40088468  4.050155 0.016488790  7.786593  8.495724
+#>   pmax_at_bound
+#> 1         FALSE
+#> 2         FALSE
+#> 3         FALSE
+#> 4         FALSE
+#> 5         FALSE
+#> 6         FALSE
 ```
 
 ``` r
@@ -505,7 +512,7 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1   7.065932e-18    -2.846441e-18            1      0.8497968
+#> 1   7.050819e-17     -3.85976e-17            1      0.8497968
 ```
 
 By construction, both factors are sample-standardized (mean 0, SD 1
@@ -649,15 +656,15 @@ predict(fit_2re, type = "demand", prices = c(0, 0.5, 1, 2, 5, 10, 20))
 # Subject-level parameter estimates (same as get_subject_pars)
 pred_pars <- predict(fit_2re, type = "parameters")
 head(pred_pars)
-#> # A tibble: 6 × 7
-#>   id        b_i     c_i    Q0   alpha  Pmax  Omax
-#>   <chr>   <dbl>   <dbl> <dbl>   <dbl> <dbl> <dbl>
-#> 1 16    -0.855   0.386   2.31 0.0162  13.8   8.62
-#> 2 24     0.0892 -0.0487  5.95 0.0105   8.31 13.3 
-#> 3 33     0.611  -0.352  10.0  0.00776  6.68 18.0 
-#> 4 40     0.153   0.500   6.34 0.0182   4.50  7.69
-#> 5 42     0.738  -0.893  11.4  0.00452 10.1  31.0 
-#> 6 49    -0.296   0.401   4.05 0.0165   7.79  8.50
+#> # A tibble: 6 × 8
+#>   id        b_i     c_i    Q0   alpha  Pmax  Omax pmax_at_bound
+#>   <chr>   <dbl>   <dbl> <dbl>   <dbl> <dbl> <dbl> <lgl>        
+#> 1 16    -0.855   0.386   2.31 0.0162  13.8   8.62 FALSE        
+#> 2 24     0.0892 -0.0487  5.95 0.0105   8.31 13.3  FALSE        
+#> 3 33     0.611  -0.352  10.0  0.00776  6.68 18.0  FALSE        
+#> 4 40     0.153   0.500   6.34 0.0182   4.50  7.69 FALSE        
+#> 5 42     0.738  -0.893  11.4  0.00452 10.1  31.0  FALSE        
+#> 6 49    -0.296   0.401   4.05 0.0165   7.79  8.50 FALSE
 ```
 
 For `type = "response"`, the `level` argument controls whether
@@ -734,6 +741,9 @@ calc_group_metrics(fit_2re)
 #> 
 #> $method
 #> [1] "analytic_lambert_w"
+#> 
+#> $pmax_at_bound
+#> [1] FALSE
 #> 
 #> $conditioned_on
 #> NULL
