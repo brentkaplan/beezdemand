@@ -86,6 +86,13 @@ jobs:
           Rscript -e 'library(TMB); cat("TMB", as.character(packageVersion("TMB")), "loads OK\n")'
         shell: bash
 
+      - name: Install the package
+        # A normal (optimised) install. pkgload::load_all() would compile
+        # src/ with pkgbuild's debug flags (-O0 -g), and on Windows the TMB
+        # object then exceeds the COFF section limit ("file too big").
+        run: R CMD INSTALL --no-docs --no-multiarch .
+        shell: bash
+
       - name: Run the heavy test files (serial, streaming reporter)
         # Only the BEEZ_FULL_TESTS-gated files (the rest run in R-CMD-check).
         # Serial (TESTTHAT_PARALLEL=false above) + the `progress` reporter
@@ -95,8 +102,11 @@ jobs:
           source("tests/testthat/helper-full-tests.R")
           heavy <- .beez_full_test_files
           cat("Heavy files:", paste(heavy, collapse = ", "), "\n")
-          testthat::test_local(
-            ".",
+          library(testthat)
+          testthat::test_dir(
+            "tests/testthat",
+            package = "beezdemand",
+            load_package = "installed",
             filter = paste0("^(", paste(heavy, collapse = "|"), ")$"),
             reporter = "progress",
             stop_on_failure = TRUE
