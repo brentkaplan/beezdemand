@@ -1,0 +1,104 @@
+# Heavy test files (TICKET-070 / release-train Q14a).
+#
+# R-CMD-check.yaml runs the suite with NOT_CRAN=true, but the hosted Linux
+# runners kill a long, output-silent `checking tests` phase (the stochastic
+# "runner received a shutdown signal" / lost-communication SIGTERM documented
+# in project memory). The heaviest Monte-Carlo files are therefore gated
+# behind BEEZ_FULL_TESTS=true (see tests/testthat/helper-full-tests.R) and run
+# HERE, on all three OSes, through a STREAMING reporter so the runner sees
+# continuous output. This job must be green on every release SHA.
+#
+# The pre-push hook (dev/run-tests.R, full mode) sets BEEZ_FULL_TESTS=true so
+# the local gate still runs everything.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'   # weekly, Monday 06:17 UTC
+
+name: full-tests
+
+permissions: read-all
+
+jobs:
+  full-tests:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-15,       r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      NOT_CRAN: true
+      BEEZ_FULL_TESTS: true
+      # Serial on purpose: under parallel workers testthat buffers a file's
+      # events until the file finishes, so the ~36-min power file would be
+      # silent and trip the runner's lost-communication kill. Serial +
+      # progress reporter streams every test as it completes.
+      TESTTHAT_PARALLEL: false
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      BLIS_NUM_THREADS: 1
+      VECLIB_MAXIMUM_THREADS: 1
+      R_DATATABLE_NUM_THREADS: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          use-public-rspm: true
+
+      - name: Work around ubuntu apt azure-cli repo 403
+        if: runner.os == 'Linux'
+        run: |
+          set -euxo pipefail
+          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/azure-cli.sources || true
+          sudo apt-get update
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgload, any::testthat
+          needs: check
+
+      - name: Rebuild TMB from source against libomp (macOS)
+        # Same repair as R-CMD-check.yaml: the prebuilt CRAN TMB binary on the
+        # macOS arm64 runners references OpenMP without linking libomp.
+        if: runner.os == 'macOS'
+        run: |
+          set -euxo pipefail
+          brew install libomp
+          LOMP="$(brew --prefix libomp)"
+          mkdir -p ~/.R
+          {
+            echo "CPPFLAGS += -Xclang -fopenmp -I${LOMP}/include"
+            echo "LDFLAGS += -L${LOMP}/lib -lomp -Wl,-rpath,${LOMP}/lib"
+          } >> ~/.R/Makevars
+          Rscript -e 'install.packages("TMB", type = "source", repos = "https://cloud.r-project.org", lib = .libPaths()[1])'
+          Rscript -e 'library(TMB); cat("TMB", as.character(packageVersion("TMB")), "loads OK\n")'
+        shell: bash
+
+      - name: Run the heavy test files (serial, streaming reporter)
+        # Only the BEEZ_FULL_TESTS-gated files (the rest run in R-CMD-check).
+        # Serial (TESTTHAT_PARALLEL=false above) + the `progress` reporter
+        # writes each test's result to stdout as it completes, which is what
+        # keeps the hosted runner from killing a long CPU-bound phase.
+        run: |
+          source("tests/testthat/helper-full-tests.R")
+          heavy <- .beez_full_test_files
+          cat("Heavy files:", paste(heavy, collapse = ", "), "\n")
+          testthat::test_local(
+            ".",
+            filter = paste0("^(", paste(heavy, collapse = "|"), ")$"),
+            reporter = "progress",
+            stop_on_failure = TRUE
+          )
+        shell: Rscript {0}
