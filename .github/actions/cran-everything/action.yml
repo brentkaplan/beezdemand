@@ -80,8 +80,11 @@ runs:
 
     - name: Session info
       if: ${{ inputs.mode == 'check' || inputs.mode == 'pkgdown' }}
+      # Written OUTSIDE the package tree: a top-level session-info.txt would be
+      # picked up by R CMD build and flagged as a non-standard top-level file.
       run: |
-        Rscript -e 'writeLines(capture.output(sessionInfo()), "session-info.txt")'
+        Rscript -e 'writeLines(capture.output(sessionInfo()), file.path(Sys.getenv("RUNNER_TEMP"), "session-info.txt"))'
+        cat "${RUNNER_TEMP}/session-info.txt"
       shell: bash
 
     - name: Lint package (Linux only)
@@ -90,10 +93,14 @@ runs:
         Rscript -e 'lintr::lint_package()'
       shell: bash
 
-    - name: URL check (Linux only)
+    - name: URL check (Linux only, informational)
       if: ${{ runner.os == 'Linux' && inputs.mode == 'check' && inputs.run-urlcheck == 'true' }}
+      # Informational: the package's own pkgdown-root URLs 404 until the master
+      # push deploys the site, and some publisher DOIs 403 to bots. Real URL
+      # problems are caught by the local gauntlet / win-builder before submit.
+      continue-on-error: true
       run: |
-        Rscript -e 'urlchecker::url_check()'
+        Rscript -e 'print(urlchecker::url_check())'
       shell: bash
 
     - name: Build source tarball (no manual)
@@ -124,7 +131,12 @@ runs:
           exit 1
         fi
         TARBALL="${TARBALLS[0]}"
-        R CMD check ${{ inputs.check-args }} "${TARBALL}"
+        # TinyTeX is installed only when build-manual == "true"; without it
+        # R (>= 4.6) turns the PDF-manual check into an ERROR, so skip the
+        # manual here (it is verified locally and by win-builder).
+        MANUAL_ARGS=""
+        if [ "${{ inputs.build-manual }}" != "true" ]; then MANUAL_ARGS="--no-manual"; fi
+        R CMD check ${{ inputs.check-args }} ${MANUAL_ARGS} "${TARBALL}"
       shell: bash
       env:
         # R >= 4.6 fetches <CRAN>/src/contrib/Meta/current.rds during the
