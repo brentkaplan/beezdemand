@@ -153,6 +153,16 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #'   the requested parameter (plus factor columns and, for `"alpha"`, the EV
 #'   block) are returned.
 #'
+#'   For a `param_space = "natural"` fit (see [fit_demand_mixed()]), the
+#'   emmeans reference-grid summary IS already natural-scale, so
+#'   `*_natural` columns are populated directly and `*_param_log10` columns
+#'   are filled with `log10()` of them for column-set parity with
+#'   `param_space = "log10"` fits. Because that fit is an unconstrained
+#'   parameterization, a Wald CI bound (or, rarely, the point estimate
+#'   itself) can be non-positive; `*_param_log10` is `NA` wherever the
+#'   corresponding `*_natural` value is `<= 0` (log10 is undefined there),
+#'   without raising a warning. `*_natural` itself is never `NA` from this.
+#'
 #' @examples
 #' \donttest{
 #' data(ko, package = "beezdemand")
@@ -193,6 +203,22 @@ get_demand_param_emms.beezdemand_nlme <- function(
   ...
 ) {
   param <- match.arg(param)
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence
+  # gate. calc_group_metrics.beezdemand_nlme() calls this twice internally
+  # (Q0 + alpha) and already warns once itself; it muffles the duplicate
+  # `beezdemand_nlme_convergence_warning` from these nested calls via
+  # .nlme_muffle_group_metrics_emms_noise() rather than suppressing it here,
+  # so a direct call always warns on a non-converged fit.
+  .nlme_warn_if_not_converged(fit_obj)
+
+  # TICKET-074: for a param_space = "natural" fit, the model itself
+  # (and hence emmeans' ref_grid summary) is already on the natural scale --
+  # NOT log10(Q0)/log10(alpha) -- so unconditionally exponentiating with
+  # `10^` below (the param_space = "log10" case) would be wrong by orders of
+  # magnitude. Resolve the space once, the same way every other NLME surface
+  # does (mixed-methods.R: summary/tidy/confint/get_subject_pars).
+  internal_space <- fit_obj$param_space %||% fit_obj$param_info$param_space %||% "log10"
 
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
@@ -394,12 +420,45 @@ get_demand_param_emms.beezdemand_nlme <- function(
             )
         }
 
+        # TICKET-074: `df_log_scale_summary`'s "log10" columns are the raw
+        # emmeans ref_grid summary on the model's *internal* scale -- for a
+        # param_space = "natural" fit that scale already IS natural (Q0/alpha
+        # are the model parameters directly, not log10(Q0)/log10(alpha)).
+        # Keep the emitted column set identical across both spaces (other
+        # NLME surfaces select by these exact names) by filling
+        # `param_log10_*` with log10() of the natural values instead of
+        # dropping them.
+        emm_table_combined <- if (identical(internal_space, "natural")) {
+          # Codex 2C review fold (BLOCKING 2, TICKET-074): a converged
+          # natural-space fit is fit with an UNCONSTRAINED parameterization
+          # -- the point estimate is typically positive but a Wald CI bound
+          # (or, rarely, the point estimate itself for a near-zero/negative
+          # parameter) can be <= 0. Unconditional log10() of such a value
+          # emits a raw, unclassed "NaNs produced" warning and silently
+          # returns NaN. Use an explicit, warning-free predicate: NA_real_
+          # for any non-positive value (log10 is undefined there), a real
+          # number otherwise. This is a display-column-only relaxation --
+          # `param_natural_*` (what get_demand_param_emms()'s alpha_natural /
+          # EV consume) is never NA from this branch.
+          .safe_log10 <- function(v) ifelse(v > 0, log10(v), NA_real_)
+          emm_table_combined |>
+            dplyr::mutate(
+              param_natural_estimate = .data$param_log10_estimate,
+              param_natural_LCL = .data$param_log10_LCL,
+              param_natural_UCL = .data$param_log10_UCL,
+              param_log10_estimate = .safe_log10(.data$param_log10_estimate),
+              param_log10_LCL = .safe_log10(.data$param_log10_LCL),
+              param_log10_UCL = .safe_log10(.data$param_log10_UCL)
+            )
+        } else {
+          emm_table_combined |>
+            dplyr::mutate(
+              param_natural_estimate = 10^.data$param_log10_estimate,
+              param_natural_LCL = 10^.data$param_log10_LCL,
+              param_natural_UCL = 10^.data$param_log10_UCL
+            )
+        }
         emm_table_combined <- emm_table_combined |>
-          dplyr::mutate(
-            param_natural_estimate = 10^.data$param_log10_estimate,
-            param_natural_LCL = 10^.data$param_log10_LCL,
-            param_natural_UCL = 10^.data$param_log10_UCL
-          ) |>
           dplyr::rename_with(
             ~ gsub(
               "param_log10_estimate",
@@ -890,6 +949,39 @@ get_observed_demand_param_emms <- function(
   }
 }
 
+#' Targeted muffling for calc_group_metrics()'s nested get_demand_param_emms() calls
+#'
+#' TICKET-064 (F12): the previous `suppressWarnings(suppressMessages(...))`
+#' around these calls silenced EVERY condition, including the
+#' estimate-column-guess fallback warning (the one warning that flags
+#' possibly-wrong Pmax/Omax) and the new hessian/convergence-gate warning's
+#' duplicate. This muffles only two known-benign, specifically-matched
+#' conditions and lets everything else -- including that fallback warning --
+#' propagate.
+#' @keywords internal
+#' @noRd
+.nlme_muffle_group_metrics_emms_noise <- function(expr) {
+  withCallingHandlers(
+    expr,
+    message = function(m) {
+      if (identical(
+        trimws(conditionMessage(m)),
+        "No factors specified or found in model. Reporting global parameter estimates."
+      )) {
+        invokeRestart("muffleMessage")
+      }
+    },
+    warning = function(w) {
+      # calc_group_metrics.beezdemand_nlme() already raised this warning
+      # once at its own top level; muffle the duplicate raised by each
+      # nested get_demand_param_emms(Q0/alpha) call.
+      if (inherits(w, "beezdemand_nlme_convergence_warning")) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
+
 #' Population-level demand metrics for a mixed-effects NLME fit
 #'
 #' Computes parameter-first-marginalized Pmax, Omax, Qmax, and
@@ -932,6 +1024,12 @@ get_observed_demand_param_emms <- function(
 #' @export
 #' @keywords internal
 calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
+  # TICKET-064 (F11): warn once for the whole call before the two nested
+  # get_demand_param_emms() calls below (which would otherwise each warn
+  # again for the same non-convergence; muffled via
+  # .nlme_muffle_group_metrics_emms_noise()).
+  .nlme_warn_if_not_converged(object)
+
   pinfo <- object$param_info
   all_factors <- unique(c(pinfo$factors, pinfo$factors_Q0, pinfo$factors_alpha))
   all_factors <- all_factors[nzchar(all_factors) & !is.na(all_factors)]
@@ -990,10 +1088,10 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
   # geometric mean, and abort if a parameter has no usable cells. emmeans
   # SE-related warnings are irrelevant (only point estimates are used), so they
   # are suppressed for silence-parity with the TMB method.
-  emm_q0 <- suppressWarnings(suppressMessages(get_demand_param_emms(
-    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE)))
-  emm_alpha <- suppressWarnings(suppressMessages(get_demand_param_emms(
-    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE)))
+  emm_q0 <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
+    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE))
+  emm_alpha <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
+    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE))
 
   .marginal_geom_mean <- function(vals, lbl) {
     vals <- vals[is.finite(vals) & vals > 0]
@@ -1095,10 +1193,22 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #' @param ... Additional arguments passed to `emmeans::emmeans()` or `emmeans::contrast()`.
 #'
 #' @return A list named by parameter. Each element contains:
-#'   \item{emmeans}{Tibble of EMMs (log10 scale) with CIs.}
-#'   \item{contrasts_log10}{Tibble of comparisons (log10 differences) with CIs and p-values.}
-#'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of comparisons
-#'     as ratios (natural scale), with CIs for ratios.}
+#'   \item{emmeans}{Tibble of EMMs (internal scale -- log10 for
+#'     `param_space = "log10"` fits, natural for `param_space = "natural"`
+#'     fits) with CIs.}
+#'   \item{contrasts_log10}{Tibble of comparisons (differences on the fit's
+#'     internal scale, despite the name -- see the Details on
+#'     `param_space = "natural"`) with CIs and p-values.}
+#'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of
+#'     comparisons with the same column shape (`ratio_estimate`, `LCL_ratio`,
+#'     `UCL_ratio`) for both spaces, but different CONTENT (TICKET-075): for
+#'     `param_space = "log10"` fits, a multiplicative ratio
+#'     (`10^difference`, fold-change on the natural scale); for
+#'     `param_space = "natural"` fits, the difference again (unchanged from
+#'     `contrasts_log10`) -- there is no log-scale quantity to exponentiate
+#'     for an already-natural-scale difference. The returned object's
+#'     `contrasts_ratio_scale` attribute is `"ratio"` or `"difference"`
+#'     accordingly.}
 #'   S3 class `beezdemand_comparison` is assigned. When `contrast_by` is active,
 #'   the nested contrast tables carry leading by-column(s) named with the
 #'   user-requested *original* factor name (e.g. `dose`, not the
@@ -1167,6 +1277,17 @@ get_demand_comparisons.beezdemand_nlme <- function(
   if (!requireNamespace("emmeans", quietly = TRUE)) {
     stop("Package 'emmeans' is required.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(fit_obj)
+
+  # TICKET-075: for a param_space = "natural" fit the emmeans contrast
+  # estimate/CI computed below are already NATURAL-scale differences (the
+  # model parameterizes Q0/alpha directly), not log10-scale differences --
+  # exponentiating them again with 10^ (as the log10-space $contrasts_ratio
+  # block does) is meaningless. Resolve the space the same way
+  # get_demand_param_emms.beezdemand_nlme() does (TICKET-074).
+  internal_space <- fit_obj$param_space %||% fit_obj$param_info$param_space %||% "log10"
 
   nlme_model <- fit_obj$model
   model_data <- fit_obj$data
@@ -1683,20 +1804,48 @@ get_demand_comparisons.beezdemand_nlme <- function(
               )
 
             if (report_ratios) {
-              current_param_results$contrasts_ratio <- current_param_results$contrasts_log10 |>
-                dplyr::mutate(
-                  ratio_estimate = 10^.data$estimate,
-                  LCL_ratio = 10^.data$lower.CL,
-                  UCL_ratio = 10^.data$upper.CL
-                ) |>
-                dplyr::select(
-                  dplyr::any_of(by_vars_in_summary),
-                  "contrast_definition",
-                  "ratio_estimate",
-                  "LCL_ratio",
-                  "UCL_ratio",
-                  "p.value"
-                )
+              # TICKET-075: for param_space = "log10" fits, `estimate`/
+              # `lower.CL`/`upper.CL` above are log10-scale differences, so
+              # 10^ converts them to a multiplicative ratio (fold-change) --
+              # unchanged, byte-identical to pre-fold output. For
+              # param_space = "natural" fits they are ALREADY natural-scale
+              # differences; there is no log-scale quantity to exponentiate,
+              # so 10^ of a natural-scale difference is meaningless. Report
+              # the difference again instead (same column names/shape, so
+              # nothing downstream that selects `$contrasts_ratio` by name
+              # breaks); `attr(., "contrasts_ratio_scale")` on the returned
+              # object (set once, object-level, below) distinguishes the two.
+              current_param_results$contrasts_ratio <- if (identical(internal_space, "natural")) {
+                current_param_results$contrasts_log10 |>
+                  dplyr::mutate(
+                    ratio_estimate = .data$estimate,
+                    LCL_ratio = .data$lower.CL,
+                    UCL_ratio = .data$upper.CL
+                  ) |>
+                  dplyr::select(
+                    dplyr::any_of(by_vars_in_summary),
+                    "contrast_definition",
+                    "ratio_estimate",
+                    "LCL_ratio",
+                    "UCL_ratio",
+                    "p.value"
+                  )
+              } else {
+                current_param_results$contrasts_log10 |>
+                  dplyr::mutate(
+                    ratio_estimate = 10^.data$estimate,
+                    LCL_ratio = 10^.data$lower.CL,
+                    UCL_ratio = 10^.data$upper.CL
+                  ) |>
+                  dplyr::select(
+                    dplyr::any_of(by_vars_in_summary),
+                    "contrast_definition",
+                    "ratio_estimate",
+                    "LCL_ratio",
+                    "UCL_ratio",
+                    "p.value"
+                  )
+              }
             }
 
             # TICKET-033: rename the nested by-column(s) from the EFFECTIVE
@@ -1790,6 +1939,17 @@ get_demand_comparisons.beezdemand_nlme <- function(
     "all fitted factors"
   }
   attr(results_list, "contrast_type_used") <- contrast_type
+  # TICKET-075: report_ratios' shape ($contrasts_ratio: ratio_estimate/
+  # LCL_ratio/UCL_ratio) is the same for both spaces, but its CONTENT is a
+  # multiplicative ratio (10^difference) only for param_space = "log10"
+  # fits; for param_space = "natural" fits it is the natural-scale
+  # difference again (no log-scale quantity exists to exponentiate). This
+  # attribute lets a caller/print method tell which one they got.
+  attr(results_list, "contrasts_ratio_scale") <- if (identical(internal_space, "natural")) {
+    "difference"
+  } else {
+    "ratio"
+  }
   # `contrast_by_used` reports the user-requested ORIGINAL name(s) (TICKET-032),
   # so it survives collapse-mapping and is consistent across backends -- but
   # only when by-grouping was actually applied for at least one parameter,
@@ -2078,9 +2238,15 @@ get_demand_param_trends <- function(
   })
 
   out_list <- list()
+  # TICKET-064 (F13): a failed (param, covariate) combination was previously
+  # dropped with `next` and no condition -- only a fully-empty result table
+  # warned. Track each dropped combo (and its cause, when known) so the
+  # caller sees a table that silently lost rows.
+  failed_combos <- character(0)
 
   for (param_name in params) {
     for (cv in covariates) {
+      fail_reason <- NULL
       tr_obj <- tryCatch(
         emmeans::emtrends(
           nlme_model,
@@ -2093,7 +2259,10 @@ get_demand_param_trends <- function(
           level = ci_level,
           ...
         ),
-        error = function(e) NULL
+        error = function(e) {
+          fail_reason <<- conditionMessage(e)
+          NULL
+        }
       )
 
       # Fallback: build ref_grid then emtrends, which can be more reliable for nlme params
@@ -2105,7 +2274,10 @@ get_demand_param_trends <- function(
             data = model_data,
             at = at
           ),
-          error = function(e) NULL
+          error = function(e) {
+            fail_reason <<- conditionMessage(e)
+            NULL
+          }
         )
         if (!is.null(rg)) {
           tr_obj <- tryCatch(
@@ -2117,19 +2289,33 @@ get_demand_param_trends <- function(
               level = ci_level,
               ...
             ),
-            error = function(e) NULL
+            error = function(e) {
+              fail_reason <<- conditionMessage(e)
+              NULL
+            }
           )
         }
       }
       if (is.null(tr_obj)) {
+        failed_combos <- c(failed_combos, sprintf(
+          "%s x %s%s", param_name, cv,
+          if (!is.null(fail_reason)) paste0(" (", fail_reason, ")") else ""
+        ))
         next
       }
 
       tr_sum <- tryCatch(
         summary(tr_obj, infer = TRUE, level = ci_level),
-        error = function(e) NULL
+        error = function(e) {
+          fail_reason <<- conditionMessage(e)
+          NULL
+        }
       )
       if (is.null(tr_sum)) {
+        failed_combos <- c(failed_combos, sprintf(
+          "%s x %s%s", param_name, cv,
+          if (!is.null(fail_reason)) paste0(" (", fail_reason, ")") else ""
+        ))
         next
       }
 
@@ -2174,10 +2360,37 @@ get_demand_param_trends <- function(
   }
 
   if (length(out_list) == 0) {
-    warning(
-      "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
-    )
+    # Codex 2C review fold (RECOMMENDED 4, TICKET-064 F13): this early
+    # return previously discarded the per-combination causes already
+    # accumulated in `failed_combos` -- NEWS claims "naming every dropped
+    # combination", which this generic message did not do when ALL
+    # combinations failed (only the partial-failure path below did).
+    if (length(failed_combos) > 0) {
+      cli::cli_warn(
+        c(
+          "!" = "No trends could be calculated -- all {length(failed_combos)}
+                 (parameter, covariate) combination{?s} failed:",
+          "i" = "{failed_combos}"
+        ),
+        class = c("beezdemand_trends_dropped_combo_warning", "beezdemand_warning")
+      )
+    } else {
+      warning(
+        "No trends could be calculated. Check 'covariates', 'specs', and 'at'."
+      )
+    }
     return(tibble::as_tibble(data.frame()))
+  }
+  if (length(failed_combos) > 0) {
+    cli::cli_warn(
+      c(
+        "!" = "{length(failed_combos)} (parameter, covariate) combination{?s}
+               could not be computed and {?was/were} dropped from the trends
+               table:",
+        "i" = "{failed_combos}"
+      ),
+      class = c("beezdemand_trends_dropped_combo_warning", "beezdemand_warning")
+    )
   }
   dplyr::bind_rows(out_list)
 }
@@ -2597,6 +2810,9 @@ tidy.beezdemand_nlme <- function(
     return(beezdemand_empty_coefficients())
   }
 
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(x)
+
   effects <- match.arg(effects, several.ok = TRUE)
   result <- tibble::tibble()
   internal_space <- x$param_space %||% x$param_info$param_space %||% "log10"
@@ -2808,6 +3024,9 @@ confint.beezdemand_nlme <- function(
       component = character()
     ))
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(object)
 
   if (method == "profile") {
     # Use nlme::intervals() for profile-based intervals
@@ -3507,6 +3726,9 @@ get_subject_pars.beezdemand_nlme <- function(object, expanded = NULL, ...) {
   if (is.null(object$model)) {
     cli::cli_abort("No fitted model found in the object; fitting may have failed.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(object)
 
   pinfo <- object$param_info
   internal_space <- object$param_space %||% pinfo$param_space %||% "log10"
@@ -4617,6 +4839,9 @@ get_individual_coefficients <- function(
   if (is.null(fit_obj$model)) {
     stop("No model found in 'fit_obj'. Fitting may have failed.")
   }
+
+  # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
+  .nlme_warn_if_not_converged(fit_obj)
 
   format <- match.arg(format)
   params <- match.arg(params, choices = c("Q0", "alpha"), several.ok = TRUE)

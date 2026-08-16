@@ -504,6 +504,14 @@ anova.beezdemand_nlme <- function(object, ...) {
     }
   }
 
+  # TICKET-064 (F11): warn once per model that didn't pass the convergence
+  # gate before the LRT/AIC comparison (each model contributes its own
+  # log-likelihood/df to the table, so a non-convergent one is named
+  # individually rather than folded into a single call-level warning).
+  for (m in models) {
+    .nlme_warn_if_not_converged(m)
+  }
+
   # Extract underlying nlme objects
   nlme_models <- lapply(models, function(m) m$model)
 

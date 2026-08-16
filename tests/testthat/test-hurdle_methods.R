@@ -292,3 +292,149 @@ test_that("BIC.beezdemand_hurdle is unchanged by this ticket (characterization)"
   )
   expect_true(is.finite(BIC(fit)))
 })
+
+
+# --- TICKET-063: hessian_pd gate on hurdle inference surfaces --------------
+# Real non-PD hurdle fits are dataset-dependent (TICKET-056 notes); the
+# object's `hessian_pd` field is forced to FALSE here for a deterministic,
+# fast regression test (real weak-fit coverage lives in the TMB-side tests
+# in test-tmb-broom-contracts.R / test_emms_comparisons.R / test-boot-demand.R).
+
+test_that("vcov.beezdemand_hurdle warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  fit$hessian_pd <- FALSE
+
+  conds <- .capture_warning_conditions(V <- vcov(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(isSymmetric(V))
+})
+
+test_that("vcov.beezdemand_hurdle: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(vcov(fit))
+})
+
+test_that("confint.beezdemand_hurdle warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  fit$hessian_pd <- FALSE
+
+  conds <- .capture_warning_conditions(ci <- confint(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_hurdle: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_no_warning(confint(fit))
+})
+
+
+# --- TICKET-056: surface optimizer diagnostics for false-converged fits ---
+
+test_that("TICKET-056: non-converged/non-PD hurdle fit prints optimizer diagnostics and the 2RE recommendation", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  # Mock a false-converged 3RE-style state (AI INSTRUCTIONS: a synthetic /
+  # mocked non-converged fit is acceptable; real false-convergence is
+  # dataset-dependent per the ticket's discovery record).
+  fit$converged <- FALSE
+  fit$hessian_pd <- FALSE
+  fit$opt$convergence <- 1L
+  fit$opt$message <- "false convergence (8)"
+
+  expect_output(print(fit), "false convergence")
+  expect_output(print(fit), "zeros.*q0")
+
+  s <- summary(fit)
+  expect_output(print(s), "false convergence")
+  expect_output(print(s), "zeros.*q0")
+  expect_true(any(grepl("false convergence", s$notes)))
+  expect_true(any(grepl("zeros.*q0", s$notes)))
+})
+
+test_that("TICKET-056: converged fit print/summary output is unchanged (Codex 2C review fold RECOMMENDED 6, pinned)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(fit$converged)
+  expect_true(isTRUE(fit$hessian_pd))
+
+  out <- testthat::capture_output_lines(print(fit))
+  s <- summary(fit)
+  out_s <- testthat::capture_output_lines(print(s))
+
+  # Pinned by capturing this exact output with the PRE-TICKET-056 code
+  # (git worktree at commit 7711de6, immediately before the TICKET-056
+  # commit 71d0875) and confirming identical() against the post-fold
+  # output -- a real byte-identity claim, not an inference from "the new
+  # code path shouldn't fire on a healthy fit".
+  expected_print <- c(
+    "", "Two-Part Mixed Effects Hurdle Demand Model", "", "Call:",
+    "fit_demand_hurdle(data = sim_data, y_var = \"y\", x_var = \"x\", ",
+    "    id_var = \"id\", random_effects = c(\"zeros\", \"q0\"), verbose = 0)",
+    "", "Convergence: Yes ", "Number of subjects: 30 ", "Number of observations: 187 ",
+    "Random effects: 2 (zeros, q0) ", "", "Fixed Effects:",
+    "     beta0      beta1     log_q0      log_k  log_alpha logsigma_a logsigma_b ",
+    "   -2.2517     1.6040     2.3622     0.7904    -0.8579    -0.1615    -0.7342 ",
+    "logsigma_e rho_ab_raw ", "   -1.2675    -0.3724 ", "", "Use summary() for full results."
+  )
+  expect_identical(out, expected_print)
+
+  expect_identical(s$notes, character(0))
+  expect_false(any(grepl("^Warning: Optimizer|^Warning: Hessian|^Recommended stability", s$notes)))
+  expect_false(any(grepl("WARNING: this fit did not pass", out_s, fixed = TRUE)))
+})
+
+test_that("TICKET-056: opt$message and opt$convergence are retrievable from the fit object", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  sim_data <- simulate_hurdle_data(n_subjects = 30, seed = 123)
+  fit <- fit_demand_hurdle(
+    sim_data, y_var = "y", x_var = "x", id_var = "id",
+    random_effects = c("zeros", "q0"), verbose = 0
+  )
+  expect_true(is.character(fit$opt$message))
+  expect_true(nchar(fit$opt$message) > 0)
+  expect_true(is.numeric(fit$opt$convergence))
+})

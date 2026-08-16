@@ -697,6 +697,14 @@ NULL
 
   best_nll <- Inf
   best_result <- NULL
+  # TICKET-067 (E3): per-start failure causes were captured two ways, both
+  # invisible by default -- hard errors -> message() gated at verbose >= 2;
+  # optimizer errors -> an Inf-NLL sentinel list whose opt$message holds the
+  # cause but was never read again once the start was rejected. Collect one
+  # line per failed start (error message, or the sentinel's opt$message plus
+  # any captured optimizer warnings) so the terminal abort below can name at
+  # least one underlying cause regardless of verbosity.
+  start_failures <- character(0)
 
   for (s in seq_along(start_sets)) {
     starts_i <- start_sets[[s]]
@@ -721,21 +729,47 @@ NULL
       list(obj = obj_i, opt = opt_i, nll = opt_i$objective, start_idx = s,
            opt_warnings = opt_warnings_i)
     }, error = function(e) {
+      start_failures[[length(start_failures) + 1L]] <<-
+        sprintf("start %d: %s", s, conditionMessage(e))
       if (verbose >= 2) {
         message(sprintf("  Start set %d failed: %s", s, e$message))
       }
       NULL
     })
 
-    if (!is.null(result) && is.finite(result$nll) && result$nll < best_nll) {
-      best_nll <- result$nll
-      best_result <- result
+    if (is.null(result)) {
+      next  # cause already recorded by the error handler above
+    }
+
+    if (is.finite(result$nll)) {
+      if (result$nll < best_nll) {
+        best_nll <- result$nll
+        best_result <- result
+      }
+    } else {
+      # .tmb_run_optimizer()'s Inf-NLL sentinel: the optimizer itself
+      # errored (opt$message holds the cause) rather than the surrounding
+      # tryCatch above.
+      cause <- result$opt$message %||% "optimizer returned a non-finite objective"
+      warn_note <- if (length(result$opt_warnings) > 0L) {
+        sprintf(" (optimizer warnings: %s)",
+                paste(unique(result$opt_warnings), collapse = "; "))
+      } else {
+        ""
+      }
+      start_failures[[length(start_failures) + 1L]] <-
+        sprintf("start %d: %s%s", s, cause, warn_note)
     }
   }
 
   if (is.null(best_result)) {
+    cause_note <- if (length(start_failures) > 0L) {
+      paste0(" Causes: ", paste(start_failures, collapse = "; "), ".")
+    } else {
+      ""
+    }
     stop(
-      "All starting value sets failed. ",
+      "All starting value sets failed.", cause_note, " ",
       "Check data quality or try different start values.",
       call. = FALSE
     )
@@ -814,14 +848,29 @@ NULL
   sdr <- tryCatch(
     TMB::sdreport(obj, getReportCovariance = store_report_cov),
     error = function(e1) {
+      e2_msg <- NULL
       sdr2 <- tryCatch(
         TMB::sdreport(obj, getReportCovariance = store_report_cov,
                       getJointPrecision = FALSE),
-        error = function(e2) NULL
+        error = function(e2) {
+          e2_msg <<- conditionMessage(e2)
+          NULL
+        }
       )
-      if (is.null(sdr2) && verbose >= 1) {
+      if (is.null(sdr2)) {
+        # TICKET-067 (E4): total sdreport failure is a failed-SE condition,
+        # not progress chatter -- warn regardless of verbose (a suppressed
+        # `verbose = 0` warning leaves no trace on the object's conditions,
+        # unlike an error). Include e2's message when the fallback attempt
+        # failed for a different reason than the first attempt.
+        msg <- if (!is.null(e2_msg) && !identical(e2_msg, conditionMessage(e1))) {
+          sprintf("Standard error computation failed: %s (fallback also failed: %s)",
+                  conditionMessage(e1), e2_msg)
+        } else {
+          sprintf("Standard error computation failed: %s", conditionMessage(e1))
+        }
         cli::cli_warn(
-          "Standard error computation failed: {e1$message}",
+          msg,
           class = c("beezdemand_sdreport_warning", "beezdemand_warning")
         )
       }
@@ -894,9 +943,19 @@ NULL
   }
 
   # Extract variance components from ADREPORT
+  # TICKET-067 (E4): this was a separate, fully silent failure path -- an
+  # error here left variance_components absent with no condition at all,
+  # even when sdreport() itself succeeded. Raise the same classed warning
+  # the sdreport-failure branch above uses.
   variance_components <- NULL
   if (!is.null(sdr)) {
-    adr <- tryCatch(summary(sdr, "report"), error = function(e) NULL)
+    adr <- tryCatch(summary(sdr, "report"), error = function(e) {
+      cli::cli_warn(
+        "Variance-component extraction (ADREPORT) failed: {conditionMessage(e)}",
+        class = c("beezdemand_sdreport_warning", "beezdemand_warning")
+      )
+      NULL
+    })
     if (!is.null(adr)) {
       variance_components <- adr
     }
@@ -1676,6 +1735,25 @@ fit_demand_tmb <- function(
   }
 
   prepared <- .tmb_prepare_data(data, y_var, x_var, id_var, equation)
+
+  # TICKET-067 (E6): when the equation-specific zero filter inside
+  # .tmb_prepare_data() drops every row (e.g. equation = "exponential" with
+  # all-zero consumption), prepared$y/n_obs/n_subjects are empty but nothing
+  # previously aborted here -- optimization proceeded on a 0-row design,
+  # reported a spurious "Converged (NLL = 0.00)", and only failed later
+  # during SE extraction with a cryptic "no 'dimnames' attribute for array"
+  # (the ONLY output at verbose = 0). The "no complete cases" guard above
+  # runs on the unfiltered data and does not catch this. Validate
+  # immediately, naming the equation and the dropped count.
+  if (prepared$n_obs == 0L || prepared$n_subjects == 0L) {
+    cli::cli_abort(c(
+      "No usable observations remain for {.arg equation} = {.val {equation}} after filtering.",
+      "x" = "{prepared$n_dropped} row{?s} were dropped (zero consumption), leaving
+             {prepared$n_obs} observation{?s} across {prepared$n_subjects} subject{?s}.",
+      "i" = "{.code equation = \"exponential\"} requires strictly positive consumption
+             (y > 0) for at least one observation."
+    ))
+  }
 
   # Build design matrices (using the data after any filtering)
   # For exponential equation, we need the filtered data

@@ -95,3 +95,52 @@ test_that("get_demand_param_trends references emmeans (guard exists)", {
   expect_true(grepl("emmeans", fn_text))
   expect_true(grepl("requireNamespace", fn_text))
 })
+
+# --- TICKET-064 (F13): dropped (param, covariate) combinations warn --------
+
+test_that("get_demand_param_trends warns naming a dropped (param, covariate) combination", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+
+  warns <- testthat::capture_warnings(
+    result <- get_demand_param_trends(
+      setup$fit,
+      params = c("Q0", "alpha"),
+      covariates = c("dose_num", "not_a_real_covariate"),
+      specs = ~drug
+    )
+  )
+  drop_warns <- grepl("not_a_real_covariate", warns, fixed = TRUE)
+  expect_true(any(drop_warns))
+  # the valid covariate's rows are still returned
+  expect_true(all(result$covariate == "dose_num"))
+  expect_true(nrow(result) > 0)
+})
+
+test_that("get_demand_param_trends: all-valid covariates raise no dropped-combo warning", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+  expect_no_warning(
+    get_demand_param_trends(
+      setup$fit, params = c("Q0", "alpha"), covariates = "dose_num", specs = ~drug
+    )
+  )
+})
+
+# --- Codex 2C review fold: RECOMMENDED 4 (TICKET-064 F13) -------------------
+
+test_that("get_demand_param_trends: all-bogus covariates still name every dropped combination (not just the generic message)", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+
+  warns <- testthat::capture_warnings(
+    result <- get_demand_param_trends(
+      setup$fit, params = "Q0",
+      covariates = c("not_a_real_covariate1", "not_a_real_covariate2"),
+      specs = ~drug
+    )
+  )
+  expect_true(any(grepl("not_a_real_covariate1", warns, fixed = TRUE)))
+  expect_true(any(grepl("not_a_real_covariate2", warns, fixed = TRUE)))
+  expect_equal(nrow(result), 0)
+})

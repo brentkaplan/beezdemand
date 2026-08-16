@@ -1111,3 +1111,280 @@ test_that("get_demand_comparisons agrees with EMM differences under `at`", {
   expected_diff_log10 <- (emms_at$estimate_log[1] - emms_at$estimate_log[2]) / log(10)
   expect_equal(td_at$estimate, expected_diff_log10, tolerance = 1e-8)
 })
+
+
+# --- TICKET-063: hessian_pd gate on TMB emms/comparisons surfaces ----------
+
+test_that("get_demand_param_emms.beezdemand_tmb warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(e <- get_demand_param_emms(fit, param = "Q0"))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(nrow(e) > 0)
+})
+
+test_that("get_demand_param_emms.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(get_demand_param_emms(fit, param = "Q0"))
+})
+
+test_that("get_demand_comparisons.beezdemand_tmb warns exactly once per call (not once per param)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(
+    res <- get_demand_comparisons(fit, param = c("Q0", "alpha"))
+  )
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+})
+
+test_that("get_demand_comparisons.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ids_g <- unique(d$id[d$gender == g])
+    head(ids_g[order(ids_g)], 25)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+  fit <- fit_demand_tmb(d, equation = "exponential", factors = "gender", verbose = 0)
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(get_demand_comparisons(fit, param = "Q0"))
+})
+
+
+# --- TICKET-074: NLME EMMs back-transform correctly for param_space="natural" -
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space fit agrees with log10-space fit (simplified)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+
+  f_nat <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "simplified", param_space = "natural")
+  f_log <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "simplified", param_space = "log10")
+
+  e_nat <- get_demand_param_emms(f_nat, include_ev = TRUE)
+  e_log <- get_demand_param_emms(f_log, include_ev = TRUE)
+
+  # Two independently-optimized NLME parameterizations of the same data
+  # (natural vs. log10) converge to slightly different optima; ~8% tolerance
+  # confirms they agree in magnitude (the bug produced errors of orders of
+  # magnitude -- see this ticket's RED evidence), not bit-identity.
+  expect_equal(e_nat$alpha_natural, e_log$alpha_natural, tolerance = 0.08)
+  expect_equal(e_nat$Q0_natural, e_log$Q0_natural, tolerance = 0.08)
+  expect_equal(e_nat$EV, e_log$EV, tolerance = 0.08)
+
+  expect_true(e_nat$LCL_alpha_natural <= e_nat$alpha_natural)
+  expect_true(e_nat$alpha_natural <= e_nat$UCL_alpha_natural)
+  expect_true(e_nat$LCL_Q0_natural <= e_nat$Q0_natural)
+  expect_true(e_nat$Q0_natural <= e_nat$UCL_Q0_natural)
+
+  # EV = 1/alpha_natural exactly for the k-free SND ("simplified") form
+  expect_equal(e_nat$EV, 1 / e_nat$alpha_natural, tolerance = 1e-8)
+
+  # param_log10 columns still present and consistent (log10 of the natural values)
+  expect_equal(e_nat$alpha_param_log10, log10(e_nat$alpha_natural), tolerance = 1e-8)
+  expect_equal(e_nat$Q0_param_log10, log10(e_nat$Q0_natural), tolerance = 1e-8)
+})
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space exponentiated fit computes EV with k", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+
+  f_nat <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                            equation_form = "exponentiated", k = 3,
+                            param_space = "natural")
+  e_nat <- get_demand_param_emms(f_nat, include_ev = TRUE)
+
+  expect_equal(e_nat$EV, 1 / (100 * e_nat$alpha_natural * (3^1.5)), tolerance = 1e-8)
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: natural-space fit does not error and agrees in sign with log10 fit", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+
+  fit_nat <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "natural"
+  )
+  fit_log <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "log10"
+  )
+
+  comps_nat <- get_demand_comparisons(fit_nat, compare_specs = ~factor1, param = "Q0")
+  comps_log <- get_demand_comparisons(fit_log, compare_specs = ~factor1, param = "Q0")
+
+  expect_equal(nrow(comps_nat$Q0$contrasts_log10), nrow(comps_log$Q0$contrasts_log10))
+  expect_equal(
+    sign(comps_nat$Q0$contrasts_log10$estimate),
+    sign(comps_log$Q0$contrasts_log10$estimate)
+  )
+})
+
+
+# --- Codex 2C review fold: BLOCKING 2 (TICKET-074) --------------------------
+# A converged param_space = "natural" fit is an unconstrained parameterization
+# -- a Wald CI bound (here, alpha's lower bound) can be non-positive. Before
+# the fold, unconditional log10() of that bound raised a raw "NaNs produced"
+# warning and returned NaN instead of NA.
+
+test_that("get_demand_param_emms.beezdemand_nlme: natural-space fit with a non-positive Wald bound emits no warning and reports NA (not NaN) in *_param_log10", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  set.seed(7)
+  d <- expand.grid(id = factor(1:5), x = c(0.1, 1, 5, 20, 50))
+  d$y <- pmax(0, 8 * exp(-0.005 * d$x) + rnorm(nrow(d), 0, 3))
+  fit <- fit_demand_mixed(
+    d, y_var = "y", x_var = "x", id_var = "id",
+    equation_form = "simplified", param_space = "natural"
+  )
+  skip_if(is.null(fit$model), "fit did not converge")
+
+  e <- expect_no_warning(get_demand_param_emms(fit, include_ev = TRUE))
+
+  # organic fixture: alpha's lower Wald bound on the natural scale is <= 0
+  expect_true(e$LCL_alpha_natural <= 0)
+  expect_true(is.na(e$LCL_alpha_param_log10))
+  expect_false(is.nan(e$LCL_alpha_param_log10))  # NA_real_, not NaN
+  # the natural-scale columns (what alpha_natural/EV consume) are unaffected
+  expect_true(is.finite(e$alpha_natural))
+  expect_true(is.finite(e$EV))
+})
+
+test_that("get_demand_param_emms.beezdemand_nlme: log10-space (default) fit output is byte-identical to the pre-fold value (RECOMMENDED 6)", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  data(apt, package = "beezdemand")
+  d <- subset(apt, y > 0)
+  fit <- fit_demand_mixed(d, y_var = "y", x_var = "x", id_var = "id",
+                          equation_form = "simplified")
+  e <- get_demand_param_emms(fit, include_ev = TRUE)
+
+  # Pinned by computing with git stash against the pre-fold committed code
+  # (commit 59240f9, i.e. before the BLOCKING-2 .safe_log10() change) --
+  # the log10-space branch is untouched by that change, so this must be
+  # byte-identical.
+  expected <- list(
+    Q0_param_log10 = 0.815617163829254, LCL_Q0_param_log10 = 0.711179527637501,
+    UCL_Q0_param_log10 = 0.920054800021007, Q0_natural = 6.54059358134015,
+    LCL_Q0_natural = 5.14256189671449, UCL_Q0_natural = 8.31868731100721,
+    alpha_param_log10 = -1.799340469525, LCL_alpha_param_log10 = -1.91475032312893,
+    UCL_alpha_param_log10 = -1.68393061592107, alpha_natural = 0.0158730187943233,
+    LCL_alpha_natural = 0.0121688538972499, UCL_alpha_natural = 0.0207047210667786,
+    EV = 62.999988405333, LCL_EV = 48.2981633403664, UCL_EV = 82.1770076659395
+  )
+  # expect_equal at a tight tolerance rather than expect_identical: this
+  # NLME fit is reproducible to ~1e-12 relative but not bit-identical
+  # across repeated runs (optimizer/BLAS summation-order noise), while a
+  # real regression from this fold would differ by orders of magnitude.
+  expect_equal(as.list(e)[names(expected)], expected, tolerance = 1e-8)
+})
+
+
+# --- Codex 2C review fold: NEW TICKET-075 -----------------------------------
+# get_demand_comparisons.beezdemand_nlme()'s $contrasts_ratio block
+# unconditionally computed ratio_estimate = 10^estimate. For a
+# param_space = "natural" fit, `estimate` is already a natural-scale
+# difference (not log10-scale), so 10^estimate is meaningless.
+
+.ticket075_natural_fit <- function() {
+  set.seed(42)
+  prices <- 10^seq(-1, 1.5, length.out = 6)
+  d <- expand.grid(id = seq_len(8), x = prices, factor1 = paste0("level", 1:3))
+  d$id <- factor(paste0(d$id, "_", d$factor1))
+  d$y <- pmax(0.01, 8 * exp(-0.01 * d$x) + rnorm(nrow(d), 0, 2))
+  suppressWarnings(fit_demand_mixed(
+    d, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified", param_space = "natural"
+  ))
+}
+
+test_that("get_demand_comparisons.beezdemand_nlme: natural-space contrasts_ratio reports the DIFFERENCE, not 10^difference", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  fit <- .ticket075_natural_fit()
+  skip_if(is.null(fit$model), "fit did not converge")
+
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  expect_identical(attr(res, "contrasts_ratio_scale"), "difference")
+  expect_equal(
+    res$Q0$contrasts_ratio$ratio_estimate,
+    res$Q0$contrasts_log10$estimate
+  )
+  expect_equal(res$Q0$contrasts_ratio$LCL_ratio, res$Q0$contrasts_log10$lower.CL)
+  expect_equal(res$Q0$contrasts_ratio$UCL_ratio, res$Q0$contrasts_log10$upper.CL)
+  # the old (wrong) computation would have given 10^estimate here instead
+  expect_false(isTRUE(all.equal(
+    res$Q0$contrasts_ratio$ratio_estimate,
+    10^res$Q0$contrasts_log10$estimate
+  )))
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: log10-space (default) fit contrasts_ratio_scale is 'ratio' and ratio_estimate is 10^difference", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified"
+  )
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  expect_identical(attr(res, "contrasts_ratio_scale"), "ratio")
+  expect_equal(res$Q0$contrasts_ratio$ratio_estimate, 10^res$Q0$contrasts_log10$estimate)
+})
+
+test_that("get_demand_comparisons.beezdemand_nlme: log10-space contrasts_ratio output is byte-identical to the pre-fold value", {
+  skip_on_cran()
+  skip_if_not_installed("emmeans")
+
+  test_data <- create_emm_test_data(n_subjects = 8, n_levels_factor1 = 3)
+  fit <- fit_demand_mixed(
+    data = test_data, y_var = "y", x_var = "x", id_var = "id",
+    factors = "factor1", equation_form = "simplified"
+  )
+  res <- get_demand_comparisons(fit, compare_specs = ~factor1, param = "Q0")
+
+  # Pinned via git stash against the pre-fold committed code (commit
+  # d6d5a40, i.e. before TICKET-075's internal_space branch); the
+  # log10-space path is the untouched `else` branch, so this must match.
+  expected <- list(
+    ratio_estimate = c(1.0010081365038, 1.01206922238537, 1.01104994602762),
+    LCL_ratio = c(0.965477826227737, 0.975931875394098, 0.974936730322645),
+    UCL_ratio = c(1.03784598892534, 1.04954468311235, 1.04850085299807)
+  )
+  actual <- list(
+    ratio_estimate = res$Q0$contrasts_ratio$ratio_estimate,
+    LCL_ratio = res$Q0$contrasts_ratio$LCL_ratio,
+    UCL_ratio = res$Q0$contrasts_ratio$UCL_ratio
+  )
+  expect_equal(actual, expected, tolerance = 1e-6)
+})

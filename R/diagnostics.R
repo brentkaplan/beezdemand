@@ -80,7 +80,10 @@ check_demand_model.beezdemand_hurdle <- function(object, ...) {
 
   # 4. Check residuals
   residuals <- .check_hurdle_residuals(object)
-  if (residuals$has_outliers) {
+  if (isTRUE(residuals$computation_failed)) {
+    issues <- c(issues, "Residual diagnostics could not be computed")
+    recommendations <- c(recommendations, "Check augment() output manually")
+  } else if (residuals$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3)", residuals$n_outliers))
     recommendations <- c(recommendations, "Investigate outlying observations")
   }
@@ -116,7 +119,10 @@ check_demand_model.beezdemand_nlme <- function(object, ...) {
 
   # 2. Check random effects
   random_effects <- .check_nlme_random_effects(object)
-  if (any(random_effects$near_zero)) {
+  if (isTRUE(random_effects$computation_failed)) {
+    issues <- c(issues, "Random-effects diagnostics could not be computed")
+    recommendations <- c(recommendations, "Check nlme::VarCorr(fit$model) manually")
+  } else if (any(random_effects$near_zero)) {
     near_zero_re <- names(random_effects$variances)[random_effects$near_zero]
     issues <- c(issues, paste("Random effect variance near zero:", paste(near_zero_re, collapse = ", ")))
     recommendations <- c(recommendations, "Consider removing these random effects from the model")
@@ -181,7 +187,10 @@ check_demand_model.beezdemand_fixed <- function(object, ...) {
 
   # 3. Check residuals (aggregate)
   residuals <- .check_fixed_residuals(object)
-  if (residuals$has_outliers) {
+  if (isTRUE(residuals$computation_failed)) {
+    issues <- c(issues, "Residual diagnostics could not be computed")
+    recommendations <- c(recommendations, "Check augment() output manually")
+  } else if (residuals$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers across subjects", residuals$n_outliers))
   }
 
@@ -865,29 +874,43 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 
 
 .check_hurdle_residuals <- function(object) {
-  aug <- tryCatch(augment(object), error = function(e) NULL)
+  # TICKET-066: an augment() error, a missing '.resid' column, and an
+  # all-NA '.resid' column all previously returned the same clean-looking
+  # "no outliers" list with zero conditions raised -- indistinguishable from
+  # a check that ran and found nothing. Give each an explicit
+  # `computation_failed` flag and a classed warning naming the cause.
+  fail_reason <- NULL
+  aug <- tryCatch(augment(object), error = function(e) {
+    fail_reason <<- conditionMessage(e)
+    NULL
+  })
 
-  if (is.null(aug) || !".resid" %in% names(aug)) {
-    return(list(
-      mean = NA_real_,
-      sd = NA_real_,
-      min = NA_real_,
-      max = NA_real_,
-      has_outliers = FALSE,
-      n_outliers = 0
-    ))
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  if (computation_failed && is.null(fail_reason)) {
+    fail_reason <- "augment() did not return a usable '.resid' column"
   }
 
-  resid <- aug$.resid[!is.na(aug$.resid)]
+  if (!computation_failed) {
+    resid <- aug$.resid[!is.na(aug$.resid)]
+    if (length(resid) == 0) {
+      computation_failed <- TRUE
+      fail_reason <- "no non-missing residuals available"
+    }
+  }
 
-  if (length(resid) == 0) {
+  if (computation_failed) {
+    cli::cli_warn(
+      "Residual diagnostics could not be computed: {fail_reason}",
+      class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+    )
     return(list(
       mean = NA_real_,
       sd = NA_real_,
       min = NA_real_,
       max = NA_real_,
       has_outliers = FALSE,
-      n_outliers = 0
+      n_outliers = 0,
+      computation_failed = TRUE
     ))
   }
 
@@ -900,7 +923,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     min = min(resid),
     max = max(resid),
     has_outliers = any(outliers),
-    n_outliers = sum(outliers)
+    n_outliers = sum(outliers),
+    computation_failed = FALSE
   )
 }
 
@@ -979,6 +1003,42 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 }
 
 
+#' Warn once when an NLME inference surface consumes a non-converged fit
+#'
+#' `.check_nlme_convergence()` is the operational convergence gate (final-fit
+#' apVar validity + recorded iteration warnings); `summary()`, `glance()`, and
+#' `check_demand_model()` already consult it, but every surface that computes
+#' *new* inference (emms, comparisons, confint, subject pars, tidy, individual
+#' coefficients, anova) predates the gate and bypasses it (TICKET-064, F11).
+#' Pass a `guard` environment to dedupe the warning across an internal call
+#' chain (mirrors `.tmb_quiet_sdreport()` / `.tmb_warn_if_hessian_not_pd()`);
+#' with `guard = NULL` (the default, for a direct top-level call) the check
+#' always fires when non-converged.
+#' @param object A `beezdemand_nlme` fit.
+#' @param guard Optional dedup environment with a `warned` flag.
+#' @keywords internal
+#' @noRd
+.nlme_warn_if_not_converged <- function(object, guard = NULL) {
+  if (!is.null(guard) && isTRUE(guard$warned)) {
+    return(invisible(NULL))
+  }
+  conv <- .check_nlme_convergence(object)
+  if (!isTRUE(conv$converged)) {
+    cli::cli_warn(
+      c(
+        "!" = "NLME fit did not pass the convergence gate; standard errors,
+               intervals, and derived quantities may be unreliable.",
+        "i" = conv$message %||%
+          "See {.fn summary} / {.fn check_demand_model} for diagnostics."
+      ),
+      class = c("beezdemand_nlme_convergence_warning", "beezdemand_warning")
+    )
+    if (!is.null(guard)) guard$warned <- TRUE
+  }
+  invisible(NULL)
+}
+
+
 .check_nlme_random_effects <- function(object) {
   variances <- NULL
   near_zero <- NULL
@@ -990,17 +1050,35 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
       variances = variances,
       near_zero = near_zero,
       correlation = correlation,
-      near_singular = near_singular
+      near_singular = near_singular,
+      computation_failed = FALSE
     ))
   }
 
   model <- object$model
 
   # Get variance-covariance of random effects
+  # TICKET-066: nlme::VarCorr() erroring must be distinguishable from a
+  # legitimate "nothing near zero" result -- an explicit `computation_failed`
+  # flag (rather than inferring failure from an empty/NULL variance list)
+  # plus a classed warning naming the cause, mirroring the TMB residual
+  # block's pattern (tmb-methods.R residual check, ~line 340 above).
+  fail_reason <- NULL
   vc <- tryCatch(
     nlme::VarCorr(model),
-    error = function(e) NULL
+    error = function(e) {
+      fail_reason <<- conditionMessage(e)
+      NULL
+    }
   )
+  computation_failed <- is.null(vc)
+  if (computation_failed) {
+    cli::cli_warn(
+      "Random-effects diagnostics could not be computed: {fail_reason %||%
+       'nlme::VarCorr() returned no usable output'}",
+      class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+    )
+  }
 
   if (!is.null(vc)) {
     # Extract variance estimates
@@ -1038,7 +1116,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     variances = variances,
     near_zero = near_zero,
     correlation = correlation,
-    near_singular = near_singular
+    near_singular = near_singular,
+    computation_failed = computation_failed
   )
 }
 
@@ -1134,29 +1213,41 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 
 
 .check_fixed_residuals <- function(object) {
-  aug <- tryCatch(augment(object), error = function(e) NULL)
+  # TICKET-066: see .check_hurdle_residuals() above for the identical
+  # rationale (augment() error / missing / all-NA '.resid' -> explicit
+  # computation_failed + classed warning, not a silent "no outliers" result).
+  fail_reason <- NULL
+  aug <- tryCatch(augment(object), error = function(e) {
+    fail_reason <<- conditionMessage(e)
+    NULL
+  })
 
-  if (is.null(aug) || !".resid" %in% names(aug)) {
-    return(list(
-      mean = NA_real_,
-      sd = NA_real_,
-      min = NA_real_,
-      max = NA_real_,
-      has_outliers = FALSE,
-      n_outliers = 0
-    ))
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  if (computation_failed && is.null(fail_reason)) {
+    fail_reason <- "augment() did not return a usable '.resid' column"
   }
 
-  resid <- aug$.resid[!is.na(aug$.resid)]
+  if (!computation_failed) {
+    resid <- aug$.resid[!is.na(aug$.resid)]
+    if (length(resid) == 0) {
+      computation_failed <- TRUE
+      fail_reason <- "no non-missing residuals available"
+    }
+  }
 
-  if (length(resid) == 0) {
+  if (computation_failed) {
+    cli::cli_warn(
+      "Residual diagnostics could not be computed: {fail_reason}",
+      class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+    )
     return(list(
       mean = NA_real_,
       sd = NA_real_,
       min = NA_real_,
       max = NA_real_,
       has_outliers = FALSE,
-      n_outliers = 0
+      n_outliers = 0,
+      computation_failed = TRUE
     ))
   }
 
@@ -1169,6 +1260,7 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     min = min(resid),
     max = max(resid),
     has_outliers = any(outliers),
-    n_outliers = sum(outliers)
+    n_outliers = sum(outliers),
+    computation_failed = FALSE
   )
 }

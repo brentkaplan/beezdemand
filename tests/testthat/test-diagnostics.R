@@ -443,3 +443,79 @@ test_that("plot_qq.beezdemand_tmb errors on invalid effect", {
   expect_error(plot_qq(fit, which = "nonexistent"),
                "Specified random effects not found")
 })
+
+
+# --- TICKET-066: check_demand_model() must not report a failed internal --
+# --- check as passing (fixed/hurdle residuals, NLME random effects) ------
+
+test_that(".check_fixed_residuals: augment() error -> computation_failed + classed warning, not a clean pass", {
+  fake <- structure(list(), class = "beezdemand_fixed")
+  warns <- testthat::capture_warnings(res <- beezdemand:::.check_fixed_residuals(fake))
+  expect_true(any(grepl("could not be computed", warns)))
+  expect_true(isTRUE(res$computation_failed))
+  expect_false(res$has_outliers)
+  expect_identical(res$n_outliers, 0)
+  expect_true(is.na(res$mean))
+})
+
+test_that(".check_hurdle_residuals: augment() error -> computation_failed + classed warning, not a clean pass", {
+  fake <- structure(list(), class = "beezdemand_hurdle")
+  warns <- testthat::capture_warnings(res <- beezdemand:::.check_hurdle_residuals(fake))
+  expect_true(any(grepl("could not be computed", warns)))
+  expect_true(isTRUE(res$computation_failed))
+  expect_false(res$has_outliers)
+  expect_identical(res$n_outliers, 0)
+})
+
+test_that(".check_nlme_random_effects: VarCorr() error -> computation_failed + classed warning, not a silently-skipped check", {
+  fake <- structure(list(model = list()), class = "beezdemand_nlme")
+  warns <- testthat::capture_warnings(res <- beezdemand:::.check_nlme_random_effects(fake))
+  expect_true(any(grepl("could not be computed", warns)))
+  expect_true(isTRUE(res$computation_failed))
+  expect_null(res$variances)
+  expect_null(res$near_zero)
+})
+
+test_that(".check_nlme_random_effects: no model -> computation_failed is FALSE (nothing to check, not a failure)", {
+  fake <- structure(list(model = NULL), class = "beezdemand_nlme")
+  expect_no_warning(res <- beezdemand:::.check_nlme_random_effects(fake))
+  expect_false(res$computation_failed)
+})
+
+test_that("check_demand_model.beezdemand_fixed surfaces a could-not-compute issue instead of a silent pass", {
+  fake <- structure(list(), class = "beezdemand_fixed")
+  # convergence/parameter sub-checks on this degenerate object may also
+  # raise; only the residuals-related issue text is asserted here.
+  diag <- suppressWarnings(check_demand_model(fake))
+  expect_true(diag$n_issues > 0)
+  expect_true(any(grepl("Residual diagnostics could not be computed", diag$issues)))
+  expect_true(isTRUE(diag$residuals$computation_failed))
+})
+
+test_that("check_demand_model.beezdemand_hurdle surfaces a could-not-compute issue instead of a silent pass", {
+  fake <- structure(
+    list(hessian_pd = TRUE, param_info = list()),
+    class = "beezdemand_hurdle"
+  )
+  diag <- suppressWarnings(check_demand_model(fake))
+  expect_true(any(grepl("Residual diagnostics could not be computed", diag$issues)))
+  expect_true(isTRUE(diag$residuals$computation_failed))
+})
+
+test_that("check_demand_model.beezdemand_nlme surfaces a could-not-compute issue for a broken random-effects check", {
+  fake <- structure(
+    list(model = list(), param_info = list()),
+    class = "beezdemand_nlme"
+  )
+  diag <- suppressWarnings(check_demand_model(fake))
+  expect_true(any(grepl("Random-effects diagnostics could not be computed", diag$issues)))
+  expect_true(isTRUE(diag$random_effects$computation_failed))
+})
+
+test_that("check_demand_model: healthy fits are unaffected (computation_failed FALSE, byte-identical issue text)", {
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id", verbose = 0)
+  expect_no_warning(diag <- check_demand_model(fit))
+  expect_false(isTRUE(diag$residuals$computation_failed))
+  expect_false(any(grepl("could not be computed", diag$issues)))
+})

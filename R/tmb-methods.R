@@ -2244,7 +2244,18 @@ plot.beezdemand_tmb <- function(
 #'   estimate) is additionally present whenever `effects` includes
 #'   `"fixed"`. Fixed-effect rows carry `component == "fixed"` (matching
 #'   [tidy.beezdemand_nlme()] and the nlme/lme4 convention);
-#'   variance-component rows carry `component == "variance"`.
+#'   variance-component rows carry `component == "variance"`. A
+#'   `hessian_warning` attribute (character scalar, or absent) is attached
+#'   depending on `x$hessian_pd`: absent (no attribute) when `hessian_pd`
+#'   is `TRUE` or `NULL` (the field is missing on a legacy fit object --
+#'   nothing to say); a message noting the Hessian is not positive definite
+#'   when `hessian_pd` is `FALSE`; a message noting
+#'   positive-definiteness is unknown (because `TMB::sdreport()` failed
+#'   entirely, so SEs/CIs are unavailable, not merely unreliable) when
+#'   `hessian_pd` is `NA`. This attribute is not printed by an ordinary
+#'   tibble print -- see [summary.beezdemand_tmb()] or
+#'   [check_demand_model()] for the surfaced versions of the same
+#'   diagnostic.
 #'
 #' @details
 #' Variance-component rows (`effects = "ran_pars"`) are exactly the rows of
@@ -2356,12 +2367,28 @@ tidy.beezdemand_tmb <- function(
     result <- dplyr::bind_rows(result, ran)
   }
 
-  if (isFALSE(x$hessian_pd)) {
+  # Codex 2C review fold (BLOCKING 1, TICKET-067): `hessian_pd` may be NULL
+  # on a fit predating this field (an older saved object) or on a
+  # deliberately-stripped object; `is.na(NULL)` is length-0, so calling
+  # `if()` on it directly errors ("argument is of length zero"). Read it
+  # into a local first and gate on `length(hp) == 1L` before `is.na()`.
+  hp <- x$hessian_pd
+  if (isFALSE(hp)) {
     attr(result, "hessian_warning") <- paste0(
       "Hessian is not positive definite (pdHess = FALSE). ",
       "Standard errors, p-values, and confidence intervals may be unreliable."
     )
+  } else if (length(hp) == 1L && is.na(hp)) {
+    # TICKET-067 (E4): hessian_pd = NA means "unknowable" -- TMB::sdreport()
+    # failed entirely, not that it succeeded and reported a non-PD Hessian.
+    # summary()'s se_available note already distinguishes this case; tidy()
+    # previously attached nothing.
+    attr(result, "hessian_warning") <- paste0(
+      "Hessian positive-definiteness is unknown (TMB::sdreport() failed). ",
+      "Standard errors, p-values, and confidence intervals are unavailable."
+    )
   }
+  # hp NULL (field absent on a legacy object): no attribute, no warning.
 
   result
 }
@@ -2643,6 +2670,32 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 
 # --- vcov / fitted / residuals (TICKET-026) ---
 
+#' Warn once when an inference surface consumes a non-PD-Hessian covariance
+#'
+#' `sdr$cov.fixed` for a fit with `hessian_pd == FALSE` is a pseudo-inverse of
+#' an indefinite Hessian -- SEs/CIs/p-values/draws computed from it are
+#' unreliable even though the point estimates (and `converged`) are fine.
+#' Shared by both TMB-backed classes (`beezdemand_tmb`, `beezdemand_hurdle`);
+#' called once per user-facing entry point that reads `cov.fixed` (TICKET-063).
+#' `isFALSE()` treats `NA`/`NULL` (unknown / old objects) as "no warning".
+#' @param object A `beezdemand_tmb` or `beezdemand_hurdle` fit.
+#' @return `NULL`, invisibly.
+#' @keywords internal
+#' @noRd
+.tmb_warn_if_hessian_not_pd <- function(object) {
+  if (isFALSE(object$hessian_pd)) {
+    cli::cli_warn(
+      c(
+        "!" = "Hessian is not positive definite; standard errors, intervals,
+               and draws are unreliable.",
+        "i" = "See {.fn summary} / {.fn check_demand_model} for diagnostics."
+      ),
+      class = c("beezdemand_hessian_not_pd_warning", "beezdemand_warning")
+    )
+  }
+  invisible(NULL)
+}
+
 #' Variance-covariance matrix for a beezdemand_tmb fit
 #'
 #' Returns the fixed-effect VCOV from the TMB sdreport, i.e., the inverse of
@@ -2663,6 +2716,7 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' }
 #' @export
 vcov.beezdemand_tmb <- function(object, ...) {
+  .tmb_warn_if_hessian_not_pd(object)
   sdr <- object$sdr
   if (is.null(sdr) || is.null(sdr$cov.fixed)) {
     cli::cli_abort(
@@ -2946,6 +3000,10 @@ confint.beezdemand_tmb <- function(
   estimates <- coefs
 
   if (method == "wald") {
+    # method = "simulate" routes through .tmb_parametric_draws() -> vcov(),
+    # which already warns once; only the wald branch needs its own explicit
+    # check (it reads model$se directly, never calling vcov()).
+    .tmb_warn_if_hessian_not_pd(object)
     z <- stats::qnorm((1 + level) / 2)
     conf_low <- coefs - z * se_vec
     conf_high <- coefs + z * se_vec
@@ -3610,6 +3668,10 @@ get_demand_param_emms.beezdemand_tmb <- function(
 ) {
   param <- match.arg(param)
 
+  # Reads sdr$cov.fixed directly (not via vcov()), so it needs its own
+  # explicit hessian_pd check (TICKET-063).
+  .tmb_warn_if_hessian_not_pd(fit_obj)
+
   coefs <- fit_obj$model$coefficients
   sdr <- fit_obj$sdr
 
@@ -3894,6 +3956,11 @@ get_demand_comparisons.beezdemand_tmb <- function(
 
   # Validate `at` once at the public boundary (single multi-value warning).
   .tmb_validate_at(fit_obj, at)
+
+  # .tmb_compare_one_param() reads sdr$cov.fixed directly (not via vcov()),
+  # once per requested param -- warn once here, before the loop, rather than
+  # once per param (TICKET-063).
+  .tmb_warn_if_hessian_not_pd(fit_obj)
 
   results_list <- stats::setNames(
     lapply(param, function(p) {

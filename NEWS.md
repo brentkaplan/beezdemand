@@ -218,6 +218,143 @@ exactly, pin the previous release:
   non-positive-definite Hessian are no longer counted as valid Monte Carlo
   evidence in `$summary`'s bias/coverage calculations.
 
+## Inference gates and diagnostic honesty
+
+The fixes in this subsection change *status/diagnostic* output (warnings,
+issue lists) rather than point estimates -- fits that were correct before
+still return the same numbers. Two exceptions, both scoped to NLME
+`param_space = "natural"` fits: the `get_demand_param_emms()` bullet below
+fixes a wrong-by-orders-of-magnitude back-transformation, and the
+`get_demand_comparisons()` bullet (TICKET-075) changes what a natural-space
+contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
+= "log10"` fits (the default) are unaffected by both.
+
+* **TMB and hurdle inference surfaces now honour `hessian_pd`.** When
+  `TMB::sdreport()` reports a non-positive-definite Hessian
+  (`fit$hessian_pd == FALSE`), `sdr$cov.fixed` is a pseudo-inverse of an
+  indefinite matrix -- standard errors, confidence intervals, p-values, and
+  parametric draws computed from it are unreliable even though the point
+  estimates are unaffected. `vcov()`, `confint()`, `anova()` (single-fit
+  Wald test), `get_demand_param_emms()`, `get_demand_comparisons()`, and
+  `boot_demand()` now each emit one classed warning
+  (`beezdemand_hessian_not_pd_warning` / `beezdemand_warning`) the first time
+  they consume such a covariance, for both the `beezdemand_tmb` and
+  `beezdemand_hurdle` classes. Previously only `summary()`'s print method and
+  `check_demand_model()` surfaced this; a user calling `confint()` or
+  `boot_demand()` directly received unreliable intervals with no indication
+  anything was wrong. Values are unchanged; healthy (PD-Hessian) fits emit no
+  new conditions.
+* **NLME inference surfaces now honour `.check_nlme_convergence()`.**
+  `summary()`, `glance()`, and `check_demand_model()` already gated on
+  whether an NLME fit's final apVar inverted cleanly; `get_demand_param_emms()`,
+  `get_demand_comparisons()`, `calc_group_metrics()`, `confint()`,
+  `get_subject_pars()`, `tidy()`, `get_individual_coefficients()`, and
+  `anova()` (per compared model) now each emit one classed warning
+  (`beezdemand_nlme_convergence_warning` / `beezdemand_warning`) on a
+  non-converged fit instead of computing inference silently.
+  `calc_group_metrics()` also replaces a blanket
+  `suppressWarnings(suppressMessages(...))` around its internal Q0/alpha
+  EMM calls with targeted muffling of two specifically-matched benign
+  conditions, so a real warning raised inside those calls (e.g. the
+  estimate-column-guess fallback, which flags a possibly-wrong Pmax/Omax)
+  now reaches the caller instead of being silently dropped.
+  `get_demand_param_trends()` now warns once, naming every dropped
+  `(parameter, covariate)` combination and its cause, instead of silently
+  shrinking the returned table. Values are unchanged; converged fits emit
+  no new conditions. See also the `get_demand_param_emms()` /
+  `param_space = "natural"` bullet below, which fixes a related but
+  distinct back-transformation bug on the same NLME surface.
+* **`get_demand_param_emms()` back-transformed with `10^` unconditionally,
+  giving wrong `*_natural` columns (and `EV`) for NLME fits made with
+  `param_space = "natural"`.** `fit_demand_mixed(..., param_space =
+  "natural")` fits Q0/alpha directly on the natural scale (supported for
+  `equation_form = "simplified"`/`"exponentiated"`), so the raw emmeans
+  summary is already natural-scale; exponentiating it again with `10^`
+  inflated `Q0_natural`/`alpha_natural` by orders of magnitude and
+  propagated into `EV`, with no warning. `get_demand_param_emms()` now
+  resolves `param_space` the same way every other NLME surface does and,
+  for a natural-space fit, uses the emmeans summary directly for the
+  `*_natural` columns and fills `*_param_log10` with `log10()` of those
+  values (keeping the same column set across both spaces). Because a
+  natural-space fit is an unconstrained parameterization, a Wald CI bound
+  (or, rarely, the point estimate) can be non-positive; `*_param_log10` is
+  `NA` (not `NaN`, and without a raw "NaNs produced" warning) wherever the
+  corresponding `*_natural` value is `<= 0` -- `*_natural` itself is never
+  affected. Condition under which output differs from 0.2.0: `beezdemand_nlme`
+  fits made with `param_space = "natural"`, only in `get_demand_param_emms()`
+  (and anything built on its EV branch). `param_space = "log10"` fits (the
+  default) and the TMB tier (already space-aware) are unaffected.
+* **`get_demand_comparisons()` (NLME) had the same `param_space = "natural"`
+  gap as the bullet above, in `$contrasts_ratio`.** (TICKET-075.)
+  `emmeans::contrast()`'s `estimate`/CI in `$contrasts_log10` are on the
+  fit's internal scale (log10 for `param_space = "log10"`, natural for
+  `param_space = "natural"`); `$contrasts_ratio` always computed
+  `ratio_estimate = 10^estimate` to turn a log10-scale difference into a
+  multiplicative fold-change -- meaningless for an already-natural-scale
+  difference. For `param_space = "natural"` fits, `$contrasts_ratio` now
+  reports the difference again (same column names/shape:
+  `ratio_estimate`/`LCL_ratio`/`UCL_ratio`) instead of exponentiating it a
+  second time; the returned object's new `contrasts_ratio_scale` attribute
+  (`"ratio"` or `"difference"`) says which content a given call got.
+  `$contrasts_log10` itself was already correct (unaffected); only
+  `$contrasts_ratio`'s *content* for natural-space fits changes, from a
+  previously-meaningless number to a documented, correct one.
+  `param_space = "log10"` fits (the default) are unaffected.
+* **`check_demand_model()` no longer reports a failed internal check as a
+  passing one.** The fixed and hurdle residual sub-checks, and the NLME
+  random-effects sub-check, converted an internal `augment()` / `VarCorr()`
+  error (or a missing/all-NA `.resid` column) into the same clean-looking
+  "no outliers found" / "nothing near zero" result the check returns when it
+  actually ran and found nothing -- so a report that never examined
+  residuals or random-effect variances printed "No issues detected"
+  indistinguishably from one that genuinely checked and passed. Each
+  sub-check now sets an explicit `computation_failed` flag, raises one
+  classed warning naming the cause, and `check_demand_model()` adds a
+  "...could not be computed" issue instead of silently passing. Mirrors the
+  pattern the TMB tier's residual check already used. Healthy fits are
+  byte-identical; only fits where one of these internal checks errors are
+  affected.
+* **`fit_demand_tmb()` failure paths now name their causes.** Three gaps on
+  the failure/error-reporting side of the TMB fitter:
+  - The multi-start terminal abort ("All starting value sets failed.")
+    previously discarded every per-start cause (hard errors were `message()`d
+    only at `verbose >= 2`; optimizer-sentinel causes in `opt$message` were
+    never re-read once a start was rejected). It now appends a `Causes:`
+    section naming at least one underlying cause per failed start,
+    regardless of verbosity.
+  - Total `TMB::sdreport()` failure now warns regardless of `verbose`
+    (previously gated on `verbose >= 1`, so a `verbose = 0` fit failed
+    completely silently); the warning includes the fallback attempt's
+    message when it differs from the first; the same classed warning now
+    also fires on ADREPORT/variance-component extraction failure (a
+    previously fully silent path); and `hessian_pd = NA` (meaning
+    "unknowable because sdreport failed") is now explained via `tidy()`'s
+    `hessian_warning` attribute, not just `summary()`'s print note.
+  - Data whose rows are entirely dropped by `equation = "exponential"`'s
+    zero-consumption filter (e.g. all-zero `y`) now aborts immediately with
+    an informative message naming the equation and the dropped-row count,
+    instead of proceeding to "fit" a 0-observation model, reporting a
+    spurious "Converged (NLL = 0.00)", and then crashing during SE
+    extraction with a cryptic `no 'dimnames' attribute for array` (the only
+    output a `verbose = 0` caller saw). Healthy fits are unaffected; no
+    numeric output changes.
+* **`print()`/`summary()` for `beezdemand_hurdle` fits now surface a
+  false-converged 3-random-effect fit prominently.** The 3RE spec
+  (`random_effects = c("zeros", "q0", "alpha")`) can converge according to
+  `nlminb()`'s reported code while the Hessian is not positive definite on
+  real purchase task data (weak identification of the alpha random effect,
+  not a broken spec); `fit$opt$message`/`fit$opt$convergence` and
+  `fit$hessian_pd` already existed but were easy to miss. Both print methods
+  now show a warning block (quoting the optimizer message) whenever
+  `converged` is `FALSE` or `hessian_pd` is `FALSE`, naming the recommended
+  stability check: refit with `random_effects = c("zeros", "q0")` and
+  compare empirical-Bayes subject parameters.
+  `summary.beezdemand_hurdle()`'s `notes` field (previously computed but
+  never printed by `print.summary.beezdemand_hurdle()`) now reaches the
+  console. Converged, PD-Hessian fits print byte-identically to before. No
+  change to `converged`/`hessian_pd` semantics, EB parameter extraction, or
+  the TMB templates/likelihoods.
+
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
 * **Hurdle random-effects covariance `chol()` failure silently substituted an

@@ -34,7 +34,18 @@ and \code{term_display}. An \code{estimate_internal} column (the pre-transform
 estimate) is additionally present whenever \code{effects} includes
 \code{"fixed"}. Fixed-effect rows carry \code{component == "fixed"} (matching
 \code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} and the nlme/lme4 convention);
-variance-component rows carry \code{component == "variance"}.
+variance-component rows carry \code{component == "variance"}. A
+\code{hessian_warning} attribute (character scalar, or absent) is attached
+depending on \code{x$hessian_pd}: absent (no attribute) when \code{hessian_pd}
+is \code{TRUE} or \code{NULL} (the field is missing on a legacy fit object --
+nothing to say); a message noting the Hessian is not positive definite
+when \code{hessian_pd} is \code{FALSE}; a message noting
+positive-definiteness is unknown (because \code{TMB::sdreport()} failed
+entirely, so SEs/CIs are unavailable, not merely unreliable) when
+\code{hessian_pd} is \code{NA}. This attribute is not printed by an ordinary
+tibble print -- see \code{\link[=summary.beezdemand_tmb]{summary.beezdemand_tmb()}} or
+\code{\link[=check_demand_model]{check_demand_model()}} for the surfaced versions of the same
+diagnostic.
 }
 \description{
 Tidy a beezdemand_tmb Model

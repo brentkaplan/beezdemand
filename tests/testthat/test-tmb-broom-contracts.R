@@ -185,3 +185,130 @@ test_that("augment exponential handles data with zeros without -Inf", {
                 info = "Zero observations should have NA residuals for exponential")
   }
 })
+
+
+# --- TICKET-063: hessian_pd gate on TMB inference surfaces ------------------
+# Codex 2C review fold (RECOMMENDED 5): assert on the
+# `beezdemand_hessian_not_pd_warning` CLASS (via `.capture_warning_conditions()`
+# / `.n_hessian_pd_warnings()`, helper-hessian-pd.R), not on warning text --
+# `testthat::capture_warnings()` discards condition class, so a text
+# `grepl("not positive definite", ...)` match can't tell this warning apart
+# from any other warning that happens to contain the same phrase.
+
+test_that("vcov.beezdemand_tmb warns once when hessian_pd is FALSE (weak fit)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(V <- vcov(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(is.matrix(V) && nrow(V) == ncol(V))
+})
+
+test_that("vcov.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_true(isTRUE(fit$hessian_pd))
+  expect_no_warning(vcov(fit))
+})
+
+test_that("confint.beezdemand_tmb (wald) warns once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(ci <- confint(fit))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_tmb (simulate) warns exactly once (dedup through draws->vcov)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(
+    ci <- confint(fit, method = "simulate", R = 100, seed = 1)
+  )
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_true(nrow(ci) > 0)
+})
+
+test_that("confint.beezdemand_tmb: healthy fit raises no hessian_pd warning (wald + simulate)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(confint(fit))
+  expect_no_warning(confint(fit, method = "simulate", R = 100, seed = 1))
+})
+
+test_that("anova.beezdemand_tmb (single-fit Wald) warns exactly once when hessian_pd is FALSE", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(a <- anova(fit, group_by = "parameter"))
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+})
+
+test_that("anova.beezdemand_tmb: healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(anova(fit, group_by = "parameter"))
+})
+
+test_that(".tmb_parametric_draws() (direct call): healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(
+    draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
+  )
+  expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+})
+
+test_that("boot_demand(): healthy fit raises no hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  expect_no_warning(
+    res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)
+  )
+  expect_true(nrow(res) > 0)
+})
+
+
+# --- Codex 2C review fold: BLOCKING 1 (TICKET-067) --------------------------
+# tidy()'s `else if (is.na(x$hessian_pd))` branch used `if()` directly on
+# `is.na(x$hessian_pd)`, which is length-0 (errors: "argument is of length
+# zero") when `hessian_pd` is NULL -- an older saved fit predating the field.
+
+test_that("tidy.beezdemand_tmb: a legacy fit with no hessian_pd field works with no attribute/warning", {
+  skip_on_cran()
+  data(apt, package = "beezdemand")
+  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit$hessian_pd <- NULL
+
+  td <- expect_no_warning(tidy(fit))
+  expect_s3_class(td, "tbl_df")
+  expect_null(attr(td, "hessian_warning"))
+})

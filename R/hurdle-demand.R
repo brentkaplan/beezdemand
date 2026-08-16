@@ -644,6 +644,29 @@ NULL
 #' compare_hurdle_models(fit3, fit2)
 #' }
 #'
+#' @section Convergence:
+#' The 3-random-effect spec (`random_effects = c("zeros", "q0", "alpha")`)
+#' can \emph{false-converge} on real purchase task data: `nlminb()` reports
+#' a nonzero convergence code (e.g. "false convergence (8)") while the
+#' Hessian is not positive definite (`fit$hessian_pd == FALSE`), reflecting
+#' weak identification of the alpha random effect rather than a broken model
+#' specification -- companion datasets from the same source can converge
+#' cleanly with the identical spec. `fit$opt$message` and
+#' `fit$opt$convergence` retain nlminb's own diagnostic fields alongside
+#' `fit$converged` and `fit$hessian_pd`; `print()` and `summary()` display a
+#' prominent warning block (quoting the optimizer message) whenever either
+#' signals a problem, so a non-converged or non-PD-Hessian fit is hard to
+#' miss even without inspecting these fields directly.
+#'
+#' The recommended \strong{stability check} when the 3RE spec reports
+#' non-convergence or a non-PD Hessian is to refit with
+#' `random_effects = c("zeros", "q0")` (dropping the alpha random effect,
+#' which converges more readily) and compare the empirical-Bayes subject
+#' parameters between the two fits. Broadly similar per-subject estimates
+#' support treating the 2RE fit's conclusions as robust; this is a
+#' diagnostic comparison, not a claim that the 2RE spec is generally
+#' preferred, and beezdemand does not refit automatically.
+#'
 #' @seealso [fit_demand_tmb()] for continuous mixed-effects models,
 #'   [fit_demand_mixed()] for NLME-based fitting,
 #'   [fit_demand_fixed()] for individual NLS curves.

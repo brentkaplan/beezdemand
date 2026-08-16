@@ -113,6 +113,31 @@ use:
 \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
 }
 
+\section{Convergence}{
+
+The 3-random-effect spec (\code{random_effects = c("zeros", "q0", "alpha")})
+can \emph{false-converge} on real purchase task data: \code{nlminb()} reports
+a nonzero convergence code (e.g. "false convergence (8)") while the
+Hessian is not positive definite (\code{fit$hessian_pd == FALSE}), reflecting
+weak identification of the alpha random effect rather than a broken model
+specification -- companion datasets from the same source can converge
+cleanly with the identical spec. \code{fit$opt$message} and
+\code{fit$opt$convergence} retain nlminb's own diagnostic fields alongside
+\code{fit$converged} and \code{fit$hessian_pd}; \code{print()} and \code{summary()} display a
+prominent warning block (quoting the optimizer message) whenever either
+signals a problem, so a non-converged or non-PD-Hessian fit is hard to
+miss even without inspecting these fields directly.
+
+The recommended \strong{stability check} when the 3RE spec reports
+non-convergence or a non-PD Hessian is to refit with
+\code{random_effects = c("zeros", "q0")} (dropping the alpha random effect,
+which converges more readily) and compare the empirical-Bayes subject
+parameters between the two fits. Broadly similar per-subject estimates
+support treating the 2RE fit's conclusions as robust; this is a
+diagnostic comparison, not a claim that the 2RE spec is generally
+preferred, and beezdemand does not refit automatically.
+}
+
 \examples{
 \donttest{
 # Load example data

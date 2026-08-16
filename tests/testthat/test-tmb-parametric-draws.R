@@ -202,3 +202,21 @@ test_that("confint simulate works on a k-fixed fit", {
   w_s <- ci_s$conf.high - ci_s$conf.low
   expect_true(all(abs(w_s - w_w) / pmax(abs(w_w), 1e-8) < 0.15))
 })
+
+
+# --- TICKET-063: hessian_pd gate reaches .tmb_parametric_draws() via vcov() -
+
+test_that(".tmb_parametric_draws-backed confint(simulate) surfaces the hessian_pd warning", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  fit <- .weak_pd_tmb_fit()
+  skip_if(!isFALSE(fit$hessian_pd),
+          "platform numerics did not produce a non-PD Hessian")
+
+  conds <- .capture_warning_conditions(
+    draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
+  )
+  expect_identical(.n_hessian_pd_warnings(conds), 1L)
+  expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+})
