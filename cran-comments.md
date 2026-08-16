@@ -9,12 +9,6 @@
   ships TMB C++ templates in `src/`; sanitizer/valgrind legs are run
   because those templates changed since 0.2.0).
 
-<!-- RELEASE-TRAIN NOTE (not shipped; this file is .Rbuildignore'd): the
-     win-builder and R-hub legs run on the FINAL develop SHA after the
-     Codex whole-release fold; their results are pasted into the section
-     below before `devtools::release()`. Do not submit while the
-     "PENDING" markers are present. -->
-
 ## R CMD check results
 
 Local (`R CMD check --as-cran --run-donttest`, macOS/arm64, R 4.5.2):
@@ -28,8 +22,13 @@ win-builder R-release (R 4.6.1 ucrt, Windows Server 2022, 2026-08-16):
 URLs, see below). One test that pinned a simulation fixture bit-for-bit
 against a macOS-generated `.rds` failed at the 1e-16 relative level on
 Windows; that comparison now uses a 1e-12 tolerance (test-only change).
-win-builder R-devel: PENDING.
-R-hub linux / macos-arm64 / windows / clang-asan / valgrind: PENDING.
+win-builder R-devel (R Under development 2026-08-15 r90413 ucrt, 2026-08-16):
+0 errors | 0 warnings | 1 note apart from the same single fixture-tolerance
+test failure as R-release above (identical PASS/SKIP counts; fixed before
+submission, test-only). The note is the same CRAN incoming URL note.
+R-hub v2 (2026-08-16; R-devel on linux/macos-arm64/windows, plus
+clang-asan and valgrind): all five legs OK -- 0 errors, no sanitizer
+findings; valgrind `ERROR SUMMARY: 0 errors`, `definitely lost: 0 bytes`.
 
 The expected NOTE is the CRAN incoming feasibility check (maintainer email;
 possibly-invalid URLs for the package's own pkgdown article pages, which are
