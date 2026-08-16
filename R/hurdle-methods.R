@@ -17,7 +17,7 @@
   }
   if (isFALSE(hessian_pd)) {
     notes <- c(notes,
-      "Warning: Hessian not positive definite — standard errors may be unreliable."
+      "Warning: Hessian not positive definite -- standard errors may be unreliable."
     )
   }
   if (!isTRUE(converged) || isFALSE(hessian_pd)) {
@@ -223,7 +223,7 @@ summary.beezdemand_hurdle <- function(
   # Compute group-level demand metrics (Omax, Pmax) via unified engine
   group_metrics <- calc_group_metrics(object)
 
-  # Conditional (Part-II only) metrics — long-standing meaning of $Pmax/$Omax.
+  # Conditional (Part-II only) metrics -- long-standing meaning of $Pmax/$Omax.
   conditional_metrics <- tibble::tibble(
     metric = c("pmax_model", "omax_model", "q_at_pmax_model",
                "elasticity_at_pmax_model"),
@@ -608,7 +608,7 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'
 #' @param object A \code{beezdemand_hurdle} object.
 #' @param ... Unused.
-#' @return Integer scalar — the number of observations the model was fit on.
+#' @return Integer scalar -- the number of observations the model was fit on.
 #' @export
 nobs.beezdemand_hurdle <- function(object, ...) {
   n <- object$param_info$n_obs

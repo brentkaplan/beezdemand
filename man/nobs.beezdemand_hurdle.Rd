@@ -12,7 +12,7 @@
 \item{...}{Unused.}
 }
 \value{
-Integer scalar — the number of observations the model was fit on.
+Integer scalar -- the number of observations the model was fit on.
 }
 \description{
 Universal-accessor parity with \code{nobs.beezdemand_tmb()} and the cross-price
