@@ -126,6 +126,14 @@ runs:
         TARBALL="${TARBALLS[0]}"
         R CMD check ${{ inputs.check-args }} "${TARBALL}"
       shell: bash
+      env:
+        # R >= 4.6 fetches <CRAN>/src/contrib/Meta/current.rds during the
+        # incoming-feasibility check; with use-public-rspm the CRAN repo is
+        # Posit PPM, which does not serve it (404) and the whole check aborts.
+        # The remote half of the incoming check (URLs, CRAN version compare)
+        # is covered by the urlchecker step, win-builder and the local
+        # gauntlet; keep the local half.
+        _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
 
     - name: Build pkgdown site
       if: ${{ inputs.mode == 'pkgdown' }}
