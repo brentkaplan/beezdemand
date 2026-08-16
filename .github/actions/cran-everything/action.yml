@@ -152,5 +152,5 @@ runs:
       env:
         PKGDOWN_DEST: ${{ inputs.pkgdown-dest }}
       run: |
-        Rscript -e 'pkgdown::build_site(preview = FALSE, dest_dir = Sys.getenv("PKGDOWN_DEST"))'
+        Rscript -e 'pkgdown::build_site(preview = FALSE, override = list(destination = Sys.getenv("PKGDOWN_DEST")))'
       shell: bash
