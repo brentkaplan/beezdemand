@@ -504,7 +504,18 @@ NULL
         results[i, common_cols] <- best_row[, common_cols]
         fits[[i]] <- best_fit
         predictions[[i]] <- best_newdat
-        data_used[[i]] <- best_adf
+        # Keep the PRODUCTION data_used entry (same subject rows, and it
+        # carries every extra column of the input -- covariates, group
+        # labels -- that the rescue call's id/x/y-only slice drops); only
+        # refresh the fitted-k column, which the rescue may have changed.
+        # Replacing the whole entry made rbind() over data_used fail in
+        # plot.beezdemand_fixed() for by-grouped fits (caught by the
+        # fixed-demand vignette in the Phase-2 exit gate).
+        if (!is.null(best_adf) && "k" %in% names(best_adf) &&
+            "k" %in% names(adf) && nrow(best_adf) == nrow(adf)) {
+          adf$k <- best_adf$k
+        }
+        data_used[[i]] <- adf
         start_source[i] <- "sampled"
       }
     }

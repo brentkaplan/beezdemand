@@ -407,3 +407,26 @@ test_that("(n) item 5: low-k mapping is an explicit stochastic sampler, not a si
   snd_formula <- 1 / (pmax * q0)
   expect_false(isTRUE(all.equal(a1, snd_formula)))
 })
+
+test_that("rescued subjects keep the production data_used columns (grouped plot regression)", {
+  skip_on_cran()
+  # Phase-2 exit gate (fixed-demand vignette) caught: rescued subjects' data_used
+  # was replaced by the rescue call's id/x/y/k slice, dropping covariate columns
+  # (gender, age, ...) so rbind() over data_used failed inside
+  # plot.beezdemand_fixed() for by-grouped fits.
+  data(apt_full, package = "beezdemand", envir = environment())
+  d <- get("apt_full", envir = environment())
+  fit <- suppressWarnings(fit_demand_fixed(d, equation = "hs", k = 2, by = "gender"))
+  for (g in names(fit$groups)) {
+    du <- fit$groups[[g]]$data_used
+    ncols <- vapply(du, function(z) if (is.null(z)) NA_integer_ else ncol(z), 1L)
+    expect_length(unique(stats::na.omit(ncols)), 1L)
+    rescued <- which(fit$groups[[g]]$results$start_source == "sampled")
+    if (length(rescued)) {
+      expect_true(all(c("gender", "age") %in% names(du[[rescued[1]]])))
+    }
+  }
+  expect_true(any(vapply(fit$groups, function(gr) any(gr$results$start_source == "sampled"), TRUE)))
+  p <- plot(fit)
+  expect_true(inherits(p, "ggplot") || inherits(p, "patchwork") || is.list(p))
+})
