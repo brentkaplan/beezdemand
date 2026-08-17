@@ -96,7 +96,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x560bcc850490>
+#> <environment: 0x55b575189418>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -172,7 +172,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x560bd5efb7f8>
+#> <environment: 0x55b57e837248>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -252,7 +252,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x560bd690ca68>
+#> <environment: 0x55b57f245a38>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -453,7 +453,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x560bca733868>
+#> <environment: 0x55b5730c2200>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -476,7 +476,7 @@ print(fit_no_factors_vignette)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>                   Q0        alpha  Residual
-#> StdDev: 5.262806e-06 3.217697e-06 0.2275573
+#> StdDev: 5.264342e-06 3.217971e-06 0.2275573
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -519,7 +519,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x560bd0625040>
+#> <environment: 0x55b578f5a670>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 
@@ -538,14 +538,14 @@ print(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047 
+#>      -0.084081282       0.009734048 
 #> 
 #> Random effects:
 #>  Formula: list(Q0 ~ 1, alpha ~ 1)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>         Q0.(Intercept) alpha.(Intercept)  Residual
-#> StdDev:   3.762036e-06      2.300115e-06 0.1625574
+#> StdDev:   3.760034e-06      2.301156e-06 0.1625574
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -593,8 +593,8 @@ summary(fit_one_factor_dose)
 #> Random Effects:
 #> monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) 
 #>                   Variance     StdDev      
-#> Q0.(Intercept)    1.415292e-11 3.762036e-06
-#> alpha.(Intercept) 5.290530e-12 2.300115e-06
+#> Q0.(Intercept)    1.413786e-11 3.760034e-06
+#> alpha.(Intercept) 5.295319e-12 2.301156e-06
 #> Residual          2.642491e-02 1.625574e-01
 #> 
 #> Residual standard error: 0.1626 
@@ -612,14 +612,14 @@ coef(fit_one_factor_dose, type = "fixed")
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047
+#>      -0.084081282       0.009734048
 
 # Random effects (deviations from fixed)
 head(coef(fit_one_factor_dose, type = "random"))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.839712e-11     -3.421765e-10
-#> B   1.247594e-10      3.349284e-11
-#> C  -2.131565e-10      3.086837e-10
+#> A   8.830297e-11     -3.424853e-10
+#> B   1.246265e-10      3.352306e-11
+#> C  -2.129295e-10      3.089622e-10
 
 # Subject-specific coefficients (fixed + random)
 head(coef(fit_one_factor_dose, type = "combined"))
@@ -628,21 +628,21 @@ head(coef(fit_one_factor_dose, type = "combined"))
 #> B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #> C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #>   alpha.dose0.003
-#> A     0.009734047
-#> B     0.009734047
-#> C     0.009734047
+#> A     0.009734048
+#> B     0.009734048
+#> C     0.009734048
 
 # Access nlme fixef/ranef directly
 nlme::fixef(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047
+#>      -0.084081282       0.009734048
 utils::head(nlme::ranef(fit_one_factor_dose))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.839712e-11     -3.421765e-10
-#> B   1.247594e-10      3.349284e-11
-#> C  -2.131565e-10      3.086837e-10
+#> A   8.830297e-11     -3.424853e-10
+#> B   1.246265e-10      3.352306e-11
+#> C  -2.129295e-10      3.089622e-10
 
 # Start values that were used for the NLME fit
 fit_one_factor_dose$start_values_used
