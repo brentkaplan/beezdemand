@@ -5,7 +5,7 @@ Create a beezdemand_systematicity Object
 ## Usage
 
 ``` r
-new_beezdemand_systematicity(results, type, call)
+new_beezdemand_systematicity(results, type, call, by_var = NULL)
 ```
 
 ## Arguments
@@ -21,3 +21,7 @@ new_beezdemand_systematicity(results, type, call)
 - call:
 
   Original function call
+
+- by_var:
+
+  Character vector of grouping column names (NULL if ungrouped)

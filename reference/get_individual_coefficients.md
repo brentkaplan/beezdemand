@@ -108,6 +108,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 6 (Q0: 3, alpha: 3)
 individual_coefs <- get_individual_coefficients(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 head(individual_coefs)
 #>   id estimated_Q0_intercept estimated_Q0_drugFentanyl
 #> 1  A               2.133994                  1.969328

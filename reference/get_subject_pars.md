@@ -1,20 +1,32 @@
 # Get Subject-Specific Parameters
 
 Convenience function to extract subject-specific demand parameters from
-a fitted hurdle demand model. Equivalent to accessing
-`object$subject_pars`.
+a fitted demand model. For `beezdemand_hurdle` fits this is equivalent
+to accessing `object$subject_pars`. For `beezdemand_tmb` fits the return
+shape depends on the `expanded` argument: it may expand across within-id
+factor levels or condition within-id numeric covariates at the subject
+mean rather than return the cached `object$subject_pars`; see
+[`get_subject_pars.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md).
 
 ## Usage
 
 ``` r
-get_subject_pars(object)
+get_subject_pars(object, ...)
 ```
 
 ## Arguments
 
 - object:
 
-  A fitted `beezdemand_hurdle` object.
+  A fitted `beezdemand_hurdle` or `beezdemand_tmb` object.
+
+- ...:
+
+  Method-specific arguments. The `beezdemand_tmb` method accepts an
+  `expanded` argument (default `NULL` = auto-detect) that controls
+  whether output is the wide one-row-per-subject shape or the long
+  per-(subject, factor-level) shape; see
+  [`get_subject_pars.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.beezdemand_tmb.md).
 
 ## Value
 
@@ -86,12 +98,12 @@ head(pars)
 #> 4  60  41.85352  0.3917919  0.4987260  9.621440 0.02892408  11.269526  6.709803
 #> 5  68  23.55110  0.4511080  0.1328454 10.209411 0.02006133  13.436440  9.674080
 #> 6 106  82.94144 -0.1452772  0.3451208  5.623335 0.02480560   7.593382  7.823835
-#>       Omax
-#> 1 44.18881
-#> 2 15.36567
-#> 3 20.86896
-#> 4 21.41158
-#> 5 32.75738
-#> 6 14.59192
+#>       Omax Pmax_unconditional Omax_unconditional
+#> 1 44.18881          13.292153           44.18881
+#> 2 15.36567          16.381413           15.36567
+#> 3 20.86896          13.137907           20.83931
+#> 4 21.41158           6.709803           21.41158
+#> 5 32.75738           9.674080           32.75738
+#> 6 14.59192           7.085743           14.52454
 # }
 ```

@@ -26,7 +26,11 @@ simulate_hurdle_data(
   epsilon = 0.001,
   n_random_effects = 2,
   stop_at_zero = TRUE,
-  seed = NULL
+  seed = NULL,
+  part2 = c("koff", "snd"),
+  rho_ab_raw = NULL,
+  rho_ac_raw = NULL,
+  rho_bc_raw = NULL
 )
 ```
 
@@ -114,6 +118,45 @@ simulate_hurdle_data(
 
   Optional random seed for reproducibility.
 
+- part2:
+
+  Character. Positive-part (Part II) generator: `"koff"` (the original
+  Zhao et al. (2016) / Koffarnus-style generator; default, backward
+  compatible) or `"snd"` (TICKET-044; matches
+  `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly –
+  see Details).
+
+- rho_ab_raw:
+
+  Only used when `part2 = "snd"`.
+  Pre-[`tanh()`](https://rdrr.io/r/base/Hyperbolic.html) raw value for
+  the a/b random-effect correlation, mirroring the TMB model's own
+  `rho_ab_raw` coefficient (actual correlation is `tanh(rho_ab_raw)`).
+  Default `NULL` uses `atanh(0.3)` (actual correlation 0.3, matching the
+  `"koff"` generator's default `rho_ab`).
+
+- rho_ac_raw:
+
+  Only used when `part2 = "snd"` and `n_random_effects = 3`.
+  Pre-[`tanh()`](https://rdrr.io/r/base/Hyperbolic.html) raw value for
+  the a/c random-effect correlation. Default `NULL` uses `0` (actual
+  correlation 0).
+
+- rho_bc_raw:
+
+  Only used when `part2 = "snd"` and `n_random_effects = 3`. Raw value
+  for the b/c *partial* correlation (see Details); the actual b/c
+  correlation is NOT `tanh(rho_bc_raw)` directly. Default `NULL` uses
+  `0` (actual correlation 0).
+
+  Note: `part2` and `rho_*_raw` were added AFTER `seed` in the argument
+  list (Codex 2F review fold, TICKET-044 item 2) specifically so that
+  pre-existing positional calls – whose 19th (and last, pre-TICKET-044)
+  positional argument is `seed` – continue to bind correctly instead of
+  landing on `part2` (where
+  [`match.arg()`](https://rdrr.io/r/base/match.arg.html) would error).
+  Always pass `part2`/`rho_*_raw` by name.
+
 ## Value
 
 A data frame with columns:
@@ -148,17 +191,40 @@ A data frame with columns:
 
 ## Details
 
-The simulation follows Zhao et al. (2016):
+**Part I (Zero vs Positive), shared by both `part2` generators:**
+\$\$logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) +
+a_i\$\$
 
-**Part I (Zero vs Positive):** \$\$logit(P(Y=0)) = \beta_0 + \beta_1
-\cdot \log(price + \epsilon) + a_i\$\$
+**Part II, `part2 = "koff"` (Zhao et al., 2016):** \$\$\log(Y \| Y \> 0)
+= (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) +
+\epsilon\$\$
 
-**Part II (Positive Consumption):** \$\$\log(Y \| Y \> 0) = (\log Q_0 +
-b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon\$\$
+**Part II, `part2 = "snd"` (TICKET-044; exactly mirrors
+`src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h`, i.e. a
+log-linear/SND mean with lognormal errors and no `k`):** \$\$Q\_{0,i} =
+\exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)\$\$
+\$\$\log(Y \| Y \> 0) = (\log Q_0 + b_i) - \alpha_i Q\_{0,i} \cdot
+price + \epsilon\$\$ with \\\epsilon \sim N(0, \sigma_e^2)\\ (residual
+on the log-consumption scale) in both generators. When
+`n_random_effects = 2`, `c_i = 0` for every subject in both generators,
+so `alpha_i` reduces to the fixed population `alpha`.
 
 Random effects \\(a_i, b_i)\\ or \\(a_i, b_i, c_i)\\ are drawn from a
-multivariate normal distribution with the specified variances and
-correlations.
+multivariate normal distribution with mean zero and covariance built
+from `sigma_a`, `sigma_b`, `sigma_c` (SDs, natural scale) and the
+specified correlations. For `part2 = "koff"` (unchanged from previous
+releases), `rho_ab`, `rho_ac`, `rho_bc` are the actual (final)
+correlations, checked for a jointly positive-definite covariance matrix.
+For `part2 = "snd"`, correlations instead mirror the TMB model's own
+raw-parameter -\> actual correlation mapping exactly (any raw values are
+guaranteed to give a valid PD matrix, so no PD check is needed):
+`rho_ab = tanh(rho_ab_raw)`, `rho_ac = tanh(rho_ac_raw)`, and `rho_bc`
+via the LKJ-Cholesky partial-correlation transform \$\$\rho\_{bc} =
+\rho\_{ab}\rho\_{ac} + \tanh(\rho\_{bc,raw}) \sqrt{(1 -
+\rho\_{ab}^2)(1 - \rho\_{ac}^2)}.\$\$ This lets a user plug a fitted
+`part2 = "snd"` model's own `rho_ab_raw`/`rho_ac_raw`/`rho_bc_raw`
+coefficients directly into the simulator for a parametric bootstrap or
+recovery study.
 
 ## See also
 

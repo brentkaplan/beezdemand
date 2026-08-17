@@ -146,32 +146,39 @@ head(coefs)
 head(fit$results)
 #>    id Intensity BP0 BP1 Omaxe Pmaxe Equation       Q0d K       Alpha        R2
 #> 1  19        10  NA  20    45    15       hs 10.158664 2 0.002047574 0.9804182
-#> 2  30         3  NA  20    20    20       hs  2.807366 2 0.005865523 0.7723159
-#> 3  38         4  NA  10    21     7       hs  4.497456 2 0.004203441 0.8767531
+#> 2  30         3  NA  20    20    20       hs  2.807366 2 0.005865524 0.7723159
+#> 3  38         4  NA  10    21     7       hs  4.497456 2 0.004203442 0.8767531
 #> 4  60        10  NA  10    24     8       hs  9.924274 2 0.004299344 0.9714808
 #> 5  68        10  NA  10    36     9       hs 10.390384 2 0.002765273 0.9723669
-#> 6 106         5  NA   7    15     5       hs  5.683566 2 0.006281201 0.9283457
+#> 6 106         5  NA   7    15     5       hs  5.683567 2 0.006281203 0.9283457
 #>        Q0se      Alphase alpha_star alpha_star_se  N      AbsSS      SdRes
 #> 1 0.2685323 6.090445e-05 0.00836391  0.0002487819 16 0.01113625 0.02820366
-#> 2 0.2257764 6.760007e-04 0.02395943  0.0027613206 16 0.10721624 0.08751173
-#> 3 0.2146862 3.571177e-04 0.01717017  0.0014587507 14 0.02387617 0.04460584
+#> 2 0.2257764 6.760007e-04 0.02395943  0.0027613205 16 0.10721624 0.08751173
+#> 3 0.2146862 3.571177e-04 0.01717018  0.0014587505 14 0.02387617 0.04460584
 #> 4 0.4591683 1.449834e-04 0.01756192  0.0005922269 14 0.02013543 0.04096282
 #> 5 0.3290277 9.636582e-05 0.01129556  0.0003936341 14 0.01006059 0.02895483
-#> 6 0.3002817 4.315615e-04 0.02565739  0.0017628381 11 0.01651102 0.04283174
+#> 6 0.3002817 4.315615e-04 0.02565739  0.0017628379 11 0.01651102 0.04283174
 #>      Q0Low    Q0High    AlphaLow   AlphaHigh        EV    Omaxd     Pmaxd
 #> 1 9.582720 10.734609 0.001916947 0.002178201 1.7266939 44.43035 13.869758
-#> 2 2.323124  3.291609 0.004415646 0.007315401 0.6027653 15.51003 17.520210
-#> 3 4.029695  4.965217 0.003425349 0.004981534 0.8411046 21.64285 15.260658
+#> 2 2.323124  3.291609 0.004415646 0.007315401 0.6027653 15.51003 17.520209
+#> 3 4.029695  4.965217 0.003425350 0.004981535 0.8411045 21.64285 15.260654
 #> 4 8.923832 10.924716 0.003983452 0.004615236 0.8223426 21.16008  6.761518
 #> 5 9.673495 11.107274 0.002555310 0.002975236 1.2785478 32.89890 10.040966
-#> 6 5.004282  6.362850 0.005304941 0.007257462 0.5628754 14.48361  8.081306
-#>      Omaxa     Pmaxa     Notes converged
-#> 1 44.43095 13.955544 converged      TRUE
-#> 2 15.51024 17.628574 converged      TRUE
-#> 3 21.64314 15.355046 converged      TRUE
-#> 4 21.16036  6.803339 converged      TRUE
-#> 5 32.89934 10.103070 converged      TRUE
-#> 6 14.48380  8.131289 converged      TRUE
+#> 6 5.004282  6.362851 0.005304943 0.007257462 0.5628753 14.48360  8.081303
+#>      Omaxa     Pmaxa     Notes converged converged_strict n_starts_tried
+#> 1 44.43095 13.955544 converged      TRUE             TRUE              1
+#> 2 15.51024 17.628573 converged      TRUE             TRUE              1
+#> 3 21.64314 15.355042 converged      TRUE             TRUE              1
+#> 4 21.16036  6.803339 converged      TRUE             TRUE              1
+#> 5 32.89934 10.103070 converged      TRUE             TRUE              1
+#> 6 14.48380  8.131287 converged      TRUE             TRUE              1
+#>   n_starts_converged start_source
+#> 1                  1   production
+#> 2                  1   production
+#> 3                  1   production
+#> 4                  1   production
+#> 5                  1   production
+#> 6                  1   production
 ```
 
 ### Getting Model-Level Statistics
@@ -345,9 +352,8 @@ check_demand_model(fit)
 #> Issues Detected (1):
 #>   1. Detected 3 potential outliers across subjects
 plot_residuals(fit)$fitted
+#> NULL
 ```
-
-![](migration-guide_files/figure-html/post-fit-workflow-1.png)
 
 ### New in 0.2.0: Unified Systematicity Wrappers
 
@@ -520,7 +526,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.1      beezdemand_0.2.0
+#> [1] dplyr_1.2.1      beezdemand_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.23         
@@ -537,15 +543,15 @@ sessionInfo()
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
 #> [37] boot_1.3-32         nlme_3.1-169        tidyselect_1.2.1   
 #> [40] digest_0.6.39       performance_0.17.1  mvtnorm_1.4-2      
-#> [43] purrr_1.2.2         labeling_0.4.3      splines_4.6.1      
-#> [46] fastmap_1.2.0       grid_4.6.1          cli_3.6.6          
-#> [49] magrittr_2.0.5      utf8_1.2.6          broom_1.0.13       
+#> [43] purrr_1.2.2         splines_4.6.1       fastmap_1.2.0      
+#> [46] grid_4.6.1          cli_3.6.6           magrittr_2.0.5     
+#> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.13       
 #> [52] withr_3.0.3         scales_1.4.0        backports_1.5.1    
 #> [55] estimability_2.0.0  rmarkdown_2.31      emmeans_2.0.4      
 #> [58] otel_0.2.0          lme4_2.0-6          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.51         
-#> [64] rbibutils_2.4.1     mgcv_1.9-4          rlang_1.3.0        
-#> [67] Rcpp_1.1.2          xtable_1.8-8        glue_1.8.1         
-#> [70] nlsr_2026.4.29      minqa_1.2.8         jsonlite_2.0.0     
-#> [73] R6_2.6.1            systemfonts_1.3.2   fs_2.1.0
+#> [64] rbibutils_2.4.1     rlang_1.3.0         Rcpp_1.1.2         
+#> [67] xtable_1.8-8        glue_1.8.1          nlsr_2026.4.29     
+#> [70] minqa_1.2.8         jsonlite_2.0.0      R6_2.6.1           
+#> [73] systemfonts_1.3.2   fs_2.1.0
 ```

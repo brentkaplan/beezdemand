@@ -5,7 +5,107 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and this project adheres to Semantic
 Versioning.
 
-## [Unreleased](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...HEAD)
+## [0.3.0](https://github.com/brentkaplan/beezdemand/compare/v0.2.0...v0.3.0) - 2026-08-16
+
+Major feature release. See `NEWS.md` for the complete, detailed
+changelog.
+
+### Added
+
+- **TMB mixed-effects tier**
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md):
+  automatic differentiation, Laplace approximation, multi-start
+  optimization, optional estimation of `k`, factor-expanded /
+  multi-block (`pdBlocked`) random effects, continuous within-subject
+  random slopes, and the full post-hoc surface (EMMs, contrasts,
+  [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md),
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html),
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md)
+  / `confint(method = "simulate")` parametric-bootstrap CIs,
+  diagnostics).
+- **Monte Carlo power analysis**:
+  [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md)
+  and
+  [`find_n_demand()`](https://brentkaplan.github.io/beezdemand/reference/find_n_demand.md)
+  for within-subject and (`design_type = "between"`) between-subject
+  designs.
+- `simulate_hurdle_data(part2 = "snd")` hurdle-SND data generator.
+- [`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+  method for `beezdemand_nlme` fits.
+- Vignettes: TMB mixed-effects, advanced random-effects structures,
+  convergence troubleshooting, power analysis (precomputed).
+
+### Changed
+
+- **Bug fixes that can change estimates** (see the NEWS subsection of
+  that name; pin 0.2.0 with `remotes::install_version()` to reproduce
+  old numbers):
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  now uses multi-start rescue by default for subjects whose
+  production-heuristic fit is not strict-converged; `zben` per-subject
+  and group `Pmax`/`Omax` are computed numerically on the natural scale
+  (adaptive domain, `pmax_at_bound` flag) instead of via the SND closed
+  form; the EV `k^1.5` exponent fix in
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md);
+  legacy
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  batch fixes (per-subject start values no longer sticky across
+  subjects, `k = "fit"` log10 start no longer compounds per subject,
+  unverified `nlxb` fallback endpoints are now verified by a port refit
+  and flagged, `converged`/`converged_strict` columns added);
+  [`GetValsForSim()`](https://brentkaplan.github.io/beezdemand/reference/GetValsForSim.md)
+  residual-to-price alignment.
+- **Reporting (broom convention).**
+  [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) report the
+  Wald `statistic`/`p.value` on the estimation (log/log10) scale for
+  every `report_space` (including the default `"natural"`); only
+  `estimate`/`std.error` are back-transformed.
+- **Breaking:**
+  [`predict.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+  defaults to `type = "demand"` (marginal expectation) instead of
+  `type = "response"`.
+- Natural-space NLME
+  [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  contrasts are reported as differences (with a `contrasts_ratio_scale`
+  attribute) rather than a `10^`-exponentiated ratio;
+  [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+  back-transforms only `param_space = "log10"` fits.
+- `nls2` dropped from Imports (unused).
+
+### Fixed
+
+- **Inference gates**: TMB and hurdle inference surfaces
+  ([`confint()`](https://rdrr.io/r/stats/confint.html),
+  [`boot_demand()`](https://brentkaplan.github.io/beezdemand/reference/boot_demand.md),
+  EMMs, contrasts, trends) honour `hessian_pd`; NLME surfaces route
+  through the convergence check;
+  [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+  no longer reports a failed internal check as passing; failure paths in
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  and hurdle sdreport now name their cause.
+- Hurdle random-effects covariance
+  [`chol()`](https://rdrr.io/r/base/chol.html) failures no longer
+  silently substitute a diagonal Sigma; cross-price fitters, extractors
+  and plot methods no longer swallow errors.
+- Legacy fitter robustness: `FitCurves(equation = "linear")`,
+  [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md),
+  [`GetSharedK()`](https://brentkaplan.github.io/beezdemand/reference/GetSharedK.md)
+  degrade per-subject/group failures gracefully instead of aborting the
+  batch; a failed subject no longer crashes the whole batch.
+- [`get_demand_comparisons()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.md)
+  now filters the emmeans grid to observed factor combinations before
+  computing contrasts, preventing phantom comparisons in unbalanced
+  multi-factor designs.
+- NLME summary/tidy reporting (df-aware p-values shared between
+  [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html);
+  convergence status aligned with
+  [`glance()`](https://generics.r-lib.org/reference/glance.html)); TMB
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) multi-block
+  correlation placement; sdreport warning hygiene.
 
 ## [0.2.0](https://github.com/brentkaplan/beezdemand/compare/v0.1.3...v0.2.0) - 2026-03-03
 

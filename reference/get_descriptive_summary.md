@@ -13,7 +13,13 @@ summarizing, and visualizing.
 ## Usage
 
 ``` r
-get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
+get_descriptive_summary(
+  data,
+  x_var = "x",
+  y_var = "y",
+  id_var = "id",
+  by = NULL
+)
 ```
 
 ## Arguments
@@ -36,6 +42,13 @@ get_descriptive_summary(data, x_var = "x", y_var = "y", id_var = "id")
 
   Character string specifying the column name for subject ID (default:
   "id")
+
+- by:
+
+  Optional character vector of column names to group by. When supplied,
+  statistics are computed separately within each unique combination of
+  the `by` columns. Group columns are prepended to `$statistics` and
+  `$data`. Default `NULL` (no grouping).
 
 ## Value
 
@@ -159,5 +172,26 @@ summary(desc)
 #> 
 #> Missing Data:
 #>   No missing values detected
+
+# Grouped summary — statistics and plots faceted by group
+data(apt_full)
+desc_g <- get_descriptive_summary(apt_full, by = "gender")
+desc_g$statistics
+#> # A tibble: 51 × 9
+#>    gender Price  Mean Median    SD PropZeros   NAs   Min   Max
+#>    <chr>  <chr> <dbl>  <dbl> <dbl>     <dbl> <int> <dbl> <dbl>
+#>  1 Female 0      5.08      5  4.11      0.09     0     0    50
+#>  2 Female 0.25   4.77      4  3.97      0.15     0     0    40
+#>  3 Female 0.5    4.59      4  3.77      0.16     0     0    30
+#>  4 Female 1      4.41      4  3.58      0.16     0     0    20
+#>  5 Female 1.5    4.14      4  3.41      0.2      0     0    20
+#>  6 Female 2      3.86      4  3.09      0.2      0     0    20
+#>  7 Female 2.5    3.61      3  2.95      0.22     0     0    15
+#>  8 Female 3      3.3       3  2.71      0.21     0     0    15
+#>  9 Female 4      2.81      3  2.43      0.24     0     0    15
+#> 10 Female 5      2.45      2  2.16      0.26     0     0    10
+#> # ℹ 41 more rows
+plot(desc_g)
+
 # }
 ```

@@ -127,9 +127,19 @@ If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
 - `start_vals`: named list of starting values (final used; kept for
   backward compatibility).
 
-- `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted).
+- `nlsLM_fit`, `nlsr_fit`: fits from later stages (if attempted; `NULL`
+  when that stage was not reached, or was attempted but did not itself
+  produce a fit).
 
 - `data`: the 2-column data frame actually fit.
+
+- `convergence`: list with `isConv`, `finIter`, `stopCode`,
+  `stopMessage` for the WINNING backend, read from `model$convInfo` –
+  populated for `nls`/`nlsLM`-class fits, and for
+  [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html) fits
+  too when it returns a plain `nls`-class object (its usual successful
+  case); `isConv = NA` only when the winning fit carries no `convInfo`
+  at all.
 
 If `return_all = FALSE`: the fitted model object from the successful
 backend.
@@ -165,8 +175,12 @@ used. This is convenient for custom print/summary/plot methods.
 
 ## Convergence & warnings
 
-- Check convergence codes and residual diagnostics from the underlying
-  fit.
+- [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`confint()`](https://rdrr.io/r/stats/confint.html) on the returned
+  object emit a classed warning
+  (`beezdemand_cp_nls_nonconverged_warning`) when `convergence$isConv`
+  is explicitly `FALSE` for the winning fit; unreported convergence
+  (`NA`, when the winning object carries no `convInfo`) is silent.
 
 - Poor scaling or extreme `y` dispersion can make parameters weakly
   identified.

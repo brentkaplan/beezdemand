@@ -1066,13 +1066,13 @@ cp_posthoc_slopes(fit_mixed)
 #> =============================== 
 #> 
 #> Estimated Marginal Means:
-#>  group               x.trend         SE  df   asymp.LCL asymp.UCL
-#>  Cigarettes       0.01665965 0.03826583 Inf -0.05834000 0.0916593
-#>  Combustibles     0.09584197 0.03826583 Inf  0.02084232 0.1708416
-#>  E-Cigarettes     0.03292730 0.03826583 Inf -0.04207235 0.1079269
-#>  Non-Combustibles 0.11504957 0.03826583 Inf  0.04004992 0.1900492
+#>  group               x.trend         SE  df    lower.CL   upper.CL
+#>  Cigarettes       0.01665965 0.03826583 223 -0.05874926 0.09206855
+#>  Combustibles     0.09584197 0.03826583 223  0.02043307 0.17125088
+#>  E-Cigarettes     0.03292730 0.03826583 223 -0.04248160 0.10833621
+#>  Non-Combustibles 0.11504957 0.03826583 223  0.03964066 0.19045847
 #> 
-#> Degrees-of-freedom method: asymptotic 
+#> Degrees-of-freedom method: kenward-roger 
 #> Confidence level used: 0.95 
 #> 
 #> Significant interaction: No 
@@ -1084,13 +1084,13 @@ cp_posthoc_intercepts(fit_mixed)
 #> =================================== 
 #> 
 #> Estimated Marginal Means:
-#>  group                emmean       SE  df asymp.LCL asymp.UCL
-#>  Cigarettes       -0.1000000 2.663776 Inf -5.320906  5.120906
-#>  Combustibles      1.9933333 2.663776 Inf -3.227573  7.214239
-#>  E-Cigarettes      0.8866667 2.663776 Inf -4.334239  6.107573
-#>  Non-Combustibles  0.0466667 2.663776 Inf -5.174239  5.267573
+#>  group                emmean       SE    df  lower.CL upper.CL
+#>  Cigarettes       -0.1000000 2.663776 59.69 -5.428913 5.228913
+#>  Combustibles      1.9933333 2.663776 59.69 -3.335580 7.322246
+#>  E-Cigarettes      0.8866667 2.663776 59.69 -4.442246 6.215580
+#>  Non-Combustibles  0.0466667 2.663776 59.69 -5.282246 5.375580
 #> 
-#> Degrees-of-freedom method: asymptotic 
+#> Degrees-of-freedom method: kenward-roger 
 #> Confidence level used: 0.95 
 #> 
 #> Significant interaction: No 

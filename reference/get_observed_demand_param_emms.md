@@ -98,6 +98,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_observed_demand_param_emms(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> # A tibble: 5 × 13
 #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
 #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>

@@ -34,6 +34,9 @@ plot(
   pop_line_size = 1,
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
+  marginal = TRUE,
+  marginal_method = c("kde", "normal", "empirical"),
+  par_trans = NULL,
   ...
 )
 ```
@@ -171,6 +174,27 @@ plot(
 - ind_line_size:
 
   Line size for individual curves.
+
+- marginal:
+
+  Logical; if `TRUE` (default) and `type = "probability"`, the
+  population curve shows the marginal (population-averaged) P(zero)
+  instead of the conditional (RE = 0) curve. Set to `FALSE` for the old
+  conditional behavior.
+
+- marginal_method:
+
+  Character. Method for marginal integration when `marginal = TRUE`. One
+  of `"kde"` (default), `"normal"`, or `"empirical"`. See
+  [`predict.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+  for details.
+
+- par_trans:
+
+  Named list of transformations for parameter distribution plots (when
+  `type = "parameters"`). Names are parameter names (e.g., `"alpha"`),
+  values are transformation names (e.g., `"log10"`). Default applies
+  `log10` to alpha.
 
 - ...:
 

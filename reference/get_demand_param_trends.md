@@ -84,6 +84,11 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Number of fixed parameters: 6 (Q0: 3, alpha: 3)
 trends <- get_demand_param_trends(fit, covariates = "dose_num",
                                   specs = ~ drug)
-#> Warning: No trends could be calculated. Check 'covariates', 'specs', and 'at'.
+#> Warning: ! No trends could be calculated -- all 2 (parameter, covariate) combinations
+#>   failed:
+#> ℹ Q0 x dose_num (Can't handle an object of class “emmGrid” Use help("models",
+#>   package = "emmeans") for information on supported models.) and alpha x
+#>   dose_num (Can't handle an object of class “emmGrid” Use help("models",
+#>   package = "emmeans") for information on supported models.)
 # }
 ```

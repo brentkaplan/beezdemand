@@ -69,7 +69,7 @@ maximum is found. For small alpha values, Pmax can be quite large.
 calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
 #> Warning: `calc_omax_pmax()` was deprecated in beezdemand 0.2.0.
 #> ℹ Please use `beezdemand_calc_pmax_omax()` instead.
-#> Warning: Note: k (2.000) < e (~2.718); the expenditure function has no interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
+#> Warning: Note: k (2.000) <= e (~2.718); the expenditure function has no strict interior maximum. Returning the maximum over a bounded search interval via numerical optimization.
 #> $Pmax
 #> [1] 19.99993
 #> 
@@ -80,10 +80,10 @@ calc_omax_pmax(Q0 = 10, k = 2, alpha = 0.5)
 #> [1] 1.353476
 #> 
 #> $note
-#> [1] "k < e: bounded-range maximum over [0.001, 20.000] via numerical optimization"
+#> [1] "k <= e: bounded-range maximum over [0.001, 20.000] via numerical optimization"
 #> 
 
-# With k >= e (~2.718), a local maximum exists
+# With k > e (~2.718), a strict interior maximum exists
 calc_omax_pmax(Q0 = 10, k = 3, alpha = 0.5)
 #> $Pmax
 #> [1] 1.238123

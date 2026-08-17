@@ -8,3 +8,7 @@ to see their documentation.
   [`augment`](https://broom.tidymodels.org/reference/reexports.html),
   [`glance`](https://broom.tidymodels.org/reference/reexports.html),
   [`tidy`](https://broom.tidymodels.org/reference/reexports.html)
+
+- lme4:
+
+  [`VarCorr`](https://rdrr.io/pkg/nlme/man/VarCorr.html)

@@ -36,14 +36,13 @@ negative). However, the intended domain is `x >= 0`.
 ## Examples
 
 ``` r
+# Basic usage
 ll4(0)
 #> [1] 0
 ll4(1)
 #> [1] 0.0752575
 ll4(10)
 #> [1] 1.000011
-ll4(100)
-#> [1] 2
 ll4(c(0, 1, 10, 100, 1000))
 #> [1] 0.0000000 0.0752575 1.0000109 2.0000000 3.0000000
 
@@ -52,4 +51,11 @@ ll4(10, lambda = 2)
 #> [1] 1.002161
 ll4(10, base = exp(1)) # Natural log base
 #> [1] 2.30261
+
+# Typical workflow: transform -> fit -> back-transform
+data(apt)
+apt$y_ll4 <- ll4(apt$y)
+# Verify round-trip: ll4_inv(ll4(x)) == x
+all.equal(apt$y, ll4_inv(apt$y_ll4))
+#> [1] TRUE
 ```

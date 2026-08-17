@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   beezdemand: beezdemand.html
+  convergence-guide: convergence-guide.html
   cross-price-models: cross-price-models.html
   fixed-demand: fixed-demand.html
   group-comparisons: group-comparisons.html
@@ -11,7 +12,10 @@ articles:
   mixed-demand-advanced: mixed-demand-advanced.html
   mixed-demand: mixed-demand.html
   model-selection: model-selection.html
-last_built: 2026-08-16T18:15Z
+  power-analysis: power-analysis.html
+  tmb-advanced-random-effects: tmb-advanced-random-effects.html
+  tmb-mixed-effects: tmb-mixed-effects.html
+last_built: 2026-08-17T01:28Z
 urls:
   reference: https://brentkaplan.github.io/beezdemand/reference
   article: https://brentkaplan.github.io/beezdemand/articles

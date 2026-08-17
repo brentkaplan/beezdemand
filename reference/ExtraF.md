@@ -41,7 +41,7 @@ ExtraF(
 - k:
 
   User-defined k value; if missing will attempt to find shared k and
-  then mean emprirical range (in log units)
+  then mean empirical range (in log units)
 
 - compare:
 

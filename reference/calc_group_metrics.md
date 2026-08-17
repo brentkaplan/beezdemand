@@ -6,14 +6,21 @@ demand model.
 ## Usage
 
 ``` r
-calc_group_metrics(object)
+calc_group_metrics(object, ...)
 ```
 
 ## Arguments
 
 - object:
 
-  A fitted `beezdemand_hurdle` object.
+  A fitted `beezdemand_hurdle` or `beezdemand_tmb` object.
+
+- ...:
+
+  Method-specific arguments. The `beezdemand_tmb` method accepts an `at`
+  argument for explicit conditioning of continuous covariates and factor
+  levels; see
+  [`calc_group_metrics.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.md).
 
 ## Value
 
@@ -65,6 +72,28 @@ calc_group_metrics(fit)
 #> [1] TRUE
 #> 
 #> $note
+#> NULL
+#> 
+#> $Pmax_unconditional
+#> [1] 11.04851
+#> 
+#> $Omax_unconditional
+#> [1] 23.82811
+#> 
+#> $Qmax_unconditional
+#>   log_q0 
+#> 2.156681 
+#> 
+#> $p_zero_at_pmax
+#> [1] 8.473529e-20
+#> 
+#> $method_unconditional
+#> [1] "numerical_optimize_observed_domain"
+#> 
+#> $is_boundary_unconditional
+#> [1] FALSE
+#> 
+#> $note_unconditional
 #> NULL
 #> 
 # }

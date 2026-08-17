@@ -75,6 +75,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 2 (Q0: 1, alpha: 1)
 confint(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> # A tibble: 2 × 6
 #>   term  estimate conf.low conf.high level component
 #>   <chr>    <dbl>    <dbl>     <dbl> <dbl> <chr>    

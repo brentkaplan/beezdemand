@@ -13,7 +13,7 @@ CheckUnsystematic(dat, deltaq = 0.025, bounce = 0.1, reversals = 0, ncons0 = 2)
 
 - dat:
 
-  Dataframe in long form. Colums are id, x, y.
+  Dataframe in long form. Columns are id, x, y.
 
 - deltaq:
 

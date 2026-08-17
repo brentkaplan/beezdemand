@@ -10,4 +10,4 @@ Maps equation IDs to their parameter requirements and scales.
 
 ## Format
 
-An object of class `list` of length 13.
+An object of class `list` of length 17.

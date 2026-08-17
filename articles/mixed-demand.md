@@ -96,7 +96,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x563c43989c90>
+#> <environment: 0x55aeb33daaf0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -172,7 +172,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x563c3c9bf420>
+#> <environment: 0x55aebca85e38>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -252,7 +252,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x563c3eec9d70>
+#> <environment: 0x55aebd4950f0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -299,20 +299,21 @@ residuals.
 ``` r
 
 glance(fit_apt_zben)
-#> # A tibble: 1 × 10
-#>   model_class     backend equation_form  nobs n_subjects converged logLik   AIC
-#>   <chr>           <chr>   <chr>         <int>      <int> <lgl>      <dbl> <dbl>
-#> 1 beezdemand_nlme nlme    zben            160         10 TRUE        147. -284.
-#> # ℹ 2 more variables: BIC <dbl>, sigma <dbl>
+#> # A tibble: 1 × 13
+#>   model_class  backend equation_form  nobs n_subjects n_random_effects converged
+#>   <chr>        <chr>   <chr>         <int>      <int>            <int> <lgl>    
+#> 1 beezdemand_… nlme    zben            160         10                2 TRUE     
+#> # ℹ 6 more variables: final_fit_ok <lgl>, fit_warned <lgl>, logLik <dbl>,
+#> #   AIC <dbl>, BIC <dbl>, sigma <dbl>
 tidy(fit_apt_zben) |> head()
 #> # A tibble: 5 × 9
 #>   term     estimate std.error statistic   p.value component estimate_scale
 #>   <chr>       <dbl>     <dbl>     <dbl>     <dbl> <chr>     <chr>         
-#> 1 Q0        7.21      0.919        7.85  4.29e-15 fixed     natural       
-#> 2 alpha     0.0106    0.00182      5.83  5.69e- 9 fixed     natural       
-#> 3 Q0        0.0286   NA           NA    NA        variance  natural       
-#> 4 alpha     0.0523   NA           NA    NA        variance  natural       
-#> 5 Residual  0.00626  NA           NA    NA        variance  natural       
+#> 1 Q0         7.21     0.919        15.5  7.17e-33 fixed     natural       
+#> 2 alpha      0.0106   0.00182     -26.5  3.05e-58 fixed     natural       
+#> 3 Q0         0.169   NA            NA   NA        variance  natural       
+#> 4 alpha      0.229   NA            NA   NA        variance  natural       
+#> 5 Residual   0.0791  NA            NA   NA        variance  natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 augment(fit_apt_zben) |> head()
 #> # A tibble: 6 × 7
@@ -360,9 +361,64 @@ check_demand_model(fit_apt_zben)
 #> Recommendations:
 #>   - Investigate outlying observations
 plot_residuals(fit_apt_zben)$fitted
+#> NULL
 ```
 
-![](mixed-demand_files/figure-html/diagnostics-1.png)
+#### Loss Surface and Profile
+
+The loss surface and profile plots visualize the optimization landscape.
+The NLME versions support two modes:
+
+- `type = "ssr"` (default): sum-of-squared residuals on aggregated
+  price-level means — a quick visual check of the fixed-effects
+  landscape
+- `type = "marginal"`: linearized marginal negative log-likelihood that
+  integrates over random-effects variance — more statistically
+  appropriate for mixed models and preferred for assessing
+  identifiability near the MLE
+
+``` r
+
+plot_loss_surface(fit_apt_zben)
+```
+
+![SSR loss surface on aggregated
+means.](mixed-demand_files/figure-html/loss-ssr-1.png)
+
+SSR loss surface on aggregated means.
+
+``` r
+
+plot_loss_surface(fit_apt_zben, type = "marginal")
+```
+
+![Marginal NLL surface accounting for random-effects
+variance.](mixed-demand_files/figure-html/loss-marginal-1.png)
+
+Marginal NLL surface accounting for random-effects variance.
+
+Profile plots show 1D slices (one parameter varied, the other fixed at
+the MLE):
+
+``` r
+
+plot_loss_profile(fit_apt_zben)
+```
+
+![SSR profile plots for Q0 and
+alpha.](mixed-demand_files/figure-html/profile-ssr-1.png)
+
+SSR profile plots for Q0 and alpha.
+
+``` r
+
+plot_loss_profile(fit_apt_zben, type = "marginal")
+```
+
+![Marginal NLL profile plots for Q0 and
+alpha.](mixed-demand_files/figure-html/profile-marginal-1.png)
+
+Marginal NLL profile plots for Q0 and alpha.
 
 #### Basic Model (No Factors)
 
@@ -397,7 +453,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x563c3d9e3df0>
+#> <environment: 0x55aeb12c2198>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -463,7 +519,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x563c3e7a70c8>
+#> <environment: 0x55aeb71ae528>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 
@@ -525,12 +581,12 @@ summary(fit_one_factor_dose)
 #> 
 #> Fixed Effects:
 #>                       Value Std.Error        DF t-value  p-value    
-#> Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01   5.817 5.99e-09 ***
-#> Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01   4.370 1.24e-05 ***
-#> Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01   4.429 9.46e-06 ***
-#> alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01   8.289  < 2e-16 ***
-#> alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01   5.941 2.84e-09 ***
-#> alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   5.707 1.15e-08 ***
+#> Q0.(Intercept)    2.602e+02 4.474e+01 3.700e+01  32.351  < 2e-16 ***
+#> Q0.dose0.001      5.524e-01 1.264e-01 3.700e+01  -2.593   0.0135 *  
+#> Q0.dose0.003      3.026e-01 6.833e-02 3.700e+01  -5.294 5.68e-06 ***
+#> alpha.(Intercept) 2.234e-05 2.695e-06 3.700e+01 -88.769  < 2e-16 ***
+#> alpha.dose0.001   8.240e-01 1.387e-01 3.700e+01  -1.150   0.2575    
+#> alpha.dose0.003   1.023e+00 1.792e-01 3.700e+01   0.128   0.8989    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -546,7 +602,10 @@ summary(fit_one_factor_dose)
 #> Model Fit:
 #>   Log-Likelihood: 17.9 
 #>   AIC: -17.8 
-#>   BIC: -1.54
+#>   BIC: -1.54 
+#> 
+#> Notes:
+#>   - Hessian is not positive definite; variance estimates may be unreliable
 
 # Fixed effects
 coef(fit_one_factor_dose, type = "fixed")

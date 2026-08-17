@@ -42,18 +42,24 @@ Where:
 ### Part II: Continuous Model (Consumption Given Positive)
 
 **With 3 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
-(\exp(-(\alpha + c_i) \cdot \text{price}) - 1) + \varepsilon\_{ij}
+(\exp(-\alpha_i \cdot \text{price}) - 1) + \varepsilon\_{ij}, \qquad
+\alpha_i = \exp(\log\alpha + c_i)
 
 **With 2 random effects:** \log(Q\_{ij}) = (\log Q_0 + b_i) + k \cdot
-(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon\_{ij}
+(\exp(-\alpha \cdot \text{price}) - 1) + \varepsilon\_{ij}, \qquad
+\alpha = \exp(\log\alpha)
 
 Where:
 
 - Q_0 = intensity (consumption at price 0)
 - k = scaling parameter for exponential decay
-- \alpha = elasticity parameter
-- b_i = subject-specific random effect on intensity
-- c_i = subject-specific random effect on elasticity (3-RE model only)
+- \alpha = elasticity parameter, estimated in log space (\log\alpha) so
+  that \alpha \> 0
+- b_i = subject-specific random effect on log-intensity
+- c_i = subject-specific random effect on log-elasticity (3-RE model
+  only). It is multiplicative on the natural scale: \alpha_i =
+  \exp(\log\alpha + c_i), which keeps each subject’s elasticity
+  positive.
 
 ### Random Effects Structure
 
@@ -148,7 +154,7 @@ summary(fit2)
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error t value
+#>              Estimate Std. Error z value
 #> beta0      -392.08424  146.77064  -2.671
 #> beta1       135.79403   50.43489   2.692
 #> log_q0        1.93813    0.11712  16.548
@@ -220,16 +226,16 @@ tidy(fit2) |> head()
 #>   <chr>          <dbl>     <dbl>     <dbl>    <dbl> <chr>         <chr>         
 #> 1 beta0      -392.      147.         -2.67 7.55e- 3 zero_probabi… logit         
 #> 2 beta1       136.       50.4         2.69 7.09e- 3 zero_probabi… logit         
-#> 3 Q0            6.95      0.813       8.54 1.36e-17 consumption   natural       
-#> 4 k             1.74      0.157      11.1  1.32e-28 consumption   natural       
-#> 5 alpha         0.0988    0.0166      5.94 2.77e- 9 consumption   natural       
+#> 3 Q0            6.95      0.813      16.5  1.65e-61 consumption   natural       
+#> 4 k             1.74      0.157       6.16 7.34e-10 consumption   natural       
+#> 5 alpha         0.0988    0.0166    -13.8  4.43e-43 consumption   natural       
 #> 6 logsigma_a    5.77      1.48        3.89 1.00e- 4 variance      natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 glance(fit2)
 #> # A tibble: 1 × 9
 #>   model_class   backend  nobs n_subjects n_random_effects converged logLik   AIC
 #>   <chr>         <chr>   <int>      <int>            <int> <lgl>      <dbl> <dbl>
-#> 1 beezdemand_h… TMB       160         10                2 TRUE        2.31  13.4
+#> 1 beezdemand_h… TMB_hu…   160         10                2 TRUE        2.31  13.4
 #> # ℹ 1 more variable: BIC <dbl>
 
 # Get subject-specific parameters
@@ -241,6 +247,13 @@ head(get_subject_pars(fit2))
 #> 4  60  31.73720  0.1663613  8.202899 0.09878809  14.204504   20 36.58857
 #> 5  68  31.19351  0.4228981 10.601806 0.09878809  14.261495   20 47.28877
 #> 6 106 116.82464 -0.2317221  5.509116 0.09878809   7.590564   20 24.57311
+#>   Pmax_unconditional Omax_unconditional
+#> 1          19.999999           51.84539
+#> 2          19.999999           16.13182
+#> 3          12.765578           20.06101
+#> 4          13.605392           30.70281
+#> 5          13.660199           39.74372
+#> 6           7.270466           16.35863
 ```
 
 ## Diagnostics
@@ -263,9 +276,9 @@ check_demand_model(fit2)
 #> Random Effects:
 #> 
 #> Residuals:
-#>   Mean: 5.392e-05
-#>   SD: 0.1896
-#>   Range: [-0.6119, 0.4986]
+#>   Mean: -0.0308
+#>   SD: 0.9809
+#>   Range: [-3.129, 2.549]
 #>   Outliers: 2 observations
 #> 
 #> --------------------------------------------------
@@ -275,16 +288,11 @@ check_demand_model(fit2)
 #> Recommendations:
 #>   - Investigate outlying observations
 plot_residuals(fit2)$fitted
-```
-
-![](hurdle-demand-models_files/figure-html/diagnostics-1.png)
-
-``` r
-
+#> NULL
 plot_qq(fit2)
 ```
 
-![](hurdle-demand-models_files/figure-html/diagnostics-2.png)
+![](hurdle-demand-models_files/figure-html/diagnostics-1.png)
 
 ## Understanding Results
 
@@ -296,7 +304,7 @@ plot_qq(fit2)
 | `beta1` | Part I slope: change in log-odds per unit increase in log(price) |
 | `logQ0` | Log of intensity parameter (population average) |
 | `k` | Scaling parameter for demand decay |
-| `alpha` | Elasticity parameter (population average for 2-RE, mean for 3-RE) |
+| `alpha` | Population elasticity \exp(\log\alpha); subject values are \exp(\log\alpha + c_i) in the 3-RE model |
 
 ### Subject-Specific Parameters
 
@@ -308,7 +316,7 @@ The `subject_pars` data frame contains:
 | `b_i` | Random effect for Part II (intensity) |
 | `c_i` | Random effect for alpha (3-RE model only) |
 | `Q0` | Individual intensity: \exp(\log Q_0 + b_i) |
-| `alpha` | Individual elasticity: \alpha + c_i (or just \alpha for 2-RE) |
+| `alpha` | Individual elasticity: \exp(\log\alpha + c_i) (or \exp(\log\alpha) for 2-RE) |
 | `breakpoint` | Price where P(zero) = 0.5: \exp(-(\beta_0 + a_i) / \beta_1) - \epsilon |
 | `Pmax` | Price at maximum expenditure |
 | `Omax` | Maximum expenditure |
@@ -345,6 +353,50 @@ compare_models(fit3, fit2)
 ```
 
 A significant p-value suggests the 3-RE model provides a better fit.
+
+## Predicting and Scoring
+
+A hurdle model carries two different “predicted consumption” quantities,
+and choosing the wrong one quietly distorts any score computed against
+observed data:
+
+- `type = "demand"` (the default since beezdemand 0.3.0) is the marginal
+  expectation `(1 - P0) * E[Y | Y > 0]`. Observed consumption includes
+  zeros, so this is the quantity to score against raw data
+  (cross-validation error, calibration checks, or model comparison on
+  predictions).
+- `type = "response"` is the conditional positive mean `E[Y | Y > 0]`:
+  expected consumption *given that any is purchased*. Scoring raw data
+  with it systematically overstates prediction error wherever the
+  probability of zero consumption is large (typically at high prices).
+
+``` r
+
+# Marginal expectation (the default): score this against observed y
+pred <- predict(fit2, type = "demand", prices = c(0.5, 1, 5, 10))
+pred[, c("x", "prob_zero", "predicted_consumption", ".fitted")]
+#> # A tibble: 40 × 4
+#>        x prob_zero predicted_consumption .fitted
+#>    <dbl>     <dbl>                 <dbl>   <dbl>
+#>  1   0.5 3.54e-250                 10.9    10.9 
+#>  2   0.5 4.96e-221                  3.39    3.39
+#>  3   0.5 3.07e-194                  5.15    5.15
+#>  4   0.5 5.53e-198                  7.69    7.69
+#>  5   0.5 3.21e-198                  9.94    9.94
+#>  6   0.5 4.97e-161                  5.16    5.16
+#>  7   0.5 3.35e-228                  8.11    8.11
+#>  8   0.5 5.98e-224                  7.66    7.66
+#>  9   0.5 2.75e-212                  6.56    6.56
+#> 10   0.5 7.71e-184                  4.48    4.48
+#> # ℹ 30 more rows
+```
+
+The `prob_zero` and `predicted_consumption` columns expose the two
+parts; `.fitted` is their product
+`(1 - prob_zero) * predicted_consumption`. See the *Scoring predictions*
+section of
+[`?predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+for details.
 
 ## Visualization
 
@@ -572,6 +624,8 @@ value. *Psychological Review*, 115(1), 186-198.
   – Mixed-effects nonlinear demand models
 - [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
   – Advanced mixed-effects topics
+- [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
+  – TMB mixed-effects demand models (continuous-only)
 - [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
   – Cross-price demand analysis
 - [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)

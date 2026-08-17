@@ -185,13 +185,54 @@ natural scale or present parameters on the \\\log\_{10}\\ scale.
 To compare \\\alpha\\ estimates with models fit in \\\log\_{10}\\ space,
 use: \$\$\log\_{10}(\alpha) = \log(\alpha) / \log(10).\$\$
 
+## Convergence
+
+The 3-random-effect spec (`random_effects = c("zeros", "q0", "alpha")`)
+can *false-converge* on real purchase task data:
+[`nlminb()`](https://rdrr.io/r/stats/nlminb.html) reports a nonzero
+convergence code (e.g. "false convergence (8)") while the Hessian is not
+positive definite (`fit$hessian_pd == FALSE`), reflecting weak
+identification of the alpha random effect rather than a broken model
+specification – companion datasets from the same source can converge
+cleanly with the identical spec. `fit$opt$message` and
+`fit$opt$convergence` retain nlminb's own diagnostic fields alongside
+`fit$converged` and `fit$hessian_pd`;
+[`print()`](https://rdrr.io/r/base/print.html) and
+[`summary()`](https://rdrr.io/r/base/summary.html) display a prominent
+warning block (quoting the optimizer message) whenever either signals a
+problem, so a non-converged or non-PD-Hessian fit is hard to miss even
+without inspecting these fields directly.
+
+The recommended **stability check** when the 3RE spec reports
+non-convergence or a non-PD Hessian is to refit with
+`random_effects = c("zeros", "q0")` (dropping the alpha random effect,
+which converges more readily) and compare the empirical-Bayes subject
+parameters between the two fits. Broadly similar per-subject estimates
+support treating the 2RE fit's conclusions as robust; this is a
+diagnostic comparison, not a claim that the 2RE spec is generally
+preferred, and beezdemand does not refit automatically.
+
 ## See also
 
 [`summary.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_hurdle.md),
-[`predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md),
+[`predict.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
+(and its *Scoring predictions* section: score zero-inclusive consumption
+with `type = "demand"`, the default since 0.3.0),
 [`plot.beezdemand_hurdle`](https://brentkaplan.github.io/beezdemand/reference/plot.beezdemand_hurdle.md),
 [`compare_hurdle_models`](https://brentkaplan.github.io/beezdemand/reference/compare_hurdle_models.md),
 [`simulate_hurdle_data`](https://brentkaplan.github.io/beezdemand/reference/simulate_hurdle_data.md)
+
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+for continuous mixed-effects models,
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+for NLME-based fitting,
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+for individual NLS curves.
+
+Other demand-fitting:
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md),
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 
 ## Examples
 
@@ -247,7 +288,7 @@ summary(fit3)
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error t value
+#>              Estimate Std. Error z value
 #> beta0      -293.94893  160.41399  -1.832
 #> beta1       104.07743   61.07262   1.704
 #> log_q0        1.87220    0.12435  15.056

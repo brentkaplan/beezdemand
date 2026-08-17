@@ -28,7 +28,10 @@ summary(object, report_space = c("natural", "log10", "internal"), ...)
     exists
 
   - `"log10"`: report [`log10()`](https://rdrr.io/r/base/Log.html)-scale
-    parameters when a mapping exists
+    parameters when a mapping exists `estimate`/`std.error` follow
+    `report_space`; `statistic`/`p.value` are always computed on the
+    estimation scale (the Wald test is defined there and is not
+    recomputed after back-transforming).
 
 - ...:
 
@@ -57,7 +60,8 @@ An object of class `summary.beezdemand_hurdle` (also inherits from
 
 - coefficients_matrix:
 
-  Matrix form for printing (legacy compatibility)
+  Matrix form for printing, on the internal (estimation) scale
+  regardless of `report_space` (legacy compatibility)
 
 - variance_components:
 
@@ -135,7 +139,7 @@ summary(fit)
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error t value
+#>              Estimate Std. Error z value
 #> beta0      -293.94893  160.41399  -1.832
 #> beta1       104.07743   61.07262   1.704
 #> log_q0        1.87220    0.12435  15.056

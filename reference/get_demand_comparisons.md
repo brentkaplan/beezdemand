@@ -9,16 +9,23 @@ natural scale by applying 10^difference).
 ## Usage
 
 ``` r
+get_demand_comparisons(fit_obj, ...)
+
+# Default S3 method
+get_demand_comparisons(fit_obj, ...)
+
+# S3 method for class 'beezdemand_nlme'
 get_demand_comparisons(
   fit_obj,
-  params_to_compare = c("Q0", "alpha"),
+  param = c("Q0", "alpha"),
   compare_specs = NULL,
   contrast_type = "pairwise",
   contrast_by = NULL,
-  adjust = "tukey",
+  adjust = "holm",
   at = NULL,
   ci_level = 0.95,
   report_ratios = TRUE,
+  params_to_compare = lifecycle::deprecated(),
   ...
 )
 ```
@@ -29,10 +36,19 @@ get_demand_comparisons(
 
   A `beezdemand_nlme` object.
 
-- params_to_compare:
+- ...:
+
+  Additional arguments passed to
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
+  or
+  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
+
+- param:
 
   Character vector: "Q0", "alpha", or `c("Q0", "alpha")`. Default
-  `c("Q0", "alpha")`.
+  `c("Q0", "alpha")` (both). This is the canonical argument name, shared
+  with the TMB backend
+  ([`get_demand_comparisons.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_comparisons.beezdemand_tmb.md)).
 
 - compare_specs:
 
@@ -69,7 +85,9 @@ get_demand_comparisons(
 
 - adjust:
 
-  P-value adjustment method. Default "tukey".
+  P-value adjustment method. Default `"holm"` (changed from `"tukey"` in
+  0.3.0 for cross-backend reproducibility; pass `adjust = "tukey"` to
+  retain the previous default).
 
 - at:
 
@@ -84,12 +102,10 @@ get_demand_comparisons(
 
   Logical. If TRUE, reports contrasts as ratios. Default `TRUE`.
 
-- ...:
+- params_to_compare:
 
-  Additional arguments passed to
-  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html)
-  or
-  [`emmeans::contrast()`](https://rvlenth.github.io/emmeans/reference/contrast.html).
+  **\[deprecated\]** Use `param` instead (deprecated in 0.3.0 to
+  harmonize with the TMB backend).
 
 ## Value
 
@@ -97,18 +113,34 @@ A list named by parameter. Each element contains:
 
 - emmeans:
 
-  Tibble of EMMs (log10 scale) with CIs.
+  Tibble of EMMs (internal scale – log10 for `param_space = "log10"`
+  fits, natural for `param_space = "natural"` fits) with CIs.
 
 - contrasts_log10:
 
-  Tibble of comparisons (log10 differences) with CIs and p-values.
+  Tibble of comparisons (differences on the fit's internal scale,
+  despite the name – see the Details on `param_space = "natural"`) with
+  CIs and p-values.
 
 - contrasts_ratio:
 
-  (If `report_ratios=TRUE` and successful) Tibble of comparisons as
-  ratios (natural scale), with CIs for ratios.
+  (If `report_ratios=TRUE` and successful) Tibble of comparisons with
+  the same column shape (`ratio_estimate`, `LCL_ratio`, `UCL_ratio`) for
+  both spaces, but different CONTENT (TICKET-075): for
+  `param_space = "log10"` fits, a multiplicative ratio (`10^difference`,
+  fold-change on the natural scale); for `param_space = "natural"` fits,
+  the difference again (unchanged from `contrasts_log10`) – there is no
+  log-scale quantity to exponentiate for an already-natural-scale
+  difference. The returned object's `contrasts_ratio_scale` attribute is
+  `"ratio"` or `"difference"` accordingly.
 
-S3 class `beezdemand_comparison` is assigned.
+S3 class `beezdemand_comparison` is assigned. When `contrast_by` is
+active, the nested contrast tables carry leading by-column(s) named with
+the user-requested *original* factor name (e.g. `dose`, not the
+collapse-mapped `dose_alpha`), harmonized with the TMB backend and the
+flat
+[tidy()](https://brentkaplan.github.io/beezdemand/reference/tidy.beezdemand_comparison.md)
+output.
 
 ## Examples
 
@@ -127,24 +159,44 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_demand_comparisons(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> Using default 'compare_specs': ~ dose for EMMs.
 #> 
 #> --- Processing comparisons for parameter: Q0 ---
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
 #> 
 #> --- Processing comparisons for parameter: alpha ---
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Note: adjust = "tukey" was changed to "sidak"
-#> because "tukey" is only appropriate for one set of pairwise comparisons
-#> Demand Parameter Comparisons (from beezdemand_nlme fit)
-#> EMMs computed over: ~dose 
+#> Demand Parameter Comparisons (nlme backend)
+#> EMMs computed over: all fitted factors 
 #> Contrast type: pairwise
-#> P-value adjustment method: tukey 
+#> P-value adjustment method: holm 
 #> ================================================== 
 #> 
+#> Q0 (log10-scale contrasts):
+#>                   contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-05) - (dose1e-04)    0.199     0.136   -0.189     0.588   0.290
+#>  (dose3e-05) - (dose3e-04)    0.363     0.129   -0.004     0.731   0.022
+#>    (dose3e-05) - dose0.001    0.670     0.131    0.295     1.046   0.000
+#>    (dose3e-05) - dose0.003    0.675     0.145    0.261     1.089   0.000
+#>  (dose1e-04) - (dose3e-04)    0.164     0.091   -0.097     0.425   0.226
+#>    (dose1e-04) - dose0.001    0.471     0.095    0.199     0.743   0.000
+#>    (dose1e-04) - dose0.003    0.476     0.113    0.153     0.799   0.000
+#>    (dose3e-04) - dose0.001    0.307     0.084    0.067     0.548   0.002
+#>    (dose3e-04) - dose0.003    0.312     0.104    0.015     0.609   0.016
+#>      dose0.001 - dose0.003    0.004     0.107   -0.302     0.311   0.967
+#> 
+#> alpha (log10-scale contrasts):
+#>                   contrast estimate std.error conf.low conf.high p.value
+#>  (dose3e-05) - (dose1e-04)    0.071     0.092   -0.193     0.336       1
+#>  (dose3e-05) - (dose3e-04)    0.015     0.088   -0.235     0.265       1
+#>    (dose3e-05) - dose0.001    0.042     0.094   -0.226     0.310       1
+#>    (dose3e-05) - dose0.003    0.086     0.109   -0.224     0.396       1
+#>  (dose1e-04) - (dose3e-04)   -0.056     0.065   -0.243     0.131       1
+#>    (dose1e-04) - dose0.001   -0.030     0.073   -0.240     0.180       1
+#>    (dose1e-04) - dose0.003    0.015     0.092   -0.247     0.276       1
+#>    (dose3e-04) - dose0.001    0.027     0.067   -0.165     0.219       1
+#>    (dose3e-04) - dose0.003    0.071     0.087   -0.176     0.319       1
+#>      dose0.001 - dose0.003    0.044     0.093   -0.221     0.310       1
 # }
 ```

@@ -3,7 +3,7 @@
 > Behavioral economic demand analysis in R. Models how consumption
 > declines as price increases using purchase task data.
 
-Package version: 0.2.0 Docs: <https://brentkaplan.github.io/beezdemand/>
+Package version: 0.3.0 Docs: <https://brentkaplan.github.io/beezdemand/>
 
 ## Entry Points
 
@@ -11,6 +11,7 @@ Package version: 0.2.0 Docs: <https://brentkaplan.github.io/beezdemand/>
 |----|----|----|
 | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) | Individual NLS demand curves | `beezdemand_fixed` |
 | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) | Hierarchical NLME with random effects | `beezdemand_nlme` |
+| [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md) | Mixed-effects demand via TMB (recommended for new work) | `beezdemand_tmb` |
 | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Two-part hurdle model via TMB | `beezdemand_hurdle` |
 | [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md) | Nonlinear cross-price elasticity | `cp_model_nls` |
 | [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md) | Linear or mixed cross-price | `cp_model_lm` / `cp_model_lmer` |
@@ -51,6 +52,7 @@ defaults remain `x`/`y`/`id`/`group`/`target`.
 |----|----|
 | `beezdemand_fixed` | `id`, `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 | `beezdemand_nlme` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
+| `beezdemand_tmb` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 | `beezdemand_hurdle` | `term`, `estimate`, `std.error`, `statistic`, `p.value`, `component`, `estimate_scale` |
 
 ### `glance()` columns
@@ -59,6 +61,7 @@ defaults remain `x`/`y`/`id`/`group`/`target`.
 |----|----|
 | `beezdemand_fixed` | `model_class`, `equation`, `k_spec`, `nobs`, `n_subjects`, `n_success`, `n_fail` |
 | `beezdemand_nlme` | `model_class`, `equation`, `nobs`, `n_subjects`, `converged`, `logLik`, `AIC`, `BIC` |
+| `beezdemand_tmb` | `model_class`, `backend`, `equation_form`, `nobs`, `n_subjects`, `n_random_effects`, `converged`, `logLik`, `AIC`, `BIC` |
 | `beezdemand_hurdle` | `model_class`, `part2`, `random_effects`, `n_subjects`, `nobs`, `converged`, `logLik`, `AIC`, `BIC` |
 
 ### `augment()` columns
@@ -67,6 +70,7 @@ defaults remain `x`/`y`/`id`/`group`/`target`.
 |----|----|
 | `beezdemand_fixed` | original data + `.fitted`, `.resid` |
 | `beezdemand_nlme` | original data + `.fitted`, `.resid` |
+| `beezdemand_tmb` | original data + `.fitted`, `.resid`, `.std_resid` |
 | `beezdemand_hurdle` | original data + `.fitted_prob_zero`, `.fitted_logQ`, `.fitted`, `.resid` |
 
 ## Common Pitfalls
@@ -87,10 +91,23 @@ defaults remain `x`/`y`/`id`/`group`/`target`.
     [`plot()`](https://rdrr.io/r/graphics/plot.default.html) to
     back-transform.
 
-3.  **Equation aliases:** `"hs"` (in `fit_demand_fixed`) corresponds to
-    Hursh & Silberberg (2008). The same model is called `"zben"` in
-    `fit_demand_mixed` and `"zhao_exponential"` in `fit_demand_hurdle`.
-    Different names, same underlying exponential demand equation.
+3.  **Equation names across tiers:** the Hursh & Silberberg (2008)
+    exponential model is named `"hs"` or `"exponential"` in
+    [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
+    and `"exponential"` in
+    [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+    and
+    [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+    (Part II). The zero-bounded exponential (`"zben"`, in
+    [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
+    and
+    [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md))
+    and the Zhao two-part model (`"zhao_exponential"`, the
+    [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
+    Part II default) are *distinct* demand equations with different
+    functional forms, not aliases of HS. See
+    [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
+    for the full equation map.
 
 4.  **Cross-price column names:**
     [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)

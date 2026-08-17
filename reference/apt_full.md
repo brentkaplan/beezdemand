@@ -64,8 +64,15 @@ fit <- fit_demand_hurdle(apt_sub, y_var = "y", x_var = "x", id_var = "id")
 #>   Optimizing...
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
-#> Warning: NaNs produced
-#> Warning: NaNs produced
+#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
+#>   `TMB::sdreport()`).
+#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
+#>   `summary()` diagnostics.
+#> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
+#> ℹ Standard errors, p-values, and confidence intervals may be unreliable.
+#> ℹ Run `check_demand_model()` for detailed diagnostics.
+#> ℹ Consider simplifying the model (fewer random effects) or checking data
+#>   quality.
 #> Done. Log-likelihood: -81.74
 summary(fit)
 #> 
@@ -76,25 +83,31 @@ summary(fit)
 #> fit_demand_hurdle(data = apt_sub, y_var = "y", x_var = "x", id_var = "id")
 #> 
 #> Convergence: No 
+#> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#> WARNING: this fit did not pass the convergence/Hessian gate.
+#>   Warning: Optimizer did not converge (code 1: "false convergence (8)").
+#>   Warning: Hessian not positive definite -- standard errors may be unreliable.
+#>   Recommended stability check: refit with random_effects = c("zeros", "q0") (dropping the alpha random effect) and compare empirical-Bayes subject parameters.
+#> !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #> Number of subjects: 20 
 #> Number of observations: 340 
 #> Random effects: 3 (zeros, q0, alpha) 
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error   t value
-#> beta0      -1.068e+02        NaN       NaN
+#>              Estimate Std. Error   z value
+#> beta0      -1.068e+02        NaN        NA
 #> beta1       1.038e+02  4.916e-01   211.100
-#> log_q0      1.998e+00        NaN       NaN
-#> log_k       3.090e+01        NaN       NaN
+#> log_q0      1.998e+00        NaN        NA
+#> log_k       3.090e+01        NaN        NA
 #> log_alpha  -3.245e+01  9.069e-03 -3577.696
 #> logsigma_a  6.384e+00  1.625e-02   392.831
 #> logsigma_b -6.577e-01  1.761e-02   -37.348
-#> logsigma_c -9.817e-01        NaN       NaN
+#> logsigma_c -9.817e-01        NaN        NA
 #> logsigma_e -1.532e+00  4.854e-02   -31.564
 #> rho_ab_raw -1.980e-02  2.425e-03    -8.165
 #> rho_ac_raw  1.669e-01  5.353e-03    31.176
-#> rho_bc_raw  3.480e-01        NaN       NaN
+#> rho_bc_raw  3.480e-01        NaN        NA
 #> 
 #> Variance Components:
 #> --------------------

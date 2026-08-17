@@ -1,0 +1,511 @@
+# TMB Advanced Random-Effects Structures
+
+## Overview
+
+This vignette covers random-effects (RE) structures beyond
+intercepts-only mixed-effects in
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md).
+If you are new to TMB-based demand modeling, start with
+[`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
+for the intercept-only and basic 2-RE cases. This vignette assumes that
+foundation and walks through:
+
+1.  **Factor-expanded REs** — random slopes on a within-subject factor
+    via `pdDiag(Q0 + alpha ~ condition)` or
+    `pdSymm(Q0 + alpha ~ condition)`.
+2.  **Multi-block `pdBlocked` REs** — independent RE blocks at the same
+    grouping level. Combines a baseline block with a per-condition
+    slopes block to recover within-subject heterogeneity that
+    intercepts-only fits miss.
+3.  **Reading subject-level results** — the long-form
+    `get_subject_pars(fit, expanded = TRUE)` interface, when to use it,
+    and the relationship to
+    [`predict()`](https://rdrr.io/r/stats/predict.html).
+4.  **Group metrics with conditioning** — the `at` argument on
+    [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+    for explicit conditioning on covariates and factor levels.
+5.  **Diagnostics** — variance components per block, multi-start advice,
+    convergence troubleshooting.
+
+The motivating use case for the multi-block work is a within-subject
+demand study where Q₀ varies by experimental condition AND subjects
+differ in their condition response. An intercepts-only fit on such data
+can invert the population-level Q₀ direction; a multi-block
+`pdBlocked(list(pdSymm(Q0+α~1), pdDiag(Q0+α~condition-1)))` recovers it.
+
+## 1. Decision tree: which RE structure?
+
+                            +-------------------------------+
+                            | Within-subject factor in data?|
+                            +-------------------------------+
+                              |                       |
+                             No                      Yes
+                              |                       |
+                              v                       v
+                    +--------------------+   +-----------------------------+
+                    | Intercepts only:   |   | Are subjects' responses    |
+                    | random_effects =   |   | to the factor heterogeneous?|
+                    | Q0 + alpha ~ 1     |   | (i.e., do you need random   |
+                    +--------------------+   |  slopes?)                   |
+                                             +-----------------------------+
+                                                  |                |
+                                                 No               Yes
+                                                  |                |
+                                                  v                v
+                                    +--------------+   +--------------------------+
+                                    | Single block,|   | Need independence between|
+                                    | factor in    |   | baseline and slopes?     |
+                                    | factors arg  |   | (cigarette M1 case)      |
+                                    +--------------+   +--------------------------+
+                                                           |             |
+                                                          No            Yes
+                                                           |             |
+                                                           v             v
+                                              +--------------------+  +-------------+
+                                              | Single block:      |  | Multi-block |
+                                              | pdSymm(Q0+α~       |  | pdBlocked   |
+                                              | factor)            |  | (see below) |
+                                              +--------------------+  +-------------+
+
+In short:
+
+- **Intercepts only** when the factor (if any) is between-subject and a
+  single per-subject Q₀/α captures the heterogeneity.
+- **Single-block factor expansion** when subjects respond differently to
+  a within-subject factor, and you want the baseline-vs-slope REs to be
+  correlated.
+- **Multi-block `pdBlocked`** when you specifically want baseline REs
+  and condition-slope REs to be uncorrelated. The classic case is a
+  study where the population-level Q₀ ordering across conditions is what
+  you want to recover, and an intercepts-only fit gets the direction
+  wrong on within-subject heterogeneous data.
+
+## 2. Factor-expanded REs
+
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+accepts a single `pdDiag` or `pdSymm` block with a factor on the
+right-hand side of the random-effects formula. The factor is expanded to
+indicator columns (one per non-reference level under treatment
+contrasts, or one per level with `~ factor - 1`).
+
+``` r
+
+sim <- beezdemand:::.simulate_within_subject_demand(
+  n_subjects = 50,
+  n_conditions = 3,
+  prices = c(0.25, 0.5, 1, 2, 4, 8, 16, 32),
+  log_q0_pop = log(15),
+  log_alpha_pop = log(0.0015),
+  delta_q0 = c(0, -0.4, -0.9),
+  delta_alpha = c(0, 0.2, 0.5),
+  sigma_b = 0.4,
+  sigma_d = 0.4,
+  seed = 42
+)
+sim$id <- factor(sim$id)
+sim$condition <- factor(sim$condition)
+
+fit_factor <- fit_demand_tmb(
+  sim,
+  equation = "simplified",
+  factors = "condition",
+  random_effects = pdSymm(Q0 + alpha ~ condition),
+  multi_start = FALSE,
+  verbose = 0
+)
+summary(fit_factor)
+```
+
+Random slopes on `condition` give each subject their own deviation from
+the population-level condition shift. `pdDiag` makes those deviations
+independent across conditions; `pdSymm` allows them to correlate.
+
+## 3. Multi-block `pdBlocked`
+
+The single most consequential RE structure is the two-block `pdBlocked`
+spec used in our cigarette demand work:
+
+``` r
+
+pdBlocked(list(
+  pdSymm(Q0 + alpha ~ 1),                # baseline (correlated)
+  pdDiag(Q0 + alpha ~ condition - 1)     # condition-specific slopes
+))
+```
+
+The first block is a 2-dimensional baseline: each subject has correlated
+intercepts on log-Q₀ and log-α. The second block is a 6-dimensional
+slopes block (3 conditions × 2 parameters): each subject has independent
+deviations on log-Q₀ and log-α at each condition. The two blocks are
+independent of each other by virtue of `pdBlocked`.
+
+Why does this matter? In data where Q₀ heterogeneity correlates with
+condition response, an intercepts-only fit can invert the
+population-level Q₀ direction across conditions. The multi-block spec
+absorbs the within-subject heterogeneity into the slopes block, freeing
+the fixed effects to recover the correct direction.
+
+``` r
+
+fit_m1 <- fit_demand_tmb(
+  sim,
+  equation = "simplified",
+  factors = "condition",
+  random_effects = pdBlocked(list(
+    pdSymm(Q0 + alpha ~ 1),
+    pdDiag(Q0 + alpha ~ condition - 1)
+  )),
+  multi_start = FALSE,
+  verbose = 0
+)
+emms_q0 <- get_demand_param_emms(fit_m1, param = "Q0")
+emms_q0
+```
+
+The simulator was configured with `delta_q0 = c(0, -0.4, -0.9)`, so the
+population Q₀ ordering should be C1 \> C2 \> C3. The M1 fit recovers it.
+
+## 4. Reading subject-level results
+
+For fits with within-subject random-effects design (factor-expanded
+single block, multi-block `pdBlocked`, or numeric within-id RE-RHS
+terms), no single subject-level `Q0` / `alpha` / `Pmax` / `Omax` is
+well-defined — each subject has a per-condition vector instead.
+
+By default,
+[`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+auto-detects this situation and returns the **long per-(subject,
+factor-level) shape** with no warning:
+
+``` r
+
+spars <- get_subject_pars(fit_m1)
+head(spars)
+```
+
+The long-form table has one row per (subject, condition) combination.
+`b_i` and `c_i` repeat across conditions for the same subject (they are
+subject-level RE intercepts); `Q0`, `alpha`, `Pmax`, and `Omax` differ
+per row because they incorporate the per-condition slope REs.
+
+Numeric within-id-varying covariates are conditioned at the subject’s
+mean (one row per subject, not expanded over their values — only factor
+levels drive row expansion). When a numeric covariate is itself a
+*random slope* (a numeric term in the random-effects formula),
+[`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+and `predict(type = "parameters")` additionally surface the per-subject
+slope deviations as `q0_<term>` / `alpha_<term>` columns, and an `at =`
+argument evaluates `Q0` / `alpha` at a chosen covariate value — see the
+dose-response section below.
+
+To force the old wide one-row-per-subject shape — useful when you want
+to inspect the per-block RE matrix attributes without the row expansion
+— pass `expanded = FALSE` explicitly. A one-line warning flags that the
+returned `Q0` / `alpha` / `Pmax` / `Omax` columns are `NA` for affected
+subjects:
+
+``` r
+
+spars_wide <- suppressWarnings(get_subject_pars(fit_m1, expanded = FALSE))
+head(spars_wide)
+```
+
+For power users who want the raw per-block RE matrices:
+
+``` r
+
+re_q0_mat <- attr(spars_wide, "re_q0_mat")
+re_alpha_mat <- attr(spars_wide, "re_alpha_mat")
+str(re_q0_mat)
+```
+
+These are `n_subjects × re_dim` matrices ordered by block. The first
+column is the baseline intercept RE; subsequent columns are the
+condition slopes.
+
+### Plot and amplitude/persistence guards
+
+Two consumers — `plot(fit, type = "individual")` and
+[`calculate_amplitude_persistence()`](https://brentkaplan.github.io/beezdemand/reference/calculate_amplitude_persistence.md)
+— read `subject_pars$Q0` and `$alpha` directly. When those are NA, both
+abort with a targeted message pointing at
+`get_subject_pars(fit, expanded = TRUE)` (or simply
+`get_subject_pars(fit)`) for per-(subject, factor-level) values that the
+caller can aggregate. Native expanded-shape support in those consumers
+is planned for a follow-up release.
+
+``` r
+
+plot(fit_m1, type = "individual")
+#> Error: Subject-level Q0/alpha are "NA" for this fit.
+#> i Default `subject_pars` has no well-defined per-subject value when
+#>   a within-subject factor varies within id (factor-expanded or
+#>   multi-block RE specs).
+#> i Call `get_subject_pars(fit, expanded = TRUE)` for per-(subject,
+#>   factor-level) parameters and reduce/aggregate before plotting,
+#>   or fit a different RE structure.
+#> x Per-(subject, factor-level) plotting is planned for a follow-up
+#>   release.
+```
+
+The [`predict()`](https://rdrr.io/r/stats/predict.html) and `ranef()`
+methods work correctly on M1-style fits; they do not read
+`subject_pars$Q0` and instead consume the `re_q0_mat` / `re_alpha_mat`
+attributes.
+
+## 5. Group metrics with conditioning
+
+[`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+returns population-level Pmax, Omax, Qmax. By default, continuous
+covariates are evaluated at their training mean and factors are
+marginalized across observed levels with equal weights.
+
+``` r
+
+metrics_default <- calc_group_metrics(fit_m1)
+metrics_default[c("Pmax", "Omax", "Qmax")]
+metrics_default$conditioned_on
+```
+
+The `conditioned_on` field reports the actual conditioning point. For a
+fit with `condition` as a factor, the default is `"marginal"` —
+Pmax/Omax are derived from the average log-Q₀ and log-α across condition
+cells.
+
+To condition on a specific level or covariate value, use `at`:
+
+``` r
+
+metrics_C1 <- calc_group_metrics(fit_m1, at = list(condition = "C1"))
+metrics_C3 <- calc_group_metrics(fit_m1, at = list(condition = "C3"))
+data.frame(
+  condition = c("C1", "C3"),
+  Pmax      = c(metrics_C1$Pmax, metrics_C3$Pmax),
+  Omax      = c(metrics_C1$Omax, metrics_C3$Omax)
+)
+```
+
+### Marginalization order
+
+For derived metrics that depend nonlinearly on (Q₀, α) jointly,
+[`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md)
+uses **parameter-first marginalization**:
+
+1.  Compute log-Q₀ and log-α EMMs at each cell of the reference grid.
+2.  Marginalize each parameter independently across cells (equal
+    weights).
+3.  Derive Pmax/Omax/Qmax from the marginalized log-parameters.
+
+This is “metrics evaluated at the average parameter values,” NOT
+“average metrics across cells.” For nonlinear transforms (Lambert-W
+solutions for Pmax) the two approaches give different answers; we use
+parameter-first because it matches the convention
+[`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md)
+already uses for individual parameters and produces consistent answers
+across the EMM family of helpers.
+
+## 6. Diagnostics
+
+### Variance components per block
+
+`summary(fit)` prints variance components grouped by block. For a
+multi-block fit, the variance estimates label which block they belong to
+(e.g., `block1 sigma_b[(Intercept)]` vs `block2 sigma_b[conditionA]`).
+
+``` r
+
+summary(fit_m1)
+```
+
+A condition-slope variance that lands at the boundary (≈ 0) is a sign
+the data does not support per-condition heterogeneity for that
+parameter; consider dropping that slope from the spec or pooling
+conditions.
+
+### Multi-start
+
+For multi-block fits with rich variance structures, optimizer
+sensitivity to starting values increases. The default
+`multi_start = TRUE` runs the optimizer from multiple random starts and
+keeps the best result; this is recommended for serious fits. The
+examples in this vignette use `multi_start = FALSE` purely for speed.
+
+### Convergence troubleshooting
+
+If `fit$converged` is `FALSE` or the Hessian is non-positive-definite:
+
+1.  Check `summary(fit)$notes` for optimizer messages.
+2.  Try `tmb_control = list(optimizer = "L-BFGS-B")` as a fallback.
+3.  Reduce model complexity: drop the slopes block, or fit pdDiag
+    instead of pdSymm.
+4.  For ill-conditioned Z matrices (e.g., near-collinear factor levels),
+    inspect `attr(fit$subject_pars, "re_q0_mat")` and
+    `attr(fit$subject_pars, "re_alpha_mat")` for degenerate columns.
+
+## 7. End-to-end workflow
+
+``` r
+
+# Simulate
+sim <- beezdemand:::.simulate_within_subject_demand(
+  n_subjects = 80, n_conditions = 3,
+  log_q0_pop = log(15), log_alpha_pop = log(0.0015),
+  delta_q0 = c(0, -0.4, -0.9), delta_alpha = c(0, 0.2, 0.5),
+  sigma_b = 0.4, sigma_d = 0.4, seed = 42
+)
+sim$id <- factor(sim$id)
+sim$condition <- factor(sim$condition)
+
+# Fit M1 spec
+fit <- fit_demand_tmb(
+  sim, equation = "simplified", factors = "condition",
+  random_effects = pdBlocked(list(
+    pdSymm(Q0 + alpha ~ 1),
+    pdDiag(Q0 + alpha ~ condition - 1)
+  )),
+  multi_start = TRUE, verbose = 0
+)
+
+# Inspect
+summary(fit)
+emms <- get_demand_param_emms(fit, param = "Q0")
+cmps <- get_demand_comparisons(fit, param = "Q0")
+
+# Subject-level long form
+spars <- get_subject_pars(fit, expanded = TRUE)
+head(spars)
+
+# Group metrics, default + per-condition
+calc_group_metrics(fit)
+calc_group_metrics(fit, at = list(condition = "C1"))
+calc_group_metrics(fit, at = list(condition = "C3"))
+```
+
+## 8. Continuous within-subject random slopes (dose-response)
+
+The factor-expanded REs above model a *discrete* within-subject
+manipulation. When the within-subject covariate is *continuous* — the
+canonical case is **dose-response demand**, where each subject completes
+the purchase task at several drug doses — a random *slope* on that
+covariate is the parsimonious model: each subject’s intensity (Q₀) and
+elasticity (α) change with dose at their own rate.
+
+Specify the random slope with a numeric term in the random-effects
+formula, and pair it with `continuous_covariates` for the population
+(fixed) dose slope. Pass the covariate **centered** (mean 0; for dose
+ladders typically a centered `log10` dose) so the random intercept is
+each subject’s deviation at the reference dose.
+
+``` r
+
+set.seed(2026)
+n_sub  <- 60
+doses  <- c(-2, -1, 0, 1, 2)            # centered (e.g. centered log10 dose)
+prices <- c(0, 1, 2, 4, 8, 16)
+# Per-subject random intercept + slope on log Q0 and log alpha.
+Sigma <- diag(c(0.30, 0.10, 0.30, 0.10)^2)        # (u_q0, w_q0, u_alpha, w_alpha)
+Sigma[1, 2] <- Sigma[2, 1] <- 0.3 * 0.30 * 0.10   # Q0 intercept-slope corr
+Sigma[3, 4] <- Sigma[4, 3] <- 0.3 * 0.30 * 0.10   # alpha intercept-slope corr
+L <- t(chol(Sigma))
+rows <- list(); k <- 1L
+for (i in seq_len(n_sub)) {
+  re <- as.numeric(L %*% rnorm(4))
+  for (d in doses) {
+    q0    <- exp(log(20)    + 0.10 * d + re[1] + re[2] * d)
+    alpha <- exp(log(0.006) - 0.15 * d + re[3] + re[4] * d)
+    mu    <- q0 * exp(-alpha * q0 * prices)
+    rows[[k]] <- data.frame(id = i, dose_c = d, x = prices,
+                            y = mu * exp(rnorm(length(prices), 0, 0.05)))
+    k <- k + 1L
+  }
+}
+dose_dat <- transform(do.call(rbind, rows), id = factor(id))
+```
+
+Fit intensity and elasticity random slopes on `dose_c`:
+
+``` r
+
+fit_dose <- fit_demand_tmb(
+  dose_dat, equation = "simplified",
+  continuous_covariates = "dose_c",
+  random_effects = nlme::pdSymm(Q0 + alpha ~ dose_c),
+  multi_start = FALSE, verbose = 0
+)
+# beta_q0[2] ~ 0.10 and beta_alpha[2] ~ -0.15 are the (log-scale) dose slopes.
+coef(fit_dose)
+```
+
+The variance components are labelled by the covariate term, and the
+intercept/slope correlation is reported per parameter side:
+
+``` r
+
+VarCorr(fit_dose)
+summary(fit_dose)$variance_components
+```
+
+[`get_subject_pars()`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md)
+carries each subject’s slope deviation (`q0_dose_c` / `alpha_dose_c`,
+the same values `ranef()` exposes). Because no single Q₀/α exists once
+the curve depends on dose, evaluate per-subject parameters at a
+covariate value with `at =`:
+
+``` r
+
+sp_ref  <- get_subject_pars(fit_dose, at = c(dose_c = 0))   # reference dose
+sp_high <- get_subject_pars(fit_dose, at = c(dose_c = 2))   # +2 dose units
+head(sp_ref[, c("id", "q0_dose_c", "alpha_dose_c", "Q0", "alpha")])
+# Each subject's Q0 moves with dose at their own (fixed + random) rate:
+head(data.frame(id      = sp_ref$id,
+                Q0_at_0 = sp_ref$Q0,
+                Q0_at_2 = sp_high$Q0[match(sp_ref$id, sp_high$id)]))
+```
+
+[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+adds a near-singular check on the intercept/slope covariance (a
+\|correlation\| near 1 means the two random effects are nearly
+collinear):
+
+``` r
+
+check_demand_model(fit_dose)$random_effects$near_singular
+```
+
+**Why continuous rather than a factor?** A `K`-level factor random slope
+needs a `2K`-dimensional per-subject block; the continuous form needs
+just 4 random effects, independent of how many doses were tested:
+
+``` r
+
+cov_params <- function(dim) dim * (dim + 1) / 2  # pdSymm covariance parameters
+data.frame(
+  K_doses              = c(3, 6, 10),
+  factor_re_params     = cov_params(2 * c(3, 6, 10)),  # 2K-dim block
+  continuous_re_params = cov_params(4)                 # intercept + slope on Q0 & alpha
+)
+#>   K_doses factor_re_params continuous_re_params
+#> 1       3               21                   10
+#> 2       6               78                   10
+#> 3      10              210                   10
+```
+
+For a roughly log-spaced dose ladder the continuous slope is also the
+better-specified model, and it sidesteps the convergence difficulty a
+large factor block brings on sparse data.
+
+## Cross-references
+
+- [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
+  — intercept-only and basic 2-RE TMB fits.
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
+  — migrating from
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  to the modern S3 API.
+- [`vignette("convergence-guide")`](https://brentkaplan.github.io/beezdemand/articles/convergence-guide.md)
+  — optimizer settings and start-value strategies.
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
+  — extra sum-of-squares F-test for group-level comparisons.
+- [`?fit_demand_tmb`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md),
+  [`?get_subject_pars`](https://brentkaplan.github.io/beezdemand/reference/get_subject_pars.md),
+  [`?calc_group_metrics`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md).

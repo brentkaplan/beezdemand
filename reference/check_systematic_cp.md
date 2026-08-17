@@ -18,7 +18,8 @@ check_systematic_cp(
   expected_down = FALSE,
   x_var = "x",
   y_var = "y",
-  id_var = "id"
+  id_var = "id",
+  by = NULL
 )
 ```
 
@@ -68,6 +69,13 @@ check_systematic_cp(
 - id_var:
 
   Character. Name of the subject identifier column. Default `"id"`.
+
+- by:
+
+  Optional character vector of column names to group by. When supplied,
+  the check is run separately within each unique combination of the `by`
+  columns. Group columns are prepended to `$results`. Default `NULL` (no
+  grouping).
 
 ## Value
 

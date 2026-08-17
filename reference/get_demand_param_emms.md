@@ -9,12 +9,19 @@ Value (EV).
 ## Usage
 
 ``` r
+get_demand_param_emms(fit_obj, ...)
+
+# Default S3 method
+get_demand_param_emms(fit_obj, ...)
+
+# S3 method for class 'beezdemand_nlme'
 get_demand_param_emms(
   fit_obj,
   factors_in_emm = NULL,
   at = NULL,
   ci_level = 0.95,
   include_ev = FALSE,
+  param = c("both", "Q0", "alpha"),
   ...
 )
 ```
@@ -24,6 +31,11 @@ get_demand_param_emms(
 - fit_obj:
 
   A `beezdemand_nlme` object.
+
+- ...:
+
+  Additional arguments passed to
+  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
 
 - factors_in_emm:
 
@@ -45,10 +57,16 @@ get_demand_param_emms(
   from alpha, along with its confidence interval (calculated by
   back-transforming the CI of alpha_param_log10). Default `FALSE`.
 
-- ...:
+- param:
 
-  Additional arguments passed to
-  [`emmeans::emmeans()`](https://rvlenth.github.io/emmeans/reference/emmeans.html).
+  Character, one of `"both"` (default), `"Q0"`, or `"alpha"`. Controls
+  which demand parameter's EMM columns are returned. `"both"` preserves
+  the historical four-column-block structure (Q0 and alpha together).
+  `"Q0"` returns only Q0 columns (and drops EV, since EV is a function
+  of alpha); a warning is emitted if `include_ev = TRUE` is requested
+  alongside `param = "Q0"`. `"alpha"` returns only alpha columns plus
+  the EV block when `include_ev = TRUE`. Mirrors the `param` argument on
+  the `beezdemand_tmb` method.
 
 ## Value
 
@@ -73,6 +91,22 @@ A tibble containing:
 
   (If `include_ev=TRUE`) Essential Value and its CI.
 
+When `param = "Q0"` or `param = "alpha"`, only the columns associated
+with the requested parameter (plus factor columns and, for `"alpha"`,
+the EV block) are returned.
+
+For a `param_space = "natural"` fit (see
+[`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)),
+the emmeans reference-grid summary IS already natural-scale, so
+`*_natural` columns are populated directly and `*_param_log10` columns
+are filled with [`log10()`](https://rdrr.io/r/base/Log.html) of them for
+column-set parity with `param_space = "log10"` fits. Because that fit is
+an unconstrained parameterization, a Wald CI bound (or, rarely, the
+point estimate itself) can be non-positive; `*_param_log10` is `NA`
+wherever the corresponding `*_natural` value is `<= 0` (log10 is
+undefined there), without raising a warning. `*_natural` itself is never
+`NA` from this.
+
 ## Examples
 
 ``` r
@@ -90,6 +124,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_demand_param_emms(fit)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> # A tibble: 5 × 13
 #>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
 #>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
@@ -102,5 +139,20 @@ get_demand_param_emms(fit)
 #> #   alpha_param_log10 <dbl>, LCL_alpha_param_log10 <dbl>,
 #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
 #> #   UCL_alpha_natural <dbl>
+
+# Request only Q0 columns — convenient for pivoting and plotting
+get_demand_param_emms(fit, param = "Q0")
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
+#> # A tibble: 5 × 7
+#>   dose  Q0_param_log10 LCL_Q0_param_log10 UCL_Q0_param_log10 Q0_natural
+#>   <fct>          <dbl>              <dbl>              <dbl>      <dbl>
+#> 1 3e-05           2.58               2.35               2.80      377. 
+#> 2 1e-04           2.38               2.23               2.52      238. 
+#> 3 3e-04           2.21               2.10               2.32      163. 
+#> 4 0.001           1.91               1.78               2.03       80.5
+#> 5 0.003           1.90               1.73               2.07       79.7
+#> # ℹ 2 more variables: LCL_Q0_natural <dbl>, UCL_Q0_natural <dbl>
 # }
 ```

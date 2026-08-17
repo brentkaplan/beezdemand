@@ -20,7 +20,15 @@ List of 3: setaparams, sdindex, x
 
 ## Details
 
-Gets values used in SimulateDemand
+Gets values used in SimulateDemand. Per-subject residuals are matched to
+the returned `x` price columns by EXACT identity
+(`make.names(as.character(x))` – no numeric tolerance), so a subject's
+price values must match the global price set bit-for-bit. A subject
+missing a price contributes `NA` for that price (tolerated by
+`sdindex`'s `na.rm = TRUE`); a subject with a duplicated price is
+rejected with an informative error naming the subject and the duplicated
+price(s), since duplicate rows have no well-defined single residual to
+place in that column.
 
 ## Author
 
