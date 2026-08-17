@@ -512,7 +512,7 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1   7.065932e-18    -2.846441e-18            1      0.8497968
+#> 1   7.050819e-17     -3.85976e-17            1      0.8497968
 ```
 
 By construction, both factors are sample-standardized (mean 0, SD 1

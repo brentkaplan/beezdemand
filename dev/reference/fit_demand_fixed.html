@@ -405,8 +405,6 @@ before <code>fit_demand_fixed()</code> for reproducibility – the helpers never
 <span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Data casted as data.frame</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>FitCurves: subject '11' reported as converged with a non-positive Alpha (Q0d = 5, Alpha = -4.345028e-10); this estimate may be domain-invalid -- inspect before use.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
@@ -432,7 +430,7 @@ before <code>fit_demand_fixed()</code> for reproducibility – the helpers never
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   gender model_class   backend equation k_spec  nobs n_subjects n_success n_fail</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Female beezdemand_f… legacy  hs       fixed…   378         38        33      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Female beezdemand_f… legacy  hs       fixed…   378         38        34      4</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Male   beezdemand_f… legacy  hs       fixed…   481         39        38      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
