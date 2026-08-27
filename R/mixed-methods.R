@@ -171,7 +171,7 @@ get_pooled_nls_starts <- function(data, y_var, x_var, equation_form) {
 #'   id_var = "monkey", factors = "dose", equation_form = "zben")
 #' get_demand_param_emms(fit)
 #'
-#' # Request only Q0 columns — convenient for pivoting and plotting
+#' # Request only Q0 columns (convenient for pivoting and plotting)
 #' get_demand_param_emms(fit, param = "Q0")
 #' }
 #' @importFrom emmeans ref_grid emmeans
@@ -429,7 +429,7 @@ get_demand_param_emms.beezdemand_nlme <- function(
         # `param_log10_*` with log10() of the natural values instead of
         # dropping them.
         emm_table_combined <- if (identical(internal_space, "natural")) {
-          # Codex 2C review fold (BLOCKING 2, TICKET-074): a converged
+          # TICKET-074: a converged
           # natural-space fit is fit with an UNCONSTRAINED parameterization
           # -- the point estimate is typically positive but a Wald CI bound
           # (or, rarely, the point estimate itself for a near-zero/negative
@@ -751,12 +751,11 @@ get_demand_param_emms.beezdemand_nlme <- function(
 
 #' Get Estimated Marginal Means for Observed Factor Combinations
 #'
-#' This function is a wrapper around `get_demand_param_emms`. It first calls
-#' `get_demand_param_emms` to calculate Estimated Marginal Means (EMMs) for
-#' Q0 and alpha parameters over all combinations of the specified factor levels.
-#' It then filters these results to return EMMs only for the combinations of
-#' factor levels that were actually present in the original dataset used to
-#' fit the `beezdemand_nlme` model.
+#' Wraps `get_demand_param_emms`: it first computes Estimated Marginal Means
+#' (EMMs) for Q0 and alpha over all combinations of the specified factor
+#' levels, then filters these results to the combinations of factor levels
+#' that were actually present in the original dataset used to fit the
+#' `beezdemand_nlme` model.
 #'
 #' @param fit_obj A `beezdemand_nlme` object returned by `fit_demand_mixed()`.
 #' @param factors_in_emm Character vector of factor names to compute EMMs over.
@@ -956,7 +955,7 @@ get_observed_demand_param_emms <- function(
 #' estimate-column-guess fallback warning (the one warning that flags
 #' possibly-wrong Pmax/Omax) and the new hessian/convergence-gate warning's
 #' duplicate. This muffles only two known-benign, specifically-matched
-#' conditions and lets everything else -- including that fallback warning --
+#' conditions and lets everything else (including that fallback warning)
 #' propagate.
 #' @keywords internal
 #' @noRd
@@ -1193,11 +1192,11 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #' @param ... Additional arguments passed to `emmeans::emmeans()` or `emmeans::contrast()`.
 #'
 #' @return A list named by parameter. Each element contains:
-#'   \item{emmeans}{Tibble of EMMs (internal scale -- log10 for
+#'   \item{emmeans}{Tibble of EMMs (internal scale, i.e., log10 for
 #'     `param_space = "log10"` fits, natural for `param_space = "natural"`
 #'     fits) with CIs.}
 #'   \item{contrasts_log10}{Tibble of comparisons (differences on the fit's
-#'     internal scale, despite the name -- see the Details on
+#'     internal scale, despite the name; see the Details on
 #'     `param_space = "natural"`) with CIs and p-values.}
 #'   \item{contrasts_ratio}{(If `report_ratios=TRUE` and successful) Tibble of
 #'     comparisons with the same column shape (`ratio_estimate`, `LCL_ratio`,
@@ -1205,7 +1204,7 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
 #'     `param_space = "log10"` fits, a multiplicative ratio
 #'     (`10^difference`, fold-change on the natural scale); for
 #'     `param_space = "natural"` fits, the difference again (unchanged from
-#'     `contrasts_log10`) -- there is no log-scale quantity to exponentiate
+#'     `contrasts_log10`), because there is no log-scale quantity to exponentiate
 #'     for an already-natural-scale difference. The returned object's
 #'     `contrasts_ratio_scale` attribute is `"ratio"` or `"difference"`
 #'     accordingly.}
@@ -1353,7 +1352,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
       )
     }
     base_factors <- all.vars(compare_specs)
-    # F3 + follow-up (Codex re-review): validate the requested factors at the
+    # F3 + follow-up: validate the requested factors at the
     # boundary, mirroring the TMB backend, instead of letting a bogus name fall
     # through emmeans() into a silent partial result. Under asymmetric
     # `collapse_levels`, `compare_specs` may name either the original factor
@@ -1381,7 +1380,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
   # Boundary validation for contrast_by (TICKET-032), mirroring compare_specs
   # and the TMB backend: a name not in the fit (typo) aborts here, once, before
   # the per-parameter loop. Without this, a typo on a collapse fit was silently
-  # dropped to NULL during per-param mapping (Codex review Blocking 1).
+  # dropped to NULL during per-param mapping.
   if (!is.null(contrast_by)) {
     if (length(contrast_by) == 0L) {
       contrast_by <- NULL
@@ -1599,7 +1598,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
           # factors_alpha), NOT the compare_specs subset (`actual_factors`).
           # A by-var that resolves here but is absent from compare_specs is
           # then caught by the pre-validation guard below (loud abort) rather
-          # than silently dropped (Codex review Blocking 1). A genuine typo was
+          # than silently dropped. A genuine typo was
           # already rejected by the boundary check above.
           if (collapsed_name %in% param_factors) {
             mapped_contrast_by <- c(mapped_contrast_by, collapsed_name)
@@ -1630,7 +1629,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
         }
       }
 
-      # TICKET-033 (Codex R2): mirror the TMB within-param collision guard
+      # TICKET-033: mirror the TMB within-param collision guard
       # (R/tmb-methods.R duplicate-effective check). Two requested by-vars that
       # resolve to the SAME effective column -- e.g.
       # contrast_by = c("age_group", "age_group_alpha") under asymmetric
@@ -1864,7 +1863,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
               cb_rename <- cb_rename[present]
             }
             if (length(cb_rename) > 0L) {
-              # Collision guard (Codex B1): the user-original target name must
+              # Collision guard: the user-original target name must
               # not already exist among the NON-source columns of either nested
               # table (e.g. a factor literally named `estimate`/`df`/`p.value`).
               # Abort loudly rather than let dplyr::rename() error cryptically.
@@ -1954,7 +1953,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
   # so it survives collapse-mapping and is consistent across backends -- but
   # only when by-grouping was actually applied for at least one parameter,
   # otherwise "NULL" (so the flattener/print do not synthesize an all-NA
-  # by-column for a fully-redundant/ignored request; Codex review Recommended 1).
+  # by-column for a fully-redundant/ignored request).
   any_by_applied <- any(vapply(contrast_by_map_list, length, integer(1)) > 0L)
   attr(results_list, "contrast_by_used") <- if (!is.null(contrast_by) && any_by_applied) {
     paste(contrast_by, collapse = ", ")
@@ -1968,7 +1967,7 @@ get_demand_comparisons.beezdemand_nlme <- function(
 
 # Is the recorded `contrast_by_used` attribute inactive (no by-grouping)?
 # Handles NULL, empty, and the literal "NULL" / "" string sentinels that both
-# backends historically write (TICKET-032 Decision: Codex v2 Finding 4).
+# backends historically write (TICKET-032).
 .contrast_by_inactive <- function(x) {
   is.null(x) || length(x) == 0L ||
     identical(x, "") || identical(x, "NULL")
@@ -2364,7 +2363,7 @@ get_demand_param_trends <- function(
   }
 
   if (length(out_list) == 0) {
-    # Codex 2C review fold (RECOMMENDED 4, TICKET-064 F13): this early
+    # TICKET-064 F13: this early
     # return previously discarded the per-combination causes already
     # accumulated in `failed_combos` -- NEWS claims "naming every dropped
     # combination", which this generic message did not do when ALL
@@ -2555,8 +2554,8 @@ print.beezdemand_nlme <- function(
 #' @param report_space Character. Reporting space for core parameters. One of
 #'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
-#'   the estimation scale — nlme's native containment-t test
-#'   (transformation-invariant).
+#'   the estimation scale (nlme's native containment-t test, which is
+#'   transformation-invariant).
 #' @param ... Additional arguments (passed to summary.nlme)
 #' @return A `summary.beezdemand_nlme` object (inherits from
 #'   `beezdemand_summary`) with fields including:
@@ -2785,8 +2784,8 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #' @param report_space Character. Reporting space for core parameters. One of
 #'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
-#'   the estimation scale — nlme's native containment-t test
-#'   (transformation-invariant).
+#'   the estimation scale (nlme's native containment-t test, which is
+#'   transformation-invariant).
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name
@@ -2889,13 +2888,13 @@ tidy.beezdemand_nlme <- function(
 #'   - `n_random_effects`: Number of random-effect terms (e.g. 2 for
 #'     `Q0 + alpha ~ 1`)
 #'   - `converged`: Operational convergence status. `TRUE` when the final fit is
-#'     usable for inference — i.e. `apVar` (nlme's approximate covariance of the
-#'     variance-covariance parameters) is positive-definite AND there is no
+#'     usable for inference, i.e., `apVar` (nlme's approximate covariance of the
+#'     variance-covariance parameters) is positive-definite and there is no
 #'     terminal error. Alias for `final_fit_ok`. It is not flipped to `FALSE`
 #'     by iteration-level optimizer warnings (see `fit_warned`).
 #'   - `final_fit_ok`: The canonical usable-for-inference gate (`apVar` PD and no
 #'     terminal error); identical to `converged`. NLME-only.
-#'   - `fit_warned`: Diagnostic flag — `TRUE` when nlme emitted iteration-level
+#'   - `fit_warned`: Diagnostic flag that is `TRUE` when nlme emitted iteration-level
 #'     convergence warnings (false convergence, singular, step-halving, iteration
 #'     limit, ...) during PNLS-LME alternation. Informational only; does not gate
 #'     `converged`. NLME-only.
@@ -4772,7 +4771,7 @@ plot.beezdemand_nlme <- function(
 
 #' Calculate Individual-Level Predicted Coefficients from beezdemand_nlme Model
 #'
-#' This function extracts and combines fixed and random effects to calculate
+#' Extracts and combines fixed and random effects to calculate
 #' individual-level predicted coefficients for all parameter-factor combinations
 #' from a beezdemand_nlme model object. It automatically detects the factor
 #' structure and calculates coefficients for each individual and factor level.

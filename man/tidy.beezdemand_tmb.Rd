@@ -37,15 +37,15 @@ estimate) is additionally present whenever \code{effects} includes
 variance-component rows carry \code{component == "variance"}. A
 \code{hessian_warning} attribute (character scalar, or absent) is attached
 depending on \code{x$hessian_pd}: absent (no attribute) when \code{hessian_pd}
-is \code{TRUE} or \code{NULL} (the field is missing on a legacy fit object --
-nothing to say); a message noting the Hessian is not positive definite
+is \code{TRUE} or \code{NULL} (the field is missing on a legacy fit object, so
+there is nothing to report); a message noting the Hessian is not positive definite
 when \code{hessian_pd} is \code{FALSE}; a message noting
 positive-definiteness is unknown (because \code{TMB::sdreport()} failed
 entirely, so SEs/CIs are unavailable, not merely unreliable) when
 \code{hessian_pd} is \code{NA}. This attribute is not printed by an ordinary
-tibble print -- see \code{\link[=summary.beezdemand_tmb]{summary.beezdemand_tmb()}} or
+tibble print (see \code{\link[=summary.beezdemand_tmb]{summary.beezdemand_tmb()}} or
 \code{\link[=check_demand_model]{check_demand_model()}} for the surfaced versions of the same
-diagnostic.
+diagnostic).
 }
 \description{
 Tidy a beezdemand_tmb Model
@@ -56,8 +56,8 @@ Variance-component rows (\code{effects = "ran_pars"}) are exactly the rows of
 deviations on the \strong{log10 scale} and the residual standard deviation on
 the model's likelihood scale. They are not the raw internal \code{logsigma}
 optimizer coefficients and do not respond to \code{report_space}; \code{std.error}
-is \code{NA} for them. Random-effect \emph{correlations} are not tidied here -- see
-\code{summary(x)$correlations} or \code{VarCorr(x)} for those. The NLME sibling
+is \code{NA} for them. Random-effect \emph{correlations} are not tidied here (see
+\code{summary(x)$correlations} or \code{VarCorr(x)} for those). The NLME sibling
 \code{\link[=tidy.beezdemand_nlme]{tidy.beezdemand_nlme()}} likewise reports SDs, so backend-agnostic code can
 consume the \code{estimate} column without dispatch logic on either side.
 }

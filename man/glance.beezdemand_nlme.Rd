@@ -22,13 +22,13 @@ A one-row tibble of model statistics with columns:
 \item \code{n_random_effects}: Number of random-effect terms (e.g. 2 for
 \code{Q0 + alpha ~ 1})
 \item \code{converged}: Operational convergence status. \code{TRUE} when the final fit is
-usable for inference — i.e. \code{apVar} (nlme's approximate covariance of the
-variance-covariance parameters) is positive-definite AND there is no
+usable for inference, i.e., \code{apVar} (nlme's approximate covariance of the
+variance-covariance parameters) is positive-definite and there is no
 terminal error. Alias for \code{final_fit_ok}. It is not flipped to \code{FALSE}
 by iteration-level optimizer warnings (see \code{fit_warned}).
 \item \code{final_fit_ok}: The canonical usable-for-inference gate (\code{apVar} PD and no
 terminal error); identical to \code{converged}. NLME-only.
-\item \code{fit_warned}: Diagnostic flag — \code{TRUE} when nlme emitted iteration-level
+\item \code{fit_warned}: Diagnostic flag that is \code{TRUE} when nlme emitted iteration-level
 convergence warnings (false convergence, singular, step-halving, iteration
 limit, ...) during PNLS-LME alternation. Informational only; does not gate
 \code{converged}. NLME-only.

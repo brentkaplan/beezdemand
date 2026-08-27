@@ -222,7 +222,7 @@
 
 #' Is this RE spec fittable by the existing (Phase-1) TMB template?
 #'
-#' The `src/MixedDemand.h` template ships with a single 1x1 (pdDiag) or
+#' The `src/MixedDemand.h` template provides a single 1x1 (pdDiag) or
 #' 2x2 (pdSymm) covariance on intercepts only. Anything richer must wait
 #' for Phase 2 (Z-matrix generalization).
 #' @keywords internal
@@ -293,7 +293,7 @@
   )
 }
 
-#' Short human-readable summary of the RE shape -- attached to fit objects
+#' Short human-readable summary of the RE shape, attached to fit objects
 #' for downstream S3 methods and `check_demand_model()`.
 #' @keywords internal
 #' @noRd
@@ -312,7 +312,7 @@
 #' Numeric (continuous) random-effect slope terms in a parsed RE spec
 #'
 #' Returns the names of RE-RHS terms that are *numeric* columns in `data`
-#' (continuous within-subject random slopes, TICKET-051) -- the terms that make
+#' (continuous within-subject random slopes), i.e. the terms that make
 #' a subject's Q0/alpha a function of a covariate. Intercepts (`"(Intercept)"`)
 #' and factor-dummy columns are excluded because their names are not numeric
 #' columns of `data`.
@@ -349,8 +349,8 @@
 #' Validate that the parsed RE spec makes sense against the provided data
 #'
 #' Phase-1-fittable shapes are trivially valid (intercept-only on a single
-#' grouping factor). For richer shapes -- which the Phase-1 gate will reject
-#' before fitting anyway -- verify that every RE formula variable exists in
+#' grouping factor). For richer shapes (which the Phase-1 gate will reject
+#' before fitting anyway), verify that every RE formula variable exists in
 #' the data and varies within `id_var`.
 #' @keywords internal
 #' @noRd

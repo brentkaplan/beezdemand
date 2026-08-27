@@ -131,7 +131,7 @@ test_that("residuals(scale='model') for zben is unaffected by the natural-scale 
 })
 
 test_that("residuals(scale='natural', level='population') for zben back-transforms y before differencing (#18)", {
-  # Codex review of GH #19 batch (Recommended #3): the subject-level identity
+  # GH #19 batch follow-up (Recommended #3): the subject-level identity
   # test above did not confirm the fix also holds at level = "population"
   # (random effects zeroed, population-mean fitted values). Same fix
   # (.tmb_fitted_resid()'s scale/equation branch), same expected identity;

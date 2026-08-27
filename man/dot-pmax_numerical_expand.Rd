@@ -25,13 +25,13 @@ number of expansions was reached and the optimum still sits at the
 (expanded) upper bound, i.e. the true maximizer was not found.
 }
 \description{
-Some demand curves -- notably zben's LL4-scale exponential decay
-back-transformed to the natural expenditure curve -- can have an
+Some demand curves (notably zben's LL4-scale exponential decay
+back-transformed to the natural expenditure curve) can have an
 unconstrained expenditure-maximizing price well beyond the subject's
 observed price range. \code{\link[=.pmax_numerical]{.pmax_numerical()}} alone then silently returns the
-domain edge as "Pmax": not the curve's true maximizer, and not stable
-across subjects/fits observed through different price ranges (Codex
-review of GH #19). This wraps \code{\link[=.pmax_numerical]{.pmax_numerical()}} with an adaptive,
+domain edge as "Pmax", which is neither the curve's true maximizer nor stable
+across subjects/fits observed through different price ranges. This wraps
+\code{\link[=.pmax_numerical]{.pmax_numerical()}} with an adaptive,
 doubling-decade search: starting from \code{price_range}, if the optimum sits
 within 1\% of the current upper bound, the upper bound is multiplied by
 10 and the search repeated, up to \code{max_expansions} times.

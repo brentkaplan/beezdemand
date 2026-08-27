@@ -64,7 +64,7 @@
 #' @format Long-form data.frame with columns: id, x, y, target, group. Participants were asked how many cigarettes, e-cigarettes, combustible, and non-combustible products they would buy at various prices.
 "etm"
 
-#' Example cross‐price dataset
+#' Example cross-price dataset
 #'
 #' A small illustrative dataset of price (x) and consumption (y) target
 #' (target), and group (group).

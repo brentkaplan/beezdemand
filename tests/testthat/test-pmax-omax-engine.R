@@ -512,8 +512,8 @@ test_that("Analytic Pmax succeeds above threshold and is NA below threshold", {
   expect_false(.pmax_analytic_hs(0.01, 10, hs_thr - 0.1)$success)
   expect_false(.pmax_analytic_hurdle(0.5, hu_thr - 0.1)$success)
   expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr - 0.1)$success)
-  # AT the threshold: all model types use strict-max semantics (resolved per the
-  # Codex review). At exactly k == threshold the expenditure function has a
+  # AT the threshold: all model types use strict-max semantics.
+  # At exactly k == threshold the expenditure function has a
   # tangent inflection, not a strict interior maximum, so Pmax is NA -- and HS
   # and the two hurdle variants now agree (previously HS used <= but hurdle <).
   expect_false(.pmax_analytic_hs(0.01, 10, hs_thr)$success)
@@ -521,7 +521,7 @@ test_that("Analytic Pmax succeeds above threshold and is NA below threshold", {
   expect_false(.pmax_analytic_hurdle_hs_stdq0(0.05, 8, hu_thr)$success)
 })
 
-# --- zben adaptive domain expansion (Codex review of GH #19, BLOCKING) ------
+# --- zben adaptive domain expansion (GH #19, BLOCKING) ----------------------
 #
 # zben's numerical fallback searched only the observed price domain. A
 # curve whose true (unconstrained) expenditure-maximizing price lies beyond

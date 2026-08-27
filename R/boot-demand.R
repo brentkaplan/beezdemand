@@ -19,7 +19,7 @@
 #'
 #' @details
 #' The parametric bootstrap is asymptotically equivalent to the delta method but
-#' avoids its linearization, so it is the more defensible recourse for the
+#' avoids its linearization, so it is preferable for the
 #' strongly nonlinear derived metrics (Pmax/Omax via Lambert-W). Draws are
 #' fixed-effect-only (population / per-condition metrics); per-subject metric CIs
 #' would require random-effect-aware draws and are out of scope for now.
@@ -40,7 +40,7 @@
 #' raised because the interval is undefined.
 #'
 #' @param fit A \code{beezdemand_tmb} object. NLME (\code{beezdemand_nlme}) and
-#'   hurdle fits are not supported in this version and error helpfully.
+#'   hurdle fits are not supported in this version and raise an informative error.
 #' @param statistics Character vector; any of
 #'   \code{c("Pmax", "Omax", "Qmax", "EV", "elasticity_at_pmax")}. Default
 #'   \code{c("Pmax", "Omax", "EV")}.
@@ -187,7 +187,7 @@ boot_demand <- function(
   )
 
   nf_vec <- integer(0)
-  # Codex review of GH #19 (BLOCKING follow-up): count zben bootstrap draws
+  # GH #19 follow-up: count zben bootstrap draws
   # whose numerical Pmax search hit the engine's domain-expansion cap
   # without finding the true (interior) maximum. Surfaced as a warning
   # (not attached per-draw to the returned tibble, which has a fixed,
@@ -269,7 +269,7 @@ boot_demand <- function(
     }
   }
 
-  # Codex review of GH #19 (BLOCKING follow-up): warn (rather than silently
+  # GH #19 follow-up: warn (rather than silently
   # returning underestimated Pmax/Omax/Qmax/elasticity_at_pmax) when zben
   # bootstrap draws hit the numerical Pmax search's domain-expansion cap.
   pmax_derived_stats <- c("Pmax", "Omax", "Qmax", "elasticity_at_pmax")

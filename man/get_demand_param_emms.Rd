@@ -81,7 +81,7 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
   id_var = "monkey", factors = "dose", equation_form = "zben")
 get_demand_param_emms(fit)
 
-# Request only Q0 columns — convenient for pivoting and plotting
+# Request only Q0 columns (convenient for pivoting and plotting)
 get_demand_param_emms(fit, param = "Q0")
 }
 }

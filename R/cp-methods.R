@@ -14,7 +14,7 @@ utils::globalVariables(c(
 #' when the winning backend explicitly reported non-convergence (`nls`/
 #' `nlsLM`-class `convInfo`); it is `NA` when no such diagnostic exists
 #' (`wrapnlsr`) or the object predates this field. Only the explicit `FALSE`
-#' case warns -- an unknown convergence status is not itself an error.
+#' case warns (an unknown convergence status is not itself an error).
 #'
 #' @param object A `cp_model_nls` object.
 #' @return Invisible `NULL`; called for the warning side effect.
@@ -38,9 +38,9 @@ utils::globalVariables(c(
 #' document `.fitted`/`.resid`/`.fixed` as always-present columns; when the
 #' underlying `fitted()`/`residuals()`/`predict()` call errors, or its
 #' result's length doesn't match the augmented data, the column was
-#' previously dropped with no indication -- indistinguishable from "not
-#' applicable". Codex 2D review (blocking #1): the warning must name which
-#' call failed and include `conditionMessage(e)`, not just the column name.
+#' previously dropped with no indication, indistinguishable from "not
+#' applicable". The warning therefore names which call failed and includes
+#' `conditionMessage(e)` rather than the column name alone.
 #'
 #' @param details Character vector, one fully-composed detail string per
 #'   omitted column (e.g. `".fitted: fitted() failed: <message>"`).
@@ -806,10 +806,10 @@ summary.cp_model_lmer <- function(object, ...) {
 # Broom Methods
 #' Convert a cross-price model to a tidy data frame of coefficients
 #'
-#' This function extracts model coefficients from a cross-price demand model
-#' into a tidy data frame format, following the conventions of the broom package.
-#' It handles cases where model fitting failed gracefully, returning an empty
-#' data frame with the expected structure.
+#' Extracts model coefficients from a cross-price demand model into a tidy
+#' data frame, following the conventions of the broom package. When model
+#' fitting failed, an empty data frame with the expected structure is
+#' returned.
 #'
 #' @param x A model object from fit_cp_nls or fit_cp_linear
 #' @param ... Additional arguments (unused)
@@ -864,9 +864,9 @@ tidy.cp_model_nls <- function(x, ...) {
 
 #' Get model summaries from a cross-price model
 #'
-#' This function extracts model summary statistics from a cross-price demand model
-#' into a single-row data frame, following the conventions of the broom package.
-#' It returns goodness-of-fit measures and other model information.
+#' Extracts model summary statistics (goodness-of-fit measures and other
+#' model information) from a cross-price demand model into a single-row data
+#' frame, following the conventions of the broom package.
 #'
 #' @param x A model object from fit_cp_nls or fit_cp_linear
 #' @param ... Additional arguments (unused)
@@ -1349,7 +1349,7 @@ plot.cp_model_lm <- function(
 #' Plot Method for Mixed-Effects Cross-Price Demand Models
 #'
 #' Creates a ggplot2 visualization of a fitted mixed-effects cross-price demand model
-#' (of class \code{cp_model_lmer}). This function allows you to plot:
+#' (of class \code{cp_model_lmer}). The \code{pred_type} argument selects what is drawn:
 #'
 #' \describe{
 #'   \item{\code{"fixed"}}{Only the population-level (fixed-effects) prediction.}
@@ -1798,7 +1798,7 @@ has_significant_interaction <- function(object, alpha = 0.05) {
 
 #' Run pairwise slope comparisons for cross-price demand model
 #'
-#' This function performs pairwise comparisons of slopes between groups in a
+#' Performs pairwise comparisons of slopes between groups in a
 #' cross-price demand model, but only when a significant interaction is present.
 #' The emmeans table showing estimated marginal means for slopes is always returned.
 #'
@@ -1888,7 +1888,7 @@ cp_posthoc_slopes <- function(object, alpha = 0.05, adjust = "tukey", ...) {
 
 #' Run pairwise intercept comparisons for cross-price demand model
 #'
-#' This function performs pairwise comparisons of intercepts between groups in a
+#' Performs pairwise comparisons of intercepts between groups in a
 #' cross-price demand model, but only when a significant interaction is present.
 #' The emmeans table showing estimated marginal means for intercepts is always returned.
 #'

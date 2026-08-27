@@ -19,6 +19,6 @@ validate_hurdle_data(data, y_var, x_var, id_var)
 A cleaned data frame ready for model fitting.
 }
 \description{
-Internal function to validate and prepare data for hurdle demand model fitting.
+Validates and prepares data for hurdle demand model fitting.
 }
 \keyword{internal}

@@ -242,7 +242,7 @@ test_that(".hurdle_chol_or_fallback is silent for a positive-definite Sigma", {
   expect_equal(unname(t(L) %*% L), Sigma, tolerance = 1e-10)
 })
 
-# Codex 2D review (blocking #2): add a REAL-fixture integration test for
+# Blocking review follow-up: add a REAL-fixture integration test for
 # TICKET-061 -- a small real hurdle fit whose Sigma is forced non-PD by
 # mocking base::chol() (the single lowest-level primitive
 # .hurdle_chol_or_fallback() wraps), scoped only around the predict() call

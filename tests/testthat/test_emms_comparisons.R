@@ -836,7 +836,7 @@ test_that("get_demand_comparisons does not filter balanced designs", {
 
 
 # =============================================================================
-# TMB fits with continuous covariates in EMMs/comparisons (codex Bug 3)
+# TMB fits with continuous covariates in EMMs/comparisons (Bug 3)
 # =============================================================================
 
 test_that("get_demand_param_emms.beezdemand_tmb handles continuous covariates", {
@@ -986,7 +986,7 @@ test_that("TMB EMMs honor `at` for covariate-only fits (no factors)", {
   expect_equal(emm_high$estimate, expected_high, tolerance = 1e-6)
 })
 
-# Codex review P2: get_demand_comparisons.beezdemand_tmb() accepts `...`
+# Finding P2: get_demand_comparisons.beezdemand_tmb() accepts `...`
 # but never forwards it to the internal get_demand_param_emms() call, so
 # caller-supplied `at` and `factors_in_emm` were silently ignored.
 test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_emm`", {
@@ -1021,7 +1021,7 @@ test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_e
 # =============================================================================
 # TICKET-011 Phase 0.4: get_demand_comparisons.beezdemand_tmb() must build
 # its contrast reference grid from the SAME conditioned grid that
-# get_demand_param_emms() uses. Codex adversarial review (rounds 2 + 3 + 4)
+# get_demand_param_emms() uses. Adversarial review (rounds 2 + 3 + 4)
 # confirmed the wrapper forwards `...` to emms but rebuilds level_combos /
 # ref_X from the unfiltered training data, so `at` filtering produces
 # off-grid contrasts (silent statistical corruption) and NA labels when
@@ -1030,7 +1030,7 @@ test_that("get_demand_comparisons.beezdemand_tmb forwards `at` and `factors_in_e
 # Note on continuous-covariate `at` testing: fit_demand_tmb() does not
 # currently support factor:covariate interactions, so the contrast estimate
 # is invariant to the covariate choice in any main-effects-only model
-# (the covariate column cancels in ref_X[i,] - ref_X[j,]). The bug Codex
+# (the covariate column cancels in ref_X[i,] - ref_X[j,]). The bug
 # flagged for the covariate path is therefore unobservable in the estimate
 # until interaction support lands. Phase 5 should add the missing covariate
 # `at` regression test once factor:covariate interactions are supported.
@@ -1245,7 +1245,7 @@ test_that("get_demand_comparisons.beezdemand_nlme: natural-space fit does not er
 })
 
 
-# --- Codex 2C review fold: BLOCKING 2 (TICKET-074) --------------------------
+# --- TICKET-074 (blocking review finding) -----------------------------------
 # A converged param_space = "natural" fit is an unconstrained parameterization
 # -- a Wald CI bound (here, alpha's lower bound) can be non-positive. Before
 # the fold, unconditional log10() of that bound raised a raw "NaNs produced"
@@ -1316,7 +1316,7 @@ test_that("get_demand_param_emms.beezdemand_nlme: log10-space (default) fit outp
 })
 
 
-# --- Codex 2C review fold: NEW TICKET-075 -----------------------------------
+# --- TICKET-075 -------------------------------------------------------------
 # get_demand_comparisons.beezdemand_nlme()'s $contrasts_ratio block
 # unconditionally computed ratio_estimate = 10^estimate. For a
 # param_space = "natural" fit, `estimate` is already a natural-scale

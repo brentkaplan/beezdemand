@@ -17,33 +17,33 @@
 }
 \value{
 A list with \code{value} (the \code{k} to pass to rescue \code{FitCurves()}
-calls -- numeric for \code{"share"}/\code{"range"}, unchanged otherwise) and
+calls; numeric for \code{"share"}/\code{"range"}, unchanged otherwise) and
 \code{resolvable} (\code{FALSE} only when \code{k_arg} is \code{"share"}/\code{"range"} and the
-dataset-wide k is genuinely unknowable from this run -- callers must
+dataset-wide k is genuinely unknowable from this run; callers must
 skip rescue entirely rather than fit a different, unreproducible
 model).
 }
 \description{
-Codex 2F review fold, TICKET-047 item 3: the production \code{k} argument
+The production \code{k} argument
 (\code{"share"}, \code{"range"}, \code{"fit"}, \code{"ind"}, or a plain number) means
-different things and CANNOT simply be re-passed unchanged to a rescue
+different things and cannot simply be re-passed unchanged to a rescue
 call that fits a single subject at a time:
 }
 \details{
 \itemize{
 \item \code{"share"}: \code{GetSharedK()} requires 2+ groups and hard-stops
 ("Cannot find a shared k value with only one dataset!") on a
-single-subject dataset -- every rescue attempt would silently fail via
+single-subject dataset, so every rescue attempt would silently fail via
 \code{try()}, never actually rescuing anything.
-\item \code{"range"}: \code{GetK()} is dataset-wide in production (computed ONCE, before
+\item \code{"range"}: \code{GetK()} is dataset-wide in production (computed once, before
 the per-subject loop); re-passing \code{"range"} would recompute a
-DIFFERENT, subject-specific K for the rescue, silently fitting a
+different, subject-specific K for the rescue, silently fitting a
 different model than production used for every other subject.
 \item \code{"fit"}: k is a genuinely free parameter refit per subject already, so
 \code{"fit"} is safe to pass through unchanged. Its \emph{starting} value
 (\code{kstart}) is recomputed internally by \code{FitCurves()} from the
-single-subject slice, which is NOT the same starting value production
-used (production's \code{kstart} comes from \code{GetK()} on the full dataset) --
+single-subject slice, which is not the same starting value production
+used (production's \code{kstart} comes from \code{GetK()} on the full dataset);
 this is a known, accepted, and documented limitation: only the Q0/alpha
 starts are actually sampled by the multi-start protocol for \code{k = "fit"}, not the k start.
 \item \code{"ind"} or a plain number: already resolved per-subject (or globally)
@@ -53,14 +53,14 @@ so passing through unchanged is correct.
 
 For \code{"share"}/\code{"range"}, this first tries to read the actual numeric K
 production used from the (dataset-wide, therefore identical across all
-rows) \code{K} column of the production results -- fast, and exact by
-construction. If NO row recorded a K (e.g. every single subject's own
+rows) \code{K} column of the production results, which is fast and exact by
+construction. If no row recorded a K (e.g. every single subject's own
 nls fit failed, which can happen independently of the dataset-wide k
 itself being perfectly well-defined), it falls back to recomputing K
-directly via the SAME function \code{FitCurves()} used internally
-(\code{GetK()}/\code{GetSharedK()}) on the SAME combined data (the union of all
+directly via the same function \code{FitCurves()} used internally
+(\code{GetK()}/\code{GetSharedK()}) on the same combined data (the union of all
 \code{data_used} slices reconstructs exactly the post-\code{CheckCols()}/zero-drop
-dataset \code{FitCurves()} originally computed K from) -- so this is exact,
+dataset \code{FitCurves()} originally computed K from), so this is exact,
 never an approximation, and never a different model than production.
 }
 \keyword{internal}

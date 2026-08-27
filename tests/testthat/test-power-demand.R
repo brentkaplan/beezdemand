@@ -165,7 +165,7 @@ test_that("power_demand targets alpha when delta_alpha is supplied", {
 
 # -----------------------------------------------------------------------------
 # Estimate recovery: extracted estimates are on the natural-log scale of the
-# simulator's delta (codex review, blocking finding 1)
+# simulator's delta (blocking finding 1)
 # -----------------------------------------------------------------------------
 
 test_that("power_demand extracts the delta on the simulator's log scale", {

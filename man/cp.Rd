@@ -3,7 +3,7 @@
 \docType{data}
 \name{cp}
 \alias{cp}
-\title{Example cross‐price dataset}
+\title{Example cross-price dataset}
 \format{
 A data frame with N rows and columns:
 \describe{

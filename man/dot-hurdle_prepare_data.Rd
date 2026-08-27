@@ -28,7 +28,7 @@ A list containing:
 }
 }
 \description{
-Internal function to prepare data structures for TMB hurdle model fitting.
+Prepares data structures for TMB hurdle model fitting.
 Converts subject IDs to 0-indexed integers and creates derived variables.
 }
 \keyword{internal}

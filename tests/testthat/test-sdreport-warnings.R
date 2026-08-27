@@ -62,7 +62,6 @@ test_that(".tmb_quiet_sdreport dedupes across a warn-error-retry fallback chain"
 test_that("two regions sharing one guard emit exactly one classed warning", {
   # the hurdle fit path wraps two separate regions (the sdreport fallback
   # chain and the summary extraction) with one shared guard env
-  # (Codex 042-diff R2)
   guard <- new.env(parent = emptyenv())
   warns <- list()
   withCallingHandlers(

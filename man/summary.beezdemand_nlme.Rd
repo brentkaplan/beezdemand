@@ -12,8 +12,8 @@
 \item{report_space}{Character. Reporting space for core parameters. One of
 \code{"natural"} or \code{"log10"} (\code{match.arg} default \code{"natural"}).
 \code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always on
-the estimation scale — nlme's native containment-t test
-(transformation-invariant).}
+the estimation scale (nlme's native containment-t test, which is
+transformation-invariant).}
 
 \item{...}{Additional arguments (passed to summary.nlme)}
 }

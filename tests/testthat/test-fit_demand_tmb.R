@@ -1019,7 +1019,7 @@ test_that("zben Pmax/Omax are computed numerically, not via the SND closed form 
   expect_true(all(spars$Pmax > 0))
   expect_true(all(spars$Omax > 0))
 
-  # Codex review of GH #19 (BLOCKING follow-up): pmax_at_bound propagates
+  # GH #19 blocking follow-up: pmax_at_bound propagates
   # the engine's domain-expansion-cap flag into subject_pars. This fit's
   # (Q0, alpha) values do not require hitting the cap (verified by the
   # independent check below finding an interior maximum), so it must read
@@ -1061,7 +1061,7 @@ test_that("zben Pmax/Omax are computed numerically, not via the SND closed form 
 })
 
 test_that("zben get_subject_pars(expanded = TRUE) recomputes Pmax/Omax for a within-subject fixture (#19)", {
-  # Codex review of GH #19 (Recommended #2): an intercept-only fixture's
+  # GH #19 follow-up (Recommended #2): an intercept-only fixture's
   # expanded = TRUE call short-circuits to the cached (fit-time) subject_pars
   # (R/tmb-methods.R ~1752, "no within-id variation -> return spars as-is")
   # and never reaches the recomputation path this ticket changed
@@ -1166,7 +1166,7 @@ test_that("predict(type='demand') does NOT warn without factors", {
 })
 
 # ------------------------------------------------------------------------------
-# Missing-data handling (codex review Bug 1)
+# Missing-data handling (Bug 1)
 # ------------------------------------------------------------------------------
 
 test_that("fit_demand_tmb tolerates NAs in y_var by dropping rows", {

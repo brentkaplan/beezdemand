@@ -63,7 +63,7 @@ If \code{NULL} and \code{estimate_k = FALSE}, k defaults to 2.}
 \item{random_effects}{Specification of subject-level random effects.
 Accepts any of the following, in order of generality:
 \describe{
-\item{formula (default)}{\code{Q0 + alpha ~ 1} -- random intercepts on
+\item{formula (default)}{\code{Q0 + alpha ~ 1}: random intercepts on
 both parameters (equivalent to the legacy \code{c("q0", "alpha")}
 shortcut). \code{Q0 ~ 1} limits REs to Q0. Formulas with a
 factor-expanded RHS (e.g., \code{Q0 + alpha ~ condition} or
@@ -170,7 +170,7 @@ An object of class \code{beezdemand_tmb} containing:
 \item{tmb_obj}{TMB objective function object}
 \item{opt}{Optimization result (normalized across optimizers)}
 \item{sdr}{TMB sdreport object. Its \verb{$cov} (full covariance of all
-ADREPORT'd quantities) is not materialized -- a scalar \code{NA} -- unless
+ADREPORT'd quantities) is not materialized (a scalar \code{NA}) unless
 \code{store_report_cov = TRUE}.}
 \item{converged}{Logical convergence indicator}
 \item{loglik}{Log-likelihood at convergence}
@@ -184,8 +184,9 @@ ADREPORT'd quantities) is not materialized -- a scalar \code{NA} -- unless
 }
 \description{
 Fits nonlinear mixed-effects demand models using Template Model Builder (TMB)
-for exact automatic differentiation and Laplace approximation. This provides
-reliable convergence where traditional NLME approaches fail.
+for exact automatic differentiation and Laplace approximation. In practice
+this converges on demand equations where the PNLS-based \code{nlme::nlme()}
+fails (see Details).
 }
 \details{
 Traditional NLME approaches using \code{nlme::nlme()} universally fail for

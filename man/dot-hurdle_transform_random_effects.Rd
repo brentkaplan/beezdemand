@@ -17,7 +17,7 @@
 Matrix of random effects on original scale with named columns.
 }
 \description{
-Internal function to transform standardized random effects (u) to the
+Transforms standardized random effects (u) to the
 original scale using the Cholesky decomposition of the covariance matrix.
 }
 \keyword{internal}

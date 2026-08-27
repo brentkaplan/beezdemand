@@ -353,7 +353,7 @@ test_that("compare_specs naming a non-fitted factor errors", {
   )
 })
 
-# F3 (Codex post-commit review): the NLME backend must validate compare_specs at
+# F3 (post-commit review): the NLME backend must validate compare_specs at
 # the boundary like TMB does, instead of letting a bogus formula fall through
 # emmeans() into a silent degenerate result. Harmonized contract parity.
 test_that("NLME compare_specs naming a non-fitted factor errors (contract parity)", {
@@ -370,7 +370,7 @@ test_that("NLME compare_specs naming a non-fitted factor errors (contract parity
   )
 })
 
-# F3 follow-up (Codex re-review after the post-commit fixes): the boundary
+# F3 follow-up (re-review after the post-commit fixes): the boundary
 # validator must accept BOTH the original factor name AND the per-parameter
 # collapsed column under asymmetric collapse_levels (parity with TMB and with
 # the prior NLME behavior via .get_actual_factors_for_param), and a cross-
@@ -420,7 +420,7 @@ test_that("NLME compare_specs accepts original or per-param collapsed name; abor
   )
 })
 
-# F1 (Codex post-commit review): the marginalization grid is rebuilt with
+# F1 (post-commit review): the marginalization grid is rebuilt with
 # model.matrix(), which otherwise honors options("contrasts") at call time. The
 # rebuilt basis must be pinned to the fitted design's contrasts so a changed
 # global contrasts option cannot silently multiply the wrong basis by beta.
@@ -443,7 +443,7 @@ test_that("TMB EMMs/contrasts are invariant to options(contrasts) (F1)", {
   expect_equal(c_flip, c_def, tolerance = 1e-10)
 })
 
-# F2 (Codex post-commit review): under asymmetric collapse_levels the fitted
+# F2 (post-commit review): under asymmetric collapse_levels the fitted
 # factor columns are renamed per parameter (age_group -> age_group_Q0 /
 # age_group_alpha). compare_specs names the ORIGINAL factor (as on NLME); it
 # must map to the per-parameter column, not silently intersect to nothing and
@@ -632,7 +632,7 @@ test_that("tidy() statistic/df reflect each backend's inference engine", {
 })
 
 # =============================================================================
-# 14. NLME arg-guards + comparison attrs (Codex fold-in finding 1)
+# 14. NLME arg-guards + comparison attrs (fold-in finding 1)
 # =============================================================================
 test_that("NLME errors on both-supplied / bogus param; attrs are set", {
   skip_on_cran()

@@ -170,7 +170,7 @@ GetValsForSim <- function(dat) {
         adf <- dat[dat$id == participants[i], ]
         adf[, "k"] <- k
 
-        ## Codex 2B-review fold (TICKET-060 follow-up): a subject with
+        ## TICKET-060 follow-up: a subject with
         ## duplicated prices (two rows at the same x) has no well-defined
         ## single residual per price column -- the residual-by-value
         ## assignment below would silently overwrite one cell with the

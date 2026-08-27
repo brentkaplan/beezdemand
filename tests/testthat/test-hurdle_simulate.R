@@ -145,7 +145,7 @@ test_that("run_hurdle_monte_carlo returns a per-replicate diagnostics table (rea
   ))
 })
 
-# Codex 2D review (blocking #2): the original version of this test used
+# The original version of this test used
 # UNNAMED `se` vectors, so `se[param_names]` silently returned all-NA and
 # `valid_idx <- !is.na(est_vals) & !is.na(se_vals)` was FALSE for every
 # replicate regardless of hessian_pd -- the exclusion assertion
@@ -273,7 +273,7 @@ test_that("run_hurdle_monte_carlo distinguishes error/nonconverged/non-PD/clean 
   expect_equal(unname(beta0_row$coverage_95), hand_coverage)
 })
 
-# Codex 2D review (recommended #3): hessian_pd = NA (sdreport() itself
+# hessian_pd = NA (sdreport() itself
 # failed) must be preserved as its own status, not coerced to
 # "converged_non_pd" -- it is excluded from the summary the same way, but
 # counted and reported separately.
@@ -517,7 +517,7 @@ test_that("(c) identity check: fit_demand_hurdle(part2 = 'snd') recovers populat
   skip_on_cran()
   skip_if_not_installed("TMB")
 
-  # Codex 2F review fold, item 7: exercise NONZERO raw correlations (not
+  # Exercise NONZERO raw correlations (not
   # just the rho_ac_raw = rho_bc_raw = 0 defaults) and add RE-SD/
   # correlation recovery assertions, loose tolerances (correlations are the
   # hardest population quantities to recover at this N).
@@ -602,7 +602,7 @@ test_that("(d) part2 = 'koff' output is byte-identical to before TICKET-044", {
 })
 
 test_that("(d) item 7: part2 = 'koff' is FULLY byte-identical to before TICKET-044 (rds fixture)", {
-  # Codex 2F review fold, item 7: the rounded spot-checks above only cover
+  # The rounded spot-checks above only cover
   # `y`/`x`/`id`; this compares the ENTIRE unrounded data frame (all
   # columns, all attributes, including "delta"/"a_i"/"b_i" and the full
   # true_params list) via identical() against a golden fixture regenerated
@@ -625,7 +625,7 @@ test_that("(d) item 7: part2 = 'koff' is FULLY byte-identical to before TICKET-0
 })
 
 # =============================================================================
-# Codex 2F review fold (TICKET-044): blocking item 2
+# TICKET-044 blocking follow-up (item 2)
 # =============================================================================
 
 test_that("item 2: positional calls through `seed` are unaffected by the new part2/rho_*_raw args", {
@@ -652,7 +652,7 @@ test_that("item 2: positional calls through `seed` are unaffected by the new par
   expect_identical(d_positional, d_named)
 })
 
-# Release 0.3.0 Codex whole-release fold: supplying `seed` must not overwrite
+# Release 0.3.0 whole-release audit: supplying `seed` must not overwrite
 # the caller's RNG stream (same guarantee power_demand()/boot_demand() give).
 test_that("simulate_hurdle_data(seed = ) restores the caller's RNG state", {
   set.seed(999)

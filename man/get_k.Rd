@@ -52,7 +52,6 @@ The k parameter appears in several demand curve equations:
 \itemize{
 \item \strong{Hursh & Silberberg (2008)}: Scales the exponential term
 \item \strong{Koffarnus et al. (2015)}: Normalizes the exponentiated model
-\item Ensures numerical stability during model fitting
 }
 }
 

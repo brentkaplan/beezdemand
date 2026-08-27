@@ -11,7 +11,7 @@
 
 \item{data}{Long-format data frame the model is fit on.}
 
-\item{id_var}{Subject id column (currently unused — reserved for
+\item{id_var}{Subject id column (currently unused; reserved for
 future per-subject reductions).}
 }
 \value{

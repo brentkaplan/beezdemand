@@ -60,7 +60,7 @@ A ggplot2 object displaying the observed data points along with the prediction c
 }
 \description{
 Creates a ggplot2 visualization of a fitted mixed-effects cross-price demand model
-(of class \code{cp_model_lmer}). This function allows you to plot:
+(of class \code{cp_model_lmer}). The \code{pred_type} argument selects what is drawn:
 }
 \details{
 \describe{

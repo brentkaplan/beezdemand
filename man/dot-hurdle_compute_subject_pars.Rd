@@ -39,7 +39,7 @@
 Data frame of subject-specific parameters.
 }
 \description{
-Internal function to compute subject-specific demand parameters from
+Computes subject-specific demand parameters from
 fixed effects and random effects.
 }
 \keyword{internal}

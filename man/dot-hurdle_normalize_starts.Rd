@@ -17,7 +17,7 @@
 Normalized starting values list.
 }
 \description{
-Internal function to handle backwards-compatibility and normalization of
+Handles backwards-compatibility and normalization of
 user-provided starting values.
 }
 \keyword{internal}

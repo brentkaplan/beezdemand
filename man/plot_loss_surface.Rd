@@ -81,8 +81,8 @@ their MLE. The SSR is computed on aggregated mean log-consumption by price
 for the Part II (continuous) component of hurdle models.
 }
 \details{
-\strong{Important:} This function computes SSR on price-aggregated means, not a
-true profile likelihood. The resulting surface shows how well different
+Note that this function computes SSR on price-aggregated means rather than
+a true profile likelihood. The resulting surface shows how well different
 (Q0, alpha) pairs explain the average demand pattern, but does not account
 for individual variation. For models with large random effects, the surface
 may appear sharper than the full-data objective.

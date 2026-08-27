@@ -16,7 +16,7 @@ Numeric vector of alpha starting values (same length as \code{pmax}).
 }
 \description{
 Draws alpha log-uniformly over a range implied by the sampled (Q0, Pmax)
-bounds, independent of any particular (Q0, Pmax) pair -- see
+bounds, independent of any particular (Q0, Pmax) pair; see
 \code{.fixed_multistart_qp_to_alpha()} Details for why this is a distinct
 code path from the SND point-mapping formula.
 }

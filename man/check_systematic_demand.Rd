@@ -85,7 +85,7 @@ print(check)
 summary(check)
 tidy(check)
 
-# Grouped check — results include group column
+# Grouped check: results include group column
 data(apt_full)
 check_g <- check_systematic_demand(apt_full, by = "gender")
 check_g$results

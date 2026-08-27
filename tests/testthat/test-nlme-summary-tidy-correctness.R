@@ -1,4 +1,4 @@
-# Regression tests for the v0.3.0 release audit (Codex findings C1 + C2).
+# Regression tests for the v0.3.0 release audit (findings C1 + C2).
 #
 # C1 (summary<->tidy p-value consistency): superseded by the v0.3.0 release audit.
 # `summary`/`tidy` no longer recompute the Wald test after the delta-method

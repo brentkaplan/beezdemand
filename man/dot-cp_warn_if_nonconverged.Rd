@@ -17,6 +17,6 @@ Internal helper (TICKET-065). \code{object$convergence$isConv} is \code{FALSE} o
 when the winning backend explicitly reported non-convergence (\code{nls}/
 \code{nlsLM}-class \code{convInfo}); it is \code{NA} when no such diagnostic exists
 (\code{wrapnlsr}) or the object predates this field. Only the explicit \code{FALSE}
-case warns -- an unknown convergence status is not itself an error.
+case warns (an unknown convergence status is not itself an error).
 }
 \keyword{internal}

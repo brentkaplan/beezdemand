@@ -22,8 +22,8 @@ However, the intended domain is \code{x >= 0}.
 \description{
 Applies a log-logistic like transformation, specifically \code{log_base(x^lambda + 1) / lambda}.
 This transformation is useful for compressing data that spans several orders of
-magnitude while handling zero values gracefully (as \code{x=0} yields \code{0}).
-It's a variation related to the Box-Cox transformation or a generalized logarithm.
+magnitude while remaining defined at zero (\code{x = 0} yields \code{0}).
+It is related to the Box-Cox transformation and to the generalized logarithm.
 }
 \examples{
 # Basic usage

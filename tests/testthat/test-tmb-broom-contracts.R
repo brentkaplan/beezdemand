@@ -188,7 +188,7 @@ test_that("augment exponential handles data with zeros without -Inf", {
 
 
 # --- TICKET-063: hessian_pd gate on TMB inference surfaces ------------------
-# Codex 2C review fold (RECOMMENDED 5): assert on the
+# Assert on the
 # `beezdemand_hessian_not_pd_warning` CLASS (via `.capture_warning_conditions()`
 # / `.n_hessian_pd_warnings()`, helper-hessian-pd.R), not on warning text --
 # `testthat::capture_warnings()` discards condition class, so a text
@@ -299,7 +299,7 @@ test_that("boot_demand(): healthy fit raises no hessian_pd warning", {
 })
 
 
-# --- Codex 2C review fold: BLOCKING 1 (TICKET-067) --------------------------
+# --- TICKET-067 (blocking review finding) -----------------------------------
 # tidy()'s `else if (is.na(x$hessian_pd))` branch used `if()` directly on
 # `is.na(x$hessian_pd)`, which is length-0 (errors: "argument is of length
 # zero") when `hessian_pd` is NULL -- an older saved fit predating the field.

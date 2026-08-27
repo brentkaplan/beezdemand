@@ -19,7 +19,7 @@ cp_posthoc_slopes(object, alpha = 0.05, adjust = "tukey", ...)
 List containing the emmeans table and optionally pairwise comparisons if interaction is significant
 }
 \description{
-This function performs pairwise comparisons of slopes between groups in a
+Performs pairwise comparisons of slopes between groups in a
 cross-price demand model, but only when a significant interaction is present.
 The emmeans table showing estimated marginal means for slopes is always returned.
 }

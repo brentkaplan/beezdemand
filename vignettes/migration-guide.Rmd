@@ -1,6 +1,6 @@
 ---
 title: "Migration Guide: FitCurves to fit_demand_fixed"
-author: "beezdemand Developers"
+author: "Brent Kaplan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -28,8 +28,8 @@ library(dplyr)
 # Overview
 
 Starting with beezdemand version 0.2.0, `FitCurves()` has been superseded by
-`fit_demand_fixed()`. This guide helps you migrate existing code to use the
-modern API.
+`fit_demand_fixed()`. This guide helps you migrate existing code to the
+new interface.
 
 For related workflows, see:
 
@@ -42,11 +42,11 @@ For related workflows, see:
 
 The new `fit_demand_fixed()` function provides:
 
-- **Structured S3 objects** with consistent methods (`summary()`, `tidy()`,
+- Structured S3 objects with consistent methods (`summary()`, `tidy()`,
   `glance()`, `predict()`, `plot()`, `confint()`, `augment()`)
-- **Tidyverse integration** via tibble outputs from `tidy()` and `glance()`
-- **Standardized API** consistent with other beezdemand model classes
-- **Better reproducibility** with stored call and parameter information
+- Tidyverse integration via tibble outputs from `tidy()` and `glance()`
+- Standardized API consistent with other beezdemand model classes
+- Better reproducibility with stored call and parameter information
 
 `FitCurves()` will continue to work but is no longer actively developed.
 New features will only be added to `fit_demand_fixed()`.
@@ -191,7 +191,7 @@ plot(fit, ids = unique(apt$id)[1:5], facet = TRUE)
 
 ## New in 0.2.0: Diagnostics + Residual Workflows
 
-Once you migrate to the modern API, you can use standardized post-fit helpers:
+Once you migrate to `fit_demand_fixed()`, you can use the standardized post-fit helpers:
 
 - `augment()` to get fitted values + residuals in a tidy format
 - `check_demand_model()` for a structured diagnostic summary
@@ -292,14 +292,14 @@ If you encounter issues during migration:
 
 # See Also
 
-- `vignette("beezdemand")` -- Getting started with beezdemand
-- `vignette("model-selection")` -- Choosing the right model class
-- `vignette("fixed-demand")` -- Fixed-effect demand modeling
-- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
-- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
-- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
-- `vignette("cross-price-models")` -- Cross-price demand analysis
-- `vignette("group-comparisons")` -- Group comparisons
+- `vignette("beezdemand")`: Getting started with beezdemand
+- `vignette("model-selection")`: Choosing the right model class
+- `vignette("fixed-demand")`: Fixed-effect demand modeling
+- `vignette("mixed-demand")`: Mixed-effects nonlinear demand models
+- `vignette("mixed-demand-advanced")`: Advanced mixed-effects topics
+- `vignette("hurdle-demand-models")`: Two-part hurdle demand models
+- `vignette("cross-price-models")`: Cross-price demand analysis
+- `vignette("group-comparisons")`: Group comparisons
 
 # Session Information
 

@@ -26,10 +26,10 @@ library(beezdemand)
 
 ## Introduction
 
-The `beezdemand` package includes functionality for fitting **two-part mixed effects hurdle demand models** using Template Model Builder (TMB). This approach is particularly useful when:
+The `beezdemand` package includes functionality for fitting **two-part mixed effects hurdle demand models** using Template Model Builder (TMB). This approach is useful when:
 
-- Zero consumption values are **informative** (i.e., represent true non-consumption rather than censored data)
-- You want to model both the **probability of consuming** and the **intensity of consumption** simultaneously
+- Zero consumption values are informative (i.e., represent true non-consumption rather than censored data)
+- You want to model both the probability of consuming and the intensity of consumption simultaneously
 - Individual-level heterogeneity is important for both parts of the model
 
 ### When to Use Hurdle Models vs. Standard Models
@@ -215,7 +215,7 @@ A significant p-value suggests the 3-RE model provides a better fit.
 ## Predicting and Scoring
 
 A hurdle model carries two different "predicted consumption" quantities,
-and choosing the wrong one quietly distorts any score computed against
+and choosing the wrong one changes any score computed against
 observed data:
 
 - `type = "demand"` (the default since beezdemand 0.3.0) is the marginal
@@ -370,11 +370,9 @@ print(summ)
 
 ### TMB Backend
 
-The hurdle model is implemented using Template Model Builder (TMB), which provides:
-
-- Efficient Laplace approximation for marginal likelihood
-- Automatic differentiation for fast optimization
-- Standard errors via the delta method
+The hurdle model is implemented in Template Model Builder (TMB), which provides
+a Laplace approximation to the marginal likelihood, automatic differentiation
+for the optimizer, and delta-method standard errors.
 
 ### Control Parameters
 
@@ -425,12 +423,12 @@ Hursh, S. R., & Silberberg, A. (2008). Economic demand and essential value. *Psy
 
 ## See Also
 
-- `vignette("beezdemand")` -- Getting started with beezdemand
-- `vignette("model-selection")` -- Choosing the right model class
-- `vignette("fixed-demand")` -- Fixed-effect demand modeling
-- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
-- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
-- `vignette("tmb-mixed-effects")` -- TMB mixed-effects demand models (continuous-only)
-- `vignette("cross-price-models")` -- Cross-price demand analysis
-- `vignette("group-comparisons")` -- Group comparisons
-- `vignette("migration-guide")` -- Migrating from `FitCurves()`
+- `vignette("beezdemand")`: Getting started with beezdemand
+- `vignette("model-selection")`: Choosing the right model class
+- `vignette("fixed-demand")`: Fixed-effect demand modeling
+- `vignette("mixed-demand")`: Mixed-effects nonlinear demand models
+- `vignette("mixed-demand-advanced")`: Advanced mixed-effects topics
+- `vignette("tmb-mixed-effects")`: TMB mixed-effects demand models (continuous-only)
+- `vignette("cross-price-models")`: Cross-price demand analysis
+- `vignette("group-comparisons")`: Group comparisons
+- `vignette("migration-guide")`: Migrating from `FitCurves()`

@@ -21,7 +21,7 @@
   ))
 }
 
-# Codex 2C review fold (RECOMMENDED 5, TICKET-063): `testthat::capture_warnings()`
+# TICKET-063: `testthat::capture_warnings()`
 # discards condition class (it returns `get_messages()` of the captured
 # stack, character only), so text-based `grepl("not positive definite",
 # ...)` assertions can't distinguish the `beezdemand_hessian_not_pd_warning`

@@ -56,8 +56,8 @@ Confidence Intervals for TMB Model Parameters
 }
 \details{
 \code{method = "simulate"} is Monte Carlo simulation from the
-asymptotic Gaussian posterior -- not a data-resampling bootstrap and
-not a profile-likelihood interval. Because the sampled distribution is
+asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+a profile-likelihood interval). Because the sampled distribution is
 the same Gaussian that Wald assumes, the simulated per-coefficient
 quantiles converge to the Wald intervals as \code{R -> Inf}; the method does
 \strong{not} improve on Wald at boundary cases and offers no positivity

@@ -127,7 +127,7 @@ test_that("augment.cp_model_nls warns when .fitted/.resid are omitted (real fixt
   expect_false(".fitted" %in% names(out_fail))
 })
 
-# Codex 2D review (blocking #1): the warning must carry conditionMessage(e),
+# The warning must carry conditionMessage(e),
 # not just "fitted()/residuals() failed". A class-specific S3 method defined
 # at test-file scope is NOT visible to UseMethod() dispatch happening inside
 # the package's own namespace (fitted.<class> here would never be found), so
@@ -169,7 +169,7 @@ test_that("augment.cp_model_lm warns when .fitted/.resid are omitted (length mis
   expect_false(".resid" %in% names(out))
 })
 
-# Codex 2D review (blocking #1): same conditionMessage requirement for lm.
+# Same conditionMessage requirement for lm.
 test_that("augment.cp_model_lm warning includes conditionMessage(e) from a real fitted() error", {
   d <- data.frame(x = 1:6, y = c(2, 4, 5, 8, 11, 13))
   real_model <- stats::lm(y ~ x, data = d)

@@ -3,10 +3,10 @@
   --run-donttest` on the built tarball (`NOT_CRAN=true`, so the full test
   suite runs inside the check).
 * GitHub Actions: Ubuntu-latest (R devel, release, oldrel-1), macOS-latest
-  (R release), Windows-latest (R release) -- all `R CMD check --as-cran`.
+  (R release), Windows-latest (R release), all `R CMD check --as-cran`.
 * win-builder: R-devel and R-release.
 * R-hub v2: linux, macos-arm64, windows, clang-asan, valgrind (the package
-  ships TMB C++ templates in `src/`; sanitizer/valgrind legs are run
+  contains TMB C++ templates in `src/`; sanitizer/valgrind legs are run
   because those templates changed since 0.2.0).
 
 ## R CMD check results
@@ -27,8 +27,8 @@ win-builder R-devel (R Under development 2026-08-15 r90413 ucrt, 2026-08-16):
 test failure as R-release above (identical PASS/SKIP counts; fixed before
 submission, test-only). The note is the same CRAN incoming URL note.
 R-hub v2 (2026-08-16; R-devel on linux/macos-arm64/windows, plus
-clang-asan and valgrind): all five legs OK -- 0 errors, no sanitizer
-findings; valgrind `ERROR SUMMARY: 0 errors`, `definitely lost: 0 bytes`.
+clang-asan and valgrind): all five legs OK (0 errors, no sanitizer
+findings; valgrind `ERROR SUMMARY: 0 errors`, `definitely lost: 0 bytes`).
 
 The expected NOTE is the CRAN incoming feasibility check (maintainer email;
 possibly-invalid URLs for the package's own pkgdown article pages, which are
@@ -58,7 +58,7 @@ full per-change detail. Headline changes:
 * Inference surfaces for TMB/hurdle/NLME fits now refuse or flag results
   from non-converged / non-positive-definite fits instead of reporting them
   silently; a number of silent-failure paths in the hurdle, cross-price and
-  legacy fitters now degrade gracefully or name their cause.
+  legacy fitters now return a flagged row or name their cause.
 * One intentional breaking change: `predict()` for hurdle fits defaults to
   `type = "demand"` (the marginal expectation) instead of the conditional
   positive mean; documented in NEWS.

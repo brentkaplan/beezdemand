@@ -45,11 +45,10 @@ NULL
 #'   with a fixed `k`), 32 when `k = "fit"`. Ignored for `equation =
 #'   "linear"`. If supplied, must be a single finite integer `>= 1`.
 #'
-#'   Note: `multistart` and `S` were added AFTER `by` in the argument list
-#'   (Codex 2F review fold, TICKET-047 item 1) specifically so that
-#'   pre-existing positional calls -- e.g.
+#'   Note: `multistart` and `S` were added after `by` in the argument list
+#'   so that pre-existing positional calls (e.g.,
 #'   `fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural",
-#'   "group_col")`, where the 9th positional argument is `by` -- continue to
+#'   "group_col")`, where the 9th positional argument is `by`) continue to
 #'   bind correctly. Always pass `multistart`/`S` by name.
 #' @param ... Additional arguments passed to the underlying `FitCurves()` engine.
 #'
@@ -80,16 +79,16 @@ NULL
 #' It provides the same fitting capabilities but returns a structured S3 object
 #' with standardized methods for model interrogation.
 #'
-#' ## Multi-start rescue protocol (TICKET-047)
+#' ## Multi-start rescue protocol
 #'
 #' `fit_demand_fixed()` always runs `FitCurves()`'s existing heuristic start
-#' exactly as before -- the "production start". A subject whose production
+#' exactly as before (the "production start"). A subject whose production
 #' fit is strict-converged (`converged_strict`: the optimizer's own
 #' convergence flag AND finite coefficients/objective AND not sitting on a
 #' user-supplied bound) is accepted immediately; no sampled starts are ever
 #' run for it, so its row, fitted model, predictions, and data are
 #' byte-identical to the `multistart = FALSE` / `S = 1` protocol by
-#' construction. Only subjects whose production fit is NOT strict-converged
+#' construction. Only subjects whose production fit is not strict-converged
 #' are re-fit from `S - 1` additional starts, sampled log-uniformly in
 #' interpretable (Q0, Pmax) coordinates and mapped to each equation's native
 #' (Q0, alpha) parameterization via the same closed forms used by
@@ -99,7 +98,7 @@ NULL
 #' (non-converged) production row is kept. `equation = "linear"` is a
 #' closed-form fit and is never multistarted. `FitCurves()` itself is
 #' unchanged; sampling draws from the ambient RNG stream (call `set.seed()`
-#' before `fit_demand_fixed()` for reproducibility -- the helpers never call
+#' before `fit_demand_fixed()` for reproducibility; the helpers never call
 #' `set.seed()` themselves).
 #'
 #' @examples
@@ -111,7 +110,7 @@ NULL
 #' tidy(fit)
 #' glance(fit)
 #'
-#' # Grouped analysis -- fit separately by gender (subset keeps it fast)
+#' # Grouped analysis: fit separately by gender (subset keeps it fast)
 #' data(apt_full)
 #' ids <- unique(apt_full[c("id", "gender")])
 #' ids <- ids[ids$gender %in% c("Male", "Female"), ]
@@ -154,7 +153,7 @@ fit_demand_fixed <- function(
   param_space <- match.arg(param_space)
   call <- match.call()
 
-  # TICKET-047 Codex 2F fold, item 6: fail fast on a malformed S rather than
+  # TICKET-047: fail fast on a malformed S rather than
   # silently misbehaving deep inside the rescue loop.
   if (!is.null(S)) {
     if (

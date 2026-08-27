@@ -2,13 +2,13 @@
 #'
 #' @description
 #' Internal helper (TICKET-065). Reads `model$convInfo` into a plain list.
-#' This works generically for any backend that populates `convInfo` --
+#' This works generically for any backend that populates `convInfo`:
 #' `nls`/`nlsLM`-class fits always do, and `nlsr::wrapnlsr()` fits do too
 #' when `wrapnlsr()` returns a plain `nls`-class object (its usual successful
-#' case; Codex 2D review folded 2026-08-15, verified via
+#' case; verified via
 #' `nlsr::wrapnlsr(y ~ a*exp(-b*x), ...)$convInfo`). `isConv` is only `NA`
 #' (unknown), not `FALSE`, when the winning object carries no `convInfo` at
-#' all -- the two must stay distinguishable so downstream gates only warn on
+#' all. The two must stay distinguishable so downstream gates only warn on
 #' an explicit, known non-convergence.
 #'
 #' @param model A fitted model object (`nls`, `nlsLM`, `nlsr`, or similar).
@@ -34,12 +34,12 @@
 }
 
 
-#' Fit cross-price demand with NLS (+ robust fallbacks)
+#' Fit cross-price demand with NLS (with fallback optimizers)
 #'
 #' @description
 #' Fits a **cross-price demand** curve using log10-parameterization for numerical
-#' stability. The optimizer estimates parameters on the log10 scale where applicable,
-#' ensuring positive constraints are naturally satisfied.
+#' stability. The optimizer estimates parameters on the log10 scale where
+#' applicable, so positivity constraints hold automatically.
 #'
 #' **Equation forms:**
 #'
@@ -69,7 +69,7 @@
 #' \eqn{\beta = 10^{log10\_beta}}.
 #'
 #' The function first attempts a multi-start nonlinear least squares fit
-#' (`nls.multstart`). If that fails—or if explicit `start_values` are provided—it
+#' (`nls.multstart`). If that fails (or if explicit `start_values` are provided), it
 #' falls back to `minpack.lm::nlsLM`. Optionally, it will make a final attempt
 #' with `nlsr::wrapnlsr`. Returns either the fitted model or a structured object
 #' with metadata for downstream methods.
@@ -129,7 +129,7 @@
 #'         stage was not reached, or was attempted but did not itself produce a fit).
 #'   \item `data`: the 2-column data frame actually fit.
 #'   \item `convergence`: list with `isConv`, `finIter`, `stopCode`, `stopMessage` for the
-#'         WINNING backend, read from `model$convInfo` -- populated for `nls`/`nlsLM`-class
+#'         winning backend, read from `model$convInfo`; populated for `nls`/`nlsLM`-class
 #'         fits, and for `nlsr::wrapnlsr()` fits too when it returns a plain `nls`-class
 #'         object (its usual successful case); `isConv = NA` only when the winning fit
 #'         carries no `convInfo` at all.

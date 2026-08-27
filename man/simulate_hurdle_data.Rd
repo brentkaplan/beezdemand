@@ -77,8 +77,8 @@ all subjects. Default is TRUE.}
 
 \item{part2}{Character. Positive-part (Part II) generator: \code{"koff"} (the
 original Zhao et al. (2016) / Koffarnus-style generator; default,
-backward compatible) or \code{"snd"} (TICKET-044; matches
-\code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h} exactly --
+backward compatible) or \code{"snd"} (matches
+\code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h} exactly;
 see Details).}
 
 \item{rho_ab_raw}{Only used when \code{part2 = "snd"}. Pre-\code{tanh()} raw value
@@ -91,13 +91,12 @@ Default \code{NULL} uses \code{atanh(0.3)} (actual correlation 0.3, matching the
 Default \code{NULL} uses \code{0} (actual correlation 0).}
 
 \item{rho_bc_raw}{Only used when \code{part2 = "snd"} and \code{n_random_effects = 3}. Raw value for the b/c \emph{partial} correlation (see Details); the
-actual b/c correlation is NOT \code{tanh(rho_bc_raw)} directly. Default
+actual b/c correlation is not \code{tanh(rho_bc_raw)} directly. Default
 \code{NULL} uses \code{0} (actual correlation 0).
 
-Note: \code{part2} and \verb{rho_*_raw} were added AFTER \code{seed} in the argument
-list (Codex 2F review fold, TICKET-044 item 2) specifically so that
-pre-existing positional calls -- whose 19th (and last, pre-TICKET-044)
-positional argument is \code{seed} -- continue to bind correctly instead of
+Note: \code{part2} and \verb{rho_*_raw} were added after \code{seed} in the argument
+list so that pre-existing positional calls (whose 19th and last
+positional argument was \code{seed}) continue to bind correctly instead of
 landing on \code{part2} (where \code{match.arg()} would error). Always pass
 \code{part2}/\verb{rho_*_raw} by name.}
 }
@@ -124,7 +123,7 @@ Useful for Monte Carlo simulation studies, power analyses, and model validation.
 \strong{Part II, \code{part2 = "koff"} (Zhao et al., 2016):}
 \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
 
-\strong{Part II, \code{part2 = "snd"} (TICKET-044; exactly mirrors
+\strong{Part II, \code{part2 = "snd"} (exactly mirrors
 \code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h}, i.e. a
 log-linear/SND mean with lognormal errors and no \code{k}):}
 \deqn{Q_{0,i} = \exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)}

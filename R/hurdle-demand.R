@@ -11,8 +11,8 @@ NULL
 #' @description
 #' Internal helper shared by the RE-transform and marginal-prediction code
 #' paths. Attempts `chol(Sigma)`; if `Sigma` is not positive definite (`chol()`
-#' errors — near-boundary rhos, overflow, or `tanh(raw)` rounding to exactly
-#' +/-1), falls back to the Cholesky factor of an uncorrelated diagonal
+#' errors, e.g. from near-boundary rhos, overflow, or `tanh(raw)` rounding to
+#' exactly +/-1), falls back to the Cholesky factor of an uncorrelated diagonal
 #' covariance built from `sigma_diag` and emits ONE classed warning, since the
 #' returned/reported correlation estimates no longer describe the transformed
 #' random effects or marginal draws that result (TICKET-061).
@@ -44,7 +44,7 @@ NULL
 #' Prepare Hurdle Model Data
 #'
 #' @description
-#' Internal function to prepare data structures for TMB hurdle model fitting.
+#' Prepares data structures for TMB hurdle model fitting.
 #' Converts subject IDs to 0-indexed integers and creates derived variables.
 #'
 #' @param data A validated data frame.
@@ -96,7 +96,7 @@ NULL
 #' Build TMB Data List for Hurdle Model
 #'
 #' @description
-#' Internal function to construct the TMB data list for hurdle demand models.
+#' Constructs the TMB data list for hurdle demand models.
 #'
 #' @param prepared_data List from \code{.hurdle_prepare_data()}.
 #' @param model_name Character string specifying the TMB model.
@@ -120,7 +120,7 @@ NULL
 #' Generate Default Starting Values for Hurdle Model
 #'
 #' @description
-#' Internal function to generate sensible default starting values for TMB
+#' Generates default starting values for TMB
 #' hurdle model optimization.
 #'
 #' @param consumption Numeric vector of consumption values.
@@ -181,7 +181,7 @@ NULL
 #' Normalize User-Provided Starting Values
 #'
 #' @description
-#' Internal function to handle backwards-compatibility and normalization of
+#' Handles backwards-compatibility and normalization of
 #' user-provided starting values.
 #'
 #' @param start_values User-provided named list of starting values.
@@ -273,7 +273,7 @@ NULL
 #' Get Parameter Names for Hurdle Model
 #'
 #' @description
-#' Internal function to get the names of fixed effect parameters and
+#' Returns the names of fixed effect parameters and
 #' variance component names based on model configuration.
 #'
 #' @param n_re Number of random effects (2 or 3).
@@ -325,7 +325,7 @@ NULL
 #' Transform Random Effects to Original Scale
 #'
 #' @description
-#' Internal function to transform standardized random effects (u) to the
+#' Transforms standardized random effects (u) to the
 #' original scale using the Cholesky decomposition of the covariance matrix.
 #'
 #' @param u_hat Matrix of standardized random effects.
@@ -387,7 +387,7 @@ NULL
 #' Compute Subject-Specific Parameters
 #'
 #' @description
-#' Internal function to compute subject-specific demand parameters from
+#' Computes subject-specific demand parameters from
 #' fixed effects and random effects.
 #'
 #' @param coefficients Named vector of fixed effect coefficients.
@@ -648,10 +648,10 @@ NULL
 #' The 3-random-effect spec (`random_effects = c("zeros", "q0", "alpha")`)
 #' can \emph{false-converge} on real purchase task data: `nlminb()` reports
 #' a nonzero convergence code (e.g. "false convergence (8)") while the
-#' Hessian is not positive definite (`fit$hessian_pd == FALSE`), reflecting
-#' weak identification of the alpha random effect rather than a broken model
-#' specification -- companion datasets from the same source can converge
-#' cleanly with the identical spec. `fit$opt$message` and
+#' Hessian is not positive definite (`fit$hessian_pd == FALSE`). This
+#' reflects weak identification of the alpha random effect rather than a
+#' broken model specification (companion datasets from the same source can
+#' converge cleanly with the identical spec). `fit$opt$message` and
 #' `fit$opt$convergence` retain nlminb's own diagnostic fields alongside
 #' `fit$converged` and `fit$hessian_pd`; `print()` and `summary()` display a
 #' prominent warning block (quoting the optimizer message) whenever either
@@ -663,9 +663,10 @@ NULL
 #' `random_effects = c("zeros", "q0")` (dropping the alpha random effect,
 #' which converges more readily) and compare the empirical-Bayes subject
 #' parameters between the two fits. Broadly similar per-subject estimates
-#' support treating the 2RE fit's conclusions as robust; this is a
-#' diagnostic comparison, not a claim that the 2RE spec is generally
-#' preferred, and beezdemand does not refit automatically.
+#' support treating the 2RE fit's conclusions as stable across the two
+#' specifications. This is a diagnostic comparison rather than a claim that
+#' the 2RE spec is generally preferred, and beezdemand does not refit
+#' automatically.
 #'
 #' @seealso [fit_demand_tmb()] for continuous mixed-effects models,
 #'   [fit_demand_mixed()] for NLME-based fitting,
@@ -1296,7 +1297,7 @@ fit_demand_hurdle <- function(
 #' Validate Hurdle Demand Data
 #'
 #' @description
-#' Internal function to validate and prepare data for hurdle demand model fitting.
+#' Validates and prepares data for hurdle demand model fitting.
 #'
 #' @param data A data frame.
 #' @param y_var Character string, name of consumption variable.

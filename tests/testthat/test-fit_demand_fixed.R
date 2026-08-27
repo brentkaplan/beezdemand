@@ -686,7 +686,7 @@ test_that("coef.beezdemand_fixed warns naming ids dropped due to failed/missing 
   )
 
   expect_false(is.null(warned_msg))
-  # Codex 2D review (blocking #1): the warning must name which condition
+  # The warning must name which condition
   # fired and include conditionMessage(e), not just the bare id.
   expect_match(warned_msg, "dropped_null \\(no fit stored\\)")
   expect_match(warned_msg, "dropped_tryerror \\(stored fit is a try-error: real try-error boom\\)")

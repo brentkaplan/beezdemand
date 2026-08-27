@@ -1,5 +1,5 @@
 # =============================================================================
-# Tests for predict.beezdemand_tmb newdata handling (codex review Bug 2)
+# Tests for predict.beezdemand_tmb newdata handling (Bug 2)
 #
 # Bug: predict() ignored fixed-effect structure in newdata, silently returning
 # biased values for models with factors or continuous covariates. For known
@@ -85,7 +85,7 @@ test_that("predict.beezdemand_tmb errors on missing required columns", {
                "missing required column")
 })
 
-# Codex review P2: predict(type='demand') builds the population curve
+# Finding P2: predict(type='demand') builds the population curve
 # from beta_q0[1] and beta_alpha[1] (the intercepts), which corresponds
 # to all covariates = 0 rather than the training means. A warning already
 # fires when factors are present; this extends the same guard to

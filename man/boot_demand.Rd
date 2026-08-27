@@ -17,7 +17,7 @@ boot_demand(
 }
 \arguments{
 \item{fit}{A \code{beezdemand_tmb} object. NLME (\code{beezdemand_nlme}) and
-hurdle fits are not supported in this version and error helpfully.}
+hurdle fits are not supported in this version and raise an informative error.}
 
 \item{statistics}{Character vector; any of
 \code{c("Pmax", "Omax", "Qmax", "EV", "elasticity_at_pmax")}. Default
@@ -74,7 +74,7 @@ the interval.
 }
 \details{
 The parametric bootstrap is asymptotically equivalent to the delta method but
-avoids its linearization, so it is the more defensible recourse for the
+avoids its linearization, so it is preferable for the
 strongly nonlinear derived metrics (Pmax/Omax via Lambert-W). Draws are
 fixed-effect-only (population / per-condition metrics); per-subject metric CIs
 would require random-effect-aware draws and are out of scope for now.

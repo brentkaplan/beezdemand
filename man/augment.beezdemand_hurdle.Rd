@@ -38,8 +38,8 @@ A tibble containing the original data plus:
 }
 \description{
 Returns the original data with fitted values, residuals, and predictions
-from a hurdle demand model. This enables easy model diagnostics and
-visualization with the tidyverse.
+from a hurdle demand model, in the format expected by tidyverse plotting
+and diagnostic tools.
 }
 \details{
 \subsection{Residual types for hurdle models}{

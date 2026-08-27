@@ -259,7 +259,7 @@ test_that("FitCurves() is untouched by the multi-start protocol", {
 })
 
 # =============================================================================
-# Codex 2F review fold (TICKET-047): blocking + recommended + optional items
+# TICKET-047 review follow-ups: blocking + recommended + optional items
 # =============================================================================
 
 test_that("(h) item 1: positional calls with an arg after `by` are unaffected", {

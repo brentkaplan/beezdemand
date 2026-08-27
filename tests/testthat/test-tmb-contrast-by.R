@@ -147,7 +147,7 @@ test_that("by not in compare_specs aborts loudly on both backends", {
 })
 
 # ===========================================================================
-# Test 5b (Critical) — NLME COLLAPSE path also aborts (Codex Blocking 1)
+# Test 5b (Critical) — NLME COLLAPSE path also aborts
 # ===========================================================================
 # The collapse mapping must NOT silently drop a typo or a valid-but-not-in-
 # compare_specs contrast_by. Boundary validation catches the typo; per-param
@@ -483,7 +483,7 @@ test_that("redundant-by emits message and falls through to plain pairwise", {
   expect_false("gender" %in% names(res$Q0$contrasts_log10))
   expect_equal(nrow(res$Q0$contrasts_log10), 1L)
   # contrast_by_used reports "NULL" (no by applied) and tidy() is the clean
-  # 9-col contract with NO all-NA by-column (Codex review Recommended 1).
+  # 9-col contract with NO all-NA by-column.
   expect_identical(attr(res, "contrast_by_used"), "NULL")
   expect_identical(
     names(broom::tidy(res)),
@@ -550,7 +550,7 @@ test_that("NLME nested by-column uses the user-original name under collapse (TIC
   expect_false(all(is.na(td$age_group[td$param == "alpha"])))
 })
 
-# Test D (Blocking guard, Codex B1) — renaming to a reserved column name aborts.
+# Test D (blocking guard) — renaming to a reserved column name aborts.
 # A factor literally named `estimate`, collapsed for alpha, maps to
 # `estimate_alpha`; renaming back to `estimate` would collide with the contrast
 # `estimate` column. One small synthetic NLME fit (mirrors the test_emms builder).
@@ -576,7 +576,7 @@ test_that("nested by-col rename aborts when the original name is a reserved colu
     regexp = "reserved contrast column|collide")
 })
 
-# Test E (Recommended guard, Codex R2) — two by-vars resolving to one effective
+# Test E (recommended guard) — two by-vars resolving to one effective
 # column abort, mirroring the TMB within-param collision guard. Reuses the
 # memoized NLME collapse fixture (no new fit).
 test_that("NLME contrast_by aborts when two by-vars resolve to one column (TICKET-033)", {
@@ -589,7 +589,7 @@ test_that("NLME contrast_by aborts when two by-vars resolve to one column (TICKE
     regexp = "resolve to the same column")
 })
 
-# Test F (Optional, Codex Opt4) — NLME redundant-by no-op falls through to plain
+# Test F (optional) — NLME redundant-by no-op falls through to plain
 # pairwise (no by-column), confirming the rename no-ops on the empty map.
 test_that("NLME redundant-by falls through to plain pairwise (no by-column)", {
   skip_on_cran()

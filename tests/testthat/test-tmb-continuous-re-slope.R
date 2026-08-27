@@ -496,7 +496,7 @@ test_that("variance-component labels name the continuous RE term (summary/tidy/V
   comp <- s$variance_components$Component
 
   # Individual-parameter summaries are finite (not NA-collapsed) for a
-  # continuous fit (Codex Recommended 4).
+  # continuous fit (Recommended 4).
   expect_true(all(is.finite(s$individual_metrics$Q0)))
   expect_true(all(is.finite(s$individual_metrics$alpha)))
 
@@ -580,7 +580,7 @@ test_that("check_demand_model flags a near-singular intercept/slope covariance",
 })
 
 # ---------------------------------------------------------------------------
-# Codex review follow-ups (TICKET-051)
+# TICKET-051 review follow-ups
 # ---------------------------------------------------------------------------
 
 test_that("diagnostics additivity: factor/intercept fits keep the historical random_effects shape", {

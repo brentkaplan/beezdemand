@@ -19,7 +19,7 @@
 A named list of starting values for TMB parameters.
 }
 \description{
-Internal function to generate sensible default starting values for TMB
+Generates default starting values for TMB
 hurdle model optimization.
 }
 \keyword{internal}

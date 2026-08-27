@@ -608,7 +608,7 @@ BIC.beezdemand_hurdle <- function(object, ...) {
 #'
 #' @param object A \code{beezdemand_hurdle} object.
 #' @param ... Unused.
-#' @return Integer scalar -- the number of observations the model was fit on.
+#' @return Integer scalar, the number of observations the model was fit on.
 #' @export
 nobs.beezdemand_hurdle <- function(object, ...) {
   n <- object$param_info$n_obs
@@ -1010,8 +1010,8 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' @param type One of:
 #'   \describe{
 #'     \item{\code{"demand"}}{(default) Predicted expected consumption
-#'       = (1 - P0) * response -- the marginal expectation; see
-#'       \emph{Scoring predictions}}
+#'       = (1 - P0) * response (the marginal expectation; see
+#'       \emph{Scoring predictions})}
 #'     \item{\code{"response"}}{Predicted consumption conditional on
 #'       consuming (part II), \eqn{E[Y \mid Y > 0]}}
 #'     \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
@@ -1027,7 +1027,7 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #'   For `type = "probability"`, uses KDE/Normal/Empirical integration of the
 #'   binary component. For `type = "response"` and `type = "demand"`, uses
 #'   Monte Carlo integration over all random effects, producing the
-#'   **population-average** demand curve (accounting for Jensen's inequality).
+#'   population-average demand curve (accounting for Jensen's inequality).
 #'   Default is `FALSE`, which gives conditional (RE = 0) predictions
 #'   representing a "typical" subject at the center of the RE distribution.
 #' @param marginal_method Character. Method for marginal integration; one of
@@ -1037,8 +1037,8 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' @param correction Logical; if `TRUE` (default), applies the lognormal
 #'   retransformation correction `exp(sigma_e^2 / 2)` when back-transforming
 #'   from the log scale to the natural consumption scale. This produces
-#'   the **arithmetic mean** (conditional on Q > 0). Set to `FALSE` to obtain
-#'   the **median** (geometric mean), which is useful for individual-level
+#'   the arithmetic mean (conditional on Q > 0). Set to `FALSE` to obtain
+#'   the median (geometric mean), which is useful for individual-level
 #'   "most likely" predictions. Only applies to `type = "response"` and
 #'   `type = "demand"`.
 #' @param seed Integer or `NULL`. Random seed for Monte Carlo marginal
@@ -1070,7 +1070,7 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' `log(Q) ~ N(mu, sigma_e^2)`. The conditional distribution of Q given
 #' Q > 0 is therefore lognormal. The arithmetic mean of a lognormal is
 #' `exp(mu + sigma_e^2/2)`, not `exp(mu)`. Using `exp(mu)` returns the
-#' **median** (geometric mean), which systematically underestimates the
+#' median (geometric mean), which systematically underestimates the
 #' arithmetic mean by a factor of `exp(sigma_e^2/2)`. This correction is
 #' applied by default when `type = "response"` or `type = "demand"`. Set
 #' `correction = FALSE` to obtain the median instead.
@@ -1102,14 +1102,14 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' Population-level demand predictions (when no subject ID is provided) can be
 #' computed in two ways:
 #'
-#' - **Conditional (default, `marginal = FALSE`):** Sets all random effects to
+#' - Conditional (default, `marginal = FALSE`): Sets all random effects to
 #'   zero and evaluates the demand function at the fixed-effect (population)
-#'   parameters. For nonlinear models, this corresponds to the **conditional
-#'   mode**, not the population-average mean.
+#'   parameters. For nonlinear models, this corresponds to the conditional
+#'   mode rather than the population-average mean.
 #'
-#' - **Marginal (`marginal = TRUE`):** Integrates the prediction over the
+#' - Marginal (`marginal = TRUE`): Integrates the prediction over the
 #'   estimated random-effects distribution via Monte Carlo sampling. This gives
-#'   the **population-average** demand curve. Due to Jensen's inequality, this
+#'   the population-average demand curve. Due to Jensen's inequality, this
 #'   curve lies above the conditional curve when the demand function is convex
 #'   in the random effects (which it is for exponential demand with log-normal
 #'   Q0 and alpha).
@@ -2496,8 +2496,8 @@ confint.beezdemand_hurdle <- function(
 #'
 #' @description
 #' Returns the original data with fitted values, residuals, and predictions
-#' from a hurdle demand model. This enables easy model diagnostics and
-#' visualization with the tidyverse.
+#' from a hurdle demand model, in the format expected by tidyverse plotting
+#' and diagnostic tools.
 #'
 #' @param x An object of class \code{beezdemand_hurdle}.
 #' @param newdata Optional data frame of new data for prediction. If NULL,

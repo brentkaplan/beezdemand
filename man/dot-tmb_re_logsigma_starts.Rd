@@ -22,7 +22,7 @@ Q0 columns then alpha columns). Intercept and factor-dummy columns keep the
 flat \code{base} start (byte-identical to the historical \code{rep(log(0.5), n)}),
 while a \emph{numeric} continuous-covariate slope column is started at
 \code{base - log(spread)} so the slope's contribution \code{w_i * x_c} is on the same
-scale as an intercept deviation -- a slope SD lives on (covariate)^-1 units.
+scale as an intercept deviation (a slope SD lives on (covariate)^-1 units).
 New behavior engages only when a numeric RE-RHS term is present, so factor
 and intercept-only fits are unaffected (TICKET-051).
 }

@@ -52,14 +52,14 @@ using `fit_demand_fixed()`. This function fits separate nonlinear least squares
 (NLS) models for each subject, producing per-subject estimates of demand
 parameters like $Q_{0}$ (intensity) and $\alpha$ (elasticity).
 
-**When to use fixed-effect models:** Fixed-effect models are appropriate when
+Fixed-effect models are appropriate when
 you want independent curve fits for each participant. They make no assumptions
 about the distribution of parameters across subjects and are the simplest
 approach to demand curve analysis. For hierarchical models that share
 information across subjects, see `vignette("mixed-demand")`. For guidance on
 choosing between approaches, see `vignette("model-selection")`.
 
-**Data format:** All modeling functions expect long-format data with columns
+All modeling functions expect long-format data with columns
 `id` (subject identifier), `x` (price), and `y` (consumption). See
 `vignette("beezdemand")` for details on data preparation and conversion from
 wide format.
@@ -350,18 +350,18 @@ plot(desc)
 
 # Conclusion
 
-The `fit_demand_fixed()` interface provides a modern, consistent API for
+The `fit_demand_fixed()` interface provides a consistent API for
 individual demand curve fitting with full support for the `tidy()` / `glance()`
 / `augment()` workflow. For datasets where borrowing strength across subjects
 is desirable, consider the mixed-effects or hurdle model approaches.
 
 # See Also
 
-- `vignette("beezdemand")` -- Getting started with beezdemand
-- `vignette("model-selection")` -- Choosing the right model class
-- `vignette("group-comparisons")` -- Extra sum-of-squares F-test for group comparisons
-- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models (NLME)
-- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
-- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models via TMB
-- `vignette("cross-price-models")` -- Cross-price demand analysis
-- `vignette("migration-guide")` -- Migrating from `FitCurves()` to `fit_demand_fixed()`
+- `vignette("beezdemand")`: Getting started with beezdemand
+- `vignette("model-selection")`: Choosing the right model class
+- `vignette("group-comparisons")`: Extra sum-of-squares F-test for group comparisons
+- `vignette("mixed-demand")`: Mixed-effects nonlinear demand models (NLME)
+- `vignette("mixed-demand-advanced")`: Advanced mixed-effects topics
+- `vignette("hurdle-demand-models")`: Two-part hurdle demand models via TMB
+- `vignette("cross-price-models")`: Cross-price demand analysis
+- `vignette("migration-guide")`: Migrating from `FitCurves()` to `fit_demand_fixed()`

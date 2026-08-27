@@ -24,7 +24,7 @@ Conventions:
 \item \code{block_types[b] = 0} for pdDiag, \code{1} for pdSymm.
 \item \code{block_q0_offset[b]} / \code{block_alpha_offset[b]} are 0-indexed
 starting columns within \code{Z_q0} / \code{Z_alpha} respectively.
-\item \code{n_logsigma} is \code{sum(block_q0_dim + block_alpha_dim)} -- one
+\item \code{n_logsigma} is \code{sum(block_q0_dim + block_alpha_dim)}, i.e. one
 standard-deviation parameter per RE column across all blocks.
 \item \code{n_rho} is \verb{sum(over pdSymm blocks: block_dim*(block_dim-1)/2)}
 where \code{block_dim = block_q0_dim + block_alpha_dim}. pdDiag

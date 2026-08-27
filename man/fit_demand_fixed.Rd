@@ -66,10 +66,9 @@ reproduce the legacy single-start behavior exactly. Not applicable to
 \code{NULL} uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
 with a fixed \code{k}), 32 when \code{k = "fit"}. Ignored for \code{equation = "linear"}. If supplied, must be a single finite integer \verb{>= 1}.
 
-Note: \code{multistart} and \code{S} were added AFTER \code{by} in the argument list
-(Codex 2F review fold, TICKET-047 item 1) specifically so that
-pre-existing positional calls -- e.g.
-\code{fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")}, where the 9th positional argument is \code{by} -- continue to
+Note: \code{multistart} and \code{S} were added after \code{by} in the argument list
+so that pre-existing positional calls (e.g.,
+\code{fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")}, where the 9th positional argument is \code{by}) continue to
 bind correctly. Always pass \code{multistart}/\code{S} by name.}
 
 \item{...}{Additional arguments passed to the underlying \code{FitCurves()} engine.}
@@ -106,16 +105,16 @@ including \code{summary()}, \code{tidy()}, and \code{glance()}.
 This function is a modern wrapper around the legacy \code{FitCurves()} function.
 It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.
-\subsection{Multi-start rescue protocol (TICKET-047)}{
+\subsection{Multi-start rescue protocol}{
 
 \code{fit_demand_fixed()} always runs \code{FitCurves()}'s existing heuristic start
-exactly as before -- the "production start". A subject whose production
+exactly as before (the "production start"). A subject whose production
 fit is strict-converged (\code{converged_strict}: the optimizer's own
 convergence flag AND finite coefficients/objective AND not sitting on a
 user-supplied bound) is accepted immediately; no sampled starts are ever
 run for it, so its row, fitted model, predictions, and data are
 byte-identical to the \code{multistart = FALSE} / \code{S = 1} protocol by
-construction. Only subjects whose production fit is NOT strict-converged
+construction. Only subjects whose production fit is not strict-converged
 are re-fit from \code{S - 1} additional starts, sampled log-uniformly in
 interpretable (Q0, Pmax) coordinates and mapped to each equation's native
 (Q0, alpha) parameterization via the same closed forms used by
@@ -125,7 +124,7 @@ order). If none of the sampled starts strict-converge, the original
 (non-converged) production row is kept. \code{equation = "linear"} is a
 closed-form fit and is never multistarted. \code{FitCurves()} itself is
 unchanged; sampling draws from the ambient RNG stream (call \code{set.seed()}
-before \code{fit_demand_fixed()} for reproducibility -- the helpers never call
+before \code{fit_demand_fixed()} for reproducibility; the helpers never call
 \code{set.seed()} themselves).
 }
 }
@@ -138,7 +137,7 @@ summary(fit)
 tidy(fit)
 glance(fit)
 
-# Grouped analysis -- fit separately by gender (subset keeps it fast)
+# Grouped analysis: fit separately by gender (subset keeps it fast)
 data(apt_full)
 ids <- unique(apt_full[c("id", "gender")])
 ids <- ids[ids$gender \%in\% c("Male", "Female"), ]

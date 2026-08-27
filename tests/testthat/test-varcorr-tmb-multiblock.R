@@ -1,4 +1,4 @@
-# Regression tests for the v0.3.0 release audit (Codex finding C3).
+# Regression tests for the v0.3.0 release audit (finding C3).
 #
 # VarCorr.beezdemand_tmb() placed each random-effect correlation on the row of
 # its higher-indexed RE using indices LOCAL to its pdBlocked block, ignoring the

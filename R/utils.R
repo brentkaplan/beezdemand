@@ -364,7 +364,7 @@ lambertW = function(
 #-------------------------------------------------------------------------------
 #' Validate and Filter Cross-Price Demand Data
 #'
-#' This function performs validation checks on cross-price demand data and applies
+#' Validates cross-price demand data and applies
 #' filtering if specified. It ensures the data meets the requirements for analysis
 #' by checking for required columns (after optional column renaming), filtering
 #' by target type if needed, and confirming ID column presence when required.
@@ -539,8 +539,8 @@ validate_demand_data <- function(
   return(data)
 }
 
-#' @keywords internal
-#' small infix helper (define once in your utilities)
+# Null-coalescing infix helper (internal; no Rd -- a `%||%` \name fails checkRd)
+#' @noRd
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 

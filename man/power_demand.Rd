@@ -47,8 +47,8 @@ for interactive exploration; use 2000+ for grant-quality precision (see
 
 \item{df}{Degrees of freedom for the Wald test's t reference
 distribution. \code{NULL} (default) uses \code{n_subjects - 1} for \code{design_type = "within"} and \code{n_subjects - 2} for \code{design_type = "between"} (the
-two-sample df). This is an \emph{empirically calibrated} small-sample
-correction, not a model-derived df (the TMB fit has no exact t sampling
+two-sample df). This is an \emph{empirically calibrated} small-sample correction
+rather than a model-derived df (the TMB fit has no exact t sampling
 theory): the asymptotic z-test was measurably anticonservative in the
 package's Type I calibration battery (empirical rate 0.089 at nominal
 .05 with 15 subjects), while the t reference passes the battery's null
@@ -66,7 +66,7 @@ lognormal errors while \code{"simplified"} fits additive Gaussian errors on
 raw consumption; the approximation is closest at small \code{sigma_e}, and
 Type I calibration is verified by the test suite at the default and a
 3x-larger \code{sigma_e}. Other equations are sensitivity analyses with a
-different estimand -- their contrasts are not on the scale of the
+different estimand, so their contrasts are not on the scale of the
 simulated delta.}
 
 \item{random_effects}{Random-effects specification passed to
@@ -139,9 +139,10 @@ Estimates statistical power to detect a single fixed-effect difference in a
 demand parameter (\code{Q0} or \code{alpha}) between two conditions, by simulation:
 each replicate (1) simulates a two-condition dataset from the mixed-effects
 demand model in \code{.simulate_within_subject_demand()} under assumed
-population parameters plus the effect \code{delta} -- either a within-subject
-design (every subject observed in both conditions) or, with \code{design_type = "between"}, a two-arm between-subject design (each subject in one
-condition) -- (2) refits it with \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}, and (3) tests the
+population parameters plus the effect \code{delta}, under either a
+within-subject design (every subject observed in both conditions) or, with
+\code{design_type = "between"}, a two-arm between-subject design (each subject
+in one condition); (2) refits it with \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}; and (3) tests the
 condition contrast on the estimation (natural log) scale with a Wald test
 at level \code{alpha}, referred to a t distribution with \code{df} degrees of freedom
 (see the \code{df} argument). Power is the proportion of \emph{usable} fits
@@ -157,8 +158,8 @@ construction, and both rates are returned.
 \details{
 A replicate whose fit fails (non-convergence, non-positive-definite
 Hessian, unusable standard error, or an error) is excluded from the power
-denominator and reported through the \verb{n_*} counts and \verb{$replicates$status}
--- it is never counted as "no effect detected", which would bias power in
+denominator and reported through the \verb{n_*} counts and \verb{$replicates$status}.
+It is never counted as "no effect detected", which would bias power in
 an unpredictable direction. A warning is issued when fewer than 95\% of
 replicates are usable, since power conditional on convergence can be
 selected when convergence depends on the realized data.
@@ -171,7 +172,7 @@ For \code{design_type = "between"}, the two arms are composed by running the
 within-subject simulator once per arm with a single condition, then binding
 the arms and refitting with per-subject intercept random effects. Because
 each subject appears in only one condition, that random-effects \emph{structure}
-matches the composed data-generating process exactly -- unlike the
+matches the composed data-generating process exactly, unlike the
 within-subject default's per-condition effects. The additive-Gaussian
 residual likelihood remains a \emph{working model} for the simulator's
 multiplicative-lognormal errors in both designs (closest at small

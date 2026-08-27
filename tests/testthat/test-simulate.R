@@ -26,7 +26,7 @@ test_that("TICKET-060: GetValsForSim tolerates a subject missing a price row", {
   expect_true(is.numeric(result$sdindex))
 })
 
-test_that("Codex 2B fold: GetValsForSim places residuals in the exact price column (not just type/length)", {
+test_that("GetValsForSim places residuals in the exact price column (not just type/length)", {
   skip_on_cran()
   full1 <- mk_sim_subj("v1")
   miss2 <- mk_sim_subj("v2")[-3, ]  # v2 lacks the x = 1 row
@@ -64,7 +64,7 @@ test_that("Codex 2B fold: GetValsForSim places residuals in the exact price colu
   expect_true(all(!is.na(result$sdindex[-missing_idx])))
 })
 
-test_that("Codex 2B fold: GetValsForSim rejects duplicated within-subject prices instead of silently corrupting one residual cell", {
+test_that("GetValsForSim rejects duplicated within-subject prices instead of silently corrupting one residual cell", {
   skip_on_cran()
   full1 <- mk_sim_subj("v1")
   dup2 <- mk_sim_subj("v2")

@@ -123,8 +123,8 @@ fit_one_factor_dose <- fit_demand_mixed(
 
 Here, $Q_{0}$ and $\alpha$ vary by drug and dose additively.
 For this, we need more data than just ko_alf, so we use `ko`.
-Note: With complex models and small sample sizes, convergence can be challenging.
-The start_value_method = "pooled_nls" is often more robust for complex models.
+Note that with complex models and small sample sizes, convergence can fail.
+With `start_value_method = "pooled_nls"`, fits often converge where the heuristic start values do not.
 
 ```{r two_factor_add_note, echo=FALSE, results='asis'}
 if (render_fast) {
@@ -312,7 +312,7 @@ if (
 
 ### Example: Different collapsing for Q0 and alpha
 
-This is particularly useful when you want fine-grained distinctions for one
+This is useful when you want fine-grained distinctions for one
 parameter but not the other. For instance, you might hypothesize that maximum
 consumption ($Q_{0}$) varies by dose, but sensitivity ($\alpha$) does not.
 
@@ -426,7 +426,7 @@ if (
 
 ### Plotting a Two-Factor Model with Faceting
 
-Let's use fit_two_factors_add (if it converged: y_ll4 ~ drug + dose). We can
+We use `fit_two_factors_add` (if it converged: y_ll4 ~ drug + dose) and
 facet by one factor and color by another.
 
 ```{r plot_two_factor_faceting, cache = FALSE}
@@ -535,7 +535,7 @@ plot_object +
 
 ## Analyzing Estimated Marginal Means (`get_demand_param_emms`)
 
-This function helps interpret how factors affect $Q_{0}$ and $\alpha$, providing estimates on both log10 and natural scales, and optionally Essential Value (EV).
+This function returns estimated marginal means for $Q_{0}$ and $\alpha$ on both the log10 and natural scales, and optionally the essential value (EV).
 
 **Note on `collapse_levels`:** When a model is fit using `collapse_levels` with
 asymmetric specifications (different collapsing for Q0 and alpha), the EMM functions
@@ -731,7 +731,7 @@ if (
 }
 ```
 
-Now let's demonstrate how to extract individual-level predicted coefficients using the
+Individual-level predicted coefficients come from the
 `get_individual_coefficients()` function. This combines fixed and random effects to
 calculate individual-level parameter estimates for each subject.
 
@@ -1076,8 +1076,8 @@ baseline:
 anova(fit_no_factors_alf, fit_one_factor_dose)
 ```
 
-The cross-tier `compare_models()` function also works with NLME objects and
-provides a unified output format:
+The cross-tier `compare_models()` function also accepts NLME objects and
+returns the same output format as for TMB and hurdle fits:
 
 ```{r model-comparison-compare}
 compare_models(fit_no_factors_alf, fit_one_factor_dose)
@@ -1086,7 +1086,7 @@ compare_models(fit_no_factors_alf, fit_one_factor_dose)
 ### Overlaying Demand Curves
 
 `plot_demand_overlay()` superimposes population demand curves from multiple
-models, making it easy to see how different specifications shift the predicted
+models, which shows how different specifications shift the predicted
 curve:
 
 ```{r viz-overlay-nlme, fig.cap = "Demand curves from intercept-only and dose-factor models overlaid."}
@@ -1108,11 +1108,11 @@ plot_model_comparison(
 
 # See Also
 
-- `vignette("mixed-demand")` -- Basic mixed-effects demand modeling
-- `vignette("model-selection")` -- Choosing the right model class
-- `vignette("fixed-demand")` -- Fixed-effect demand modeling
-- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
-- `vignette("cross-price-models")` -- Cross-price demand analysis
-- `vignette("group-comparisons")` -- Group comparisons
-- `vignette("migration-guide")` -- Migrating from `FitCurves()`
-- `vignette("beezdemand")` -- Getting started with beezdemand
+- `vignette("mixed-demand")`: Basic mixed-effects demand modeling
+- `vignette("model-selection")`: Choosing the right model class
+- `vignette("fixed-demand")`: Fixed-effect demand modeling
+- `vignette("hurdle-demand-models")`: Two-part hurdle demand models
+- `vignette("cross-price-models")`: Cross-price demand analysis
+- `vignette("group-comparisons")`: Group comparisons
+- `vignette("migration-guide")`: Migrating from `FitCurves()`
+- `vignette("beezdemand")`: Getting started with beezdemand

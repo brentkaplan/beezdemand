@@ -15,7 +15,7 @@
 A list with fixed_names, var_names, and rho_names.
 }
 \description{
-Internal function to get the names of fixed effect parameters and
+Returns the names of fixed effect parameters and
 variance component names based on model configuration.
 }
 \keyword{internal}

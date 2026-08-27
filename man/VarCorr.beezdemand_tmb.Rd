@@ -22,8 +22,8 @@ displayed values. Default \code{3}.}
 \value{
 A character matrix of class \code{"VarCorr.lme"} with one row per
 random-effect term plus a final \code{"Residual"} row, columns
-\code{"Variance"} and \code{"StdDev"}, and --- for fits with correlated
-random effects (\code{pdSymm}) --- a \code{"Corr"} column. \code{print()}
+\code{"Variance"} and \code{"StdDev"}, and, for fits with correlated
+random effects (\code{pdSymm}), a \code{"Corr"} column. \code{print()}
 dispatches to \code{nlme}'s \code{print.VarCorr.lme()}.
 }
 \description{
@@ -33,12 +33,12 @@ familiar with \pkg{nlme} or \pkg{lme4} can introspect a TMB fit with the
 accessor they already know. The reported values are the same ones returned
 by \code{\link{summary.beezdemand_tmb}}: the Q0 and alpha random-effect
 standard deviations on the \strong{log10 scale} and the residual standard
-deviation on the model's likelihood scale. This is a presentation shim ---
-it formats already-computed values and recomputes nothing.
+deviation on the model's likelihood scale. This is a presentation shim that
+formats already-computed values and recomputes nothing.
 }
 \note{
-The \code{Corr} column is placed using \code{nlme}'s convention ---
-each correlation on the row of its higher-indexed random effect. For
+The \code{Corr} column is placed using \code{nlme}'s convention,
+with each correlation on the row of its higher-indexed random effect. For
 multi-block \code{pdBlocked} fits the correlations are placed on the
 correct global rows (each correlated block's off-diagonals are offset by
 the cumulative random-effect dimension of the earlier blocks);

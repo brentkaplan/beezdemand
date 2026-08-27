@@ -86,7 +86,7 @@ plot(desc)
 # With log-transformed y-axis
 plot(desc, y_trans = "log10")
 
-# With pseudo-log y-axis (handles zeros gracefully)
+# With pseudo-log y-axis (defined at zero)
 plot(desc, y_trans = "pseudo_log")
 }
 

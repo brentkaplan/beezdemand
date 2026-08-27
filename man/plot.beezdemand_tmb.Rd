@@ -50,7 +50,7 @@ distributions).}
 \item{x_trans}{Character. X-axis transformation.}
 
 \item{y_trans}{Character. Y-axis transformation. If \code{NULL} (default),
-uses \code{"pseudo_log"} which handles zero values gracefully.}
+uses \code{"pseudo_log"}, which is defined at zero.}
 
 \item{inv_fun}{Optional function to back-transform y-axis. For \code{zben} and
 \code{exponential} equations, the inverse link is applied automatically by

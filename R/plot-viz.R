@@ -747,8 +747,8 @@
 #' @return A ggplot2 object.
 #'
 #' @details
-#' **Important:** This function computes SSR on price-aggregated means, not a
-#' true profile likelihood. The resulting surface shows how well different
+#' Note that this function computes SSR on price-aggregated means rather than
+#' a true profile likelihood. The resulting surface shows how well different
 #' (Q0, alpha) pairs explain the average demand pattern, but does not account
 #' for individual variation. For models with large random effects, the surface
 #' may appear sharper than the full-data objective.
@@ -2354,8 +2354,7 @@ plot_expenditure.beezdemand_hurdle <- function(
 
   # Add Pmax/Omax — pull the metric set that matches the displayed curve.
   if (show_pmax || show_omax) {
-    # Codex 2D review (optional): name only the annotation(s) actually
-    # requested, not always "Pmax/Omax".
+    # Name only the annotation(s) actually requested, not always "Pmax/Omax".
     requested_annotations <- c(if (show_pmax) "Pmax", if (show_omax) "Omax")
     annotation_label <- paste(requested_annotations, collapse = "/")
     annotation_noun <- if (length(requested_annotations) == 1) {
@@ -2489,8 +2488,7 @@ plot_expenditure.beezdemand_tmb <- function(
     theme_beezdemand(style = style)
 
   if (show_pmax || show_omax) {
-    # Codex 2D review (optional): name only the annotation(s) actually
-    # requested, not always "Pmax/Omax".
+    # Name only the annotation(s) actually requested, not always "Pmax/Omax".
     requested_annotations <- c(if (show_pmax) "Pmax", if (show_omax) "Omax")
     annotation_label <- paste(requested_annotations, collapse = "/")
     annotation_noun <- if (length(requested_annotations) == 1) {
@@ -2572,8 +2570,8 @@ plot_expenditure.beezdemand_tmb <- function(
 #' \deqn{\eta(P) = \frac{dQ}{dP} \cdot \frac{P}{Q(P)}}
 #'
 #' This uses the unconditional demand Q(P) for hurdle models (which includes
-#' the probability of zero consumption), providing the economically relevant
-#' total elasticity.
+#' the probability of zero consumption), so the result is the economically
+#' relevant total elasticity.
 #'
 #' @examples
 #' \donttest{

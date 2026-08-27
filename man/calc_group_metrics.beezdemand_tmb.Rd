@@ -44,8 +44,8 @@ weights (matches the emmeans default).
 \item Derive Pmax/Omax/Qmax from the marginalized log-parameters at
 the user-supplied (or training-mean default) covariate point.
 }
-This is "metrics evaluated at the average parameter values," NOT
-"average metrics across cells" -- the two answers differ for nonlinear
+The result is "metrics evaluated at the average parameter values" rather
+than "average metrics across cells". The two answers differ for nonlinear
 transforms. The convention matches the parameter-level marginalization
 used by \code{get_demand_param_emms()}.
 }

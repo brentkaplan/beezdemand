@@ -18,8 +18,8 @@ Internal helper (TICKET-068, E5c). The \verb{augment.cp_model_*()} methods
 document \code{.fitted}/\code{.resid}/\code{.fixed} as always-present columns; when the
 underlying \code{fitted()}/\code{residuals()}/\code{predict()} call errors, or its
 result's length doesn't match the augmented data, the column was
-previously dropped with no indication -- indistinguishable from "not
-applicable". Codex 2D review (blocking #1): the warning must name which
-call failed and include \code{conditionMessage(e)}, not just the column name.
+previously dropped with no indication, indistinguishable from "not
+applicable". The warning therefore names which call failed and includes
+\code{conditionMessage(e)} rather than the column name alone.
 }
 \keyword{internal}

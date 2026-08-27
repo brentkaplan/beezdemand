@@ -621,10 +621,10 @@
 #' demand parameter (`Q0` or `alpha`) between two conditions, by simulation:
 #' each replicate (1) simulates a two-condition dataset from the mixed-effects
 #' demand model in `.simulate_within_subject_demand()` under assumed
-#' population parameters plus the effect `delta` -- either a within-subject
-#' design (every subject observed in both conditions) or, with `design_type =
-#' "between"`, a two-arm between-subject design (each subject in one
-#' condition) -- (2) refits it with [fit_demand_tmb()], and (3) tests the
+#' population parameters plus the effect `delta`, under either a
+#' within-subject design (every subject observed in both conditions) or, with
+#' `design_type = "between"`, a two-arm between-subject design (each subject
+#' in one condition); (2) refits it with [fit_demand_tmb()]; and (3) tests the
 #' condition contrast on the estimation (natural log) scale with a Wald test
 #' at level `alpha`, referred to a t distribution with `df` degrees of freedom
 #' (see the `df` argument). Power is the proportion of *usable* fits
@@ -659,8 +659,8 @@
 #' @param df Degrees of freedom for the Wald test's t reference
 #'   distribution. `NULL` (default) uses `n_subjects - 1` for `design_type =
 #'   "within"` and `n_subjects - 2` for `design_type = "between"` (the
-#'   two-sample df). This is an *empirically calibrated* small-sample
-#'   correction, not a model-derived df (the TMB fit has no exact t sampling
+#'   two-sample df). This is an *empirically calibrated* small-sample correction
+#'   rather than a model-derived df (the TMB fit has no exact t sampling
 #'   theory): the asymptotic z-test was measurably anticonservative in the
 #'   package's Type I calibration battery (empirical rate 0.089 at nominal
 #'   .05 with 15 subjects), while the t reference passes the battery's null
@@ -676,7 +676,7 @@
 #'   raw consumption; the approximation is closest at small `sigma_e`, and
 #'   Type I calibration is verified by the test suite at the default and a
 #'   3x-larger `sigma_e`. Other equations are sensitivity analyses with a
-#'   different estimand -- their contrasts are not on the scale of the
+#'   different estimand, so their contrasts are not on the scale of the
 #'   simulated delta.
 #' @param design_type Either `"within"` (default) or `"between"`. `"within"`
 #'   simulates the two-condition within-subject design (every subject observed
@@ -741,8 +741,8 @@
 #' @details
 #' A replicate whose fit fails (non-convergence, non-positive-definite
 #' Hessian, unusable standard error, or an error) is excluded from the power
-#' denominator and reported through the `n_*` counts and `$replicates$status`
-#' -- it is never counted as "no effect detected", which would bias power in
+#' denominator and reported through the `n_*` counts and `$replicates$status`.
+#' It is never counted as "no effect detected", which would bias power in
 #' an unpredictable direction. A warning is issued when fewer than 95% of
 #' replicates are usable, since power conditional on convergence can be
 #' selected when convergence depends on the realized data.
@@ -755,7 +755,7 @@
 #' within-subject simulator once per arm with a single condition, then binding
 #' the arms and refitting with per-subject intercept random effects. Because
 #' each subject appears in only one condition, that random-effects *structure*
-#' matches the composed data-generating process exactly -- unlike the
+#' matches the composed data-generating process exactly, unlike the
 #' within-subject default's per-condition effects. The additive-Gaussian
 #' residual likelihood remains a *working model* for the simulator's
 #' multiplicative-lognormal errors in both designs (closest at small
@@ -1173,8 +1173,9 @@ print.beezdemand_power <- function(x, ...) {
 #' flagged `uncertain`. The selected N and its lower neighbor are then
 #' re-evaluated with fresh replicates before minimality is claimed.
 #'
-#' The returned `n` is an *estimated minimum under Monte Carlo uncertainty*,
-#' not an exact bound. For grant-quality reporting, rerun [power_demand()] at
+#' The returned `n` is an *estimated minimum under Monte Carlo uncertainty*
+#' rather than an exact bound. For grant-quality reporting, rerun
+#' [power_demand()] at
 #' the returned `n` with a large `n_sim` (2000+) and report that estimate
 #' with its Monte Carlo confidence interval.
 #'
@@ -1219,14 +1220,14 @@ print.beezdemand_power <- function(x, ...) {
 #'     \item{status}{`"confirmed"` (selected N re-confirmed above target and
 #'       N - 1 below), `"uncertain"` (a decision relied on a point estimate,
 #'       N - 1 also cleared the target on reconfirmation, or an evaluated
-#'       lower N read above the target -- so the returned N may not be
+#'       lower N read above the target, so the returned N may not be
 #'       minimal), `"unresolved"` (the selected N failed its
 #'       own reconfirmation; `n` is `NA`), or `"at_lower_bound"` (the target
 #'       was already met at `n_range[1]` on two independent looks; smaller N
-#'       was not explored -- widen `n_range` downward if that matters). These
-#'       labels describe a heuristic Monte Carlo decision rule -- repeated
-#'       looks at ordinary Wilson intervals across several N -- not a formal
-#'       sequential error guarantee.}
+#'       was not explored; widen `n_range` downward if that matters). These
+#'       labels describe a heuristic Monte Carlo decision rule (repeated
+#'       looks at ordinary Wilson intervals across several N) rather than a
+#'       formal sequential error guarantee.}
 #'     \item{uncertain}{Logical; `TRUE` when any search decision was made on
 #'       a point estimate rather than a conclusive Wilson interval, or the
 #'       status is not `"confirmed"`/`"at_lower_bound"`.}

@@ -387,7 +387,7 @@ test_that("TICKET-056: non-converged/non-PD hurdle fit prints optimizer diagnost
   expect_true(any(grepl("zeros.*q0", s$notes)))
 })
 
-test_that("TICKET-056: converged fit print/summary output is unchanged (Codex 2C review fold RECOMMENDED 6, pinned)", {
+test_that("TICKET-056: converged fit print/summary output is unchanged", {
   skip_on_cran()
   skip_if_not_installed("TMB")
 

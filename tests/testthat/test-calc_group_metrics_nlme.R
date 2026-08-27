@@ -120,7 +120,7 @@ test_that("calc_group_metrics nlme and tmb share field + conditioned_on shape", 
 
   cm_nlme <- calc_group_metrics(fit_nlme)
   cm_tmb <- calc_group_metrics(fit_tmb)
-  # `pmax_at_bound` (Codex review of GH #19, TMB tier) is TMB-only: it flags
+  # `pmax_at_bound` (GH #19, TMB tier) is TMB-only: it flags
   # when the zben numerical Pmax search hits its domain-expansion cap, which
   # has no NLME counterpart (NLME zben Pmax/Omax are out of scope for that
   # ticket). Checked for presence explicitly instead of folding it into the

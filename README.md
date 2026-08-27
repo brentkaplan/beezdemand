@@ -459,18 +459,17 @@ emp
 ### Fitting Demand Curves
 
 The recommended function for fitting individual demand curves is
-`fit_demand_fixed()`. It provides a modern S3 interface with
-`summary()`, `coef()`, `tidy()`, `glance()`, `predict()`, and `plot()`
-methods.
+`fit_demand_fixed()`. It provides an S3 interface with `summary()`,
+`coef()`, `tidy()`, `glance()`, `predict()`, and `plot()` methods.
 
 Key arguments:
 
-- `equation` — `"hs"` (Hursh & Silberberg, 2008; default) or `"koff"`
+- `equation`: `"hs"` (Hursh & Silberberg, 2008; default) or `"koff"`
   (Koffarnus et al., 2015).
-- `k` — scaling constant. By default, calculated from the sample range +
+- `k`: scaling constant. By default, calculated from the sample range +
   0.5. Other options: `"ind"` (individual), `"fit"` (free parameter),
   `"share"` (shared across all series).
-- `agg` — `NULL` (individual fits; default), `"Mean"` (fit to averaged
+- `agg`: `NULL` (individual fits; default), `"Mean"` (fit to averaged
   data), or `"Pooled"` (fit to all data ignoring clustering).
 
 #### Individual fits (Hursh & Silberberg equation)
@@ -772,11 +771,10 @@ models, and visualize the results.
 
 Key functions:
 
-- `check_unsystematic_cp()` — identify unsystematic cross-price
-  patterns.
-- `fit_cp_nls()` — fit nonlinear cross-price models (e.g., exponentiated
+- `check_unsystematic_cp()`: identify unsystematic cross-price patterns.
+- `fit_cp_nls()`: fit nonlinear cross-price models (e.g., exponentiated
   form).
-- `fit_cp_linear()` — fit linear and mixed-effects cross-price models.
+- `fit_cp_linear()`: fit linear and mixed-effects cross-price models.
 - S3 methods: `summary()`, `plot()`, `glance()`, `tidy()`.
 
 Minimal example (using the included ETM dataset):
@@ -823,8 +821,8 @@ dynamic ranges.
 
 Key functions:
 
-- `fit_demand_mixed()` — fit mixed-effects demand models via `nlme`.
-- `ll4()` / `ll4_inv()` — transform and inverse-transform consumption.
+- `fit_demand_mixed()`: fit mixed-effects demand models via `nlme`.
+- `ll4()` / `ll4_inv()`: transform and inverse-transform consumption.
 - Plotting and predictions via `plot()`/`predict()` on `beezdemand_nlme`
   objects.
 - Post-hoc summaries with `get_demand_param_emms()` and comparisons
@@ -868,7 +866,7 @@ effects, and post-hoc analyses of parameter estimates.
 differentiation, a Laplace approximation for the random effects, and
 multi-start optimization. It is the **recommended backend for new
 mixed-effects work**: where the `nlme` PNLS algorithm frequently fails
-to converge on demand equations, TMB is markedly more robust, and it can
+to converge on demand equations, TMB usually converges, and it can
 additionally estimate the scaling constant `k` rather than fixing it.
 Fits return `beezdemand_tmb` objects with the full S3 method suite
 (`coef()`, `predict()`, `summary()`, `plot()`, `tidy()`, `glance()`,
@@ -950,12 +948,12 @@ this document:
 The package publishes machine-readable documentation for use with AI
 coding assistants and RAG systems:
 
-- **`llms.txt`** — canonical entry point for LLMs, published at:
+- **`llms.txt`**: canonical entry point for LLMs, published at:
   <https://brentkaplan.github.io/beezdemand/llms.txt>
-- **Context7** — a `context7.json` at the repo root configures Context7
+- **Context7**: a `context7.json` at the repo root configures Context7
   indexing. Use `/brentkaplan/beezdemand` as the library ID in
   Context7-enabled tools.
-- **Docs map** — a chunkable reference at
+- **Docs map**: a chunkable reference at
   [`inst/llm/docs-map.md`](https://github.com/brentkaplan/beezdemand/blob/master/inst/llm/docs-map.md)
   summarises workflows, data format, and key functions for RAG
   ingestion.

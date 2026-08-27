@@ -552,9 +552,9 @@ summary.beezdemand_tmb <- function(
     # d > 2, the marginal correlations are the off-diagonals of
     # R_corr = L_corr %*% t(L_corr) -- reconstruct L_corr here using
     # the same recurrence as the template, then derive R_corr.
-    # Codex round 5 caught the prior code reporting tanh(rho_raw)
-    # directly as rho[j,k], which is a silent statistical wrong answer
-    # for any pdSymm block of size > 2.
+    # The prior code reported tanh(rho_raw) directly as rho[j,k],
+    # which is a silent statistical wrong answer for any pdSymm block
+    # of size > 2.
     if (bmap$block_types[b] == 1L && d > 1L) {
       n_off <- d * (d - 1L) / 2L
 
@@ -885,16 +885,16 @@ fixef.beezdemand_tmb <- function(object, ...) {
 #'
 #' @return Data frame with subject-level random effects. Columns:
 #'   \itemize{
-#'     \item `id` — subject identifier
-#'     \item `b_i`, `c_i` (when present) — first-column convenience aliases
+#'     \item `id`: subject identifier
+#'     \item `b_i`, `c_i` (when present): first-column convenience aliases
 #'       for `q0_(Intercept)` and `alpha_(Intercept)`. Preserved for
 #'       backward compatibility with older callers.
-#'     \item `q0_<term>` — per-block random-effect coefficients for log-Q0,
+#'     \item `q0_<term>`: per-block random-effect coefficients for log-Q0,
 #'       one column per random-effects design column from the parsed
 #'       block structure. For factor-expanded or multi-block fits, these
 #'       expose the per-condition slope REs that `b_i` / `c_i` alone do
 #'       not surface.
-#'     \item `alpha_<term>` — analogous columns for log-alpha.
+#'     \item `alpha_<term>`: analogous columns for log-alpha.
 #'   }
 #'
 #' @examples
@@ -1012,7 +1012,7 @@ ranef.beezdemand_tmb <- function(object, ...) {
 #' data(apt)
 #' fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #'
-#' # Fitted values (subject-conditional -- the default)
+#' # Fitted values (subject-conditional, the default)
 #' head(predict(fit, type = "response"))
 #'
 #' # Population-mean predictions: no `id` column needed in newdata
@@ -1143,7 +1143,7 @@ predict.beezdemand_tmb <- function(
   # type == "response": fitted values at the requested random-effect
   # level(s). Fixed-effect linear predictors are rebuilt from newdata so
   # that factor and continuous-covariate values propagate into Q0 and
-  # alpha (codex Bug 3 fix); see .tmb_build_predicted_pars().
+  # alpha; see .tmb_build_predicted_pars().
   if (is.null(newdata)) {
     newdata <- object$data
   }
@@ -1303,7 +1303,7 @@ predict.beezdemand_tmb <- function(
   # 1. Validate required columns are present. Phase 2 also requires
   # variables that appear only in the RE formula RHS (not in `factors`):
   # without them, .tmb_build_z_matrices() in step 4 below crashes with
-  # cryptic `model.matrix()` errors. Codex round 6.
+  # cryptic `model.matrix()` errors.
   re_parsed_pre <- pinfo$random_effects_parsed
   re_rhs_vars_pre <- character(0)
   if (!is.null(re_parsed_pre)) {
@@ -1335,7 +1335,6 @@ predict.beezdemand_tmb <- function(
   # NAs in any model-matrix column (including x_var / price) propagate
   # into mismatched-shape Z / X arrays downstream. Reject them up front
   # with a clear error so the user can clean their newdata.
-  # Phase 2 / Codex rounds 6 + 7.
   na_cols <- needed[vapply(needed, function(c) any(is.na(newdata[[c]])),
                             logical(1))]
   if (length(na_cols) > 0) {
@@ -1456,7 +1455,7 @@ predict.beezdemand_tmb <- function(
       i = "Use {.code level = \"population\"} for the population-mean prediction (random effects set to zero)."
     ))
   }
-  # Phase 2 fix (Codex round 5): for factor-expanded RE specs the
+  # For factor-expanded RE specs the
   # per-subject RE contribution is `Z[i, ] %*% re_mat[subj_i, ]`, NOT
   # just spars$b_i (which holds only the FIRST RE column for backward
   # compat). Build Z from newdata via the same helper used at fit time;
@@ -1911,7 +1910,7 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
   out$alpha <- alpha
   out$Pmax <- omax_pmax$pmax_model
   out$Omax <- omax_pmax$omax_model
-  # Codex review of GH #19 (BLOCKING follow-up): surface the numerical
+  # GH #19 follow-up: surface the numerical
   # zben Pmax search's expansion-cap flag (see .tmb_compute_subject_pars()
   # for the fit-time/wide-shape counterpart of this column).
   out$pmax_at_bound <- omax_pmax$is_boundary_model
@@ -1936,7 +1935,7 @@ get_subject_pars.beezdemand_tmb <- function(object, expanded = NULL, at = NULL, 
 #'   `"individual"`, or `"both"`. If `NULL` (default), determined by `type`.
 #' @param x_trans Character. X-axis transformation.
 #' @param y_trans Character. Y-axis transformation. If `NULL` (default),
-#'   uses `"pseudo_log"` which handles zero values gracefully.
+#'   uses `"pseudo_log"`, which is defined at zero.
 #' @param inv_fun Optional function to back-transform y-axis. For `zben` and
 #'   `exponential` equations, the inverse link is applied automatically by
 #'   default so all demand plots are on the consumption scale.
@@ -2247,15 +2246,15 @@ plot.beezdemand_tmb <- function(
 #'   variance-component rows carry `component == "variance"`. A
 #'   `hessian_warning` attribute (character scalar, or absent) is attached
 #'   depending on `x$hessian_pd`: absent (no attribute) when `hessian_pd`
-#'   is `TRUE` or `NULL` (the field is missing on a legacy fit object --
-#'   nothing to say); a message noting the Hessian is not positive definite
+#'   is `TRUE` or `NULL` (the field is missing on a legacy fit object, so
+#'   there is nothing to report); a message noting the Hessian is not positive definite
 #'   when `hessian_pd` is `FALSE`; a message noting
 #'   positive-definiteness is unknown (because `TMB::sdreport()` failed
 #'   entirely, so SEs/CIs are unavailable, not merely unreliable) when
 #'   `hessian_pd` is `NA`. This attribute is not printed by an ordinary
-#'   tibble print -- see [summary.beezdemand_tmb()] or
+#'   tibble print (see [summary.beezdemand_tmb()] or
 #'   [check_demand_model()] for the surfaced versions of the same
-#'   diagnostic.
+#'   diagnostic).
 #'
 #' @details
 #' Variance-component rows (`effects = "ran_pars"`) are exactly the rows of
@@ -2263,8 +2262,8 @@ plot.beezdemand_tmb <- function(
 #' deviations on the **log10 scale** and the residual standard deviation on
 #' the model's likelihood scale. They are not the raw internal `logsigma`
 #' optimizer coefficients and do not respond to `report_space`; `std.error`
-#' is `NA` for them. Random-effect *correlations* are not tidied here -- see
-#' `summary(x)$correlations` or `VarCorr(x)` for those. The NLME sibling
+#' is `NA` for them. Random-effect *correlations* are not tidied here (see
+#' `summary(x)$correlations` or `VarCorr(x)` for those). The NLME sibling
 #' [tidy.beezdemand_nlme()] likewise reports SDs, so backend-agnostic code can
 #' consume the `estimate` column without dispatch logic on either side.
 #'
@@ -2367,7 +2366,7 @@ tidy.beezdemand_tmb <- function(
     result <- dplyr::bind_rows(result, ran)
   }
 
-  # Codex 2C review fold (BLOCKING 1, TICKET-067): `hessian_pd` may be NULL
+  # TICKET-067: `hessian_pd` may be NULL
   # on a fit predating this field (an older saved object) or on a
   # deliberately-stripped object; `is.na(NULL)` is length-0, so calling
   # `if()` on it directly errors ("argument is of length zero"). Read it
@@ -2473,8 +2472,8 @@ glance.beezdemand_tmb <- function(x, ...) {
 #' accessor they already know. The reported values are the same ones returned
 #' by \code{\link{summary.beezdemand_tmb}}: the Q0 and alpha random-effect
 #' standard deviations on the \strong{log10 scale} and the residual standard
-#' deviation on the model's likelihood scale. This is a presentation shim ---
-#' it formats already-computed values and recomputes nothing.
+#' deviation on the model's likelihood scale. This is a presentation shim that
+#' formats already-computed values and recomputes nothing.
 #'
 #' @param x A \code{beezdemand_tmb} object.
 #' @param sigma Present for signature compatibility with
@@ -2487,12 +2486,12 @@ glance.beezdemand_tmb <- function(x, ...) {
 #'
 #' @return A character matrix of class \code{"VarCorr.lme"} with one row per
 #'   random-effect term plus a final \code{"Residual"} row, columns
-#'   \code{"Variance"} and \code{"StdDev"}, and --- for fits with correlated
-#'   random effects (\code{pdSymm}) --- a \code{"Corr"} column. \code{print()}
+#'   \code{"Variance"} and \code{"StdDev"}, and, for fits with correlated
+#'   random effects (\code{pdSymm}), a \code{"Corr"} column. \code{print()}
 #'   dispatches to \code{nlme}'s \code{print.VarCorr.lme()}.
 #'
-#' @note The \code{Corr} column is placed using \code{nlme}'s convention ---
-#'   each correlation on the row of its higher-indexed random effect. For
+#' @note The \code{Corr} column is placed using \code{nlme}'s convention,
+#'   with each correlation on the row of its higher-indexed random effect. For
 #'   multi-block \code{pdBlocked} fits the correlations are placed on the
 #'   correct global rows (each correlated block's off-diagonals are offset by
 #'   the cumulative random-effect dimension of the earlier blocks);
@@ -2854,7 +2853,7 @@ residuals.beezdemand_tmb <- function(object,
 #'   the likelihood-ratio test screens for detectable non-nesting (equal or
 #'   decreasing degrees of freedom, or a larger model with lower
 #'   log-likelihood) but cannot prove nesting from log-likelihood and df
-#'   alone -- pass genuinely nested models. Rows of the multiple-fit table
+#'   alone. Pass genuinely nested models. Rows of the multiple-fit table
 #'   are ordered by ascending degrees of freedom, and the \code{Model}
 #'   column labels them \code{Model1}, \code{Model2}, ... in that order.
 #'
@@ -2947,8 +2946,8 @@ anova.beezdemand_tmb <- function(object, ...,
 #' @return A tibble with term, estimate, conf.low, conf.high, level.
 #'
 #' @details `method = "simulate"` is Monte Carlo simulation from the
-#'   asymptotic Gaussian posterior -- not a data-resampling bootstrap and
-#'   not a profile-likelihood interval. Because the sampled distribution is
+#'   asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+#'   a profile-likelihood interval). Because the sampled distribution is
 #'   the same Gaussian that Wald assumes, the simulated per-coefficient
 #'   quantiles converge to the Wald intervals as `R -> Inf`; the method does
 #'   **not** improve on Wald at boundary cases and offers no positivity
@@ -3248,7 +3247,7 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 #'
 #' Extracted from `.tmb_build_emm_ref_grid()` so each public-facing
 #' function (`get_demand_param_emms`, `get_demand_comparisons`,
-#' `calc_group_metrics`) can validate ONCE at the top of the call —
+#' `calc_group_metrics`) can validate once at the top of the call;
 #' otherwise grid-builder calls inside one public call (Q0 grid + alpha
 #' grid) emit duplicate warnings on multi-value continuous `at`.
 #'
@@ -3267,7 +3266,7 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 #' @param fit_obj A `beezdemand_tmb` object.
 #' @param at User-supplied `at` list (or NULL).
 #' @param param_scope `NULL` (default) accepts the union of factors_q0
-#'   and factors_alpha — appropriate for callers that build BOTH grids
+#'   and factors_alpha, appropriate for callers that build both grids
 #'   in one user call (e.g., calc_group_metrics). `"Q0"` or `"alpha"`
 #'   restricts active factors to that param's set, so a Q0 EMM call
 #'   doesn't silently accept an alpha-only collapsed factor name (and
@@ -3372,7 +3371,7 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
 }
 
 # Resolve user-requested retained factors against a parameter's fitted factor
-# columns (F2, Codex post-commit review). Under asymmetric `collapse_levels` the
+# columns (F2). Under asymmetric `collapse_levels` the
 # fitted columns are renamed per parameter (`age_group` -> `age_group_Q0` /
 # `age_group_alpha`), but users pass the ORIGINAL name via `compare_specs`
 # (mirroring the NLME backend's .get_actual_factors_for_param()). A plain
@@ -3559,8 +3558,8 @@ update.beezdemand_tmb <- function(object, ..., evaluate = TRUE) {
     }
   }
 
-  # Pin the rebuilt basis to the FITTED design's contrasts (F1, Codex
-  # post-commit review). `model.matrix()` otherwise picks up whatever
+  # Pin the rebuilt basis to the FITTED design's contrasts (F1).
+  # `model.matrix()` otherwise picks up whatever
   # `options("contrasts")` is in effect at call time; if that differs from fit
   # time the rebuilt basis can keep the same column count but encode a different
   # basis, silently multiplying the wrong columns by `beta`. Passing the fitted
@@ -4006,8 +4005,8 @@ get_demand_comparisons.beezdemand_tmb <- function(
   attr(results_list, "contrast_type_used") <- contrast_type
   # Report the user-requested original name(s) ONLY when by-grouping was
   # actually applied for at least one parameter; otherwise "NULL" so the
-  # flattener/print do not synthesize an all-NA by-column (Codex review
-  # Recommended 1, e.g. redundant-by ignored for every parameter).
+  # flattener/print do not synthesize an all-NA by-column (e.g.
+  # redundant-by ignored for every parameter).
   any_by_applied <- any(vapply(contrast_by_map, length, integer(1)) > 0L)
   attr(results_list, "contrast_by_used") <- if (is.null(contrast_by) || !any_by_applied) {
     "NULL"
@@ -4281,7 +4280,7 @@ get_demand_comparisons.beezdemand_tmb <- function(
 
   if (length(block_results) == 0L) {
     # Empty but contrast_by was resolved: preserve the map so the metadata
-    # contract holds even with no contrast rows (Codex review Recommended 2).
+    # contract holds even with no contrast rows.
     res <- finish_empty(emm_block)
     attr(res, "contrast_by_map") <- by_map
     return(res)
@@ -4346,8 +4345,8 @@ get_demand_comparisons.beezdemand_tmb <- function(
 #'   \item Derive Pmax/Omax/Qmax from the marginalized log-parameters at
 #'     the user-supplied (or training-mean default) covariate point.
 #' }
-#' This is "metrics evaluated at the average parameter values," NOT
-#' "average metrics across cells" -- the two answers differ for nonlinear
+#' The result is "metrics evaluated at the average parameter values" rather
+#' than "average metrics across cells". The two answers differ for nonlinear
 #' transforms. The convention matches the parameter-level marginalization
 #' used by \code{get_demand_param_emms()}.
 #'
@@ -4470,7 +4469,7 @@ calc_group_metrics.beezdemand_tmb <- function(object, at = NULL, ...) {
     Qmax = result$q_at_pmax_model,
     elasticity_at_pmax = result$elasticity_at_pmax_model,
     method = result$method_model,
-    # Codex review of GH #19 (BLOCKING follow-up): TRUE only for zben fits
+    # GH #19 follow-up: TRUE only for zben fits
     # whose numerical Pmax search hit its domain-expansion cap without
     # finding the true (interior) maximum; FALSE for analytic (hs/snd)
     # fits, which never reach that path.

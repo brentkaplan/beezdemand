@@ -100,7 +100,7 @@ with \code{marginal = TRUE}.
 data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 
-# Fitted values (subject-conditional -- the default)
+# Fitted values (subject-conditional, the default)
 head(predict(fit, type = "response"))
 
 # Population-mean predictions: no `id` column needed in newdata

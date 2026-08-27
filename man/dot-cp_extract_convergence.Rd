@@ -14,13 +14,13 @@ A list with \code{isConv}, \code{finIter}, \code{stopCode}, \code{stopMessage}.
 }
 \description{
 Internal helper (TICKET-065). Reads \code{model$convInfo} into a plain list.
-This works generically for any backend that populates \code{convInfo} --
+This works generically for any backend that populates \code{convInfo}:
 \code{nls}/\code{nlsLM}-class fits always do, and \code{nlsr::wrapnlsr()} fits do too
 when \code{wrapnlsr()} returns a plain \code{nls}-class object (its usual successful
-case; Codex 2D review folded 2026-08-15, verified via
+case; verified via
 \code{nlsr::wrapnlsr(y ~ a*exp(-b*x), ...)$convInfo}). \code{isConv} is only \code{NA}
 (unknown), not \code{FALSE}, when the winning object carries no \code{convInfo} at
-all -- the two must stay distinguishable so downstream gates only warn on
+all. The two must stay distinguishable so downstream gates only warn on
 an explicit, known non-convergence.
 }
 \keyword{internal}

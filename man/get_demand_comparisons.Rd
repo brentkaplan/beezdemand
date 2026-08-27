@@ -66,11 +66,11 @@ instead (deprecated in 0.3.0 to harmonize with the TMB backend).}
 }
 \value{
 A list named by parameter. Each element contains:
-\item{emmeans}{Tibble of EMMs (internal scale -- log10 for
+\item{emmeans}{Tibble of EMMs (internal scale, i.e., log10 for
 \code{param_space = "log10"} fits, natural for \code{param_space = "natural"}
 fits) with CIs.}
 \item{contrasts_log10}{Tibble of comparisons (differences on the fit's
-internal scale, despite the name -- see the Details on
+internal scale, despite the name; see the Details on
 \code{param_space = "natural"}) with CIs and p-values.}
 \item{contrasts_ratio}{(If \code{report_ratios=TRUE} and successful) Tibble of
 comparisons with the same column shape (\code{ratio_estimate}, \code{LCL_ratio},
@@ -78,7 +78,7 @@ comparisons with the same column shape (\code{ratio_estimate}, \code{LCL_ratio},
 \code{param_space = "log10"} fits, a multiplicative ratio
 (\code{10^difference}, fold-change on the natural scale); for
 \code{param_space = "natural"} fits, the difference again (unchanged from
-\code{contrasts_log10}) -- there is no log-scale quantity to exponentiate
+\code{contrasts_log10}), because there is no log-scale quantity to exponentiate
 for an already-natural-scale difference. The returned object's
 \code{contrasts_ratio_scale} attribute is \code{"ratio"} or \code{"difference"}
 accordingly.}

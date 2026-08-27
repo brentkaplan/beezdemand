@@ -32,9 +32,9 @@
 \item{k}{The \code{k} argument as supplied to \code{fit_demand_fixed()}.}
 
 \item{agg}{The \code{agg} argument as supplied to \code{fit_demand_fixed()}
-(\code{NULL}, \code{"Mean"}, or \code{"Pooled"}). Codex 2F review fold, item 3: this
-MUST be passed through unchanged to each rescue \code{FitCurves()} call
-(never hard-coded to \code{NULL}) -- for \code{agg = "Pooled"}, \code{data_used[[i]]}
+(\code{NULL}, \code{"Mean"}, or \code{"Pooled"}). This
+must be passed through unchanged to each rescue \code{FitCurves()} call
+(never hard-coded to \code{NULL}). For \code{agg = "Pooled"}, \code{data_used[[i]]}
 is the raw (duplicated-price) stacked data, and \code{FitCurves()}'s own
 \code{agg = "Pooled"} handling is what builds the deduplicated table
 \code{GetEmpirical()} needs; without it, \code{GetEmpirical()} hard-errors on
@@ -48,7 +48,7 @@ is the raw (duplicated-price) stacked data, and \code{FitCurves()}'s own
 
 \item{dots}{Named list of additional arguments forwarded from
 \code{fit_demand_fixed()}'s \code{...} (e.g. \code{lobound}, \code{hibound},
-\code{constrainq0}) -- passed through to each rescue \code{FitCurves()} call,
+\code{constrainq0}), passed through to each rescue \code{FitCurves()} call,
 with any user-supplied \code{startq0}/\code{startalpha} stripped (the sampled
 starts replace them for rescue attempts).}
 }

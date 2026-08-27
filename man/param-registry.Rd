@@ -5,7 +5,7 @@
 \title{Parameter Naming Registry for beezdemand}
 \description{
 This file defines canonical parameter naming conventions across all model
-families. It serves as the single source of truth for parameter names,
+families. It is the canonical reference for parameter names,
 scales, and mappings.
 }
 \section{Naming Convention}{

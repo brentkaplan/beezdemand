@@ -57,7 +57,7 @@ Compute Subject-Specific Parameters
 \note{
 For factor-expanded RE specs (e.g. \code{pdDiag(Q0+alpha~condition)}),
 subject-level Q0 / alpha here use the first observed row of \code{Z_q0} /
-\code{Z_alpha} per subject -- which encodes the subject's first observed
+\code{Z_alpha} per subject, which encodes the subject's first observed
 condition only. This helper does not emit per-(subject, condition) rows;
 use \code{predict()} for cell-level values.
 }

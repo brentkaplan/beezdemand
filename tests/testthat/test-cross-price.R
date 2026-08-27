@@ -644,7 +644,7 @@ test_that("fit_cp_nls records convergence info for a healthy fit (real fixture)"
   )
 })
 
-# Codex 2D review (recommended #4): nlsr::wrapnlsr() DOES populate
+# nlsr::wrapnlsr() DOES populate
 # `convInfo` when it returns a plain `nls`-class object (its usual
 # successful case) -- .cp_extract_convergence() already reads it generically
 # via `model$convInfo`, but the docs/NEWS wrongly claimed isConv is always

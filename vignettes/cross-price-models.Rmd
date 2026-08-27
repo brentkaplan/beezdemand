@@ -69,10 +69,10 @@ as the price of another commodity varies. This is central to understanding
 economic relationships between goods:
 
 - **Substitutes**: When the price of the target commodity increases and
-  consumption of the alternative increases, the goods function as substitutes
+  consumption of the alternative increases, the goods are substitutes
   (e.g., e-cigarettes and combustible cigarettes).
 - **Complements**: When the price of the target increases and consumption of the
-  alternative *decreases*, the goods function as complements.
+  alternative *decreases*, the goods are complements.
 - **Independent**: When the price of one commodity does not meaningfully affect
   consumption of the other.
 
@@ -597,10 +597,10 @@ cp_posthoc_intercepts(fit_mixed)
 
 ## See Also
 
-- `vignette("beezdemand")` -- Getting started with beezdemand
-- `vignette("model-selection")` -- Choosing the right model class for your data
-- `vignette("group-comparisons")` -- Extra sum-of-squares F-test for group comparisons
-- `vignette("mixed-demand")` -- Mixed-effects nonlinear demand models
-- `vignette("mixed-demand-advanced")` -- Advanced mixed-effects topics
-- `vignette("hurdle-demand-models")` -- Two-part hurdle demand models
-- `vignette("migration-guide")` -- Migrating from `FitCurves()`
+- `vignette("beezdemand")`: getting started with beezdemand
+- `vignette("model-selection")`: choosing the right model class for your data
+- `vignette("group-comparisons")`: extra sum-of-squares F-test for group comparisons
+- `vignette("mixed-demand")`: mixed-effects nonlinear demand models
+- `vignette("mixed-demand-advanced")`: advanced mixed-effects topics
+- `vignette("hurdle-demand-models")`: two-part hurdle demand models
+- `vignette("migration-guide")`: migrating from `FitCurves()`

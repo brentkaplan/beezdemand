@@ -53,7 +53,7 @@ A validated (and potentially filtered) data frame with canonical
 column names.
 }
 \description{
-This function performs validation checks on cross-price demand data and applies
+Validates cross-price demand data and applies
 filtering if specified. It ensures the data meets the requirements for analysis
 by checking for required columns (after optional column renaming), filtering
 by target type if needed, and confirming ID column presence when required.

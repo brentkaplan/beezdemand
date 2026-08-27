@@ -25,7 +25,7 @@ Prefers the production fit's own recorded \code{K} (natural scale, already
 back-transformed by \code{ExtractCoefs()}) since that is the exact value used
 for this subject regardless of the caller's \code{k} mode (\code{"ind"}, \code{"fit"},
 \code{"range"}, \code{"share"}, or a plain number). Falls back to the caller's \code{k}
-if numeric, else to \code{GetK()} computed on the subject's own data -- both
+if numeric, else to \code{GetK()} computed on the subject's own data. Both
 are only used to seed a \emph{starting} alpha, so approximate is acceptable.
 }
 \keyword{internal}

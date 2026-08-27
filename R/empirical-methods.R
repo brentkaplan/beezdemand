@@ -39,7 +39,6 @@
 #' \itemize{
 #'   \item Six-panel faceted plot showing distribution of each measure
 #'   \item Helps identify central tendencies and outliers
-#'   \item Uses modern beezdemand styling
 #' }
 #'
 #' **Matrix type**:

@@ -7,8 +7,8 @@
 # equation-specific error model -- the point is that the compiled mean must
 # match the published equation for the optimizer to recover the truth. If a C++
 # mean branch drifted from its published form, recovery would fail here even
-# though the R-mirror equation tests still passed. (Codex audit recommendation;
-# complements test-statistical-corrections.R.)
+# though the R-mirror equation tests still passed. (Complements
+# test-statistical-corrections.R.)
 #
 # Coverage: eqn_type 0 (exponential/HS), 1 (exponentiated/Koffarnus),
 # 2 (simplified/SND). The zben branch (eqn_type 3) is guarded by the R

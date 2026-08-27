@@ -30,8 +30,8 @@ If \code{newdata} is \code{NULL}, returns predictions for all subjects across a 
 \item{type}{One of:
 \describe{
 \item{\code{"demand"}}{(default) Predicted expected consumption
-= (1 - P0) * response -- the marginal expectation; see
-\emph{Scoring predictions}}
+= (1 - P0) * response (the marginal expectation; see
+\emph{Scoring predictions})}
 \item{\code{"response"}}{Predicted consumption conditional on
 consuming (part II), \eqn{E[Y \mid Y > 0]}}
 \item{\code{"link"}}{Predicted log-consumption (linear predictor of part II)}
@@ -49,7 +49,7 @@ predictions by integrating over the random effects distribution.
 For \code{type = "probability"}, uses KDE/Normal/Empirical integration of the
 binary component. For \code{type = "response"} and \code{type = "demand"}, uses
 Monte Carlo integration over all random effects, producing the
-\strong{population-average} demand curve (accounting for Jensen's inequality).
+population-average demand curve (accounting for Jensen's inequality).
 Default is \code{FALSE}, which gives conditional (RE = 0) predictions
 representing a "typical" subject at the center of the RE distribution.}
 
@@ -61,8 +61,8 @@ over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
 \item{correction}{Logical; if \code{TRUE} (default), applies the lognormal
 retransformation correction \code{exp(sigma_e^2 / 2)} when back-transforming
 from the log scale to the natural consumption scale. This produces
-the \strong{arithmetic mean} (conditional on Q > 0). Set to \code{FALSE} to obtain
-the \strong{median} (geometric mean), which is useful for individual-level
+the arithmetic mean (conditional on Q > 0). Set to \code{FALSE} to obtain
+the median (geometric mean), which is useful for individual-level
 "most likely" predictions. Only applies to \code{type = "response"} and
 \code{type = "demand"}.}
 
@@ -98,7 +98,7 @@ The hurdle model specifies Gaussian errors on log-consumption (Part II):
 \code{log(Q) ~ N(mu, sigma_e^2)}. The conditional distribution of Q given
 Q > 0 is therefore lognormal. The arithmetic mean of a lognormal is
 \code{exp(mu + sigma_e^2/2)}, not \code{exp(mu)}. Using \code{exp(mu)} returns the
-\strong{median} (geometric mean), which systematically underestimates the
+median (geometric mean), which systematically underestimates the
 arithmetic mean by a factor of \code{exp(sigma_e^2/2)}. This correction is
 applied by default when \code{type = "response"} or \code{type = "demand"}. Set
 \code{correction = FALSE} to obtain the median instead.
@@ -132,13 +132,13 @@ RE normality.
 Population-level demand predictions (when no subject ID is provided) can be
 computed in two ways:
 \itemize{
-\item \strong{Conditional (default, \code{marginal = FALSE}):} Sets all random effects to
+\item Conditional (default, \code{marginal = FALSE}): Sets all random effects to
 zero and evaluates the demand function at the fixed-effect (population)
-parameters. For nonlinear models, this corresponds to the \strong{conditional
-mode}, not the population-average mean.
-\item \strong{Marginal (\code{marginal = TRUE}):} Integrates the prediction over the
+parameters. For nonlinear models, this corresponds to the conditional
+mode rather than the population-average mean.
+\item Marginal (\code{marginal = TRUE}): Integrates the prediction over the
 estimated random-effects distribution via Monte Carlo sampling. This gives
-the \strong{population-average} demand curve. Due to Jensen's inequality, this
+the population-average demand curve. Due to Jensen's inequality, this
 curve lies above the conditional curve when the demand function is convex
 in the random effects (which it is for exponential demand with log-normal
 Q0 and alpha).

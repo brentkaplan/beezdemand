@@ -753,9 +753,9 @@ coef.beezdemand_fixed <- function(
   }
 
   ids <- names(object$fits)
-  # TICKET-068 (E5a): track which subjects' rows are dropped and WHY (Codex
-  # 2D review, blocking #1: name the failing call and include
-  # conditionMessage(e), not just the id), so the caller can distinguish
+  # TICKET-068 (E5a): track which subjects' rows are dropped and WHY (name
+  # the failing call and include conditionMessage(e), not just the id), so
+  # the caller can distinguish
   # "subject absent" from "subject failed" rather than the two looking
   # identical in the returned tibble.
   omitted <- character(0)

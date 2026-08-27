@@ -1051,7 +1051,7 @@ test_that("plot_expenditure.beezdemand_tmb warns when Pmax/Omax metrics fail", {
   expect_s3_class(p, "gg")
 })
 
-# Codex 2D review (optional): the warning should name only the annotation(s)
+# The warning should name only the annotation(s)
 # actually requested, not always "Pmax/Omax".
 test_that("plot_expenditure warning names only the requested annotation (Pmax only)", {
   testthat::local_mocked_bindings(

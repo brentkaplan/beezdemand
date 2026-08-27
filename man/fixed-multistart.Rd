@@ -4,16 +4,15 @@
 \alias{fixed-multistart}
 \title{Multi-Start Rescue Protocol for fit_demand_fixed()}
 \description{
-Internal helpers implementing the multi-start rescue protocol
-(TICKET-047, shipped spec = release-train plan section 1, decision D3).
+Internal helpers implementing the multi-start rescue protocol.
 \code{fit_demand_fixed()} always runs the legacy \code{FitCurves()} heuristic
-exactly as before -- this is the "production start". A subject whose
-production fit is strict-converged (\code{converged_strict}, TICKET-069:
+exactly as before (the "production start"). A subject whose
+production fit is strict-converged (\code{converged_strict}:
 optimizer \code{isConv} AND finite coefficients/objective AND not sitting on
-a user-supplied bound) is ACCEPTED immediately and no sampled starts are
-ever run for it -- its row/fit/prediction/data entries stay
+a user-supplied bound) is accepted immediately and no sampled starts are
+ever run for it; its row/fit/prediction/data entries stay
 byte-identical to the single-start (\code{S = 1}) protocol by construction.
-Only subjects whose production fit is NOT strict-converged are re-fit
+Only subjects whose production fit is not strict-converged are re-fit
 from \code{S - 1} additional sampled starting values; among the sampled
 attempts that themselves strict-converge, the minimum-\code{AbsSS} (residual
 sum of squares) start wins, ties resolved by draw order (first index).

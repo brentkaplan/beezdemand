@@ -127,7 +127,7 @@ test_that("get_demand_param_trends: all-valid covariates raise no dropped-combo 
   )
 })
 
-# --- Codex 2C review fold: RECOMMENDED 4 (TICKET-064 F13) -------------------
+# --- TICKET-064 F13 (recommended follow-up) ---------------------------------
 
 test_that("get_demand_param_trends: all-bogus covariates still name every dropped combination (not just the generic message)", {
   skip_on_cran()

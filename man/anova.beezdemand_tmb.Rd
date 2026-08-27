@@ -49,7 +49,7 @@ so such a value should be interpreted with caution. For multiple fits,
 the likelihood-ratio test screens for detectable non-nesting (equal or
 decreasing degrees of freedom, or a larger model with lower
 log-likelihood) but cannot prove nesting from log-likelihood and df
-alone -- pass genuinely nested models. Rows of the multiple-fit table
+alone. Pass genuinely nested models. Rows of the multiple-fit table
 are ordered by ascending degrees of freedom, and the \code{Model}
 column labels them \code{Model1}, \code{Model2}, ... in that order.
 }

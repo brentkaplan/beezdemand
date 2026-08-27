@@ -17,6 +17,6 @@
 A list suitable for \code{TMB::MakeADFun(data = ...)}.
 }
 \description{
-Internal function to construct the TMB data list for hurdle demand models.
+Constructs the TMB data list for hurdle demand models.
 }
 \keyword{internal}

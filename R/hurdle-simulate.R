@@ -31,8 +31,8 @@
 #' @param seed Optional random seed for reproducibility.
 #' @param part2 Character. Positive-part (Part II) generator: `"koff"` (the
 #'   original Zhao et al. (2016) / Koffarnus-style generator; default,
-#'   backward compatible) or `"snd"` (TICKET-044; matches
-#'   `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly --
+#'   backward compatible) or `"snd"` (matches
+#'   `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly;
 #'   see Details).
 #' @param rho_ab_raw Only used when `part2 = "snd"`. Pre-`tanh()` raw value
 #'   for the a/b random-effect correlation, mirroring the TMB model's own
@@ -44,13 +44,12 @@
 #'   Default `NULL` uses `0` (actual correlation 0).
 #' @param rho_bc_raw Only used when `part2 = "snd"` and `n_random_effects =
 #'   3`. Raw value for the b/c *partial* correlation (see Details); the
-#'   actual b/c correlation is NOT `tanh(rho_bc_raw)` directly. Default
+#'   actual b/c correlation is not `tanh(rho_bc_raw)` directly. Default
 #'   `NULL` uses `0` (actual correlation 0).
 #'
-#'   Note: `part2` and `rho_*_raw` were added AFTER `seed` in the argument
-#'   list (Codex 2F review fold, TICKET-044 item 2) specifically so that
-#'   pre-existing positional calls -- whose 19th (and last, pre-TICKET-044)
-#'   positional argument is `seed` -- continue to bind correctly instead of
+#'   Note: `part2` and `rho_*_raw` were added after `seed` in the argument
+#'   list so that pre-existing positional calls (whose 19th and last
+#'   positional argument was `seed`) continue to bind correctly instead of
 #'   landing on `part2` (where `match.arg()` would error). Always pass
 #'   `part2`/`rho_*_raw` by name.
 #'
@@ -72,7 +71,7 @@
 #' \strong{Part II, `part2 = "koff"` (Zhao et al., 2016):}
 #' \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
 #'
-#' \strong{Part II, `part2 = "snd"` (TICKET-044; exactly mirrors
+#' \strong{Part II, `part2 = "snd"` (exactly mirrors
 #' `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h`, i.e. a
 #' log-linear/SND mean with lognormal errors and no `k`):}
 #' \deqn{Q_{0,i} = \exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)}
@@ -416,7 +415,7 @@ simulate_hurdle_data <- function(
 #'   \item{summary}{Summary statistics including bias, SE ratio, and coverage,
 #'     computed only from replicates that converged with a positive-definite
 #'     Hessian (`diagnostics$status == "clean"`); converged-but-non-PD and
-#'     converged-but-Hessian-unavailable replicates are excluded (TICKET-062)
+#'     converged-but-Hessian-unavailable replicates are excluded
 #'     since their SEs are unreliable or unknown}
 #'   \item{n_converged}{Number of simulations that converged (regardless of
 #'     Hessian positive-definiteness/availability; unchanged definition)}
@@ -424,7 +423,7 @@ simulate_hurdle_data <- function(
 #'   \item{diagnostics}{Data frame with one row per simulation: `sim_id`,
 #'     `status` (`"error"`, `"nonconverged"`, `"converged_non_pd"`,
 #'     `"converged_hessian_unavailable"`, or `"clean"`), `converged`,
-#'     `hessian_pd` (`TRUE`/`FALSE`/`NA` -- `NA` means `sdreport()` itself
+#'     `hessian_pd` (`TRUE`/`FALSE`/`NA`; `NA` means `sdreport()` itself
 #'     failed, a different condition from an explicit non-PD Hessian),
 #'     `opt_convergence`, and `opt_message`}
 #'   \item{n_hessian_not_pd}{Number of converged replicates excluded from
@@ -581,7 +580,7 @@ run_hurdle_monte_carlo <- function(
 
     fit <- fit_or_err
     converged <- isTRUE(fit$converged)
-    # Codex 2D review (recommended #3): fit$hessian_pd can be NA when
+    # fit$hessian_pd can be NA when
     # sdreport() itself failed (see hurdle-demand.R's `hessian_pd <- NA`
     # default) -- that is a DIFFERENT condition from an explicit
     # non-positive-definite Hessian and must stay distinguishable, not get
@@ -674,7 +673,7 @@ run_hurdle_monte_carlo <- function(
       c("converged_non_pd", "clean", "converged_hessian_unavailable")
   )
   n_hessian_not_pd <- sum(diagnostics$status == "converged_non_pd")
-  # Codex 2D review (recommended #3): counted separately from n_hessian_not_pd
+  # Counted separately from n_hessian_not_pd
   # -- "Hessian unavailable" (sdreport() itself failed) is a different
   # condition from an explicit non-PD Hessian, though both are excluded from
   # the SE-dependent summary the same way.

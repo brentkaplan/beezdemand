@@ -2,7 +2,7 @@
 % Please edit documentation in R/cross-price.R
 \name{fit_cp_nls}
 \alias{fit_cp_nls}
-\title{Fit cross-price demand with NLS (+ robust fallbacks)}
+\title{Fit cross-price demand with NLS (with fallback optimizers)}
 \usage{
 fit_cp_nls(
   data,
@@ -58,7 +58,7 @@ If \code{return_all = TRUE} (default): a list of class \code{"cp_model_nls"}:
 stage was not reached, or was attempted but did not itself produce a fit).
 \item \code{data}: the 2-column data frame actually fit.
 \item \code{convergence}: list with \code{isConv}, \code{finIter}, \code{stopCode}, \code{stopMessage} for the
-WINNING backend, read from \code{model$convInfo} -- populated for \code{nls}/\code{nlsLM}-class
+winning backend, read from \code{model$convInfo}; populated for \code{nls}/\code{nlsLM}-class
 fits, and for \code{nlsr::wrapnlsr()} fits too when it returns a plain \code{nls}-class
 object (its usual successful case); \code{isConv = NA} only when the winning fit
 carries no \code{convInfo} at all.
@@ -67,8 +67,8 @@ If \code{return_all = FALSE}: the fitted model object from the successful backen
 }
 \description{
 Fits a \strong{cross-price demand} curve using log10-parameterization for numerical
-stability. The optimizer estimates parameters on the log10 scale where applicable,
-ensuring positive constraints are naturally satisfied.
+stability. The optimizer estimates parameters on the log10 scale where
+applicable, so positivity constraints hold automatically.
 
 \strong{Equation forms:}
 \itemize{
@@ -97,7 +97,7 @@ Natural-scale values are recovered as \eqn{Q_{alone} = 10^{log10\_qalone}} and
 \eqn{\beta = 10^{log10\_beta}}.
 
 The function first attempts a multi-start nonlinear least squares fit
-(\code{nls.multstart}). If that fails—or if explicit \code{start_values} are provided—it
+(\code{nls.multstart}). If that fails (or if explicit \code{start_values} are provided), it
 falls back to \code{minpack.lm::nlsLM}. Optionally, it will make a final attempt
 with \code{nlsr::wrapnlsr}. Returns either the fitted model or a structured object
 with metadata for downstream methods.

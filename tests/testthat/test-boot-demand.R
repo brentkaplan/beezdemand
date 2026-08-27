@@ -186,7 +186,7 @@ test_that("boot_demand validates R and statistics", {
   skip_if_not_installed("TMB")
   fit <- .bd_int_fit()
   expect_error(boot_demand(fit, statistics = "Pmax", R = 50), "R")
-  # Non-integer R must be rejected, not silently floored (Codex-probe finding).
+  # Non-integer R must be rejected, not silently floored.
   expect_error(boot_demand(fit, statistics = "Pmax", R = 150.5), "R")
   # Unknown args (not partial-matchable to a formal) must error, not be silently
   # ignored. `level` is a plausible confint-style slip for `ci_level`. (Note
@@ -342,7 +342,7 @@ test_that("boot_demand computes finite zben Pmax CIs via the numerical path, not
   expect_false(isTRUE(all.equal(pmax_row$estimate, unname(snd_pmax), tolerance = 1e-2)))
 })
 
-test_that("boot_demand zben Pmax bootstrap draws match an independent per-draw computation (#19 Codex review Recommended #3)", {
+test_that("boot_demand zben Pmax bootstrap draws match an independent per-draw computation (#19 Recommended #3)", {
   skip_on_cran()
   skip_if_not_installed("TMB")
   data(apt, package = "beezdemand")

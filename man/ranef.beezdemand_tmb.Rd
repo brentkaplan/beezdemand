@@ -14,16 +14,16 @@
 \value{
 Data frame with subject-level random effects. Columns:
 \itemize{
-\item \code{id} — subject identifier
-\item \code{b_i}, \code{c_i} (when present) — first-column convenience aliases
+\item \code{id}: subject identifier
+\item \code{b_i}, \code{c_i} (when present): first-column convenience aliases
 for \code{q0_(Intercept)} and \code{alpha_(Intercept)}. Preserved for
 backward compatibility with older callers.
-\item \verb{q0_<term>} — per-block random-effect coefficients for log-Q0,
+\item \verb{q0_<term>}: per-block random-effect coefficients for log-Q0,
 one column per random-effects design column from the parsed
 block structure. For factor-expanded or multi-block fits, these
 expose the per-condition slope REs that \code{b_i} / \code{c_i} alone do
 not surface.
-\item \verb{alpha_<term>} — analogous columns for log-alpha.
+\item \verb{alpha_<term>}: analogous columns for log-alpha.
 }
 }
 \description{

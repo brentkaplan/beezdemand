@@ -28,7 +28,7 @@ beezdemand_calc_pmax_omax(
 \item hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 \item snd/simplified: alpha, q0
 \item zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
-only -- requires \code{price_obs} / \code{price_range} for the numerical search
+only, which requires \code{price_obs} / \code{price_range} for the numerical search
 domain; see \code{\link[=.pmax_numerical]{.pmax_numerical()}})
 }}
 
@@ -80,7 +80,7 @@ A list with snake_case fields:
 \description{
 Unified internal engine for pmax/omax computation. Supports analytic solutions
 (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
-observed (row-wise) metrics. Handles parameter-space conversions transparently.
+observed (row-wise) metrics. Parameter-scale conversions are handled internally.
 }
 \examples{
 \donttest{

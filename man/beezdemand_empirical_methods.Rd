@@ -60,7 +60,6 @@ Creates visualizations of empirical measures across subjects.
 \itemize{
 \item Six-panel faceted plot showing distribution of each measure
 \item Helps identify central tendencies and outliers
-\item Uses modern beezdemand styling
 }
 
 \strong{Matrix type}:

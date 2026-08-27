@@ -172,7 +172,7 @@ test_that("Phase 2 acceptance: pdSymm(Q0+alpha~condition) on within-subject data
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# Codex round 5: Phase 2 vector-parameter reporting regressions
+# Review round 5: Phase 2 vector-parameter reporting regressions
 # -----------------------------------------------------------------------------
 
 test_that("Phase 2 SEs are populated for every element of vector parameters", {
@@ -191,7 +191,7 @@ test_that("Phase 2 SEs are populated for every element of vector parameters", {
   se_logsigma <- fit$model$se[names(fit$model$coefficients) == "logsigma"]
   se_rho_raw  <- fit$model$se[names(fit$model$coefficients) == "rho_raw"]
 
-  # Codex round 5: only the first element used to get a non-NA SE because
+  # Only the first element used to get a non-NA SE because
   # the duplicated-name match in .tmb_extract_estimates() short-circuited
   # at idx[1]. Vector handling now mirrors beta_q0/beta_alpha.
   expect_equal(length(se_logsigma), 6L)        # 3 q0 + 3 alpha
@@ -213,7 +213,7 @@ test_that("tidy() classifies random-effect SDs as variance components", {
   # TICKET-017: variance-component rows are built from the block-aware
   # .tmb_format_variance_components() formatter (Q0/alpha RE SDs + residual
   # SD on the reporting scale), not the raw `logsigma` optimizer
-  # coefficients. Codex round 5 originally caught bare `logsigma` vector
+  # coefficients. Review round 5 originally caught bare `logsigma` vector
   # params landing in an empty component bucket; the formatter makes that
   # misclassification structurally impossible.
   re_rows <- td[td$component == "variance", ]
@@ -222,7 +222,7 @@ test_that("tidy() classifies random-effect SDs as variance components", {
   expect_true(any(grepl("RE SD", re_rows$term)))
 })
 
-test_that("predict() rejects newdata missing RE-only RHS column (Codex round 6)", {
+test_that("predict() rejects newdata missing RE-only RHS column", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 731)
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
@@ -242,7 +242,7 @@ test_that("predict() rejects newdata missing RE-only RHS column (Codex round 6)"
   )
 })
 
-test_that("predict() rejects newdata with NA in x_var (Codex round 7 followup)", {
+test_that("predict() rejects newdata with NA in x_var", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 832)
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
@@ -264,7 +264,7 @@ test_that("predict() rejects newdata with NA in x_var (Codex round 7 followup)",
   )
 })
 
-test_that("predict() rejects newdata with NA in RE-only RHS (Codex round 6)", {
+test_that("predict() rejects newdata with NA in RE-only RHS", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 732)
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
@@ -286,7 +286,7 @@ test_that("predict() rejects newdata with NA in RE-only RHS (Codex round 6)", {
   )
 })
 
-test_that("character RE-only RHS variables are coerced to factor at fit time (Codex round 6)", {
+test_that("character RE-only RHS variables are coerced to factor at fit time", {
   skip_on_cran()
   sim <- helper_within_subject_data(seed = 733)
   # Pass `condition` as a CHARACTER, not a factor. Prior to the fix this
@@ -328,7 +328,7 @@ test_that("predict() uses full re_q0_mat / re_alpha_mat for factor-expanded fits
 
   # Predict on the training data; should reproduce the model's own
   # internal predictions (which use the full per-(subject, condition)
-  # RE matrices). Codex round 5 reproduced max_abs_diff = 0.571 against
+  # RE matrices). Review round 5 reproduced max_abs_diff = 0.571 against
   # a hand-computed full-Z reconstruction; the prior code added only
   # subject_pars$b_i (first RE column) and silently dropped conditions
   # 2 and 3.
@@ -384,7 +384,7 @@ test_that("complete-case filter drops rows with NA in RE-only RHS variables", {
   sim$condition[5] <- NA
   expect_true(any(is.na(sim$condition)))
 
-  # Codex round 5 reproduction: this used to either hand TMB
+  # Review round 5 reproduction: this used to either hand TMB
   # mismatched arrays (cryptic crash) or silently fit the wrong model.
   fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
     sim, y_var = "y_ll4", x_var = "x", id_var = "id",
@@ -416,7 +416,7 @@ test_that("pdSymm correlation reporting uses marginal (not partial) correlations
 
   # Reconstruct the marginal correlation matrix R_corr = L_corr * t(L_corr)
   # from rho_raw and assert the reported values match it -- NOT the raw
-  # tanh(rho_raw) partials. Codex round 5 caught the prior reporting
+  # tanh(rho_raw) partials. Review round 5 caught the prior reporting
   # using partials directly, which is a silent wrong answer for d > 2.
   coefs <- fit$model$coefficients
   rho_raw <- unname(coefs[names(coefs) == "rho_raw"])

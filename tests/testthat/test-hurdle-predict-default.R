@@ -57,7 +57,6 @@ test_that("predict default is type = 'demand' with a one-time transition message
   expect_no_message(predict(fit, type = "response"))
 
   # POSITIONAL type is not "missing": no message, old semantics intact
-  # (Codex 042-diff R1)
   expect_no_message(p_pos <- predict(fit, NULL, "response"))
   expect_identical(p_pos$.fitted, p_pos$predicted_consumption)
 

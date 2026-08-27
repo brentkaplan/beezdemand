@@ -477,13 +477,13 @@ NULL
 #' Numerical Pmax via Optimization with Adaptive Domain Expansion
 #'
 #' @description
-#' Some demand curves -- notably zben's LL4-scale exponential decay
-#' back-transformed to the natural expenditure curve -- can have an
+#' Some demand curves (notably zben's LL4-scale exponential decay
+#' back-transformed to the natural expenditure curve) can have an
 #' unconstrained expenditure-maximizing price well beyond the subject's
 #' observed price range. [.pmax_numerical()] alone then silently returns the
-#' domain edge as "Pmax": not the curve's true maximizer, and not stable
-#' across subjects/fits observed through different price ranges (Codex
-#' review of GH #19). This wraps [.pmax_numerical()] with an adaptive,
+#' domain edge as "Pmax", which is neither the curve's true maximizer nor stable
+#' across subjects/fits observed through different price ranges. This wraps
+#' [.pmax_numerical()] with an adaptive,
 #' doubling-decade search: starting from `price_range`, if the optimum sits
 #' within 1% of the current upper bound, the upper bound is multiplied by
 #' 10 and the search repeated, up to `max_expansions` times.
@@ -715,7 +715,7 @@ NULL
 #' @description
 #' Unified internal engine for pmax/omax computation. Supports analytic solutions
 #' (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
-#' observed (row-wise) metrics. Handles parameter-space conversions transparently.
+#' observed (row-wise) metrics. Parameter-scale conversions are handled internally.
 #'
 #' @param model_type Character: "hs", "koff", "hurdle", "hurdle_hs_stdq0", "snd",
 #'   "simplified", "zben", or NULL
@@ -725,7 +725,7 @@ NULL
 #'   - hurdle_hs_stdq0: alpha, q0, k (Q0 appears inside exponent)
 #'   - snd/simplified: alpha, q0
 #'   - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
-#'     only -- requires `price_obs` / `price_range` for the numerical search
+#'     only, which requires `price_obs` / `price_range` for the numerical search
 #'     domain; see [.pmax_numerical()])
 #' @param param_scales Named list mapping parameter names to their input scales:
 #'   "natural", "log", or "log10". Default assumes all natural.
@@ -1032,8 +1032,8 @@ beezdemand_calc_pmax_omax <- function(
     }
     
     # Use numerical optimization. zben's unconstrained expenditure maximum
-    # can sit well beyond the observed price domain (Codex review of GH
-    # #19); its numerical search adaptively expands the domain instead of
+    # can sit well beyond the observed price domain; its numerical search
+    # adaptively expands the domain instead of
     # silently returning the observed-domain edge as Pmax. Other model
     # types reaching this fallback (e.g. hurdle when analytic fails) keep
     # the plain observed-domain search, unchanged from before.

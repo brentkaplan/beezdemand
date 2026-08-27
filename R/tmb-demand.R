@@ -136,7 +136,7 @@ NULL
 #'
 #' @param re_parsed Output of `.normalize_re_input()`.
 #' @param data Long-format data frame the model is fit on.
-#' @param id_var Subject id column (currently unused — reserved for
+#' @param id_var Subject id column (currently unused; reserved for
 #'   future per-subject reductions).
 #'
 #' @return A list with components:
@@ -216,7 +216,7 @@ NULL
 #'   * `block_types[b] = 0` for pdDiag, `1` for pdSymm.
 #'   * `block_q0_offset[b]` / `block_alpha_offset[b]` are 0-indexed
 #'     starting columns within `Z_q0` / `Z_alpha` respectively.
-#'   * `n_logsigma` is `sum(block_q0_dim + block_alpha_dim)` -- one
+#'   * `n_logsigma` is `sum(block_q0_dim + block_alpha_dim)`, i.e. one
 #'     standard-deviation parameter per RE column across all blocks.
 #'   * `n_rho` is `sum(over pdSymm blocks: block_dim*(block_dim-1)/2)`
 #'     where `block_dim = block_q0_dim + block_alpha_dim`. pdDiag
@@ -391,7 +391,7 @@ NULL
 #' flat `base` start (byte-identical to the historical `rep(log(0.5), n)`),
 #' while a *numeric* continuous-covariate slope column is started at
 #' `base - log(spread)` so the slope's contribution `w_i * x_c` is on the same
-#' scale as an intercept deviation -- a slope SD lives on (covariate)^-1 units.
+#' scale as an intercept deviation (a slope SD lives on (covariate)^-1 units).
 #' New behavior engages only when a numeric RE-RHS term is present, so factor
 #' and intercept-only fits are unaffected (TICKET-051).
 #'
@@ -484,7 +484,7 @@ NULL
 #' @return A list with elements:
 #'   \describe{
 #'     \item{`opt`}{Named list with `$par`, `$objective`, `$convergence`,
-#'       `$message` -- guaranteed non-NULL character for `$message`.}
+#'       `$message` (`$message` is always a non-NULL character string).}
 #'     \item{`warnings`}{Character vector of optimizer warnings captured during
 #'       the run.}
 #'   }
@@ -991,7 +991,7 @@ NULL
 #'
 #' @note For factor-expanded RE specs (e.g. `pdDiag(Q0+alpha~condition)`),
 #'   subject-level Q0 / alpha here use the first observed row of `Z_q0` /
-#'   `Z_alpha` per subject -- which encodes the subject's first observed
+#'   `Z_alpha` per subject, which encodes the subject's first observed
 #'   condition only. This helper does not emit per-(subject, condition) rows;
 #'   use `predict()` for cell-level values.
 #'
@@ -1266,7 +1266,7 @@ NULL
     )
   }
 
-  # Codex review of GH #19 (BLOCKING follow-up): for zben, the numerical
+  # For zben, the numerical
   # Pmax search adaptively expands the domain and flags is_boundary_model
   # TRUE only when its expansion cap is hit without finding the true
   # (interior) maximum -- i.e. the stored Pmax is a lower-bound estimate,
@@ -1336,8 +1336,9 @@ NULL
 #'
 #' @description
 #' Fits nonlinear mixed-effects demand models using Template Model Builder (TMB)
-#' for exact automatic differentiation and Laplace approximation. This provides
-#' reliable convergence where traditional NLME approaches fail.
+#' for exact automatic differentiation and Laplace approximation. In practice
+#' this converges on demand equations where the PNLS-based `nlme::nlme()`
+#' fails (see Details).
 #'
 #' @param data A data frame in long format with columns for subject ID, price,
 #'   and consumption.
@@ -1367,7 +1368,7 @@ NULL
 #' @param random_effects Specification of subject-level random effects.
 #'   Accepts any of the following, in order of generality:
 #'   \describe{
-#'     \item{formula (default)}{`Q0 + alpha ~ 1` -- random intercepts on
+#'     \item{formula (default)}{`Q0 + alpha ~ 1`: random intercepts on
 #'       both parameters (equivalent to the legacy `c("q0", "alpha")`
 #'       shortcut). `Q0 ~ 1` limits REs to Q0. Formulas with a
 #'       factor-expanded RHS (e.g., `Q0 + alpha ~ condition` or
@@ -1461,7 +1462,7 @@ NULL
 #'     \item{tmb_obj}{TMB objective function object}
 #'     \item{opt}{Optimization result (normalized across optimizers)}
 #'     \item{sdr}{TMB sdreport object. Its `$cov` (full covariance of all
-#'       ADREPORT'd quantities) is not materialized -- a scalar `NA` -- unless
+#'       ADREPORT'd quantities) is not materialized (a scalar `NA`) unless
 #'       `store_report_cov = TRUE`.}
 #'     \item{converged}{Logical convergence indicator}
 #'     \item{loglik}{Log-likelihood at convergence}
@@ -1639,7 +1640,7 @@ fit_demand_tmb <- function(
   # this, a character `condition` in random_effects = Q0+alpha~condition
   # is stored as character, and predict() on a subset of newdata that
   # only contains one level fails with "contrasts can be applied only
-  # to factors with 2 or more levels". Codex round 6.
+  # to factors with 2 or more levels".
   re_rhs_vars_for_coerce <- character(0)
   for (b in re_parsed$blocks) {
     rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))
@@ -1700,7 +1701,7 @@ fit_demand_tmb <- function(
   # already in `factors` -- otherwise NAs in (e.g.) a within-subject
   # factor `condition` survive into prepared$y while model.matrix() in
   # .tmb_build_z_matrices() silently drops the row, handing TMB
-  # mismatched arrays. Codex round 5 reproduced n_data=84, n_Z=83.
+  # mismatched arrays (reproduced failure: n_data=84, n_Z=83).
   re_rhs_vars <- character(0)
   for (b in re_parsed$blocks) {
     rhs_form <- stats::as.formula(paste("~", deparse1(b$formula[[3]])))

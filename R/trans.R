@@ -2,8 +2,8 @@
 #'
 #' Applies a log-logistic like transformation, specifically `log_base(x^lambda + 1) / lambda`.
 #' This transformation is useful for compressing data that spans several orders of
-#' magnitude while handling zero values gracefully (as `x=0` yields `0`).
-#' It's a variation related to the Box-Cox transformation or a generalized logarithm.
+#' magnitude while remaining defined at zero (`x = 0` yields `0`).
+#' It is related to the Box-Cox transformation and to the generalized logarithm.
 #'
 #' @param x A numeric vector or scalar of non-negative values to be transformed.
 #' @param lambda A positive numeric scalar, the lambda parameter of the transformation.
@@ -67,7 +67,7 @@ ll4 <- function(x, lambda = 4, base = 10) {
 #' negative).
 #'
 #' This boundary condition arises in practice when a model predicts fitted values
-#' below zero on the LL4 scale --- typically for extrapolation to very high
+#' below zero on the LL4 scale, typically for extrapolation to very high
 #' prices. The mapping to zero is the natural floor because `ll4(0) = 0` and
 #' the LL4 transformation is monotonically increasing on `[0, Inf)`.
 #'
@@ -151,7 +151,7 @@ scale_ll4 <- function(..., lambda = 4) {
 #' Generates a `scales::trans` object using the `ll4` transformation.
 #' This transformation object can be passed to the `trans` argument of
 #' `ggplot2::scale_x_continuous` or `ggplot2::scale_y_continuous`.
-#' It's designed for non-negative data and handles zero values gracefully.
+#' It is intended for non-negative data and is defined at zero.
 #' The "pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that it
 #' handles a range including zero, but the transformation is `ll4`.
 #'
