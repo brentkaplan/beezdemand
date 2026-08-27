@@ -4,8 +4,8 @@ Internal helper (TICKET-065). `object$convergence$isConv` is `FALSE`
 only when the winning backend explicitly reported non-convergence
 (`nls`/ `nlsLM`-class `convInfo`); it is `NA` when no such diagnostic
 exists (`wrapnlsr`) or the object predates this field. Only the explicit
-`FALSE` case warns – an unknown convergence status is not itself an
-error.
+`FALSE` case warns (an unknown convergence status is not itself an
+error).
 
 ## Usage
 

@@ -1,9 +1,10 @@
 # Fit Mixed-Effects Demand Models via TMB
 
 Fits nonlinear mixed-effects demand models using Template Model Builder
-(TMB) for exact automatic differentiation and Laplace approximation.
-This provides reliable convergence where traditional NLME approaches
-fail.
+(TMB) for exact automatic differentiation and Laplace approximation. In
+practice this converges on demand equations where the PNLS-based
+[`nlme::nlme()`](https://rdrr.io/pkg/nlme/man/nlme.html) fails (see
+Details).
 
 ## Usage
 
@@ -96,9 +97,9 @@ fit_demand_tmb(
 
   formula (default)
 
-  :   `Q0 + alpha ~ 1` – random intercepts on both parameters
-      (equivalent to the legacy `c("q0", "alpha")` shortcut). `Q0 ~ 1`
-      limits REs to Q0. Formulas with a factor-expanded RHS (e.g.,
+  :   `Q0 + alpha ~ 1`: random intercepts on both parameters (equivalent
+      to the legacy `c("q0", "alpha")` shortcut). `Q0 ~ 1` limits REs to
+      Q0. Formulas with a factor-expanded RHS (e.g.,
       `Q0 + alpha ~ condition` or `Q0 + alpha ~ condition - 1`) are
       supported, giving each subject a random effect per factor level.
       The within-subject factor must vary within each `id`; pure
@@ -276,7 +277,7 @@ An object of class `beezdemand_tmb` containing:
 - sdr:
 
   TMB sdreport object. Its `$cov` (full covariance of all ADREPORT'd
-  quantities) is not materialized – a scalar `NA` – unless
+  quantities) is not materialized (a scalar `NA`) unless
   `store_report_cov = TRUE`.
 
 - converged:
@@ -457,7 +458,7 @@ fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 170.93 (start set 2 of 3)
+#>   Multi-start: best NLL = 171.10 (start set 2 of 3)
 #>   WARNING: Did not converge (code 1: false convergence (8))
 #>   Computing standard errors...
 #> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).

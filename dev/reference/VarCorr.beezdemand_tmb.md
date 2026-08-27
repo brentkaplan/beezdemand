@@ -8,7 +8,7 @@ they already know. The reported values are the same ones returned by
 [`summary.beezdemand_tmb`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_tmb.md):
 the Q0 and alpha random-effect standard deviations on the **log10
 scale** and the residual standard deviation on the model's likelihood
-scale. This is a presentation shim — it formats already-computed values
+scale. This is a presentation shim that formats already-computed values
 and recomputes nothing.
 
 ## Usage
@@ -45,17 +45,17 @@ VarCorr(x, sigma = 1, rdig = 3, ...)
 
 A character matrix of class `"VarCorr.lme"` with one row per
 random-effect term plus a final `"Residual"` row, columns `"Variance"`
-and `"StdDev"`, and — for fits with correlated random effects (`pdSymm`)
-— a `"Corr"` column. [`print()`](https://rdrr.io/r/base/print.html)
+and `"StdDev"`, and, for fits with correlated random effects (`pdSymm`),
+a `"Corr"` column. [`print()`](https://rdrr.io/r/base/print.html)
 dispatches to `nlme`'s `print.VarCorr.lme()`.
 
 ## Note
 
-The `Corr` column is placed using `nlme`'s convention — each correlation
-on the row of its higher-indexed random effect. For multi-block
-`pdBlocked` fits the correlations are placed on the correct global rows
-(each correlated block's off-diagonals are offset by the cumulative
-random-effect dimension of the earlier blocks);
+The `Corr` column is placed using `nlme`'s convention, with each
+correlation on the row of its higher-indexed random effect. For
+multi-block `pdBlocked` fits the correlations are placed on the correct
+global rows (each correlated block's off-diagonals are offset by the
+cumulative random-effect dimension of the earlier blocks);
 `summary(x)$correlations` remains available for the labelled values.
 
 ## See also

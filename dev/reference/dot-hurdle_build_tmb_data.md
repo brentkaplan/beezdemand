@@ -1,7 +1,6 @@
 # Build TMB Data List for Hurdle Model
 
-Internal function to construct the TMB data list for hurdle demand
-models.
+Constructs the TMB data list for hurdle demand models.
 
 ## Usage
 

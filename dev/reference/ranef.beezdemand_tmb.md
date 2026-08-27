@@ -26,18 +26,18 @@ ranef(object, ...)
 
 Data frame with subject-level random effects. Columns:
 
-- `id` — subject identifier
+- `id`: subject identifier
 
-- `b_i`, `c_i` (when present) — first-column convenience aliases for
+- `b_i`, `c_i` (when present): first-column convenience aliases for
   `q0_(Intercept)` and `alpha_(Intercept)`. Preserved for backward
   compatibility with older callers.
 
-- `q0_<term>` — per-block random-effect coefficients for log-Q0, one
+- `q0_<term>`: per-block random-effect coefficients for log-Q0, one
   column per random-effects design column from the parsed block
   structure. For factor-expanded or multi-block fits, these expose the
   per-condition slope REs that `b_i` / `c_i` alone do not surface.
 
-- `alpha_<term>` — analogous columns for log-alpha.
+- `alpha_<term>`: analogous columns for log-alpha.
 
 ## Examples
 

@@ -74,8 +74,6 @@ The k parameter appears in several demand curve equations:
 
 - **Koffarnus et al. (2015)**: Normalizes the exponentiated model
 
-- Ensures numerical stability during model fitting
-
 ### Calculation Modes
 
 - **use_means = TRUE** (default): Calculates k from mean consumption at

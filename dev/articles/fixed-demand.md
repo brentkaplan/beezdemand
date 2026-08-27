@@ -9,18 +9,17 @@ This function fits separate nonlinear least squares (NLS) models for
 each subject, producing per-subject estimates of demand parameters like
 Q\_{0} (intensity) and \alpha (elasticity).
 
-**When to use fixed-effect models:** Fixed-effect models are appropriate
-when you want independent curve fits for each participant. They make no
-assumptions about the distribution of parameters across subjects and are
-the simplest approach to demand curve analysis. For hierarchical models
-that share information across subjects, see
+Fixed-effect models are appropriate when you want independent curve fits
+for each participant. They make no assumptions about the distribution of
+parameters across subjects and are the simplest approach to demand curve
+analysis. For hierarchical models that share information across
+subjects, see
 [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md).
 For guidance on choosing between approaches, see
 [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md).
 
-**Data format:** All modeling functions expect long-format data with
-columns `id` (subject identifier), `x` (price), and `y` (consumption).
-See
+All modeling functions expect long-format data with columns `id`
+(subject identifier), `x` (price), and `y` (consumption). See
 [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
 for details on data preparation and conversion from wide format.
 
@@ -569,14 +568,14 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -621,6 +620,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -687,6 +688,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -729,222 +732,220 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -953,8 +954,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -991,100 +990,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1123,60 +1028,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1191,6 +1042,52 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1215,6 +1112,20 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1249,38 +1160,10 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1331,6 +1214,66 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1345,34 +1288,10 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1393,80 +1312,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1481,50 +1326,20 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1547,42 +1362,50 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
+#>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -1591,6 +1414,180 @@ fit_by_gender <- fit_demand_fixed(
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -1599,6 +1596,14 @@ fit_by_gender <- fit_demand_fixed(
 #>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   step factor 0.000488281 reduced below 'minFactor' of 0.000976562
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -1659,12 +1664,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -1675,6 +1674,14 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1715,130 +1722,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1869,66 +1752,10 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   number of iterations exceeded maximum of 50
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
-#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
-#>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -1961,8 +1788,28 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -1977,14 +1824,178 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   number of iterations exceeded maximum of 50
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
+#>   Missing value or an infinity produced when evaluating the model
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -2059,10 +2070,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -2099,8 +2106,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -2109,6 +2114,14 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
+#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
+#>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -2117,12 +2130,6 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
-#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
-#>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
 #>   Missing value or an infinity produced when evaluating the model
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -2147,6 +2154,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -2161,6 +2170,8 @@ fit_by_gender <- fit_demand_fixed(
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -2181,8 +2192,8 @@ fit_by_gender
 #> Equation: hs 
 #> k: fixed (2) 
 #> 
-#>   gender=Female: 617 subjects (534 converged, 83 failed)
-#>   gender=Male: 471 subjects (429 converged, 42 failed)
+#>   gender=Female: 617 subjects (539 converged, 78 failed)
+#>   gender=Male: 471 subjects (431 converged, 40 failed)
 #>   gender=Would rather not say: 2 subjects (2 converged, 0 failed)
 #> 
 #> Use tidy() for combined tidy output, coef() for coefficients.
@@ -2218,8 +2229,8 @@ glance(fit_by_gender)
 #> # A tibble: 3 × 13
 #>   gender   model_class backend equation k_spec  nobs n_subjects n_success n_fail
 #>   <chr>    <chr>       <chr>   <chr>    <chr>  <int>      <int>     <int>  <int>
-#> 1 Female   beezdemand… legacy  hs       fixed…  7097        617       534     83
-#> 2 Male     beezdemand… legacy  hs       fixed…  5730        471       429     42
+#> 1 Female   beezdemand… legacy  hs       fixed…  7097        617       539     78
+#> 2 Male     beezdemand… legacy  hs       fixed…  5730        471       431     40
 #> 3 Would r… beezdemand… legacy  hs       fixed…    12          2         2      0
 #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 ```
@@ -2270,8 +2281,8 @@ plot(desc)
 
 The
 [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
-interface provides a modern, consistent API for individual demand curve
-fitting with full support for the
+interface provides a consistent API for individual demand curve fitting
+with full support for the
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) /
 [`glance()`](https://generics.r-lib.org/reference/glance.html) /
 [`augment()`](https://generics.r-lib.org/reference/augment.html)
@@ -2280,22 +2291,22 @@ desirable, consider the mixed-effects or hurdle model approaches.
 
 ## See Also
 
-- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
-  – Getting started with beezdemand
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class
-- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
-  – Extra sum-of-squares F-test for group comparisons
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – Mixed-effects nonlinear demand models (NLME)
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced mixed-effects topics
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle demand models via TMB
-- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
-  – Cross-price demand analysis
-- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
-  – Migrating from
+- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+  Getting started with beezdemand
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right model class
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
+  Extra sum-of-squares F-test for group comparisons
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  Mixed-effects nonlinear demand models (NLME)
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  Advanced mixed-effects topics
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle demand models via TMB
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+  Cross-price demand analysis
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md):
+  Migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
   to
   [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)

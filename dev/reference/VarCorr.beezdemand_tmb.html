@@ -5,15 +5,15 @@ familiar with nlme or lme4 can introspect a TMB fit with the
 accessor they already know. The reported values are the same ones returned
 by summary.beezdemand_tmb: the Q0 and alpha random-effect
 standard deviations on the log10 scale and the residual standard
-deviation on the model's likelihood scale. This is a presentation shim —
-it formats already-computed values and recomputes nothing."><meta property="og:description" content="Extracts the random-effect variance components from a beezdemand_tmb
+deviation on the model's likelihood scale. This is a presentation shim that
+formats already-computed values and recomputes nothing."><meta property="og:description" content="Extracts the random-effect variance components from a beezdemand_tmb
 fit in the matrix layout produced by nlme::VarCorr(), so users
 familiar with nlme or lme4 can introspect a TMB fit with the
 accessor they already know. The reported values are the same ones returned
 by summary.beezdemand_tmb: the Q0 and alpha random-effect
 standard deviations on the log10 scale and the residual standard
-deviation on the model's likelihood scale. This is a presentation shim —
-it formats already-computed values and recomputes nothing."><meta property="og:image" content="https://brentkaplan.github.io/beezdemand/logo.png"></head><body>
+deviation on the model's likelihood scale. This is a presentation shim that
+formats already-computed values and recomputes nothing."><meta property="og:image" content="https://brentkaplan.github.io/beezdemand/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -84,8 +84,8 @@ familiar with <span class="pkg">nlme</span> or <span class="pkg">lme4</span> can
 accessor they already know. The reported values are the same ones returned
 by <code><a href="summary.beezdemand_tmb.html">summary.beezdemand_tmb</a></code>: the Q0 and alpha random-effect
 standard deviations on the <strong>log10 scale</strong> and the residual standard
-deviation on the model's likelihood scale. This is a presentation shim —
-it formats already-computed values and recomputes nothing.</p>
+deviation on the model's likelihood scale. This is a presentation shim that
+formats already-computed values and recomputes nothing.</p>
     </div>
 
     <div class="section level2">
@@ -122,14 +122,14 @@ displayed values. Default <code>3</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A character matrix of class <code>"VarCorr.lme"</code> with one row per
 random-effect term plus a final <code>"Residual"</code> row, columns
-<code>"Variance"</code> and <code>"StdDev"</code>, and — for fits with correlated
-random effects (<code>pdSymm</code>) — a <code>"Corr"</code> column. <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
+<code>"Variance"</code> and <code>"StdDev"</code>, and, for fits with correlated
+random effects (<code>pdSymm</code>), a <code>"Corr"</code> column. <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
 dispatches to <code>nlme</code>'s <code>print.VarCorr.lme()</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>The <code>Corr</code> column is placed using <code>nlme</code>'s convention —
-each correlation on the row of its higher-indexed random effect. For
+    <p>The <code>Corr</code> column is placed using <code>nlme</code>'s convention,
+with each correlation on the row of its higher-indexed random effect. For
 multi-block <code>pdBlocked</code> fits the correlations are placed on the
 correct global rows (each correlated block's off-diagonals are offset by
 the cumulative random-effect dimension of the earlier blocks);

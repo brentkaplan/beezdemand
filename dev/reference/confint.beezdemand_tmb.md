@@ -76,8 +76,8 @@ A tibble with term, estimate, conf.low, conf.high, level.
 ## Details
 
 `method = "simulate"` is Monte Carlo simulation from the asymptotic
-Gaussian posterior – not a data-resampling bootstrap and not a
-profile-likelihood interval. Because the sampled distribution is the
+Gaussian posterior (neither a data-resampling bootstrap nor a
+profile-likelihood interval). Because the sampled distribution is the
 same Gaussian that Wald assumes, the simulated per-coefficient quantiles
 converge to the Wald intervals as `R -> Inf`; the method does **not**
 improve on Wald at boundary cases and offers no positivity guarantee on

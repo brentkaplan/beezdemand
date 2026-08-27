@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-17</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/convergence-guide.Rmd" class="external-link"><code>vignettes/convergence-guide.Rmd</code></a></small>
       <div class="d-none name"><code>convergence-guide.Rmd</code></div>
@@ -118,8 +118,8 @@ whether your model results are trustworthy.</p>
 <ol style="list-style-type: decimal">
 <li><p><strong>“Convergence = good model.”</strong> A model can converge
 to a local minimum, a boundary solution, or nonsensical parameter
-estimates. Convergence status tells you the optimizer stopped happily,
-not that it stopped at the right place.</p></li>
+estimates. Convergence status tells you only that the optimizer stopped.
+It does not tell you whether it stopped at the right place.</p></li>
 <li><p><strong>“Non-convergence = useless results.”</strong> A model
 that hits an iteration limit or triggers a “false convergence” warning
 may have parameter estimates that are practically identical to those
@@ -218,8 +218,8 @@ by default. It reports the following convergence codes:</p>
 <td>Number of iterations &gt;= <code>iter.max</code>
 </td>
 <td>The optimizer ran out of its iteration budget before satisfying its
-convergence criterion. The estimates may be fine — it just wasn’t given
-enough iterations to confirm.</td>
+convergence criterion. The estimates may be fine (the optimizer simply
+ran out of iterations before it could confirm).</td>
 </tr>
 <tr class="odd">
 <td align="center">8</td>
@@ -231,9 +231,9 @@ boundary or when the likelihood surface is very flat.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Code 0</strong> is what you want but doesn’t guarantee the
-solution is correct — the optimizer may have converged to a local
-minimum or a boundary.</p>
+<p><strong>Code 0</strong> is what you want, but it does not guarantee
+that the solution is correct. The optimizer may still have converged to
+a local minimum or a boundary.</p>
 <p><strong>Code 1</strong> (iteration limit) is often benign. If the
 objective function was still decreasing, increasing
 <code>iter_max</code> in <code>tmb_control</code> may resolve it. If the
@@ -356,7 +356,7 @@ need more iterations. Try increasing <code>msMaxIter</code> or
 are obtained with more iterations, the original solution was fine.</p>
 <p><strong>Moderate severity</strong> (“false convergence”, “step
 halving”): These mean the optimizer had difficulty making progress. The
-estimates may be fine — especially if the parameters are plausible and
+estimates may be fine, especially if the parameters are plausible and
 the random effect variances are not near zero. These warnings are
 analogous to TMB’s code 8.</p>
 <p><strong>High severity</strong> (“singular”, non-PD
@@ -385,16 +385,15 @@ programmatically:</p>
 <ul>
 <li>
 <strong>Fixed-effect estimates</strong>
-(<code>fixef(fit$model)</code>) are still valid — they don’t depend on
-<code>apVar</code>
-</li>
+(<code>fixef(fit$model)</code>) are still valid (they do not depend on
+<code>apVar</code>)</li>
 <li>
 <strong>Random-effect predictions</strong>
-(<code>ranef(fit$model)</code>) are still valid — they are empirical
-Bayes predictions conditional on the fixed effects</li>
+(<code>ranef(fit$model)</code>) are still valid (they are empirical
+Bayes predictions conditional on the fixed effects)</li>
 <li>
 <strong>Variance component standard errors</strong> are not
-available — you cannot construct confidence intervals for the random
+available, so you cannot construct confidence intervals for the random
 effect variances</li>
 <li>
 <strong><code>intervals(fit$model)</code></strong> will fail for the
@@ -419,26 +418,26 @@ tries:</p>
 <li>If that fails, <code><a href="https://rdrr.io/pkg/nlsr/man/wrapnlsr.html" class="external-link">nlsr::wrapnlsr()</a></code>
 </li>
 </ol>
-<p>Models either converge or fail outright; partial convergence doesn’t
-occur. The returned object tracks per-subject success/failure in the
+<p>Models either converge or fail outright (partial convergence does not
+occur). The returned object tracks per-subject success/failure in the
 <code>Notes</code> column. Use <code><a href="../reference/check_demand_model.html">check_demand_model()</a></code> to see
 the failure rate:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span><span class="op">)</span></span>
 <span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">diagnostics</span><span class="op">)</span></span></code></pre></div>
-<p>A high failure rate (&gt;20%) suggests data quality problems —
-insufficient price range, too many zero-consumption observations, or
-extreme outliers — rather than modeling issues.</p>
+<p>A high failure rate (&gt;20%) suggests data quality problems
+(insufficient price range, too many zero-consumption observations, or
+extreme outliers) rather than modeling issues.</p>
 </div>
 <div class="section level3">
-<h3 id="the-key-insight">The Key Insight<a class="anchor" aria-label="anchor" href="#the-key-insight"></a>
+<h3 id="what-convergence-status-does-and-does-not-tell-you">What Convergence Status Does and Does Not Tell You<a class="anchor" aria-label="anchor" href="#what-convergence-status-does-and-does-not-tell-you"></a>
 </h3>
-<p>Convergence status reflects the optimizer’s stopping rule, not the
-quality of the solution. A non-converged fit with plausible parameters
-and valid standard errors can be more trustworthy than a converged fit
-at a boundary or local minimum. This principle applies equally to TMB
-numeric codes and NLME warning messages.</p>
+<p>Convergence status reflects the optimizer’s stopping rule rather than
+the quality of the solution. A non-converged fit with plausible
+parameters and valid standard errors can be more trustworthy than a
+converged fit at a boundary or local minimum. This principle applies
+equally to TMB numeric codes and NLME warning messages.</p>
 <p>The next section provides a systematic checklist for evaluating fit
 quality regardless of convergence status.</p>
 </div>
@@ -532,7 +531,7 @@ surface is well-behaved near the solution.</p>
 <span></span>
 <span><span class="co"># Hessian positive-definiteness gate (since 0.3.0): TRUE means the inverse</span></span>
 <span><span class="co"># Hessian is well-conditioned, so SEs / p-values / Wald CIs are trustworthy.</span></span>
-<span><span class="co"># FALSE means they are not — and `fit_demand_tmb()` / `fit_demand_hurdle()`</span></span>
+<span><span class="co"># FALSE means they are not, and `fit_demand_tmb()` / `fit_demand_hurdle()`</span></span>
 <span><span class="co"># also emit a cli warning at fit time when verbose &gt;= 1.</span></span>
 <span><span class="va">fit_tmb</span><span class="op">$</span><span class="va">hessian_pd</span></span>
 <span></span>
@@ -594,9 +593,9 @@ stationary point.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Maximum absolute gradient:"</span>, <span class="va">max_grad</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Rule of thumb:</span></span>
-<span><span class="co"># &lt; 0.001: excellent — optimizer found a clean minimum</span></span>
-<span><span class="co"># 0.001-0.01: good — likely near a minimum</span></span>
-<span><span class="co"># &gt; 0.01: concerning — may not be at a minimum</span></span></code></pre></div>
+<span><span class="co"># &lt; 0.001: excellent (optimizer found a clean minimum)</span></span>
+<span><span class="co"># 0.001-0.01: good (likely near a minimum)</span></span>
+<span><span class="co"># &gt; 0.01: concerning (may not be at a minimum)</span></span></code></pre></div>
 <p>NLME does not expose gradients directly, so this check is TMB-only.
 For NLME models, rely on the other five checks.</p>
 </div>
@@ -646,11 +645,11 @@ objects.</p>
 <span><span class="co"># Check random effects correlation for near-singularity</span></span>
 <span><span class="va">vc</span> <span class="op">&lt;-</span> <span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr</a></span><span class="op">(</span><span class="va">fit_nlme</span><span class="op">$</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">vc</span><span class="op">)</span></span>
-<span><span class="co"># Look at the Corr column — values &gt; |0.99| indicate near-singularity</span></span></code></pre></div>
+<span><span class="co"># In the Corr column, values &gt; |0.99| indicate near-singularity</span></span></code></pre></div>
 <p>For NLME models, also check the random effects correlation matrix. If
 two random effects are correlated above |0.99|, they are nearly
-collinear — the model is trying to estimate two separate sources of
-variation that the data cannot distinguish. Consider switching to
+collinear (the model is trying to estimate two separate sources of
+variation that the data cannot distinguish). Consider switching to
 <code>pdDiag</code> covariance structure (which forces zero correlation)
 or removing one of the random effects.</p>
 </div>
@@ -660,8 +659,9 @@ or removing one of the random effects.</p>
 </h3>
 <p>If a non-converged complex model beats a simpler converged model by a
 large AIC margin, the parameters are in a good region of the likelihood
-surface. AIC and BIC depend on the log-likelihood at the parameter
-values, not on convergence status.</p>
+surface. AIC and BIC are computed from the log-likelihood at the final
+parameter values whether or not the optimizer reported convergence, so
+they inherit whatever unreliability a non-converged fit carries.</p>
 <div class="section level4">
 <h4 id="tmb-models-3">TMB Models<a class="anchor" aria-label="anchor" href="#tmb-models-3"></a>
 </h4>
@@ -776,8 +776,8 @@ percent), the solution is stable.</p>
 <td align="center">0</td>
 <td align="center">Yes</td>
 <td align="center">No</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td>Saddle point: refit with different starts</td>
 </tr>
 <tr class="odd">
@@ -795,22 +795,22 @@ percent), the solution is stable.</p>
 <td align="center">Yes</td>
 <td align="center">Yes</td>
 <td>
-<strong>Likely trustworthy</strong> — run diagnostics, increase
-iterations to confirm</td>
+<strong>Likely trustworthy</strong> (run diagnostics; increase
+iterations to confirm)</td>
 </tr>
 <tr class="odd">
 <td align="center">1 or 8</td>
 <td align="center">No</td>
 <td align="center">No</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td>Simplify model (fewer random effects, fix k)</td>
 </tr>
 <tr class="even">
 <td align="center">1 or 8</td>
-<td align="center">—</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td align="center">No</td>
 <td>Estimates unreliable: simplify or check data quality</td>
 </tr>
@@ -855,46 +855,46 @@ model (<code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a>
 <td align="center">Yes</td>
 <td align="center">Yes</td>
 <td>
-<strong>Likely trustworthy</strong> — consider increasing
-iterations</td>
+<strong>Likely trustworthy</strong> (consider increasing
+iterations)</td>
 </tr>
 <tr class="odd">
 <td>“false convergence”</td>
 <td align="center">No</td>
-<td align="center">—</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td>SEs unreliable: consider simplifying RE structure</td>
 </tr>
 <tr class="even">
 <td>“max iterations”</td>
-<td align="center">—</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td align="center">Yes</td>
 <td>Increase <code>msMaxIter</code>/<code>maxIter</code> and refit</td>
 </tr>
 <tr class="odd">
 <td>“singular”</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
 <td align="center">No</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td>Overparameterized: reduce RE structure</td>
 </tr>
 <tr class="even">
 <td>Any</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td align="center">Near zero</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
 <td>Remove that random effect</td>
 </tr>
 <tr class="odd">
 <td>Any</td>
-<td align="center">—</td>
-<td align="center">—</td>
-<td align="center">—</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
+<td align="center">n/a</td>
 <td align="center">No</td>
 <td>Estimates unreliable: check data, simplify model</td>
 </tr>
@@ -959,7 +959,7 @@ table below maps symptoms to solutions:</p>
 <div class="section level4">
 <h4 id="increasing-iterations">Increasing Iterations<a class="anchor" aria-label="anchor" href="#increasing-iterations"></a>
 </h4>
-<p>The simplest remedy for iteration-limit warnings. The
+<p>This is the simplest remedy for iteration-limit warnings. The
 <code>nlme_control</code> argument accepts a named list of control
 parameters:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
@@ -1279,12 +1279,13 @@ directly:</p>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
-<p>Key takeaways:</p>
+<p>The main points:</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Convergence codes and warnings are about stopping rules,
-not solution quality.</strong> Code 0 or no warnings means the optimizer
-is satisfied — it doesn’t guarantee a good solution. Non-convergence
-doesn’t mean the estimates are wrong.</p></li>
+<li><p><strong>Convergence codes and warnings describe stopping rules
+rather than solution quality.</strong> Code 0 or no warnings means only
+that the optimizer is satisfied, which does not guarantee a good
+solution. Non-convergence does not mean the estimates are
+wrong.</p></li>
 <li><p><strong>Use the six-item diagnostic checklist.</strong> Parameter
 plausibility, standard errors, gradient norm (TMB), Hessian/apVar
 status, model comparison, and starting value stability.</p></li>
@@ -1306,19 +1307,19 @@ complex model, the estimates are likely trustworthy.</p></li>
 </h3>
 <ul>
 <li>
-<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code> — Fitting TMB hurdle
+<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code>: fitting TMB hurdle
 models</li>
 <li>
-<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code> — Fitting NLME mixed-effects
+<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code>: fitting NLME mixed-effects
 models</li>
 <li>
-<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code> — Advanced NLME
-topics including control tuning</li>
+<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code>: advanced NLME topics
+including control tuning</li>
 <li>
-<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code> — Fitting fixed-effect NLS
+<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code>: fitting fixed-effect NLS
 models</li>
 <li>
-<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code> — Choosing between model
+<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code>: choosing between model
 tiers</li>
 </ul>
 </div>

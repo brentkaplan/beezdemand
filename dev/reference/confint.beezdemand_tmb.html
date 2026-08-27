@@ -141,8 +141,8 @@ exit so the global stream is left unperturbed.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>method = "simulate"</code> is Monte Carlo simulation from the
-asymptotic Gaussian posterior – not a data-resampling bootstrap and
-not a profile-likelihood interval. Because the sampled distribution is
+asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+a profile-likelihood interval). Because the sampled distribution is
 the same Gaussian that Wald assumes, the simulated per-coefficient
 quantiles converge to the Wald intervals as <code>R -&gt; Inf</code>; the method does
 <strong>not</strong> improve on Wald at boundary cases and offers no positivity

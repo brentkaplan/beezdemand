@@ -1,4 +1,4 @@
-# Example cross‐price dataset
+# Example cross-price dataset
 
 A small illustrative dataset of price (x) and consumption (y) target
 (target), and group (group).

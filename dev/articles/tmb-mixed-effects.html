@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-17</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-mixed-effects.Rmd" class="external-link"><code>vignettes/tmb-mixed-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-mixed-effects.Rmd</code></div>
@@ -114,21 +114,21 @@ Builder</a> (TMB). It is the modern alternative to
 provides several advantages:</p>
 <ul>
 <li>
-<strong>Automatic differentiation</strong> – exact gradients via
+<strong>Automatic differentiation</strong>: exact gradients via
 compiled C++, replacing the numerical finite-difference approximations
 used by <code>nlme</code>
 </li>
 <li>
-<strong>Laplace approximation</strong> – integrates over random
+<strong>Laplace approximation</strong>: integrates over random
 effects analytically rather than relying on iterative linearization</li>
 <li>
-<strong>Multi-start optimization</strong> – automatically tries
+<strong>Multi-start optimization</strong>: automatically tries
 multiple starting-value sets and keeps the best fit</li>
 <li>
-<strong>Four equation forms</strong> – exponential, exponentiated,
+<strong>Four equation forms</strong>: exponential, exponentiated,
 simplified, and zero-bounded exponential (zben)</li>
 <li>
-<strong>Factor and covariate support</strong> – design matrices for
+<strong>Factor and covariate support</strong>: design matrices for
 group comparisons with estimated marginal means (EMMs) and pairwise
 contrasts</li>
 </ul>
@@ -257,7 +257,7 @@ observations.</p>
 <td>log(Q)</td>
 <td>Dropped</td>
 <td>Estimated or fixed</td>
-<td>Most datasets; robust 2-RE convergence</td>
+<td>Most datasets; the usual choice for 2-RE models</td>
 </tr>
 <tr class="even">
 <td><code>"exponentiated"</code></td>
@@ -327,11 +327,11 @@ e^{-\frac{\alpha_i}{\log_{10}(Q_{0i})} \cdot Q_{0i} \cdot C_j} +
 <span><span class="co">#&gt; 2 exponentiated           1-RE      TRUE 6744.5</span></span>
 <span><span class="co">#&gt; 3    simplified           1-RE      TRUE 6743.4</span></span>
 <span><span class="co">#&gt; 4          zben           1-RE      TRUE -893.6</span></span></code></pre></div>
-<p><strong>Note:</strong> AIC values are not directly comparable across
-equations because they model different response scales (log Q vs raw Q
-vs LL4(Q)).</p>
-<p><strong>Convergence tip:</strong> The <code>exponential</code>
-equation is the most reliable for 2-random-effect models. The
+<p>Note that AIC values are not directly comparable across equations
+because they model different response scales (log Q vs raw Q vs
+LL4(Q)).</p>
+<p>For convergence, the <code>exponential</code> equation is the most
+reliable choice for 2-random-effect models. The
 <code>exponentiated</code> equation works well with 1-RE but can
 struggle to converge with 2-RE, especially with smaller samples.</p>
 </div>
@@ -342,11 +342,10 @@ struggle to converge with 2-RE, especially with smaller samples.</p>
 <p><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> supports two configurations:</p>
 <ul>
 <li>
-<code>random_effects = "q0"</code> – <strong>1-RE</strong>: random
-intercept on <span class="math inline">Q_0</span> only; <span class="math inline">\alpha</span> is constant across subjects</li>
+<code>random_effects = "q0"</code> (1-RE): random intercept on <span class="math inline">Q_0</span> only; <span class="math inline">\alpha</span> is constant across subjects</li>
 <li>
-<code>random_effects = c("q0", "alpha")</code> –
-<strong>2-RE</strong>: random effects on both <span class="math inline">Q_0</span> and <span class="math inline">\alpha</span> with an estimated correlation</li>
+<code>random_effects = c("q0", "alpha")</code> (2-RE): random
+effects on both <span class="math inline">Q_0</span> and <span class="math inline">\alpha</span> with an estimated correlation</li>
 </ul>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_1re</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span><span class="va">dat</span>, equation <span class="op">=</span> <span class="st">"exponential"</span>,</span>
@@ -480,8 +479,8 @@ and <span class="math inline">k</span> off the log estimation scale. The
 computed on the estimation (log) scale, where the Wald test is well
 defined; they are not recomputed from the back-transformed
 <code>estimate</code> and <code>std.error</code> (that recompute is
-degenerate for a strictly positive parameter – it would test “ratio = 0”
-rather than “ratio = 1”). One consequence:
+degenerate for a strictly positive parameter because it would test
+“ratio = 0” rather than “ratio = 1”). As a consequence,
 <code>estimate / std.error</code> from the default table does not
 reproduce the reported <code>statistic</code>. This matches the
 <code>broom</code> and <code>emmeans</code> convention; pass
@@ -500,7 +499,7 @@ for <code>exponential</code>, the LL4-transformed <code>y_var</code> for
 scale-invariant.</p>
 <p>For users coming from <code>nlme</code> or <code>lme4</code>, the
 <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">VarCorr()</a></code> accessor returns these same variance components
-in the familiar <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">nlme::VarCorr()</a></code> matrix layout – a
+in the familiar <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">nlme::VarCorr()</a></code> matrix layout, i.e., a
 <code>Variance</code> / <code>StdDev</code> matrix (with a
 <code>Corr</code> column for <code>pdSymm</code> fits) and a final
 <code>Residual</code> row:</p>
@@ -511,7 +510,7 @@ in the familiar <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class=
 <span><span class="co">#&gt; alpha    0.1560   0.395  -0.447</span></span>
 <span><span class="co">#&gt; Residual 0.0507   0.225</span></span></code></pre></div>
 <p>Note that <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> (shown next) reports the raw internal
-optimizer parameters instead – the <code>logsigma</code> rows are the
+optimizer parameters instead. The <code>logsigma</code> rows are the
 natural log of each RE SD, not the log10-scale SDs from
 <code>summary()$variance_components</code>.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
@@ -605,7 +604,7 @@ tiers.</p>
 <span>    Persistence_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">Persistence</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt;   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd</span></span>
-<span><span class="co">#&gt; 1   7.050819e-17     -3.85976e-17            1      0.8497968</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   7.065932e-18    -2.846441e-18            1      0.8497968</span></span></code></pre></div>
 <p>By construction, both factors are sample-standardized (mean 0, SD 1
 within the fitted dataset). For cross-sample comparisons, supply
 external <code>basis_means</code> and <code>basis_sds</code> so the
@@ -646,8 +645,8 @@ Monte Carlo intervals with <code>method = "simulate"</code>. These draw
 <code>R</code> samples from the joint asymptotic posterior
 <code>N(coef, vcov)</code> and report empirical quantiles. They are
 asymptotically Wald-equivalent, so a large discrepancy between the two
-flags a fit where the Gaussian approximation is suspect. This is a
-diagnostic comparison, <strong>not</strong> an accuracy improvement: the
+flags a fit where the Gaussian approximation is suspect. The comparison
+is diagnostic rather than an accuracy improvement, because the
 <code>simulate</code> method does not capture non-Gaussian posterior
 shape and carries no positivity guarantee on the internal scale. Set
 <code>seed</code> for reproducibility.</p>
@@ -672,9 +671,9 @@ shape and carries no positivity guarantee on the internal scale. Set
 <h3 id="variance-covariance-and-the-delta-method">Variance-Covariance and the Delta Method<a class="anchor" aria-label="anchor" href="#variance-covariance-and-the-delta-method"></a>
 </h3>
 <p><code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> returns the fixed-effect variance-covariance
-matrix from the TMB sdreport — the inverse of the negative Hessian at
-the MLE, restricted to fixed effects after Laplace-marginalizing the
-random effects. Combined with the optimizer’s internal parameter vector
+matrix from the TMB sdreport (the inverse of the negative Hessian at the
+MLE, restricted to fixed effects after Laplace-marginalizing the random
+effects). Combined with the optimizer’s internal parameter vector
 (<code>coef(fit, type = "internal")</code>), it lets you apply the delta
 method to any nonlinear function of the parameters via
 <code><a href="https://rdrr.io/pkg/car/man/deltaMethod.html" class="external-link">car::deltaMethod</a></code>. Pass the parameter vector explicitly so
@@ -856,7 +855,7 @@ attribute on <code><a href="https://generics.r-lib.org/reference/tidy.html" clas
 <code class="sourceCode R"><span><span class="va">fit_2re</span><span class="op">$</span><span class="va">hessian_pd</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Model health check — convergence, variance components, residual stats,</span></span>
+<code class="sourceCode R"><span><span class="co"># Model health check: convergence, variance components, residual stats,</span></span>
 <span><span class="co"># and (since 0.3.0) Hessian positive-definiteness.</span></span>
 <span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -913,7 +912,7 @@ Random effects diagnostic panels.
 </p>
 </div>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Residual plot — standard in every modeling workflow</span></span>
+<code class="sourceCode R"><span><span class="co"># Residual plot (standard in every modeling workflow)</span></span>
 <span><span class="fu"><a href="../reference/plot_residuals.html">plot_residuals</a></span><span class="op">(</span><span class="va">fit_2re</span>, type <span class="op">=</span> <span class="st">"fitted"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="tmb-mixed-effects_files/figure-html/diagnostics-resid-1.png" class="r-plt" alt="Residuals vs fitted values for the 2-RE exponential model." width="1008"><p class="caption">
@@ -956,7 +955,7 @@ Expenditure curve with Pmax and Omax reference lines.
 </div>
 <p>The elasticity curve shows how responsive demand is to price changes.
 The dashed line at <span class="math inline">-1</span> marks unit
-elasticity — prices above this threshold produce elastic demand:</p>
+elasticity (prices above this threshold produce elastic demand):</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_elasticity.html">plot_elasticity</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -970,8 +969,8 @@ Own-price elasticity curve with unit elasticity reference.
 </h3>
 <p>The loss surface visualizes the sum-of-squared-residuals landscape
 over a grid of <span class="math inline">(Q_0, \alpha)</span> values,
-with the MLE marked. This helps assess identifiability — a sharp,
-well-defined minimum indicates good identification:</p>
+with the MLE marked. This helps assess identifiability (a sharp,
+well-defined minimum indicates good identification):</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_loss_surface.html">plot_loss_surface</a></span><span class="op">(</span><span class="va">fit_2re</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
@@ -1072,8 +1071,7 @@ to the design matrices for both <span class="math inline">Q_0</span> and
 <h3 id="joint-tests">Joint Tests<a class="anchor" aria-label="anchor" href="#joint-tests"></a>
 </h3>
 <p><code>anova(fit)</code> reports a joint Wald-χ² test for each
-parameter × factor block — here, whether <code>gender</code> shifts
-<span class="math inline">Q_0</span> and <span class="math inline">\alpha</span>. Pass additional fits for a nested
+parameter × factor block (here, whether <code>gender</code> shifts <span class="math inline">Q_0</span> and <span class="math inline">\alpha</span>). Pass additional fits for a nested
 likelihood-ratio test.</p>
 <div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit_gender</span><span class="op">)</span></span>
@@ -1166,10 +1164,10 @@ likelihood ratio test, AIC, and BIC:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Notes:</span></span>
 <span><span class="co">#&gt;   - LRT nesting assumption not verified.</span></span></code></pre></div>
-<p><strong>Valid comparisons</strong> require models fit on the same
-data with the same equation and response scale. Models with different
-equations (e.g., exponential vs exponentiated) model different responses
-and cannot be compared via AIC.</p>
+<p>Valid comparisons require models fit on the same data with the same
+equation and response scale. Models with different equations (e.g.,
+exponential vs exponentiated) model different responses and cannot be
+compared via AIC.</p>
 <div class="section level3">
 <h3 id="building-nested-models-with-update">Building Nested Models with <code>update()</code><a class="anchor" aria-label="anchor" href="#building-nested-models-with-update"></a>
 </h3>
@@ -1209,10 +1207,10 @@ out the introspection API. <code>formula(fit)</code> returns a named
 list of one-sided formulas for <code>Q0</code> and <code>alpha</code>
 plus the random-effect spec; <code>model.matrix(fit)</code> returns the
 four design matrices the TMB template consumed (<code>X_q0</code>,
-<code>X_alpha</code>, <code>Z_q0</code>, <code>Z_alpha</code>) — a named
-list rather than the single matrix <code>lm</code> or <code>lme4</code>
-return, because the TMB tier truly has two fixed-effect linear
-predictors.</p>
+<code>X_alpha</code>, <code>Z_q0</code>, <code>Z_alpha</code>). This is
+a named list rather than the single matrix <code>lm</code> or
+<code>lme4</code> return, because the TMB tier has two fixed-effect
+linear predictors.</p>
 </div>
 </div>
 <div class="section level2">
@@ -1395,7 +1393,7 @@ predictors.</p>
 </tr>
 <tr class="odd">
 <td>Convergence</td>
-<td>Robust (AD + Laplace + multi-start)</td>
+<td>Reliable (AD + Laplace + multi-start)</td>
 <td>Can struggle with nonlinear equations</td>
 </tr>
 <tr class="even">
@@ -1439,19 +1437,19 @@ M. (2016). TMB: Automatic differentiation and Laplace approximation.
 </h2>
 <ul>
 <li>
-<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code> – Individual NLS demand
+<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code>: Individual NLS demand
 curves</li>
 <li>
-<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code> – NLME-based mixed-effects
+<code><a href="../articles/mixed-demand.html">vignette("mixed-demand")</a></code>: NLME-based mixed-effects
 models</li>
 <li>
-<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code> – Advanced topics:
+<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code>: Advanced topics:
 multi-factor designs, collapse_levels</li>
 <li>
-<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code> – Two-part hurdle
+<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code>: Two-part hurdle
 models for zero-heavy data</li>
 <li>
-<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code> – Choosing the right demand
+<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code>: Choosing the right demand
 model</li>
 </ul>
 </div>

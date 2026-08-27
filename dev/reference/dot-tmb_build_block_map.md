@@ -30,7 +30,7 @@ Conventions:
 - `block_q0_offset[b]` / `block_alpha_offset[b]` are 0-indexed starting
   columns within `Z_q0` / `Z_alpha` respectively.
 
-- `n_logsigma` is `sum(block_q0_dim + block_alpha_dim)` – one
+- `n_logsigma` is `sum(block_q0_dim + block_alpha_dim)`, i.e. one
   standard-deviation parameter per RE column across all blocks.
 
 - `n_rho` is `sum(over pdSymm blocks: block_dim*(block_dim-1)/2)` where

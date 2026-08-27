@@ -22,7 +22,7 @@ covariates, and complex random effects structures, see
 
 ### Data Preparation
 
-For these examples, we will use the apt and ko datasets, which is
+For these examples, we will use the `apt` and `ko` datasets, which are
 assumed to be available and pre-processed.
 
 The apt dataset should contain:
@@ -96,7 +96,7 @@ print(fit_apt_zben)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x555df877de50>
+#> <environment: 0x557dd20e4160>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -172,7 +172,7 @@ print(fit_apt_simplified)
 #> Equation Form Selected:  simplified 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)
-#> <environment: 0x555e01e29eb8>
+#> <environment: 0x557ddb324480>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -252,7 +252,7 @@ print(fit_apt_exponentiated)
 #> Equation Form Selected:  exponentiated 
 #> NLME Model Formula:
 #> y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))
-#> <environment: 0x555e02838840>
+#> <environment: 0x557ddbca72b8>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  id 
@@ -370,12 +370,11 @@ The loss surface and profile plots visualize the optimization landscape.
 The NLME versions support two modes:
 
 - `type = "ssr"` (default): sum-of-squared residuals on aggregated
-  price-level means — a quick visual check of the fixed-effects
-  landscape
+  price-level means (a quick visual check of the fixed-effects surface)
 - `type = "marginal"`: linearized marginal negative log-likelihood that
-  integrates over random-effects variance — more statistically
-  appropriate for mixed models and preferred for assessing
-  identifiability near the MLE
+  integrates over the random-effects variance. This mode is more
+  appropriate for mixed models and is preferred for assessing
+  identifiability near the MLE.
 
 ``` r
 
@@ -453,7 +452,7 @@ print(fit_no_factors_vignette)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x555df66bd688>
+#> <environment: 0x557dd0a0d1b0>
 #> Fixed Effects Structure (Q0 & alpha):  ~ 1 
 #> Factors: None
 #> ID Variable for Random Effects:  monkey 
@@ -476,7 +475,7 @@ print(fit_no_factors_vignette)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>                   Q0        alpha  Residual
-#> StdDev: 5.262806e-06 3.217697e-06 0.2275573
+#> StdDev: 5.264342e-06 3.217971e-06 0.2275573
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -493,7 +492,7 @@ model converged, it prints the nlme model summary.
 
 #### Model with One Factor
 
-Let’s model Q\_{0} and \alpha as varying by dose for Alfentanil.
+We now model Q\_{0} and \alpha as varying by dose for Alfentanil.
 
 ``` r
 
@@ -519,7 +518,7 @@ print(fit_one_factor_dose)
 #> Equation Form Selected:  zben 
 #> NLME Model Formula:
 #> y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)
-#> <environment: 0x555dfc5373e8>
+#> <environment: 0x557dd5891810>
 #> Fixed Effects Structure (Q0 & alpha):  ~ dose 
 #> Factors:  dose 
 #> Interaction Term Included:  FALSE 
@@ -538,14 +537,14 @@ print(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047 
+#>      -0.084081282       0.009734048 
 #> 
 #> Random effects:
 #>  Formula: list(Q0 ~ 1, alpha ~ 1)
 #>  Level: monkey
 #>  Structure: Diagonal
 #>         Q0.(Intercept) alpha.(Intercept)  Residual
-#> StdDev:   3.762036e-06      2.300115e-06 0.1625574
+#> StdDev:   3.760034e-06      2.301156e-06 0.1625574
 #> 
 #> Number of Observations: 45
 #> Number of Groups: 3 
@@ -593,8 +592,8 @@ summary(fit_one_factor_dose)
 #> Random Effects:
 #> monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) 
 #>                   Variance     StdDev      
-#> Q0.(Intercept)    1.415292e-11 3.762036e-06
-#> alpha.(Intercept) 5.290530e-12 2.300115e-06
+#> Q0.(Intercept)    1.413786e-11 3.760034e-06
+#> alpha.(Intercept) 5.295319e-12 2.301156e-06
 #> Residual          2.642491e-02 1.625574e-01
 #> 
 #> Residual standard error: 0.1626 
@@ -612,14 +611,14 @@ coef(fit_one_factor_dose, type = "fixed")
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047
+#>      -0.084081282       0.009734048
 
 # Random effects (deviations from fixed)
 head(coef(fit_one_factor_dose, type = "random"))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.839712e-11     -3.421765e-10
-#> B   1.247594e-10      3.349284e-11
-#> C  -2.131565e-10      3.086837e-10
+#> A   8.830297e-11     -3.424853e-10
+#> B   1.246265e-10      3.352306e-11
+#> C  -2.129295e-10      3.089622e-10
 
 # Subject-specific coefficients (fixed + random)
 head(coef(fit_one_factor_dose, type = "combined"))
@@ -628,21 +627,21 @@ head(coef(fit_one_factor_dose, type = "combined"))
 #> B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #> C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128
 #>   alpha.dose0.003
-#> A     0.009734047
-#> B     0.009734047
-#> C     0.009734047
+#> A     0.009734048
+#> B     0.009734048
+#> C     0.009734048
 
 # Access nlme fixef/ranef directly
 nlme::fixef(fit_one_factor_dose)
 #>    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) 
 #>       2.415349697      -0.257733998      -0.519065274      -4.650854662 
 #>   alpha.dose0.001   alpha.dose0.003 
-#>      -0.084081282       0.009734047
+#>      -0.084081282       0.009734048
 utils::head(nlme::ranef(fit_one_factor_dose))
 #>   Q0.(Intercept) alpha.(Intercept)
-#> A   8.839712e-11     -3.421765e-10
-#> B   1.247594e-10      3.349284e-11
-#> C  -2.131565e-10      3.086837e-10
+#> A   8.830297e-11     -3.424853e-10
+#> B   1.246265e-10      3.352306e-11
+#> C  -2.129295e-10      3.089622e-10
 
 # Start values that were used for the NLME fit
 fit_one_factor_dose$start_values_used
@@ -707,7 +706,7 @@ The `beezdemand` package provides an S3
 `beezdemand_nlme` objects, built using `ggplot2`, to help visualize the
 fitted demand curves against observed data.
 
-**Key Features:**
+The main arguments are:
 
 - **Observed Data:** Can display the original data points.
 
@@ -729,8 +728,8 @@ fitted demand curves against observed data.
 
 #### Example 1: Plotting a Single-Factor Model
 
-Let’s use `fit_one_factor_dose` (modeling demand for Alfentanil by
-`dose`, with `y_ll4` as the dependent variable).
+We use `fit_one_factor_dose` (modeling demand for Alfentanil by `dose`,
+with `y_ll4` as the dependent variable).
 
 ``` r
 
@@ -813,29 +812,29 @@ plot_object +
 
 ## Conclusion
 
-The beezdemand package provides a suite of tools for robustly fitting
-nonlinear mixed-effects demand models and interpreting their parameters.
-By parameterizing Q\_{0} and \alpha on the log10 scale, numerical
-stability is enhanced, while helper functions allow for easy
-back-transformation and interpretation on the natural scale.
+The beezdemand package provides tools for fitting nonlinear
+mixed-effects demand models and interpreting their parameters.
+Parameterizing Q\_{0} and \alpha on the log10 scale improves numerical
+stability, and the helper functions back-transform estimates to the
+natural scale for interpretation.
 
 ## See Also
 
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Multi-factor models, collapsing levels, EMMs, comparisons,
-  covariates, and trends
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – Fixed-effect demand modeling
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle demand models
-- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
-  – Cross-price demand analysis
-- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
-  – Group comparisons
-- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
-  – Migrating from
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  Multi-factor models, collapsing levels, EMMs, comparisons, covariates,
+  and trends
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right model class
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  Fixed-effect demand modeling
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle demand models
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+  Cross-price demand analysis
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
+  Group comparisons
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md):
+  Migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
-- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
-  – Getting started with beezdemand
+- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+  Getting started with beezdemand

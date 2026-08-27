@@ -84,7 +84,7 @@ Data frame of subject-specific parameters.
 
 For factor-expanded RE specs (e.g. `pdDiag(Q0+alpha~condition)`),
 subject-level Q0 / alpha here use the first observed row of `Z_q0` /
-`Z_alpha` per subject – which encodes the subject's first observed
+`Z_alpha` per subject, which encodes the subject's first observed
 condition only. This helper does not emit per-(subject, condition) rows;
 use [`predict()`](https://rdrr.io/r/stats/predict.html) for cell-level
 values.

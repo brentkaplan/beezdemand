@@ -6,7 +6,7 @@ Starting with beezdemand version 0.2.0,
 [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
 has been superseded by
 [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
-This guide helps you migrate existing code to use the modern API.
+This guide helps you migrate existing code to the new interface.
 
 For related workflows, see:
 
@@ -27,7 +27,7 @@ The new
 [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
 function provides:
 
-- **Structured S3 objects** with consistent methods
+- Structured S3 objects with consistent methods
   ([`summary()`](https://rdrr.io/r/base/summary.html),
   [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
   [`glance()`](https://generics.r-lib.org/reference/glance.html),
@@ -35,11 +35,11 @@ function provides:
   [`plot()`](https://rdrr.io/r/graphics/plot.default.html),
   [`confint()`](https://rdrr.io/r/stats/confint.html),
   [`augment()`](https://generics.r-lib.org/reference/augment.html))
-- **Tidyverse integration** via tibble outputs from
+- Tidyverse integration via tibble outputs from
   [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
   [`glance()`](https://generics.r-lib.org/reference/glance.html)
-- **Standardized API** consistent with other beezdemand model classes
-- **Better reproducibility** with stored call and parameter information
+- Standardized API consistent with other beezdemand model classes
+- Better reproducibility with stored call and parameter information
 
 [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
 will continue to work but is no longer actively developed. New features
@@ -154,7 +154,7 @@ head(fit$results)
 #>        Q0se      Alphase alpha_star alpha_star_se  N      AbsSS      SdRes
 #> 1 0.2685323 6.090445e-05 0.00836391  0.0002487819 16 0.01113625 0.02820366
 #> 2 0.2257764 6.760007e-04 0.02395943  0.0027613205 16 0.10721624 0.08751173
-#> 3 0.2146862 3.571176e-04 0.01717018  0.0014587504 14 0.02387617 0.04460584
+#> 3 0.2146862 3.571177e-04 0.01717018  0.0014587505 14 0.02387617 0.04460584
 #> 4 0.4591683 1.449834e-04 0.01756192  0.0005922269 14 0.02013543 0.04096282
 #> 5 0.3290277 9.636582e-05 0.01129556  0.0003936341 14 0.01006059 0.02895483
 #> 6 0.3002817 4.315615e-04 0.02565739  0.0017628379 11 0.01651102 0.04283174
@@ -308,8 +308,9 @@ plot(fit, ids = unique(apt$id)[1:5], facet = TRUE)
 
 ### New in 0.2.0: Diagnostics + Residual Workflows
 
-Once you migrate to the modern API, you can use standardized post-fit
-helpers:
+Once you migrate to
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md),
+you can use the standardized post-fit helpers:
 
 - [`augment()`](https://generics.r-lib.org/reference/augment.html) to
   get fitted values + residuals in a tidy format
@@ -483,22 +484,22 @@ If you encounter issues during migration:
 
 ## See Also
 
-- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
-  – Getting started with beezdemand
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – Fixed-effect demand modeling
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – Mixed-effects nonlinear demand models
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced mixed-effects topics
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle demand models
-- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
-  – Cross-price demand analysis
-- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
-  – Group comparisons
+- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+  Getting started with beezdemand
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right model class
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  Fixed-effect demand modeling
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  Mixed-effects nonlinear demand models
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  Advanced mixed-effects topics
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle demand models
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+  Cross-price demand analysis
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
+  Group comparisons
 
 ## Session Information
 
@@ -529,9 +530,9 @@ sessionInfo()
 #> [1] dplyr_1.2.1      beezdemand_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.23         
+#>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.25         
 #>  [4] xfun_0.60           bslib_0.12.0        ggplot2_4.0.3      
-#>  [7] htmlwidgets_1.6.4   insight_1.5.2       lattice_0.22-9     
+#>  [7] htmlwidgets_1.6.4   insight_1.5.3       lattice_0.22-9     
 #> [10] vctrs_0.7.3         tools_4.6.1         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
 #> [16] Matrix_1.7-5        RColorBrewer_1.1-3  S7_0.2.2           

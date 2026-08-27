@@ -139,7 +139,7 @@ data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 
-# Fitted values (subject-conditional -- the default)
+# Fitted values (subject-conditional, the default)
 head(predict(fit, type = "response"))
 #> # A tibble: 6 × 4
 #>   id        x     y .fitted

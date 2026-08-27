@@ -96,16 +96,16 @@ To obtain the standardized random effects (<code>u</code> matrix), access
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Data frame with subject-level random effects. Columns:</p><ul><li><p><code>id</code> — subject identifier</p></li>
-<li><p><code>b_i</code>, <code>c_i</code> (when present) — first-column convenience aliases
+    <p>Data frame with subject-level random effects. Columns:</p><ul><li><p><code>id</code>: subject identifier</p></li>
+<li><p><code>b_i</code>, <code>c_i</code> (when present): first-column convenience aliases
 for <code>q0_(Intercept)</code> and <code>alpha_(Intercept)</code>. Preserved for
 backward compatibility with older callers.</p></li>
-<li><p><code>q0_&lt;term&gt;</code> — per-block random-effect coefficients for log-Q0,
+<li><p><code>q0_&lt;term&gt;</code>: per-block random-effect coefficients for log-Q0,
 one column per random-effects design column from the parsed
 block structure. For factor-expanded or multi-block fits, these
 expose the per-condition slope REs that <code>b_i</code> / <code>c_i</code> alone do
 not surface.</p></li>
-<li><p><code>alpha_&lt;term&gt;</code> — analogous columns for log-alpha.</p></li>
+<li><p><code>alpha_&lt;term&gt;</code>: analogous columns for log-alpha.</p></li>
 </ul></div>
 
     <div class="section level2">

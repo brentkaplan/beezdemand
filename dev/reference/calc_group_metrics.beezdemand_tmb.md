@@ -55,10 +55,10 @@ derives metrics:
 3.  Derive Pmax/Omax/Qmax from the marginalized log-parameters at the
     user-supplied (or training-mean default) covariate point.
 
-This is "metrics evaluated at the average parameter values," NOT
-"average metrics across cells" – the two answers differ for nonlinear
-transforms. The convention matches the parameter-level marginalization
-used by
+The result is "metrics evaluated at the average parameter values" rather
+than "average metrics across cells". The two answers differ for
+nonlinear transforms. The convention matches the parameter-level
+marginalization used by
 [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
 
 ## See also

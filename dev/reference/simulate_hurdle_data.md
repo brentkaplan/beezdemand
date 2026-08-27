@@ -122,9 +122,8 @@ simulate_hurdle_data(
 
   Character. Positive-part (Part II) generator: `"koff"` (the original
   Zhao et al. (2016) / Koffarnus-style generator; default, backward
-  compatible) or `"snd"` (TICKET-044; matches
-  `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h` exactly –
-  see Details).
+  compatible) or `"snd"` (matches `src/HurdleDemand3RE_SND.h` /
+  `src/HurdleDemand2RE_SND.h` exactly; see Details).
 
 - rho_ab_raw:
 
@@ -146,13 +145,12 @@ simulate_hurdle_data(
 
   Only used when `part2 = "snd"` and `n_random_effects = 3`. Raw value
   for the b/c *partial* correlation (see Details); the actual b/c
-  correlation is NOT `tanh(rho_bc_raw)` directly. Default `NULL` uses
+  correlation is not `tanh(rho_bc_raw)` directly. Default `NULL` uses
   `0` (actual correlation 0).
 
-  Note: `part2` and `rho_*_raw` were added AFTER `seed` in the argument
-  list (Codex 2F review fold, TICKET-044 item 2) specifically so that
-  pre-existing positional calls – whose 19th (and last, pre-TICKET-044)
-  positional argument is `seed` – continue to bind correctly instead of
+  Note: `part2` and `rho_*_raw` were added after `seed` in the argument
+  list so that pre-existing positional calls (whose 19th and last
+  positional argument was `seed`) continue to bind correctly instead of
   landing on `part2` (where
   [`match.arg()`](https://rdrr.io/r/base/match.arg.html) would error).
   Always pass `part2`/`rho_*_raw` by name.
@@ -199,15 +197,15 @@ a_i\$\$
 = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) +
 \epsilon\$\$
 
-**Part II, `part2 = "snd"` (TICKET-044; exactly mirrors
-`src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h`, i.e. a
-log-linear/SND mean with lognormal errors and no `k`):** \$\$Q\_{0,i} =
-\exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)\$\$
-\$\$\log(Y \| Y \> 0) = (\log Q_0 + b_i) - \alpha_i Q\_{0,i} \cdot
-price + \epsilon\$\$ with \\\epsilon \sim N(0, \sigma_e^2)\\ (residual
-on the log-consumption scale) in both generators. When
-`n_random_effects = 2`, `c_i = 0` for every subject in both generators,
-so `alpha_i` reduces to the fixed population `alpha`.
+**Part II, `part2 = "snd"` (exactly mirrors `src/HurdleDemand3RE_SND.h`
+/ `src/HurdleDemand2RE_SND.h`, i.e. a log-linear/SND mean with lognormal
+errors and no `k`):** \$\$Q\_{0,i} = \exp(\log Q_0 + b_i), \quad
+\alpha_i = \exp(\log \alpha + c_i)\$\$ \$\$\log(Y \| Y \> 0) = (\log
+Q_0 + b_i) - \alpha_i Q\_{0,i} \cdot price + \epsilon\$\$ with
+\\\epsilon \sim N(0, \sigma_e^2)\\ (residual on the log-consumption
+scale) in both generators. When `n_random_effects = 2`, `c_i = 0` for
+every subject in both generators, so `alpha_i` reduces to the fixed
+population `alpha`.
 
 Random effects \\(a_i, b_i)\\ or \\(a_i, b_i, c_i)\\ are drawn from a
 multivariate normal distribution with mean zero and covariance built

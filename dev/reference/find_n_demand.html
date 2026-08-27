@@ -7,8 +7,9 @@ wholly above or below the target; if it still straddles the target at the
 cap, the decision falls back to the point estimate and the result is
 flagged uncertain. The selected N and its lower neighbor are then
 re-evaluated with fresh replicates before minimality is claimed.
-The returned n is an estimated minimum under Monte Carlo uncertainty,
-not an exact bound. For grant-quality reporting, rerun power_demand() at
+The returned n is an estimated minimum under Monte Carlo uncertainty
+rather than an exact bound. For grant-quality reporting, rerun
+power_demand() at
 the returned n with a large n_sim (2000+) and report that estimate
 with its Monte Carlo confidence interval.
 Monotonicity assumption. Bisection presumes that power is
@@ -31,8 +32,9 @@ wholly above or below the target; if it still straddles the target at the
 cap, the decision falls back to the point estimate and the result is
 flagged uncertain. The selected N and its lower neighbor are then
 re-evaluated with fresh replicates before minimality is claimed.
-The returned n is an estimated minimum under Monte Carlo uncertainty,
-not an exact bound. For grant-quality reporting, rerun power_demand() at
+The returned n is an estimated minimum under Monte Carlo uncertainty
+rather than an exact bound. For grant-quality reporting, rerun
+power_demand() at
 the returned n with a large n_sim (2000+) and report that estimate
 with its Monte Carlo confidence interval.
 Monotonicity assumption. Bisection presumes that power is
@@ -120,8 +122,9 @@ wholly above or below the target; if it still straddles the target at the
 cap, the decision falls back to the point estimate and the result is
 flagged <code>uncertain</code>. The selected N and its lower neighbor are then
 re-evaluated with fresh replicates before minimality is claimed.</p>
-<p>The returned <code>n</code> is an <em>estimated minimum under Monte Carlo uncertainty</em>,
-not an exact bound. For grant-quality reporting, rerun <code><a href="power_demand.html">power_demand()</a></code> at
+<p>The returned <code>n</code> is an <em>estimated minimum under Monte Carlo uncertainty</em>
+rather than an exact bound. For grant-quality reporting, rerun
+<code><a href="power_demand.html">power_demand()</a></code> at
 the returned <code>n</code> with a large <code>n_sim</code> (2000+) and report that estimate
 with its Monte Carlo confidence interval.</p>
 <p><strong>Monotonicity assumption.</strong> Bisection presumes that power is
@@ -226,7 +229,7 @@ lognormal errors while <code>"simplified"</code> fits additive Gaussian errors o
 raw consumption; the approximation is closest at small <code>sigma_e</code>, and
 Type I calibration is verified by the test suite at the default and a
 3x-larger <code>sigma_e</code>. Other equations are sensitivity analyses with a
-different estimand – their contrasts are not on the scale of the
+different estimand, so their contrasts are not on the scale of the
 simulated delta.</p></dd>
 
 
@@ -281,14 +284,14 @@ defaults track <code>design_type</code>.</p></dd>
 <dd><p><code>"confirmed"</code> (selected N re-confirmed above target and
 N - 1 below), <code>"uncertain"</code> (a decision relied on a point estimate,
 N - 1 also cleared the target on reconfirmation, or an evaluated
-lower N read above the target – so the returned N may not be
+lower N read above the target, so the returned N may not be
 minimal), <code>"unresolved"</code> (the selected N failed its
 own reconfirmation; <code>n</code> is <code>NA</code>), or <code>"at_lower_bound"</code> (the target
 was already met at <code>n_range[1]</code> on two independent looks; smaller N
-was not explored – widen <code>n_range</code> downward if that matters). These
-labels describe a heuristic Monte Carlo decision rule – repeated
-looks at ordinary Wilson intervals across several N – not a formal
-sequential error guarantee.</p></dd>
+was not explored; widen <code>n_range</code> downward if that matters). These
+labels describe a heuristic Monte Carlo decision rule (repeated
+looks at ordinary Wilson intervals across several N) rather than a
+formal sequential error guarantee.</p></dd>
 
 <dt>uncertain</dt>
 <dd><p>Logical; <code>TRUE</code> when any search decision was made on

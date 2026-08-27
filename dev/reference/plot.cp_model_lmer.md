@@ -1,8 +1,8 @@
 # Plot Method for Mixed-Effects Cross-Price Demand Models
 
 Creates a ggplot2 visualization of a fitted mixed-effects cross-price
-demand model (of class `cp_model_lmer`). This function allows you to
-plot:
+demand model (of class `cp_model_lmer`). The `pred_type` argument
+selects what is drawn:
 
 ## Usage
 

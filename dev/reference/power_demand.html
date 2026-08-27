@@ -3,9 +3,10 @@
 demand parameter (Q0 or alpha) between two conditions, by simulation:
 each replicate (1) simulates a two-condition dataset from the mixed-effects
 demand model in .simulate_within_subject_demand() under assumed
-population parameters plus the effect delta – either a within-subject
-design (every subject observed in both conditions) or, with design_type = "between", a two-arm between-subject design (each subject in one
-condition) – (2) refits it with fit_demand_tmb(), and (3) tests the
+population parameters plus the effect delta, under either a
+within-subject design (every subject observed in both conditions) or, with
+design_type = "between", a two-arm between-subject design (each subject
+in one condition); (2) refits it with fit_demand_tmb(); and (3) tests the
 condition contrast on the estimation (natural log) scale with a Wald test
 at level alpha, referred to a t distribution with df degrees of freedom
 (see the df argument). Power is the proportion of usable fits
@@ -19,9 +20,10 @@ construction, and both rates are returned.'><meta property="og:description" cont
 demand parameter (Q0 or alpha) between two conditions, by simulation:
 each replicate (1) simulates a two-condition dataset from the mixed-effects
 demand model in .simulate_within_subject_demand() under assumed
-population parameters plus the effect delta – either a within-subject
-design (every subject observed in both conditions) or, with design_type = "between", a two-arm between-subject design (each subject in one
-condition) – (2) refits it with fit_demand_tmb(), and (3) tests the
+population parameters plus the effect delta, under either a
+within-subject design (every subject observed in both conditions) or, with
+design_type = "between", a two-arm between-subject design (each subject
+in one condition); (2) refits it with fit_demand_tmb(); and (3) tests the
 condition contrast on the estimation (natural log) scale with a Wald test
 at level alpha, referred to a t distribution with df degrees of freedom
 (see the df argument). Power is the proportion of usable fits
@@ -100,9 +102,10 @@ construction, and both rates are returned.'><meta property="og:image" content="h
 demand parameter (<code>Q0</code> or <code>alpha</code>) between two conditions, by simulation:
 each replicate (1) simulates a two-condition dataset from the mixed-effects
 demand model in <code><a href="dot-simulate_within_subject_demand.html">.simulate_within_subject_demand()</a></code> under assumed
-population parameters plus the effect <code>delta</code> – either a within-subject
-design (every subject observed in both conditions) or, with <code>design_type = "between"</code>, a two-arm between-subject design (each subject in one
-condition) – (2) refits it with <code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code>, and (3) tests the
+population parameters plus the effect <code>delta</code>, under either a
+within-subject design (every subject observed in both conditions) or, with
+<code>design_type = "between"</code>, a two-arm between-subject design (each subject
+in one condition); (2) refits it with <code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code>; and (3) tests the
 condition contrast on the estimation (natural log) scale with a Wald test
 at level <code>alpha</code>, referred to a t distribution with <code>df</code> degrees of freedom
 (see the <code>df</code> argument). Power is the proportion of <em>usable</em> fits
@@ -175,8 +178,8 @@ for interactive exploration; use 2000+ for grant-quality precision (see
 <dt id="arg-df">df<a class="anchor" aria-label="anchor" href="#arg-df"></a></dt>
 <dd><p>Degrees of freedom for the Wald test's t reference
 distribution. <code>NULL</code> (default) uses <code>n_subjects - 1</code> for <code>design_type = "within"</code> and <code>n_subjects - 2</code> for <code>design_type = "between"</code> (the
-two-sample df). This is an <em>empirically calibrated</em> small-sample
-correction, not a model-derived df (the TMB fit has no exact t sampling
+two-sample df). This is an <em>empirically calibrated</em> small-sample correction
+rather than a model-derived df (the TMB fit has no exact t sampling
 theory): the asymptotic z-test was measurably anticonservative in the
 package's Type I calibration battery (empirical rate 0.089 at nominal
 .05 with 15 subjects), while the t reference passes the battery's null
@@ -198,7 +201,7 @@ lognormal errors while <code>"simplified"</code> fits additive Gaussian errors o
 raw consumption; the approximation is closest at small <code>sigma_e</code>, and
 Type I calibration is verified by the test suite at the default and a
 3x-larger <code>sigma_e</code>. Other equations are sensitivity analyses with a
-different estimand – their contrasts are not on the scale of the
+different estimand, so their contrasts are not on the scale of the
 simulated delta.</p></dd>
 
 
@@ -316,8 +319,8 @@ the deparsed random-effects specification.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A replicate whose fit fails (non-convergence, non-positive-definite
 Hessian, unusable standard error, or an error) is excluded from the power
-denominator and reported through the <code>n_*</code> counts and <code>$replicates$status</code>
-– it is never counted as "no effect detected", which would bias power in
+denominator and reported through the <code>n_*</code> counts and <code>$replicates$status</code>.
+It is never counted as "no effect detected", which would bias power in
 an unpredictable direction. A warning is issued when fewer than 95% of
 replicates are usable, since power conditional on convergence can be
 selected when convergence depends on the realized data.</p>
@@ -328,7 +331,7 @@ scope; see <code><a href="../articles/power-analysis.html">vignette("power-analy
 within-subject simulator once per arm with a single condition, then binding
 the arms and refitting with per-subject intercept random effects. Because
 each subject appears in only one condition, that random-effects <em>structure</em>
-matches the composed data-generating process exactly – unlike the
+matches the composed data-generating process exactly, unlike the
 within-subject default's per-condition effects. The additive-Gaussian
 residual likelihood remains a <em>working model</em> for the simulator's
 multiplicative-lognormal errors in both designs (closest at small

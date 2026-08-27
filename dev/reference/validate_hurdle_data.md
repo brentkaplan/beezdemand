@@ -1,7 +1,6 @@
 # Validate Hurdle Demand Data
 
-Internal function to validate and prepare data for hurdle demand model
-fitting.
+Validates and prepares data for hurdle demand model fitting.
 
 ## Usage
 

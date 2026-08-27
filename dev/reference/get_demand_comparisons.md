@@ -113,13 +113,14 @@ A list named by parameter. Each element contains:
 
 - emmeans:
 
-  Tibble of EMMs (internal scale – log10 for `param_space = "log10"`
-  fits, natural for `param_space = "natural"` fits) with CIs.
+  Tibble of EMMs (internal scale, i.e., log10 for
+  `param_space = "log10"` fits, natural for `param_space = "natural"`
+  fits) with CIs.
 
 - contrasts_log10:
 
   Tibble of comparisons (differences on the fit's internal scale,
-  despite the name – see the Details on `param_space = "natural"`) with
+  despite the name; see the Details on `param_space = "natural"`) with
   CIs and p-values.
 
 - contrasts_ratio:
@@ -129,8 +130,8 @@ A list named by parameter. Each element contains:
   both spaces, but different CONTENT (TICKET-075): for
   `param_space = "log10"` fits, a multiplicative ratio (`10^difference`,
   fold-change on the natural scale); for `param_space = "natural"` fits,
-  the difference again (unchanged from `contrasts_log10`) – there is no
-  log-scale quantity to exponentiate for an already-natural-scale
+  the difference again (unchanged from `contrasts_log10`), because there
+  is no log-scale quantity to exponentiate for an already-natural-scale
   difference. The returned object's `contrasts_ratio_scale` attribute is
   `"ratio"` or `"difference"` accordingly.
 

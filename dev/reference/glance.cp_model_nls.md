@@ -1,9 +1,8 @@
 # Get model summaries from a cross-price model
 
-This function extracts model summary statistics from a cross-price
-demand model into a single-row data frame, following the conventions of
-the broom package. It returns goodness-of-fit measures and other model
-information.
+Extracts model summary statistics (goodness-of-fit measures and other
+model information) from a cross-price demand model into a single-row
+data frame, following the conventions of the broom package.
 
 ## Usage
 

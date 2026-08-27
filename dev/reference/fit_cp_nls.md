@@ -1,9 +1,8 @@
-# Fit cross-price demand with NLS (+ robust fallbacks)
+# Fit cross-price demand with NLS (with fallback optimizers)
 
 Fits a **cross-price demand** curve using log10-parameterization for
 numerical stability. The optimizer estimates parameters on the log10
-scale where applicable, ensuring positive constraints are naturally
-satisfied.
+scale where applicable, so positivity constraints hold automatically.
 
 **Equation forms:**
 
@@ -35,8 +34,8 @@ Natural-scale values are recovered as \\Q\_{alone} =
 10^{log10\\qalone}\\ and \\\beta = 10^{log10\\beta}\\.
 
 The function first attempts a multi-start nonlinear least squares fit
-(`nls.multstart`). If that fails—or if explicit `start_values` are
-provided—it falls back to
+(`nls.multstart`). If that fails (or if explicit `start_values` are
+provided), it falls back to
 [`minpack.lm::nlsLM`](https://rdrr.io/pkg/minpack.lm/man/nlsLM.html).
 Optionally, it will make a final attempt with
 [`nlsr::wrapnlsr`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html). Returns
@@ -134,7 +133,7 @@ If `return_all = TRUE` (default): a list of class `"cp_model_nls"`:
 - `data`: the 2-column data frame actually fit.
 
 - `convergence`: list with `isConv`, `finIter`, `stopCode`,
-  `stopMessage` for the WINNING backend, read from `model$convInfo` –
+  `stopMessage` for the winning backend, read from `model$convInfo`;
   populated for `nls`/`nlsLM`-class fits, and for
   [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html) fits
   too when it returns a plain `nls`-class object (its usual successful

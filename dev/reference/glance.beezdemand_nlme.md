@@ -37,15 +37,15 @@ A one-row tibble of model statistics with columns:
   `Q0 + alpha ~ 1`)
 
 - `converged`: Operational convergence status. `TRUE` when the final fit
-  is usable for inference — i.e. `apVar` (nlme's approximate covariance
-  of the variance-covariance parameters) is positive-definite AND there
+  is usable for inference, i.e., `apVar` (nlme's approximate covariance
+  of the variance-covariance parameters) is positive-definite and there
   is no terminal error. Alias for `final_fit_ok`. It is not flipped to
   `FALSE` by iteration-level optimizer warnings (see `fit_warned`).
 
 - `final_fit_ok`: The canonical usable-for-inference gate (`apVar` PD
   and no terminal error); identical to `converged`. NLME-only.
 
-- `fit_warned`: Diagnostic flag — `TRUE` when nlme emitted
+- `fit_warned`: Diagnostic flag that is `TRUE` when nlme emitted
   iteration-level convergence warnings (false convergence, singular,
   step-halving, iteration limit, ...) during PNLS-LME alternation.
   Informational only; does not gate `converged`. NLME-only.

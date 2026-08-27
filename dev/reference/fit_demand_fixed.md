@@ -100,12 +100,11 @@ fit_demand_fixed(
   for `equation = "linear"`. If supplied, must be a single finite
   integer `>= 1`.
 
-  Note: `multistart` and `S` were added AFTER `by` in the argument list
-  (Codex 2F review fold, TICKET-047 item 1) specifically so that
-  pre-existing positional calls – e.g.
+  Note: `multistart` and `S` were added after `by` in the argument list
+  so that pre-existing positional calls (e.g.,
   `fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")`,
-  where the 9th positional argument is `by` – continue to bind
-  correctly. Always pass `multistart`/`S` by name.
+  where the 9th positional argument is `by`) continue to bind correctly.
+  Always pass `multistart`/`S` by name.
 
 - ...:
 
@@ -178,18 +177,18 @@ This function is a modern wrapper around the legacy
 function. It provides the same fitting capabilities but returns a
 structured S3 object with standardized methods for model interrogation.
 
-### Multi-start rescue protocol (TICKET-047)
+### Multi-start rescue protocol
 
 `fit_demand_fixed()` always runs
 [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)'s
-existing heuristic start exactly as before – the "production start". A
+existing heuristic start exactly as before (the "production start"). A
 subject whose production fit is strict-converged (`converged_strict`:
 the optimizer's own convergence flag AND finite coefficients/objective
 AND not sitting on a user-supplied bound) is accepted immediately; no
 sampled starts are ever run for it, so its row, fitted model,
 predictions, and data are byte-identical to the `multistart = FALSE` /
 `S = 1` protocol by construction. Only subjects whose production fit is
-NOT strict-converged are re-fit from `S - 1` additional starts, sampled
+not strict-converged are re-fit from `S - 1` additional starts, sampled
 log-uniformly in interpretable (Q0, Pmax) coordinates and mapped to each
 equation's native (Q0, alpha) parameterization via the same closed forms
 used by
@@ -202,7 +201,7 @@ is never multistarted.
 [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
 itself is unchanged; sampling draws from the ambient RNG stream (call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) before
-`fit_demand_fixed()` for reproducibility – the helpers never call
+`fit_demand_fixed()` for reproducibility; the helpers never call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) themselves).
 
 ## See also
@@ -300,7 +299,7 @@ glance(fit)
 #> 1 beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0
 #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 
-# Grouped analysis -- fit separately by gender (subset keeps it fast)
+# Grouped analysis: fit separately by gender (subset keeps it fast)
 data(apt_full)
 ids <- unique(apt_full[c("id", "gender")])
 ids <- ids[ids$gender %in% c("Male", "Female"), ]
@@ -368,6 +367,8 @@ fit_g <- fit_demand_fixed(dat, equation = "hs", k = 2, by = "gender")
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Data casted as data.frame
 #> Warning: FitCurves: subject '11' reported as converged with a non-positive Alpha (Q0d = 5, Alpha = -4.345028e-10); this estimate may be domain-invalid -- inspect before use.
 #> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : 
@@ -393,7 +394,7 @@ glance(fit_g)  # one row per group
 #> # A tibble: 2 × 13
 #>   gender model_class   backend equation k_spec  nobs n_subjects n_success n_fail
 #>   <chr>  <chr>         <chr>   <chr>    <chr>  <int>      <int>     <int>  <int>
-#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        34      4
+#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        33      5
 #> 2 Male   beezdemand_f… legacy  hs       fixed…   481         39        38      1
 #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 # }

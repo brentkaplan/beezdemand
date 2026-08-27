@@ -1,13 +1,13 @@
 # Numerical Pmax via Optimization with Adaptive Domain Expansion
 
-Some demand curves – notably zben's LL4-scale exponential decay
-back-transformed to the natural expenditure curve – can have an
+Some demand curves (notably zben's LL4-scale exponential decay
+back-transformed to the natural expenditure curve) can have an
 unconstrained expenditure-maximizing price well beyond the subject's
 observed price range.
 [`.pmax_numerical()`](https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.md)
-alone then silently returns the domain edge as "Pmax": not the curve's
-true maximizer, and not stable across subjects/fits observed through
-different price ranges (Codex review of GH \#19). This wraps
+alone then silently returns the domain edge as "Pmax", which is neither
+the curve's true maximizer nor stable across subjects/fits observed
+through different price ranges. This wraps
 [`.pmax_numerical()`](https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.md)
 with an adaptive, doubling-decade search: starting from `price_range`,
 if the optimum sits within 1% of the current upper bound, the upper

@@ -104,8 +104,8 @@ If <code>newdata</code> is <code>NULL</code>, returns predictions for all subjec
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
 <dd><p>One of:</p><dl><dt><code>"demand"</code></dt>
 <dd><p>(default) Predicted expected consumption
-= (1 - P0) * response – the marginal expectation; see
-<em>Scoring predictions</em></p></dd>
+= (1 - P0) * response (the marginal expectation; see
+<em>Scoring predictions</em>)</p></dd>
 
 <dt><code>"response"</code></dt>
 <dd><p>Predicted consumption conditional on
@@ -136,7 +136,7 @@ predictions by integrating over the random effects distribution.
 For <code>type = "probability"</code>, uses KDE/Normal/Empirical integration of the
 binary component. For <code>type = "response"</code> and <code>type = "demand"</code>, uses
 Monte Carlo integration over all random effects, producing the
-<strong>population-average</strong> demand curve (accounting for Jensen's inequality).
+population-average demand curve (accounting for Jensen's inequality).
 Default is <code>FALSE</code>, which gives conditional (RE = 0) predictions
 representing a "typical" subject at the center of the RE distribution.</p></dd>
 
@@ -152,8 +152,8 @@ over the model-assumed N(0, sigma_a) distribution), or <code>"empirical"</code>
 <dd><p>Logical; if <code>TRUE</code> (default), applies the lognormal
 retransformation correction <code>exp(sigma_e^2 / 2)</code> when back-transforming
 from the log scale to the natural consumption scale. This produces
-the <strong>arithmetic mean</strong> (conditional on Q &gt; 0). Set to <code>FALSE</code> to obtain
-the <strong>median</strong> (geometric mean), which is useful for individual-level
+the arithmetic mean (conditional on Q &gt; 0). Set to <code>FALSE</code> to obtain
+the median (geometric mean), which is useful for individual-level
 "most likely" predictions. Only applies to <code>type = "response"</code> and
 <code>type = "demand"</code>.</p></dd>
 
@@ -202,7 +202,7 @@ helper columns <code>predicted_log_consumption</code>, <code>predicted_consumpti
 <code>log(Q) ~ N(mu, sigma_e^2)</code>. The conditional distribution of Q given
 Q &gt; 0 is therefore lognormal. The arithmetic mean of a lognormal is
 <code>exp(mu + sigma_e^2/2)</code>, not <code>exp(mu)</code>. Using <code>exp(mu)</code> returns the
-<strong>median</strong> (geometric mean), which systematically underestimates the
+median (geometric mean), which systematically underestimates the
 arithmetic mean by a factor of <code>exp(sigma_e^2/2)</code>. This correction is
 applied by default when <code>type = "response"</code> or <code>type = "demand"</code>. Set
 <code>correction = FALSE</code> to obtain the median instead.</p>
@@ -236,13 +236,13 @@ RE normality.</p>
 
 
 <p>Population-level demand predictions (when no subject ID is provided) can be
-computed in two ways:</p><ul><li><p><strong>Conditional (default, <code>marginal = FALSE</code>):</strong> Sets all random effects to
+computed in two ways:</p><ul><li><p>Conditional (default, <code>marginal = FALSE</code>): Sets all random effects to
 zero and evaluates the demand function at the fixed-effect (population)
-parameters. For nonlinear models, this corresponds to the <strong>conditional
-mode</strong>, not the population-average mean.</p></li>
-<li><p><strong>Marginal (<code>marginal = TRUE</code>):</strong> Integrates the prediction over the
+parameters. For nonlinear models, this corresponds to the conditional
+mode rather than the population-average mean.</p></li>
+<li><p>Marginal (<code>marginal = TRUE</code>): Integrates the prediction over the
 estimated random-effects distribution via Monte Carlo sampling. This gives
-the <strong>population-average</strong> demand curve. Due to Jensen's inequality, this
+the population-average demand curve. Due to Jensen's inequality, this
 curve lies above the conditional curve when the demand function is convex
 in the random effects (which it is for exponential demand with log-normal
 Q0 and alpha).</p></li>

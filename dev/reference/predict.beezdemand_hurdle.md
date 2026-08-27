@@ -42,8 +42,8 @@ predict(
 
   `"demand"`
 
-  :   (default) Predicted expected consumption = (1 - P0) \* response –
-      the marginal expectation; see *Scoring predictions*
+  :   (default) Predicted expected consumption = (1 - P0) \* response
+      (the marginal expectation; see *Scoring predictions*)
 
   `"response"`
 
@@ -77,10 +77,9 @@ predict(
   `type = "probability"`, uses KDE/Normal/Empirical integration of the
   binary component. For `type = "response"` and `type = "demand"`, uses
   Monte Carlo integration over all random effects, producing the
-  **population-average** demand curve (accounting for Jensen's
-  inequality). Default is `FALSE`, which gives conditional (RE = 0)
-  predictions representing a "typical" subject at the center of the RE
-  distribution.
+  population-average demand curve (accounting for Jensen's inequality).
+  Default is `FALSE`, which gives conditional (RE = 0) predictions
+  representing a "typical" subject at the center of the RE distribution.
 
 - marginal_method:
 
@@ -93,10 +92,10 @@ predict(
 
   Logical; if `TRUE` (default), applies the lognormal retransformation
   correction `exp(sigma_e^2 / 2)` when back-transforming from the log
-  scale to the natural consumption scale. This produces the **arithmetic
-  mean** (conditional on Q \> 0). Set to `FALSE` to obtain the
-  **median** (geometric mean), which is useful for individual-level
-  "most likely" predictions. Only applies to `type = "response"` and
+  scale to the natural consumption scale. This produces the arithmetic
+  mean (conditional on Q \> 0). Set to `FALSE` to obtain the median
+  (geometric mean), which is useful for individual-level "most likely"
+  predictions. Only applies to `type = "response"` and
   `type = "demand"`.
 
 - seed:
@@ -140,7 +139,7 @@ The hurdle model specifies Gaussian errors on log-consumption (Part II):
 `log(Q) ~ N(mu, sigma_e^2)`. The conditional distribution of Q given Q
 \> 0 is therefore lognormal. The arithmetic mean of a lognormal is
 `exp(mu + sigma_e^2/2)`, not `exp(mu)`. Using `exp(mu)` returns the
-**median** (geometric mean), which systematically underestimates the
+median (geometric mean), which systematically underestimates the
 arithmetic mean by a factor of `exp(sigma_e^2/2)`. This correction is
 applied by default when `type = "response"` or `type = "demand"`. Set
 `correction = FALSE` to obtain the median instead.
@@ -173,17 +172,17 @@ to assess RE normality.
 Population-level demand predictions (when no subject ID is provided) can
 be computed in two ways:
 
-- **Conditional (default, `marginal = FALSE`):** Sets all random effects
-  to zero and evaluates the demand function at the fixed-effect
+- Conditional (default, `marginal = FALSE`): Sets all random effects to
+  zero and evaluates the demand function at the fixed-effect
   (population) parameters. For nonlinear models, this corresponds to the
-  **conditional mode**, not the population-average mean.
+  conditional mode rather than the population-average mean.
 
-- **Marginal (`marginal = TRUE`):** Integrates the prediction over the
+- Marginal (`marginal = TRUE`): Integrates the prediction over the
   estimated random-effects distribution via Monte Carlo sampling. This
-  gives the **population-average** demand curve. Due to Jensen's
-  inequality, this curve lies above the conditional curve when the
-  demand function is convex in the random effects (which it is for
-  exponential demand with log-normal Q0 and alpha).
+  gives the population-average demand curve. Due to Jensen's inequality,
+  this curve lies above the conditional curve when the demand function
+  is convex in the random effects (which it is for exponential demand
+  with log-normal Q0 and alpha).
 
 The conditional prediction is appropriate for characterizing a "typical"
 subject. The marginal prediction is appropriate for predicting aggregate

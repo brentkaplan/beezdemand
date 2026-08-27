@@ -1,9 +1,9 @@
 # Run pairwise slope comparisons for cross-price demand model
 
-This function performs pairwise comparisons of slopes between groups in
-a cross-price demand model, but only when a significant interaction is
-present. The emmeans table showing estimated marginal means for slopes
-is always returned.
+Performs pairwise comparisons of slopes between groups in a cross-price
+demand model, but only when a significant interaction is present. The
+emmeans table showing estimated marginal means for slopes is always
+returned.
 
 ## Usage
 

@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-17</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/model-selection.Rmd" class="external-link"><code>vignettes/model-selection.Rmd</code></a></small>
       <div class="d-none name"><code>model-selection.Rmd</code></div>
@@ -141,7 +141,7 @@ expenditure)</p>
 <td><code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code></td>
 </tr>
 <tr class="even">
-<td>Group comparisons, modern backend</td>
+<td>Group comparisons, preferred backend</td>
 <td>TMB mixed-effects</td>
 <td><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code></td>
 </tr>
@@ -246,7 +246,7 @@ use <code>by</code> to run checks and summaries within each group:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Female 1.5    4.14      4  3.41      0.2      0     0    20</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Female 2      3.86      4  3.09      0.2      0     0    20</span></span></code></pre></div>
 <p>The <code>by</code> parameter also works with
-<code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code> — see
+<code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code>; see
 <code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code> for a full grouped analysis
 example.</p>
 <hr>
@@ -361,8 +361,9 @@ Individual demand curves for two example participants.
 <h3 id="the-ll4-transformation">The LL4 Transformation<a class="anchor" aria-label="anchor" href="#the-ll4-transformation"></a>
 </h3>
 <p>For the mixed-effects approach with the <code>zben</code> equation
-form, transform your consumption data using the LL4 (log-log with
-4-parameter adjustment):</p>
+form, transform your consumption data using the LL4 transformation,
+<code>log10(x^lambda + 1) / lambda</code> with
+<code>lambda = 4</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Transform consumption using LL4</span></span>
 <span><span class="va">apt_ll4</span> <span class="op">&lt;-</span> <span class="va">apt</span> <span class="op">|&gt;</span></span>
@@ -434,13 +435,14 @@ form, transform your consumption data using the LL4 (log-log with
 </h3>
 <p>Use <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> when you want:</p>
 <ul>
-<li>Group comparisons with modern estimation (automatic
+<li>Group comparisons with gradient-based estimation (automatic
 differentiation)</li>
 <li>More equation choices than <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></code>
 (exponential, exponentiated, simplified, zben)</li>
 <li>Estimated or fixed k parameter</li>
-<li>Robust convergence via multi-start optimization and Laplace
-approximation</li>
+<li>Multi-start optimization with a Laplace approximation for the random
+effects, which gives it another route to convergence when
+<code>nlme</code> fails</li>
 <li>The preferred approach for new mixed-effects analyses</li>
 </ul>
 </div>
@@ -476,8 +478,8 @@ approximation</li>
 </tr>
 <tr class="even">
 <td>Convergence</td>
-<td>Robust (AD + Laplace + multi-start)</td>
-<td>Can struggle with nonlinear equations</td>
+<td>AD + Laplace + multi-start</td>
+<td>Numerical gradients; can fail on nonlinear equations</td>
 </tr>
 <tr class="odd">
 <td>Speed</td>
@@ -528,7 +530,7 @@ approximation</li>
 <span></span>
 <span><span class="co"># Pairwise comparisons</span></span>
 <span><span class="fu"><a href="../reference/get_demand_comparisons.html">get_demand_comparisons</a></span><span class="op">(</span><span class="va">fit_gender</span>, param <span class="op">=</span> <span class="st">"alpha"</span><span class="op">)</span></span></code></pre></div>
-<p>For comprehensive TMB documentation, see
+<p>For the full TMB workflow, see
 <code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code>.</p>
 <hr>
 </div>
@@ -544,7 +546,7 @@ approximation</li>
 <li>Substantial zero consumption values (&gt;10-15% zeros)</li>
 <li>Need for two-part modeling (zeros vs. positive consumption)</li>
 <li>Interest in both participation and consumption intensity</li>
-<li>TMB backend for fast, stable estimation</li>
+<li>TMB backend</li>
 </ul>
 </div>
 <div class="section level3">
@@ -690,7 +692,7 @@ legacy names by <code><a href="../reference/fit_demand_fixed.html">fit_demand_fi
 <ul>
 <li>For <strong>new analyses</strong>, consider using
 <code>"simplified"</code> (also called SND) as it handles zeros natively
-and does not require specifying <code>k</code>, making results more
+and does not require specifying <code>k</code>, so results are more
 comparable across studies.</li>
 <li>For <strong>replication or comparability</strong> with existing
 literature, use <code>"hs"</code> or <code>"koff"</code> with the same
@@ -890,7 +892,7 @@ fitting</li>
 F-test</li>
 <li>
 <strong>TMB Mixed-Effects</strong>: See
-<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code> for modern TMB-based mixed
+<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code> for TMB-based mixed
 models</li>
 <li>
 <strong>NLME Mixed Models</strong>: See

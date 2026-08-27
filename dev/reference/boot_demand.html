@@ -120,7 +120,7 @@ the interval.</p>
 
 <dl><dt id="arg-fit">fit<a class="anchor" aria-label="anchor" href="#arg-fit"></a></dt>
 <dd><p>A <code>beezdemand_tmb</code> object. NLME (<code>beezdemand_nlme</code>) and
-hurdle fits are not supported in this version and error helpfully.</p></dd>
+hurdle fits are not supported in this version and raise an informative error.</p></dd>
 
 
 <dt id="arg-statistics">statistics<a class="anchor" aria-label="anchor" href="#arg-statistics"></a></dt>
@@ -187,7 +187,7 @@ non-finite).</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The parametric bootstrap is asymptotically equivalent to the delta method but
-avoids its linearization, so it is the more defensible recourse for the
+avoids its linearization, so it is preferable for the
 strongly nonlinear derived metrics (Pmax/Omax via Lambert-W). Draws are
 fixed-effect-only (population / per-condition metrics); per-subject metric CIs
 would require random-effect-aware draws and are out of scope for now.</p>

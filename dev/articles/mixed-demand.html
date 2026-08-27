@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-17</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/mixed-demand.Rmd" class="external-link"><code>vignettes/mixed-demand.Rmd</code></a></small>
       <div class="d-none name"><code>mixed-demand.Rmd</code></div>
@@ -125,8 +125,9 @@ covariates, and complex random effects structures, see
 <div class="section level3">
 <h3 id="data-preparation">Data Preparation<a class="anchor" aria-label="anchor" href="#data-preparation"></a>
 </h3>
-<p>For these examples, we will use the apt and ko datasets, which is
-assumed to be available and pre-processed.</p>
+<p>For these examples, we will use the <code>apt</code> and
+<code>ko</code> datasets, which are assumed to be available and
+pre-processed.</p>
 <p>The apt dataset should contain:</p>
 <ul>
 <li><p>id: A unique identifier for each subject.</p></li>
@@ -192,7 +193,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555df877de50&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x557dd20e4160&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -263,7 +264,7 @@ is <code><a href="../reference/fit_demand_mixed.html">fit_demand_mixed()</a></co
 <span><span class="co">#&gt; Equation Form Selected:  simplified </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * exp(-(10^alpha) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555e01e29eb8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x557ddb324480&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -337,7 +338,7 @@ data range (you can also specify it directly).</p>
 <span><span class="co">#&gt; Equation Form Selected:  exponentiated </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y ~ (10^Q0) * 10^(1.5 * (exp(-(10^alpha) * (10^Q0) * x) - 1))</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555e02838840&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x557ddbca72b8&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  id </span></span>
@@ -449,13 +450,13 @@ landscape. The NLME versions support two modes:</p>
 <ul>
 <li>
 <code>type = "ssr"</code> (default): sum-of-squared residuals on
-aggregated price-level means — a quick visual check of the fixed-effects
-landscape</li>
+aggregated price-level means (a quick visual check of the fixed-effects
+surface)</li>
 <li>
 <code>type = "marginal"</code>: linearized marginal negative
-log-likelihood that integrates over random-effects variance — more
-statistically appropriate for mixed models and preferred for assessing
-identifiability near the MLE</li>
+log-likelihood that integrates over the random-effects variance. This
+mode is more appropriate for mixed models and is preferred for assessing
+identifiability near the MLE.</li>
 </ul>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_loss_surface.html">plot_loss_surface</a></span><span class="op">(</span><span class="va">fit_apt_zben</span><span class="op">)</span></span></code></pre></div>
@@ -521,7 +522,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555df66bd688&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x557dd0a0d1b0&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ 1 </span></span>
 <span><span class="co">#&gt; Factors: None</span></span>
 <span><span class="co">#&gt; ID Variable for Random Effects:  monkey </span></span>
@@ -544,7 +545,7 @@ effects for subjects.</p>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;                   Q0        alpha  Residual</span></span>
-<span><span class="co">#&gt; StdDev: 5.262806e-06 3.217697e-06 0.2275573</span></span>
+<span><span class="co">#&gt; StdDev: 5.264342e-06 3.217971e-06 0.2275573</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -560,7 +561,7 @@ model converged, it prints the nlme model summary.</p>
 <div class="section level4">
 <h4 id="model-with-one-factor">Model with One Factor<a class="anchor" aria-label="anchor" href="#model-with-one-factor"></a>
 </h4>
-<p>Let’s model <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> as varying by dose for Alfentanil.</p>
+<p>We now model <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> as varying by dose for Alfentanil.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_one_factor_dose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">ko_alf</span>,</span>
@@ -584,7 +585,7 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Equation Form Selected:  zben </span></span>
 <span><span class="co">#&gt; NLME Model Formula:</span></span>
 <span><span class="co">#&gt; y_ll4 ~ Q0 * exp(-(10^alpha/Q0) * (10^Q0) * x)</span></span>
-<span><span class="co">#&gt; &lt;environment: 0x555dfc5373e8&gt;</span></span>
+<span><span class="co">#&gt; &lt;environment: 0x557dd5891810&gt;</span></span>
 <span><span class="co">#&gt; Fixed Effects Structure (Q0 &amp; alpha):  ~ dose </span></span>
 <span><span class="co">#&gt; Factors:  dose </span></span>
 <span><span class="co">#&gt; Interaction Term Included:  FALSE </span></span>
@@ -603,14 +604,14 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047 </span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Random effects:</span></span>
 <span><span class="co">#&gt;  Formula: list(Q0 ~ 1, alpha ~ 1)</span></span>
 <span><span class="co">#&gt;  Level: monkey</span></span>
 <span><span class="co">#&gt;  Structure: Diagonal</span></span>
 <span><span class="co">#&gt;         Q0.(Intercept) alpha.(Intercept)  Residual</span></span>
-<span><span class="co">#&gt; StdDev:   3.762036e-06      2.300115e-06 0.1625574</span></span>
+<span><span class="co">#&gt; StdDev:   3.760034e-06      2.301156e-06 0.1625574</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Observations: 45</span></span>
 <span><span class="co">#&gt; Number of Groups: 3 </span></span>
@@ -656,8 +657,8 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; Random Effects:</span></span>
 <span><span class="co">#&gt; monkey = pdDiag(list(Q0 ~ 1,alpha ~ 1)) </span></span>
 <span><span class="co">#&gt;                   Variance     StdDev      </span></span>
-<span><span class="co">#&gt; Q0.(Intercept)    1.415292e-11 3.762036e-06</span></span>
-<span><span class="co">#&gt; alpha.(Intercept) 5.290530e-12 2.300115e-06</span></span>
+<span><span class="co">#&gt; Q0.(Intercept)    1.413786e-11 3.760034e-06</span></span>
+<span><span class="co">#&gt; alpha.(Intercept) 5.295319e-12 2.301156e-06</span></span>
 <span><span class="co">#&gt; Residual          2.642491e-02 1.625574e-01</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Residual standard error: 0.1626 </span></span>
@@ -675,14 +676,14 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048</span></span>
 <span></span>
 <span><span class="co"># Random effects (deviations from fixed)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"random"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
-<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
-<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
+<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
+<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
 <span></span>
 <span><span class="co"># Subject-specific coefficients (fixed + random)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span>, type <span class="op">=</span> <span class="st">"combined"</span><span class="op">)</span><span class="op">)</span></span>
@@ -691,21 +692,21 @@ model converged, it prints the nlme model summary.</p>
 <span><span class="co">#&gt; B        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt; C        2.41535    -0.257734   -0.5190653         -4.650855     -0.08408128</span></span>
 <span><span class="co">#&gt;   alpha.dose0.003</span></span>
-<span><span class="co">#&gt; A     0.009734047</span></span>
-<span><span class="co">#&gt; B     0.009734047</span></span>
-<span><span class="co">#&gt; C     0.009734047</span></span>
+<span><span class="co">#&gt; A     0.009734048</span></span>
+<span><span class="co">#&gt; B     0.009734048</span></span>
+<span><span class="co">#&gt; C     0.009734048</span></span>
 <span></span>
 <span><span class="co"># Access nlme fixef/ranef directly</span></span>
 <span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/fixed.effects.html" class="external-link">fixef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Q0.(Intercept)      Q0.dose0.001      Q0.dose0.003 alpha.(Intercept) </span></span>
 <span><span class="co">#&gt;       2.415349697      -0.257733998      -0.519065274      -4.650854662 </span></span>
 <span><span class="co">#&gt;   alpha.dose0.001   alpha.dose0.003 </span></span>
-<span><span class="co">#&gt;      -0.084081282       0.009734047</span></span>
+<span><span class="co">#&gt;      -0.084081282       0.009734048</span></span>
 <span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit_one_factor_dose</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Q0.(Intercept) alpha.(Intercept)</span></span>
-<span><span class="co">#&gt; A   8.839712e-11     -3.421765e-10</span></span>
-<span><span class="co">#&gt; B   1.247594e-10      3.349284e-11</span></span>
-<span><span class="co">#&gt; C  -2.131565e-10      3.086837e-10</span></span>
+<span><span class="co">#&gt; A   8.830297e-11     -3.424853e-10</span></span>
+<span><span class="co">#&gt; B   1.246265e-10      3.352306e-11</span></span>
+<span><span class="co">#&gt; C  -2.129295e-10      3.089622e-10</span></span>
 <span></span>
 <span><span class="co"># Start values that were used for the NLME fit</span></span>
 <span><span class="va">fit_one_factor_dose</span><span class="op">$</span><span class="va">start_values_used</span></span>
@@ -768,7 +769,7 @@ group-level predictions.</p>
 <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> method for <code>beezdemand_nlme</code> objects,
 built using <code>ggplot2</code>, to help visualize the fitted demand
 curves against observed data.</p>
-<p><strong>Key Features:</strong></p>
+<p>The main arguments are:</p>
 <ul>
 <li><p><strong>Observed Data:</strong> Can display the original data
 points.</p></li>
@@ -792,7 +793,7 @@ via <code>facet_formula</code>.</p></li>
 <div class="section level4">
 <h4 id="example-1-plotting-a-single-factor-model">Example 1: Plotting a Single-Factor Model<a class="anchor" aria-label="anchor" href="#example-1-plotting-a-single-factor-model"></a>
 </h4>
-<p>Let’s use <code>fit_one_factor_dose</code> (modeling demand for
+<p>We use <code>fit_one_factor_dose</code> (modeling demand for
 Alfentanil by <code>dose</code>, with <code>y_ll4</code> as the
 dependent variable).</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
@@ -866,40 +867,39 @@ breaks:</p>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>The beezdemand package provides a suite of tools for robustly fitting
-nonlinear mixed-effects demand models and interpreting their parameters.
-By parameterizing <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> on the log10 scale, numerical
-stability is enhanced, while helper functions allow for easy
-back-transformation and interpretation on the natural scale.</p>
+<p>The beezdemand package provides tools for fitting nonlinear
+mixed-effects demand models and interpreting their parameters.
+Parameterizing <span class="math inline">Q_{0}</span> and <span class="math inline">\alpha</span> on the log10 scale improves numerical
+stability, and the helper functions back-transform estimates to the
+natural scale for interpretation.</p>
 </div>
 <div class="section level2">
 <h2 id="see-also">See Also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code> – Multi-factor
-models, collapsing levels, EMMs, comparisons, covariates, and
-trends</li>
+<code><a href="../articles/mixed-demand-advanced.html">vignette("mixed-demand-advanced")</a></code>: Multi-factor models,
+collapsing levels, EMMs, comparisons, covariates, and trends</li>
 <li>
-<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code> – Choosing the right model
+<code><a href="../articles/model-selection.html">vignette("model-selection")</a></code>: Choosing the right model
 class</li>
 <li>
-<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code> – Fixed-effect demand
+<code><a href="../articles/fixed-demand.html">vignette("fixed-demand")</a></code>: Fixed-effect demand
 modeling</li>
 <li>
-<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code> – Two-part hurdle
+<code><a href="../articles/hurdle-demand-models.html">vignette("hurdle-demand-models")</a></code>: Two-part hurdle
 demand models</li>
 <li>
-<code><a href="../articles/cross-price-models.html">vignette("cross-price-models")</a></code> – Cross-price demand
+<code><a href="../articles/cross-price-models.html">vignette("cross-price-models")</a></code>: Cross-price demand
 analysis</li>
 <li>
-<code><a href="../articles/group-comparisons.html">vignette("group-comparisons")</a></code> – Group comparisons</li>
+<code><a href="../articles/group-comparisons.html">vignette("group-comparisons")</a></code>: Group comparisons</li>
 <li>
-<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code> – Migrating from
+<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code>: Migrating from
 <code><a href="../reference/FitCurves.html">FitCurves()</a></code>
 </li>
 <li>
-<code><a href="../articles/beezdemand.html">vignette("beezdemand")</a></code> – Getting started with
+<code><a href="../articles/beezdemand.html">vignette("beezdemand")</a></code>: Getting started with
 beezdemand</li>
 </ul>
 </div>

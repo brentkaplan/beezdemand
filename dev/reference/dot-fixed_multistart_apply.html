@@ -123,9 +123,9 @@ post-rescue verdicts automatically.</p>
 
 <dt id="arg-agg">agg<a class="anchor" aria-label="anchor" href="#arg-agg"></a></dt>
 <dd><p>The <code>agg</code> argument as supplied to <code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code>
-(<code>NULL</code>, <code>"Mean"</code>, or <code>"Pooled"</code>). Codex 2F review fold, item 3: this
-MUST be passed through unchanged to each rescue <code><a href="FitCurves.html">FitCurves()</a></code> call
-(never hard-coded to <code>NULL</code>) – for <code>agg = "Pooled"</code>, <code>data_used[[i]]</code>
+(<code>NULL</code>, <code>"Mean"</code>, or <code>"Pooled"</code>). This
+must be passed through unchanged to each rescue <code><a href="FitCurves.html">FitCurves()</a></code> call
+(never hard-coded to <code>NULL</code>). For <code>agg = "Pooled"</code>, <code>data_used[[i]]</code>
 is the raw (duplicated-price) stacked data, and <code><a href="FitCurves.html">FitCurves()</a></code>'s own
 <code>agg = "Pooled"</code> handling is what builds the deduplicated table
 <code><a href="GetEmpirical.html">GetEmpirical()</a></code> needs; without it, <code><a href="GetEmpirical.html">GetEmpirical()</a></code> hard-errors on
@@ -147,7 +147,7 @@ is the raw (duplicated-price) stacked data, and <code><a href="FitCurves.html">F
 <dt id="arg-dots">dots<a class="anchor" aria-label="anchor" href="#arg-dots"></a></dt>
 <dd><p>Named list of additional arguments forwarded from
 <code><a href="fit_demand_fixed.html">fit_demand_fixed()</a></code>'s <code>...</code> (e.g. <code>lobound</code>, <code>hibound</code>,
-<code>constrainq0</code>) – passed through to each rescue <code><a href="FitCurves.html">FitCurves()</a></code> call,
+<code>constrainq0</code>), passed through to each rescue <code><a href="FitCurves.html">FitCurves()</a></code> call,
 with any user-supplied <code>startq0</code>/<code>startalpha</code> stripped (the sampled
 starts replace them for rescue attempts).</p></dd>
 

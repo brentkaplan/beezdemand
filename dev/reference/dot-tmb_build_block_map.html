@@ -96,7 +96,7 @@ block structure (see Conventions above).</p>
     <p>Conventions:</p><ul><li><p><code>block_types[b] = 0</code> for pdDiag, <code>1</code> for pdSymm.</p></li>
 <li><p><code>block_q0_offset[b]</code> / <code>block_alpha_offset[b]</code> are 0-indexed
 starting columns within <code>Z_q0</code> / <code>Z_alpha</code> respectively.</p></li>
-<li><p><code>n_logsigma</code> is <code>sum(block_q0_dim + block_alpha_dim)</code> – one
+<li><p><code>n_logsigma</code> is <code>sum(block_q0_dim + block_alpha_dim)</code>, i.e. one
 standard-deviation parameter per RE column across all blocks.</p></li>
 <li><p><code>n_rho</code> is <code>sum(over pdSymm blocks: block_dim*(block_dim-1)/2)</code>
 where <code>block_dim = block_q0_dim + block_alpha_dim</code>. pdDiag

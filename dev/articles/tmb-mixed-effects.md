@@ -9,16 +9,16 @@ alternative to
 [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
 (which uses `nlme`) and provides several advantages:
 
-- **Automatic differentiation** – exact gradients via compiled C++,
+- **Automatic differentiation**: exact gradients via compiled C++,
   replacing the numerical finite-difference approximations used by
   `nlme`
-- **Laplace approximation** – integrates over random effects
-  analytically rather than relying on iterative linearization
-- **Multi-start optimization** – automatically tries multiple
+- **Laplace approximation**: integrates over random effects analytically
+  rather than relying on iterative linearization
+- **Multi-start optimization**: automatically tries multiple
   starting-value sets and keeps the best fit
-- **Four equation forms** – exponential, exponentiated, simplified, and
+- **Four equation forms**: exponential, exponentiated, simplified, and
   zero-bounded exponential (zben)
-- **Factor and covariate support** – design matrices for group
+- **Factor and covariate support**: design matrices for group
   comparisons with estimated marginal means (EMMs) and pairwise
   contrasts
 
@@ -139,7 +139,7 @@ supports four demand equations:
 
 | Equation | Response | Zeros | k | Best for |
 |----|----|----|----|----|
-| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; robust 2-RE convergence |
+| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; the usual choice for 2-RE models |
 | `"exponentiated"` | Raw Q | Allowed | Estimated or fixed | Data with few zeros; 1-RE models |
 | `"simplified"` | Raw Q | Allowed | None | Simpler model without k |
 | `"zben"` | LL4(Q) | Allowed (via transform) | None | Wide dynamic range with LL4 compression |
@@ -209,11 +209,11 @@ data.frame(
 #> 4          zben           1-RE      TRUE -893.6
 ```
 
-**Note:** AIC values are not directly comparable across equations
+Note that AIC values are not directly comparable across equations
 because they model different response scales (log Q vs raw Q vs LL4(Q)).
 
-**Convergence tip:** The `exponential` equation is the most reliable for
-2-random-effect models. The `exponentiated` equation works well with
+For convergence, the `exponential` equation is the most reliable choice
+for 2-random-effect models. The `exponentiated` equation works well with
 1-RE but can struggle to converge with 2-RE, especially with smaller
 samples.
 
@@ -222,10 +222,10 @@ samples.
 [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 supports two configurations:
 
-- `random_effects = "q0"` – **1-RE**: random intercept on Q_0 only;
-  \alpha is constant across subjects
-- `random_effects = c("q0", "alpha")` – **2-RE**: random effects on both
-  Q_0 and \alpha with an estimated correlation
+- `random_effects = "q0"` (1-RE): random intercept on Q_0 only; \alpha
+  is constant across subjects
+- `random_effects = c("q0", "alpha")` (2-RE): random effects on both Q_0
+  and \alpha with an estimated correlation
 
 ``` r
 
@@ -368,8 +368,8 @@ back-transforms Q_0, \alpha, and k off the log estimation scale. The
 `statistic` and `p.value` columns are always computed on the estimation
 (log) scale, where the Wald test is well defined; they are not
 recomputed from the back-transformed `estimate` and `std.error` (that
-recompute is degenerate for a strictly positive parameter – it would
-test “ratio = 0” rather than “ratio = 1”). One consequence:
+recompute is degenerate for a strictly positive parameter because it
+would test “ratio = 0” rather than “ratio = 1”). As a consequence,
 `estimate / std.error` from the default table does not reproduce the
 reported `statistic`. This matches the `broom` and `emmeans` convention;
 pass `report_space = "internal"` (or `"log10"`) to read the estimate and
@@ -391,7 +391,7 @@ For users coming from `nlme` or `lme4`, the
 [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) accessor
 returns these same variance components in the familiar
 [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) matrix
-layout – a `Variance` / `StdDev` matrix (with a `Corr` column for
+layout, i.e., a `Variance` / `StdDev` matrix (with a `Corr` column for
 `pdSymm` fits) and a final `Residual` row:
 
 ``` r
@@ -404,7 +404,7 @@ VarCorr(fit_2re)
 ```
 
 Note that [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
-(shown next) reports the raw internal optimizer parameters instead – the
+(shown next) reports the raw internal optimizer parameters instead. The
 `logsigma` rows are the natural log of each RE SD, not the log10-scale
 SDs from `summary()$variance_components`.
 
@@ -512,7 +512,7 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1   7.050819e-17     -3.85976e-17            1      0.8497968
+#> 1   7.065932e-18    -2.846441e-18            1      0.8497968
 ```
 
 By construction, both factors are sample-standardized (mean 0, SD 1
@@ -560,8 +560,8 @@ Monte Carlo intervals with `method = "simulate"`. These draw `R` samples
 from the joint asymptotic posterior `N(coef, vcov)` and report empirical
 quantiles. They are asymptotically Wald-equivalent, so a large
 discrepancy between the two flags a fit where the Gaussian approximation
-is suspect. This is a diagnostic comparison, **not** an accuracy
-improvement: the `simulate` method does not capture non-Gaussian
+is suspect. The comparison is diagnostic rather than an accuracy
+improvement, because the `simulate` method does not capture non-Gaussian
 posterior shape and carries no positivity guarantee on the internal
 scale. Set `seed` for reproducibility.
 
@@ -587,9 +587,9 @@ data.frame(
 ### Variance-Covariance and the Delta Method
 
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) returns the fixed-effect
-variance-covariance matrix from the TMB sdreport — the inverse of the
+variance-covariance matrix from the TMB sdreport (the inverse of the
 negative Hessian at the MLE, restricted to fixed effects after
-Laplace-marginalizing the random effects. Combined with the optimizer’s
+Laplace-marginalizing the random effects). Combined with the optimizer’s
 internal parameter vector (`coef(fit, type = "internal")`), it lets you
 apply the delta method to any nonlinear function of the parameters via
 [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html). Pass
@@ -803,7 +803,7 @@ fit_2re$hessian_pd
 
 ``` r
 
-# Model health check — convergence, variance components, residual stats,
+# Model health check: convergence, variance components, residual stats,
 # and (since 0.3.0) Hessian positive-definiteness.
 check_demand_model(fit_2re)
 #> 
@@ -872,7 +872,7 @@ Random effects diagnostic panels.
 
 ``` r
 
-# Residual plot — standard in every modeling workflow
+# Residual plot (standard in every modeling workflow)
 plot_residuals(fit_2re, type = "fitted")
 ```
 
@@ -914,8 +914,8 @@ lines.](tmb-mixed-effects_files/figure-html/viz-expenditure-1.png)
 Expenditure curve with Pmax and Omax reference lines.
 
 The elasticity curve shows how responsive demand is to price changes.
-The dashed line at -1 marks unit elasticity — prices above this
-threshold produce elastic demand:
+The dashed line at -1 marks unit elasticity (prices above this threshold
+produce elastic demand):
 
 ``` r
 
@@ -931,8 +931,8 @@ Own-price elasticity curve with unit elasticity reference.
 
 The loss surface visualizes the sum-of-squared-residuals landscape over
 a grid of (Q_0, \alpha) values, with the MLE marked. This helps assess
-identifiability — a sharp, well-defined minimum indicates good
-identification:
+identifiability (a sharp, well-defined minimum indicates good
+identification):
 
 ``` r
 
@@ -1048,7 +1048,7 @@ fit_gender
 ### Joint Tests
 
 `anova(fit)` reports a joint Wald-χ² test for each parameter × factor
-block — here, whether `gender` shifts Q_0 and \alpha. Pass additional
+block (here, whether `gender` shifts Q_0 and \alpha). Pass additional
 fits for a nested likelihood-ratio test.
 
 ``` r
@@ -1155,7 +1155,7 @@ compare_models(fit_1re, fit_2re)
 #>   - LRT nesting assumption not verified.
 ```
 
-**Valid comparisons** require models fit on the same data with the same
+Valid comparisons require models fit on the same data with the same
 equation and response scale. Models with different equations (e.g.,
 exponential vs exponentiated) model different responses and cannot be
 compared via AIC.
@@ -1203,8 +1203,8 @@ of re-fitting, matching the convention of
 `formula(fit)` returns a named list of one-sided formulas for `Q0` and
 `alpha` plus the random-effect spec; `model.matrix(fit)` returns the
 four design matrices the TMB template consumed (`X_q0`, `X_alpha`,
-`Z_q0`, `Z_alpha`) — a named list rather than the single matrix `lm` or
-`lme4` return, because the TMB tier truly has two fixed-effect linear
+`Z_q0`, `Z_alpha`). This is a named list rather than the single matrix
+`lm` or `lme4` return, because the TMB tier has two fixed-effect linear
 predictors.
 
 ## Convergence Tips
@@ -1275,7 +1275,7 @@ fit4 <- fit_demand_tmb(
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified |
 | k parameter | Estimated or fixed | Not available |
 | Random effects | 1 or 2 (Q0, alpha) | Configurable via nlme |
-| Convergence | Robust (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
+| Convergence | Reliable (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |
 | Post-hoc EMMs | [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md) | [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md) (via emmeans) |
 | Factors/covariates | Design matrices | Formula-based |
@@ -1303,13 +1303,13 @@ Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M.
 
 ## See Also
 
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – Individual NLS demand curves
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – NLME-based mixed-effects models
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced topics: multi-factor designs, collapse_levels
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle models for zero-heavy data
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right demand model
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  Individual NLS demand curves
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  NLME-based mixed-effects models
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  Advanced topics: multi-factor designs, collapse_levels
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle models for zero-heavy data
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right demand model

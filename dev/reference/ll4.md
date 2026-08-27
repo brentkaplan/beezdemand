@@ -2,9 +2,9 @@
 
 Applies a log-logistic like transformation, specifically
 `log_base(x^lambda + 1) / lambda`. This transformation is useful for
-compressing data that spans several orders of magnitude while handling
-zero values gracefully (as `x=0` yields `0`). It's a variation related
-to the Box-Cox transformation or a generalized logarithm.
+compressing data that spans several orders of magnitude while remaining
+defined at zero (`x = 0` yields `0`). It is related to the Box-Cox
+transformation and to the generalized logarithm.
 
 ## Usage
 

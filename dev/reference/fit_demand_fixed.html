@@ -159,10 +159,9 @@ reproduce the legacy single-start behavior exactly. Not applicable to
 (including the production start), when <code>multistart = TRUE</code>. Default
 <code>NULL</code> uses a tiered budget: 8 for 2-parameter forms (hs/koff/simplified
 with a fixed <code>k</code>), 32 when <code>k = "fit"</code>. Ignored for <code>equation = "linear"</code>. If supplied, must be a single finite integer <code>&gt;= 1</code>.</p>
-<p>Note: <code>multistart</code> and <code>S</code> were added AFTER <code>by</code> in the argument list
-(Codex 2F review fold, TICKET-047 item 1) specifically so that
-pre-existing positional calls – e.g.
-<code>fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")</code>, where the 9th positional argument is <code>by</code> – continue to
+<p>Note: <code>multistart</code> and <code>S</code> were added after <code>by</code> in the argument list
+so that pre-existing positional calls (e.g.,
+<code>fit_demand_fixed(data, "hs", 2, NULL, "x", "y", "id", "natural", "group_col")</code>, where the 9th positional argument is <code>by</code>) continue to
 bind correctly. Always pass <code>multistart</code>/<code>S</code> by name.</p></dd>
 
 
@@ -221,17 +220,17 @@ supports rescue), and <code>summary</code> (per-subject start metadata, or
     <p>This function is a modern wrapper around the legacy <code><a href="FitCurves.html">FitCurves()</a></code> function.
 It provides the same fitting capabilities but returns a structured S3 object
 with standardized methods for model interrogation.</p><div class="section">
-<h3 id="multi-start-rescue-protocol-ticket-">Multi-start rescue protocol (TICKET-047)<a class="anchor" aria-label="anchor" href="#multi-start-rescue-protocol-ticket-"></a></h3>
+<h3 id="multi-start-rescue-protocol">Multi-start rescue protocol<a class="anchor" aria-label="anchor" href="#multi-start-rescue-protocol"></a></h3>
 
 
 <p><code>fit_demand_fixed()</code> always runs <code><a href="FitCurves.html">FitCurves()</a></code>'s existing heuristic start
-exactly as before – the "production start". A subject whose production
+exactly as before (the "production start"). A subject whose production
 fit is strict-converged (<code>converged_strict</code>: the optimizer's own
 convergence flag AND finite coefficients/objective AND not sitting on a
 user-supplied bound) is accepted immediately; no sampled starts are ever
 run for it, so its row, fitted model, predictions, and data are
 byte-identical to the <code>multistart = FALSE</code> / <code>S = 1</code> protocol by
-construction. Only subjects whose production fit is NOT strict-converged
+construction. Only subjects whose production fit is not strict-converged
 are re-fit from <code>S - 1</code> additional starts, sampled log-uniformly in
 interpretable (Q0, Pmax) coordinates and mapped to each equation's native
 (Q0, alpha) parameterization via the same closed forms used by
@@ -241,7 +240,7 @@ order). If none of the sampled starts strict-converge, the original
 (non-converged) production row is kept. <code>equation = "linear"</code> is a
 closed-form fit and is never multistarted. <code><a href="FitCurves.html">FitCurves()</a></code> itself is
 unchanged; sampling draws from the ambient RNG stream (call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>
-before <code>fit_demand_fixed()</code> for reproducibility – the helpers never call
+before <code>fit_demand_fixed()</code> for reproducibility; the helpers never call
 <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> themselves).</p>
 </div>
 
@@ -337,7 +336,7 @@ before <code>fit_demand_fixed()</code> for reproducibility – the helpers never
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> beezdemand_fixed legacy  hs       fixed (2)   146         10        10      0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Grouped analysis -- fit separately by gender (subset keeps it fast)</span></span></span>
+<span class="r-in"><span><span class="co"># Grouped analysis: fit separately by gender (subset keeps it fast)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"gender"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="va">ids</span><span class="op">[</span><span class="va">ids</span><span class="op">$</span><span class="va">gender</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Male"</span>, <span class="st">"Female"</span><span class="op">)</span>, <span class="op">]</span></span></span>
@@ -405,6 +404,8 @@ before <code>fit_demand_fixed()</code> for reproducibility – the helpers never
 <span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   singular gradient matrix at initial parameter estimates</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Data casted as data.frame</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>FitCurves: subject '11' reported as converged with a non-positive Alpha (Q0d = 5, Alpha = -4.345028e-10); this estimate may be domain-invalid -- inspect before use.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error in numericDeriv(form[[3L]], names(ind), env, central = nDcentral) : </span>
@@ -430,7 +431,7 @@ before <code>fit_demand_fixed()</code> for reproducibility – the helpers never
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 13</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   gender model_class   backend equation k_spec  nobs n_subjects n_success n_fail</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Female beezdemand_f… legacy  hs       fixed…   378         38        34      4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Female beezdemand_f… legacy  hs       fixed…   378         38        33      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Male   beezdemand_f… legacy  hs       fixed…   481         39        38      1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: converged &lt;lgl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

@@ -188,8 +188,8 @@ all subjects. Default is TRUE.</p></dd>
 <dt id="arg-part-">part2<a class="anchor" aria-label="anchor" href="#arg-part-"></a></dt>
 <dd><p>Character. Positive-part (Part II) generator: <code>"koff"</code> (the
 original Zhao et al. (2016) / Koffarnus-style generator; default,
-backward compatible) or <code>"snd"</code> (TICKET-044; matches
-<code>src/HurdleDemand3RE_SND.h</code> / <code>src/HurdleDemand2RE_SND.h</code> exactly –
+backward compatible) or <code>"snd"</code> (matches
+<code>src/HurdleDemand3RE_SND.h</code> / <code>src/HurdleDemand2RE_SND.h</code> exactly;
 see Details).</p></dd>
 
 
@@ -208,12 +208,11 @@ Default <code>NULL</code> uses <code>0</code> (actual correlation 0).</p></dd>
 
 <dt id="arg-rho-bc-raw">rho_bc_raw<a class="anchor" aria-label="anchor" href="#arg-rho-bc-raw"></a></dt>
 <dd><p>Only used when <code>part2 = "snd"</code> and <code>n_random_effects = 3</code>. Raw value for the b/c <em>partial</em> correlation (see Details); the
-actual b/c correlation is NOT <code>tanh(rho_bc_raw)</code> directly. Default
+actual b/c correlation is not <code>tanh(rho_bc_raw)</code> directly. Default
 <code>NULL</code> uses <code>0</code> (actual correlation 0).</p>
-<p>Note: <code>part2</code> and <code>rho_*_raw</code> were added AFTER <code>seed</code> in the argument
-list (Codex 2F review fold, TICKET-044 item 2) specifically so that
-pre-existing positional calls – whose 19th (and last, pre-TICKET-044)
-positional argument is <code>seed</code> – continue to bind correctly instead of
+<p>Note: <code>part2</code> and <code>rho_*_raw</code> were added after <code>seed</code> in the argument
+list so that pre-existing positional calls (whose 19th and last
+positional argument was <code>seed</code>) continue to bind correctly instead of
 landing on <code>part2</code> (where <code><a href="https://rdrr.io/r/base/match.arg.html" class="external-link">match.arg()</a></code> would error). Always pass
 <code>part2</code>/<code>rho_*_raw</code> by name.</p></dd>
 
@@ -249,7 +248,7 @@ landing on <code>part2</code> (where <code><a href="https://rdrr.io/r/base/match
 $$logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i$$</p>
 <p><strong>Part II, <code>part2 = "koff"</code> (Zhao et al., 2016):</strong>
 $$\log(Y | Y &gt; 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon$$</p>
-<p><strong>Part II, <code>part2 = "snd"</code> (TICKET-044; exactly mirrors
+<p><strong>Part II, <code>part2 = "snd"</code> (exactly mirrors
 <code>src/HurdleDemand3RE_SND.h</code> / <code>src/HurdleDemand2RE_SND.h</code>, i.e. a
 log-linear/SND mean with lognormal errors and no <code>k</code>):</strong>
 $$Q_{0,i} = \exp(\log Q_0 + b_i), \quad \alpha_i = \exp(\log \alpha + c_i)$$

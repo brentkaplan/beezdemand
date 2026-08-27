@@ -34,7 +34,7 @@ boot_demand(
 - fit:
 
   A `beezdemand_tmb` object. NLME (`beezdemand_nlme`) and hurdle fits
-  are not supported in this version and error helpfully.
+  are not supported in this version and raise an informative error.
 
 - statistics:
 
@@ -106,11 +106,11 @@ non-finite).
 ## Details
 
 The parametric bootstrap is asymptotically equivalent to the delta
-method but avoids its linearization, so it is the more defensible
-recourse for the strongly nonlinear derived metrics (Pmax/Omax via
-Lambert-W). Draws are fixed-effect-only (population / per-condition
-metrics); per-subject metric CIs would require random-effect-aware draws
-and are out of scope for now.
+method but avoids its linearization, so it is preferable for the
+strongly nonlinear derived metrics (Pmax/Omax via Lambert-W). Draws are
+fixed-effect-only (population / per-condition metrics); per-subject
+metric CIs would require random-effect-aware draws and are out of scope
+for now.
 
 When `k` is estimated, its uncertainty is propagated (the `log_k` column
 is in the draw matrix); when `k` is fixed, the fixed value is used. The

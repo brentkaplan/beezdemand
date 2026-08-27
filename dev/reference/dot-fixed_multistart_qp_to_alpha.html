@@ -122,14 +122,14 @@ different scales) and share the Lambert-W relation used by
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Low-k fallback (Codex 2F review fold, item 5): if <code>k</code> is too small for a
+    <p>Low-k fallback: if <code>k</code> is too small for a
 real principal-branch Lambert-W solution to exist at this scale (<code>k &lt;= exp(1) / log(10)</code>, mirroring <code><a href="dot-pmax_analytic_hs.html">.pmax_analytic_hs()</a></code>'s own existence check,
-or if <code><a href="lambertW.html">lambertW()</a></code> itself fails), hs/koff have no interior Pmax at all –
-the sampled Pmax is not achievable by ANY alpha via the closed form. The
-function does NOT silently fall back to the (unrelated) SND point
+or if <code><a href="lambertW.html">lambertW()</a></code> itself fails), hs/koff have no interior Pmax at all;
+the sampled Pmax is not achievable by any alpha via the closed form. The
+function does not silently fall back to the (unrelated) SND point
 formula <code>alpha = 1 / (Pmax * Q0)</code> in this case. Instead it draws alpha
 directly and independently, log-uniform over a range implied by the same
-sampled (Q0, Pmax) bounds – an explicit, documented, genuinely
+sampled (Q0, Pmax) bounds: an explicit, documented, genuinely
 stochastic low-k/degenerate-k sampler (two calls with the same inputs
 but different RNG state give different alpha).</p>
     </div>

@@ -140,7 +140,7 @@ get_demand_param_emms(fit)
 #> #   UCL_alpha_param_log10 <dbl>, alpha_natural <dbl>, LCL_alpha_natural <dbl>,
 #> #   UCL_alpha_natural <dbl>
 
-# Request only Q0 columns — convenient for pivoting and plotting
+# Request only Q0 columns (convenient for pivoting and plotting)
 get_demand_param_emms(fit, param = "Q0")
 #> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
 #>   derived quantities may be unreliable.

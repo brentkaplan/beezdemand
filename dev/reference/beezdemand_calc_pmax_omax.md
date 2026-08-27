@@ -2,8 +2,8 @@
 
 Unified internal engine for pmax/omax computation. Supports analytic
 solutions (Lambert W for HS/hurdle, closed-form for SND), numerical
-fallback, and observed (row-wise) metrics. Handles parameter-space
-conversions transparently.
+fallback, and observed (row-wise) metrics. Parameter-scale conversions
+are handled internally.
 
 ## Usage
 
@@ -42,7 +42,7 @@ beezdemand_calc_pmax_omax(
   - snd/simplified: alpha, q0
 
   - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical
-    fallback only – requires `price_obs` / `price_range` for the
+    fallback only, which requires `price_obs` / `price_range` for the
     numerical search domain; see
     [`.pmax_numerical()`](https://brentkaplan.github.io/beezdemand/reference/dot-pmax_numerical.md))
 

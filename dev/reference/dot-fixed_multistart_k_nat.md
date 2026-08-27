@@ -6,7 +6,7 @@ for this subject regardless of the caller's `k` mode (`"ind"`, `"fit"`,
 `"range"`, `"share"`, or a plain number). Falls back to the caller's `k`
 if numeric, else to
 [`GetK()`](https://brentkaplan.github.io/beezdemand/reference/GetK.md)
-computed on the subject's own data – both are only used to seed a
+computed on the subject's own data. Both are only used to seed a
 *starting* alpha, so approximate is acceptable.
 
 ## Usage

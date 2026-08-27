@@ -74,8 +74,8 @@ A list with:
   Summary statistics including bias, SE ratio, and coverage, computed
   only from replicates that converged with a positive-definite Hessian
   (`diagnostics$status == "clean"`); converged-but-non-PD and
-  converged-but-Hessian-unavailable replicates are excluded (TICKET-062)
-  since their SEs are unreliable or unknown
+  converged-but-Hessian-unavailable replicates are excluded since their
+  SEs are unreliable or unknown
 
 - n_converged:
 
@@ -91,7 +91,7 @@ A list with:
   Data frame with one row per simulation: `sim_id`, `status` (`"error"`,
   `"nonconverged"`, `"converged_non_pd"`,
   `"converged_hessian_unavailable"`, or `"clean"`), `converged`,
-  `hessian_pd` (`TRUE`/`FALSE`/`NA` – `NA` means `sdreport()` itself
+  `hessian_pd` (`TRUE`/`FALSE`/`NA`; `NA` means `sdreport()` itself
   failed, a different condition from an explicit non-PD Hessian),
   `opt_convergence`, and `opt_message`
 
@@ -139,7 +139,7 @@ print(mc_results$summary)
 #> logsigma_a   1.36074207   1.42004301   1.0435799         1.0       5
 #> logsigma_b   0.09177586   0.13790528   1.5026314         1.0       5
 #> logsigma_e   0.09265646   0.05896088   0.6363386         0.6       5
-#> rho_ab_raw   3.00042161 834.73811178 278.2069392         1.0       5
+#> rho_ab_raw   3.00042161 834.73811464 278.2069401         1.0       5
 
 # Check convergence rate
 cat("Convergence rate:", mc_results$n_converged / mc_results$n_sim, "\n")

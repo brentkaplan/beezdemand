@@ -19,7 +19,7 @@ Pmax (price at maximum expenditure) and Omax (maximum expenditure)
 | Your Situation | Recommended Approach | Function |
 |----|----|----|
 | Individual curves, quick exploration | Fixed-effects NLS | [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) |
-| Group comparisons, modern backend | TMB mixed-effects | [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md) |
+| Group comparisons, preferred backend | TMB mixed-effects | [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md) |
 | Group comparisons, legacy pipeline | NLME mixed-effects | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) |
 | Many zeros, two-part modeling | Hurdle model | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) |
 | Cross-commodity substitution | Cross-price models | `fit_cp_*()` |
@@ -108,8 +108,8 @@ desc_by_gender$statistics |> head()
 ```
 
 The `by` parameter also works with
-[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
-— see
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md);
+see
 [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
 for a full grouped analysis example.
 
@@ -228,8 +228,8 @@ when you want:
 ### The LL4 Transformation
 
 For the mixed-effects approach with the `zben` equation form, transform
-your consumption data using the LL4 (log-log with 4-parameter
-adjustment):
+your consumption data using the LL4 transformation,
+`log10(x^lambda + 1) / lambda` with `lambda = 4`:
 
 ``` r
 
@@ -307,13 +307,14 @@ Use
 [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 when you want:
 
-- Group comparisons with modern estimation (automatic differentiation)
+- Group comparisons with gradient-based estimation (automatic
+  differentiation)
 - More equation choices than
   [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
   (exponential, exponentiated, simplified, zben)
 - Estimated or fixed k parameter
-- Robust convergence via multi-start optimization and Laplace
-  approximation
+- Multi-start optimization with a Laplace approximation for the random
+  effects, which gives it another route to convergence when `nlme` fails
 - The preferred approach for new mixed-effects analyses
 
 ### Advantages Over NLME
@@ -323,7 +324,7 @@ when you want:
 | Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified, exponentiated |
 | k parameter | Estimated or fixed | Not available |
-| Convergence | Robust (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
+| Convergence | AD + Laplace + multi-start | Numerical gradients; can fail on nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |
 
 ### Complete Example
@@ -370,7 +371,7 @@ get_demand_param_emms(fit_gender, param = "Q0")
 get_demand_comparisons(fit_gender, param = "alpha")
 ```
 
-For comprehensive TMB documentation, see
+For the full TMB workflow, see
 [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md).
 
 ------------------------------------------------------------------------
@@ -386,7 +387,7 @@ when you have:
 - Substantial zero consumption values (\>10-15% zeros)
 - Need for two-part modeling (zeros vs. positive consumption)
 - Interest in both participation and consumption intensity
-- TMB backend for fast, stable estimation
+- TMB backend
 
 ### Understanding the Two-Part Structure
 
@@ -483,8 +484,8 @@ the legacy names by
 **Recommendations:**
 
 - For **new analyses**, consider using `"simplified"` (also called SND)
-  as it handles zeros natively and does not require specifying `k`,
-  making results more comparable across studies.
+  as it handles zeros natively and does not require specifying `k`, so
+  results are more comparable across studies.
 - For **replication or comparability** with existing literature, use
   `"hs"` or `"koff"` with the same `k` specification as the original
   study.
@@ -600,7 +601,7 @@ Q_0) always exists.)
   for extra sum-of-squares F-test
 - **TMB Mixed-Effects**: See
   [`vignette("tmb-mixed-effects")`](https://brentkaplan.github.io/beezdemand/articles/tmb-mixed-effects.md)
-  for modern TMB-based mixed models
+  for TMB-based mixed models
 - **NLME Mixed Models**: See
   [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
   for NLME-based mixed-effects examples

@@ -95,13 +95,13 @@
 <li><p><code>n_random_effects</code>: Number of random-effect terms (e.g. 2 for
 <code>Q0 + alpha ~ 1</code>)</p></li>
 <li><p><code>converged</code>: Operational convergence status. <code>TRUE</code> when the final fit is
-usable for inference — i.e. <code>apVar</code> (nlme's approximate covariance of the
-variance-covariance parameters) is positive-definite AND there is no
+usable for inference, i.e., <code>apVar</code> (nlme's approximate covariance of the
+variance-covariance parameters) is positive-definite and there is no
 terminal error. Alias for <code>final_fit_ok</code>. It is not flipped to <code>FALSE</code>
 by iteration-level optimizer warnings (see <code>fit_warned</code>).</p></li>
 <li><p><code>final_fit_ok</code>: The canonical usable-for-inference gate (<code>apVar</code> PD and no
 terminal error); identical to <code>converged</code>. NLME-only.</p></li>
-<li><p><code>fit_warned</code>: Diagnostic flag — <code>TRUE</code> when nlme emitted iteration-level
+<li><p><code>fit_warned</code>: Diagnostic flag that is <code>TRUE</code> when nlme emitted iteration-level
 convergence warnings (false convergence, singular, step-halving, iteration
 limit, ...) during PNLS-LME alternation. Informational only; does not gate
 <code>converged</code>. NLME-only.</p></li>

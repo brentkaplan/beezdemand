@@ -30,7 +30,8 @@ tidy(
   Character. Reporting space for core parameters. One of `"natural"` or
   `"log10"` (`match.arg` default `"natural"`). `estimate`/`std.error`
   follow this scale; `statistic`/`p.value` are always on the estimation
-  scale — nlme's native containment-t test (transformation-invariant).
+  scale (nlme's native containment-t test, which is
+  transformation-invariant).
 
 - ...:
 

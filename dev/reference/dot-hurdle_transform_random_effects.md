@@ -1,8 +1,7 @@
 # Transform Random Effects to Original Scale
 
-Internal function to transform standardized random effects (u) to the
-original scale using the Cholesky decomposition of the covariance
-matrix.
+Transforms standardized random effects (u) to the original scale using
+the Cholesky decomposition of the covariance matrix.
 
 ## Usage
 

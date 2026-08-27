@@ -72,7 +72,7 @@ plot(
 - y_trans:
 
   Character. Y-axis transformation. If `NULL` (default), uses
-  `"pseudo_log"` which handles zero values gracefully.
+  `"pseudo_log"`, which is defined at zero.
 
 - inv_fun:
 

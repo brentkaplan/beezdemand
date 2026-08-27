@@ -1,11 +1,10 @@
 # Get Estimated Marginal Means for Observed Factor Combinations
 
-This function is a wrapper around `get_demand_param_emms`. It first
-calls `get_demand_param_emms` to calculate Estimated Marginal Means
-(EMMs) for Q0 and alpha parameters over all combinations of the
-specified factor levels. It then filters these results to return EMMs
-only for the combinations of factor levels that were actually present in
-the original dataset used to fit the `beezdemand_nlme` model.
+Wraps `get_demand_param_emms`: it first computes Estimated Marginal
+Means (EMMs) for Q0 and alpha over all combinations of the specified
+factor levels, then filters these results to the combinations of factor
+levels that were actually present in the original dataset used to fit
+the `beezdemand_nlme` model.
 
 ## Usage
 

@@ -1,7 +1,7 @@
 # Get Parameter Names for Hurdle Model
 
-Internal function to get the names of fixed effect parameters and
-variance component names based on model configuration.
+Returns the names of fixed effect parameters and variance component
+names based on model configuration.
 
 ## Usage
 

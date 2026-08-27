@@ -439,7 +439,7 @@ style="width:100%;"}
 | 19  | Q0   | 10.158665 | 9.632351 | 10.684978 |  0.95 |
 | 30  | Q0   |  2.807366 | 2.364853 |  3.249880 |  0.95 |
 | 38  | Q0   |  4.497456 | 4.076679 |  4.918234 |  0.95 |
-| 60  | Q0   |  9.924274 | 9.024321 | 10.824227 |  0.95 |
+| 60  | Q0   |  9.924274 | 9.024320 | 10.824227 |  0.95 |
 | 68  | Q0   | 10.390384 | 9.745502 | 11.035267 |  0.95 |
 | 106 | Q0   |  5.683567 | 5.095025 |  6.272108 |  0.95 |
 | 113 | Q0   |  6.195948 | 5.854111 |  6.537784 |  0.95 |
@@ -592,9 +592,9 @@ fit_demand_fixed(data = apt, equation = "hs", k = "share")
 | id | term | estimate | std.error | statistic | p.value | component | estimate_scale | term_display | estimate_internal |
 |:---|:---|---:|---:|---:|---:|:---|:---|:---|---:|
 | 19 | Q0 | 10.014576 | 0.2429150 | NA | NA | fixed | natural | Q0 | 10.014576 |
-| 30 | Q0 | 2.766313 | 0.2192797 | NA | NA | fixed | natural | Q0 | 2.766313 |
+| 30 | Q0 | 2.766313 | 0.2192798 | NA | NA | fixed | natural | Q0 | 2.766313 |
 | 38 | Q0 | 4.485810 | 0.2074990 | NA | NA | fixed | natural | Q0 | 4.485810 |
-| 60 | Q0 | 9.721379 | 0.4371061 | NA | NA | fixed | natural | Q0 | 9.721379 |
+| 60 | Q0 | 9.721379 | 0.4371060 | NA | NA | fixed | natural | Q0 | 9.721379 |
 | 68 | Q0 | 10.293139 | 0.3179671 | NA | NA | fixed | natural | Q0 | 10.293139 |
 | 106 | Q0 | 5.654330 | 0.2826797 | NA | NA | fixed | natural | Q0 | 5.654330 |
 | 113 | Q0 | 6.169268 | 0.1640778 | NA | NA | fixed | natural | Q0 | 6.169268 |
@@ -633,22 +633,22 @@ front of the function name.
 Now that you are familiar with the basics, explore the other vignettes
 for more advanced workflows:
 
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class for your data
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – In-depth fixed-effect demand modeling
-- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
-  – Extra sum-of-squares F-test for group comparisons
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – Mixed-effects nonlinear demand models (NLME)
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced mixed-effects topics (factors, EMMs, covariates)
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle models via TMB
-- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
-  – Cross-price demand analysis
-- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
-  – Migrating from
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  choosing the right model class for your data
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  in-depth fixed-effect demand modeling
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
+  extra sum-of-squares F-test for group comparisons
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  mixed-effects nonlinear demand models (NLME)
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  advanced mixed-effects topics (factors, EMMs, covariates)
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  two-part hurdle models via TMB
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+  cross-price demand analysis
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md):
+  migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
   to
   [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)

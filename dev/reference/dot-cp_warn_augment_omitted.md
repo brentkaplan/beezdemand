@@ -5,10 +5,9 @@ document `.fitted`/`.resid`/`.fixed` as always-present columns; when the
 underlying
 [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)/[`predict()`](https://rdrr.io/r/stats/predict.html)
 call errors, or its result's length doesn't match the augmented data,
-the column was previously dropped with no indication – indistinguishable
-from "not applicable". Codex 2D review (blocking \#1): the warning must
-name which call failed and include `conditionMessage(e)`, not just the
-column name.
+the column was previously dropped with no indication, indistinguishable
+from "not applicable". The warning therefore names which call failed and
+includes `conditionMessage(e)` rather than the column name alone.
 
 ## Usage
 

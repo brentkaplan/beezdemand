@@ -1,7 +1,7 @@
 # Compute Subject-Specific Parameters
 
-Internal function to compute subject-specific demand parameters from
-fixed effects and random effects.
+Computes subject-specific demand parameters from fixed effects and
+random effects.
 
 ## Usage
 

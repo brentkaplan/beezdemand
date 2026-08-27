@@ -7,11 +7,10 @@ changes as the price of another commodity varies. This is central to
 understanding economic relationships between goods:
 
 - **Substitutes**: When the price of the target commodity increases and
-  consumption of the alternative increases, the goods function as
-  substitutes (e.g., e-cigarettes and combustible cigarettes).
+  consumption of the alternative increases, the goods are substitutes
+  (e.g., e-cigarettes and combustible cigarettes).
 - **Complements**: When the price of the target increases and
-  consumption of the alternative *decreases*, the goods function as
-  complements.
+  consumption of the alternative *decreases*, the goods are complements.
 - **Independent**: When the price of one commodity does not meaningfully
   affect consumption of the other.
 
@@ -1101,18 +1100,18 @@ cp_posthoc_intercepts(fit_mixed)
 
 ## See Also
 
-- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
-  – Getting started with beezdemand
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class for your data
-- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md)
-  – Extra sum-of-squares F-test for group comparisons
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – Mixed-effects nonlinear demand models
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced mixed-effects topics
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle demand models
-- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
-  – Migrating from
+- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+  getting started with beezdemand
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  choosing the right model class for your data
+- [`vignette("group-comparisons")`](https://brentkaplan.github.io/beezdemand/articles/group-comparisons.md):
+  extra sum-of-squares F-test for group comparisons
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  mixed-effects nonlinear demand models
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  advanced mixed-effects topics
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  two-part hurdle demand models
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md):
+  migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)

@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-08-17</h4>
+            <h4 data-toc-skip class="date">2026-08-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/tmb-advanced-random-effects.Rmd" class="external-link"><code>vignettes/tmb-advanced-random-effects.Rmd</code></a></small>
       <div class="d-none name"><code>tmb-advanced-random-effects.Rmd</code></div>
@@ -115,28 +115,28 @@ basic 2-RE cases. This vignette assumes that foundation and walks
 through:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Factor-expanded REs</strong> — random slopes on a
+<strong>Factor-expanded REs</strong>: random slopes on a
 within-subject factor via <code>pdDiag(Q0 + alpha ~ condition)</code> or
 <code>pdSymm(Q0 + alpha ~ condition)</code>.</li>
 <li>
-<strong>Multi-block <code>pdBlocked</code> REs</strong> —
-independent RE blocks at the same grouping level. Combines a baseline
-block with a per-condition slopes block to recover within-subject
-heterogeneity that intercepts-only fits miss.</li>
+<strong>Multi-block <code>pdBlocked</code> REs</strong>: independent
+RE blocks at the same grouping level. Combines a baseline block with a
+per-condition slopes block to recover within-subject heterogeneity that
+intercepts-only fits miss.</li>
 <li>
-<strong>Reading subject-level results</strong> — the long-form
+<strong>Reading subject-level results</strong>: the long-form
 <code>get_subject_pars(fit, expanded = TRUE)</code> interface, when to
 use it, and the relationship to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</li>
 <li>
-<strong>Group metrics with conditioning</strong> — the
+<strong>Group metrics with conditioning</strong>: the
 <code>at</code> argument on <code><a href="../reference/calc_group_metrics.html">calc_group_metrics()</a></code> for
 explicit conditioning on covariates and factor levels.</li>
 <li>
-<strong>Diagnostics</strong> — variance components per block,
+<strong>Diagnostics</strong>: variance components per block,
 multi-start advice, convergence troubleshooting.</li>
 </ol>
 <p>The motivating use case for the multi-block work is a within-subject
-demand study where Q₀ varies by experimental condition AND subjects
+demand study where Q₀ varies by experimental condition and subjects also
 differ in their condition response. An intercepts-only fit on such data
 can invert the population-level Q₀ direction; a multi-block
 <code>pdBlocked(list(pdSymm(Q0+α~1), pdDiag(Q0+α~condition-1)))</code>
@@ -236,7 +236,7 @@ makes those deviations independent across conditions;
 <div class="section level2">
 <h2 id="multi-block-pdblocked">3. Multi-block <code>pdBlocked</code><a class="anchor" aria-label="anchor" href="#multi-block-pdblocked"></a>
 </h2>
-<p>The single most consequential RE structure is the two-block
+<p>The RE structure that motivated this work is the two-block
 <code>pdBlocked</code> spec used in our cigarette demand work:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pdBlocked</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -249,11 +249,11 @@ correlated intercepts on log-Q₀ and log-α. The second block is a
 has independent deviations on log-Q₀ and log-α at each condition. The
 two blocks are independent of each other by virtue of
 <code>pdBlocked</code>.</p>
-<p>Why does this matter? In data where Q₀ heterogeneity correlates with
-condition response, an intercepts-only fit can invert the
-population-level Q₀ direction across conditions. The multi-block spec
-absorbs the within-subject heterogeneity into the slopes block, freeing
-the fixed effects to recover the correct direction.</p>
+<p>In data where Q₀ heterogeneity correlates with condition response, an
+intercepts-only fit can invert the population-level Q₀ direction across
+conditions. The multi-block spec absorbs the within-subject
+heterogeneity into the slopes block, which frees the fixed effects to
+recover the correct direction.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
 <span>  <span class="va">sim</span>,</span>
@@ -279,7 +279,7 @@ should be C1 &gt; C2 &gt; C3. The M1 fit recovers it.</p>
 single block, multi-block <code>pdBlocked</code>, or numeric within-id
 RE-RHS terms), no single subject-level <code>Q0</code> /
 <code>alpha</code> / <code>Pmax</code> / <code>Omax</code> is
-well-defined — each subject has a per-condition vector instead.</p>
+well-defined. Each subject has a per-condition vector instead.</p>
 <p>By default, <code><a href="../reference/get_subject_pars.html">get_subject_pars()</a></code> auto-detects this
 situation and returns the <strong>long per-(subject, factor-level)
 shape</strong> with no warning:</p>
@@ -292,7 +292,7 @@ same subject (they are subject-level RE intercepts); <code>Q0</code>,
 <code>alpha</code>, <code>Pmax</code>, and <code>Omax</code> differ per
 row because they incorporate the per-condition slope REs.</p>
 <p>Numeric within-id-varying covariates are conditioned at the subject’s
-mean (one row per subject, not expanded over their values — only factor
+mean (one row per subject, not expanded over their values; only factor
 levels drive row expansion). When a numeric covariate is itself a
 <em>random slope</em> (a numeric term in the random-effects formula),
 <code><a href="../reference/get_subject_pars.html">get_subject_pars()</a></code> and
@@ -300,17 +300,17 @@ levels drive row expansion). When a numeric covariate is itself a
 per-subject slope deviations as <code>q0_&lt;term&gt;</code> /
 <code>alpha_&lt;term&gt;</code> columns, and an <code>at =</code>
 argument evaluates <code>Q0</code> / <code>alpha</code> at a chosen
-covariate value — see the dose-response section below.</p>
-<p>To force the old wide one-row-per-subject shape — useful when you
-want to inspect the per-block RE matrix attributes without the row
-expansion — pass <code>expanded = FALSE</code> explicitly. A one-line
+covariate value (see the dose-response section below).</p>
+<p>To force the old wide one-row-per-subject shape (useful when you want
+to inspect the per-block RE matrix attributes without the row
+expansion), pass <code>expanded = FALSE</code> explicitly. A one-line
 warning flags that the returned <code>Q0</code> / <code>alpha</code> /
 <code>Pmax</code> / <code>Omax</code> columns are <code>NA</code> for
 affected subjects:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spars_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_subject_pars.html">get_subject_pars</a></span><span class="op">(</span><span class="va">fit_m1</span>, expanded <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spars_wide</span><span class="op">)</span></span></code></pre></div>
-<p>For power users who want the raw per-block RE matrices:</p>
+<p>To access the raw per-block RE matrices directly:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">re_q0_mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">spars_wide</span>, <span class="st">"re_q0_mat"</span><span class="op">)</span></span>
 <span><span class="va">re_alpha_mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">spars_wide</span>, <span class="st">"re_alpha_mat"</span><span class="op">)</span></span>
@@ -321,8 +321,8 @@ the condition slopes.</p>
 <div class="section level3">
 <h3 id="plot-and-amplitudepersistence-guards">Plot and amplitude/persistence guards<a class="anchor" aria-label="anchor" href="#plot-and-amplitudepersistence-guards"></a>
 </h3>
-<p>Two consumers — <code>plot(fit, type = "individual")</code> and
-<code><a href="../reference/calculate_amplitude_persistence.html">calculate_amplitude_persistence()</a></code> — read
+<p>Two consumers, <code>plot(fit, type = "individual")</code> and
+<code><a href="../reference/calculate_amplitude_persistence.html">calculate_amplitude_persistence()</a></code>, read
 <code>subject_pars$Q0</code> and <code>$alpha</code> directly. When
 those are NA, both abort with a targeted message pointing at
 <code>get_subject_pars(fit, expanded = TRUE)</code> (or simply
@@ -341,7 +341,7 @@ those consumers is planned for a follow-up release.</p>
 <span><span class="co">#&gt; x Per-(subject, factor-level) plotting is planned for a follow-up</span></span>
 <span><span class="co">#&gt;   release.</span></span></code></pre></div>
 <p>The <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> and <code>ranef()</code> methods work
-correctly on M1-style fits; they do not read
+correctly on M1-style fits. They do not read
 <code>subject_pars$Q0</code> and instead consume the
 <code>re_q0_mat</code> / <code>re_alpha_mat</code> attributes.</p>
 </div>
@@ -359,8 +359,8 @@ equal weights.</p>
 <span><span class="va">metrics_default</span><span class="op">$</span><span class="va">conditioned_on</span></span></code></pre></div>
 <p>The <code>conditioned_on</code> field reports the actual conditioning
 point. For a fit with <code>condition</code> as a factor, the default is
-<code>"marginal"</code> — Pmax/Omax are derived from the average log-Q₀
-and log-α across condition cells.</p>
+<code>"marginal"</code>, and Pmax/Omax are derived from the average
+log-Q₀ and log-α across condition cells.</p>
 <p>To condition on a specific level or covariate value, use
 <code>at</code>:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -384,8 +384,8 @@ grid.</li>
 weights).</li>
 <li>Derive Pmax/Omax/Qmax from the marginalized log-parameters.</li>
 </ol>
-<p>This is “metrics evaluated at the average parameter values,” NOT
-“average metrics across cells.” For nonlinear transforms (Lambert-W
+<p>This is “metrics evaluated at the average parameter values” rather
+than “average metrics across cells.” For nonlinear transforms (Lambert-W
 solutions for Pmax) the two approaches give different answers; we use
 parameter-first because it matches the convention
 <code><a href="../reference/get_demand_param_emms.html">get_demand_param_emms()</a></code> already uses for individual
@@ -416,9 +416,9 @@ conditions.</p>
 <p>For multi-block fits with rich variance structures, optimizer
 sensitivity to starting values increases. The default
 <code>multi_start = TRUE</code> runs the optimizer from multiple random
-starts and keeps the best result; this is recommended for serious fits.
-The examples in this vignette use <code>multi_start = FALSE</code>
-purely for speed.</p>
+starts and keeps the best result. We recommend it for any fit that will
+be reported. The examples in this vignette use
+<code>multi_start = FALSE</code> purely for speed.</p>
 </div>
 <div class="section level3">
 <h3 id="convergence-troubleshooting">Convergence troubleshooting<a class="anchor" aria-label="anchor" href="#convergence-troubleshooting"></a>
@@ -481,11 +481,11 @@ columns.</li>
 </h2>
 <p>The factor-expanded REs above model a <em>discrete</em>
 within-subject manipulation. When the within-subject covariate is
-<em>continuous</em> — the canonical case is <strong>dose-response
-demand</strong>, where each subject completes the purchase task at
-several drug doses — a random <em>slope</em> on that covariate is the
-parsimonious model: each subject’s intensity (Q₀) and elasticity (α)
-change with dose at their own rate.</p>
+<em>continuous</em> (the canonical case is dose-response demand, where
+each subject completes the purchase task at several drug doses), a
+random <em>slope</em> on that covariate is the parsimonious model: each
+subject’s intensity (Q₀) and elasticity (α) change with dose at their
+own rate.</p>
 <p>Specify the random slope with a numeric term in the random-effects
 formula, and pair it with <code>continuous_covariates</code> for the
 population (fixed) dose slope. Pass the covariate
@@ -549,10 +549,11 @@ intercept/slope covariance (a |correlation| near 1 means the two random
 effects are nearly collinear):</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_dose</span><span class="op">)</span><span class="op">$</span><span class="va">random_effects</span><span class="op">$</span><span class="va">near_singular</span></span></code></pre></div>
-<p><strong>Why continuous rather than a factor?</strong> A
+<p><strong>Continuous slope versus factor slope.</strong> A
 <code>K</code>-level factor random slope needs a
-<code>2K</code>-dimensional per-subject block; the continuous form needs
-just 4 random effects, independent of how many doses were tested:</p>
+<code>2K</code>-dimensional per-subject block, whereas the continuous
+form needs 4 random effects regardless of how many doses were
+tested:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cov_params</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dim</span><span class="op">)</span> <span class="va">dim</span> <span class="op">*</span> <span class="op">(</span><span class="va">dim</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>  <span class="co"># pdSymm covariance parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -573,16 +574,16 @@ large factor block brings on sparse data.</p>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code> — intercept-only and
-basic 2-RE TMB fits.</li>
+<code><a href="../articles/tmb-mixed-effects.html">vignette("tmb-mixed-effects")</a></code>: intercept-only and basic
+2-RE TMB fits.</li>
 <li>
-<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code> — migrating from
+<code><a href="../articles/migration-guide.html">vignette("migration-guide")</a></code>: migrating from
 <code><a href="../reference/FitCurves.html">FitCurves()</a></code> to the modern S3 API.</li>
 <li>
-<code><a href="../articles/convergence-guide.html">vignette("convergence-guide")</a></code> — optimizer settings and
+<code><a href="../articles/convergence-guide.html">vignette("convergence-guide")</a></code>: optimizer settings and
 start-value strategies.</li>
 <li>
-<code><a href="../articles/group-comparisons.html">vignette("group-comparisons")</a></code> — extra sum-of-squares
+<code><a href="../articles/group-comparisons.html">vignette("group-comparisons")</a></code>: extra sum-of-squares
 F-test for group-level comparisons.</li>
 <li>
 <code><a href="../reference/fit_demand_tmb.html">?fit_demand_tmb</a></code>, <code><a href="../reference/get_subject_pars.html">?get_subject_pars</a></code>,

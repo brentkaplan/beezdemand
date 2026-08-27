@@ -1,7 +1,7 @@
 # Normalize User-Provided Starting Values
 
-Internal function to handle backwards-compatibility and normalization of
-user-provided starting values.
+Handles backwards-compatibility and normalization of user-provided
+starting values.
 
 ## Usage
 
