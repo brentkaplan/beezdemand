@@ -109,7 +109,7 @@ automatically drops zero-consumption observations.
 
 | Equation | Response | Zeros | k | Best for |
 |----------|----------|-------|---|----------|
-| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; reliable 2-RE convergence |
+| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; the usual choice for 2-RE models |
 | `"exponentiated"` | Raw Q | Allowed | Estimated or fixed | Data with few zeros; 1-RE models |
 | `"simplified"` | Raw Q | Allowed | None | Simpler model without k |
 | `"zben"` | LL4(Q) | Allowed (via transform) | None | Wide dynamic range with LL4 compression |

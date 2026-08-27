@@ -124,7 +124,7 @@ fit_one_factor_dose <- fit_demand_mixed(
 Here, $Q_{0}$ and $\alpha$ vary by drug and dose additively.
 For this, we need more data than just ko_alf, so we use `ko`.
 Note that with complex models and small sample sizes, convergence can fail.
-With `start_value_method = "pooled_nls"`, fits often converge where the heuristic start values do not.
+`start_value_method = "pooled_nls"` is worth trying when the heuristic start values do not converge.
 
 ```{r two_factor_add_note, echo=FALSE, results='asis'}
 if (render_fast) {

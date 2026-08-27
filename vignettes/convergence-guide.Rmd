@@ -431,8 +431,9 @@ zero correlation) or removing one of the random effects.
 
 If a non-converged complex model beats a simpler converged model by a large AIC
 margin, the parameters are in a good region of the likelihood surface. AIC and BIC
-depend on the log-likelihood at the parameter values and are unaffected by
-convergence status.
+are computed from the log-likelihood at the final parameter values whether or not
+the optimizer reported convergence, so they inherit whatever unreliability a
+non-converged fit carries.
 
 #### TMB Models
 

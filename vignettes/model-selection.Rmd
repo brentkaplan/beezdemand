@@ -236,7 +236,7 @@ Use `fit_demand_tmb()` when you want:
 - Group comparisons with gradient-based estimation (automatic differentiation)
 - More equation choices than `fit_demand_mixed()` (exponential, exponentiated, simplified, zben)
 - Estimated or fixed k parameter
-- Multi-start optimization with a Laplace approximation for the random effects; fits converge on many data sets where `nlme` fails
+- Multi-start optimization with a Laplace approximation for the random effects, which gives it another route to convergence when `nlme` fails
 - The preferred approach for new mixed-effects analyses
 
 ## Advantages Over NLME

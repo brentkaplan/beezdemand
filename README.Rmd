@@ -456,8 +456,9 @@ analyses of parameter estimates.
 (TMB)](https://github.com/kaskr/adcomp), which uses exact automatic
 differentiation, a Laplace approximation for the random effects, and multi-start
 optimization. It is the **recommended backend for new mixed-effects work**:
-where the `nlme` PNLS algorithm frequently fails to converge on demand
-equations, TMB usually converges, and it can additionally estimate the
+where the `nlme` PNLS algorithm can fail to converge on demand equations,
+TMB's exact gradients and multi-start optimization give it another route to a
+solution, and it can additionally estimate the
 scaling constant `k` rather than fixing it. Fits return `beezdemand_tmb` objects
 with the full S3 method suite (`coef()`, `predict()`, `summary()`, `plot()`,
 `tidy()`, `glance()`, `confint()`, `VarCorr()`, ...) and support factor
