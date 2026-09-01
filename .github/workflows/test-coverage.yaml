@@ -30,7 +30,7 @@ jobs:
       R_DATATABLE_NUM_THREADS: 1
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -60,14 +60,14 @@ jobs:
 
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-reports
           path: |
             cobertura.xml
             coverage.html
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         # Codecov uploads from `push` events require a valid CODECOV_TOKEN secret.
         # Without it, codecov-action exits non-zero and fails the workflow.
         if: ${{ env.CODECOV_TOKEN != '' }}
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-test-failures
           path: ${{ runner.temp }}/package
