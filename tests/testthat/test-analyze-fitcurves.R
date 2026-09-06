@@ -209,6 +209,50 @@ test_that("FitCurves handles constrainq0 validation", {
   )
 })
 
+# Regression: with constrainq0 set only alpha is free, and the pre-TICKET-069
+# fallback block indexed `fit$m$Rmat()[2, 2]` on a 1x1 matrix outside every
+# try(), so one non-fittable subject aborted the whole call with
+# "subscript out of bounds" (seen in production on 2026-08-31 for
+# individual koff fits). Verified RED at develop sha 8671eb4, GREEN after
+# 299d0a1. The degenerate subject has a single non-zero consumption point;
+# koff keeps zeros, so the fit reaches the fallback chain and fails there.
+constrainq0_regression_data <- function() {
+  apt <- beezdemand::apt
+  good <- apt[apt$id %in% c(19, 30), ]
+  degenerate <- data.frame(id = 999, x = sort(unique(good$x)), y = 0)
+  degenerate$y[1] <- 3
+  rbind(good, degenerate)
+}
+
+test_that("FitCurves + constrainq0 reports a non-fittable subject, no abort", {
+  d <- constrainq0_regression_data()
+
+  expect_no_error(
+    result <- suppressWarnings(FitCurves(d, "koff", k = 2, constrainq0 = 10))
+  )
+
+  expect_equal(nrow(result), 3)
+  failed <- result[result$id == "999", ]
+  expect_false(failed$converged)
+  expect_true(nzchar(failed$Notes))
+  expect_true(all(result$converged[result$id %in% c("19", "30")]))
+  expect_true(all(is.finite(result$Alpha[result$id %in% c("19", "30")])))
+})
+
+test_that("fit_demand_fixed + constrainq0 counts the non-fittable subject", {
+  d <- constrainq0_regression_data()
+
+  expect_no_error(
+    fit <- suppressWarnings(fit_demand_fixed(
+      d, "koff", k = 2, agg = NULL, constrainq0 = 10, multistart = FALSE
+    ))
+  )
+
+  expect_identical(fit$n_total, 3L)
+  expect_identical(fit$n_fail, 1L)
+  expect_false(fit$results$converged[fit$results$id == "999"])
+})
+
 # =============================================================================
 # Detailed output tests
 # =============================================================================
