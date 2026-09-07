@@ -3005,7 +3005,6 @@ confint.beezdemand_tmb <- function(
 ) {
   method <- match.arg(method)
   report_space <- match.arg(report_space)
-  .tmb_warn_if_not_converged(object)
 
   coefs <- object$model$coefficients
   se_vec <- object$model$se
@@ -3031,7 +3030,10 @@ confint.beezdemand_tmb <- function(
   if (method == "wald") {
     # method = "simulate" routes through .tmb_parametric_draws() -> vcov(),
     # which already warns once; only the wald branch needs its own explicit
-    # check (it reads model$se directly, never calling vcov()).
+    # check (it reads model$se directly, never calling vcov()). The same
+    # holds for the convergence gate: the simulate branch warns once via
+    # vcov(); warning here too would duplicate it.
+    .tmb_warn_if_not_converged(object)
     .tmb_warn_if_hessian_not_pd(object)
     z <- stats::qnorm((1 + level) / 2)
     conf_low <- coefs - z * se_vec

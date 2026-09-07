@@ -65,11 +65,11 @@ exactly, pin the previous release:
   ranges could report different `Pmax` (e.g. `Q0 = 19`, `alpha = 0.012`:
   17.5 vs the true 3.64). zben now searches an analytic domain that provably
   contains every stationary point of its expenditure curve (all maxima lie
-  below `4 * log10(Q0) / (alpha * Q0)`), scanning a dense log-price grid and
-  refining every grid-local maximum with `optimize()`, so the observed price
-  range no longer enters the model `Pmax`/`Omax` at all (`method`
-  `"numerical_optimize_analytic_domain"`; the domain-expansion cap and its
-  `pmax_at_bound` flag are no longer reachable for valid zben parameters).
+  below `4 * max(log10(Q0), 1e-3) / (alpha * Q0)`), scanning a dense
+  log-price grid and refining the grid-local maxima with `optimize()`, so
+  the observed price range no longer enters the model `Pmax`/`Omax`
+  (`method` `"numerical_optimize_analytic_domain"`; the domain-expansion
+  search remains only as a fallback when that bound cannot be formed).
   Condition under which output differs: zben fits whose expenditure curve is
   bimodal (about 5 % of a broad random sweep of `(Q0, alpha)`) or whose
   observed price range excluded the higher peak. The same grid-then-refine
@@ -87,7 +87,8 @@ exactly, pin the previous release:
 * **`simulate_hurdle_data(n_random_effects = 3, part2 = "koff")` now draws
   `alpha_i = exp(log(alpha) + c_i)`**, the model `src/HurdleDemand3RE.h`
   fits, instead of the additive `alpha + c_i` (which could generate
-  increasing curves). Two-random-effect simulations are byte-identical.
+  increasing curves). Two-random-effect simulations are unchanged
+  (`c_i = 0`).
   `run_hurdle_monte_carlo()` also compares the fitted `rho_bc_raw` to the
   partial-correlation raw value that generates the requested `rho_bc`, not
   to `atanh(rho_bc)`.

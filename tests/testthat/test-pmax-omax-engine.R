@@ -649,8 +649,9 @@ test_that("zben Pmax matches a brute-force global search across the (Q0, alpha) 
                                    params = list(alpha = alpha, q0 = Q0),
                                    param_scales = list(alpha = "natural", q0 = "natural"),
                                    price_obs = c(0, 10))
-    if (!isTRUE(all.equal(r$omax_model, truth_omax, tolerance = 1e-5)) ||
-        !isTRUE(all.equal(r$pmax_model, truth_pmax, tolerance = 2e-3))) n_bad <- n_bad + 1L
+    # Ratios: relative agreement regardless of the magnitude of the values.
+    if (!isTRUE(all.equal(r$omax_model / truth_omax, 1, tolerance = 1e-5)) ||
+        !isTRUE(all.equal(r$pmax_model / truth_pmax, 1, tolerance = 2e-3))) n_bad <- n_bad + 1L
   }
   expect_identical(n_bad, 0L)
 })
@@ -675,4 +676,25 @@ test_that("zben numerical Pmax finds the global maximum on a bimodal expenditure
     expect_equal(r$pmax_model, truth_pmax, tolerance = 1e-3, info = paste(po, collapse = ","))
     expect_equal(r$omax_model, truth_omax, tolerance = 1e-4, info = paste(po, collapse = ","))
   }
+})
+
+test_that("zben Pmax honours an analytic lower bound below the old 1e-6 price floor", {
+  # Q0 = 10, alpha = 1e6: the bound 4 * log10(Q0) / (alpha * Q0) = 4e-7 sits
+  # below 1e-6; the old floor rejected the interval and returned NA.
+  # (Brute-force truth inline: .zben_truth()'s grid starts at 1e-3, far above
+  # this peak. Ratios are compared because expect_equal() on numbers this
+  # small falls back to an absolute tolerance and would pass vacuously.)
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  Q0 <- 10; alpha <- 1e6; q <- log10(Q0)
+  E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+  lp <- seq(log(1e-12), log(1e-3), length.out = 400001)
+  e <- E(exp(lp))
+  truth_pmax <- exp(lp[which.max(e)]); truth_omax <- max(e)   # ~3.48e-7 / 2.63e-7
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = 1e6, q0 = 10),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
+  expect_true(is.finite(res$pmax_model))
+  expect_equal(res$pmax_model / truth_pmax, 1, tolerance = 1e-3)
+  expect_equal(res$omax_model / truth_omax, 1, tolerance = 1e-4)
 })

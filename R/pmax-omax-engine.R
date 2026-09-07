@@ -410,7 +410,14 @@ NULL
     ))
   }
   
-  p_min <- max(price_range[1], 1e-6)  # Avoid exact zero
+  # Honour a positive lower bound as supplied (the zben analytic domain can
+  # legitimately sit below 1e-6 for very large alpha * Q0); only an
+  # observed range starting at zero (or below) gets the small positive floor.
+  p_min <- if (is.finite(price_range[1]) && price_range[1] > 0) {
+    price_range[1]
+  } else {
+    1e-6
+  }
 
   p_max <- price_range[2]
   
@@ -458,7 +465,8 @@ NULL
       # endpoints count), not just the tallest sample: two nearly tied peaks
       # with different curvature can be ranked wrongly by the samples alone.
       # This is still a heuristic for arbitrary functions -- a peak narrower
-      # than a grid cell can be missed -- but the demand curves routed here
+      # than a grid cell can be missed, and at most the eight tallest
+      # grid-local maxima are refined -- but the demand curves routed here
       # are smooth with at most two maxima on the searched domain.
       left <- c(-Inf, e_grid[-n_grid])
       right <- c(e_grid[-1L], -Inf)

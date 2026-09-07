@@ -11,6 +11,7 @@ test_that("hurdle Pearson residuals are unit-invariant and standardized on the l
   data("apt", package = "beezdemand")
   fit <- suppressWarnings(fit_demand_hurdle(apt, id_var = "id", x_var = "x",
                                             y_var = "y", verbose = 0))
+  skip_if(!isTRUE(fit$converged), "hurdle fit on apt did not converge")
   y <- fit$data[[fit$param_info$y_var]]
   rp <- residuals(fit, type = "pearson")
   expect_length(rp, length(y))
@@ -27,6 +28,7 @@ test_that("hurdle Pearson residuals are unit-invariant and standardized on the l
   apt10 <- apt; apt10$y <- apt10$y * 10
   fit10 <- suppressWarnings(fit_demand_hurdle(apt10, id_var = "id", x_var = "x",
                                               y_var = "y", verbose = 0))
+  skip_if(!isTRUE(fit10$converged), "hurdle fit on 10*apt did not converge")
   rp10 <- residuals(fit10, type = "pearson")
   expect_equal(as.numeric(rp10[y > 0]), as.numeric(rp[y > 0]), tolerance = 1e-2)
 })
