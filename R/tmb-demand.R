@@ -1487,8 +1487,9 @@ NULL
 #' **Fixed versus estimated k.** By default k is held at 2, the convention of
 #' Hursh & Silberberg (2008) and the default of \code{fit_demand_fixed()}. It is
 #' a convention rather than an estimate, so fits at a second value (say
-#' \code{k = 1.5} or \code{k = 3}) are worth reporting as a sensitivity check:
-#' Q0 is unaffected, while alpha and the derived Pmax / Omax / EV move with k.
+#' \code{k = 1.5} or \code{k = 3}) are worth reporting as a sensitivity check.
+#' alpha and the derived Pmax / Omax / EV move most; Q0 enters the likelihood
+#' jointly with alpha, so it can shift too.
 #'
 #' Setting \code{estimate_k = TRUE} estimates k alongside Q0 and alpha, which
 #' fits better on data that carry the information to support it. Many do not.

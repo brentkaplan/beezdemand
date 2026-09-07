@@ -74,7 +74,8 @@ change is against the development version rather than against a release.
   convention rather than an estimate, it deserves a sensitivity fit at a second
   `k`. Pass `estimate_k = TRUE` for the old behaviour, or `k` for another
   constant. Two consequences for development-version users: `update()` replays a
-  stored call, so updating a fit made before this change now fixes `k`, and a
+  stored call, so updating a fit whose original call omitted `estimate_k` now
+  fixes `k` (a call that named `estimate_k = TRUE` is unaffected), and a
   `tmb_control$warm_start` vector saved from a free-`k` fit no longer matches the
   parameter count of a default fit.
 * **`check_demand_model()` screens free-`k` TMB fits for that failure.**

@@ -242,8 +242,9 @@ that pattern and `summary()` carries the note. The screen reports what it
 detects; a fit that passes it has not been shown to identify $k$.
 
 Because 2 is a convention rather than an estimate, it is worth refitting at a
-second value (say 1.5 or 3) and reporting how much the estimates move. $Q_0$
-does not change. $\alpha$ and the derived $P_{max}$, $O_{max}$ and $EV$ do.
+second value (say 1.5 or 3) and reporting how much the estimates move.
+$\alpha$ and the derived $P_{max}$, $O_{max}$ and $EV$ move most; $Q_0$ enters
+the likelihood jointly with $\alpha$, so it can shift as well.
 
 The `simplified` and `zben` equations do not use a $k$ parameter.
 
@@ -760,7 +761,7 @@ If a model fails to converge, try these strategies in order:
 |----------|-----|------|
 | Reduce random effects | `random_effects = "q0"` | 2-RE models struggling |
 | Use exponential equation | `equation = "exponential"` | Exponentiated/simplified not converging |
-| Fix k (the default) | drop `estimate_k = TRUE`, or pass `k = 2` | a free k drifting to extreme values |
+| Fix k (the default) | `estimate_k = FALSE`, optionally with `k = <value>` | a free k drifting to extreme values |
 | Increase iterations | `tmb_control = list(iter_max = 2000)` | "false convergence" messages |
 | Try L-BFGS-B | `tmb_control = list(optimizer = "L-BFGS-B")` | nlminb not making progress |
 | Set parameter bounds | `tmb_control = list(lower = ..., upper = ...)` | Estimates at boundaries |

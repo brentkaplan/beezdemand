@@ -59,6 +59,65 @@
   }
 }
 
+#' Per-observation decay exponent of a TMB demand fit
+#'
+#' @description
+#' Recomputes `alpha_ij * Q0_ij * price_ij` at every modelled row, mirroring the
+#' likelihood in `src/MixedDemand.h`, so factor levels, covariates, subject
+#' random effects and each row's own price all enter. The maximum over rows says
+#' how far the fitted curve travels down its decay before the observed prices
+#' run out.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @return A list with the per-row `alpha` and the row-wise decay exponent `u`,
+#'   or `NULL` when the stored design cannot be reassembled.
+#' @keywords internal
+.tmb_row_decay <- function(object) {
+  coefs <- object$model$coefficients
+  beta_q0 <- unname(coefs[names(coefs) == "beta_q0"])
+  beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
+  if (length(beta_q0) == 0L || length(beta_alpha) == 0L) return(NULL)
+
+  # The TMB environment holds exactly what the likelihood saw; the stored
+  # design matrices are the fallback when it is unavailable (a reloaded fit).
+  tdata <- tryCatch(object$tmb_obj$env$data, error = function(e) NULL)
+  X_q0 <- tdata$X_q0 %||% object$formula_details$X_q0
+  X_alpha <- tdata$X_alpha %||% object$formula_details$X_alpha
+  price <- tdata$price %||%
+    object$data[[object$param_info$x_var %||% "x"]]
+  if (is.null(X_q0) || is.null(X_alpha) || is.null(price)) return(NULL)
+  if (ncol(X_q0) != length(beta_q0) ||
+      ncol(X_alpha) != length(beta_alpha) ||
+      nrow(X_q0) != length(price) ||
+      nrow(X_alpha) != length(price)) {
+    return(NULL)
+  }
+
+  log_q0 <- as.vector(X_q0 %*% beta_q0)
+  log_alpha <- as.vector(X_alpha %*% beta_alpha)
+
+  # Subject random effects, when both the Z design and the fitted RE matrix are
+  # to hand. Without them the exponent is the fixed-effect part only.
+  subj <- tdata$subject_id
+  if (!is.null(subj)) {
+    subj <- as.integer(subj) + 1L
+    spars <- object$subject_pars
+    add_re <- function(lin, Z, M) {
+      if (is.null(Z) || is.null(M) || ncol(M) == 0L || ncol(Z) != ncol(M) ||
+          max(subj) > nrow(M) || nrow(Z) != length(lin)) {
+        return(lin)
+      }
+      lin + rowSums(Z * M[subj, , drop = FALSE])
+    }
+    log_q0 <- add_re(log_q0, tdata$Z_q0, attr(spars, "re_q0_mat"))
+    log_alpha <- add_re(log_alpha, tdata$Z_alpha, attr(spars, "re_alpha_mat"))
+  }
+
+  alpha <- exp(log_alpha)
+  list(alpha = alpha, u = alpha * exp(log_q0) * price)
+}
+
+
 #' Screen a free-k TMB fit for the signature of an unidentified k
 #'
 #' @description
@@ -73,11 +132,21 @@
 #' identification test. A `"none"` severity means only that nothing was
 #' detected.
 #'
+#' @details
+#' Two findings point at the ridge directly and grade `"warn"`: a fitted k
+#' outside 0.001 to 1000, and a decay exponent that never reaches 0.05 at any
+#' modelled row. Three weaker findings grade `"suspect"`, because each has
+#' innocent explanations: a fitted alpha below 1e-8 (which also follows from a
+#' price unit rescaling, since alpha is not scale-free), `log_k` resting on a
+#' user-supplied optimizer bound (which may simply be a tight bound), and a
+#' non-positive-definite Hessian with a free k (which says the surface is flat
+#' somewhere without localising that to k).
+#'
 #' @param object A `beezdemand_tmb` fit.
 #' @return `NULL` when k was not estimated as a free parameter. Otherwise a list
 #'   with the fitted `k` and `log_k`, the largest decay exponent
-#'   `alpha * Q0 * price` over the fit (`decay_exponent_max`), the smallest
-#'   fitted `alpha_min`, a character vector of `reasons`, `at_boundary`
+#'   `alpha * Q0 * price` over the modelled rows (`decay_exponent_max`), the
+#'   smallest fitted `alpha_min`, a character vector of `reasons`, `at_boundary`
 #'   (`"log_k"` when it rests on a user-supplied optimizer bound, otherwise
 #'   `character(0)`), and a `severity` of `"warn"`, `"suspect"` or `"none"`.
 #' @keywords internal
@@ -92,83 +161,67 @@
   log_k <- unname(coefs[["log_k"]])
   k <- exp(log_k)
 
-  # Subject parameters where they are usable; the reference Q0 / alpha
-  # otherwise (continuous random-slope fits cache an all-NA table).
-  sp <- object$subject_pars
-  q0_vec <- alpha_vec <- numeric(0)
-  if (is.data.frame(sp) && all(c("Q0", "alpha") %in% names(sp))) {
-    ok <- is.finite(sp$Q0) & is.finite(sp$alpha)
-    q0_vec <- sp$Q0[ok]
-    alpha_vec <- sp$alpha[ok]
+  rd <- .tmb_row_decay(object)
+  finite_or_na <- function(x) {
+    x <- x[is.finite(x)]
+    if (length(x) == 0L) NA_real_ else x
   }
-  if (length(alpha_vec) == 0L) {
-    ref <- function(nm) {
-      v <- unname(coefs[names(coefs) == nm])
-      if (length(v) == 0L) NA_real_ else exp(v[1])
-    }
-    q0_vec <- ref("beta_q0")
-    alpha_vec <- ref("beta_alpha")
+  decay_max <- if (is.null(rd)) NA_real_ else {
+    v <- finite_or_na(rd$u)
+    if (length(v) == 1L && is.na(v)) NA_real_ else max(v)
   }
-  alpha_min <- suppressWarnings(min(alpha_vec, na.rm = TRUE))
-  if (!is.finite(alpha_min)) alpha_min <- NA_real_
+  alpha_min <- if (is.null(rd)) NA_real_ else {
+    v <- finite_or_na(rd$alpha)
+    if (length(v) == 1L && is.na(v)) NA_real_ else min(v)
+  }
 
-  price <- suppressWarnings(
-    max(object$data[[pinfo$x_var %||% "x"]], na.rm = TRUE)
-  )
-  decay_max <- if (is.finite(price) && any(is.finite(q0_vec * alpha_vec))) {
-    suppressWarnings(max(alpha_vec * q0_vec * price, na.rm = TRUE))
-  } else {
-    NA_real_
-  }
-  if (!is.finite(decay_max)) decay_max <- NA_real_
-
-  reasons <- character(0)
+  strong <- character(0)
+  weak <- character(0)
   at_boundary <- character(0)
 
-  # (1) k outside any plausible range for a base-10 span of consumption.
+  # Points at the ridge directly.
   if (is.finite(k) && (k > 1e3 || k < 1e-3)) {
-    reasons <- c(reasons, sprintf(
+    strong <- c(strong, sprintf(
       "the fitted k is %.3g, far outside the plausible range 0.001-1000", k))
   }
-
-  # (2) The decay never leaves its linear regime over the observed prices, so
-  # only the product k * alpha is identified. Unit-free, unlike alpha itself.
   if (!is.na(decay_max) && decay_max < 0.05) {
-    reasons <- c(reasons, sprintf(paste(
-      "the decay exponent alpha * Q0 * price reaches only %.3g over the",
-      "observed prices, so consumption never approaches its floor and only",
-      "the product k * alpha is identified"), decay_max))
+    strong <- c(strong, sprintf(paste(
+      "the decay exponent alpha * Q0 * price reaches only %.3g at any observed",
+      "row, so consumption never approaches its floor and only the product",
+      "k * alpha is identified"), decay_max))
   }
 
-  # (3) A numerically degenerate alpha, the other half of the k * alpha ridge.
+  # Weaker signals: each has an innocent reading (see Details).
   if (!is.na(alpha_min) && alpha_min < 1e-8) {
-    reasons <- c(reasons, sprintf(
-      "the smallest fitted alpha is %.3g", alpha_min))
+    weak <- c(weak, sprintf(
+      "the smallest fitted alpha is %.3g (alpha is not scale-free, so this can also follow from the price units)",
+      alpha_min))
   }
-
-  # (4) log_k resting on a user-supplied optimizer bound.
   bounds <- pinfo$log_k_bounds
   if (!is.null(bounds) && is.finite(log_k)) {
     on_bound <- vapply(bounds, function(b) {
       is.finite(b) && abs(log_k - b) <= 1e-6 * max(1, abs(b))
     }, logical(1))
     if (any(on_bound)) {
+      hit <- which(on_bound)[1]
       at_boundary <- "log_k"
-      reasons <- c(reasons, sprintf(
+      weak <- c(weak, sprintf(
         "log_k rests on the user-supplied %s bound (%.4g)",
-        names(bounds)[which(on_bound)[1]], bounds[[which(on_bound)[1]]]))
+        names(bounds)[hit], bounds[[hit]]))
     }
   }
-
-  severity <- if (length(reasons) > 0L) "warn" else "none"
-
-  # (5) A non-PD Hessian with a free k is a weaker signal: it says the surface
-  # is flat somewhere, without localising that to k.
   if (isFALSE(object$hessian_pd)) {
-    reasons <- c(reasons, paste(
+    weak <- c(weak, paste(
       "the Hessian is not positive definite (which does not by itself",
       "localise the problem to k)"))
-    if (severity == "none") severity <- "suspect"
+  }
+
+  severity <- if (length(strong) > 0L) {
+    "warn"
+  } else if (length(weak) > 0L) {
+    "suspect"
+  } else {
+    "none"
   }
 
   list(
@@ -176,7 +229,7 @@
     log_k = log_k,
     decay_exponent_max = decay_max,
     alpha_min = alpha_min,
-    reasons = reasons,
+    reasons = c(strong, weak),
     at_boundary = at_boundary,
     severity = severity
   )

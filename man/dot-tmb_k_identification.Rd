@@ -12,8 +12,8 @@
 \value{
 \code{NULL} when k was not estimated as a free parameter. Otherwise a list
 with the fitted \code{k} and \code{log_k}, the largest decay exponent
-\code{alpha * Q0 * price} over the fit (\code{decay_exponent_max}), the smallest
-fitted \code{alpha_min}, a character vector of \code{reasons}, \code{at_boundary}
+\code{alpha * Q0 * price} over the modelled rows (\code{decay_exponent_max}), the
+smallest fitted \code{alpha_min}, a character vector of \code{reasons}, \code{at_boundary}
 (\code{"log_k"} when it rests on a user-supplied optimizer bound, otherwise
 \code{character(0)}), and a \code{severity} of \code{"warn"}, \code{"suspect"} or \code{"none"}.
 }
@@ -28,5 +28,15 @@ arbitrarily far with a compensating alpha.
 This is a heuristic screen for that signature rather than a formal
 identification test. A \code{"none"} severity means only that nothing was
 detected.
+}
+\details{
+Two findings point at the ridge directly and grade \code{"warn"}: a fitted k
+outside 0.001 to 1000, and a decay exponent that never reaches 0.05 at any
+modelled row. Three weaker findings grade \code{"suspect"}, because each has
+innocent explanations: a fitted alpha below 1e-8 (which also follows from a
+price unit rescaling, since alpha is not scale-free), \code{log_k} resting on a
+user-supplied optimizer bound (which may simply be a tight bound), and a
+non-positive-definite Hessian with a free k (which says the surface is flat
+somewhere without localising that to k).
 }
 \keyword{internal}
