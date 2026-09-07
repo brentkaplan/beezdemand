@@ -10,7 +10,7 @@ fit_demand_tmb(
   x_var = "x",
   id_var = "id",
   equation = c("exponentiated", "exponential", "simplified", "zben"),
-  estimate_k = TRUE,
+  estimate_k = FALSE,
   k = NULL,
   random_effects = Q0 + alpha ~ 1,
   covariance_structure = c("pdSymm", "pdDiag"),
@@ -53,12 +53,14 @@ in the decay rate). Subjects with estimated Q0 near 1 may have
 biased parameter estimates.}
 }}
 
-\item{estimate_k}{Logical. If \code{TRUE} (default), estimate k as a free
-parameter. If \code{FALSE}, fix k at the value given in \code{k}. Only relevant for
+\item{estimate_k}{Logical. If \code{FALSE} (default), k is held fixed at the
+value given in \code{k}. If \code{TRUE}, k is estimated as a free parameter; see
+Details for when the data support that. Only relevant for the
 "exponentiated" and "exponential" equations.}
 
 \item{k}{Numeric or \code{NULL}. Fixed value of k when \code{estimate_k = FALSE}.
-If \code{NULL} and \code{estimate_k = FALSE}, k defaults to 2.}
+\code{NULL} (the default) means k = 2, the conventional value of
+Hursh & Silberberg (2008) and the default of \code{\link[=fit_demand_fixed]{fit_demand_fixed()}}.}
 
 \item{random_effects}{Specification of subject-level random effects.
 Accepts any of the following, in order of generality:
@@ -126,9 +128,10 @@ applies to nlminb.}
 parameters (default NULL = no bounds). Names must match optimizer
 parameter names (e.g., \code{log_k}, \code{beta_q0}, \code{logsigma_b}). Note that
 most parameters are in log-space: e.g., to constrain k between 0.14
-and 55, use \code{lower = c(log_k = -2)}, \code{upper = c(log_k = 4)}. A bound name
-applies to \emph{all} occurrences of that parameter (e.g., both elements
-of \code{beta_q0}).}
+and 55, use \code{lower = c(log_k = -2)}, \code{upper = c(log_k = 4)} (which bind
+only when \code{estimate_k = TRUE}, since a fixed k is not a free
+parameter). A bound name applies to \emph{all} occurrences of that
+parameter (e.g., both elements of \code{beta_q0}).}
 \item{\code{upper}}{Named numeric vector of upper bounds (see \code{lower}).}
 \item{\code{warm_start}}{Named numeric vector of starting values in
 optimizer space (e.g., from a previous \code{fit$opt$par}). When provided,
@@ -195,10 +198,23 @@ gradients cannot navigate the likelihood surface. TMB succeeds using exact
 automatic differentiation, Laplace approximation, and joint marginal
 likelihood optimization.
 
-When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
-Q0 and alpha. This typically improves model fit substantially. The
-conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
-k by 3-8x.
+\strong{Fixed versus estimated k.} By default k is held at 2, the convention of
+Hursh & Silberberg (2008) and the default of \code{fit_demand_fixed()}. It is
+a convention rather than an estimate, so fits at a second value (say
+\code{k = 1.5} or \code{k = 3}) are worth reporting as a sensitivity check:
+Q0 is unaffected, while alpha and the derived Pmax / Omax / EV move with k.
+
+Setting \code{estimate_k = TRUE} estimates k alongside Q0 and alpha, which
+fits better on data that carry the information to support it. Many do not.
+The response depends on k through \eqn{k(e^{-\alpha Q_0 C} - 1)}, so while
+\eqn{\alpha Q_0 C} stays small the curve is a straight line of slope
+\eqn{k\alpha} and only that product is identified. What pins k down is the
+curvature that appears as consumption approaches its floor. On data whose
+consumption never gets there, a free k can drift to arbitrarily large values
+with a compensating alpha, giving a non-positive-definite Hessian and
+meaningless Pmax / Omax. \code{check_demand_model()} screens a free-k fit for
+that signature and \code{summary()} carries the note. The screen reports what
+it detects; passing it is no evidence that k is identified.
 
 \strong{Continuous within-subject random slopes (dose-response).} A numeric term
 in the random-effects formula (e.g. \code{Q0 + alpha ~ dose_c}) gives each

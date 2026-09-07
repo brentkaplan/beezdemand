@@ -1360,11 +1360,13 @@ NULL
 #'       in the decay rate). Subjects with estimated Q0 near 1 may have
 #'       biased parameter estimates.}
 #'   }
-#' @param estimate_k Logical. If `TRUE` (default), estimate k as a free
-#'   parameter. If `FALSE`, fix k at the value given in `k`. Only relevant for
+#' @param estimate_k Logical. If `FALSE` (default), k is held fixed at the
+#'   value given in `k`. If `TRUE`, k is estimated as a free parameter; see
+#'   Details for when the data support that. Only relevant for the
 #'   "exponentiated" and "exponential" equations.
 #' @param k Numeric or `NULL`. Fixed value of k when `estimate_k = FALSE`.
-#'   If `NULL` and `estimate_k = FALSE`, k defaults to 2.
+#'   `NULL` (the default) means k = 2, the conventional value of
+#'   Hursh & Silberberg (2008) and the default of [fit_demand_fixed()].
 #' @param random_effects Specification of subject-level random effects.
 #'   Accepts any of the following, in order of generality:
 #'   \describe{
@@ -1424,9 +1426,10 @@ NULL
 #'       parameters (default NULL = no bounds). Names must match optimizer
 #'       parameter names (e.g., `log_k`, `beta_q0`, `logsigma_b`). Note that
 #'       most parameters are in log-space: e.g., to constrain k between 0.14
-#'       and 55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)`. A bound name
-#'       applies to *all* occurrences of that parameter (e.g., both elements
-#'       of `beta_q0`).}
+#'       and 55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)` (which bind
+#'       only when `estimate_k = TRUE`, since a fixed k is not a free
+#'       parameter). A bound name applies to *all* occurrences of that
+#'       parameter (e.g., both elements of `beta_q0`).}
 #'     \item{`upper`}{Named numeric vector of upper bounds (see `lower`).}
 #'     \item{`warm_start`}{Named numeric vector of starting values in
 #'       optimizer space (e.g., from a previous `fit$opt$par`). When provided,
@@ -1481,10 +1484,23 @@ NULL
 #' automatic differentiation, Laplace approximation, and joint marginal
 #' likelihood optimization.
 #'
-#' When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
-#' Q0 and alpha. This typically improves model fit substantially. The
-#' conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
-#' k by 3-8x.
+#' **Fixed versus estimated k.** By default k is held at 2, the convention of
+#' Hursh & Silberberg (2008) and the default of \code{fit_demand_fixed()}. It is
+#' a convention rather than an estimate, so fits at a second value (say
+#' \code{k = 1.5} or \code{k = 3}) are worth reporting as a sensitivity check:
+#' Q0 is unaffected, while alpha and the derived Pmax / Omax / EV move with k.
+#'
+#' Setting \code{estimate_k = TRUE} estimates k alongside Q0 and alpha, which
+#' fits better on data that carry the information to support it. Many do not.
+#' The response depends on k through \eqn{k(e^{-\alpha Q_0 C} - 1)}, so while
+#' \eqn{\alpha Q_0 C} stays small the curve is a straight line of slope
+#' \eqn{k\alpha} and only that product is identified. What pins k down is the
+#' curvature that appears as consumption approaches its floor. On data whose
+#' consumption never gets there, a free k can drift to arbitrarily large values
+#' with a compensating alpha, giving a non-positive-definite Hessian and
+#' meaningless Pmax / Omax. \code{check_demand_model()} screens a free-k fit for
+#' that signature and \code{summary()} carries the note. The screen reports what
+#' it detects; passing it is no evidence that k is identified.
 #'
 #' **Continuous within-subject random slopes (dose-response).** A numeric term
 #' in the random-effects formula (e.g. \code{Q0 + alpha ~ dose_c}) gives each
@@ -1560,7 +1576,7 @@ fit_demand_tmb <- function(
   x_var = "x",
   id_var = "id",
   equation = c("exponentiated", "exponential", "simplified", "zben"),
-  estimate_k = TRUE,
+  estimate_k = FALSE,
   k = NULL,
   random_effects = Q0 + alpha ~ 1,
   covariance_structure = c("pdSymm", "pdDiag"),
@@ -1619,10 +1635,17 @@ fit_demand_tmb <- function(
 
   # Determine if k is used
   has_k <- equation %in% c("exponentiated", "exponential")
+  k_defaulted <- has_k && !estimate_k && is.null(k)
   if (has_k && !estimate_k) {
     if (is.null(k)) k <- 2
     if (!is.numeric(k) || length(k) != 1 || k <= 0) {
       stop("`k` must be a positive number.", call. = FALSE)
+    }
+    if (k_defaulted && verbose >= 1) {
+      cli::cli_inform(c(
+        "i" = "Using a fixed k = 2 (the {.code estimate_k = FALSE} default).",
+        "*" = "Pass {.arg k} for a different constant, or {.code estimate_k = TRUE} to estimate k."
+      ))
     }
   }
 
@@ -2018,6 +2041,19 @@ fit_demand_tmb <- function(
   aic <- 2 * nll + 2 * n_fixed_params
   bic <- 2 * nll + n_fixed_params * log(n_obs)
 
+  # Effective optimizer bounds on log_k, kept so `check_demand_model()` can tell
+  # a free k resting on a user-supplied bound from one that stopped freely.
+  # NULL whenever k was not a free parameter.
+  log_k_bounds <- if (has_k && estimate_k) {
+    pick <- function(b, default) {
+      if (!is.null(b) && "log_k" %in% names(b)) unname(b[["log_k"]]) else default
+    }
+    c(lower = pick(tmb_control$lower, -Inf),
+      upper = pick(tmb_control$upper, Inf))
+  } else {
+    NULL
+  }
+
   # Build return object
   result <- structure(
     list(
@@ -2055,6 +2091,7 @@ fit_demand_tmb <- function(
         has_k = has_k,
         estimate_k = estimate_k,
         k_fixed = if (has_k && !estimate_k) k else NULL,
+        log_k_bounds = log_k_bounds,
         y_var = y_var,
         x_var = x_var,
         id_var = id_var,

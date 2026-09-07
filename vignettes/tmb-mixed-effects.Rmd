@@ -109,8 +109,8 @@ automatically drops zero-consumption observations.
 
 | Equation | Response | Zeros | k | Best for |
 |----------|----------|-------|---|----------|
-| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; the usual choice for 2-RE models |
-| `"exponentiated"` | Raw Q | Allowed | Estimated or fixed | Data with few zeros; 1-RE models |
+| `"exponential"` | log(Q) | Dropped | Fixed at 2; optionally estimated | Most datasets; the usual choice for 2-RE models |
+| `"exponentiated"` | Raw Q | Allowed | Fixed at 2; optionally estimated | Data with few zeros; 1-RE models |
 | `"simplified"` | Raw Q | Allowed | None | Simpler model without k |
 | `"zben"` | LL4(Q) | Allowed (via transform) | None | Wide dynamic range with LL4 compression |
 
@@ -204,27 +204,46 @@ head(nlme::ranef(fit_2re))
 The `b_i` column is the random deviation on log($Q_0$) and `c_i` is the
 random deviation on log($\alpha$) for each subject.
 
-## Estimating vs. Fixing k
+## Fixing vs. Estimating k
 
 For the `exponential` and `exponentiated` equations, $k$ scales the range of
-the demand curve. By default it is estimated (`estimate_k = TRUE`). You can
-fix it at the conventional value of 2 (Hursh & Silberberg, 2008):
+the demand curve. By default it is held at 2 (`estimate_k = FALSE`), the
+convention of Hursh & Silberberg (2008) and the default of
+`fit_demand_fixed()`. Setting `estimate_k = TRUE` estimates it instead:
 
 ```{r k-compare}
+fit_k_fixed <- fit_demand_tmb(dat, equation = "exponential",
+                               random_effects = c("q0", "alpha"),
+                               verbose = 0)
 fit_k_free <- fit_demand_tmb(dat, equation = "exponential",
                               random_effects = c("q0", "alpha"),
                               estimate_k = TRUE, verbose = 0)
-fit_k_fixed <- fit_demand_tmb(dat, equation = "exponential",
-                               random_effects = c("q0", "alpha"),
-                               estimate_k = FALSE, k = 2, verbose = 0)
 
 data.frame(
-  k = c("estimated", "fixed at 2"),
-  converged = c(fit_k_free$converged, fit_k_fixed$converged),
-  AIC = round(c(AIC(fit_k_free), AIC(fit_k_fixed)), 1),
-  k_value = round(c(exp(coef(fit_k_free)[["log_k"]]), 2), 3)
+  k = c("fixed at 2", "estimated"),
+  converged = c(fit_k_fixed$converged, fit_k_free$converged),
+  AIC = round(c(AIC(fit_k_fixed), AIC(fit_k_free)), 1),
+  k_value = round(c(2, exp(coef(fit_k_free)[["log_k"]])), 3)
 )
 ```
+
+### When the data support a free k
+
+A free $k$ needs curvature to estimate from. The response depends on $k$
+through $k(e^{-\alpha Q_0 C} - 1)$, and while $\alpha Q_0 C$ stays small that
+term is a straight line in price with slope $k\alpha$, so only the product is
+identified. What separates $k$ from $\alpha$ is the bend that appears as
+consumption approaches its floor, so a free $k$ is estimable only when the
+prices reach far enough for consumption to bottom out. On data that stop short,
+$k$ can drift to enormous values with a compensating $\alpha$. The fit then
+reports a non-positive-definite Hessian, and the derived $P_{max}$ and
+$O_{max}$ are meaningless. `check_demand_model()` screens a free-$k$ fit for
+that pattern and `summary()` carries the note. The screen reports what it
+detects; a fit that passes it has not been shown to identify $k$.
+
+Because 2 is a convention rather than an estimate, it is worth refitting at a
+second value (say 1.5 or 3) and reporting how much the estimates move. $Q_0$
+does not change. $\alpha$ and the derived $P_{max}$, $O_{max}$ and $EV$ do.
 
 The `simplified` and `zben` equations do not use a $k$ parameter.
 
@@ -741,7 +760,7 @@ If a model fails to converge, try these strategies in order:
 |----------|-----|------|
 | Reduce random effects | `random_effects = "q0"` | 2-RE models struggling |
 | Use exponential equation | `equation = "exponential"` | Exponentiated/simplified not converging |
-| Fix k | `estimate_k = FALSE, k = 2` | k estimate drifting to extreme values |
+| Fix k (the default) | drop `estimate_k = TRUE`, or pass `k = 2` | a free k drifting to extreme values |
 | Increase iterations | `tmb_control = list(iter_max = 2000)` | "false convergence" messages |
 | Try L-BFGS-B | `tmb_control = list(optimizer = "L-BFGS-B")` | nlminb not making progress |
 | Set parameter bounds | `tmb_control = list(lower = ..., upper = ...)` | Estimates at boundaries |
@@ -762,9 +781,9 @@ fit2 <- fit_demand_tmb(
   verbose = 0
 )
 
-# Apply parameter bounds
+# Apply parameter bounds (log_k is only a parameter when k is estimated)
 fit3 <- fit_demand_tmb(
-  dat, equation = "exponential",
+  dat, equation = "exponential", estimate_k = TRUE,
   tmb_control = list(
     lower = c(log_k = -2),
     upper = c(log_k = 4)
@@ -798,7 +817,7 @@ fit4 <- fit_demand_tmb(
 |---------|-------------------|---------------------|
 | Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified |
-| k parameter | Estimated or fixed | Not available |
+| k parameter | Fixed at 2 by default; optionally estimated | Not available |
 | Random effects | 1 or 2 (Q0, alpha) | Configurable via nlme |
 | Convergence | Reliable (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |

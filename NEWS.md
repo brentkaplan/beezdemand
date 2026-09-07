@@ -52,11 +52,41 @@ The subsections below give the per-change detail, oldest at the bottom.
 ## Bug fixes that can change estimates
 
 The fixes in this subsection correct wrong numbers rather than add features, so
-outputs can differ from 0.2.0 under the stated conditions. Single-subject fits
-and paths that were already correct are unchanged. To reproduce the old numbers
-exactly, pin the previous release:
-`remotes::install_version("beezdemand", "0.2.0")`.
+outputs can differ under the stated conditions. Single-subject fits and paths
+that were already correct are unchanged. To reproduce the old numbers exactly,
+pin the previous release: `remotes::install_version("beezdemand", "0.2.0")`.
+The comparison is against 0.2.0 except where an item says otherwise: the TMB
+tier, the hurdle tier and the power functions are new in 0.3.0, so for those the
+change is against the development version rather than against a release.
 
+* **`fit_demand_tmb()` now fixes `k` at 2 by default (`estimate_k = FALSE`).**
+  The TMB tier is new in 0.3.0 and has never been released, so this changes
+  results only for users who installed the development version; nothing on CRAN
+  is affected. A free `k` is identified only by the curvature that appears as
+  consumption approaches its floor: the response depends on `k` through
+  `k * (exp(-alpha * Q0 * price) - 1)`, and while `alpha * Q0 * price` stays
+  small that term is linear in price with slope `k * alpha`, so only the product
+  is identified. On the package's own `apt` data with
+  `equation = "exponentiated"` the old default walked that ridge to `k = 1.8e13`
+  with `alpha = 2e-16`, ending non-converged with a non-positive-definite
+  Hessian; at the new default the same call converges. `k = 2` is the convention
+  of Hursh & Silberberg (2008) and the default of `fit_demand_fixed()`. Being a
+  convention rather than an estimate, it deserves a sensitivity fit at a second
+  `k`. Pass `estimate_k = TRUE` for the old behaviour, or `k` for another
+  constant. Two consequences for development-version users: `update()` replays a
+  stored call, so updating a fit made before this change now fixes `k`, and a
+  `tmb_control$warm_start` vector saved from a free-`k` fit no longer matches the
+  parameter count of a default fit.
+* **`check_demand_model()` screens free-`k` TMB fits for that failure.**
+  The `boundary` slot of the returned diagnostics was previously a hard-coded
+  empty list for `beezdemand_tmb` fits. It now carries `k_identification`,
+  which flags an implausible `k`, a decay exponent `alpha * Q0 * price` that
+  never leaves its linear regime over the observed prices, a degenerate `alpha`,
+  or `log_k` resting on a user-supplied optimizer bound; a non-positive-definite
+  Hessian with a free `k` is reported as the weaker "may not be identified".
+  The finding is repeated in `summary()`'s notes and by `print()` on the
+  diagnostics object. The check is a heuristic screen rather than a formal
+  identification test, so no flag means only that nothing was detected.
 * **`equation = "zben"` numerical `Pmax`/`Omax` could return a non-global
   maximum that depended on the observed price grid.** The zben expenditure
   curve on the back-transformed scale can have two local maxima; the engine's

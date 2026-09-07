@@ -28,7 +28,10 @@ check_demand_model(object, ...)
 An object of class \code{beezdemand_diagnostics} containing:
 \describe{
 \item{convergence}{List with convergence status and messages}
-\item{boundary}{List with boundary condition warnings}
+\item{boundary}{List with boundary condition warnings. For
+\code{beezdemand_tmb} fits it also carries \code{k_identification}: \code{NULL} unless
+k was estimated as a free parameter, otherwise the screen described in
+Details.}
 \item{residuals}{Summary statistics for residuals}
 \item{random_effects}{Summary of random effects (if applicable)}
 \item{issues}{Character vector of identified issues}
@@ -46,6 +49,12 @@ The function checks for:
 \item Parameters at or near boundaries
 \item Residual patterns (heteroscedasticity, outliers)
 \item Random effect variance estimates near zero
+\item For \code{fit_demand_tmb()} fits with \code{estimate_k = TRUE}, whether the
+fit shows the signature of an unidentified k: an implausible k, a decay
+exponent \code{alpha * Q0 * price} that never leaves its linear regime over
+the observed prices, a degenerate alpha, or \code{log_k} resting on a
+user-supplied bound. This is a screen, not a formal test: no flag means
+nothing was detected, not that k is identified.
 \item Correlation matrices near singularity
 }
 }

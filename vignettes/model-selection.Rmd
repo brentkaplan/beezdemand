@@ -245,7 +245,7 @@ Use `fit_demand_tmb()` when you want:
 |---------|-------------------|---------------------|
 | Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified, exponentiated |
-| k parameter | Estimated or fixed | Not available |
+| k parameter | Fixed at 2 by default; optionally estimated | Not available |
 | Convergence | AD + Laplace + multi-start | Numerical gradients; can fail on nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |
 

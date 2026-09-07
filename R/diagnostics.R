@@ -14,7 +14,10 @@
 #' @return An object of class `beezdemand_diagnostics` containing:
 #'   \describe{
 #'     \item{convergence}{List with convergence status and messages}
-#'     \item{boundary}{List with boundary condition warnings}
+#'     \item{boundary}{List with boundary condition warnings. For
+#'       `beezdemand_tmb` fits it also carries `k_identification`: `NULL` unless
+#'       k was estimated as a free parameter, otherwise the screen described in
+#'       Details.}
 #'     \item{residuals}{Summary statistics for residuals}
 #'     \item{random_effects}{Summary of random effects (if applicable)}
 #'     \item{issues}{Character vector of identified issues}
@@ -28,6 +31,12 @@
 #'   \item Parameters at or near boundaries
 #'   \item Residual patterns (heteroscedasticity, outliers)
 #'   \item Random effect variance estimates near zero
+#'   \item For `fit_demand_tmb()` fits with `estimate_k = TRUE`, whether the
+#'     fit shows the signature of an unidentified k: an implausible k, a decay
+#'     exponent `alpha * Q0 * price` that never leaves its linear regime over
+#'     the observed prices, a degenerate alpha, or `log_k` resting on a
+#'     user-supplied bound. This is a screen, not a formal test: no flag means
+#'     nothing was detected, not that k is identified.
 #'   \item Correlation matrices near singularity
 #' }
 #'
@@ -378,12 +387,25 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     recommendations <- c(recommendations, "Investigate outlying observations")
   }
 
+  # 5. Free-k identification screen. Returns NULL unless k was estimated as a
+  # free parameter; a "none" severity means nothing was detected, not that k is
+  # identified (see `.tmb_k_identification()`).
+  k_ident <- .tmb_k_identification(object)
+  k_msg <- .tmb_k_identification_message(k_ident)
+  if (!is.null(k_msg)) {
+    issues <- c(issues, k_msg$issue)
+    recommendations <- c(recommendations, k_msg$recommendation)
+  }
+
   structure(
     list(
       model_class = "beezdemand_tmb",
       convergence = convergence,
       hessian_pd = hessian_pd,
-      boundary = list(at_boundary = character(0)),
+      boundary = list(
+        at_boundary = k_ident$at_boundary %||% character(0),
+        k_identification = k_ident
+      ),
       residuals = residuals_info,
       random_effects = random_effects,
       issues = issues,
@@ -425,6 +447,25 @@ print.beezdemand_diagnostics <- function(x, ...) {
       for (nm in names(vars)) {
         status <- if (isTRUE(x$random_effects$near_zero[nm])) " [NEAR ZERO]" else ""
         cat(sprintf("  %s variance: %.4g%s\n", nm, vars[nm], status))
+      }
+    }
+  }
+
+  # Boundary / identification
+  bnd <- x$boundary
+  if (!is.null(bnd) && (length(bnd$at_boundary) > 0 ||
+                        !is.null(bnd$k_identification))) {
+    ki <- bnd$k_identification
+    show_k <- !is.null(ki) && ki$severity != "none"
+    if (length(bnd$at_boundary) > 0 || show_k) {
+      cat("\nBoundary and Identification:\n")
+      if (length(bnd$at_boundary) > 0) {
+        cat("  At boundary:", paste(bnd$at_boundary, collapse = ", "), "\n")
+      }
+      if (show_k) {
+        msg <- .tmb_k_identification_message(ki)
+        cat("  ", strwrap(msg$issue, width = 76, exdent = 4), sep = "",
+            fill = TRUE)
       }
     }
   }

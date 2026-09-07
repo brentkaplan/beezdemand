@@ -59,6 +59,153 @@
   }
 }
 
+#' Screen a free-k TMB fit for the signature of an unidentified k
+#'
+#' @description
+#' For the k-bearing equations the response depends on k through
+#' `k * (exp(-alpha * Q0 * price) - 1)`. While `alpha * Q0 * price` stays small
+#' that term is linear in price with slope `k * alpha`, so only the product is
+#' identified: k is pinned down by the curvature that appears as consumption
+#' approaches its floor. On data that never get there a free k can drift
+#' arbitrarily far with a compensating alpha.
+#'
+#' This is a heuristic screen for that signature rather than a formal
+#' identification test. A `"none"` severity means only that nothing was
+#' detected.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @return `NULL` when k was not estimated as a free parameter. Otherwise a list
+#'   with the fitted `k` and `log_k`, the largest decay exponent
+#'   `alpha * Q0 * price` over the fit (`decay_exponent_max`), the smallest
+#'   fitted `alpha_min`, a character vector of `reasons`, `at_boundary`
+#'   (`"log_k"` when it rests on a user-supplied optimizer bound, otherwise
+#'   `character(0)`), and a `severity` of `"warn"`, `"suspect"` or `"none"`.
+#' @keywords internal
+.tmb_k_identification <- function(object) {
+  pinfo <- object$param_info
+  if (is.null(pinfo) || !isTRUE(pinfo$has_k) || !isTRUE(pinfo$estimate_k)) {
+    return(NULL)
+  }
+  coefs <- object$model$coefficients
+  if (!("log_k" %in% names(coefs))) return(NULL)
+
+  log_k <- unname(coefs[["log_k"]])
+  k <- exp(log_k)
+
+  # Subject parameters where they are usable; the reference Q0 / alpha
+  # otherwise (continuous random-slope fits cache an all-NA table).
+  sp <- object$subject_pars
+  q0_vec <- alpha_vec <- numeric(0)
+  if (is.data.frame(sp) && all(c("Q0", "alpha") %in% names(sp))) {
+    ok <- is.finite(sp$Q0) & is.finite(sp$alpha)
+    q0_vec <- sp$Q0[ok]
+    alpha_vec <- sp$alpha[ok]
+  }
+  if (length(alpha_vec) == 0L) {
+    ref <- function(nm) {
+      v <- unname(coefs[names(coefs) == nm])
+      if (length(v) == 0L) NA_real_ else exp(v[1])
+    }
+    q0_vec <- ref("beta_q0")
+    alpha_vec <- ref("beta_alpha")
+  }
+  alpha_min <- suppressWarnings(min(alpha_vec, na.rm = TRUE))
+  if (!is.finite(alpha_min)) alpha_min <- NA_real_
+
+  price <- suppressWarnings(
+    max(object$data[[pinfo$x_var %||% "x"]], na.rm = TRUE)
+  )
+  decay_max <- if (is.finite(price) && any(is.finite(q0_vec * alpha_vec))) {
+    suppressWarnings(max(alpha_vec * q0_vec * price, na.rm = TRUE))
+  } else {
+    NA_real_
+  }
+  if (!is.finite(decay_max)) decay_max <- NA_real_
+
+  reasons <- character(0)
+  at_boundary <- character(0)
+
+  # (1) k outside any plausible range for a base-10 span of consumption.
+  if (is.finite(k) && (k > 1e3 || k < 1e-3)) {
+    reasons <- c(reasons, sprintf(
+      "the fitted k is %.3g, far outside the plausible range 0.001-1000", k))
+  }
+
+  # (2) The decay never leaves its linear regime over the observed prices, so
+  # only the product k * alpha is identified. Unit-free, unlike alpha itself.
+  if (!is.na(decay_max) && decay_max < 0.05) {
+    reasons <- c(reasons, sprintf(paste(
+      "the decay exponent alpha * Q0 * price reaches only %.3g over the",
+      "observed prices, so consumption never approaches its floor and only",
+      "the product k * alpha is identified"), decay_max))
+  }
+
+  # (3) A numerically degenerate alpha, the other half of the k * alpha ridge.
+  if (!is.na(alpha_min) && alpha_min < 1e-8) {
+    reasons <- c(reasons, sprintf(
+      "the smallest fitted alpha is %.3g", alpha_min))
+  }
+
+  # (4) log_k resting on a user-supplied optimizer bound.
+  bounds <- pinfo$log_k_bounds
+  if (!is.null(bounds) && is.finite(log_k)) {
+    on_bound <- vapply(bounds, function(b) {
+      is.finite(b) && abs(log_k - b) <= 1e-6 * max(1, abs(b))
+    }, logical(1))
+    if (any(on_bound)) {
+      at_boundary <- "log_k"
+      reasons <- c(reasons, sprintf(
+        "log_k rests on the user-supplied %s bound (%.4g)",
+        names(bounds)[which(on_bound)[1]], bounds[[which(on_bound)[1]]]))
+    }
+  }
+
+  severity <- if (length(reasons) > 0L) "warn" else "none"
+
+  # (5) A non-PD Hessian with a free k is a weaker signal: it says the surface
+  # is flat somewhere, without localising that to k.
+  if (isFALSE(object$hessian_pd)) {
+    reasons <- c(reasons, paste(
+      "the Hessian is not positive definite (which does not by itself",
+      "localise the problem to k)"))
+    if (severity == "none") severity <- "suspect"
+  }
+
+  list(
+    k = k,
+    log_k = log_k,
+    decay_exponent_max = decay_max,
+    alpha_min = alpha_min,
+    reasons = reasons,
+    at_boundary = at_boundary,
+    severity = severity
+  )
+}
+
+
+#' Wording for the free-k identification screen
+#'
+#' @param ki The list returned by [.tmb_k_identification()].
+#' @return A list with `issue` and `recommendation` strings, or `NULL` when the
+#'   screen found nothing.
+#' @keywords internal
+.tmb_k_identification_message <- function(ki) {
+  if (is.null(ki) || ki$severity == "none") return(NULL)
+  lead <- if (ki$severity == "warn") {
+    "k is not identified by these data"
+  } else {
+    "k may not be identified by these data"
+  }
+  list(
+    issue = paste0(lead, ": ", paste(ki$reasons, collapse = "; "), "."),
+    recommendation = paste(
+      "Refit with `estimate_k = FALSE` and a fixed k (the default is k = 2),",
+      "and report a sensitivity fit at a second k."
+    )
+  )
+}
+
+
 #' Map a TMB design-matrix column to its originating model term
 #' @keywords internal
 .tmb_term_assign_map <- function(object, param) {
@@ -435,6 +582,10 @@ summary.beezdemand_tmb <- function(
     notes <- c(notes,
       "Warning: Hessian not positive definite \u2014 standard errors may be unreliable."
     )
+  }
+  k_msg <- .tmb_k_identification_message(.tmb_k_identification(object))
+  if (!is.null(k_msg)) {
+    notes <- c(notes, paste(k_msg$issue, k_msg$recommendation))
   }
   if (length(object$opt_warnings %||% character(0)) > 0) {
     notes <- c(notes, sprintf(

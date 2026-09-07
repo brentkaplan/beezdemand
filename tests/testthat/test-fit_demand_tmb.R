@@ -629,7 +629,7 @@ test_that("bounds with L-BFGS-B are applied", {
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(
     apt, y_var = "y", x_var = "x", id_var = "id",
-    equation = "exponentiated",
+    equation = "exponentiated", estimate_k = TRUE,
     tmb_control = list(
       optimizer = "L-BFGS-B",
       lower = c(log_k = -2),
@@ -640,11 +640,10 @@ test_that("bounds with L-BFGS-B are applied", {
 
   expect_s3_class(fit, "beezdemand_tmb")
   expect_true(is.finite(fit$opt$objective))
-  # k should be within bounds
-  if ("log_k" %in% names(fit$opt$par)) {
-    expect_gte(fit$opt$par[["log_k"]], -2)
-    expect_lte(fit$opt$par[["log_k"]], 4)
-  }
+  # k is estimated here, so the bounds apply to a live parameter.
+  expect_true("log_k" %in% names(fit$opt$par))
+  expect_gte(fit$opt$par[["log_k"]], -2)
+  expect_lte(fit$opt$par[["log_k"]], 4)
 })
 
 test_that("S3 methods work with L-BFGS-B fit", {
@@ -885,7 +884,8 @@ test_that("exponential equation ln(10) fix: predictions match HS formula", {
   beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
   Q0 <- exp(beta_q0)
   alpha_val <- exp(beta_alpha)
-  k_val <- exp(coefs[["log_k"]])
+  # Package default: k is fixed at 2 (`estimate_k = FALSE`).
+  k_val <- unname(.tmb_get_k(fit))
 
   # Predict at specific prices
   prices <- c(0, 1, 5, 10)
@@ -907,7 +907,8 @@ test_that("exponentiated equation predictions match Koffarnus formula", {
   beta_alpha <- coefs[names(coefs) == "beta_alpha"][1]
   Q0 <- exp(beta_q0)
   alpha_val <- exp(beta_alpha)
-  k_val <- exp(coefs[["log_k"]])
+  # Package default: k is fixed at 2 (`estimate_k = FALSE`).
+  k_val <- unname(.tmb_get_k(fit))
 
   prices <- c(0, 1, 5, 10)
   pred <- predict(fit, type = "demand", prices = prices)
@@ -1136,8 +1137,14 @@ test_that("confint parm filters by display names", {
   expect_equal(nrow(ci_display), 1)
   expect_equal(ci_display$term, q0_display)
 
-  # Filter by raw name should still work
-  ci_raw <- confint(fit, parm = "log_k")
+  # Filter by raw name should still work. `log_k` is only a parameter when k is
+  # estimated, which is not the package default, so fit one explicitly.
+  data(apt, package = "beezdemand")
+  fit_free_k <- fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", estimate_k = TRUE, verbose = 0
+  )
+  ci_raw <- confint(fit_free_k, parm = "log_k")
   expect_equal(nrow(ci_raw), 1)
   expect_true(grepl("log_k", ci_raw$term))
 })
