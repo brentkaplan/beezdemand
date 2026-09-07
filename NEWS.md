@@ -57,6 +57,17 @@ and paths that were already correct are unchanged. To reproduce the old numbers
 exactly, pin the previous release:
 `remotes::install_version("beezdemand", "0.2.0")`.
 
+* **`equation = "zben"` numerical `Pmax`/`Omax` could return a non-global
+  maximum that depended on the observed price grid.** The zben expenditure
+  curve on the back-transformed scale can have two local maxima; the engine's
+  single `optimize()` call converged to whichever one its bracketing happened
+  to find, so two fits of the same curve observed through different price
+  ranges could report different `Pmax` (e.g. `Q0 = 19`, `alpha = 0.012`:
+  17.5 vs the true 3.64). `.pmax_numerical()` now scans a dense log-price
+  grid for the global maximum before refining with `optimize()`. Condition
+  under which output differs: zben fits whose expenditure curve is bimodal
+  (about 5 % of a broad random sweep of `(Q0, alpha)`); all other equations
+  use closed forms and are unchanged.
 * **Multi-start is now the default fitting protocol in `fit_demand_fixed()`
   (TICKET-047).** Previously each subject was fit from a single
   production-heuristic starting value; a subject whose start led to a
@@ -250,6 +261,13 @@ fixes a wrong-by-orders-of-magnitude back-transformation, and the
 contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 = "log10"` fits (the default) are unaffected by both.
 
+* **`anova(fit, test = "Wald")` grouped columns under the wrong model term
+  when the design had a factor plus a covariate (or two factors).** The
+  term-assignment helper indexed term labels with the raw `assign` vector;
+  the intercept's `0` dropped an element and shifted every label by one, so
+  the default `group_by = "auto"` table reported e.g. `Q0 ~ grp` as the joint
+  test of one factor column with the covariate. Fixed; `group_by = "term"`
+  and `test = "LRT"` were unaffected.
 * **TMB and hurdle inference surfaces now honor `hessian_pd`.** When
   `TMB::sdreport()` reports a non-positive-definite Hessian
   (`fit$hessian_pd == FALSE`), `sdr$cov.fixed` is a pseudo-inverse of an

@@ -605,3 +605,25 @@ test_that("zben Pmax flags is_boundary_model TRUE when the expansion cap is hit"
   # The capped value is a lower bound on the true maximizer, not the answer.
   expect_lt(res$pmax_model, 3.5e6)
 })
+
+test_that("zben numerical Pmax finds the global maximum on a bimodal expenditure curve, independent of the observed price grid", {
+  # Regression: a single optimize() call over the search interval returned the
+  # lower of two local maxima for some (Q0, alpha), and which one depended on
+  # the observed price range (GH #19 follow-up).
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  Q0 <- 18.999; alpha <- 0.01198
+  q <- log10(Q0)
+  E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+  lp <- seq(log(1e-3), log(1e4), length.out = 200001)
+  e <- E(exp(lp))
+  truth_pmax <- exp(lp[which.max(e)])   # ~3.64 (the second local maximum near 17.5 is lower)
+  truth_omax <- max(e)
+  for (po in list(c(0.01, 100), c(1, 5, 10, 50), c(0.5, 1, 2, 5, 10, 20))) {
+    r <- beezdemand_calc_pmax_omax(model_type = "zben",
+                                   params = list(alpha = alpha, q0 = Q0),
+                                   param_scales = list(alpha = "natural", q0 = "natural"),
+                                   price_obs = po)
+    expect_equal(r$pmax_model, truth_pmax, tolerance = 1e-3, info = paste(po, collapse = ","))
+    expect_equal(r$omax_model, truth_omax, tolerance = 1e-4, info = paste(po, collapse = ","))
+  }
+})

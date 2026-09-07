@@ -75,8 +75,13 @@
     cn  <- colnames(X)
   }
   labs <- attr(stats::terms(f), "term.labels")
-  # assign == 0 -> intercept (NA term label); k -> labs[k].
-  stats::setNames(ifelse(asn == 0L, NA_character_, labs[asn]), cn)
+  # assign == 0 -> intercept (NA term label); k -> labs[k]. Index with the
+  # zero clamped to 1: `labs[asn]` would DROP the intercept's 0, shorten the
+  # vector, and let ifelse() recycle it one position out of step (a factor +
+  # covariate design then grouped the wrong columns under each term).
+  lab_by_col <- labs[pmax(asn, 1L)]
+  lab_by_col[asn == 0L] <- NA_character_
+  stats::setNames(lab_by_col, cn)
 }
 
 #' Group beezdemand_tmb fixed effects into testable blocks for anova()

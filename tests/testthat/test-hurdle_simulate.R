@@ -686,3 +686,22 @@ test_that("run_hurdle_monte_carlo(seed = ) restores the caller's RNG state", {
   ))
   expect_identical(.Random.seed, before)
 })
+
+test_that("run_hurdle_monte_carlo() evaluates k and alpha (natural scale) for converged replicates", {
+  skip_if_not_installed("TMB")
+  skip_on_cran()
+  # Regression: the estimates were pulled from fit$model$coefficients by the
+  # names "k"/"alpha", which that slot stores as "log_k"/"log_alpha", so both
+  # rows were NA in every replicate and $summary never assessed them.
+  mc <- run_hurdle_monte_carlo(n_sim = 2, n_subjects = 40, n_random_effects = 2,
+                               verbose = FALSE, seed = 3)
+  ok_rows <- mc$estimates[mc$estimates$parameter %in% c("k", "alpha") & mc$estimates$converged, ]
+  expect_gt(nrow(ok_rows), 0)
+  expect_false(anyNA(ok_rows$estimate))
+  expect_false(anyNA(ok_rows$se))
+  expect_true(all(ok_rows$estimate > 0))
+  s <- mc$summary
+  expect_false(is.na(s$mean_estimate[s$parameter == "k"]))
+  expect_false(is.na(s$mean_estimate[s$parameter == "alpha"]))
+  expect_equal(s$n_valid[s$parameter == "k"], s$n_valid[s$parameter == "beta0"])
+})

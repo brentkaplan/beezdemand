@@ -632,9 +632,23 @@ run_hurdle_monte_carlo <- function(
       return(list(estimates = NULL, diag = diag_row))
     }
 
-    # Extract estimates
-    est <- fit$model$coefficients[param_names]
-    se <- fit$model$se[param_names]
+    # Extract estimates. fit$model$coefficients stores k and alpha as
+    # log_k / log_alpha; report them on the natural scale (the scale of
+    # true_params) with delta-method SEs.
+    coefs <- fit$model$coefficients
+    ses <- fit$model$se
+    pick <- function(nm) {
+      if (nm %in% c("k", "alpha") && !nm %in% names(coefs)) {
+        lg <- paste0("log_", nm)
+        val <- unname(exp(coefs[lg]))
+        c(val, unname(val * ses[lg]))
+      } else {
+        c(unname(coefs[nm]), unname(ses[nm]))
+      }
+    }
+    picked <- vapply(param_names, pick, numeric(2))
+    est <- picked[1, ]
+    se <- picked[2, ]
 
     est_df <- data.frame(
       sim_id = sim_id,

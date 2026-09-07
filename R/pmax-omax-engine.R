@@ -425,18 +425,35 @@ NULL
     ))
   }
   
+  safe_e <- function(p) {
+    val <- expenditure_fn(p)
+    if (!is.finite(val)) return(-Inf)
+    val
+  }
+
+  # Expenditure curves are not always unimodal (the zben LL4 back-transform can
+  # give two local maxima), and optimize() alone converges to whichever local
+  # maximum its golden-section steps happen to bracket -- so the answer used to
+  # depend on the observed price range. Scan a dense log-price grid first to
+  # locate the GLOBAL maximum, then refine with optimize() inside the
+  # bracketing grid cells.
   opt_result <- tryCatch(
     {
-      stats::optimize(
-        f = function(p) {
-          val <- expenditure_fn(p)
-          if (!is.finite(val)) return(-Inf)
-          val
-        },
-        interval = c(p_min, p_max),
+      n_grid <- 2001L
+      lp <- seq(log(p_min), log(p_max), length.out = n_grid)
+      e_grid <- vapply(exp(lp), safe_e, numeric(1))
+      if (!any(is.finite(e_grid))) stop("no finite expenditure on the grid")
+      i_best <- which.max(e_grid)
+      lo <- exp(lp[max(1L, i_best - 1L)])
+      hi <- exp(lp[min(n_grid, i_best + 1L)])
+      refined <- stats::optimize(
+        f = safe_e,
+        interval = c(lo, hi),
         maximum = TRUE,
         tol = .Machine$double.eps^0.5
       )
+      if (refined$objective >= e_grid[i_best]) refined else
+        list(maximum = exp(lp[i_best]), objective = e_grid[i_best])
     },
     error = function(e) NULL
   )
