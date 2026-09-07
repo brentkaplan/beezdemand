@@ -2133,7 +2133,9 @@ print.cp_model_lmer <- function(x, ...) {
 #' @param x A `cp_model_nls` object.
 #' @param ... Additional arguments (unused).
 #' @return A tibble with the original modelling data and added `.fitted` and
-#'   `.resid` columns.
+#'   `.resid` columns. Both are on the model's response scale: raw `y` for
+#'   `equation = "exponentiated"` / `"additive"`, and `log10(y)` for
+#'   `equation = "exponential"` (which is fit to `log10(y)`).
 #' @export
 augment.cp_model_nls <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
@@ -2148,9 +2150,16 @@ augment.cp_model_nls <- function(x, ...) {
     return(out)
   }
   fitted_vals <- fitted_res
+  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
   if (nrow(out) == length(fitted_vals)) {
     out$.fitted <- as.numeric(fitted_vals)
-    out$.resid <- if ("y" %in% names(out)) out$y - out$.fitted else NA_real_
+    # Model-scale residuals (audit 2026-09-06, F-BD11-2): the exponential
+    # form is fit to log10(y), so `y - .fitted` mixed scales.
+    out$.resid <- if (!is.null(resid_vals) && length(resid_vals) == nrow(out)) {
+      as.numeric(resid_vals)
+    } else {
+      NA_real_
+    }
   } else {
     .cp_warn_augment_omitted(
       .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_vals, nrow(out))

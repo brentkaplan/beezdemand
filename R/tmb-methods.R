@@ -1051,6 +1051,7 @@ predict.beezdemand_tmb <- function(
 ) {
   type <- match.arg(type)
   scale <- match.arg(scale)
+  .tmb_warn_if_not_converged(object)
   # `level` accepts one or both of "subject"/"population". A numeric
   # nlme-style level (0/1) is rejected here by match.arg(); see the @param
   # note contrasting this with predict.beezdemand_nlme().
@@ -2290,6 +2291,7 @@ tidy.beezdemand_tmb <- function(
 ) {
   effects <- match.arg(effects, several.ok = TRUE)
   report_space <- match.arg(report_space)
+  .tmb_warn_if_not_converged(x)
 
   result <- tibble::tibble()
 
@@ -2686,6 +2688,22 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' @return `NULL`, invisibly.
 #' @keywords internal
 #' @noRd
+.tmb_warn_if_not_converged <- function(object) {
+  if (isFALSE(object$converged)) {
+    cli::cli_warn(
+      c(
+        "!" = "TMB fit did not converge; estimates, standard errors,
+               intervals, and predictions from it may be unreliable.",
+        "i" = "See {.fn summary} / {.fn check_demand_model}; refit with more
+               iterations ({.code tmb_control = list(iter_max = ...)}),
+               different starts, or a simpler random-effects structure."
+      ),
+      class = c("beezdemand_tmb_convergence_warning", "beezdemand_warning")
+    )
+  }
+  invisible(NULL)
+}
+
 .tmb_warn_if_hessian_not_pd <- function(object) {
   if (isFALSE(object$hessian_pd)) {
     cli::cli_warn(
@@ -2720,6 +2738,7 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' }
 #' @export
 vcov.beezdemand_tmb <- function(object, ...) {
+  .tmb_warn_if_not_converged(object)
   .tmb_warn_if_hessian_not_pd(object)
   sdr <- object$sdr
   if (is.null(sdr) || is.null(sdr$cov.fixed)) {
@@ -2986,6 +3005,7 @@ confint.beezdemand_tmb <- function(
 ) {
   method <- match.arg(method)
   report_space <- match.arg(report_space)
+  .tmb_warn_if_not_converged(object)
 
   coefs <- object$model$coefficients
   se_vec <- object$model$se

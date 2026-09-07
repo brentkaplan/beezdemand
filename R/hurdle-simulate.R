@@ -68,8 +68,10 @@
 #' \strong{Part I (Zero vs Positive), shared by both `part2` generators:}
 #' \deqn{logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i}
 #'
-#' \strong{Part II, `part2 = "koff"` (Zhao et al., 2016):}
-#' \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
+#' \strong{Part II, `part2 = "koff"` (Zhao et al., 2016; mirrors
+#' `src/HurdleDemand3RE.h`):}
+#' \deqn{\alpha_i = \exp(\log \alpha + c_i)}
+#' \deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot price) - 1) + \epsilon}
 #'
 #' \strong{Part II, `part2 = "snd"` (exactly mirrors
 #' `src/HurdleDemand3RE_SND.h` / `src/HurdleDemand2RE_SND.h`, i.e. a
@@ -305,8 +307,13 @@ simulate_hurdle_data <- function(
         log_y <- rnorm(1, mean = mu, sd = sigma_e)
         y <- exp(log_y)
       } else {
-        # Part II (koff/Zhao et al., 2016): unchanged from previous releases.
-        alpha_i <- alpha + c_i[i]
+        # Part II (koff/Zhao et al., 2016). The alpha random effect is
+        # multiplicative, exactly as src/HurdleDemand3RE.h fits it
+        # (alpha_i = exp(log_alpha + c_i)); an additive `alpha + c_i` (before
+        # 0.3.0) generated from a different model than the one recovered and
+        # could produce increasing curves. Identical for n_random_effects = 2
+        # (c_i = 0).
+        alpha_i <- exp(log(alpha) + c_i[i])
         mu <- (log_q0 + b_i[i]) + k * (exp(-alpha_i * p) - 1)
         log_y <- rnorm(1, mean = mu, sd = sigma_e)
         y <- exp(log_y)
@@ -738,7 +745,11 @@ run_hurdle_monte_carlo <- function(
     logsigma_e = log(true_params$sigma_e),
     rho_ab_raw = atanh(true_params$rho_ab),
     rho_ac_raw = atanh(true_params$rho_ac),
-    rho_bc_raw = atanh(true_params$rho_bc)
+    # rho_bc_raw is the PARTIAL correlation given (a) in the 3-RE template
+    # (src/HurdleDemand3RE.h), not atanh(rho_bc) (audit 2026-09-06, F-BD9-3).
+    rho_bc_raw = .hurdle_rho_bc_raw_from_corr(
+      true_params$rho_ab, true_params$rho_ac, true_params$rho_bc
+    )
   )
 
   # Calculate summary statistics
@@ -920,4 +931,23 @@ print_mc_summary <- function(mc_results, digits = 3) {
     envir = envir
   )
   invisible(NULL)
+}
+
+#' Raw (pre-tanh partial-correlation) parameter for rho_bc
+#'
+#' Inverts the LKJ-Cholesky mapping used by `src/HurdleDemand3RE.h`,
+#' `rho_bc = rho_ab * rho_ac + tanh(rho_bc_raw) * sqrt((1 - rho_ab^2) * (1 - rho_ac^2))`,
+#' so that a Monte Carlo truth table compares the fitted `rho_bc_raw` to the
+#' value that actually generates the requested correlations.
+#'
+#' @param rho_ab,rho_ac,rho_bc Actual (final) correlations.
+#' @return Numeric scalar; `NA` when the implied partial correlation is not
+#'   inside (-1, 1).
+#' @keywords internal
+.hurdle_rho_bc_raw_from_corr <- function(rho_ab, rho_ac, rho_bc) {
+  denom <- sqrt((1 - rho_ab^2) * (1 - rho_ac^2))
+  if (!is.finite(denom) || denom <= 0) return(NA_real_)
+  partial <- (rho_bc - rho_ab * rho_ac) / denom
+  if (!is.finite(partial) || abs(partial) >= 1) return(NA_real_)
+  atanh(partial)
 }

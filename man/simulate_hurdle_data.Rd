@@ -120,8 +120,10 @@ Useful for Monte Carlo simulation studies, power analyses, and model validation.
 \strong{Part I (Zero vs Positive), shared by both \code{part2} generators:}
 \deqn{logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i}
 
-\strong{Part II, \code{part2 = "koff"} (Zhao et al., 2016):}
-\deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon}
+\strong{Part II, \code{part2 = "koff"} (Zhao et al., 2016; mirrors
+\code{src/HurdleDemand3RE.h}):}
+\deqn{\alpha_i = \exp(\log \alpha + c_i)}
+\deqn{\log(Y | Y > 0) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot price) - 1) + \epsilon}
 
 \strong{Part II, \code{part2 = "snd"} (exactly mirrors
 \code{src/HurdleDemand3RE_SND.h} / \code{src/HurdleDemand2RE_SND.h}, i.e. a

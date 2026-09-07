@@ -1957,6 +1957,19 @@ fit_demand_tmb <- function(
 
   converged <- opt$convergence == 0
   try(obj$fn(opt$par), silent = TRUE)
+  if (!converged) {
+    # Audit 2026-09-06 (F-BD4-2): announce non-convergence regardless of
+    # `verbose`; the inference surfaces re-warn via .tmb_warn_if_not_converged().
+    cli::cli_warn(
+      c(
+        "!" = "TMB fit did not converge (optimizer code {opt$convergence}:
+               {opt$message}).",
+        "i" = "Estimates and standard errors from this fit may be unreliable;
+               see {.fn summary} / {.fn check_demand_model}."
+      ),
+      class = c("beezdemand_tmb_convergence_warning", "beezdemand_warning")
+    )
+  }
 
   if (verbose >= 1) {
     if (converged) {

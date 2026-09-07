@@ -13,7 +13,9 @@
 }
 \value{
 A tibble with the original modelling data and added \code{.fitted} and
-\code{.resid} columns.
+\code{.resid} columns. Both are on the model's response scale: raw \code{y} for
+\code{equation = "exponentiated"} / \code{"additive"}, and \code{log10(y)} for
+\code{equation = "exponential"} (which is fit to \code{log10(y)}).
 }
 \description{
 Augment a Cross-Price Demand Model (Nonlinear)

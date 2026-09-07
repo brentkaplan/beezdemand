@@ -686,8 +686,13 @@ fitted.beezdemand_hurdle <- function(object, marginal = TRUE, ...) {
 #' Residuals for a beezdemand_hurdle fit
 #'
 #' Response-scale residuals against the marginal (default) or conditional
-#' fitted values. `type = "pearson"` divides by the residual SD
-#' `exp(coef[["logsigma_e"]])`.
+#' fitted values. `type = "pearson"` returns the Part-II standardized
+#' residual on the model (log-consumption) scale,
+#' `(log(y) - mu_i) / sigma_e`, where `mu_i` is the subject-conditional
+#' linear predictor (`predict(type = "link")`) and `sigma_e` is
+#' `exp(coef[["logsigma_e"]])`; observations with `y = 0` have no Part-II
+#' residual and are `NA`. (Before 0.3.0 the raw-scale residual was divided by
+#' the log-scale `sigma_e`, which changed with the consumption unit.)
 #'
 #' @param object A \code{beezdemand_hurdle} object.
 #' @param type One of `"response"` (default) or `"pearson"`.
@@ -714,7 +719,21 @@ residuals.beezdemand_hurdle <- function(object,
     cli::cli_inform("sigma_e not finite; returning response residuals.")
     return(r)
   }
-  r / sigma_e
+  # Part-II standardized residual on the log scale (audit 2026-09-06,
+  # F-BD9-4): dividing the raw-scale residual by the log-scale sigma_e gave a
+  # statistic that scaled with the consumption unit.
+  mu <- tryCatch(
+    as.numeric(predict(object, newdata = object$data, type = "link")$.fitted),
+    error = function(e) NULL
+  )
+  if (is.null(mu) || length(mu) != length(y_obs)) {
+    cli::cli_inform("Part-II linear predictor unavailable; returning response residuals.")
+    return(r)
+  }
+  out <- rep(NA_real_, length(y_obs))
+  pos <- is.finite(y_obs) & y_obs > 0
+  out[pos] <- (log(y_obs[pos]) - mu[pos]) / sigma_e
+  out
 }
 
 

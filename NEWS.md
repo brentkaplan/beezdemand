@@ -63,11 +63,40 @@ exactly, pin the previous release:
   single `optimize()` call converged to whichever one its bracketing happened
   to find, so two fits of the same curve observed through different price
   ranges could report different `Pmax` (e.g. `Q0 = 19`, `alpha = 0.012`:
-  17.5 vs the true 3.64). `.pmax_numerical()` now scans a dense log-price
-  grid for the global maximum before refining with `optimize()`. Condition
-  under which output differs: zben fits whose expenditure curve is bimodal
-  (about 5 % of a broad random sweep of `(Q0, alpha)`); all other equations
-  use closed forms and are unchanged.
+  17.5 vs the true 3.64). zben now searches an analytic domain that provably
+  contains every stationary point of its expenditure curve (all maxima lie
+  below `4 * log10(Q0) / (alpha * Q0)`), scanning a dense log-price grid and
+  refining every grid-local maximum with `optimize()`, so the observed price
+  range no longer enters the model `Pmax`/`Omax` at all (`method`
+  `"numerical_optimize_analytic_domain"`; the domain-expansion cap and its
+  `pmax_at_bound` flag are no longer reachable for valid zben parameters).
+  Condition under which output differs: zben fits whose expenditure curve is
+  bimodal (about 5 % of a broad random sweep of `(Q0, alpha)`) or whose
+  observed price range excluded the higher peak. The same grid-then-refine
+  search is used by the hurdle numerical fallbacks and the unconditional
+  hurdle `Pmax`/`Omax`; smooth unimodal curves give the same answer to
+  optimizer tolerance. Equations with closed forms are unchanged.
+* **`residuals(<beezdemand_hurdle>, type = "pearson")` is now the Part-II
+  standardized log-scale residual** `(log(y) - mu_i) / sigma_e` (`NA` at
+  zeros). It previously divided the raw-scale response residual by the
+  log-scale `sigma_e`, giving values that scaled with the consumption unit.
+* **`augment(<cp_model_nls>)` returns model-scale residuals.** For
+  `equation = "exponential"` (fit to `log10(y)`) `.resid` was `y` minus the
+  log10-scale fitted value; it is now `residuals(model)` on the model scale,
+  matching `.fitted`.
+* **`simulate_hurdle_data(n_random_effects = 3, part2 = "koff")` now draws
+  `alpha_i = exp(log(alpha) + c_i)`**, the model `src/HurdleDemand3RE.h`
+  fits, instead of the additive `alpha + c_i` (which could generate
+  increasing curves). Two-random-effect simulations are byte-identical.
+  `run_hurdle_monte_carlo()` also compares the fitted `rho_bc_raw` to the
+  partial-correlation raw value that generates the requested `rho_bc`, not
+  to `atanh(rho_bc)`.
+* **Non-converged `fit_demand_tmb()` fits now warn** (class
+  `beezdemand_tmb_convergence_warning`) at fit time regardless of `verbose`,
+  and `tidy()`, `confint()`, `vcov()` and `predict()` re-warn before
+  returning numbers from such a fit; previously only a non-PD Hessian was
+  flagged, so a fit that hit the iteration limit with a PD Hessian gave
+  silent p-values and intervals.
 * **Multi-start is now the default fitting protocol in `fit_demand_fixed()`
   (TICKET-047).** Previously each subject was fit from a single
   production-heuristic starting value; a subject whose start led to a

@@ -25,6 +25,10 @@ number of expansions was reached and the optimum still sits at the
 (expanded) upper bound, i.e. the true maximizer was not found.
 }
 \description{
+Retained as the fallback for a zben curve whose analytic search domain
+(\code{\link[=.zben_search_domain]{.zben_search_domain()}}) cannot be formed; zben fits with valid
+parameters search that domain directly and never expand.
+
 Some demand curves (notably zben's LL4-scale exponential decay
 back-transformed to the natural expenditure curve) can have an
 unconstrained expenditure-maximizing price well beyond the subject's

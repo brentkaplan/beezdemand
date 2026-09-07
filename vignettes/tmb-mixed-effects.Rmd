@@ -117,7 +117,8 @@ automatically drops zero-consumption observations.
 ### Mathematical Specifications
 
 **Exponential** (Hursh & Silberberg, 2008):
-$$\log(Q_{ij}) = \log(Q_{0i}) + k \left(e^{-\alpha_i \cdot Q_{0i} \cdot C_j} - 1\right) + \varepsilon_{ij}$$
+$$\log_{10}(Q_{ij}) = \log_{10}(Q_{0i}) + k \left(e^{-\alpha_i \cdot Q_{0i} \cdot C_j} - 1\right) + \varepsilon_{ij}$$
+(fit on the natural-log scale, where the $k$ term is multiplied by $\ln 10$; the $k$ reported is the base-10 span of the original equation)
 
 **Exponentiated** (Koffarnus et al., 2015):
 $$Q_{ij} = Q_{0i} \cdot 10^{k \left(e^{-\alpha_i \cdot Q_{0i} \cdot C_j} - 1\right)} + \varepsilon_{ij}$$
