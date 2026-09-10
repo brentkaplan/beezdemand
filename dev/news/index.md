@@ -269,7 +269,18 @@ To reproduce the old numbers exactly, pin the previous release:
   `converged_strict` are otherwise unaffected). Subjects that converge
   cleanly on the first `wrapnlsr` attempt are unchanged. With the
   brute-force refit gone, `nls2` is no longer used anywhere in the
-  package and has been dropped from `Imports`.
+  package and has been dropped from `Imports`. Removing that block also
+  removed a crash: with `constrainq0` set only `alpha` is free, and the
+  old code indexed `fit$m$Rmat()[2, 2]` on a 1x1 matrix outside every
+  [`try()`](https://rdrr.io/r/base/try.html), so a single non-fittable
+  subject (for example one with a lone non-zero consumption point)
+  aborted the whole
+  [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
+  /
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
+  call with “subscript out of bounds”. Such a subject is now reported as
+  a non-converged row and the other subjects are fit normally; a
+  regression test covers the individual `koff` case.
 
 - **[`GetValsForSim()`](https://brentkaplan.github.io/beezdemand/reference/GetValsForSim.md)
   (used by
