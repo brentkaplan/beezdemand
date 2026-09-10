@@ -144,3 +144,59 @@ test_that("get_demand_param_trends: all-bogus covariates still name every droppe
   expect_true(any(grepl("not_a_real_covariate2", warns, fixed = TRUE)))
   expect_equal(nrow(result), 0)
 })
+
+# --- F-BD6-1 (release-correctness audit 2026-09-06) --------------------------
+# get_demand_param_trends() was the only NLME inference surface that did not
+# call .nlme_warn_if_not_converged(), so trends from a fit whose apVar could
+# not be inverted were returned with no condition at all. The gate keys on
+# apVar + error_message (R/diagnostics.R .check_nlme_convergence), NOT on a
+# $converged field, so the fixture below installs nlme's own failure sentinel.
+
+test_that("get_demand_param_trends() gates on NLME convergence (F-BD6-1)", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+
+  bad <- setup$fit
+  # nlme sets apVar to a character message when the approximate
+  # variance-covariance of the variance parameters could not be inverted.
+  bad$model$apVar <- "Non-positive definite approximate variance-covariance"
+
+  conds <- list()
+  res <- withCallingHandlers(
+    get_demand_param_trends(
+      bad, params = "Q0", covariates = "dose_num", specs = ~drug
+    ),
+    warning = function(w) {
+      conds[[length(conds) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  n_gate <- sum(vapply(conds, inherits, logical(1),
+                       "beezdemand_nlme_convergence_warning"))
+  expect_identical(n_gate, 1L)
+  # The gate warns; it does not suppress the table.
+  expect_s3_class(res, "tbl_df")
+})
+
+test_that("get_demand_param_trends() does not warn on a usable fit (F-BD6-1)", {
+  skip_on_cran()
+  setup <- make_nlme_fit()
+  skip_if(!is.matrix(setup$fit$model$apVar),
+          "fixture fit has a non-finite apVar in this environment")
+
+  conds <- list()
+  withCallingHandlers(
+    get_demand_param_trends(
+      setup$fit, params = "Q0", covariates = "dose_num", specs = ~drug
+    ),
+    warning = function(w) {
+      conds[[length(conds) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  n_gate <- sum(vapply(conds, inherits, logical(1),
+                       "beezdemand_nlme_convergence_warning"))
+  expect_identical(n_gate, 0L)
+})

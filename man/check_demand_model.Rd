@@ -33,7 +33,14 @@ An object of class \code{beezdemand_diagnostics} containing:
 k was estimated as a free parameter, otherwise the screen described in
 Details.}
 \item{residuals}{Summary statistics for residuals}
-\item{random_effects}{Summary of random effects (if applicable)}
+\item{random_effects}{Summary of random effects (if applicable).
+\code{variances} holds random-effect variances: on the log10 scale for
+\code{beezdemand_tmb} fits, and as reported by \code{\link[nlme:VarCorr]{nlme::VarCorr()}} for
+\code{beezdemand_nlme} fits. \code{beezdemand_tmb} fits also carry \code{sd_log10}
+(the corresponding standard deviations, matching
+\code{summary(fit)$variance_components}) and \code{sd_internal_log} (the raw
+natural-log-scale standard deviations used by the near-zero
+degeneracy check).}
 \item{issues}{Character vector of identified issues}
 \item{recommendations}{Character vector of recommendations}
 }

@@ -371,11 +371,14 @@ test_that("check_demand_model.beezdemand_tmb 2-RE: named near_zero contains both
   expect_output(print(diag), "Model Diagnostics")
 })
 
-test_that("check_demand_model TMB: random_effect SDs are on the log10 scale (TICKET-002 addendum)", {
-  # TICKET-002 addendum: $random_effects$variances now matches the public
-  # summary()$variance_components convention -- Q0/alpha RE SDs on the log10
-  # scale (TICKET-015) -- and the raw natural-log-scale SDs used for the
-  # near-zero degeneracy heuristic are exposed separately as $sd_internal_log.
+test_that("check_demand_model TMB: RE variances, SDs and internal SDs (TICKET-002 addendum; F-BD13-1)", {
+  # TICKET-002 addendum pinned $variances to the public
+  # summary()$variance_components convention -- but those are Q0/alpha RE *SDs*
+  # on the log10 scale (TICKET-015), so the field name and the print label both
+  # lied. F-BD13-1 (audit 2026-09-06): $variances now holds true variances on
+  # the log10 scale, the SDs move to the explicitly named $sd_log10 (which is
+  # what still matches summary()), and $sd_internal_log keeps the raw
+  # natural-log-scale SDs used by the near-zero degeneracy heuristic.
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(
     apt, y_var = "y", x_var = "x", id_var = "id",
@@ -386,12 +389,48 @@ test_that("check_demand_model TMB: random_effect SDs are on the log10 scale (TIC
   vc <- summary(fit)$variance_components
   re_summary <- vc$Estimate[!grepl("Residual", vc$Component)]
 
-  # $variances == summary() Q0/alpha rows (log10 scale).
-  expect_equal(unname(diag$random_effects$variances), re_summary,
+  # $sd_log10 == summary() Q0/alpha rows (log10-scale SDs).
+  expect_equal(unname(diag$random_effects$sd_log10), re_summary,
+               tolerance = 1e-8)
+  # $variances is the square of those -- the field name is now true.
+  expect_equal(unname(diag$random_effects$variances), re_summary^2,
                tolerance = 1e-8)
   # $sd_internal_log is the raw natural-log-scale SD (a factor log(10) larger).
   expect_equal(unname(diag$random_effects$sd_internal_log),
                re_summary * log(10), tolerance = 1e-8)
+  # Names stay aligned across the three vectors.
+  expect_identical(names(diag$random_effects$variances),
+                   names(diag$random_effects$sd_log10))
+
+  # The printed line reports the variance, matching its label.
+  out <- paste(capture.output(print(diag)), collapse = "\n")
+  expect_match(out, "variance", fixed = TRUE)
+  expect_match(out, sprintf("%.4g", diag$random_effects$variances[[1]]),
+               fixed = TRUE)
+})
+
+test_that("check_demand_model NLME: $variances holds VarCorr variances (F-BD13-1)", {
+  skip_on_cran()
+  skip_if_not_installed("nlme")
+
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- tryCatch(
+    fit_demand_mixed(apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+                     equation_form = "zben"),
+    error = function(e) NULL
+  )
+  skip_if(is.null(fit) || is.null(fit$model), "NLME fixture did not fit here")
+
+  re <- suppressWarnings(check_demand_model(fit))$random_effects
+  skip_if(is.null(re$variances) || length(re$variances) == 0,
+          "no random-effect variances available")
+
+  vc <- nlme::VarCorr(fit$model)
+  skip_if(!("Variance" %in% colnames(vc)), "VarCorr has no Variance column")
+  nm <- names(re$variances)
+  expect_equal(unname(re$variances),
+               as.numeric(vc[nm, "Variance"]), tolerance = 1e-8)
 })
 
 test_that("plot_residuals works for TMB models", {

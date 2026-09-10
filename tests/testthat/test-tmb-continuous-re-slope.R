@@ -591,7 +591,8 @@ test_that("diagnostics additivity: factor/intercept fits keep the historical ran
     multi_start = FALSE, verbose = 0
   )))
   re_int <- check_demand_model(fit_int)$random_effects
-  expect_setequal(names(re_int), c("variances", "near_zero", "sd_internal_log"))
+  expect_setequal(names(re_int),
+                  c("variances", "sd_log10", "near_zero", "sd_internal_log"))
   expect_false("near_singular" %in% names(re_int))
 
   # A continuous fit DOES gain the near_singular field.

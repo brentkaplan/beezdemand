@@ -322,6 +322,35 @@ fixes a wrong-by-orders-of-magnitude back-transformation, and the
 contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 = "log10"` fits (the default) are unaffected by both.
 
+* **`boot_demand()` and `confint(method = "simulate")` silently repaired an
+  indefinite covariance.** `.tmb_parametric_draws()` refused a non-finite
+  fixed-effect covariance but clamped genuinely negative eigenvalues of a
+  finite one to zero, so draws came from a different, rank-deficient
+  distribution than the requested asymptotic posterior, with no condition
+  raised. A materially indefinite covariance is now refused with a classed
+  error (`beezdemand_indefinite_vcov_error`); eigenvalues negative only to
+  within numerical tolerance are still clamped, so a positive-semidefinite
+  singular covariance keeps working, as does a well-formed covariance whose
+  parameters differ wildly in scale. "Materially" is judged both against the
+  covariance's largest absolute eigenvalue and against that of its
+  correlation-scaled form, so a negative variance in a small-scale parameter
+  is not masked by a large-scale one. Affected fits are those whose Hessian is
+  not positive definite; use `check_demand_model(fit)` and `fit$hessian_pd`,
+  and note that `confint(method = "wald")` rests on the same curvature.
+* **`get_demand_param_trends()` did not gate on NLME convergence.** It was the
+  only NLME inference surface that never called the convergence guard, so
+  trends from a fit whose `apVar` could not be inverted were returned with no
+  warning. It now warns once, like every other NLME surface.
+* **`check_demand_model()$random_effects$variances` reported standard
+  deviations, not variances, for `beezdemand_tmb` fits** (and `print()`
+  labelled them "variance"). The log10-scale SDs now live in a new `sd_log10`
+  element -- that is the one matching `summary(fit)$variance_components` -- and
+  `variances` holds their squares, so the field name and the printed label are
+  true. `sd_internal_log` (raw natural-log-scale SDs, used by the near-zero
+  degeneracy check) is unchanged, as are all near-zero predicates and the
+  issues they raise. The NLME path now takes `nlme::VarCorr()`'s `Variance`
+  column explicitly. No estimate changes; code reading `$variances` from a TMB
+  fit and expecting an SD should read `$sd_log10`.
 * **`anova(fit, test = "Wald")` grouped columns under the wrong model term
   when the design had a factor plus a covariate (or two factors).** The
   term-assignment helper indexed term labels with the raw `assign` vector;
@@ -1327,12 +1356,15 @@ land here as the foundation for the Phase 2 factor-RE work.
 
 ## Diagnostics random-effect scale alignment (TICKET-002)
 
-* `check_demand_model()` on a `beezdemand_tmb` fit now reports
-  `$random_effects$variances` on the log10 scale, consistent with
+* `check_demand_model()` on a `beezdemand_tmb` fit now reports random-effect
+  scale on the log10 scale, consistent with
   `summary(fit_tmb)$variance_components` (the TICKET-015 convention).
   Previously these were raw natural-log-scale SDs, a factor of `log(10)`
   larger. The raw internal SDs (still used for the near-zero degeneracy
   check) are now exposed separately as `$random_effects$sd_internal_log`.
+  (Superseded later in this release: those log10-scale SDs are now
+  `$random_effects$sd_log10`, and `$random_effects$variances` holds their
+  squares -- see "Inference gates and diagnostic reporting" above.)
 
 ## broom-method harmonization across NLME and TMB (TICKET-017)
 

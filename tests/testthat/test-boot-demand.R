@@ -455,8 +455,30 @@ test_that("boot_demand warns exactly once when hessian_pd is FALSE (dedup throug
   skip_if(!all(is.finite(suppressWarnings(vcov(fit)))),
           "weak fixture's covariance is non-finite on this platform (draws unavailable by design)")
 
+  # F-BD4-3 (audit 2026-09-06): see test-tmb-parametric-draws.R -- a non-PD
+  # Hessian usually leaves a materially indefinite covariance, which
+  # boot_demand() now propagates as a classed error. The hessian_pd warning is
+  # still raised exactly once on the way, which is what this test pins.
+  V <- suppressWarnings(vcov(fit))
+  ev <- eigen(V, symmetric = TRUE)$values
+  indefinite <- any(ev < -max(abs(ev)) * sqrt(.Machine$double.eps))
+
+  err <- NULL
   conds <- .capture_warning_conditions(
-    res <- boot_demand(fit, statistics = "Pmax", R = 100, seed = 1)
+    res <- tryCatch(
+      boot_demand(fit, statistics = "Pmax", R = 100, seed = 1),
+      beezdemand_indefinite_vcov_error = function(e) {
+        err <<- e
+        NULL
+      }
+    )
   )
   expect_identical(.n_hessian_pd_warnings(conds), 1L)
+
+  if (indefinite) {
+    expect_s3_class(err, "beezdemand_indefinite_vcov_error")
+  } else {
+    expect_null(err)
+    expect_false(is.null(res))
+  }
 })

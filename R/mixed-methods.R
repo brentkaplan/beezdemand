@@ -2240,6 +2240,12 @@ get_demand_param_trends <- function(
     character(0)
   })
 
+  # F-BD6-1 (audit 2026-09-06): this was the only NLME inference surface
+  # that did not gate on convergence, so trends from a fit whose apVar could not
+  # be inverted were returned with no condition at all. Placed outside the
+  # emmeans tryCatch()s and the param/covariate loops so it warns exactly once.
+  .nlme_warn_if_not_converged(fit_obj)
+
   out_list <- list()
   # TICKET-064 (F13): a failed (param, covariate) combination was previously
   # dropped with `next` and no condition -- only a fully-empty result table

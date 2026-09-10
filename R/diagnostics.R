@@ -19,7 +19,14 @@
 #'       k was estimated as a free parameter, otherwise the screen described in
 #'       Details.}
 #'     \item{residuals}{Summary statistics for residuals}
-#'     \item{random_effects}{Summary of random effects (if applicable)}
+#'     \item{random_effects}{Summary of random effects (if applicable).
+#'       `variances` holds random-effect variances: on the log10 scale for
+#'       `beezdemand_tmb` fits, and as reported by [nlme::VarCorr()] for
+#'       `beezdemand_nlme` fits. `beezdemand_tmb` fits also carry `sd_log10`
+#'       (the corresponding standard deviations, matching
+#'       `summary(fit)$variance_components`) and `sd_internal_log` (the raw
+#'       natural-log-scale standard deviations used by the near-zero
+#'       degeneracy check).}
 #'     \item{issues}{Character vector of identified issues}
 #'     \item{recommendations}{Character vector of recommendations}
 #'   }
@@ -254,14 +261,17 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
   # 3. Random-effect SD components and near-zero check. Phase 2 generalized
   # the RE parameterization to a `logsigma` vector spanning all blocks;
   # iterate the full vector and label each entry by its (block, q0|alpha)
-  # slot. `variances` reports the SDs on the log10 scale -- exp(logsigma) /
-  # log(10) -- matching summary()$variance_components (TICKET-015). The raw
-  # natural-log-scale SDs are retained in `sd_internal_log`, and the
-  # near-zero degeneracy check is applied on that raw internal scale so its
-  # behavior is unchanged.
+  # slot. F-BD13-1 (audit 2026-09-06): `variances` used to report the SDs on
+  # the log10 scale -- exp(logsigma) / log(10) -- so both the field name and the
+  # print label were wrong. Those SDs now live in `sd_log10` (still matching
+  # summary()$variance_components, TICKET-015) and `variances` holds their
+  # squares, i.e. true variances on the log10 scale. The raw natural-log-scale
+  # SDs are retained in `sd_internal_log`, and the near-zero degeneracy check is
+  # still applied on that raw internal scale so its behavior is unchanged.
   coefs <- object$model$coefficients
   re_parsed <- object$param_info$random_effects_parsed
   re_variances <- numeric(0)
+  re_sd_log10 <- numeric(0)
   re_sd_internal <- numeric(0)
   near_zero <- logical(0)
 
@@ -281,7 +291,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
                 sprintf("%ssigma_b[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + j])
           re_sd_internal[nm] <- v
-          re_variances[nm] <- v / log(10)
+          re_sd_log10[nm] <- v / log(10)
+          re_variances[nm] <- (v / log(10))^2
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -291,7 +302,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
                 sprintf("%ssigma_c[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + d_q0 + j])
           re_sd_internal[nm] <- v
-          re_variances[nm] <- v / log(10)
+          re_sd_log10[nm] <- v / log(10)
+          re_variances[nm] <- (v / log(10))^2
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -314,6 +326,7 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
 
   random_effects <- list(
     variances = re_variances,
+    sd_log10 = re_sd_log10,
     near_zero = near_zero,
     sd_internal_log = re_sd_internal
   )
@@ -1123,6 +1136,11 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 
   if (!is.null(vc)) {
     # Extract variance estimates
+    # F-BD13-1: prefer the "Variance" column so the field name is true.
+    # nlme::VarCorr() returns both columns for every class this package fits;
+    # the StdDev branch is defensive, and squares only the reported values --
+    # the near-zero predicate keeps comparing the column as returned, so the
+    # flagging threshold is unchanged on that path.
     var_cols <- c("Variance", "StdDev")
     var_col <- intersect(colnames(vc), var_cols)[1]
 
@@ -1135,7 +1153,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
         # Get variance values
         var_vals <- as.numeric(vc[param_names, var_col])
         names(var_vals) <- param_names
-        variances <- var_vals
+        variances <- if (identical(var_col, "StdDev")) var_vals^2 else var_vals
+        names(variances) <- param_names
         near_zero <- var_vals < 1e-6
         names(near_zero) <- param_names
       }
