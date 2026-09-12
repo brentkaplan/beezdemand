@@ -144,3 +144,32 @@ test_that("glance.cp_model_lmer NULL schema follows the REML flag (F-BD11-4, end
   expect_true(isTRUE(reml_fit$REML))
   expect_identical(names(glance(.f114_null("cp_model_lmer"))), names(glance(reml_fit)))
 })
+
+test_that("glance.cp_model_lmer() carries a `converged` column (F-BD11-4, batch 3)", {
+  skip_on_cran()
+  skip_if_not_installed("broom.mixed")
+  d <- .f114_data()
+  ok <- suppressWarnings(fit_cp_linear(d, type = "mixed"))
+  g_ok <- glance(ok)
+  expect_true("converged" %in% names(g_ok))
+  expect_identical(names(g_ok)[length(names(g_ok))], "converged")
+  expect_identical(g_ok$converged, TRUE)
+
+  bad <- suppressWarnings(fit_cp_linear(
+    d, type = "mixed",
+    control = lme4::lmerControl(optimizer = "Nelder_Mead",
+                                optCtrl = list(maxfun = 5))
+  ))
+  expect_identical(glance(bad)$converged, FALSE)
+
+  # Legacy object without the field: NA, not FALSE, and still a valid glance.
+  legacy <- ok
+  legacy$converged <- NULL
+  g_legacy <- glance(legacy)
+  expect_identical(g_legacy$converged, NA)
+  expect_identical(names(g_legacy), names(g_ok))
+
+  # Typed empty keeps the same schema (converged included).
+  expect_identical(names(glance(.f114_null("cp_model_lmer"))), names(g_ok))
+  expect_identical(glance(.f114_null("cp_model_lmer"))$converged, NA)
+})

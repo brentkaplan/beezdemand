@@ -70,6 +70,11 @@ Q0, alpha, breakpoint, Pmax, Omax}
 \item{data}{Original data used for fitting}
 \item{param_info}{List with y_var, x_var, id_var, n_subjects, n_obs, etc.}
 \item{converged}{Logical indicating convergence}
+\item{re_cov_fallback}{Logical. \code{TRUE} when the estimated random-effects
+covariance was not positive definite and the subject-level effects
+were computed from an uncorrelated (diagonal) approximation; the
+reported correlations do not apply to those outputs. \code{summary()} and
+\code{print()} carry a note when it is \code{TRUE}.}
 \item{loglik}{Log-likelihood at convergence}
 \item{AIC, BIC}{Information criteria}
 \item{error_message}{Error message if fitting failed, NULL otherwise}

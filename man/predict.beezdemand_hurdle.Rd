@@ -10,7 +10,7 @@
   type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   correction = TRUE,
   seed = 42L,
   se.fit = FALSE,
@@ -54,11 +54,15 @@ Default is \code{FALSE}, which gives conditional (RE = 0) predictions
 representing a "typical" subject at the center of the RE distribution.}
 
 \item{marginal_method}{Character. Method for marginal integration; one of
-\code{"kde"} (default, kernel density estimate of BLUPs), \code{"normal"} (integrate
-over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
-(simple average over BLUPs). \code{"normal"} is the model-consistent choice;
-\code{"kde"} and \code{"empirical"} are descriptive summaries of the shrunken
-BLUPs (see Details). Ignored when \code{marginal = FALSE}.}
+\code{"normal"} (default; integrate over the model-assumed N(0, sigma_a)
+distribution of the zero-component intercept, over the whole real
+line), \code{"kde"} (kernel density estimate of the shrunken BLUPs), or
+\code{"empirical"} (simple average over the BLUPs). \code{"normal"} is the
+model-consistent choice: it integrates over the same distribution the
+fitted likelihood integrates over. \code{"kde"} and \code{"empirical"} are
+descriptive summaries of the shrunken BLUPs, which understate the
+random-effect spread (see Details). The default was \code{"kde"} in the
+development versions before 0.3.0. Ignored when \code{marginal = FALSE}.}
 
 \item{correction}{Logical; if \code{TRUE} (default), applies the lognormal
 retransformation correction \code{exp(sigma_e^2 / 2)} when back-transforming
@@ -88,7 +92,12 @@ for price, \code{prob_zero}, and \code{.fitted} (no subject column).
 Otherwise, a tibble containing the \code{newdata} columns plus \code{.fitted} and
 helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 \code{prob_zero}, and \code{expected_consumption}. When requested, \code{.se.fit} and
-\code{.lower}/\code{.upper} are included.
+\code{.lower}/\code{.upper} are included. Marginal results carry a
+\code{marginal_method} attribute; Monte Carlo marginal results
+(\code{type = "response"} / \code{"demand"}) also carry a logical
+\code{re_cov_fallback} attribute that is \code{TRUE} when the random-effect draws
+had to use an uncorrelated (diagonal) covariance because the estimated
+covariance was not positive definite.
 }
 \description{
 Returns predictions from a fitted hurdle demand model.

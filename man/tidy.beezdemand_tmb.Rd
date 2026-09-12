@@ -29,7 +29,9 @@ on the estimation scale (transformation-invariant).}
 }
 \value{
 A tibble of model terms with columns \code{term}, \code{estimate},
-\code{std.error}, \code{statistic}, \code{p.value}, \code{component}, \code{estimate_scale},
+\code{std.error}, \code{statistic}, \code{p.value}, \code{df} (\code{Inf} on fixed-effect rows:
+the Wald test is an asymptotic z, i.e. a t on infinite df; \code{NA} on
+variance rows), \code{component}, \code{estimate_scale},
 and \code{term_display}. An \code{estimate_internal} column (the pre-transform
 estimate) is additionally present whenever \code{effects} includes
 \code{"fixed"}. Fixed-effect rows carry \code{component == "fixed"} (matching

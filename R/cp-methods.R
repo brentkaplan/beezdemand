@@ -1122,9 +1122,16 @@ tidy.cp_model_lmer <- function(x, effects = c("fixed", "ran_vals", "ran_pars", "
 #'
 #' @param x A cp_model_lmer object.
 #' @param ... Additional arguments passed to broom.mixed::glance.
-#' @return A tibble with model summary statistics.
+#' @return A tibble with model summary statistics: the columns of
+#'   `broom.mixed::glance()` for the underlying `merMod` fit, followed by
+#'   `converged` (logical; `TRUE` when lme4 reported no convergence problem,
+#'   `FALSE` when it did, `NA` when the fit predates the stored metadata or
+#'   failed). `converged` mirrors `broom::glance.nls()`'s `isConv` so a
+#'   batch of fits can be screened programmatically; `print()` and
+#'   `summary()` report the same flag.
 #' @export
 glance.cp_model_lmer <- function(x, ...) {
+  converged_flag <- if (is.null(x$converged)) NA else isTRUE(x$converged)
   if (is.null(x$model)) {
     # One all-NA row with broom.mixed::glance.merMod's columns. The criterion
     # column is `REMLcrit` for a REML fit and `deviance` for an ML fit;
@@ -1140,12 +1147,15 @@ glance.cp_model_lmer <- function(x, ...) {
     )
     out[[if (reml) "REMLcrit" else "deviance"]] <- NA_real_
     out$df.residual <- NA_integer_
+    out$converged <- NA
     return(out)
   }
   if (!requireNamespace("broom.mixed", quietly = TRUE)) {
     missing_package_error("broom.mixed", reason = "to glance mixed-effects models")
   }
-  broom.mixed::glance(x$model, ...)
+  out <- broom.mixed::glance(x$model, ...)
+  out$converged <- converged_flag
+  out
 }
 
 #-------------------------------------------------------------------------------

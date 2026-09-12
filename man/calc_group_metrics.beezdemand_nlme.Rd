@@ -39,26 +39,38 @@ solution.
 }
 \section{Marginalisation policy (NLME vs TMB)}{
 
-The two backends marginalise over different grids, and the results are
-only guaranteed to coincide for a complete design fit in \code{param_space = "log10"}:
+Both backends marginalise over the factor cells that were \strong{observed} in
+the fitting data, with equal weight per cell, on the log scale (a
+geometric mean of the per-cell parameter estimates). Cells of the full
+factorial crossing that contain no subjects are not averaged over, so
+population-level Pmax/Omax never extrapolate through the additive model
+into cells the design cannot estimate. (This is the observed-cells side of
+the two conventions in wide use: \code{emmeans} / \code{marginaleffects}'s
+\code{"balanced"} grid averages every combination of levels; \code{marginaleffects}'s
+default averages the observed rows with frequency weights. Neither is used
+here: unobserved cells get weight zero and observed cells get equal
+weight regardless of group size.)
 \itemize{
 \item \strong{NLME (this method)}: \code{emmeans} builds the full factorial
-reference grid over every factor level (including cells with no
-observations), the cell EMMs are back-transformed to the natural scale,
-and the geometric mean is taken over the cells (for \code{param_space = "log10"} this equals the arithmetic mean of the log10 EMMs). Under
+reference grid, the per-cell EMMs are back-transformed to the natural
+scale, rows for unobserved cells are dropped, and the geometric mean is
+taken over the remaining cells (for \code{param_space = "log10"} this equals
+the arithmetic mean of the observed cells' log10 EMMs). Under
 \code{param_space = "natural"} the cell EMMs are natural-scale estimates and
 the geometric mean is taken of those directly, which is not the same
 as averaging log predictors.
 \item \strong{TMB} (\code{calc_group_metrics.beezdemand_tmb()}): the log-scale
-linear predictors are averaged with equal weight over the factor cells
-retained in the fitted design (observed cells only), then
-exponentiated.
+linear predictors are averaged with equal weight over the observed
+factor cells, then exponentiated.
 }
-The two therefore agree for balanced designs in log space and can differ
-when factor cells are unobserved or the NLME fit is in natural space. In
-both backends continuous covariates are held at the training mean unless
-\code{at} supplies a single value; a multi-value continuous \code{at} entry warns and
-uses its first value.
+The two therefore agree for any design fit in log space and can differ
+only when the NLME fit is in natural space. In both backends continuous
+covariates are held at the training mean unless \code{at} supplies a single
+value; a multi-value continuous \code{at} entry warns and uses its first value.
+A factor level supplied in \code{at} restricts the observed cells to that
+level (for a \code{collapse_levels} fit the original level is translated to
+each parameter's collapsed label); requesting a combination of levels
+with no observed cell is an error rather than an extrapolation.
 }
 
 \examples{

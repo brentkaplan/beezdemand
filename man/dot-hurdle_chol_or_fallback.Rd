@@ -14,7 +14,10 @@ fallback (length must equal \code{nrow(Sigma)}).}
 }
 \value{
 The upper-triangular Cholesky factor of \code{Sigma}, or of the
-diagonal fallback when \code{Sigma} is not positive definite.
+diagonal fallback when \code{Sigma} is not positive definite. The result
+carries a logical attribute \code{"fallback"} (\code{TRUE} when the diagonal
+substitute was used); read it at the call site before any further
+matrix operation, since \code{t()} / \code{\%*\%} need not preserve it.
 }
 \description{
 Internal helper shared by the RE-transform and marginal-prediction code

@@ -118,7 +118,21 @@ defaults are used.}
 \item{tmb_control}{List of control parameters for the optimizer:
 \describe{
 \item{\code{optimizer}}{Character. \code{"nlminb"} (default) or \code{"L-BFGS-B"}.
-L-BFGS-B can recover from nlminb convergence failures (code 1 or 8).}
+L-BFGS-B can sometimes recover where nlminb reports convergence
+code 1 with a \code{"false convergence (8)"} message (R's \code{nlminb()}
+reports only codes 0/1; the PORT status is in \code{opt$message}).}
+\item{\code{rescue}}{Logical (default \code{TRUE}). When nlminb exits with
+false convergence, retry automatically: restart nlminb from the
+stalled point, then L-BFGS-B from it, and, for a fixed-\code{k} fit,
+warm-start from a free-\code{k} refit. A candidate is accepted only if
+it reports convergence code 0, its gradient satisfies
+\code{max(abs(grad)) <= rescue_grad_tol}, and its Hessian is positive
+definite; the lowest-NLL accepted candidate replaces the stalled
+result and \code{fit$opt$rescued_from} / \code{fit$opt$rescue_method} record
+it. If no candidate qualifies the fit fails loudly as before. See
+\code{vignette("convergence-guide")} for the worked example.}
+\item{\code{rescue_grad_tol}}{Positive number (default \code{1e-2}): the
+maximum absolute gradient component a rescue candidate may have.}
 \item{\code{iter_max}}{Maximum iterations (default 1000).}
 \item{\code{eval_max}}{Maximum function evaluations (default 2000). Only
 applies to nlminb; L-BFGS-B has no function evaluation limit.}

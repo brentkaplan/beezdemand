@@ -32,7 +32,7 @@
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
   marginal = TRUE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   par_trans = NULL,
   ...
 )
@@ -110,7 +110,7 @@ instead of the conditional (RE = 0) curve. Set to \code{FALSE} for the old
 conditional behavior.}
 
 \item{marginal_method}{Character. Method for marginal integration when
-\code{marginal = TRUE}. One of \code{"kde"} (default), \code{"normal"}, or
+\code{marginal = TRUE}. One of \code{"normal"} (default), \code{"kde"}, or
 \code{"empirical"}. See \code{\link[=predict.beezdemand_hurdle]{predict.beezdemand_hurdle()}} for details.}
 
 \item{par_trans}{Named list of transformations for parameter distribution

@@ -8,6 +8,7 @@
   x,
   effects = c("fixed", "ran_pars"),
   report_space = c("natural", "log10"),
+  df_method = c("containment", "between"),
   ...
 )
 }
@@ -21,10 +22,13 @@
 \code{"natural"} or \code{"log10"} (\code{match.arg} default \code{"natural"}).
 \code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always on
 the estimation scale (nlme's native containment-t test, which is
-transformation-invariant). The \code{df} column is nlme's containment df,
-which uses the observation-level residual df for between-subject terms
-as well; p-values for such terms are anticonservative (see
-\code{\link[=summary.beezdemand_nlme]{summary.beezdemand_nlme()}}).}
+transformation-invariant).}
+
+\item{df_method}{Character. \code{"containment"} (default) reports nlme's own
+df, which uses the observation-level residual df for between-subject
+terms as well, so their p-values are anticonservative; \code{"between"}
+substitutes \code{n_subjects - rank(X_between)} for between-subject terms and
+recomputes their p-values. See \code{\link[=summary.beezdemand_nlme]{summary.beezdemand_nlme()}} for the rule.}
 
 \item{...}{Additional arguments (ignored)}
 }
@@ -39,6 +43,8 @@ convention.
 \item \code{std.error}: Standard error (\code{NA} for variance components)
 \item \code{statistic}: t-value (\code{NA} for variance components)
 \item \code{p.value}: P-value (\code{NA} for variance components)
+\item \code{df}: Degrees of freedom the p-value uses (\code{NA} for variance
+components); see \code{df_method}
 \item \code{component}: \code{"fixed"} or \code{"variance"}
 \item \code{estimate_scale}: Scale that \code{estimate} is reported on
 \item \code{term_display}: Display label for \code{term}

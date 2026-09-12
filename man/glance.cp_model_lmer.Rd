@@ -12,7 +12,13 @@
 \item{...}{Additional arguments passed to broom.mixed::glance.}
 }
 \value{
-A tibble with model summary statistics.
+A tibble with model summary statistics: the columns of
+\code{broom.mixed::glance()} for the underlying \code{merMod} fit, followed by
+\code{converged} (logical; \code{TRUE} when lme4 reported no convergence problem,
+\code{FALSE} when it did, \code{NA} when the fit predates the stored metadata or
+failed). \code{converged} mirrors \code{broom::glance.nls()}'s \code{isConv} so a
+batch of fits can be screened programmatically; \code{print()} and
+\code{summary()} report the same flag.
 }
 \description{
 Get model summaries from a mixed-effects cross-price model
