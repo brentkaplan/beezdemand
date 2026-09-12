@@ -154,7 +154,10 @@ check_demand_model.beezdemand_nlme <- function(object, ...) {
 
   # 4. Check residuals
   residuals <- .check_nlme_residuals(object)
-  if (residuals$has_outliers) {
+  if (isTRUE(residuals$computation_failed)) {
+    issues <- c(issues, "Residual diagnostics could not be computed")
+    recommendations <- c(recommendations, "Check residuals() on the fitted nlme model manually")
+  } else if (residuals$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)", residuals$n_outliers))
     recommendations <- c(recommendations, "Investigate outlying observations")
   }
@@ -939,7 +942,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     NULL
   })
 
-  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug) ||
+    !is.numeric(aug$.resid)
   if (computation_failed && is.null(fail_reason)) {
     fail_reason <- "augment() did not return a usable '.resid' column"
   }
@@ -1145,24 +1149,48 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     var_col <- intersect(colnames(vc), var_cols)[1]
 
     if (!is.na(var_col)) {
-      # Get row names (parameter names)
-      param_names <- rownames(vc)
-      param_names <- param_names[param_names != "Residual"]
+      # F-BD13-2: walk the rows by INDEX, not by rowname. For a nested
+      # grouping (`~ 1 | site/id`) nlme::VarCorr() interleaves group-header
+      # rows (rowname "site =", a pdMat class string in the value cell) with
+      # the per-level parameter rows, and the parameter rownames repeat for
+      # every level. Indexing `vc[param_names, ]` coerced the headers to NA
+      # and returned the FIRST level's value for every repeat, so the inner
+      # level's variance was never reported. Header rows are dropped (their
+      # value cell is not numeric) and, when more than one grouping level is
+      # present, entries are named `<level>:<term>` so they stay unique;
+      # single-level fits keep the bare term names.
+      rn <- rownames(vc)
+      raw_vals <- suppressWarnings(as.numeric(vc[, var_col]))
+      is_header <- is.na(raw_vals) & grepl("=\\s*$", rn)
+      group_of <- character(length(rn))
+      current <- ""
+      for (i in seq_along(rn)) {
+        if (is_header[i]) current <- trimws(sub("=\\s*$", "", rn[i]))
+        group_of[i] <- current
+      }
+      keep <- !is_header & rn != "Residual"
+      n_groups <- length(unique(group_of[keep & nzchar(group_of)]))
+      param_names <- if (n_groups > 1L) {
+        paste0(group_of[keep], ":", rn[keep])
+      } else {
+        rn[keep]
+      }
 
       if (length(param_names) > 0) {
-        # Get variance values
-        var_vals <- as.numeric(vc[param_names, var_col])
+        var_vals <- raw_vals[keep]
         names(var_vals) <- param_names
         variances <- if (identical(var_col, "StdDev")) var_vals^2 else var_vals
         names(variances) <- param_names
-        near_zero <- var_vals < 1e-6
+        near_zero <- !is.na(var_vals) & var_vals < 1e-6
         names(near_zero) <- param_names
       }
     }
 
     # Check for near-singular correlation
     if ("Corr" %in% colnames(vc)) {
-      corr_vals <- as.numeric(vc[, "Corr"])
+      # The Corr column mixes numbers with "(Intr)" labels and blanks;
+      # coerce quietly and keep the numeric cells.
+      corr_vals <- suppressWarnings(as.numeric(vc[, "Corr"]))
       corr_vals <- corr_vals[!is.na(corr_vals)]
       if (length(corr_vals) > 0 && any(abs(corr_vals) > 0.99)) {
         near_singular <- TRUE
@@ -1194,19 +1222,49 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     ))
   }
 
+  # F-BD13-1 follow-up: mirror the hurdle/fixed helpers. Both residual
+  # attempts are guarded (the plain `residuals()` fallback used to escape),
+  # and an empty or non-numeric residual vector is reported as a failed
+  # computation with the classed warning, never as a clean "no outliers".
+  fail_reason <- NULL
   resid <- tryCatch(
     stats::residuals(object$model, type = "normalized"),
-    error = function(e) stats::residuals(object$model)
+    error = function(e) {
+      tryCatch(
+        stats::residuals(object$model),
+        error = function(e2) {
+          fail_reason <<- conditionMessage(e2)
+          NULL
+        }
+      )
+    }
   )
+  if (!is.null(resid) && !is.numeric(resid)) {
+    fail_reason <- "residuals() did not return a numeric vector"
+    resid <- NULL
+  }
+  if (!is.null(resid)) {
+    resid <- resid[!is.na(resid)]
+    if (length(resid) == 0) {
+      fail_reason <- "no non-missing residuals available"
+      resid <- NULL
+    }
+  }
 
-  if (is.null(resid) || length(resid) == 0) {
+  if (is.null(resid)) {
+    cli::cli_warn(
+      "Residual diagnostics could not be computed: {fail_reason %||%
+       'residuals() returned no usable output'}",
+      class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+    )
     return(list(
       mean = NA_real_,
       sd = NA_real_,
       min = NA_real_,
       max = NA_real_,
       has_outliers = FALSE,
-      n_outliers = 0
+      n_outliers = 0,
+      computation_failed = TRUE
     ))
   }
 
@@ -1219,7 +1277,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     min = min(resid),
     max = max(resid),
     has_outliers = any(outliers),
-    n_outliers = sum(outliers)
+    n_outliers = sum(outliers),
+    computation_failed = FALSE
   )
 }
 
@@ -1282,7 +1341,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     NULL
   })
 
-  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug) ||
+    !is.numeric(aug$.resid)
   if (computation_failed && is.null(fail_reason)) {
     fail_reason <- "augment() did not return a usable '.resid' column"
   }

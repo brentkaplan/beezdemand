@@ -313,6 +313,20 @@ change is against the development version rather than against a release.
 
 ## Inference gates and diagnostic reporting
 
+* **`check_demand_model()` on a nested-grouping NLME fit mis-read
+  `nlme::VarCorr()`.** The variance table for `random = ~ 1 | outer/inner`
+  interleaves group-header rows with per-level parameter rows whose names
+  repeat, and indexing by row name turned the headers into `NA` and reported
+  the outer level's variance for every level, so the inner level's variance
+  never appeared and the near-zero flag could be `NA`. Rows are now walked by
+  position, header rows dropped, and entries named `<level>:<term>` when more
+  than one grouping level is present; single-level fits keep the bare term
+  names.
+* **NLME residual diagnostics are now guarded like the hurdle and fixed
+  ones.** A `residuals()` failure or an empty residual vector is reported as a
+  failed computation (classed warning plus a "could not be computed" issue),
+  not as a clean "no outliers"; the hurdle and fixed checks also treat a
+  non-numeric `.resid` column as a failed computation.
 The fixes in this subsection change *status/diagnostic* output (warnings,
 issue lists) rather than point estimates; fits that were correct before
 still return the same numbers. Two exceptions, both scoped to NLME
