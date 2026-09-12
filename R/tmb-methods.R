@@ -727,6 +727,13 @@ summary.beezdemand_tmb <- function(
       length(object$opt_warnings)
     ))
   }
+  if (!is.null(object$opt$rescued_from)) {
+    notes <- c(notes, sprintf(
+      "Optimizer: nlminb reported '%s'; rescued via %s (NLL %.3f -> %.3f). The stalled point was not stationary; see vignette('convergence-guide').",
+      object$opt$rescued_from, object$opt$rescue_method,
+      object$opt$rescue_nll_before, object$opt$objective
+    ))
+  }
   if (!is.null(object$param_info$factors) && length(object$param_info$factors) > 0) {
     notes <- c(notes,
       "Population metrics reflect reference level. Use get_demand_param_emms() for per-group estimates."
@@ -2534,7 +2541,9 @@ plot.beezdemand_tmb <- function(
 #' @param ... Additional arguments.
 #'
 #' @return A tibble of model terms with columns `term`, `estimate`,
-#'   `std.error`, `statistic`, `p.value`, `component`, `estimate_scale`,
+#'   `std.error`, `statistic`, `p.value`, `df` (`Inf` on fixed-effect rows:
+#'   the Wald test is an asymptotic z, i.e. a t on infinite df; `NA` on
+#'   variance rows), `component`, `estimate_scale`,
 #'   and `term_display`. An `estimate_internal` column (the pre-transform
 #'   estimate) is additionally present whenever `effects` includes
 #'   `"fixed"`. Fixed-effect rows carry `component == "fixed"` (matching
@@ -2618,6 +2627,9 @@ tidy.beezdemand_tmb <- function(
       std.error = unname(se),
       statistic = unname(z_val),
       p.value = unname(p_val),
+      # Asymptotic z = t on infinite df; keeps the column set identical to
+      # tidy.beezdemand_nlme() (batch 3, F-BD10-1).
+      df = Inf,
       component = component,
       estimate_scale = estimate_scale,
       term_display = term
@@ -2655,6 +2667,7 @@ tidy.beezdemand_tmb <- function(
       std.error = NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
+      df = NA_real_,
       component = "variance",
       estimate_scale = ifelse(is_resid, "natural", "log10"),
       term_display = sd_tbl$Component
