@@ -56,7 +56,9 @@ representing a "typical" subject at the center of the RE distribution.}
 \item{marginal_method}{Character. Method for marginal integration; one of
 \code{"kde"} (default, kernel density estimate of BLUPs), \code{"normal"} (integrate
 over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
-(simple average over BLUPs). Ignored when \code{marginal = FALSE}.}
+(simple average over BLUPs). \code{"normal"} is the model-consistent choice;
+\code{"kde"} and \code{"empirical"} are descriptive summaries of the shrunken
+BLUPs (see Details). Ignored when \code{marginal = FALSE}.}
 
 \item{correction}{Logical; if \code{TRUE} (default), applies the lognormal
 retransformation correction \code{exp(sigma_e^2 / 2)} when back-transforming
@@ -117,14 +119,18 @@ the random effect distribution, answering "what fraction of the population
 has stopped buying at this price?"
 
 The \code{"kde"} and \code{"empirical"} methods integrate over empirical Bayes
-estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
-compared to the true random effects, so these methods slightly
-underestimate the RE variance. In practice, this shrinkage bias is often
-smaller than the bias from assuming normality when the true RE distribution
-is non-normal. The \code{"normal"} method integrates over the model-assumed
-N(0, sigma_a) distribution, which is correct under the model but may be
-wrong if the normality assumption is violated. Use \code{\link[=plot_qq]{plot_qq()}} to assess
-RE normality.
+estimates (BLUPs) of the random intercepts. They are descriptive rather
+than model-consistent: BLUPs are shrunk toward zero compared to the true
+random effects (more so for subjects with few observations), so these
+methods understate the RE spread, and the marginal curve they produce
+summarises the fitted subjects rather than the population-level quantity
+the model defines. The \code{"normal"} method integrates over the model-assumed
+N(0, sigma_a) distribution, which is the model-consistent marginal (the
+same one the fitted likelihood integrates over) and is the choice to use
+when the marginal curve is reported as an estimate. It can be wrong only
+in the way the model itself is wrong, that is, if the normality assumption
+fails. The default remains \code{"kde"} for continuity with earlier versions.
+Use \code{\link[=plot_qq]{plot_qq()}} to assess RE normality.
 }
 
 \subsection{Conditional vs. marginal demand predictions}{

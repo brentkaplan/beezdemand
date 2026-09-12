@@ -1,9 +1,12 @@
-# Parametric Monte Carlo draws from a TMB fit's asymptotic posterior (TICKET-018)
+# Parametric Monte Carlo draws from a TMB fit's asymptotic sampling
+# approximation (TICKET-018)
 
-#' Parametric Monte Carlo draws from a TMB fit's asymptotic posterior
+#' Parametric Monte Carlo draws from a TMB fit's asymptotic sampling approximation
 #'
 #' Draws `R` samples of the internal-scale fixed-effect parameter vector from
-#' the joint asymptotic Gaussian posterior \eqn{N(\hat\beta, \hat\Sigma)}, where
+#' the asymptotic Gaussian sampling approximation \eqn{N(\hat\beta, \hat\Sigma)}
+#' (a frequentist approximation to the MLE's sampling distribution; no prior
+#' is involved), where
 #' \eqn{\hat\beta} is \code{object$model$coefficients} and \eqn{\hat\Sigma} is
 #' \code{vcov(object)} (the TMB \code{sdreport} fixed-effect covariance,
 #' \code{sdr$cov.fixed}). The mean vector and covariance are positionally

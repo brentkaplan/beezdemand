@@ -1052,7 +1052,9 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' @param marginal_method Character. Method for marginal integration; one of
 #'   `"kde"` (default, kernel density estimate of BLUPs), `"normal"` (integrate
 #'   over the model-assumed N(0, sigma_a) distribution), or `"empirical"`
-#'   (simple average over BLUPs). Ignored when `marginal = FALSE`.
+#'   (simple average over BLUPs). `"normal"` is the model-consistent choice;
+#'   `"kde"` and `"empirical"` are descriptive summaries of the shrunken
+#'   BLUPs (see Details). Ignored when `marginal = FALSE`.
 #' @param correction Logical; if `TRUE` (default), applies the lognormal
 #'   retransformation correction `exp(sigma_e^2 / 2)` when back-transforming
 #'   from the log scale to the natural consumption scale. This produces
@@ -1107,14 +1109,18 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' has stopped buying at this price?"
 #'
 #' The `"kde"` and `"empirical"` methods integrate over empirical Bayes
-#' estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
-#' compared to the true random effects, so these methods slightly
-#' underestimate the RE variance. In practice, this shrinkage bias is often
-#' smaller than the bias from assuming normality when the true RE distribution
-#' is non-normal. The `"normal"` method integrates over the model-assumed
-#' N(0, sigma_a) distribution, which is correct under the model but may be
-#' wrong if the normality assumption is violated. Use [plot_qq()] to assess
-#' RE normality.
+#' estimates (BLUPs) of the random intercepts. They are descriptive rather
+#' than model-consistent: BLUPs are shrunk toward zero compared to the true
+#' random effects (more so for subjects with few observations), so these
+#' methods understate the RE spread, and the marginal curve they produce
+#' summarises the fitted subjects rather than the population-level quantity
+#' the model defines. The `"normal"` method integrates over the model-assumed
+#' N(0, sigma_a) distribution, which is the model-consistent marginal (the
+#' same one the fitted likelihood integrates over) and is the choice to use
+#' when the marginal curve is reported as an estimate. It can be wrong only
+#' in the way the model itself is wrong, that is, if the normality assumption
+#' fails. The default remains `"kde"` for continuity with earlier versions.
+#' Use [plot_qq()] to assess RE normality.
 #'
 #' ## Conditional vs. marginal demand predictions
 #'

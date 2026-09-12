@@ -13,7 +13,14 @@
 \code{"natural"} or \code{"log10"} (\code{match.arg} default \code{"natural"}).
 \code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always on
 the estimation scale (nlme's native containment-t test, which is
-transformation-invariant).}
+transformation-invariant). Note that nlme's containment rule assigns the
+observation-level residual degrees of freedom to every fixed effect,
+including between-subject terms (a group factor), for which the
+effective sample size is the number of subjects. The reported \code{df},
+and hence the p-values, for between-subject terms are therefore
+anticonservative. The TMB backend reports an asymptotic z instead. For
+a defensible between-subject test use \code{df = n_subjects - p_between}
+with the reported statistic, or refit with \code{\link[=fit_demand_tmb]{fit_demand_tmb()}}.}
 
 \item{...}{Additional arguments (passed to summary.nlme)}
 }

@@ -2597,7 +2597,14 @@ print.beezdemand_nlme <- function(
 #'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
 #'   the estimation scale (nlme's native containment-t test, which is
-#'   transformation-invariant).
+#'   transformation-invariant). Note that nlme's containment rule assigns the
+#'   observation-level residual degrees of freedom to every fixed effect,
+#'   including between-subject terms (a group factor), for which the
+#'   effective sample size is the number of subjects. The reported `df`,
+#'   and hence the p-values, for between-subject terms are therefore
+#'   anticonservative. The TMB backend reports an asymptotic z instead. For
+#'   a defensible between-subject test use `df = n_subjects - p_between`
+#'   with the reported statistic, or refit with [fit_demand_tmb()].
 #' @param ... Additional arguments (passed to summary.nlme)
 #' @return A `summary.beezdemand_nlme` object (inherits from
 #'   `beezdemand_summary`) with fields including:
@@ -2827,7 +2834,10 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #'   `"natural"` or `"log10"` (`match.arg` default `"natural"`).
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
 #'   the estimation scale (nlme's native containment-t test, which is
-#'   transformation-invariant).
+#'   transformation-invariant). The `df` column is nlme's containment df,
+#'   which uses the observation-level residual df for between-subject terms
+#'   as well; p-values for such terms are anticonservative (see
+#'   [summary.beezdemand_nlme()]).
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name

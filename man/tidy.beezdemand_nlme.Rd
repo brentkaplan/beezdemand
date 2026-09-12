@@ -21,7 +21,10 @@
 \code{"natural"} or \code{"log10"} (\code{match.arg} default \code{"natural"}).
 \code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always on
 the estimation scale (nlme's native containment-t test, which is
-transformation-invariant).}
+transformation-invariant). The \code{df} column is nlme's containment df,
+which uses the observation-level residual df for between-subject terms
+as well; p-values for such terms are anticonservative (see
+\code{\link[=summary.beezdemand_nlme]{summary.beezdemand_nlme()}}).}
 
 \item{...}{Additional arguments (ignored)}
 }

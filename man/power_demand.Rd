@@ -168,15 +168,27 @@ The v1 scope is a single fixed-effect delta. Joint Q0 + alpha effects,
 power for derived measures (Pmax, Omax), and arbitrary designs are out of
 scope; see \code{vignette("power-analysis")}.
 
+The within-subject simulator draws a fresh pair of subject deviations
+(log Q0, log alpha) for every subject in \emph{every condition}. A subject's
+deviation in condition 1 is independent of their deviation in condition 2,
+and \code{rho_bd} (the within-condition Q0/alpha correlation) is pinned at 0.
+No subject-level effect is shared across conditions, so the within-subject
+power estimate describes two conditions with independent subject effects.
+In the usual repeated-measures design each subject's deviation carries over
+and the condition contrast is paired; that design is not what is simulated
+here, and for it the resulting power is a conservative benchmark. The
+default \code{random_effects} (per-condition effects) matches the simulated
+data-generating process exactly.
+
 For \code{design_type = "between"}, the two arms are composed by running the
 within-subject simulator once per arm with a single condition, then binding
 the arms and refitting with per-subject intercept random effects. Because
-each subject appears in only one condition, that random-effects \emph{structure}
-matches the composed data-generating process exactly, unlike the
-within-subject default's per-condition effects. The additive-Gaussian
-residual likelihood remains a \emph{working model} for the simulator's
-multiplicative-lognormal errors in both designs (closest at small
-\code{sigma_e}). Type I error is calibrated by the test suite for both designs.
+each subject appears in only one condition, that random-effects structure
+matches the composed data-generating process exactly, as the within-subject
+default matches its own. In both designs the additive-Gaussian residual
+likelihood is a \emph{working model} for the simulator's multiplicative-lognormal
+errors (closest at small \code{sigma_e}). Type I error is calibrated by the test
+suite for both designs.
 }
 \examples{
 \donttest{

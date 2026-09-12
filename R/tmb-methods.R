@@ -3204,7 +3204,7 @@ anova.beezdemand_tmb <- function(object, ...,
 #'   `.tmb_format_variance_components()` for transformed variance components.
 #' @param method Character. `"wald"` (default) returns Hessian-based
 #'   Wald intervals (`coef +/- z * se`). `"simulate"` draws `R` parametric
-#'   Monte Carlo samples from the joint asymptotic Gaussian posterior
+#'   Monte Carlo samples from the asymptotic Gaussian sampling approximation
 #'   \eqn{N(\hat\beta, \hat\Sigma)} (with \eqn{\hat\Sigma = }`vcov(object)`)
 #'   and reports per-coefficient empirical quantiles.
 #' @param R Integer. Number of Monte Carlo draws for `method = "simulate"`.
@@ -3218,7 +3218,8 @@ anova.beezdemand_tmb <- function(object, ...,
 #' @return A tibble with term, estimate, conf.low, conf.high, level.
 #'
 #' @details `method = "simulate"` is Monte Carlo simulation from the
-#'   asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+#'   asymptotic Gaussian sampling approximation to the MLE (neither a
+#'   Bayesian posterior, nor a data-resampling bootstrap, nor
 #'   a profile-likelihood interval). Because the sampled distribution is
 #'   the same Gaussian that Wald assumes, the simulated per-coefficient
 #'   quantiles converge to the Wald intervals as `R -> Inf`; the method does

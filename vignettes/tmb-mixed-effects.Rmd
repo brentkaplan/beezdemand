@@ -167,8 +167,10 @@ data.frame(
 )
 ```
 
-Note that AIC values are not directly comparable across equations because they
-model different response scales (log Q vs raw Q vs LL4(Q)).
+AIC is comparable only between equations that model the same response scale.
+Here `exponentiated` and `simplified` both model raw Q and can be compared with
+each other; `exponential` models log Q and `zben` models LL4(Q), so their AIC
+values are not comparable with the raw-Q equations or with each other.
 
 For convergence, the `exponential` equation is the most reliable choice for
 2-random-effect models. The `exponentiated` equation works well with 1-RE but
@@ -324,12 +326,13 @@ spars |>
 ### Amplitude–Persistence Decomposition
 
 `calculate_amplitude_persistence()` collapses the per-subject parameters into
-two latent factors used in behavioral economic indices: **Amplitude**
-(intensity of demand, primarily $Q_0$) and **Persistence** (sensitivity to
-price, drawn from $P_{max}$, $O_{max}$, and $1/\alpha$). The TMB method
-extracts subject parameters from `fit$subject_pars` and delegates to the
-default Z-score implementation, so the result is comparable across model
-tiers.
+two standardized composite scores used in behavioral economic indices:
+**Amplitude** (intensity of demand, the z-score of $Q_0$) and **Persistence**
+(sensitivity to price, the mean of the z-scores of $P_{max}$, $O_{max}$, and
+$1/\alpha$). No factor analysis is involved; each is a plain z-score
+composite. The TMB method extracts subject parameters from `fit$subject_pars`
+and delegates to the default Z-score implementation, so the result is
+comparable across model tiers.
 
 ```{r results-amplitude-persistence}
 ap <- calculate_amplitude_persistence(fit_2re)
@@ -346,9 +349,12 @@ ap |>
   )
 ```
 
-By construction, both factors are sample-standardized (mean 0, SD 1 within the
-fitted dataset). For cross-sample comparisons, supply external `basis_means`
-and `basis_sds` so the standardization uses a fixed reference.
+Amplitude is a single z-score, so it has mean 0 and SD 1 within the fitted
+dataset. Persistence is the mean of three z-scores and is not re-standardized:
+its mean is 0 but its SD depends on how strongly the three components correlate
+(it equals 1 only when they are perfectly correlated) and on any missing
+components. For cross-sample comparisons, supply external `basis_means` and
+`basis_sds` so the standardization uses a fixed reference.
 
 ### Confidence Intervals
 
@@ -365,11 +371,12 @@ confint(fit_2re, report_space = "natural")
 
 For a quick diagnostic on the Gaussian (Wald) approximation, request Monte
 Carlo intervals with `method = "simulate"`. These draw `R` samples from the
-joint asymptotic posterior `N(coef, vcov)` and report empirical quantiles.
-They are asymptotically Wald-equivalent, so a large discrepancy between the
-two flags a fit where the Gaussian approximation is suspect. The comparison
-is diagnostic rather than an accuracy improvement, because the `simulate`
-method does not capture non-Gaussian posterior shape and carries no
+asymptotic sampling approximation `N(coef, vcov)` (the same Gaussian that Wald
+intervals assume; no prior is involved) and report empirical quantiles. They
+are asymptotically Wald-equivalent, so a large discrepancy between the two
+flags a fit where the Gaussian approximation is suspect. The comparison is
+diagnostic rather than an accuracy improvement, because the `simulate` method
+does not capture a non-Gaussian sampling distribution and carries no
 positivity guarantee on the internal scale. Set `seed` for reproducibility.
 
 ```{r results-confint-simulate}
@@ -725,9 +732,10 @@ AIC, and BIC:
 compare_models(fit_1re, fit_2re)
 ```
 
-Valid comparisons require models fit on the same data with the same
-equation and response scale. Models with different equations (e.g., exponential
-vs exponentiated) model different responses and cannot be compared via AIC.
+Valid comparisons require models fit on the same data with the same response
+scale. Equations that model different responses (e.g., exponential on log Q
+vs exponentiated on raw Q) cannot be compared via AIC; equations that share a
+response scale (exponentiated and simplified, both raw Q) can.
 
 ### Building Nested Models with `update()`
 

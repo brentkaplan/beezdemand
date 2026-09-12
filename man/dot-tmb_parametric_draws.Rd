@@ -2,7 +2,7 @@
 % Please edit documentation in R/tmb-parametric-draws.R
 \name{.tmb_parametric_draws}
 \alias{.tmb_parametric_draws}
-\title{Parametric Monte Carlo draws from a TMB fit's asymptotic posterior}
+\title{Parametric Monte Carlo draws from a TMB fit's asymptotic sampling approximation}
 \usage{
 .tmb_parametric_draws(object, R = 1000L, seed = NULL)
 }
@@ -21,7 +21,9 @@ the internal coefficient vector (\code{names(object$model$coefficients)}).
 }
 \description{
 Draws \code{R} samples of the internal-scale fixed-effect parameter vector from
-the joint asymptotic Gaussian posterior \eqn{N(\hat\beta, \hat\Sigma)}, where
+the asymptotic Gaussian sampling approximation \eqn{N(\hat\beta, \hat\Sigma)}
+(a frequentist approximation to the MLE's sampling distribution; no prior
+is involved), where
 \eqn{\hat\beta} is \code{object$model$coefficients} and \eqn{\hat\Sigma} is
 \code{vcov(object)} (the TMB \code{sdreport} fixed-effect covariance,
 \code{sdr$cov.fixed}). The mean vector and covariance are positionally

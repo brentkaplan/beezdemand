@@ -6,7 +6,8 @@
 #' Computes confidence intervals on derived demand metrics (Pmax, Omax, Qmax,
 #' EV, elasticity-at-Pmax) for a TMB mixed-effects demand fit, via a parametric
 #' bootstrap. Draws of the fixed-effect parameter vector are taken from the
-#' joint asymptotic Gaussian posterior \eqn{N(\hat\beta, \hat\Sigma)}, mapped to
+#' asymptotic Gaussian sampling approximation \eqn{N(\hat\beta, \hat\Sigma)}
+#' (the distribution Wald intervals assume; no prior is involved), mapped to
 #' per-condition \eqn{(Q_0, \alpha, k)} through the model's fixed-effect design,
 #' passed through the canonical Pmax/Omax engine, and summarized by empirical
 #' quantiles.

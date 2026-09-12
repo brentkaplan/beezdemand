@@ -1018,6 +1018,13 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
   # usable-for-inference gate. (Fixed-effect SEs come from model$varFix, which is
   # available whenever the model fits; apVar is the stricter conditioning signal.)
   apVar_ok <- is.matrix(model$apVar) && all(is.finite(model$apVar))
+  # F-BD10-1: a finite apVar can still be indefinite (a saddle rather than a
+  # maximum); require it to be positive definite as well.
+  if (apVar_ok) {
+    apVar_ok <- !inherits(
+      tryCatch(chol(model$apVar), error = function(e) e), "error"
+    )
+  }
   no_error <- is.null(object$error_message)
   final_fit_ok <- apVar_ok && no_error
 

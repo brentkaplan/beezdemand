@@ -408,8 +408,10 @@ comparisons.
 
 `beezdemand` also supports nonlinear mixed-effects demand models to estimate
 subject-level parameters (e.g., Q0 and alpha) while modeling fixed effects of
-conditions (e.g., dose, drug). The `zben` equation form pairs well with the
-included LL4 transformation to handle zeros and wide dynamic ranges.
+conditions (e.g., dose, drug). The `zben` equation form is defined on an
+LL4-transformed response: transform consumption with `ll4()` first and pass
+that column as `y_var` (fitting `zben` to raw consumption fits the wrong
+model). The transformation handles zeros and wide dynamic ranges.
 
 Key functions:
 

@@ -111,6 +111,16 @@ present parameters on the \eqn{\log_{10}} scale.
 To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
 use:
 \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
+
+The default \code{part2 = "zhao_exponential"} places no \eqn{Q_0} inside the
+exponent (\eqn{\exp(-\alpha_{Zhao} \, P)}), whereas the Hursh & Silberberg
+form used by \code{fit_demand_fixed(equation = "hs")} and
+\code{fit_demand_tmb(equation = "exponential")} uses \eqn{\exp(-\alpha_{HS} \, Q_0 \, P)}.
+The two \eqn{\alpha} values are therefore on different scales and relate as
+\deqn{\alpha_{HS} = \alpha_{Zhao} / Q_0,}
+so a Zhao \eqn{\alpha} is not directly comparable with an HS \eqn{\alpha}
+unless divided by the subject's (or group's) \eqn{Q_0}. Use
+\code{part2 = "exponential"} (alias \code{"hs_stdq0"}) for an HS-scaled \eqn{\alpha}.
 }
 
 \section{Convergence}{

@@ -222,3 +222,18 @@ test_that("NLME inference surfaces: healthy fit raises no convergence-gate warni
   expect_no_warning(get_individual_coefficients(fit))
   expect_no_warning(calc_group_metrics(fit))
 })
+
+# F-BD10-1 (audit 2026-09-06): a finite apVar can still be indefinite (a saddle
+# point rather than a maximum). The gate now requires positive definiteness.
+test_that("glance$converged is FALSE when apVar is finite but indefinite (F-BD10-1)", {
+  skip_on_cran()
+  fit <- .nch_fit()
+  skip_if_not(is.matrix(fit$model$apVar) && all(is.finite(fit$model$apVar)))
+  bad <- fit$model$apVar
+  bad[1, 1] <- -abs(bad[1, 1]) - 1
+  fit$model$apVar <- bad
+
+  res <- beezdemand:::.check_nlme_convergence(fit)
+  expect_false(res$final_fit_ok)
+  expect_false(res$converged)
+})
