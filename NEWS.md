@@ -66,8 +66,9 @@ change is against the development version rather than against a release.
   into that cell before taking the geometric mean of Q0 and alpha. The TMB
   method already used observed cells only; the two backends now agree on any
   design fit in log space, and the policy is written out under
-  "Marginalisation policy" in both methods' help. Numbers change only when a
-  factor cell has no subjects. In the same method, a factor level passed in
+  "Marginalisation policy" in both methods' help. Unconditioned numbers
+  change only when a factor cell has no subjects. In the same method, a
+  factor level passed in
   `at` on a `collapse_levels` fit was silently ignored (the restriction was
   keyed by the original factor name, which the collapsed model does not
   have) and the result was the unconditioned one; `at` is now applied to

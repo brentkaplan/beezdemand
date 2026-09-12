@@ -26,7 +26,7 @@
 test_that("tidy/summary carry a df column; containment is bit-identical to nlme", {
   skip_on_cran()
   fit <- .dfm_gender_fit()
-  skip_if(is.null(fit$model), "gender NLME fit failed")
+  expect_false(is.null(fit$model))  # a fitting regression must fail, not skip
   tt <- summary(fit$model)$tTable
   n_subj <- length(unique(fit$data$id))
   expect_identical(n_subj, 50L)
@@ -52,7 +52,7 @@ test_that("tidy/summary carry a df column; containment is bit-identical to nlme"
 test_that("df_method = 'between' uses n_subjects - rank for between-subject terms only", {
   skip_on_cran()
   fit <- .dfm_gender_fit()
-  skip_if(is.null(fit$model), "gender NLME fit failed")
+  expect_false(is.null(fit$model))
   tt <- summary(fit$model)$tTable
   n_subj <- length(unique(fit$data$id))
 
@@ -89,7 +89,7 @@ test_that("df_method = 'between' leaves within-subject terms on containment df",
     data = dat, y_var = "y_ll4", x_var = "x", id_var = "id",
     equation_form = "zben", factors = cond_var,
     random_effects = nlme::pdDiag(Q0 + alpha ~ 1), verbose = FALSE)))
-  skip_if(is.null(fit$model), "within-subject NLME fit failed")
+  expect_false(is.null(fit$model))
   # Precondition: the factor varies within subject.
   expect_true(any(tapply(dat[[cond_var]], dat$id, function(v) length(unique(v))) > 1))
   td_c <- tidy(fit, effects = "fixed", df_method = "containment")

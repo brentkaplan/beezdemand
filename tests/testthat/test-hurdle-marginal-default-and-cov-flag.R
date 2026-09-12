@@ -44,6 +44,11 @@ test_that("'normal' marginal P(zero) integrates over the whole real line", {
     expect_equal(fun(sd_small, beta0, beta1, prices, eps),
                  stats::plogis(beta0 + beta1 * log(prices + eps)), tolerance = 1e-6)
   }
+  # Non-finite SD: Inf gives the 1/2 limit, NA/NaN abort (Codex END pass).
+  expect_equal(fun(Inf, beta0, beta1, prices, eps), rep(0.5, length(prices)))
+  expect_equal(fun(1e6, 10, 0, prices, eps), rep(0.5, length(prices)), tolerance = 1e-6)
+  expect_error(fun(NA_real_, beta0, beta1, prices, eps), "sigma_a")
+  expect_error(fun(NaN, beta0, beta1, prices, eps), "sigma_a")
 })
 
 test_that("a normal fit records re_cov_fallback = FALSE and prints no covariance note", {

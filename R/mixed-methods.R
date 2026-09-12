@@ -1075,7 +1075,22 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
       cli::cli_abort(
         "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)}).")
     }
-    valid_names <- c(all_factors, cov_names)
+    # Internal collapsed columns (`<factor>_Q0` / `<factor>_alpha`) are not
+    # user-facing: `at` must use the ORIGINAL factor name and level, which is
+    # translated to each parameter's collapsed label below (Codex END pass:
+    # an internal name was accepted and then silently skipped).
+    internal_cols <- unlist(lapply(object$collapse_info, function(ci) {
+      vapply(ci, function(x) x$new_col_name %||% NA_character_, character(1))
+    }), use.names = FALSE)
+    internal_cols <- internal_cols[!is.na(internal_cols)]
+    if (any(names(at) %in% internal_cols)) {
+      bad_int <- intersect(names(at), internal_cols)
+      cli::cli_abort(c(
+        "{.arg at} names the internal collapsed column{?s} {.field {bad_int}}.",
+        "i" = "Use the original factor name{?s} ({.field {sub('_(Q0|alpha)$', '', bad_int)}}) with an original level; it is translated to each parameter's collapsed label."
+      ))
+    }
+    valid_names <- setdiff(c(all_factors, cov_names), internal_cols)
     bad <- setdiff(names(at), valid_names)
     if (length(bad) > 0L) {
       cli::cli_abort(c(
@@ -1152,9 +1167,16 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
   .marginal_geom_mean <- function(vals, lbl) {
     vals <- vals[is.finite(vals) & vals > 0]
     if (length(vals) == 0L) {
+      requested <- if (length(at_fac) > 0L) {
+        paste(names(at_fac), "=", vapply(at_fac, function(v) paste(as.character(v), collapse = "/"), character(1)),
+              collapse = ", ")
+      } else {
+        NULL
+      }
       cli::cli_abort(c(
         "No usable {lbl} EMM rows to marginalize.",
-        "i" = "All emmeans values were non-finite/non-positive (possible with overlapping {.arg collapse_levels} labels), or {.arg at} requested a combination of factor levels with no observed cell."
+        "i" = "All emmeans values were non-finite/non-positive (possible with overlapping {.arg collapse_levels} labels), or {.arg at} requested a combination of factor levels with no observed cell.",
+        if (!is.null(requested)) c("x" = "Requested: {requested}.")
       ))
     }
     exp(mean(log(vals)))

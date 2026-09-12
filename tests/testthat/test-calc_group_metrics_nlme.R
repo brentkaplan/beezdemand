@@ -377,7 +377,7 @@ test_that("calc_group_metrics.beezdemand_nlme averages over observed cells only 
   fit <- suppressMessages(fit_demand_mixed(
     d, equation_form = "zben", factors = c("gender", "site"),
     factor_interaction = FALSE, y_var = "y_ll4", x_var = "x", id_var = "id"))
-  skip_if(is.null(fit$model), "incomplete-design NLME fit failed")
+  expect_false(is.null(fit$model))  # a fitting regression must fail, not skip
 
   eq <- suppressWarnings(suppressMessages(get_demand_param_emms(
     fit, param = "Q0", factors_in_emm = NULL, include_ev = FALSE)))
@@ -426,7 +426,7 @@ test_that("calc_group_metrics.beezdemand_nlme honours `at` under partial collaps
   fit <- suppressMessages(fit_demand_mixed(
     d, equation_form = "zben", factors = "grp",
     y_var = "y_ll4", x_var = "x", id_var = "id", collapse_levels = cl))
-  skip_if(is.null(fit$model), "partial-collapse NLME fit failed")
+  expect_false(is.null(fit$model))
   expect_true("grp_Q0" %in% names(fit$data))
   expect_identical(fit$param_info$factors_alpha, "grp")
 
@@ -452,6 +452,10 @@ test_that("calc_group_metrics.beezdemand_nlme honours `at` under partial collaps
                   q0 = eq$Q0_natural[eq$grp == "C"]),
     param_scales = list(alpha = "natural", q0 = "natural"))
   expect_equal(cm_c$Pmax, ref_c$pmax_model, tolerance = 1e-6)
+
+  # The internal collapsed column is not a user-facing name (Codex END pass:
+  # it was accepted and then silently skipped).
+  expect_error(calc_group_metrics(fit, at = list(grp_Q0 = "x")), "original factor name")
 })
 
 test_that("calc_group_metrics.beezdemand_nlme runs when a parameter collapses to one level", {
@@ -461,7 +465,7 @@ test_that("calc_group_metrics.beezdemand_nlme runs when a parameter collapses to
   fit <- suppressMessages(suppressWarnings(fit_demand_mixed(
     d, equation_form = "zben", factors = "grp",
     y_var = "y_ll4", x_var = "x", id_var = "id", collapse_levels = cl)))
-  skip_if(is.null(fit$model), "single-level-collapse NLME fit failed")
+  expect_false(is.null(fit$model))
   cm <- calc_group_metrics(fit)
   expect_true(is.finite(cm$Pmax))
   cm_b <- calc_group_metrics(fit, at = list(grp = "B"))

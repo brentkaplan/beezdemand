@@ -94,7 +94,7 @@ code-1 exit is the PORT status text in `fit$opt$message`:
 
 | Code | Message | What It Means |
 |:----:|---------|---------------|
-| 0 | "relative convergence (4)", "X-convergence (3)", "both X- and relative convergence (5)", "absolute function convergence (6)" | The optimizer is satisfied that it found a minimum. This is the "normal" exit. |
+| 0 | "relative convergence (4)", "X-convergence (3)", "both X-convergence and relative convergence (5)", "absolute function convergence (6)" | The optimizer is satisfied that it found a minimum. This is the "normal" exit. |
 | 1 | "iteration limit reached without convergence (10)" or "function evaluation limit reached without convergence (9)" | The optimizer ran out of its budget before satisfying its convergence criterion. The estimates may be fine (it simply ran out of iterations before it could confirm). |
 | 1 | "false convergence (8)" | The step size shrank to zero without meeting the tolerance. The optimizer cannot make further progress but has not confirmed a minimum. Often the solution is near a parameter boundary, the likelihood surface is very flat, or, as in the worked example below, the point is not a stationary point at all. |
 | 1 | "singular convergence (7)" | The model is over-parameterised near the solution (a direction with no curvature). |

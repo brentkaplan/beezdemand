@@ -875,10 +875,23 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
   # (-Inf, Inf) lets integrate() miss a very narrow density entirely
   # (Codex end pass 2026-09-12: exactly 0 at sigma_a = 1e-4), whereas the
   # standard-normal kernel is always well resolved.
+  if (length(sigma_a) != 1L || is.na(sigma_a)) {
+    cli::cli_abort(c(
+      "The fitted random-intercept SD ({.code sigma_a}) is {.val {sigma_a}}; cannot integrate the marginal P(zero).",
+      "i" = "The zero-component variance did not estimate; check {.code summary(fit)} and the convergence gate."
+    ))
+  }
   vapply(prices, function(p) {
     log_price_term <- beta1 * log(p + epsilon)
-    if (!is.finite(sigma_a) || sigma_a <= 0) {
+    if (sigma_a <= 0) {
+      # Degenerate random effect: the marginal equals the conditional curve.
       return(stats::plogis(beta0 + log_price_term))
+    }
+    if (is.infinite(sigma_a)) {
+      # Limit of E[plogis(beta0 + a + lpt)] as the intercept SD grows without
+      # bound: the logistic is bounded in [0, 1] and symmetric, so the
+      # expectation tends to 1/2 regardless of beta0 + lpt.
+      return(0.5)
     }
     stats::integrate(
       function(z) {
