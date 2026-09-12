@@ -2193,7 +2193,7 @@ plot_re_diagnostics.beezdemand_tmb <- function(
       ),
       type = "probability",
       marginal = TRUE,
-      marginal_method = "kde"
+      marginal_method = "normal"
     ),
     error = function(e) NULL
   )

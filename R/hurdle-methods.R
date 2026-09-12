@@ -7,7 +7,8 @@
 #' @keywords internal
 #' @noRd
 .hurdle_convergence_warning_notes <- function(converged, hessian_pd,
-                                              opt_message, opt_convergence) {
+                                              opt_message, opt_convergence,
+                                              re_cov_fallback = NULL) {
   notes <- character(0)
   if (!isTRUE(converged)) {
     notes <- c(notes, sprintf(
@@ -27,6 +28,15 @@
       "effect) and compare empirical-Bayes subject parameters."
     ))
   }
+  # Batch 3 (F-BD9-7): the diagonal-covariance fallback used to warn once at
+  # fit time and leave no trace on the object.
+  if (isTRUE(re_cov_fallback)) {
+    notes <- c(notes, paste(
+      "Warning: random-effects covariance not positive definite --",
+      "subject-level effects and marginal predictions use an uncorrelated",
+      "(diagonal) approximation; reported correlations do not apply to them."
+    ))
+  }
   notes
 }
 
@@ -38,7 +48,12 @@
     return(invisible(NULL))
   }
   cat(strrep("!", 60), "\n", sep = "")
-  cat("WARNING: this fit did not pass the convergence/Hessian gate.\n")
+  gate <- if (any(grepl("^Warning: random-effects covariance", notes))) {
+    "convergence/Hessian/covariance gate"
+  } else {
+    "convergence/Hessian gate"
+  }
+  cat("WARNING: this fit did not pass the ", gate, ".\n", sep = "")
   for (n in notes) cat("  ", n, "\n", sep = "")
   cat(strrep("!", 60), "\n", sep = "")
   invisible(NULL)
@@ -52,7 +67,8 @@
     converged = x$converged,
     hessian_pd = x$hessian_pd,
     opt_message = x$opt$message,
-    opt_convergence = x$opt$convergence
+    opt_convergence = x$opt$convergence,
+    re_cov_fallback = x$re_cov_fallback
   )
   .print_hurdle_warning_block(notes)
 }
@@ -269,7 +285,8 @@ summary.beezdemand_hurdle <- function(
     converged = object$converged,
     hessian_pd = object$hessian_pd,
     opt_message = object$opt$message,
-    opt_convergence = object$opt$convergence
+    opt_convergence = object$opt$convergence,
+    re_cov_fallback = object$re_cov_fallback
   )
   part2 <- object$param_info$part2 %||% "zhao_exponential"
   if (!identical(part2, "simplified_exponential") &&
@@ -388,7 +405,7 @@ print.summary.beezdemand_hurdle <- function(x, digits = 4, n = Inf, ...) {
   # summary.beezdemand_hurdle() already computed into x$notes -- previously
   # stored but never printed by this method.
   .print_hurdle_warning_block(grep(
-    "^Warning: Optimizer|^Warning: Hessian|^Recommended stability",
+    "^Warning: Optimizer|^Warning: Hessian|^Recommended stability|^Warning: random-effects covariance",
     x$notes, value = TRUE
   ))
   cat("Number of subjects:", x$n_subjects, "\n")
@@ -813,7 +830,7 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' @return Numeric vector of marginal P(zero) values.
 #' @keywords internal
 #' @noRd
-.compute_marginal_pzero <- function(object, prices, method = "kde") {
+.compute_marginal_pzero <- function(object, prices, method = "normal") {
   coefs <- object$model$coefficients
   beta0 <- unname(coefs[["beta0"]])
   beta1 <- unname(coefs[["beta1"]])
@@ -853,14 +870,21 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #' Marginal P(zero) via normal integration
 #' @noRd
 .marginal_pzero_normal <- function(sigma_a, beta0, beta1, prices, epsilon) {
-
+  # Integrate in standardised units (a = sigma_a * z, z ~ N(0, 1)) over the
+  # whole real line. Integrating dnorm(a, 0, sigma_a) directly on
+  # (-Inf, Inf) lets integrate() miss a very narrow density entirely
+  # (Codex end pass 2026-09-12: exactly 0 at sigma_a = 1e-4), whereas the
+  # standard-normal kernel is always well resolved.
   vapply(prices, function(p) {
     log_price_term <- beta1 * log(p + epsilon)
+    if (!is.finite(sigma_a) || sigma_a <= 0) {
+      return(stats::plogis(beta0 + log_price_term))
+    }
     stats::integrate(
-      function(a) {
-        stats::plogis(beta0 + a + log_price_term) * stats::dnorm(a, 0, sigma_a)
+      function(z) {
+        stats::plogis(beta0 + sigma_a * z + log_price_term) * stats::dnorm(z)
       },
-      lower = -4 * sigma_a, upper = 4 * sigma_a
+      lower = -Inf, upper = Inf
     )$value
   }, numeric(1))
 }
@@ -943,6 +967,7 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
     c(sigma_a^2, sigma_b^2)
   }
   L <- .hurdle_chol_or_fallback(Sigma, sigma_diag)
+  re_cov_fallback <- isTRUE(attr(L, "fallback"))
 
   # Draw correlated random effects via Z %*% L where Z ~ iid N(0,1)
   draw_fn <- function() {
@@ -1006,13 +1031,17 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
     demand = avg_expected
   )
 
-  tibble::tibble(
+  out <- tibble::tibble(
     !!x_var := prices,
     predicted_consumption = avg_consumption,
     prob_zero = avg_prob_zero,
     expected_consumption = avg_expected,
     .fitted = fitted_vals
   )
+  # Batch 3 (F-BD9-7): record whether this call's random-effect draws used
+  # the diagonal-covariance fallback (predict() forwards the attribute).
+  attr(out, "re_cov_fallback") <- re_cov_fallback
+  out
 }
 
 
@@ -1050,11 +1079,15 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #'   Default is `FALSE`, which gives conditional (RE = 0) predictions
 #'   representing a "typical" subject at the center of the RE distribution.
 #' @param marginal_method Character. Method for marginal integration; one of
-#'   `"kde"` (default, kernel density estimate of BLUPs), `"normal"` (integrate
-#'   over the model-assumed N(0, sigma_a) distribution), or `"empirical"`
-#'   (simple average over BLUPs). `"normal"` is the model-consistent choice;
-#'   `"kde"` and `"empirical"` are descriptive summaries of the shrunken
-#'   BLUPs (see Details). Ignored when `marginal = FALSE`.
+#'   `"normal"` (default; integrate over the model-assumed N(0, sigma_a)
+#'   distribution of the zero-component intercept, over the whole real
+#'   line), `"kde"` (kernel density estimate of the shrunken BLUPs), or
+#'   `"empirical"` (simple average over the BLUPs). `"normal"` is the
+#'   model-consistent choice: it integrates over the same distribution the
+#'   fitted likelihood integrates over. `"kde"` and `"empirical"` are
+#'   descriptive summaries of the shrunken BLUPs, which understate the
+#'   random-effect spread (see Details). The default was `"kde"` in the
+#'   development versions before 0.3.0. Ignored when `marginal = FALSE`.
 #' @param correction Logical; if `TRUE` (default), applies the lognormal
 #'   retransformation correction `exp(sigma_e^2 / 2)` when back-transforming
 #'   from the log scale to the natural consumption scale. This produces
@@ -1149,7 +1182,12 @@ model.matrix.beezdemand_hurdle <- function(object, what = NULL, ...) {
 #'   Otherwise, a tibble containing the `newdata` columns plus `.fitted` and
 #'   helper columns `predicted_log_consumption`, `predicted_consumption`,
 #'   `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
-#'   `.lower`/`.upper` are included.
+#'   `.lower`/`.upper` are included. Marginal results carry a
+#'   `marginal_method` attribute; Monte Carlo marginal results
+#'   (`type = "response"` / `"demand"`) also carry a logical
+#'   `re_cov_fallback` attribute that is `TRUE` when the random-effect draws
+#'   had to use an uncorrelated (diagonal) covariance because the estimated
+#'   covariance was not positive definite.
 #'
 #' @examples
 #' \donttest{
@@ -1170,7 +1208,7 @@ predict.beezdemand_hurdle <- function(
   type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   correction = TRUE,
   seed = 42L,
   se.fit = FALSE,
@@ -1555,7 +1593,7 @@ predict.beezdemand_hurdle <- function(
 #'   instead of the conditional (RE = 0) curve. Set to `FALSE` for the old
 #'   conditional behavior.
 #' @param marginal_method Character. Method for marginal integration when
-#'   `marginal = TRUE`. One of `"kde"` (default), `"normal"`, or
+#'   `marginal = TRUE`. One of `"normal"` (default), `"kde"`, or
 #'   `"empirical"`. See [predict.beezdemand_hurdle()] for details.
 #' @param par_trans Named list of transformations for parameter distribution
 #'   plots (when `type = "parameters"`). Names are parameter names (e.g.,
@@ -1609,7 +1647,7 @@ plot.beezdemand_hurdle <- function(
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
   marginal = TRUE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   par_trans = NULL,
   ...
 ) {

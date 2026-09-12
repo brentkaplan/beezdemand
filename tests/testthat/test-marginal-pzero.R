@@ -107,7 +107,8 @@ test_that("predict marginal returns tibble with correct columns", {
   expect_equal(nrow(out), length(prices))
   expect_true(all(out$prob_zero >= 0 & out$prob_zero <= 1))
   expect_equal(out$prob_zero, out$.fitted)
-  expect_equal(attr(out, "marginal_method"), "kde")
+  # Batch 3 (F-BD9-7): the model-consistent "normal" integration is the default.
+  expect_equal(attr(out, "marginal_method"), "normal")
 })
 
 test_that("predict marginal each method works", {
