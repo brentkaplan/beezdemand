@@ -507,6 +507,26 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
+* **Cross-price method contracts.** `tidy()`, `glance()` and `augment()` on a
+  `cp_model_nls` / `cp_model_lm` / `cp_model_lmer` object whose fit failed
+  (`model = NULL`) now return typed empties with the same columns as the
+  successful call (zero rows for `tidy()`/`augment()`, one all-`NA` row for
+  `glance()`) instead of six different shapes. `tidy.cp_model_lmer()` accepts
+  `effects = "ran_vals"` and keeps `"random"` as an alias (it used to pass
+  argument matching and then error inside broom.mixed). `fit_cp_linear(type
+  = "mixed")` stores lme4's convergence verdict (`converged`,
+  `convergence_messages`), warns once with class
+  `beezdemand_cp_lmer_nonconverged_warning` when it is bad, and `print()` /
+  `summary()` show it; `print.cp_model_nls()` shows a non-converged winning
+  fit. The summary print describes `qalone` as the asymptote as the
+  alternative's price grows, not the zero-price value.
+* **`calc_group_metrics()` on an NLME fit recorded a covariate value it had
+  not conditioned on.** A multi-value continuous `at` entry was forwarded
+  whole to emmeans (the grid expanded over every value) while
+  `conditioned_on` reported only the first. The NLME method now warns and
+  uses the first value, as the TMB method already did. Both methods'
+  documentation now states the marginalisation grid each backend uses and
+  when the two can differ.
 * **`predict.beezdemand_tmb()` rebuilt its design under the contrasts in force
   at call time, not at fit time.** Changing `options("contrasts")` after
   fitting a model with factors kept the column count but changed the basis,

@@ -4625,6 +4625,19 @@ get_demand_comparisons.beezdemand_tmb <- function(
 #' transforms. The convention matches the parameter-level marginalization
 #' used by \code{get_demand_param_emms()}.
 #'
+#' @section Marginalisation policy (TMB vs NLME):
+#' This method averages the log-scale linear predictors with equal weight
+#' over the factor cells retained in the fitted design (observed cells
+#' only) and then exponentiates. The NLME method
+#' (\code{calc_group_metrics.beezdemand_nlme()}) instead lets \code{emmeans}
+#' build the full factorial reference grid (unobserved cells included) and
+#' takes the geometric mean of the natural-scale cell EMMs. The two agree for
+#' balanced designs fit in log space and can differ when factor cells are
+#' unobserved or the NLME fit uses \code{param_space = "natural"}. In both
+#' backends continuous covariates are held at the training mean unless
+#' \code{at} supplies a single value; a multi-value continuous \code{at}
+#' entry warns and uses its first value.
+#'
 #' @examples
 #' \donttest{
 #' data(apt)

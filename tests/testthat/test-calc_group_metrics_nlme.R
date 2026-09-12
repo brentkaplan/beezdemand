@@ -314,3 +314,28 @@ test_that(".nlme_muffle_group_metrics_emms_noise mutes only the benign message +
   }
   expect_no_warning(beezdemand:::.nlme_muffle_group_metrics_emms_noise(gate_warn_fn()))
 })
+
+# ---------------------------------------------------------------------------
+# F-BD6-3 (audit 2026-09-06): a multi-value continuous `at` used to be
+# forwarded whole to emmeans (the grid expanded over every value and the
+# geometric mean averaged across them) while `conditioned_on` recorded only
+# the first value. The NLME method now normalises to the first value with
+# the same warning the TMB method emits, so the recorded conditioning is the
+# conditioning that was applied.
+# ---------------------------------------------------------------------------
+test_that("calc_group_metrics.beezdemand_nlme: multi-value continuous `at` warns and uses the first value (F-BD6-3)", {
+  skip_on_cran()
+  d <- .cgm_nlme_subsample()
+  fit <- fit_demand_mixed(
+    d, equation_form = "zben", continuous_covariates = "age",
+    y_var = "y_ll4", x_var = "x", id_var = "id")
+
+  cm_one <- calc_group_metrics(fit, at = list(age = 30))
+  expect_warning(
+    cm_two <- calc_group_metrics(fit, at = list(age = c(30, 60))),
+    "using first value"
+  )
+  expect_equal(cm_two$conditioned_on$covariates[["age"]], 30)
+  expect_equal(cm_two$Pmax, cm_one$Pmax, tolerance = 1e-10)
+  expect_equal(cm_two$Omax, cm_one$Omax, tolerance = 1e-10)
+})

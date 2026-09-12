@@ -997,6 +997,30 @@ get_observed_demand_param_emms <- function(
 #' Silberberg solution; `"zben"`/`"simplified"` use the simplified (SND)
 #' solution.
 #'
+#' @section Marginalisation policy (NLME vs TMB):
+#' The two backends marginalise over different grids, and the results are
+#' only guaranteed to coincide for a complete design fit in `param_space =
+#' "log10"`:
+#' \itemize{
+#'   \item **NLME (this method)**: `emmeans` builds the full factorial
+#'     reference grid over every factor level (including cells with no
+#'     observations), the cell EMMs are back-transformed to the natural scale,
+#'     and the geometric mean is taken over the cells (for `param_space =
+#'     "log10"` this equals the arithmetic mean of the log10 EMMs). Under
+#'     `param_space = "natural"` the cell EMMs are natural-scale estimates and
+#'     the geometric mean is taken of those directly, which is not the same
+#'     as averaging log predictors.
+#'   \item **TMB** (`calc_group_metrics.beezdemand_tmb()`): the log-scale
+#'     linear predictors are averaged with equal weight over the factor cells
+#'     retained in the fitted design (observed cells only), then
+#'     exponentiated.
+#' }
+#' The two therefore agree for balanced designs in log space and can differ
+#' when factor cells are unobserved or the NLME fit is in natural space. In
+#' both backends continuous covariates are held at the training mean unless
+#' `at` supplies a single value; a multi-value continuous `at` entry warns and
+#' uses its first value.
+#'
 #' @param object A `beezdemand_nlme` object from [fit_demand_mixed()].
 #' @param at Optional named list conditioning continuous covariates / factor
 #'   levels (same shape as the `beezdemand_tmb` method). Covariates default to
@@ -1069,6 +1093,18 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
         if (any(is.na(v_num)) || any(!is.finite(v_num))) {
           cli::cli_abort(
             "{.field {nm}} value{?s} {.val {as.character(v)}} must be finite numeric.")
+        }
+        # F-BD6-3: a multi-value continuous `at` was forwarded whole to
+        # emmeans (grid expanded, geometric mean taken across the values)
+        # while `conditioned_on` recorded only the first. Normalise to the
+        # first value with the TMB method's warning so the recorded
+        # conditioning is the conditioning applied.
+        if (length(v) > 1L) {
+          cli::cli_warn(c(
+            "{.arg at${nm}} has length {length(v)}; using first value {.val {v_num[1]}}.",
+            "i" = "Pass a single numeric value per continuous covariate."
+          ))
+          at[[nm]] <- v_num[1]
         }
       }
     }
