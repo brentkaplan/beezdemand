@@ -493,6 +493,16 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
 
 ## Silent-failure fixes (hurdle, cross-price, extractors, plots)
 
+* **`predict.beezdemand_tmb()` rebuilt its design under the contrasts in force
+  at call time, not at fit time.** Changing `options("contrasts")` after
+  fitting a model with factors kept the column count but changed the basis,
+  so population- and subject-level predictions silently changed. The rebuilt
+  fixed-effect design is now pinned to the fitted `contrasts` attribute and
+  verified column-by-column (aborting loudly on a mismatch), the same rule the
+  EMM grid already used; the factor-expanded random-effect design stores the
+  fit-time contrasts on the parsed block and reuses them, and the
+  `anova()` term-map fallback does the same. Default-contrast sessions are
+  unaffected.
 * **Hurdle random-effects covariance `chol()` failure silently substituted an
   uncorrelated diagonal Sigma at five sites** (the RE-transform helpers, the
   live `fit_demand_hurdle()` inline path for 2- and 3-RE models, and

@@ -136,7 +136,8 @@
   }
 
   rhs_form <- stats::as.formula(paste("~", deparse1(form[[3]])))
-  terms_template <- .re_rhs_terms(rhs_form, data)
+  design <- .re_rhs_design(rhs_form, data)
+  terms_template <- design$terms
 
   terms_q0 <- if ("Q0" %in% lhs_vars) terms_template else character(0)
   terms_alpha <- if ("alpha" %in% lhs_vars) terms_template else character(0)
@@ -146,6 +147,7 @@
     formula     = form,
     terms_q0    = terms_q0,
     terms_alpha = terms_alpha,
+    contrasts   = design$contrasts,
     dim         = length(terms_q0) + length(terms_alpha)
   ))
 }
@@ -169,7 +171,8 @@
   # All components in a listForm share the same RHS
   rhs_expr <- form_list[[1]][[length(form_list[[1]])]]
   rhs_form <- stats::as.formula(paste("~", deparse1(rhs_expr)))
-  terms_template <- .re_rhs_terms(rhs_form, data)
+  design <- .re_rhs_design(rhs_form, data)
+  terms_template <- design$terms
 
   terms_q0    <- if ("Q0"    %in% lhs_vars) terms_template else character(0)
   terms_alpha <- if ("alpha" %in% lhs_vars) terms_template else character(0)
@@ -183,6 +186,7 @@
     formula     = composite,
     terms_q0    = terms_q0,
     terms_alpha = terms_alpha,
+    contrasts   = design$contrasts,
     dim         = length(terms_q0) + length(terms_alpha)
   )
 }
@@ -190,11 +194,20 @@
 # Expand an RHS formula (one-sided) into contrast column names.
 # For `~ 1` this is just `"(Intercept)"` -- no data needed.
 .re_rhs_terms <- function(rhs_form, data) {
+  .re_rhs_design(rhs_form, data)$terms
+}
+
+# Column names AND the contrasts model.matrix() used to produce them. The
+# contrasts are stored on the RE block so every later rebuild of the Z design
+# (predict, get_subject_pars) reproduces the fit-time basis regardless of
+# options("contrasts") at call time (F-BD6-2). NULL for intercept-only RHS.
+.re_rhs_design <- function(rhs_form, data) {
   tt <- stats::terms(rhs_form)
   vars <- all.vars(rhs_form)
   if (length(vars) == 0L) {
     # Intercept-only; no data needed
-    if (attr(tt, "intercept") == 1L) "(Intercept)" else character(0)
+    terms <- if (attr(tt, "intercept") == 1L) "(Intercept)" else character(0)
+    list(terms = terms, contrasts = NULL)
   } else {
     if (is.null(data)) {
       stop(
@@ -212,7 +225,8 @@
       )
     }
     mf <- stats::model.frame(rhs_form, data = data)
-    colnames(stats::model.matrix(rhs_form, data = mf))
+    mm <- stats::model.matrix(rhs_form, data = mf)
+    list(terms = colnames(mm), contrasts = attr(mm, "contrasts"))
   }
 }
 

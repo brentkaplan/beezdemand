@@ -198,7 +198,11 @@ NULL
   rhs_form <- stats::as.formula(
     paste("~", deparse1(block$formula[[3]]))
   )
-  X <- stats::model.matrix(rhs_form, data = data)
+  # Pin to the fit-time contrasts stored by the parser (F-BD6-2); blocks
+  # from intercept-only specs or older fits carry NULL, which is the
+  # default `model.matrix()` behaviour.
+  X <- stats::model.matrix(rhs_form, data = data,
+                           contrasts.arg = block$contrasts)
 
   # Reorder to match the parser's `terms_*` ordering (defensive — they
   # should already match).

@@ -259,6 +259,49 @@
 }
 
 
+#' Rebuild a fixed-effect design matrix pinned to the fitted contrasts
+#'
+#' `model.matrix()` honours `options("contrasts")` at call time. If that
+#' option changed after fitting, a rebuilt design keeps the same column
+#' count but encodes a different basis, so `beta` silently multiplies the
+#' wrong columns (F-BD6-2). This helper passes the fitted matrix's
+#' `contrasts` attribute, verifies the rebuilt columns match the fitted
+#' ones, reorders to the fitted order, and aborts loudly otherwise. The
+#' EMM grid builder applies the same rule (TICKET-016, F1).
+#'
+#' @param fitted_X The design matrix stored on the fit (`formula_details$X_*`).
+#' @param rhs A one-sided formula or its character form.
+#' @param data Data frame to build the design from.
+#' @param param `"Q0"` or `"alpha"`, for messages only.
+#' @return The rebuilt design matrix with the fitted column order and the
+#'   `assign` / `contrasts` attributes `model.matrix()` produced.
+#' @keywords internal
+.tmb_rebuild_fixed_design <- function(fitted_X, rhs, data, param = "Q0") {
+  if (is.character(rhs)) rhs <- stats::as.formula(rhs)
+  X <- stats::model.matrix(rhs, data = data,
+                           contrasts.arg = attr(fitted_X, "contrasts"))
+  fitted_cols <- colnames(fitted_X)
+  if (!is.null(fitted_cols)) {
+    if (!setequal(colnames(X), fitted_cols)) {
+      cli::cli_abort(c(
+        "Could not reproduce the fitted {param} design matrix.",
+        "i" = "Rebuilt columns: {.val {colnames(X)}}.",
+        "i" = "Fitted columns: {.val {fitted_cols}}.",
+        "x" = "This can happen if the model's factor levels or contrasts changed after fitting."
+      ))
+    }
+    if (!identical(colnames(X), fitted_cols)) {
+      asn <- attr(X, "assign")
+      ctr <- attr(X, "contrasts")
+      ord <- match(fitted_cols, colnames(X))
+      X <- X[, ord, drop = FALSE]
+      attr(X, "assign") <- asn[ord]
+      attr(X, "contrasts") <- ctr
+    }
+  }
+  X
+}
+
 #' Map a TMB design-matrix column to its originating model term
 #' @keywords internal
 .tmb_term_assign_map <- function(object, param) {
@@ -269,8 +312,9 @@
   f   <- if (param == "Q0") stats::formula(object)$Q0 else
     stats::formula(object)$alpha
   if (is.null(asn)) {
-    # Rebuild to recover the `assign` attribute (Task 0, Step 3 fallback).
-    X   <- stats::model.matrix(f, data = object$data)
+    # Rebuild to recover the `assign` attribute (Task 0, Step 3 fallback),
+    # pinned to the fit-time contrasts (F-BD6-2).
+    X   <- .tmb_rebuild_fixed_design(X, f, object$data, param)
     asn <- attr(X, "assign")
     cn  <- colnames(X)
   }
@@ -1590,14 +1634,14 @@ predict.beezdemand_tmb <- function(
     newdata[[f]] <- factor(new_vals, levels = train_levels)
   }
 
-  # 3. Rebuild per-row design matrices using the stored RHS.
-  X_q0_new <- stats::model.matrix(
-    stats::as.formula(object$formula_details$rhs_q0),
-    data = newdata
+  # 3. Rebuild per-row design matrices using the stored RHS, pinned to the
+  #    fit-time contrasts (F-BD6-2; see .tmb_rebuild_fixed_design()).
+  X_q0_new <- .tmb_rebuild_fixed_design(
+    object$formula_details$X_q0, object$formula_details$rhs_q0, newdata, "Q0"
   )
-  X_alpha_new <- stats::model.matrix(
-    stats::as.formula(object$formula_details$rhs_alpha),
-    data = newdata
+  X_alpha_new <- .tmb_rebuild_fixed_design(
+    object$formula_details$X_alpha, object$formula_details$rhs_alpha, newdata,
+    "alpha"
   )
 
   if (ncol(X_q0_new) != length(beta_q0)) {
