@@ -89,24 +89,31 @@ well.
 TMB models fitted with `fit_demand_tmb()` and `fit_demand_hurdle()` use the
 `nlminb` optimizer by default. It reports the following convergence codes:
 
-| Code | What Triggered It | What It Means |
-|:----:|-------------------|---------------|
-| 0 | Relative improvement in objective < `rel.tol` | The optimizer is satisfied that it found a minimum. This is the "normal" exit. |
-| 1 | Number of iterations >= `iter.max` | The optimizer ran out of its iteration budget before satisfying its convergence criterion. The estimates may be fine (the optimizer simply ran out of iterations before it could confirm). |
-| 8 | Step size shrinks to zero but tolerance not met ("false convergence") | The optimizer cannot make further progress but hasn't confirmed it reached a minimum. Often occurs when the solution is near a parameter boundary or when the likelihood surface is very flat. |
+R's `nlminb()` reports only two convergence codes, 0 and 1; the reason for a
+code-1 exit is the PORT status text in `fit$opt$message`:
+
+| Code | Message | What It Means |
+|:----:|---------|---------------|
+| 0 | "relative convergence (4)", "X-convergence (3)", "both X- and relative convergence (5)", "absolute function convergence (6)" | The optimizer is satisfied that it found a minimum. This is the "normal" exit. |
+| 1 | "iteration limit reached without convergence (10)" or "function evaluation limit reached without convergence (9)" | The optimizer ran out of its budget before satisfying its convergence criterion. The estimates may be fine (it simply ran out of iterations before it could confirm). |
+| 1 | "false convergence (8)" | The step size shrank to zero without meeting the tolerance. The optimizer cannot make further progress but has not confirmed a minimum. Often the solution is near a parameter boundary, the likelihood surface is very flat, or, as in the worked example below, the point is not a stationary point at all. |
+| 1 | "singular convergence (7)" | The model is over-parameterised near the solution (a direction with no curvature). |
 
 **Code 0** is what you want, but it does not guarantee that the solution is
 correct. The optimizer may still have converged to a local minimum or a boundary.
 
-**Code 1** (iteration limit) is often benign. If the objective function was still
+**Iteration limit** exits are often benign. If the objective function was still
 decreasing, increasing `iter_max` in `tmb_control` may resolve it. If the objective
 had plateaued, the current estimates are likely at or very near the minimum.
 
-**Code 8** (false convergence) sounds alarming but is common in well-specified
-demand models. TMB provides exact gradients via automatic differentiation, so
-code 8 is rarer than with finite-difference methods. When it does occur, it
-typically means the solution is at a feasibility boundary (e.g., a random effect
-variance near zero) rather than that the optimizer is stuck.
+**False convergence** sounds alarming but is common in well-specified demand
+models. TMB provides exact gradients via automatic differentiation, so it is
+rarer than with finite-difference methods. When it does occur, it can mean the
+solution is at a feasibility boundary (e.g., a random effect variance near
+zero), or that the optimizer stalled on a ridge that is not a minimum. Check the
+gradient and the Hessian before trusting the estimates (see the checklist
+below); since 0.3.0 `fit_demand_tmb()` runs that check itself and tries to
+rescue the fit (see "Switching Optimizer").
 
 #### L-BFGS-B Convergence Codes
 
@@ -521,9 +528,9 @@ Use this table after running the diagnostic checklist on a TMB model
 | 0 | Yes | Yes | Yes | Yes | **Trust the results** |
 | 0 | Yes | No | n/a | n/a | Saddle point: refit with different starts |
 | 0 | Yes | Yes | Yes | No | Converged to wrong minimum: check data, try different starts |
-| 1 or 8 | Yes | Yes | Yes | Yes | **Likely trustworthy** (run diagnostics; increase iterations to confirm) |
-| 1 or 8 | No | No | n/a | n/a | Simplify model (fewer random effects, fix k) |
-| 1 or 8 | n/a | n/a | n/a | No | Estimates unreliable: simplify or check data quality |
+| 1 (any message) | Yes | Yes | Yes | Yes | **Likely trustworthy** (run diagnostics; increase iterations to confirm) |
+| 1 (any message) | No | No | n/a | n/a | Not a solution: simplify model (fewer random effects, fix k) or let the false-convergence rescue run |
+| 1 (any message) | n/a | n/a | n/a | No | Estimates unreliable: simplify or check data quality |
 
 ### NLME Decision Table
 
@@ -654,7 +661,7 @@ TMB convergence issues have their own set of solutions:
 | Flat likelihood | Large SEs, code 1 | Simplify model (fewer RE, fix k) |
 | Boundary solution | Parameter at bound, code 1 | Widen or narrow bounds |
 | Iteration limit | Code 1 | Increase `iter_max` |
-| False convergence | Code 8 | Try more iterations; try L-BFGS-B |
+| False convergence | Code 1, message "false convergence (8)" | Automatic rescue (default); else try L-BFGS-B or a warm start |
 | Saddle point | Hessian not PD | Different starts; try L-BFGS-B optimizer |
 | Zero RE variance | sigma near 0 | Remove that random effect |
 
@@ -674,8 +681,9 @@ fit <- fit_demand_tmb(
 
 #### Switching Optimizer
 
-If `nlminb` produces code 8 (false convergence), switching to L-BFGS-B sometimes
-helps because it uses a different line search strategy:
+If `nlminb` reports false convergence (code 1 with the message
+"false convergence (8)"), switching to L-BFGS-B sometimes helps because it
+uses a different line search strategy:
 
 ```{r tmb-optimizer, eval = FALSE}
 fit_lbfgsb <- fit_demand_tmb(
@@ -684,6 +692,57 @@ fit_lbfgsb <- fit_demand_tmb(
   tmb_control = list(optimizer = "L-BFGS-B")
 )
 ```
+
+Since 0.3.0 you rarely need to do this by hand: `fit_demand_tmb()` tries a
+rescue itself whenever nlminb reports false convergence. A worked example
+shows what the rescue does and why the stalled point must not be kept.
+
+**Worked example: `apt_full`, exponential, gender, fixed `k = 2`.** With the
+default `estimate_k = FALSE` the fixed-`k` fit stalls:
+
+```{r tmb-rescue-off, eval = FALSE}
+data(apt_full)
+fit_off <- fit_demand_tmb(
+  apt_full, equation = "exponential", factors = "gender",
+  tmb_control = list(rescue = FALSE)
+)
+#> Warning: TMB fit did not converge (optimizer code 1: false convergence (8)).
+fit_off$opt$objective                 # 3308.7
+max(abs(fit_off$tmb_obj$gr(fit_off$opt$par)))   # ~8e10
+```
+
+The negative log-likelihood at the stalled point (3308.7) looks respectable,
+but the gradient there has components of order 1e10 and the Hessian is
+indefinite (smallest eigenvalue about -4e6): it is not a stationary point,
+so it is not an estimate of anything. Restarting nlminb from that point and
+switching to L-BFGS-B both stall in the same region. What does work is a
+warm start from the free-`k` solution:
+
+```{r tmb-rescue-on, eval = FALSE}
+fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender")
+#>   nlminb reported false convergence; attempting rescue...
+#>   Rescued nlminb false convergence via free_k_warm_start (NLL 3308.738 -> 3312.643;
+#>   the stalled point was not stationary)
+fit$converged                         # TRUE
+fit$hessian_pd                        # TRUE
+fit$opt$rescue_method                 # "free_k_warm_start"
+```
+
+The rescued fit has a *higher* NLL (3312.6) than the stalled point. That is
+expected: the stalled 3308.7 was reached on a ridge the optimizer could not
+leave and is not admissible, whereas 3312.6 is a genuine local minimum of the
+fixed-`k` likelihood (gradient below `rescue_grad_tol`, positive-definite
+Hessian). The rescue never picks a candidate by NLL alone; it requires
+convergence code 0, a small gradient and a positive-definite Hessian first.
+
+Two cautions. First, the rescued point is a local minimum on the fixed-`k`
+surface, not proven to be the global one. Second, the same data with
+`estimate_k = TRUE` converges cleanly at `k = 1.76` with NLL 3301.6, so this
+example is also a fixed-`k` sensitivity check: when a fixed-`k` fit needs
+rescuing, compare it with the free-`k` fit before reporting either (the
+Details of `?fit_demand_tmb` explain when `k` is identified). To keep the
+old loud failure
+instead of the rescue, pass `tmb_control = list(rescue = FALSE)`.
 
 #### Using Warm Starts
 

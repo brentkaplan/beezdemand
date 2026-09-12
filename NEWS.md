@@ -59,6 +59,31 @@ The comparison is against 0.2.0 except where an item says otherwise: the TMB
 tier, the hurdle tier and the power functions are new in 0.3.0, so for those the
 change is against the development version rather than against a release.
 
+* **`calc_group_metrics()` on an NLME fit now averages over the factor cells
+  that were observed, with equal weight per cell.** It previously let
+  `emmeans` average over the full factorial grid, so a design with an empty
+  cell (say, no Female subjects at site B) extrapolated the additive model
+  into that cell before taking the geometric mean of Q0 and alpha. The TMB
+  method already used observed cells only; the two backends now agree on any
+  design fit in log space, and the policy is written out under
+  "Marginalisation policy" in both methods' help. Numbers change only when a
+  factor cell has no subjects. In the same method, a factor level passed in
+  `at` on a `collapse_levels` fit was silently ignored (the restriction was
+  keyed by the original factor name, which the collapsed model does not
+  have) and the result was the unconditioned one; `at` is now applied to
+  each parameter's collapsed cells, and a requested cell with no data is an
+  error rather than an extrapolation.
+* **Hurdle marginal `P(zero)` now integrates over the fitted normal random
+  effect by default.** `predict()` and `plot()` for `beezdemand_hurdle` fits
+  used `marginal_method = "kde"`, a kernel density of the shrunken subject
+  intercepts, which understates the random-effect spread and pulls the
+  population curve toward the conditional one; the default is now
+  `"normal"`, the distribution the likelihood itself integrates over, and
+  the integral runs over the whole real line instead of a truncated
+  interval whose weights were not renormalised. `"kde"` and `"empirical"`
+  remain available as descriptive summaries. The hurdle tier is new in
+  0.3.0, so this differs only from the development version.
+
 * **`fit_demand_tmb()` now fixes `k` at 2 by default (`estimate_k = FALSE`).**
   The TMB tier is new in 0.3.0 and has never been released, so this changes
   results only for users who installed the development version; nothing on CRAN
@@ -313,6 +338,42 @@ change is against the development version rather than against a release.
 
 ## Inference gates and diagnostic reporting
 
+* **`fit_demand_tmb()` rescues an nlminb false-convergence exit.** R's
+  `nlminb()` reports convergence codes 0 and 1 only and puts the PORT status
+  in the message, so "false convergence (8)" arrives as code 1. When that
+  happens the fitter now restarts nlminb from the stalled point, tries
+  L-BFGS-B, and, for a fixed-`k` fit, warm-starts from a free-`k` refit; a
+  candidate replaces the stalled result only if it reports code 0, its
+  gradient is small (`tmb_control$rescue_grad_tol`, default 0.01) and its
+  Hessian is positive definite, and the lowest-NLL accepted candidate wins.
+  `fit$opt$rescued_from` / `fit$opt$rescue_method` record a rescue and
+  `summary()` notes it; `tmb_control = list(rescue = FALSE)` restores the
+  loud failure. Fits that converge first time are untouched. The worked
+  example (`apt_full`, exponential, gender, fixed `k = 2`, where the stalled
+  point has a gradient of order 1e11 and an indefinite Hessian) is in
+  `vignette("convergence-guide")`.
+* **NLME `summary()` and `tidy()` gain `df_method`.** nlme's containment rule
+  assigns the observation-level residual df to between-subject terms, whose
+  effective sample size is the number of subjects, so those p-values were
+  anticonservative and the help could only warn about it. Both methods now
+  carry a `df` column (nlme's containment df by default, bit-identical to
+  before) and accept `df_method = "between"`, which gives each
+  between-subject term `n_subjects - rank(X_between)` from that parameter's
+  subject-level design and recomputes its p-value from the unchanged t
+  statistic; intercepts and within-subject terms keep containment df. The
+  printed summary shows the df in use. For column parity,
+  `tidy.beezdemand_tmb()` reports `df = Inf` on its asymptotic z rows.
+* **`glance.cp_model_lmer()` reports `converged`.** The mixed-effects
+  cross-price wrapper stored lme4's convergence status but `glance()` did not
+  expose it; a `converged` column (logical, `NA` on a failed fit or an object
+  saved before the field existed) is now appended so a batch of fits can be
+  screened without printing each one, matching `broom::glance.nls()`'s
+  `isConv`.
+* **A hurdle fit records when its random-effects covariance fell back to a
+  diagonal approximation.** `.hurdle_chol_or_fallback()` warned once at fit
+  time and left no trace; `fit$re_cov_fallback` now stores the flag,
+  `summary()` and `print()` carry a note, and marginal `predict()` output
+  gets a `re_cov_fallback` attribute when its own draws used the fallback.
 * **`check_demand_model()` on a nested-grouping NLME fit mis-read
   `nlme::VarCorr()`.** The variance table for `random = ~ 1 | outer/inner`
   interleaves group-header rows with per-level parameter rows whose names
