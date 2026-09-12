@@ -644,7 +644,8 @@ fit_cp_linear <- function(
         group_effects = group_effects,
         random_slope = random_slope,
         converged = converged,
-        convergence_messages = conv_msgs
+        convergence_messages = conv_msgs,
+        REML = tryCatch(lme4::isREML(model), error = function(e) TRUE)
       )
       class(result) <- "cp_model_lmer"
       return(result)

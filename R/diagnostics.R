@@ -1019,11 +1019,17 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
   # available whenever the model fits; apVar is the stricter conditioning signal.)
   apVar_ok <- is.matrix(model$apVar) && all(is.finite(model$apVar))
   # F-BD10-1: a finite apVar can still be indefinite (a saddle rather than a
-  # maximum); require it to be positive definite as well.
+  # maximum); require it to be positive semi-definite up to rounding. A raw
+  # chol() would flip healthy fits on a -1e-16 eigenvalue (end-pass review),
+  # so use the symmetric eigenvalues with a relative tolerance.
   if (apVar_ok) {
-    apVar_ok <- !inherits(
-      tryCatch(chol(model$apVar), error = function(e) e), "error"
+    ev <- tryCatch(
+      eigen((model$apVar + t(model$apVar)) / 2, symmetric = TRUE,
+            only.values = TRUE)$values,
+      error = function(e) NULL
     )
+    apVar_ok <- !is.null(ev) && length(ev) > 0 &&
+      all(ev > -sqrt(.Machine$double.eps) * max(abs(ev), 1e-300))
   }
   no_error <- is.null(object$error_message)
   final_fit_ok <- apVar_ok && no_error
@@ -1188,8 +1194,17 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
         names(var_vals) <- param_names
         variances <- if (identical(var_col, "StdDev")) var_vals^2 else var_vals
         names(variances) <- param_names
-        near_zero <- !is.na(var_vals) & var_vals < 1e-6
+        # Keep NA as NA: a retained row whose value did not parse is "not
+        # checked", never "checked and not near zero" (end-pass review).
+        near_zero <- var_vals < 1e-6
         names(near_zero) <- param_names
+        if (anyNA(var_vals)) {
+          computation_failed <- TRUE
+          cli::cli_warn(
+            "Random-effects diagnostics could not be computed for {.val {param_names[is.na(var_vals)]}}: VarCorr() value did not parse as a number",
+            class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+          )
+        }
       }
     }
 

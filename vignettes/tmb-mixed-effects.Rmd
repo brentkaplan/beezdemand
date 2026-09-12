@@ -351,9 +351,10 @@ ap |>
 
 Amplitude is a single z-score, so it has mean 0 and SD 1 within the fitted
 dataset. Persistence is the mean of three z-scores and is not re-standardized:
-its mean is 0 but its SD depends on how strongly the three components correlate
-(it equals 1 only when they are perfectly correlated) and on any missing
-components. For cross-sample comparisons, supply external `basis_means` and
+with complete components its mean is 0, and its SD depends on how strongly the
+three components correlate (it equals 1 only when they are perfectly
+correlated). Missing components move both the mean and the SD away from those
+values. For cross-sample comparisons, supply external `basis_means` and
 `basis_sds` so the standardization uses a fixed reference.
 
 ### Confidence Intervals

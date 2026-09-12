@@ -237,3 +237,13 @@ test_that("glance$converged is FALSE when apVar is finite but indefinite (F-BD10
   expect_false(res$final_fit_ok)
   expect_false(res$converged)
 })
+
+test_that("apVar gate tolerates a rounding-level negative eigenvalue (F-BD10-1, end-pass)", {
+  skip_on_cran()
+  fit <- .nch_fit()
+  skip_if_not(is.matrix(fit$model$apVar) && all(is.finite(fit$model$apVar)))
+  k <- nrow(fit$model$apVar)
+  fit$model$apVar <- diag(c(rep(1, k - 1), -1e-16))
+  res <- beezdemand:::.check_nlme_convergence(fit)
+  expect_true(res$final_fit_ok)
+})

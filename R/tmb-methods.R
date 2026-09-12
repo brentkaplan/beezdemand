@@ -302,6 +302,43 @@
   X
 }
 
+#' Recreate `collapse_levels` factor columns in newdata
+#'
+#' `fit_demand_tmb(collapse_levels = ...)` fits on derived columns named
+#' `<factor>_Q0` / `<factor>_alpha` that live only in `object$data`. A user
+#' supplying newdata in the original shape has the original factor but not
+#' those columns, and `predict()` rejected the rows as missing required
+#' columns (F-BD6-4). The old-to-new level map is not stored on the fit, but
+#' it is recoverable exactly from the training data, where both columns are
+#' present. Columns already in `newdata` are left alone; an original level
+#' unseen in training is left `NA` and caught by the later level check.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @param newdata Data frame.
+#' @return `newdata` with any missing collapsed columns added.
+#' @keywords internal
+.tmb_recreate_collapsed_columns <- function(object, newdata) {
+  ci <- object$collapse_info
+  if (is.null(ci) || length(ci) == 0L) return(newdata)
+  train <- object$data
+  for (param in names(ci)) {
+    for (orig in names(ci[[param]])) {
+      new_col <- ci[[param]][[orig]]$new_col_name
+      if (is.null(new_col) || new_col %in% names(newdata)) next
+      if (!(orig %in% names(newdata)) ||
+          !all(c(orig, new_col) %in% names(train))) next
+      map <- unique(data.frame(
+        old = as.character(train[[orig]]),
+        new = as.character(train[[new_col]]),
+        stringsAsFactors = FALSE
+      ))
+      new_vals <- map$new[match(as.character(newdata[[orig]]), map$old)]
+      newdata[[new_col]] <- factor(new_vals, levels = levels(train[[new_col]]))
+    }
+  }
+  newdata
+}
+
 #' Map a TMB design-matrix column to its originating model term
 #' @keywords internal
 .tmb_term_assign_map <- function(object, param) {
@@ -1553,6 +1590,11 @@ predict.beezdemand_tmb <- function(
 
   beta_q0    <- unname(coefs[names(coefs) == "beta_q0"])
   beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
+
+  # 0. Under `collapse_levels` the fitted factor columns are internal
+  #    (`age_group_Q0` / `age_group_alpha`); recreate them from the original
+  #    column so ordinary newdata predicts (F-BD6-4, end-pass review).
+  newdata <- .tmb_recreate_collapsed_columns(object, newdata)
 
   # 1. Validate required columns are present. Phase 2 also requires
   # variables that appear only in the RE formula RHS (not in `factors`):

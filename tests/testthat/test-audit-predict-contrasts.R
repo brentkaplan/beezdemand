@@ -30,14 +30,67 @@ test_that("predict.beezdemand_tmb is invariant to options(contrasts) (F-BD6-2)",
   ))
   nd <- d[d$gender == "Female", ][1:8, ]
 
+  # Population-level output uses the nlme-style `predict.fixed` column;
+  # subject-level keeps `.fitted`. Pull the level-appropriate column and
+  # require numeric values so a missing column cannot pass as NULL == NULL.
+  col_for <- c(population = "predict.fixed", subject = ".fitted")
   for (lev in c("population", "subject")) {
-    p_def <- predict(fit, newdata = nd, level = lev)$.fitted
+    expect_no_warning(p_def <- predict(fit, newdata = nd, level = lev)[[col_for[[lev]]]])
     p_sum <- withr::with_options(
       .f62_sum_contrasts,
-      predict(fit, newdata = nd, level = lev)$.fitted
+      predict(fit, newdata = nd, level = lev)[[col_for[[lev]]]]
     )
+    expect_true(is.numeric(p_def) && length(p_def) == nrow(nd), info = lev)
     expect_equal(p_sum, p_def, tolerance = 1e-10, info = lev)
   }
+})
+
+# F-BD6-4 (end-pass review of F-BD6-2): a collapse_levels fit predicts from
+# newdata in the ORIGINAL shape (the original factor, not the internal
+# `<factor>_Q0` / `<factor>_alpha` columns), under either contrasts setting.
+test_that("predict.beezdemand_tmb accepts original-shaped newdata for a collapse_levels fit (F-BD6-4)", {
+  skip_on_cran()
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(as.factor(d$gender))
+  d$age_group <- factor(
+    cut(d$age, c(0, 25, 35, Inf), labels = c("young", "mid", "old")),
+    levels = c("young", "mid", "old")
+  )
+  ids_keep <- unlist(lapply(levels(d$gender), function(g) {
+    ig <- unique(d$id[d$gender == g]); head(ig[order(ig)], 30)
+  }))
+  d <- d[d$id %in% ids_keep, ]
+  d$id <- droplevels(as.factor(d$id))
+
+  fit <- suppressWarnings(suppressMessages(fit_demand_tmb(
+    d, equation = "exponential", factors = c("gender", "age_group"),
+    collapse_levels = list(
+      Q0 = list(age_group = list(young_mid = c("young", "mid"), old = "old")),
+      alpha = list(age_group = list(young = "young", mid_old = c("mid", "old")))
+    ),
+    verbose = 0
+  )))
+  nd <- d[, c("id", "x", "gender", "age_group")][1:12, ]
+  expect_false(any(c("age_group_Q0", "age_group_alpha") %in% names(nd)))
+
+  p_pop <- predict(fit, newdata = nd, level = "population")$predict.fixed
+  p_sub <- predict(fit, newdata = nd, level = "subject")$.fitted
+  expect_true(is.numeric(p_pop) && all(is.finite(p_pop)))
+  expect_true(is.numeric(p_sub) && all(is.finite(p_sub)))
+  # Same rows through the training-time (already collapsed) frame agree.
+  nd_int <- fit$data[match(rownames(nd), rownames(fit$data)), ]
+  expect_equal(predict(fit, newdata = nd_int, level = "population")$predict.fixed,
+               p_pop, tolerance = 1e-10)
+
+  p_pop_sum <- withr::with_options(
+    .f62_sum_contrasts,
+    predict(fit, newdata = nd, level = "population")$predict.fixed)
+  p_sub_sum <- withr::with_options(
+    .f62_sum_contrasts,
+    predict(fit, newdata = nd, level = "subject")$.fitted)
+  expect_equal(p_pop_sum, p_pop, tolerance = 1e-10)
+  expect_equal(p_sub_sum, p_sub, tolerance = 1e-10)
 })
 
 test_that("subject-level predictions with a factor-expanded RE are invariant to options(contrasts) (F-BD6-2)", {

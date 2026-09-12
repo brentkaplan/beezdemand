@@ -131,3 +131,16 @@ test_that("summary.cp_model_nls print describes qalone as the infinite-price asy
   expect_false(grepl("zero alternative price", out))
   expect_true(grepl("alternative price", out))
 })
+
+test_that("glance.cp_model_lmer NULL schema follows the REML flag (F-BD11-4, end-pass)", {
+  skip_on_cran()
+  skip_if_not_installed("broom.mixed")
+  d <- .f114_data()
+  ml_fit <- suppressWarnings(fit_cp_linear(d, type = "mixed", REML = FALSE))
+  expect_false(isTRUE(ml_fit$REML))
+  empty_ml <- .f114_null("cp_model_lmer"); empty_ml$REML <- FALSE
+  expect_identical(names(glance(empty_ml)), names(glance(ml_fit)))
+  reml_fit <- suppressWarnings(fit_cp_linear(d, type = "mixed"))
+  expect_true(isTRUE(reml_fit$REML))
+  expect_identical(names(glance(.f114_null("cp_model_lmer"))), names(glance(reml_fit)))
+})

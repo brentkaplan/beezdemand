@@ -176,7 +176,10 @@ No subject-level effect is shared across conditions, so the within-subject
 power estimate describes two conditions with independent subject effects.
 In the usual repeated-measures design each subject's deviation carries over
 and the condition contrast is paired; that design is not what is simulated
-here, and for it the resulting power is a conservative benchmark. The
+here. When the carried-over deviations are positively correlated across
+conditions (the common case) pairing reduces the contrast variance, so the
+power reported here is a conservative benchmark for such a design; a
+negative cross-condition correlation would make it optimistic instead. The
 default \code{random_effects} (per-condition effects) matches the simulated
 data-generating process exactly.
 

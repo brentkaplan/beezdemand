@@ -1126,18 +1126,21 @@ tidy.cp_model_lmer <- function(x, effects = c("fixed", "ran_vals", "ran_pars", "
 #' @export
 glance.cp_model_lmer <- function(x, ...) {
   if (is.null(x$model)) {
-    # One all-NA row with broom.mixed::glance.merMod's columns for a REML
-    # fit (lme4's default, and what fit_cp_linear() produces unless the caller
-    # passes REML = FALSE). (F-BD11-4)
-    return(tibble::tibble(
+    # One all-NA row with broom.mixed::glance.merMod's columns. The criterion
+    # column is `REMLcrit` for a REML fit and `deviance` for an ML fit;
+    # fit_cp_linear() records `REML` on the object, and lme4's default (REML)
+    # is assumed when it is absent. (F-BD11-4)
+    reml <- if (is.null(x$REML)) TRUE else isTRUE(x$REML)
+    out <- tibble::tibble(
       nobs = NA_integer_,
       sigma = NA_real_,
       logLik = NA_real_,
       AIC = NA_real_,
-      BIC = NA_real_,
-      REMLcrit = NA_real_,
-      df.residual = NA_integer_
-    ))
+      BIC = NA_real_
+    )
+    out[[if (reml) "REMLcrit" else "deviance"]] <- NA_real_
+    out$df.residual <- NA_integer_
+    return(out)
   }
   if (!requireNamespace("broom.mixed", quietly = TRUE)) {
     missing_package_error("broom.mixed", reason = "to glance mixed-effects models")

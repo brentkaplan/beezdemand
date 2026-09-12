@@ -536,7 +536,10 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   the same rule the EMM grid already used. The factor-expanded random-effect
   design stores the fit-time contrasts on the parsed block and reuses them,
   and the `anova()` term-map fallback does the same. Default-contrast sessions
-  are unaffected.
+  are unaffected. In the same area, `predict()` on a `collapse_levels` fit
+  rejected newdata in the original shape because the fitted factor columns
+  are internal (`<factor>_Q0` / `<factor>_alpha`); those columns are now
+  recreated from the original factor using the training data's level map.
 * **Hurdle random-effects covariance `chol()` failure silently substituted an
   uncorrelated diagonal Sigma at five sites** (the RE-transform helpers, the
   live `fit_demand_hurdle()` inline path for 2- and 3-RE models, and
