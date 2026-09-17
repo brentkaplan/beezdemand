@@ -508,7 +508,7 @@ If you encounter issues during migration:
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -531,7 +531,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.25         
-#>  [4] xfun_0.60           bslib_0.12.0        ggplot2_4.0.3      
+#>  [4] xfun_0.61           bslib_0.12.0        ggplot2_4.0.3      
 #>  [7] htmlwidgets_1.6.4   insight_1.5.4       lattice_0.22-9     
 #> [10] vctrs_0.7.3         tools_4.6.1         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
@@ -543,7 +543,7 @@ sessionInfo()
 #> [31] nloptr_2.2.1        jquerylib_0.1.4     tidyr_1.3.2        
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
 #> [37] boot_1.3-32         nlme_3.1-169        tidyselect_1.2.1   
-#> [40] digest_0.6.39       performance_0.18.1  mvtnorm_1.4-2      
+#> [40] digest_0.6.39       performance_0.18.2  mvtnorm_1.4-2      
 #> [43] purrr_1.2.2         splines_4.6.1       fastmap_1.2.0      
 #> [46] grid_4.6.1          cli_3.6.6           magrittr_2.0.5     
 #> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.13       
