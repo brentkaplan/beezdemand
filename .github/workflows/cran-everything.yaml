@@ -29,7 +29,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build + check (CRAN)
         uses: ./.github/actions/cran-everything
@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload check artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cran-check-${{ matrix.os }}
           path: |
@@ -61,7 +61,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build pkgdown site
         uses: ./.github/actions/cran-everything
@@ -72,7 +72,7 @@ jobs:
 
       - name: Upload pkgdown site
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pkgdown-site
           path: docs/**
