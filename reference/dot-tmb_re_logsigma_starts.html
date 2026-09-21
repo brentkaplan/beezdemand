@@ -4,14 +4,14 @@ Q0 columns then alpha columns). Intercept and factor-dummy columns keep the
 flat base start (byte-identical to the historical rep(log(0.5), n)),
 while a numeric continuous-covariate slope column is started at
 base - log(spread) so the slope's contribution w_i * x_c is on the same
-scale as an intercept deviation – a slope SD lives on (covariate)^-1 units.
+scale as an intercept deviation (a slope SD lives on (covariate)^-1 units).
 New behavior engages only when a numeric RE-RHS term is present, so factor
 and intercept-only fits are unaffected (TICKET-051)."><meta property="og:description" content="Returns the logsigma starting vector in canonical block order (per block:
 Q0 columns then alpha columns). Intercept and factor-dummy columns keep the
 flat base start (byte-identical to the historical rep(log(0.5), n)),
 while a numeric continuous-covariate slope column is started at
 base - log(spread) so the slope's contribution w_i * x_c is on the same
-scale as an intercept deviation – a slope SD lives on (covariate)^-1 units.
+scale as an intercept deviation (a slope SD lives on (covariate)^-1 units).
 New behavior engages only when a numeric RE-RHS term is present, so factor
 and intercept-only fits are unaffected (TICKET-051)."><meta property="og:image" content="https://brentkaplan.github.io/beezdemand/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -83,7 +83,7 @@ Q0 columns then alpha columns). Intercept and factor-dummy columns keep the
 flat <code>base</code> start (byte-identical to the historical <code>rep(log(0.5), n)</code>),
 while a <em>numeric</em> continuous-covariate slope column is started at
 <code>base - log(spread)</code> so the slope's contribution <code>w_i * x_c</code> is on the same
-scale as an intercept deviation – a slope SD lives on (covariate)^-1 units.
+scale as an intercept deviation (a slope SD lives on (covariate)^-1 units).
 New behavior engages only when a numeric RE-RHS term is present, so factor
 and intercept-only fits are unaffected (TICKET-051).</p>
     </div>

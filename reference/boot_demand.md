@@ -3,8 +3,9 @@
 Computes confidence intervals on derived demand metrics (Pmax, Omax,
 Qmax, EV, elasticity-at-Pmax) for a TMB mixed-effects demand fit, via a
 parametric bootstrap. Draws of the fixed-effect parameter vector are
-taken from the joint asymptotic Gaussian posterior \\N(\hat\beta,
-\hat\Sigma)\\, mapped to per-condition \\(Q_0, \alpha, k)\\ through the
+taken from the asymptotic Gaussian sampling approximation \\N(\hat\beta,
+\hat\Sigma)\\ (the distribution Wald intervals assume; no prior is
+involved), mapped to per-condition \\(Q_0, \alpha, k)\\ through the
 model's fixed-effect design, passed through the canonical Pmax/Omax
 engine, and summarized by empirical quantiles.
 
@@ -34,7 +35,7 @@ boot_demand(
 - fit:
 
   A `beezdemand_tmb` object. NLME (`beezdemand_nlme`) and hurdle fits
-  are not supported in this version and error helpfully.
+  are not supported in this version and raise an informative error.
 
 - statistics:
 
@@ -106,11 +107,11 @@ non-finite).
 ## Details
 
 The parametric bootstrap is asymptotically equivalent to the delta
-method but avoids its linearization, so it is the more defensible
-recourse for the strongly nonlinear derived metrics (Pmax/Omax via
-Lambert-W). Draws are fixed-effect-only (population / per-condition
-metrics); per-subject metric CIs would require random-effect-aware draws
-and are out of scope for now.
+method but avoids its linearization, so it is preferable for the
+strongly nonlinear derived metrics (Pmax/Omax via Lambert-W). Draws are
+fixed-effect-only (population / per-condition metrics); per-subject
+metric CIs would require random-effect-aware draws and are out of scope
+for now.
 
 When `k` is estimated, its uncertainty is propagated (the `log_k` column
 is in the draw matrix); when `k` is fixed, the fixed value is used. The
@@ -146,8 +147,8 @@ boot_demand(fit, statistics = c("Pmax", "Omax", "EV"), R = 500, seed = 1)
 #> # A tibble: 3 × 6
 #>   statistic condition estimate conf.low conf.high level
 #>   <chr>     <chr>        <dbl>    <dbl>     <dbl> <dbl>
-#> 1 Pmax      NA          11.2      8.50      17.1   0.95
-#> 2 Omax      NA          23.9     18.1       32.6   0.95
-#> 3 EV        NA           0.863    0.544      1.37  0.95
+#> 1 Pmax      NA          11.6      8.62      15.7   0.95
+#> 2 Omax      NA          23.9     18.0       33.4   0.95
+#> 3 EV        NA           0.930    0.699      1.30  0.95
 # }
 ```

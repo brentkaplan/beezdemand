@@ -40,8 +40,8 @@ A list with elements:
 
 - `opt`:
 
-  Named list with `$par`, `$objective`, `$convergence`, `$message` –
-  guaranteed non-NULL character for `$message`.
+  Named list with `$par`, `$objective`, `$convergence`, `$message`
+  (`$message` is always a non-NULL character string).
 
 - `warnings`:
 

@@ -2,12 +2,12 @@
 
 Internal helper shared by the RE-transform and marginal-prediction code
 paths. Attempts `chol(Sigma)`; if `Sigma` is not positive definite
-([`chol()`](https://rdrr.io/r/base/chol.html) errors — near-boundary
-rhos, overflow, or `tanh(raw)` rounding to exactly +/-1), falls back to
-the Cholesky factor of an uncorrelated diagonal covariance built from
-`sigma_diag` and emits ONE classed warning, since the returned/reported
-correlation estimates no longer describe the transformed random effects
-or marginal draws that result (TICKET-061).
+([`chol()`](https://rdrr.io/r/base/chol.html) errors, e.g. from
+near-boundary rhos, overflow, or `tanh(raw)` rounding to exactly +/-1),
+falls back to the Cholesky factor of an uncorrelated diagonal covariance
+built from `sigma_diag` and emits ONE classed warning, since the
+returned/reported correlation estimates no longer describe the
+transformed random effects or marginal draws that result (TICKET-061).
 
 ## Usage
 
@@ -29,4 +29,8 @@ or marginal draws that result (TICKET-061).
 ## Value
 
 The upper-triangular Cholesky factor of `Sigma`, or of the diagonal
-fallback when `Sigma` is not positive definite.
+fallback when `Sigma` is not positive definite. The result carries a
+logical attribute `"fallback"` (`TRUE` when the diagonal substitute was
+used); read it at the call site before any further matrix operation,
+since [`t()`](https://rdrr.io/r/base/t.html) / `%*%` need not preserve
+it.

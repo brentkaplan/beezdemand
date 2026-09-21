@@ -43,7 +43,9 @@ An object of class `beezdemand_diagnostics` containing:
 
 - boundary:
 
-  List with boundary condition warnings
+  List with boundary condition warnings. For `beezdemand_tmb` fits it
+  also carries `k_identification`: `NULL` unless k was estimated as a
+  free parameter, otherwise the screen described in Details.
 
 - residuals:
 
@@ -51,7 +53,15 @@ An object of class `beezdemand_diagnostics` containing:
 
 - random_effects:
 
-  Summary of random effects (if applicable)
+  Summary of random effects (if applicable). `variances` holds
+  random-effect variances: on the log10 scale for `beezdemand_tmb` fits,
+  and as reported by
+  [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) for
+  `beezdemand_nlme` fits. `beezdemand_tmb` fits also carry `sd_log10`
+  (the corresponding standard deviations, matching
+  `summary(fit)$variance_components`) and `sd_internal_log` (the raw
+  natural-log-scale standard deviations used by the near-zero degeneracy
+  check).
 
 - issues:
 
@@ -72,6 +82,15 @@ The function checks for:
 - Residual patterns (heteroscedasticity, outliers)
 
 - Random effect variance estimates near zero
+
+- For
+  [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+  fits with `estimate_k = TRUE`, whether the fit shows the signature of
+  an unidentified k: an implausible k, a decay exponent
+  `alpha * Q0 * price` that never leaves its linear regime over the
+  observed prices, a degenerate alpha, or `log_k` resting on a
+  user-supplied bound. This is a screen, not a formal test: no flag
+  means nothing was detected, not that k is identified.
 
 - Correlation matrices near singularity
 

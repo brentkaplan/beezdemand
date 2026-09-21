@@ -136,6 +136,16 @@ An object of class `beezdemand_hurdle` containing:
 
   Logical indicating convergence
 
+- re_cov_fallback:
+
+  Logical. `TRUE` when the estimated random-effects covariance was not
+  positive definite and the subject-level effects were computed from an
+  uncorrelated (diagonal) approximation; the reported correlations do
+  not apply to those outputs.
+  [`summary()`](https://rdrr.io/r/base/summary.html) and
+  [`print()`](https://rdrr.io/r/base/print.html) carry a note when it is
+  `TRUE`.
+
 - loglik:
 
   Log-likelihood at convergence
@@ -185,16 +195,27 @@ natural scale or present parameters on the \\\log\_{10}\\ scale.
 To compare \\\alpha\\ estimates with models fit in \\\log\_{10}\\ space,
 use: \$\$\log\_{10}(\alpha) = \log(\alpha) / \log(10).\$\$
 
+The default `part2 = "zhao_exponential"` places no \\Q_0\\ inside the
+exponent (\\\exp(-\alpha\_{Zhao} \\ P)\\), whereas the Hursh &
+Silberberg form used by `fit_demand_fixed(equation = "hs")` and
+`fit_demand_tmb(equation = "exponential")` uses \\\exp(-\alpha\_{HS} \\
+Q_0 \\ P)\\. The two \\\alpha\\ values are therefore on different scales
+and relate as \$\$\alpha\_{HS} = \alpha\_{Zhao} / Q_0,\$\$ so a Zhao
+\\\alpha\\ is not directly comparable with an HS \\\alpha\\ unless
+divided by the subject's (or group's) \\Q_0\\. Use
+`part2 = "exponential"` (alias `"hs_stdq0"`) for an HS-scaled
+\\\alpha\\.
+
 ## Convergence
 
 The 3-random-effect spec (`random_effects = c("zeros", "q0", "alpha")`)
 can *false-converge* on real purchase task data:
 [`nlminb()`](https://rdrr.io/r/stats/nlminb.html) reports a nonzero
 convergence code (e.g. "false convergence (8)") while the Hessian is not
-positive definite (`fit$hessian_pd == FALSE`), reflecting weak
+positive definite (`fit$hessian_pd == FALSE`). This reflects weak
 identification of the alpha random effect rather than a broken model
-specification – companion datasets from the same source can converge
-cleanly with the identical spec. `fit$opt$message` and
+specification (companion datasets from the same source can converge
+cleanly with the identical spec). `fit$opt$message` and
 `fit$opt$convergence` retain nlminb's own diagnostic fields alongside
 `fit$converged` and `fit$hessian_pd`;
 [`print()`](https://rdrr.io/r/base/print.html) and
@@ -208,9 +229,10 @@ non-convergence or a non-PD Hessian is to refit with
 `random_effects = c("zeros", "q0")` (dropping the alpha random effect,
 which converges more readily) and compare the empirical-Bayes subject
 parameters between the two fits. Broadly similar per-subject estimates
-support treating the 2RE fit's conclusions as robust; this is a
-diagnostic comparison, not a claim that the 2RE spec is generally
-preferred, and beezdemand does not refit automatically.
+support treating the 2RE fit's conclusions as stable across the two
+specifications. This is a diagnostic comparison rather than a claim that
+the 2RE spec is generally preferred, and beezdemand does not refit
+automatically.
 
 ## See also
 
@@ -267,7 +289,7 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Subjects: 10, Observations: 160
 #>   Fixed parameters: 9, Random effects per subject: 2
 #>   Optimizing...
-#>   Converged in 95 iterations
+#>   Converged in 93 iterations
 #>   Computing standard errors...
 #> Done. Log-likelihood: 2.31
 
@@ -289,7 +311,7 @@ summary(fit3)
 #> Fixed Effects:
 #> --------------
 #>              Estimate Std. Error z value
-#> beta0      -293.94893  160.41399  -1.832
+#> beta0      -293.94893  160.41398  -1.832
 #> beta1       104.07743   61.07262   1.704
 #> log_q0        1.87220    0.12435  15.056
 #> log_k         1.83359    0.56794   3.228
@@ -307,7 +329,7 @@ summary(fit3)
 #>          Estimate Std. Error
 #> alpha      0.0176     0.0115
 #> k          6.2563     3.5532
-#> var_a  17607.7218 47451.7806
+#> var_a  17607.7199 47451.7741
 #> var_b      0.1488     0.0682
 #> var_c      0.2050     0.0977
 #> cov_ab     9.2703     7.6244

@@ -1,7 +1,6 @@
 # Generate Default Starting Values for Hurdle Model
 
-Internal function to generate sensible default starting values for TMB
-hurdle model optimization.
+Generates default starting values for TMB hurdle model optimization.
 
 ## Usage
 

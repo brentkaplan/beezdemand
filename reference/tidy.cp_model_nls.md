@@ -1,9 +1,9 @@
 # Convert a cross-price model to a tidy data frame of coefficients
 
-This function extracts model coefficients from a cross-price demand
-model into a tidy data frame format, following the conventions of the
-broom package. It handles cases where model fitting failed gracefully,
-returning an empty data frame with the expected structure.
+Extracts model coefficients from a cross-price demand model into a tidy
+data frame, following the conventions of the broom package. When model
+fitting failed, an empty data frame with the expected structure is
+returned.
 
 ## Usage
 

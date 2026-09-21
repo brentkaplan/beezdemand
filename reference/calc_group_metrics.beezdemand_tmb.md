@@ -55,11 +55,26 @@ derives metrics:
 3.  Derive Pmax/Omax/Qmax from the marginalized log-parameters at the
     user-supplied (or training-mean default) covariate point.
 
-This is "metrics evaluated at the average parameter values," NOT
-"average metrics across cells" – the two answers differ for nonlinear
-transforms. The convention matches the parameter-level marginalization
-used by
+The result is "metrics evaluated at the average parameter values" rather
+than "average metrics across cells". The two answers differ for
+nonlinear transforms. The convention matches the parameter-level
+marginalization used by
 [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md).
+
+## Marginalisation policy (TMB vs NLME)
+
+This method averages the log-scale linear predictors with equal weight
+over the factor cells observed in the fitting data and then
+exponentiates. The NLME method
+([`calc_group_metrics.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_nlme.md))
+follows the same policy: per-cell EMMs from `emmeans`, rows for
+unobserved cells dropped, equal-weight geometric mean over the remaining
+cells. Cells of the full factorial crossing with no subjects are never
+averaged over by either backend. The two agree for any design fit in log
+space and can differ only when the NLME fit uses
+`param_space = "natural"`. In both backends continuous covariates are
+held at the training mean unless `at` supplies a single value; a
+multi-value continuous `at` entry warns and uses its first value.
 
 ## See also
 
@@ -75,13 +90,13 @@ fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 calc_group_metrics(fit)
 #> $Pmax
-#> [1] 11.23768
+#> [1] 11.6482
 #> 
 #> $Omax
-#> [1] 23.89412
+#> [1] 23.92321
 #> 
 #> $Qmax
-#> [1] 2.126251
+#> [1] 2.053813
 #> 
 #> $elasticity_at_pmax
 #> [1] -1

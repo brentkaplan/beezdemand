@@ -43,17 +43,17 @@ Numeric vector of alpha starting values (same length as `pmax`).
 
 ## Details
 
-Low-k fallback (Codex 2F review fold, item 5): if `k` is too small for a
-real principal-branch Lambert-W solution to exist at this scale
-(`k <= exp(1) / log(10)`, mirroring
+Low-k fallback: if `k` is too small for a real principal-branch
+Lambert-W solution to exist at this scale (`k <= exp(1) / log(10)`,
+mirroring
 [`.pmax_analytic_hs()`](https://brentkaplan.github.io/beezdemand/reference/dot-pmax_analytic_hs.md)'s
 own existence check, or if
 [`lambertW()`](https://brentkaplan.github.io/beezdemand/reference/lambertW.md)
-itself fails), hs/koff have no interior Pmax at all – the sampled Pmax
-is not achievable by ANY alpha via the closed form. The function does
-NOT silently fall back to the (unrelated) SND point formula
+itself fails), hs/koff have no interior Pmax at all; the sampled Pmax is
+not achievable by any alpha via the closed form. The function does not
+silently fall back to the (unrelated) SND point formula
 `alpha = 1 / (Pmax * Q0)` in this case. Instead it draws alpha directly
 and independently, log-uniform over a range implied by the same sampled
-(Q0, Pmax) bounds – an explicit, documented, genuinely stochastic
+(Q0, Pmax) bounds: an explicit, documented, genuinely stochastic
 low-k/degenerate-k sampler (two calls with the same inputs but different
 RNG state give different alpha).

@@ -17,7 +17,7 @@ not exist for nonlinear mixed-effects demand models, and Wald
 asymptotics are unreliable at realistic study sizes, especially near
 boundary parameters.
 [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md)
-therefore estimates power by Monte Carlo simulation:
+therefore estimates power by Monte Carlo simulation in five steps:
 
 1.  Simulate a dataset under assumed true population parameters, a
     hypothesized effect size, and the study design.
@@ -34,7 +34,7 @@ therefore estimates power by Monte Carlo simulation:
     error 0.089 at nominal .05 with 15 subjects), while the null Wald
     statistics closely follow the t with the design’s contrast df. The
     two verdicts use the same standard error and reference distribution,
-    so they always agree – both report formats are returned. `df = Inf`
+    so they always agree (both report formats are returned). `df = Inf`
     recovers the asymptotic z-test if you need it.
 5.  Repeat `n_sim` times. Power is the proportion of *usable* fits
     (converged, positive-definite Hessian, finite SE) that reject,
@@ -85,15 +85,14 @@ res
 ```
 
 The Monte Carlo confidence interval (`power_mc_ci`) is wide at
-`n_sim = 40` – that is the point of reporting it. Interactive
+`n_sim = 40`, which is the point of reporting it. Interactive
 exploration is fine at a few hundred replicates; numbers destined for a
 grant application should use `n_sim = 2000` or more (see the guidance
 section below).
 
-Convergence diagnostics are part of the output, not a footnote:
-replicates whose refit fails are excluded from the power denominator and
-counted in `n_converged` / `n_used`, never treated as “no effect
-detected”.
+Convergence diagnostics are part of the output. Replicates whose refit
+fails are excluded from the power denominator and counted in
+`n_converged` / `n_used` rather than treated as “no effect detected”.
 
 ``` r
 
@@ -120,8 +119,8 @@ reporting. Bisection assumes power is monotone in N; because each N is
 judged from independent replicates, a fluctuation at a lower N can hide
 a crossing the search never revisits. Evaluated N that contradict
 monotonicity demote the status to `uncertain`, but never-visited N
-cannot be checked – so treat the result as an estimate and confirm it
-with a large `n_sim` at the chosen N.
+cannot be checked. Treat the result as an estimate and confirm it with a
+large `n_sim` at the chosen N.
 
 ``` r
 
@@ -297,23 +296,23 @@ estimate; a power of “0.80” from 100 replicates is `[0.71, 0.87]`.
 (`tests/testthat/test-power-demand.R`) verifies, with preregistered
 seeds and tolerance bands fixed before the tests were first run:
 
-- **Type I error calibration** (the load-bearing check): with the effect
-  set to zero, the empirical false-positive rate at nominal
-  `alpha = .05` over 1,200 replicates must fall in \[0.03, 0.07\] – a
-  band of 3.18 binomial standard errors that excludes both half and 1.5
-  times the nominal rate. `n_sim = 1200` was computed from that
-  tolerance (`9 * .05 * .95 / .02^2 ≈ 1069`), not guessed. A second null
-  check runs at a realistic N = 40 on the alpha contrast. This check is
-  what motivated the t reference distribution: the first run, using the
-  asymptotic z-test, failed it (empirical rate 0.089 at n = 15), and the
-  t(n - 1) reference was adopted and re-validated rather than widening
-  the band. The between-subject design carries its own preregistered
-  calibration and larger-N null checks against the same bands, with the
-  two-sample `t(n - 2)` reference.
+- **Type I error calibration** (the primary check): with the effect set
+  to zero, the empirical false-positive rate at nominal `alpha = .05`
+  over 1,200 replicates must fall in \[0.03, 0.07\], a band of 3.18
+  binomial standard errors that excludes both half and 1.5 times the
+  nominal rate. `n_sim = 1200` was computed from that tolerance
+  (`9 * .05 * .95 / .02^2 ≈ 1069`). A second null check runs at a
+  realistic N = 40 on the alpha contrast. This check is what motivated
+  the t reference distribution: the first run, using the asymptotic
+  z-test, failed it (empirical rate 0.089 at n = 15), and the t(n - 1)
+  reference was adopted and re-validated rather than widening the band.
+  The between-subject design carries its own preregistered calibration
+  and larger-N null checks against the same bands, with the two-sample
+  `t(n - 2)` reference.
 - **Convergence handling**: a configuration that reliably produces
   non-convergence confirms failed replicates are excluded from the power
-  denominator and surfaced via `n_converged` / `n_used`, not silently
-  counted as misses.
+  denominator and surfaced via `n_converged` / `n_used` rather than
+  silently counted as misses.
 - **Closed-form benchmark**: in a degenerate configuration (tiny
   residual and alpha-side variability) the within-subject design reduces
   to a paired comparison of per-condition log-Q0 values, and the
@@ -333,24 +332,34 @@ draws multiplicative lognormal errors while the simplified equation fits
 additive Gaussian errors on raw consumption (they share the mean
 function; the error models differ). The approximation is closest at
 small residual SD, and the null calibration is verified at both the
-default `sigma_e = 0.1` and a stress value of 0.3. The between-subject
-design’s random-effects structure is a step *less* approximate: with
-each subject in a single arm, the per-subject intercept refit matches
-the composed data-generating process exactly (only the error model
-remains a working approximation). Other equations remain available as
+default `sigma_e = 0.1` and a stress value of 0.3. In both designs the
+random-effects structure of the refit matches its simulator exactly.
+Only the error model is a working approximation.
+
+One point matters for interpreting the within-subject numbers. The
+simulator draws a new pair of subject deviations for every subject in
+every condition. Nothing about a subject carries over from condition 1
+to condition 2, and `rho_bd` is pinned at 0. The within-subject power
+estimate therefore describes two conditions with independent subject
+effects. Most within-subject studies run a paired repeated-measures
+design in which each subject’s deviation carries over. When that
+carried-over deviation is positively correlated across conditions, as it
+usually is, pairing shrinks the contrast variance and the estimate here
+is a conservative benchmark; a negative cross-condition correlation
+would make it optimistic. Other equations remain available as
 sensitivity analyses, but their condition contrasts are defined on
 different parameterizations and are not validated against the simulated
 delta; `rho_bd` is locked at 0 in this version.
 
 The `find_n_*` search statuses (`"confirmed"`, `"uncertain"`,
-`"unresolved"`) describe a heuristic Monte Carlo decision rule –
-repeated looks at ordinary Wilson intervals across candidate N – not a
+`"unresolved"`) describe a heuristic Monte Carlo decision rule (repeated
+looks at ordinary Wilson intervals across candidate N), rather than a
 formal sequential testing procedure with a guaranteed error rate. When
 the confirmation pass contradicts the search, the function returns
 `n = NA` rather than an unsupported number.
 
-**Explicitly out of scope in v1** (flagged as future work, not silently
-approximated):
+**Explicitly out of scope in v1** (flagged as future work rather than
+silently approximated):
 
 - Simultaneous multi-parameter effects (e.g., a joint Q0 + alpha shift).
 - Power for derived measures (Pmax, Omax, elasticity at a point,
@@ -363,9 +372,9 @@ approximated):
   odd total N already splits into arms differing by one subject).
 - Any graphical or interactive interface.
 
-**What the numbers can bear.** A reported power estimate is (a)
+**Interpreting the estimate.** A reported power estimate is (a)
 conditional on the assumed population parameters and variance components
-– vary them and look at the sensitivity of the answer; (b) conditional
-on usable fits – take the `n_used` warning seriously if it fires; and
-(c) a Monte Carlo estimate – cite it with its interval at an `n_sim`
-sized for the decision it supports.
+(vary them and look at the sensitivity of the answer); (b) conditional
+on usable fits (take the `n_used` warning seriously if it fires); and
+(c) a Monte Carlo estimate (cite it with its interval at an `n_sim`
+sized for the decision it supports).

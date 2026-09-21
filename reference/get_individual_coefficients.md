@@ -1,10 +1,10 @@
 # Calculate Individual-Level Predicted Coefficients from beezdemand_nlme Model
 
-This function extracts and combines fixed and random effects to
-calculate individual-level predicted coefficients for all
-parameter-factor combinations from a beezdemand_nlme model object. It
-automatically detects the factor structure and calculates coefficients
-for each individual and factor level.
+Extracts and combines fixed and random effects to calculate
+individual-level predicted coefficients for all parameter-factor
+combinations from a beezdemand_nlme model object. It automatically
+detects the factor structure and calculates coefficients for each
+individual and factor level.
 
 ## Usage
 

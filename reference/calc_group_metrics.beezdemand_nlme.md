@@ -50,6 +50,43 @@ marginalized parameters via
 a range parameter `k`) uses the Hursh & Silberberg solution;
 `"zben"`/`"simplified"` use the simplified (SND) solution.
 
+## Marginalisation policy (NLME vs TMB)
+
+Both backends marginalise over the factor cells that were **observed**
+in the fitting data, with equal weight per cell, on the log scale (a
+geometric mean of the per-cell parameter estimates). Cells of the full
+factorial crossing that contain no subjects are not averaged over, so
+population-level Pmax/Omax never extrapolate through the additive model
+into cells the design cannot estimate. (This is the observed-cells side
+of the two conventions in wide use: `emmeans` / `marginaleffects`'s
+`"balanced"` grid averages every combination of levels;
+`marginaleffects`'s default averages the observed rows with frequency
+weights. Neither is used here: unobserved cells get weight zero and
+observed cells get equal weight regardless of group size.)
+
+- **NLME (this method)**: `emmeans` builds the full factorial reference
+  grid, the per-cell EMMs are back-transformed to the natural scale,
+  rows for unobserved cells are dropped, and the geometric mean is taken
+  over the remaining cells (for `param_space = "log10"` this equals the
+  arithmetic mean of the observed cells' log10 EMMs). Under
+  `param_space = "natural"` the cell EMMs are natural-scale estimates
+  and the geometric mean is taken of those directly, which is not the
+  same as averaging log predictors.
+
+- **TMB**
+  ([`calc_group_metrics.beezdemand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.beezdemand_tmb.md)):
+  the log-scale linear predictors are averaged with equal weight over
+  the observed factor cells, then exponentiated.
+
+The two therefore agree for any design fit in log space and can differ
+only when the NLME fit is in natural space. In both backends continuous
+covariates are held at the training mean unless `at` supplies a single
+value; a multi-value continuous `at` entry warns and uses its first
+value. A factor level supplied in `at` restricts the observed cells to
+that level (for a `collapse_levels` fit the original level is translated
+to each parameter's collapsed label); requesting a combination of levels
+with no observed cell is an error rather than an extrapolation.
+
 ## See also
 
 [`calc_group_metrics()`](https://brentkaplan.github.io/beezdemand/reference/calc_group_metrics.md),

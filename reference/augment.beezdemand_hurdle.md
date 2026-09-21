@@ -1,8 +1,8 @@
 # Augment a beezdemand_hurdle Model with Fitted Values and Residuals
 
 Returns the original data with fitted values, residuals, and predictions
-from a hurdle demand model. This enables easy model diagnostics and
-visualization with the tidyverse.
+from a hurdle demand model, in the format expected by tidyverse plotting
+and diagnostic tools.
 
 ## Usage
 

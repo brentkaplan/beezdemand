@@ -87,7 +87,7 @@ Point elasticity is computed as: \$\$\eta(P) = \frac{dQ}{dP} \cdot
 \frac{P}{Q(P)}\$\$
 
 This uses the unconditional demand Q(P) for hurdle models (which
-includes the probability of zero consumption), providing the
+includes the probability of zero consumption), so the result is the
 economically relevant total elasticity.
 
 ## Examples

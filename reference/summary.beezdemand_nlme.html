@@ -73,7 +73,12 @@ fit statistics, and random effects information.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'beezdemand_nlme'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, report_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"log10"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  report_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"log10"</span><span class="op">)</span>,</span>
+<span>  df_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"containment"</span>, <span class="st">"between"</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -88,8 +93,27 @@ fit statistics, and random effects information.</p>
 <dd><p>Character. Reporting space for core parameters. One of
 <code>"natural"</code> or <code>"log10"</code> (<code>match.arg</code> default <code>"natural"</code>).
 <code>estimate</code>/<code>std.error</code> follow this scale; <code>statistic</code>/<code>p.value</code> are always on
-the estimation scale — nlme's native containment-t test
-(transformation-invariant).</p></dd>
+the estimation scale (nlme's native containment-t test, which is
+transformation-invariant).</p></dd>
+
+
+<dt id="arg-df-method">df_method<a class="anchor" aria-label="anchor" href="#arg-df-method"></a></dt>
+<dd><p>Character. Degrees of freedom used for the fixed-effect
+t tests. <code>"containment"</code> (default) reports nlme's own containment df
+unchanged. nlme's containment rule assigns the observation-level
+residual degrees of freedom to every fixed effect, including
+between-subject terms (a group factor), for which the effective sample
+size is the number of subjects; the default <code>df</code> and p-values for such
+terms are therefore anticonservative. <code>"between"</code> replaces the df of
+each between-subject term (a coefficient whose design column is
+constant within every subject, excluding the parameter intercepts) with
+<code>n_subjects - rank(X_between)</code>, where <code>X_between</code> is that parameter's
+subject-level design (intercept plus its between-subject columns), and
+recomputes the p-value from the unchanged t statistic. Intercepts and
+within-subject terms keep containment df in both modes (Pinheiro &amp;
+Bates, 2000, section 2.4.2). Estimates and standard errors never change.
+Satterthwaite / Kenward-Roger df are not available for <code><a href="https://rdrr.io/pkg/nlme/man/nlme.html" class="external-link">nlme::nlme()</a></code>.
+The TMB backend reports an asymptotic z test instead.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -103,10 +127,18 @@ the estimation scale — nlme's native containment-t test
 <li><p><code>model_class</code>: "beezdemand_nlme"</p></li>
 <li><p><code>backend</code>: "nlme"</p></li>
 <li><p><code>equation_form</code>: The equation form used ("zben" or "simplified")</p></li>
-<li><p><code>coefficients</code>: Tibble of fixed effects with std.error, statistic, p.value</p></li>
+<li><p><code>coefficients</code>: Tibble of fixed effects with std.error, statistic,
+p.value and <code>df</code> (the degrees of freedom the p-value uses; see
+<code>df_method</code>)</p></li>
+<li><p><code>df_method</code>: The <code>df_method</code> in effect</p></li>
 <li><p><code>random_effects</code>: VarCorr output for random effects</p></li>
 <li><p><code>logLik</code>, <code>AIC</code>, <code>BIC</code>: Model fit statistics</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Pinheiro, J. C., &amp; Bates, D. M. (2000). <em>Mixed-Effects Models
+in S and S-PLUS</em>. Springer. Section 2.4.2.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

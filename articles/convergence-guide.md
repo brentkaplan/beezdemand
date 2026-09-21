@@ -14,8 +14,8 @@ Two myths persist in applied behavioral economics:
 
 1.  **“Convergence = good model.”** A model can converge to a local
     minimum, a boundary solution, or nonsensical parameter estimates.
-    Convergence status tells you the optimizer stopped happily, not that
-    it stopped at the right place.
+    Convergence status tells you only that the optimizer stopped. It
+    does not tell you whether it stopped at the right place.
 
 2.  **“Non-convergence = useless results.”** A model that hits an
     iteration limit or triggers a “false convergence” warning may have
@@ -78,27 +78,37 @@ and
 use the `nlminb` optimizer by default. It reports the following
 convergence codes:
 
-| Code | What Triggered It | What It Means |
+R’s [`nlminb()`](https://rdrr.io/r/stats/nlminb.html) reports only two
+convergence codes, 0 and 1; the reason for a code-1 exit is the PORT
+status text in `fit$opt$message`:
+
+| Code | Message | What It Means |
 |:--:|----|----|
-| 0 | Relative improvement in objective \< `rel.tol` | The optimizer is satisfied that it found a minimum. This is the “normal” exit. |
-| 1 | Number of iterations \>= `iter.max` | The optimizer ran out of its iteration budget before satisfying its convergence criterion. The estimates may be fine — it just wasn’t given enough iterations to confirm. |
-| 8 | Step size shrinks to zero but tolerance not met (“false convergence”) | The optimizer cannot make further progress but hasn’t confirmed it reached a minimum. Often occurs when the solution is near a parameter boundary or when the likelihood surface is very flat. |
+| 0 | “relative convergence (4)”, “X-convergence (3)”, “both X-convergence and relative convergence (5)”, “absolute function convergence (6)” | The optimizer is satisfied that it found a minimum. This is the “normal” exit. |
+| 1 | “iteration limit reached without convergence (10)” or “function evaluation limit reached without convergence (9)” | The optimizer ran out of its budget before satisfying its convergence criterion. The estimates may be fine (it simply ran out of iterations before it could confirm). |
+| 1 | “false convergence (8)” | The step size shrank to zero without meeting the tolerance. The optimizer cannot make further progress but has not confirmed a minimum. Often the solution is near a parameter boundary, the likelihood surface is very flat, or, as in the worked example below, the point is not a stationary point at all. |
+| 1 | “singular convergence (7)” | The model is over-parameterised near the solution (a direction with no curvature). |
 
-**Code 0** is what you want but doesn’t guarantee the solution is
-correct — the optimizer may have converged to a local minimum or a
-boundary.
+**Code 0** is what you want, but it does not guarantee that the solution
+is correct. The optimizer may still have converged to a local minimum or
+a boundary.
 
-**Code 1** (iteration limit) is often benign. If the objective function
+**Iteration limit** exits are often benign. If the objective function
 was still decreasing, increasing `iter_max` in `tmb_control` may resolve
 it. If the objective had plateaued, the current estimates are likely at
 or very near the minimum.
 
-**Code 8** (false convergence) sounds alarming but is common in
-well-specified demand models. TMB provides exact gradients via automatic
-differentiation, so code 8 is rarer than with finite-difference methods.
-When it does occur, it typically means the solution is at a feasibility
-boundary (e.g., a random effect variance near zero) rather than that the
-optimizer is stuck.
+**False convergence** sounds alarming but is common in well-specified
+demand models. TMB provides exact gradients via automatic
+differentiation, so it is rarer than with finite-difference methods.
+When it does occur, it can mean the solution is at a feasibility
+boundary (e.g., a random effect variance near zero), or that the
+optimizer stalled on a ridge that is not a minimum. Check the gradient
+and the Hessian before trusting the estimates (see the checklist below);
+since 0.3.0
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+runs that check itself and tries to rescue the fit (see “Switching
+Optimizer”).
 
 #### L-BFGS-B Convergence Codes
 
@@ -155,8 +165,8 @@ If the same estimates are obtained with more iterations, the original
 solution was fine.
 
 **Moderate severity** (“false convergence”, “step halving”): These mean
-the optimizer had difficulty making progress. The estimates may be fine
-— especially if the parameters are plausible and the random effect
+the optimizer had difficulty making progress. The estimates may be fine,
+especially if the parameters are plausible and the random effect
 variances are not near zero. These warnings are analogous to TMB’s code
 8.
 
@@ -185,12 +195,13 @@ is_apvar_ok <- is.matrix(fit$model$apVar)
 
 When `apVar` fails:
 
-- **Fixed-effect estimates** (`fixef(fit$model)`) are still valid — they
-  don’t depend on `apVar`
-- **Random-effect predictions** (`ranef(fit$model)`) are still valid —
-  they are empirical Bayes predictions conditional on the fixed effects
-- **Variance component standard errors** are not available — you cannot
-  construct confidence intervals for the random effect variances
+- **Fixed-effect estimates** (`fixef(fit$model)`) are still valid (they
+  do not depend on `apVar`)
+- **Random-effect predictions** (`ranef(fit$model)`) are still valid
+  (they are empirical Bayes predictions conditional on the fixed
+  effects)
+- **Variance component standard errors** are not available, so you
+  cannot construct confidence intervals for the random effect variances
 - **`intervals(fit$model)`** will fail for the random effects portion
 
 This is analogous to TMB’s `sdreport` failure: point estimates are fine
@@ -209,8 +220,8 @@ strategy. For each subject, the package tries:
 3.  If that fails,
     [`nlsr::wrapnlsr()`](https://rdrr.io/pkg/nlsr/man/wrapnlsr.html)
 
-Models either converge or fail outright; partial convergence doesn’t
-occur. The returned object tracks per-subject success/failure in the
+Models either converge or fail outright (partial convergence does not
+occur). The returned object tracks per-subject success/failure in the
 `Notes` column. Use
 [`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
 to see the failure rate:
@@ -222,17 +233,17 @@ diagnostics <- check_demand_model(fit)
 print(diagnostics)
 ```
 
-A high failure rate (\>20%) suggests data quality problems —
-insufficient price range, too many zero-consumption observations, or
-extreme outliers — rather than modeling issues.
+A high failure rate (\>20%) suggests data quality problems (insufficient
+price range, too many zero-consumption observations, or extreme
+outliers) rather than modeling issues.
 
-### The Key Insight
+### What Convergence Status Does and Does Not Tell You
 
-Convergence status reflects the optimizer’s stopping rule, not the
-quality of the solution. A non-converged fit with plausible parameters
-and valid standard errors can be more trustworthy than a converged fit
-at a boundary or local minimum. This principle applies equally to TMB
-numeric codes and NLME warning messages.
+Convergence status reflects the optimizer’s stopping rule rather than
+the quality of the solution. A non-converged fit with plausible
+parameters and valid standard errors can be more trustworthy than a
+converged fit at a boundary or local minimum. This principle applies
+equally to TMB numeric codes and NLME warning messages.
 
 The next section provides a systematic checklist for evaluating fit
 quality regardless of convergence status.
@@ -328,7 +339,7 @@ fit_tmb$se_available
 
 # Hessian positive-definiteness gate (since 0.3.0): TRUE means the inverse
 # Hessian is well-conditioned, so SEs / p-values / Wald CIs are trustworthy.
-# FALSE means they are not — and `fit_demand_tmb()` / `fit_demand_hurdle()`
+# FALSE means they are not, and `fit_demand_tmb()` / `fit_demand_hurdle()`
 # also emit a cli warning at fit time when verbose >= 1.
 fit_tmb$hessian_pd
 
@@ -387,9 +398,9 @@ max_grad <- max(abs(grad))
 cat("Maximum absolute gradient:", max_grad, "\n")
 
 # Rule of thumb:
-# < 0.001: excellent — optimizer found a clean minimum
-# 0.001-0.01: good — likely near a minimum
-# > 0.01: concerning — may not be at a minimum
+# < 0.001: excellent (optimizer found a clean minimum)
+# 0.001-0.01: good (likely near a minimum)
+# > 0.01: concerning (may not be at a minimum)
 ```
 
 NLME does not expose gradients directly, so this check is TMB-only. For
@@ -445,13 +456,13 @@ cat("apVar OK:", is.matrix(fit_nlme$model$apVar), "\n")
 # Check random effects correlation for near-singularity
 vc <- nlme::VarCorr(fit_nlme$model)
 print(vc)
-# Look at the Corr column — values > |0.99| indicate near-singularity
+# In the Corr column, values > |0.99| indicate near-singularity
 ```
 
 For NLME models, also check the random effects correlation matrix. If
 two random effects are correlated above \|0.99\|, they are nearly
-collinear — the model is trying to estimate two separate sources of
-variation that the data cannot distinguish. Consider switching to
+collinear (the model is trying to estimate two separate sources of
+variation that the data cannot distinguish). Consider switching to
 `pdDiag` covariance structure (which forces zero correlation) or
 removing one of the random effects.
 
@@ -459,8 +470,9 @@ removing one of the random effects.
 
 If a non-converged complex model beats a simpler converged model by a
 large AIC margin, the parameters are in a good region of the likelihood
-surface. AIC and BIC depend on the log-likelihood at the parameter
-values, not on convergence status.
+surface. AIC and BIC are computed from the log-likelihood at the final
+parameter values whether or not the optimizer reported convergence, so
+they inherit whatever unreliability a non-converged fit carries.
 
 #### TMB Models
 
@@ -554,11 +566,11 @@ or
 | Code | Gradient Small? | Hessian PD? | SEs Finite? | Params Plausible? | Verdict |
 |:--:|:--:|:--:|:--:|:--:|----|
 | 0 | Yes | Yes | Yes | Yes | **Trust the results** |
-| 0 | Yes | No | — | — | Saddle point: refit with different starts |
+| 0 | Yes | No | n/a | n/a | Saddle point: refit with different starts |
 | 0 | Yes | Yes | Yes | No | Converged to wrong minimum: check data, try different starts |
-| 1 or 8 | Yes | Yes | Yes | Yes | **Likely trustworthy** — run diagnostics, increase iterations to confirm |
-| 1 or 8 | No | No | — | — | Simplify model (fewer random effects, fix k) |
-| 1 or 8 | — | — | — | No | Estimates unreliable: simplify or check data quality |
+| 1 (any message) | Yes | Yes | Yes | Yes | **Likely trustworthy** (run diagnostics; increase iterations to confirm) |
+| 1 (any message) | No | No | n/a | n/a | Not a solution: simplify model (fewer random effects, fix k) or let the false-convergence rescue run |
+| 1 (any message) | n/a | n/a | n/a | No | Estimates unreliable: simplify or check data quality |
 
 ### NLME Decision Table
 
@@ -568,12 +580,12 @@ Use this table after running the diagnostic checklist on an NLME model
 | Warning | apVar OK? | RE Corr \< \|0.99\|? | RE Var \> 0? | Params Plausible? | Verdict |
 |----|:--:|:--:|:--:|:--:|----|
 | None | Yes | Yes | Yes | Yes | **Trust the results** |
-| “false convergence” | Yes | Yes | Yes | Yes | **Likely trustworthy** — consider increasing iterations |
-| “false convergence” | No | — | — | — | SEs unreliable: consider simplifying RE structure |
-| “max iterations” | — | — | — | Yes | Increase `msMaxIter`/`maxIter` and refit |
-| “singular” | — | No | — | — | Overparameterized: reduce RE structure |
-| Any | — | — | Near zero | — | Remove that random effect |
-| Any | — | — | — | No | Estimates unreliable: check data, simplify model |
+| “false convergence” | Yes | Yes | Yes | Yes | **Likely trustworthy** (consider increasing iterations) |
+| “false convergence” | No | n/a | n/a | n/a | SEs unreliable: consider simplifying RE structure |
+| “max iterations” | n/a | n/a | n/a | Yes | Increase `msMaxIter`/`maxIter` and refit |
+| “singular” | n/a | No | n/a | n/a | Overparameterized: reduce RE structure |
+| Any | n/a | n/a | Near zero | n/a | Remove that random effect |
+| Any | n/a | n/a | n/a | No | Estimates unreliable: check data, simplify model |
 
 ## Remedies by Model Tier
 
@@ -593,8 +605,8 @@ below maps symptoms to solutions:
 
 #### Increasing Iterations
 
-The simplest remedy for iteration-limit warnings. The `nlme_control`
-argument accepts a named list of control parameters:
+This is the simplest remedy for iteration-limit warnings. The
+`nlme_control` argument accepts a named list of control parameters:
 
 ``` r
 
@@ -695,7 +707,7 @@ TMB convergence issues have their own set of solutions:
 | Flat likelihood | Large SEs, code 1 | Simplify model (fewer RE, fix k) |
 | Boundary solution | Parameter at bound, code 1 | Widen or narrow bounds |
 | Iteration limit | Code 1 | Increase `iter_max` |
-| False convergence | Code 8 | Try more iterations; try L-BFGS-B |
+| False convergence | Code 1, message “false convergence (8)” | Automatic rescue (default); else try L-BFGS-B or a warm start |
 | Saddle point | Hessian not PD | Different starts; try L-BFGS-B optimizer |
 | Zero RE variance | sigma near 0 | Remove that random effect |
 
@@ -716,8 +728,9 @@ fit <- fit_demand_tmb(
 
 #### Switching Optimizer
 
-If `nlminb` produces code 8 (false convergence), switching to L-BFGS-B
-sometimes helps because it uses a different line search strategy:
+If `nlminb` reports false convergence (code 1 with the message “false
+convergence (8)”), switching to L-BFGS-B sometimes helps because it uses
+a different line search strategy:
 
 ``` r
 
@@ -727,6 +740,63 @@ fit_lbfgsb <- fit_demand_tmb(
   tmb_control = list(optimizer = "L-BFGS-B")
 )
 ```
+
+Since 0.3.0 you rarely need to do this by hand:
+[`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+tries a rescue itself whenever nlminb reports false convergence. A
+worked example shows what the rescue does and why the stalled point must
+not be kept.
+
+**Worked example: `apt_full`, exponential, gender, fixed `k = 2`.** With
+the default `estimate_k = FALSE` the fixed-`k` fit stalls:
+
+``` r
+
+data(apt_full)
+fit_off <- fit_demand_tmb(
+  apt_full, equation = "exponential", factors = "gender",
+  tmb_control = list(rescue = FALSE)
+)
+#> Warning: TMB fit did not converge (optimizer code 1: false convergence (8)).
+fit_off$opt$objective                 # 3308.7
+max(abs(fit_off$tmb_obj$gr(fit_off$opt$par)))   # ~8e10
+```
+
+The negative log-likelihood at the stalled point (3308.7) looks
+respectable, but the gradient there has components of order 1e10 and the
+Hessian is indefinite (smallest eigenvalue about -4e6): it is not a
+stationary point, so it is not an estimate of anything. Restarting
+nlminb from that point and switching to L-BFGS-B both stall in the same
+region. What does work is a warm start from the free-`k` solution:
+
+``` r
+
+fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender")
+#>   nlminb reported false convergence; attempting rescue...
+#>   Rescued nlminb false convergence via free_k_warm_start (NLL 3308.738 -> 3312.643;
+#>   the stalled point was not stationary)
+fit$converged                         # TRUE
+fit$hessian_pd                        # TRUE
+fit$opt$rescue_method                 # "free_k_warm_start"
+```
+
+The rescued fit has a *higher* NLL (3312.6) than the stalled point. That
+is expected: the stalled 3308.7 was reached on a ridge the optimizer
+could not leave and is not admissible, whereas 3312.6 is a genuine local
+minimum of the fixed-`k` likelihood (gradient below `rescue_grad_tol`,
+positive-definite Hessian). The rescue never picks a candidate by NLL
+alone; it requires convergence code 0, a small gradient and a
+positive-definite Hessian first.
+
+Two cautions. First, the rescued point is a local minimum on the
+fixed-`k` surface, not proven to be the global one. Second, the same
+data with `estimate_k = TRUE` converges cleanly at `k = 1.76` with NLL
+3301.6, so this example is also a fixed-`k` sensitivity check: when a
+fixed-`k` fit needs rescuing, compare it with the free-`k` fit before
+reporting either (the Details of
+[`?fit_demand_tmb`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
+explain when `k` is identified). To keep the old loud failure instead of
+the rescue, pass `tmb_control = list(rescue = FALSE)`.
 
 #### Using Warm Starts
 
@@ -876,12 +946,12 @@ glance_result$converged
 
 ## Summary
 
-Key takeaways:
+The main points:
 
-1.  **Convergence codes and warnings are about stopping rules, not
-    solution quality.** Code 0 or no warnings means the optimizer is
-    satisfied — it doesn’t guarantee a good solution. Non-convergence
-    doesn’t mean the estimates are wrong.
+1.  **Convergence codes and warnings describe stopping rules rather than
+    solution quality.** Code 0 or no warnings means only that the
+    optimizer is satisfied, which does not guarantee a good solution.
+    Non-convergence does not mean the estimates are wrong.
 
 2.  **Use the six-item diagnostic checklist.** Parameter plausibility,
     standard errors, gradient norm (TMB), Hessian/apVar status, model
@@ -903,16 +973,16 @@ Key takeaways:
 
 ### Cross-References
 
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  — Fitting TMB hurdle models
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  — Fitting NLME mixed-effects models
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  — Advanced NLME topics including control tuning
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  — Fitting fixed-effect NLS models
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  — Choosing between model tiers
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  fitting TMB hurdle models
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  fitting NLME mixed-effects models
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  advanced NLME topics including control tuning
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  fitting fixed-effect NLS models
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  choosing between model tiers
 
 ## References
 

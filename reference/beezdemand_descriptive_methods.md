@@ -167,7 +167,7 @@ plot(desc, y_trans = "log10")
 #> (`stat_summary()`).
 
 
-# With pseudo-log y-axis (handles zeros gracefully)
+# With pseudo-log y-axis (defined at zero)
 plot(desc, y_trans = "pseudo_log")
 
 # }

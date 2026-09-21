@@ -119,6 +119,40 @@ Silberberg solution; <code>"zben"</code>/<code>"simplified"</code> use the simpl
 solution.</p>
     </div>
     <div class="section level2">
+    <h2 id="marginalisation-policy-nlme-vs-tmb-">Marginalisation policy (NLME vs TMB)<a class="anchor" aria-label="anchor" href="#marginalisation-policy-nlme-vs-tmb-"></a></h2>
+
+
+<p>Both backends marginalise over the factor cells that were <strong>observed</strong> in
+the fitting data, with equal weight per cell, on the log scale (a
+geometric mean of the per-cell parameter estimates). Cells of the full
+factorial crossing that contain no subjects are not averaged over, so
+population-level Pmax/Omax never extrapolate through the additive model
+into cells the design cannot estimate. (This is the observed-cells side of
+the two conventions in wide use: <code>emmeans</code> / <code>marginaleffects</code>'s
+<code>"balanced"</code> grid averages every combination of levels; <code>marginaleffects</code>'s
+default averages the observed rows with frequency weights. Neither is used
+here: unobserved cells get weight zero and observed cells get equal
+weight regardless of group size.)</p><ul><li><p><strong>NLME (this method)</strong>: <code>emmeans</code> builds the full factorial
+reference grid, the per-cell EMMs are back-transformed to the natural
+scale, rows for unobserved cells are dropped, and the geometric mean is
+taken over the remaining cells (for <code>param_space = "log10"</code> this equals
+the arithmetic mean of the observed cells' log10 EMMs). Under
+<code>param_space = "natural"</code> the cell EMMs are natural-scale estimates and
+the geometric mean is taken of those directly, which is not the same
+as averaging log predictors.</p></li>
+<li><p><strong>TMB</strong> (<code><a href="calc_group_metrics.beezdemand_tmb.html">calc_group_metrics.beezdemand_tmb()</a></code>): the log-scale
+linear predictors are averaged with equal weight over the observed
+factor cells, then exponentiated.</p></li>
+</ul><p>The two therefore agree for any design fit in log space and can differ
+only when the NLME fit is in natural space. In both backends continuous
+covariates are held at the training mean unless <code>at</code> supplies a single
+value; a multi-value continuous <code>at</code> entry warns and uses its first value.
+A factor level supplied in <code>at</code> restricts the observed cells to that
+level (for a <code>collapse_levels</code> fit the original level is translated to
+each parameter's collapsed label); requesting a combination of levels
+with no observed cell is an error rather than an extrapolation.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="calc_group_metrics.html">calc_group_metrics()</a></code>, <code><a href="get_demand_param_emms.html">get_demand_param_emms()</a></code></p></div>
     </div>

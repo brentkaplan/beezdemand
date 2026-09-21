@@ -132,7 +132,7 @@ so such a value should be interpreted with caution. For multiple fits,
 the likelihood-ratio test screens for detectable non-nesting (equal or
 decreasing degrees of freedom, or a larger model with lower
 log-likelihood) but cannot prove nesting from log-likelihood and df
-alone – pass genuinely nested models. Rows of the multiple-fit table
+alone. Pass genuinely nested models. Rows of the multiple-fit table
 are ordered by ascending degrees of freedom, and the <code>Model</code>
 column labels them <code>Model1</code>, <code>Model2</code>, ... in that order.</p>
     </div>
@@ -157,14 +157,14 @@ column labels them <code>Model1</code>, <code>Model2</code>, ... in that order.<
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 4</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Group           Chisq    df  p.value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0 ~ gender    11.9       1 0.000<span style="text-decoration: underline;">569</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha ~ gender  0.178     1 0.673   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0 ~ gender    12.4       1 0.000<span style="text-decoration: underline;">429</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha ~ gender  0.230     1 0.632   </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">fit</span>, group_by <span class="op">=</span> <span class="st">"parameter"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 4</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Group Chisq    df   p.value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0     521.     2 9.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-114</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha <span style="text-decoration: underline;">1</span>305.     2 3.47<span style="color: #949494;">e</span><span style="color: #BB0000;">-284</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Q0     535.     2 6.59<span style="color: #949494;">e</span><span style="color: #BB0000;">-117</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> alpha <span style="text-decoration: underline;">2</span>539.     2 0   <span style="color: #949494;"> </span>    </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

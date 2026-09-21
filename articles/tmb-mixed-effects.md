@@ -9,16 +9,16 @@ alternative to
 [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md)
 (which uses `nlme`) and provides several advantages:
 
-- **Automatic differentiation** – exact gradients via compiled C++,
+- **Automatic differentiation**: exact gradients via compiled C++,
   replacing the numerical finite-difference approximations used by
   `nlme`
-- **Laplace approximation** – integrates over random effects
-  analytically rather than relying on iterative linearization
-- **Multi-start optimization** – automatically tries multiple
+- **Laplace approximation**: integrates over random effects analytically
+  rather than relying on iterative linearization
+- **Multi-start optimization**: automatically tries multiple
   starting-value sets and keeps the best fit
-- **Four equation forms** – exponential, exponentiated, simplified, and
+- **Four equation forms**: exponential, exponentiated, simplified, and
   zero-bounded exponential (zben)
-- **Factor and covariate support** – design matrices for group
+- **Factor and covariate support**: design matrices for group
   comparisons with estimated marginal means (EMMs) and pairwise
   contrasts
 
@@ -56,12 +56,12 @@ fit
 #> Number of observations: 1131 
 #> Observations dropped (zeros): 569 
 #> Random effects: 2 (q0, alpha) 
-#> Log-likelihood: -268.54 
-#> AIC: 551.07 
+#> Log-likelihood: -297.55 
+#> AIC: 607.1 
 #> 
 #> Fixed Effects:
-#>       Q0.0    alpha.0      log_k   logsigma   logsigma logsigma_e    rho_raw 
-#>     1.6944    -4.5060     0.3399    -0.2940    -0.0952    -1.4906    -0.4812 
+#>       Q0.0    alpha.0   logsigma   logsigma logsigma_e    rho_raw 
+#>     1.6611    -4.9277    -0.3234    -0.1093    -1.4600    -0.6190 
 #> 
 #> Use summary() for full results.
 ```
@@ -80,38 +80,37 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   5.4434    0.4171   22.1140  < 2e-16
-#>  alpha:(Intercept)   0.0110    0.0012  -42.4332  < 2e-16
-#>              log_k   0.3399    0.0276   12.2980  < 2e-16
-#>           logsigma  -0.2940    0.0748   -3.9297 8.51e-05
-#>           logsigma  -0.0952    0.0807   -1.1796 0.238169
-#>         logsigma_e  -1.4906    0.0231  -64.4070  < 2e-16
-#>            rho_raw  -0.4812    0.1310   -3.6742 0.000239
+#>     Q0:(Intercept)   5.2652    0.3920   22.3123  < 2e-16
+#>  alpha:(Intercept)   0.0072    0.0007  -50.6088  < 2e-16
+#>           logsigma  -0.3234    0.0748   -4.3244 1.53e-05
+#>           logsigma  -0.1093    0.0817   -1.3389    0.181
+#>         logsigma_e  -1.4600    0.0232  -62.8668  < 2e-16
+#>            rho_raw  -0.6190    0.1307   -4.7354 2.19e-06
 #> 
 #> --- Variance Components ---
 #> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.3237
-#>  sigma_c (alpha RE SD)   0.3948
-#>  sigma_e (Residual SD)   0.2252
+#>     sigma_b (Q0 RE SD)   0.3143
+#>  sigma_c (alpha RE SD)   0.3893
+#>  sigma_e (Residual SD)   0.2322
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
-#>  rho_bc (Q0-alpha correlation)  -0.4472
+#>  rho_bc (Q0-alpha correlation)  -0.5504
 #> 
 #> --- Fit Statistics ---
-#> Log-likelihood: -268.54 
-#> AIC: 551.07 
-#> BIC: 586.29 
+#> Log-likelihood: -297.55 
+#> AIC: 607.1 
+#> BIC: 637.28 
 #> 
 #> --- Population Demand Metrics ---
-#> Pmax: 8.6507  Omax: 12.6853  Method: analytic_lambert_w
+#> Pmax: 7.6114  Omax: 12.5597  Method: analytic_lambert_w
 #> 
 #> --- Individual Parameter Summaries ---
-#>   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2637
-#>   alpha: Min=0.0012  Med=0.0117  Mean=0.0180  Max=0.1803
-#>   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8223
-#>   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2688
+#>   Q0: Min=1.0852  Med=5.6123  Mean=6.6880  Max=26.2169
+#>   alpha: Min=0.0008  Med=0.0070  Mean=0.0117  Max=0.1083
+#>   Pmax: Min=0.4518  Med=7.9771  Mean=8.8033  Max=37.9008
+#>   Omax: Min=0.8402  Med=12.9591  Mean=16.9925  Max=112.4944
 #> 
 #> Notes:
 #>   * 569 zero-consumption observations dropped for equation='exponential'.
@@ -139,16 +138,18 @@ supports four demand equations:
 
 | Equation | Response | Zeros | k | Best for |
 |----|----|----|----|----|
-| `"exponential"` | log(Q) | Dropped | Estimated or fixed | Most datasets; robust 2-RE convergence |
-| `"exponentiated"` | Raw Q | Allowed | Estimated or fixed | Data with few zeros; 1-RE models |
+| `"exponential"` | log(Q) | Dropped | Fixed at 2; optionally estimated | Most datasets; the usual choice for 2-RE models |
+| `"exponentiated"` | Raw Q | Allowed | Fixed at 2; optionally estimated | Data with few zeros; 1-RE models |
 | `"simplified"` | Raw Q | Allowed | None | Simpler model without k |
 | `"zben"` | LL4(Q) | Allowed (via transform) | None | Wide dynamic range with LL4 compression |
 
 ### Mathematical Specifications
 
-**Exponential** (Hursh & Silberberg, 2008): \log(Q\_{ij}) =
-\log(Q\_{0i}) + k \left(e^{-\alpha_i \cdot Q\_{0i} \cdot C_j} -
-1\right) + \varepsilon\_{ij}
+**Exponential** (Hursh & Silberberg, 2008): \log\_{10}(Q\_{ij}) =
+\log\_{10}(Q\_{0i}) + k \left(e^{-\alpha_i \cdot Q\_{0i} \cdot C_j} -
+1\right) + \varepsilon\_{ij} (fit on the natural-log scale, where the k
+term is multiplied by \ln 10; the k reported is the base-10 span of the
+original equation)
 
 **Exponentiated** (Koffarnus et al., 2015): Q\_{ij} = Q\_{0i} \cdot
 10^{k \left(e^{-\alpha_i \cdot Q\_{0i} \cdot C_j} - 1\right)} +
@@ -203,17 +204,20 @@ data.frame(
                 AIC(fit_simp), AIC(fit_zben)), 1)
 )
 #>        equation random_effects converged    AIC
-#> 1   exponential           2-RE      TRUE  551.1
-#> 2 exponentiated           1-RE      TRUE 6744.5
+#> 1   exponential           2-RE      TRUE  607.1
+#> 2 exponentiated           1-RE      TRUE 6746.9
 #> 3    simplified           1-RE      TRUE 6743.4
 #> 4          zben           1-RE      TRUE -893.6
 ```
 
-**Note:** AIC values are not directly comparable across equations
-because they model different response scales (log Q vs raw Q vs LL4(Q)).
+AIC is comparable only between equations that model the same response
+scale. Here `exponentiated` and `simplified` both model raw Q and can be
+compared with each other; `exponential` models log Q and `zben` models
+LL4(Q), so their AIC values are not comparable with the raw-Q equations
+or with each other.
 
-**Convergence tip:** The `exponential` equation is the most reliable for
-2-random-effect models. The `exponentiated` equation works well with
+For convergence, the `exponential` equation is the most reliable choice
+for 2-random-effect models. The `exponentiated` equation works well with
 1-RE but can struggle to converge with 2-RE, especially with smaller
 samples.
 
@@ -222,10 +226,10 @@ samples.
 [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md)
 supports two configurations:
 
-- `random_effects = "q0"` – **1-RE**: random intercept on Q_0 only;
-  \alpha is constant across subjects
-- `random_effects = c("q0", "alpha")` – **2-RE**: random effects on both
-  Q_0 and \alpha with an estimated correlation
+- `random_effects = "q0"` (1-RE): random intercept on Q_0 only; \alpha
+  is constant across subjects
+- `random_effects = c("q0", "alpha")` (2-RE): random effects on both Q_0
+  and \alpha with an estimated correlation
 
 ``` r
 
@@ -242,10 +246,10 @@ compare_models(fit_1re, fit_2re)
 #> ================================================== 
 #> 
 #>    Model          Class   Backend nobs df    logLik       AIC       BIC
-#>  Model_1 beezdemand_tmb TMB_mixed 1131  5 -639.5903 1289.1807 1314.3350
-#>  Model_2 beezdemand_tmb TMB_mixed 1131  7 -268.5364  551.0729  586.2889
+#>  Model_1 beezdemand_tmb TMB_mixed 1131  4 -703.9366 1415.8732 1435.9967
+#>  Model_2 beezdemand_tmb TMB_mixed 1131  6 -297.5496  607.0992  637.2843
 #>  delta_AIC delta_BIC
-#>   738.1078  728.0461
+#>   808.7741  798.7124
 #>     0.0000    0.0000
 #> 
 #> Best model by BIC: Model_2 
@@ -253,7 +257,7 @@ compare_models(fit_1re, fit_2re)
 #> Likelihood Ratio Tests:
 #> ---------------------------------------- 
 #>          Comparison  LR_stat df p_value
-#>  Model_1 vs Model_2 742.1078  2  <2e-16
+#>  Model_1 vs Model_2 812.7741  2  <2e-16
 #> 
 #> Notes:
 #>   - LRT nesting assumption not verified.
@@ -266,44 +270,67 @@ and elasticity (\alpha).
 ``` r
 
 head(nlme::ranef(fit_2re))
-#>   id        b_i         c_i q0_(Intercept) alpha_(Intercept)
-#> 1 16 -0.8553425  0.38606925     -0.8553425        0.38606925
-#> 2 24  0.0892061 -0.04866633      0.0892061       -0.04866633
-#> 3 33  0.6114842 -0.35230990      0.6114842       -0.35230990
-#> 4 40  0.1527007  0.50021504      0.1527007        0.50021504
-#> 5 42  0.7378500 -0.89299758      0.7378500       -0.89299758
-#> 6 49 -0.2956502  0.40088468     -0.2956502        0.40088468
+#>   id        b_i        c_i q0_(Intercept) alpha_(Intercept)
+#> 1 16 -0.8231033  0.4178510     -0.8231033         0.4178510
+#> 2 24  0.1184444 -0.0807627      0.1184444        -0.0807627
+#> 3 33  0.6447745 -0.3544123      0.6447745        -0.3544123
+#> 4 40  0.1793134  0.5066451      0.1793134         0.5066451
+#> 5 42  0.7535770 -0.9183795      0.7535770        -0.9183795
+#> 6 49 -0.2751488  0.4130012     -0.2751488         0.4130012
 ```
 
 The `b_i` column is the random deviation on log(Q_0) and `c_i` is the
 random deviation on log(\alpha) for each subject.
 
-## Estimating vs. Fixing k
+## Fixing vs. Estimating k
 
 For the `exponential` and `exponentiated` equations, k scales the range
-of the demand curve. By default it is estimated (`estimate_k = TRUE`).
-You can fix it at the conventional value of 2 (Hursh & Silberberg,
-2008):
+of the demand curve. By default it is held at 2 (`estimate_k = FALSE`),
+the convention of Hursh & Silberberg (2008) and the default of
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
+Setting `estimate_k = TRUE` estimates it instead:
 
 ``` r
 
+fit_k_fixed <- fit_demand_tmb(dat, equation = "exponential",
+                               random_effects = c("q0", "alpha"),
+                               verbose = 0)
 fit_k_free <- fit_demand_tmb(dat, equation = "exponential",
                               random_effects = c("q0", "alpha"),
                               estimate_k = TRUE, verbose = 0)
-fit_k_fixed <- fit_demand_tmb(dat, equation = "exponential",
-                               random_effects = c("q0", "alpha"),
-                               estimate_k = FALSE, k = 2, verbose = 0)
 
 data.frame(
-  k = c("estimated", "fixed at 2"),
-  converged = c(fit_k_free$converged, fit_k_fixed$converged),
-  AIC = round(c(AIC(fit_k_free), AIC(fit_k_fixed)), 1),
-  k_value = round(c(exp(coef(fit_k_free)[["log_k"]]), 2), 3)
+  k = c("fixed at 2", "estimated"),
+  converged = c(fit_k_fixed$converged, fit_k_free$converged),
+  AIC = round(c(AIC(fit_k_fixed), AIC(fit_k_free)), 1),
+  k_value = round(c(2, exp(coef(fit_k_free)[["log_k"]])), 3)
 )
 #>            k converged   AIC k_value
-#> 1  estimated      TRUE 551.1   1.405
-#> 2 fixed at 2      TRUE 607.1   2.000
+#> 1 fixed at 2      TRUE 607.1   2.000
+#> 2  estimated      TRUE 551.1   1.405
 ```
+
+### When the data support a free k
+
+A free k needs curvature to estimate from. The response depends on k
+through k(e^{-\alpha Q_0 C} - 1), and while \alpha Q_0 C stays small
+that term is a straight line in price with slope k\alpha, so only the
+product is identified. What separates k from \alpha is the bend that
+appears as consumption approaches its floor, so a free k is estimable
+only when the prices reach far enough for consumption to bottom out. On
+data that stop short, k can drift to enormous values with a compensating
+\alpha. The fit then reports a non-positive-definite Hessian, and the
+derived P\_{max} and O\_{max} are meaningless.
+[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+screens a free-k fit for that pattern and
+[`summary()`](https://rdrr.io/r/base/summary.html) carries the note. The
+screen reports what it detects; a fit that passes it has not been shown
+to identify k.
+
+Because 2 is a convention rather than an estimate, it is worth refitting
+at a second value (say 1.5 or 3) and reporting how much the estimates
+move. \alpha and the derived P\_{max}, O\_{max} and EV move most; Q_0
+enters the likelihood jointly with \alpha, so it can shift as well.
 
 The `simplified` and `zben` equations do not use a k parameter.
 
@@ -325,38 +352,37 @@ summary(fit_2re)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   5.4434    0.4171   22.1140  < 2e-16
-#>  alpha:(Intercept)   0.0110    0.0012  -42.4332  < 2e-16
-#>              log_k   0.3399    0.0276   12.2980  < 2e-16
-#>           logsigma  -0.2940    0.0748   -3.9297 8.51e-05
-#>           logsigma  -0.0952    0.0807   -1.1796 0.238169
-#>         logsigma_e  -1.4906    0.0231  -64.4070  < 2e-16
-#>            rho_raw  -0.4812    0.1310   -3.6742 0.000239
+#>     Q0:(Intercept)   5.2652    0.3920   22.3123  < 2e-16
+#>  alpha:(Intercept)   0.0072    0.0007  -50.6088  < 2e-16
+#>           logsigma  -0.3234    0.0748   -4.3244 1.53e-05
+#>           logsigma  -0.1093    0.0817   -1.3389    0.181
+#>         logsigma_e  -1.4600    0.0232  -62.8668  < 2e-16
+#>            rho_raw  -0.6190    0.1307   -4.7354 2.19e-06
 #> 
 #> --- Variance Components ---
 #> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.3237
-#>  sigma_c (alpha RE SD)   0.3948
-#>  sigma_e (Residual SD)   0.2252
+#>     sigma_b (Q0 RE SD)   0.3143
+#>  sigma_c (alpha RE SD)   0.3893
+#>  sigma_e (Residual SD)   0.2322
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
-#>  rho_bc (Q0-alpha correlation)  -0.4472
+#>  rho_bc (Q0-alpha correlation)  -0.5504
 #> 
 #> --- Fit Statistics ---
-#> Log-likelihood: -268.54 
-#> AIC: 551.07 
-#> BIC: 586.29 
+#> Log-likelihood: -297.55 
+#> AIC: 607.1 
+#> BIC: 637.28 
 #> 
 #> --- Population Demand Metrics ---
-#> Pmax: 8.6507  Omax: 12.6853  Method: analytic_lambert_w
+#> Pmax: 7.6114  Omax: 12.5597  Method: analytic_lambert_w
 #> 
 #> --- Individual Parameter Summaries ---
-#>   Q0: Min=1.0764  Med=5.8144  Mean=6.9916  Max=27.2637
-#>   alpha: Min=0.0012  Med=0.0117  Mean=0.0180  Max=0.1803
-#>   Pmax: Min=0.3701  Med=8.9913  Mean=10.5038  Max=54.8223
-#>   Omax: Min=0.7770  Med=11.9321  Mean=17.2419  Max=120.2688
+#>   Q0: Min=1.0852  Med=5.6123  Mean=6.6880  Max=26.2169
+#>   alpha: Min=0.0008  Med=0.0070  Mean=0.0117  Max=0.1083
+#>   Pmax: Min=0.4518  Med=7.9771  Mean=8.8033  Max=37.9008
+#>   Omax: Min=0.8402  Med=12.9591  Mean=16.9925  Max=112.4944
 #> 
 #> Notes:
 #>   * 569 zero-consumption observations dropped for equation='exponential'.
@@ -368,8 +394,8 @@ back-transforms Q_0, \alpha, and k off the log estimation scale. The
 `statistic` and `p.value` columns are always computed on the estimation
 (log) scale, where the Wald test is well defined; they are not
 recomputed from the back-transformed `estimate` and `std.error` (that
-recompute is degenerate for a strictly positive parameter – it would
-test “ratio = 0” rather than “ratio = 1”). One consequence:
+recompute is degenerate for a strictly positive parameter because it
+would test “ratio = 0” rather than “ratio = 1”). As a consequence,
 `estimate / std.error` from the default table does not reproduce the
 reported `statistic`. This matches the `broom` and `emmeans` convention;
 pass `report_space = "internal"` (or `"log10"`) to read the estimate and
@@ -391,35 +417,34 @@ For users coming from `nlme` or `lme4`, the
 [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) accessor
 returns these same variance components in the familiar
 [`nlme::VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) matrix
-layout – a `Variance` / `StdDev` matrix (with a `Corr` column for
+layout, i.e., a `Variance` / `StdDev` matrix (with a `Corr` column for
 `pdSymm` fits) and a final `Residual` row:
 
 ``` r
 
 VarCorr(fit_2re)
-#>          Variance StdDev Corr  
-#> Q0       0.1050   0.324        
-#> alpha    0.1560   0.395  -0.447
-#> Residual 0.0507   0.225
+#>          Variance StdDev Corr 
+#> Q0       0.0988   0.314       
+#> alpha    0.1520   0.389  -0.55
+#> Residual 0.0539   0.232
 ```
 
 Note that [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
-(shown next) reports the raw internal optimizer parameters instead – the
+(shown next) reports the raw internal optimizer parameters instead. The
 `logsigma` rows are the natural log of each RE SD, not the log10-scale
 SDs from `summary()$variance_components`.
 
 ``` r
 
 tidy(fit_2re)
-#> # A tibble: 6 × 9
-#>   term          estimate std.error statistic    p.value component estimate_scale
-#>   <chr>            <dbl>     <dbl>     <dbl>      <dbl> <chr>     <chr>         
-#> 1 Q0:(Intercep…   5.44     0.417        22.1  2.32e-108 fixed     natural       
-#> 2 alpha:(Inter…   0.0110   0.00117     -42.4  0         fixed     natural       
-#> 3 log_k           0.340    0.0276       12.3  9.28e- 35 fixed     log           
-#> 4 sigma_b (Q0 …   0.324   NA            NA   NA         variance  log10         
-#> 5 sigma_c (alp…   0.395   NA            NA   NA         variance  log10         
-#> 6 sigma_e (Res…   0.225   NA            NA   NA         variance  natural       
+#> # A tibble: 5 × 10
+#>   term    estimate std.error statistic    p.value    df component estimate_scale
+#>   <chr>      <dbl>     <dbl>     <dbl>      <dbl> <dbl> <chr>     <chr>         
+#> 1 Q0:(In…  5.27     0.392         22.3  2.81e-110   Inf fixed     natural       
+#> 2 alpha:…  0.00724  0.000705     -50.6  0           Inf fixed     natural       
+#> 3 sigma_…  0.314   NA             NA   NA            NA variance  log10         
+#> 4 sigma_…  0.389   NA             NA   NA            NA variance  log10         
+#> 5 sigma_…  0.232   NA             NA   NA            NA variance  natural       
 #> # ℹ 2 more variables: term_display <chr>, estimate_internal <dbl>
 ```
 
@@ -442,13 +467,13 @@ and O\_{max}:
 
 spars <- get_subject_pars(fit_2re)
 head(spars)
-#>   id        b_i         c_i        Q0       alpha      Pmax      Omax
-#> 1 16 -0.8553425  0.38606925  2.314197 0.016246302 13.830982  8.622529
-#> 2 24  0.0892061 -0.04866633  5.951310 0.010518438  8.306997 13.317967
-#> 3 33  0.6114842 -0.35230990 10.033098 0.007763911  6.675631 18.042997
-#> 4 40  0.1527007  0.50021504  6.341441 0.018210732  4.502903  7.692399
-#> 5 42  0.7378500 -0.89299758 11.384528 0.004521295 10.102527 30.983205
-#> 6 49 -0.2956502  0.40088468  4.050155 0.016488790  7.786593  8.495724
+#>   id        b_i        c_i        Q0       alpha      Pmax      Omax
+#> 1 16 -0.8231033  0.4178510  2.311769 0.011000602 11.414637  8.270063
+#> 2 24  0.1184444 -0.0807627  5.927253 0.006681459  7.329904 13.616139
+#> 3 33  0.6447745 -0.3544123 10.033113 0.005081908  5.693254 17.901874
+#> 4 40  0.1793134  0.5066451  6.299245 0.012022070  3.833145  7.567388
+#> 5 42  0.7535770 -0.9183795 11.186340 0.002891339  8.975033 31.464899
+#> 6 49 -0.2751488  0.4130012  3.998693 0.010947381  6.631240  8.310269
 #>   pmax_at_bound
 #> 1         FALSE
 #> 2         FALSE
@@ -471,35 +496,37 @@ spars |>
   tidyr::pivot_wider(names_from = stat, values_from = value) |>
   mutate(across(where(is.numeric), \(x) round(x, 4)))
 #> # A tibble: 4 × 4
-#>   parameter  median   mean      sd
-#>   <chr>       <dbl>  <dbl>   <dbl>
-#> 1 Q0         5.81    6.99   5.01  
-#> 2 alpha      0.0117  0.018  0.0238
-#> 3 Pmax       8.99   10.5    7.53  
-#> 4 Omax      11.9    17.2   17.3
+#>   parameter median    mean      sd
+#>   <chr>      <dbl>   <dbl>   <dbl>
+#> 1 Q0         5.61   6.69    4.70  
+#> 2 alpha      0.007  0.0117  0.0146
+#> 3 Pmax       7.98   8.80    5.48  
+#> 4 Omax      13.0   17.0    16.6
 ```
 
 ### Amplitude–Persistence Decomposition
 
 [`calculate_amplitude_persistence()`](https://brentkaplan.github.io/beezdemand/reference/calculate_amplitude_persistence.md)
-collapses the per-subject parameters into two latent factors used in
-behavioral economic indices: **Amplitude** (intensity of demand,
-primarily Q_0) and **Persistence** (sensitivity to price, drawn from
-P\_{max}, O\_{max}, and 1/\alpha). The TMB method extracts subject
-parameters from `fit$subject_pars` and delegates to the default Z-score
-implementation, so the result is comparable across model tiers.
+collapses the per-subject parameters into two standardized composite
+scores used in behavioral economic indices: **Amplitude** (intensity of
+demand, the z-score of Q_0) and **Persistence** (sensitivity to price,
+the mean of the z-scores of P\_{max}, O\_{max}, and 1/\alpha). No factor
+analysis is involved; each is a plain z-score composite. The TMB method
+extracts subject parameters from `fit$subject_pars` and delegates to the
+default Z-score implementation, so the result is comparable across model
+tiers.
 
 ``` r
 
 ap <- calculate_amplitude_persistence(fit_2re)
 head(ap)
-#>   id       z_Q0      z_Pmax      z_Omax z_inv_alpha  Amplitude Persistence
-#> 1 16 -0.9332306  0.44158011 -0.49884140 -0.49884140 -0.9332306  -0.1853676
-#> 2 24 -0.2075582 -0.29156364 -0.22709436 -0.22709436 -0.2075582  -0.2485841
-#> 3 33  0.6068353 -0.50807870  0.04636527  0.04636527  0.6068353  -0.1384494
-#> 4 40 -0.1297198 -0.79644335 -0.55267242 -0.55267242 -0.1297198  -0.6339294
-#> 5 42  0.8764710 -0.05326084  0.79527589  0.79527589  0.8764710   0.5124303
-#> 6 49 -0.5868744 -0.36063167 -0.50618019 -0.50618019 -0.5868744  -0.4576640
+#>   id        z_Q0      z_Pmax      z_Omax z_inv_alpha   Amplitude Persistence
+#> 1 16 -0.93103155  0.47627407 -0.52701646 -0.52701646 -0.93103155  -0.1925863
+#> 2 24 -0.16185398 -0.26873784 -0.20400271 -0.20400271 -0.16185398  -0.2255811
+#> 3 33  0.71164905 -0.56724551  0.05494444  0.05494444  0.71164905  -0.1524522
+#> 4 40 -0.08271426 -0.90650961 -0.56947256 -0.56947256 -0.08271426  -0.6818182
+#> 5 42  0.95699283  0.03131627  0.87443209  0.87443209  0.95699283   0.5933935
+#> 6 49 -0.57214617 -0.39616683 -0.52458721 -0.52458721 -0.57214617  -0.4817804
 ```
 
 ``` r
@@ -512,29 +539,32 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1   7.065932e-18    -2.846441e-18            1      0.8497968
+#> 1  -5.588131e-17    -2.271513e-17            1      0.8517458
 ```
 
-By construction, both factors are sample-standardized (mean 0, SD 1
-within the fitted dataset). For cross-sample comparisons, supply
-external `basis_means` and `basis_sds` so the standardization uses a
-fixed reference.
+Amplitude is a single z-score, so it has mean 0 and SD 1 within the
+fitted dataset. Persistence is the mean of three z-scores and is not
+re-standardized: with complete components its mean is 0, and its SD
+depends on how strongly the three components correlate (it equals 1 only
+when they are perfectly correlated). Missing components move both the
+mean and the SD away from those values. For cross-sample comparisons,
+supply external `basis_means` and `basis_sds` so the standardization
+uses a fixed reference.
 
 ### Confidence Intervals
 
 ``` r
 
 confint(fit_2re)
-#> # A tibble: 7 × 5
+#> # A tibble: 6 × 5
 #>   term              estimate conf.low conf.high level
 #>   <chr>                <dbl>    <dbl>     <dbl> <dbl>
-#> 1 Q0:(Intercept)      1.69      1.54     1.84    0.95
-#> 2 alpha:(Intercept)  -4.51     -4.71    -4.30    0.95
-#> 3 log_k               0.340     0.286    0.394   0.95
-#> 4 logsigma           -0.294    -0.441   -0.147   0.95
-#> 5 logsigma           -0.0952   -0.254    0.0630  0.95
-#> 6 logsigma_e         -1.49     -1.54    -1.45    0.95
-#> 7 rho_raw            -0.481    -0.738   -0.225   0.95
+#> 1 Q0:(Intercept)       1.66     1.52     1.81    0.95
+#> 2 alpha:(Intercept)   -4.93    -5.12    -4.74    0.95
+#> 3 logsigma            -0.323   -0.470   -0.177   0.95
+#> 4 logsigma            -0.109   -0.269    0.0507  0.95
+#> 5 logsigma_e          -1.46    -1.51    -1.41    0.95
+#> 6 rho_raw             -0.619   -0.875   -0.363   0.95
 ```
 
 By default, confidence intervals are on the internal (log) scale. Use
@@ -543,27 +573,27 @@ By default, confidence intervals are on the internal (log) scale. Use
 ``` r
 
 confint(fit_2re, report_space = "natural")
-#> # A tibble: 7 × 5
+#> # A tibble: 6 × 5
 #>   term              estimate conf.low conf.high level
 #>   <chr>                <dbl>    <dbl>     <dbl> <dbl>
-#> 1 Q0:(Intercept)      5.44    4.68       6.33    0.95
-#> 2 alpha:(Intercept)   0.0110  0.00897    0.0136  0.95
-#> 3 log_k               1.40    1.33       1.48    0.95
-#> 4 logsigma           -0.294  -0.441     -0.147   0.95
-#> 5 logsigma           -0.0952 -0.254      0.0630  0.95
-#> 6 logsigma_e         -1.49   -1.54      -1.45    0.95
-#> 7 rho_raw            -0.481  -0.738     -0.225   0.95
+#> 1 Q0:(Intercept)     5.27     4.55      6.09     0.95
+#> 2 alpha:(Intercept)  0.00724  0.00599   0.00877  0.95
+#> 3 logsigma          -0.323   -0.470    -0.177    0.95
+#> 4 logsigma          -0.109   -0.269     0.0507   0.95
+#> 5 logsigma_e        -1.46    -1.51     -1.41     0.95
+#> 6 rho_raw           -0.619   -0.875    -0.363    0.95
 ```
 
 For a quick diagnostic on the Gaussian (Wald) approximation, request
 Monte Carlo intervals with `method = "simulate"`. These draw `R` samples
-from the joint asymptotic posterior `N(coef, vcov)` and report empirical
-quantiles. They are asymptotically Wald-equivalent, so a large
+from the asymptotic sampling approximation `N(coef, vcov)` (the same
+Gaussian that Wald intervals assume; no prior is involved) and report
+empirical quantiles. They are asymptotically Wald-equivalent, so a large
 discrepancy between the two flags a fit where the Gaussian approximation
-is suspect. This is a diagnostic comparison, **not** an accuracy
-improvement: the `simulate` method does not capture non-Gaussian
-posterior shape and carries no positivity guarantee on the internal
-scale. Set `seed` for reproducibility.
+is suspect. The comparison is diagnostic rather than an accuracy
+improvement, because the `simulate` method does not capture a
+non-Gaussian sampling distribution and carries no positivity guarantee
+on the internal scale. Set `seed` for reproducibility.
 
 ``` r
 
@@ -575,21 +605,20 @@ data.frame(
   width_sim = ci_sim$conf.high - ci_sim$conf.low
 )
 #>                term width_wald  width_sim
-#> 1    Q0:(Intercept) 0.30035058 0.29461890
-#> 2 alpha:(Intercept) 0.41625530 0.42113249
-#> 3             log_k 0.10833786 0.10835459
-#> 4          logsigma 0.29327780 0.29006254
-#> 5          logsigma 0.31651456 0.31452214
-#> 6        logsigma_e 0.09071999 0.09080796
-#> 7           rho_raw 0.51338445 0.52553410
+#> 1    Q0:(Intercept) 0.29183243 0.28646321
+#> 2 alpha:(Intercept) 0.38167415 0.38942952
+#> 3          logsigma 0.29319103 0.29765027
+#> 4          logsigma 0.32006787 0.31764255
+#> 5        logsigma_e 0.09103547 0.09041937
+#> 6           rho_raw 0.51240654 0.51039522
 ```
 
 ### Variance-Covariance and the Delta Method
 
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) returns the fixed-effect
-variance-covariance matrix from the TMB sdreport — the inverse of the
+variance-covariance matrix from the TMB sdreport (the inverse of the
 negative Hessian at the MLE, restricted to fixed effects after
-Laplace-marginalizing the random effects. Combined with the optimizer’s
+Laplace-marginalizing the random effects). Combined with the optimizer’s
 internal parameter vector (`coef(fit, type = "internal")`), it lets you
 apply the delta method to any nonlinear function of the parameters via
 [`car::deltaMethod`](https://rdrr.io/pkg/car/man/deltaMethod.html). Pass
@@ -606,7 +635,7 @@ car::deltaMethod(
   vcov. = vcov(fit_2re)
 )
 #>             Estimate       SE    2.5 % 97.5 %
-#> beta_q0 * 1 1.694405 0.076621 1.544230 1.8446
+#> beta_q0 * 1 1.661116 0.074448 1.515200  1.807
 ```
 
 `fitted(fit)` and `residuals(fit)` are also exposed as direct accessors,
@@ -627,12 +656,12 @@ head(pred_resp)
 #> # A tibble: 6 × 9
 #>   id    gender   age binges totdrinks tothours     x     y .fitted
 #>   <fct> <chr>  <dbl>  <dbl>     <dbl>    <dbl> <dbl> <dbl>   <dbl>
-#> 1 16    Male      30      0         1        1  0        2   0.839
+#> 1 16    Male      30      0         1        1  0        2   0.838
 #> 2 16    Male      30      0         1        1  0.25     2   0.809
-#> 3 16    Male      30      0         1        1  0.5      2   0.779
-#> 4 16    Male      30      0         1        1  1        2   0.720
-#> 5 16    Male      30      0         1        1  1.5      2   0.662
-#> 6 16    Male      30      0         1        1  2        2   0.605
+#> 3 16    Male      30      0         1        1  0.5      2   0.780
+#> 4 16    Male      30      0         1        1  1        2   0.722
+#> 5 16    Male      30      0         1        1  1.5      2   0.666
+#> 6 16    Male      30      0         1        1  2        2   0.610
 ```
 
 ``` r
@@ -642,13 +671,13 @@ predict(fit_2re, type = "demand", prices = c(0, 0.5, 1, 2, 5, 10, 20))
 #> # A tibble: 7 × 2
 #>   price .fitted
 #>   <dbl>   <dbl>
-#> 1   0     1.69 
-#> 2   0.5   1.60 
-#> 3   1     1.51 
-#> 4   2     1.33 
-#> 5   5     0.855
-#> 6  10     0.233
-#> 7  20    -0.568
+#> 1   0     1.66 
+#> 2   0.5   1.57 
+#> 3   1     1.49 
+#> 4   2     1.32 
+#> 5   5     0.862
+#> 6  10     0.201
+#> 7  20    -0.796
 ```
 
 ``` r
@@ -657,14 +686,14 @@ predict(fit_2re, type = "demand", prices = c(0, 0.5, 1, 2, 5, 10, 20))
 pred_pars <- predict(fit_2re, type = "parameters")
 head(pred_pars)
 #> # A tibble: 6 × 8
-#>   id        b_i     c_i    Q0   alpha  Pmax  Omax pmax_at_bound
-#>   <chr>   <dbl>   <dbl> <dbl>   <dbl> <dbl> <dbl> <lgl>        
-#> 1 16    -0.855   0.386   2.31 0.0162  13.8   8.62 FALSE        
-#> 2 24     0.0892 -0.0487  5.95 0.0105   8.31 13.3  FALSE        
-#> 3 33     0.611  -0.352  10.0  0.00776  6.68 18.0  FALSE        
-#> 4 40     0.153   0.500   6.34 0.0182   4.50  7.69 FALSE        
-#> 5 42     0.738  -0.893  11.4  0.00452 10.1  31.0  FALSE        
-#> 6 49    -0.296   0.401   4.05 0.0165   7.79  8.50 FALSE
+#>   id       b_i     c_i    Q0   alpha  Pmax  Omax pmax_at_bound
+#>   <chr>  <dbl>   <dbl> <dbl>   <dbl> <dbl> <dbl> <lgl>        
+#> 1 16    -0.823  0.418   2.31 0.0110  11.4   8.27 FALSE        
+#> 2 24     0.118 -0.0808  5.93 0.00668  7.33 13.6  FALSE        
+#> 3 33     0.645 -0.354  10.0  0.00508  5.69 17.9  FALSE        
+#> 4 40     0.179  0.507   6.30 0.0120   3.83  7.57 FALSE        
+#> 5 42     0.754 -0.918  11.2  0.00289  8.98 31.5  FALSE        
+#> 6 49    -0.275  0.413   4.00 0.0109   6.63  8.31 FALSE
 ```
 
 For `type = "response"`, the `level` argument controls whether
@@ -691,12 +720,12 @@ head(pred_levels)
 #> # A tibble: 6 × 4
 #>        x id    predict.fixed predict.id
 #>    <dbl> <fct>         <dbl>      <dbl>
-#> 1 0.05   16             5.53       2.36
-#> 2 0.0553 16             5.52       2.36
-#> 3 0.0613 16             5.52       2.36
-#> 4 0.0678 16             5.51       2.35
-#> 5 0.0751 16             5.50       2.35
-#> 6 0.0831 16             5.49       2.35
+#> 1 0.05   16             5.36       2.36
+#> 2 0.0553 16             5.36       2.36
+#> 3 0.0613 16             5.35       2.36
+#> 4 0.0678 16             5.35       2.36
+#> 5 0.0751 16             5.34       2.35
+#> 6 0.0831 16             5.33       2.35
 ```
 
 The population-mean curve is identical for every subject, so a single
@@ -728,13 +757,13 @@ curve (dark).
 
 calc_group_metrics(fit_2re)
 #> $Pmax
-#> [1] 8.65068
+#> [1] 7.611377
 #> 
 #> $Omax
-#> [1] 12.68535
+#> [1] 12.5597
 #> 
 #> $Qmax
-#> [1] 1.466399
+#> [1] 1.650122
 #> 
 #> $elasticity_at_pmax
 #> [1] -1
@@ -803,7 +832,7 @@ fit_2re$hessian_pd
 
 ``` r
 
-# Model health check — convergence, variance components, residual stats,
+# Model health check: convergence, variance components, residual stats,
 # and (since 0.3.0) Hessian positive-definiteness.
 check_demand_model(fit_2re)
 #> 
@@ -815,18 +844,18 @@ check_demand_model(fit_2re)
 #>   Status: Converged
 #> 
 #> Random Effects:
-#>   sigma_b variance: 0.3237
-#>   sigma_c variance: 0.3948
+#>   sigma_b variance: 0.09877
+#>   sigma_c variance: 0.1516
 #> 
 #> Residuals:
-#>   Mean: -0.0001171
-#>   SD: 0.2069
-#>   Range: [-0.9401, 0.7515]
-#>   Outliers: 12 observations
+#>   Mean: -7.789e-05
+#>   SD: 0.2133
+#>   Range: [-0.8457, 1.172]
+#>   Outliers: 15 observations
 #> 
 #> --------------------------------------------------
 #> Issues Detected (1):
-#>   1. Detected 12 potential outliers (|resid| > 3 SD)
+#>   1. Detected 15 potential outliers (|resid| > 3 SD)
 #> 
 #> Recommendations:
 #>   - Investigate outlying observations
@@ -840,12 +869,12 @@ head(aug[, c("id", "x", "y", ".fitted", ".resid", ".std_resid")])
 #> # A tibble: 6 × 6
 #>   id        x     y .fitted  .resid .std_resid
 #>   <fct> <dbl> <dbl>   <dbl>   <dbl>      <dbl>
-#> 1 16     0        2   0.839 -0.146      -0.648
-#> 2 16     0.25     2   0.809 -0.116      -0.513
-#> 3 16     0.5      2   0.779 -0.0857     -0.380
-#> 4 16     1        2   0.720 -0.0266     -0.118
-#> 5 16     1.5      2   0.662  0.0315      0.140
-#> 6 16     2        2   0.605  0.0884      0.392
+#> 1 16     0        2   0.838 -0.145      -0.624
+#> 2 16     0.25     2   0.809 -0.116      -0.498
+#> 3 16     0.5      2   0.780 -0.0867     -0.373
+#> 4 16     1        2   0.722 -0.0292     -0.126
+#> 5 16     1.5      2   0.666  0.0275      0.118
+#> 6 16     2        2   0.610  0.0835      0.360
 ```
 
 ``` r
@@ -872,7 +901,7 @@ Random effects diagnostic panels.
 
 ``` r
 
-# Residual plot — standard in every modeling workflow
+# Residual plot (standard in every modeling workflow)
 plot_residuals(fit_2re, type = "fitted")
 ```
 
@@ -914,8 +943,8 @@ lines.](tmb-mixed-effects_files/figure-html/viz-expenditure-1.png)
 Expenditure curve with Pmax and Omax reference lines.
 
 The elasticity curve shows how responsive demand is to price changes.
-The dashed line at -1 marks unit elasticity — prices above this
-threshold produce elastic demand:
+The dashed line at -1 marks unit elasticity (prices above this threshold
+produce elastic demand):
 
 ``` r
 
@@ -931,8 +960,8 @@ Own-price elasticity curve with unit elasticity reference.
 
 The loss surface visualizes the sum-of-squared-residuals landscape over
 a grid of (Q_0, \alpha) values, with the MLE marked. This helps assess
-identifiability — a sharp, well-defined minimum indicates good
-identification:
+identifiability (a sharp, well-defined minimum indicates good
+identification):
 
 ``` r
 
@@ -1033,14 +1062,14 @@ fit_gender
 #> Number of observations: 1131 
 #> Observations dropped (zeros): 569 
 #> Random effects: 2 (q0, alpha) 
-#> Log-likelihood: -267.38 
-#> AIC: 552.76 
+#> Log-likelihood: -296.45 
+#> AIC: 608.91 
 #> 
 #> Fixed Effects:
-#>       Q0.0       Q0.1    alpha.0    alpha.1      log_k   logsigma   logsigma 
-#>     1.6093     0.1941    -4.4026    -0.2493     0.3404    -0.3021    -0.1074 
-#> logsigma_e    rho_raw 
-#>    -1.4905    -0.4591 
+#>       Q0.0       Q0.1    alpha.0    alpha.1   logsigma   logsigma logsigma_e 
+#>     1.5894     0.1643    -4.8140    -0.2691    -0.3292    -0.1239    -1.4600 
+#>    rho_raw 
+#>    -0.5997 
 #> 
 #> Use summary() for full results.
 ```
@@ -1048,7 +1077,7 @@ fit_gender
 ### Joint Tests
 
 `anova(fit)` reports a joint Wald-χ² test for each parameter × factor
-block — here, whether `gender` shifts Q_0 and \alpha. Pass additional
+block (here, whether `gender` shifts Q_0 and \alpha). Pass additional
 fits for a nested likelihood-ratio test.
 
 ``` r
@@ -1057,8 +1086,8 @@ anova(fit_gender)
 #> # A tibble: 2 × 4
 #>   Group          Chisq    df p.value
 #>   <chr>          <dbl> <int>   <dbl>
-#> 1 Q0 ~ gender     1.61     1   0.205
-#> 2 alpha ~ gender  1.63     1   0.202
+#> 1 Q0 ~ gender     1.21     1   0.271
+#> 2 alpha ~ gender  1.99     1   0.158
 ```
 
 ### Estimated Marginal Means
@@ -1069,8 +1098,8 @@ get_demand_param_emms(fit_gender, param = "Q0")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female     5.00         1.61     0.102     4.10      6.10
-#> 2 gender=Male       6.07         1.80     0.115     4.85      7.60
+#> 1 gender=Female     4.90         1.59    0.0990     4.04      5.95
+#> 2 gender=Male       5.78         1.75    0.112      4.64      7.19
 ```
 
 ``` r
@@ -1079,8 +1108,8 @@ get_demand_param_emms(fit_gender, param = "alpha")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female  0.0122         -4.40     0.133  0.00943    0.0159
-#> 2 gender=Male    0.00954        -4.65     0.155  0.00705    0.0129
+#> 1 gender=Female  0.00812        -4.81     0.126  0.00634   0.0104 
+#> 2 gender=Male    0.00620        -5.08     0.146  0.00466   0.00825
 ```
 
 EMMs are reported on both the natural scale (`estimate`) and log scale
@@ -1100,7 +1129,7 @@ get_demand_comparisons(fit_gender, param = "Q0")
 #> 
 #> Q0 (log10-scale contrasts):
 #>       contrast estimate std.error conf.low conf.high p.value
-#>  Female - Male   -0.084     0.067   -0.215     0.046   0.205
+#>  Female - Male   -0.071     0.065   -0.198     0.056   0.271
 ```
 
 ``` r
@@ -1114,7 +1143,7 @@ get_demand_comparisons(fit_gender, param = "alpha")
 #> 
 #> alpha (log10-scale contrasts):
 #>       contrast estimate std.error conf.low conf.high p.value
-#>  Female - Male    0.108     0.085   -0.058     0.275   0.202
+#>  Female - Male    0.117     0.083   -0.045     0.279   0.158
 ```
 
 The `estimate_ratio` column gives the multiplicative ratio between
@@ -1138,10 +1167,10 @@ compare_models(fit_1re, fit_2re)
 #> ================================================== 
 #> 
 #>    Model          Class   Backend nobs df    logLik       AIC       BIC
-#>  Model_1 beezdemand_tmb TMB_mixed 1131  5 -639.5903 1289.1807 1314.3350
-#>  Model_2 beezdemand_tmb TMB_mixed 1131  7 -268.5364  551.0729  586.2889
+#>  Model_1 beezdemand_tmb TMB_mixed 1131  4 -703.9366 1415.8732 1435.9967
+#>  Model_2 beezdemand_tmb TMB_mixed 1131  6 -297.5496  607.0992  637.2843
 #>  delta_AIC delta_BIC
-#>   738.1078  728.0461
+#>   808.7741  798.7124
 #>     0.0000    0.0000
 #> 
 #> Best model by BIC: Model_2 
@@ -1149,16 +1178,17 @@ compare_models(fit_1re, fit_2re)
 #> Likelihood Ratio Tests:
 #> ---------------------------------------- 
 #>          Comparison  LR_stat df p_value
-#>  Model_1 vs Model_2 742.1078  2  <2e-16
+#>  Model_1 vs Model_2 812.7741  2  <2e-16
 #> 
 #> Notes:
 #>   - LRT nesting assumption not verified.
 ```
 
-**Valid comparisons** require models fit on the same data with the same
-equation and response scale. Models with different equations (e.g.,
-exponential vs exponentiated) model different responses and cannot be
-compared via AIC.
+Valid comparisons require models fit on the same data with the same
+response scale. Equations that model different responses (e.g.,
+exponential on log Q vs exponentiated on raw Q) cannot be compared via
+AIC; equations that share a response scale (exponentiated and
+simplified, both raw Q) can.
 
 ### Building Nested Models with `update()`
 
@@ -1178,18 +1208,18 @@ compare_models(fit_gender_null, fit_gender)
 #> ================================================== 
 #> 
 #>    Model          Class   Backend nobs df    logLik      AIC      BIC delta_AIC
-#>  Model_1 beezdemand_tmb TMB_mixed 1131  7 -268.5364 551.0729 586.2889    0.0000
-#>  Model_2 beezdemand_tmb TMB_mixed 1131  9 -267.3790 552.7580 598.0357    1.6851
+#>  Model_1 beezdemand_tmb TMB_mixed 1131  6 -297.5496 607.0992 637.2843    0.0000
+#>  Model_2 beezdemand_tmb TMB_mixed 1131  8 -296.4541 608.9083 649.1552    1.8091
 #>  delta_BIC
 #>     0.0000
-#>    11.7468
+#>    11.8708
 #> 
 #> Best model by BIC: Model_1 
 #> 
 #> Likelihood Ratio Tests:
 #> ---------------------------------------- 
 #>          Comparison LR_stat df p_value
-#>  Model_1 vs Model_2  2.3149  2   0.314
+#>  Model_1 vs Model_2  2.1909  2   0.334
 #> 
 #> Notes:
 #>   - LRT nesting assumption not verified.
@@ -1203,8 +1233,8 @@ of re-fitting, matching the convention of
 `formula(fit)` returns a named list of one-sided formulas for `Q0` and
 `alpha` plus the random-effect spec; `model.matrix(fit)` returns the
 four design matrices the TMB template consumed (`X_q0`, `X_alpha`,
-`Z_q0`, `Z_alpha`) — a named list rather than the single matrix `lm` or
-`lme4` return, because the TMB tier truly has two fixed-effect linear
+`Z_q0`, `Z_alpha`). This is a named list rather than the single matrix
+`lm` or `lme4` return, because the TMB tier has two fixed-effect linear
 predictors.
 
 ## Convergence Tips
@@ -1215,7 +1245,7 @@ If a model fails to converge, try these strategies in order:
 |----|----|----|
 | Reduce random effects | `random_effects = "q0"` | 2-RE models struggling |
 | Use exponential equation | `equation = "exponential"` | Exponentiated/simplified not converging |
-| Fix k | `estimate_k = FALSE, k = 2` | k estimate drifting to extreme values |
+| Fix k (the default) | `estimate_k = FALSE`, optionally with `k = <value>` | a free k drifting to extreme values |
 | Increase iterations | `tmb_control = list(iter_max = 2000)` | “false convergence” messages |
 | Try L-BFGS-B | `tmb_control = list(optimizer = "L-BFGS-B")` | nlminb not making progress |
 | Set parameter bounds | `tmb_control = list(lower = ..., upper = ...)` | Estimates at boundaries |
@@ -1237,9 +1267,9 @@ fit2 <- fit_demand_tmb(
   verbose = 0
 )
 
-# Apply parameter bounds
+# Apply parameter bounds (log_k is only a parameter when k is estimated)
 fit3 <- fit_demand_tmb(
-  dat, equation = "exponential",
+  dat, equation = "exponential", estimate_k = TRUE,
   tmb_control = list(
     lower = c(log_k = -2),
     upper = c(log_k = 4)
@@ -1273,9 +1303,9 @@ fit4 <- fit_demand_tmb(
 |----|----|----|
 | Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified |
-| k parameter | Estimated or fixed | Not available |
+| k parameter | Fixed at 2 by default; optionally estimated | Not available |
 | Random effects | 1 or 2 (Q0, alpha) | Configurable via nlme |
-| Convergence | Robust (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
+| Convergence | Reliable (AD + Laplace + multi-start) | Can struggle with nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |
 | Post-hoc EMMs | [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md) | [`get_demand_param_emms()`](https://brentkaplan.github.io/beezdemand/reference/get_demand_param_emms.md) (via emmeans) |
 | Factors/covariates | Design matrices | Formula-based |
@@ -1303,13 +1333,13 @@ Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H., & Bell, B. M.
 
 ## See Also
 
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – Individual NLS demand curves
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – NLME-based mixed-effects models
-- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md)
-  – Advanced topics: multi-factor designs, collapse_levels
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle models for zero-heavy data
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right demand model
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  Individual NLS demand curves
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  NLME-based mixed-effects models
+- [`vignette("mixed-demand-advanced")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand-advanced.md):
+  Advanced topics: multi-factor designs, collapse_levels
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle models for zero-heavy data
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right demand model

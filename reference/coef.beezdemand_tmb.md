@@ -71,26 +71,26 @@ data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 coef(fit)                    # raw optimizer vector (default, "internal")
-#>    beta_q0 beta_alpha      log_k   logsigma   logsigma logsigma_e    rho_raw 
-#>  1.8736539 -5.8010932  0.8954500 -0.9527944 -0.7797945 -1.9498223 -0.4674928 
+#>    beta_q0 beta_alpha   logsigma   logsigma logsigma_e    rho_raw 
+#>  1.8799653 -5.5720123 -0.9506009 -0.7771868 -1.9469323 -0.4593234 
 coef(fit, type = "subject")  # per-subject parameter tibble
 #> # A tibble: 10 × 8
 #>    id        b_i    c_i    Q0   alpha  Pmax  Omax pmax_at_bound
 #>    <chr>   <dbl>  <dbl> <dbl>   <dbl> <dbl> <dbl> <lgl>        
-#>  1 19     0.435  -0.614 10.1  0.00164 13.4   44.1 FALSE        
-#>  2 30    -0.831   0.442  2.84 0.00471 16.6   15.4 FALSE        
-#>  3 38    -0.359   0.128  4.55 0.00344 14.2   21.0 FALSE        
-#>  4 60     0.394   0.111  9.66 0.00338  6.78  21.4 FALSE        
-#>  5 68     0.451  -0.317 10.2  0.00220  9.83  32.8 FALSE        
-#>  6 106   -0.149   0.486  5.61 0.00492  8.02  14.7 FALSE        
-#>  7 113   -0.0358 -0.596  6.28 0.00167 21.1   43.4 FALSE        
-#>  8 142   -0.0509 -0.450  6.19 0.00193 18.6   37.5 FALSE        
-#>  9 156    0.227   0.203  8.17 0.00371  7.31  19.5 FALSE        
-#> 10 188   -0.0470  0.710  6.21 0.00615  5.79  11.7 FALSE        
+#>  1 19     0.435  -0.612 10.1  0.00206 13.9   44.1 FALSE        
+#>  2 30    -0.830   0.444  2.86 0.00593 17.1   15.3 FALSE        
+#>  3 38    -0.363   0.117  4.56 0.00428 14.9   21.3 FALSE        
+#>  4 60     0.396   0.116  9.74 0.00427  6.98  21.3 FALSE        
+#>  5 68     0.450  -0.322 10.3  0.00276 10.2   33.0 FALSE        
+#>  6 106   -0.153   0.477  5.63 0.00613  8.42  14.8 FALSE        
+#>  7 113   -0.0392 -0.604  6.30 0.00208 22.2   43.8 FALSE        
+#>  8 142   -0.0472 -0.444  6.25 0.00244 19.0   37.3 FALSE        
+#>  9 156    0.231   0.212  8.26 0.00470  7.48  19.4 FALSE        
+#> 10 188   -0.0475  0.716  6.25 0.00778  5.97  11.7 FALSE        
 coef(fit, type = "fixed")    # fixed-effect coefficients
 #> # A tibble: 1 × 2
 #>   `Q0:(Intercept)` `alpha:(Intercept)`
 #>              <dbl>               <dbl>
-#> 1             1.87               -5.80
+#> 1             1.88               -5.57
 # }
 ```

@@ -106,13 +106,23 @@ about convergence, boundary conditions, and residual patterns.</p>
 <dd><p>List with convergence status and messages</p></dd>
 
 <dt>boundary</dt>
-<dd><p>List with boundary condition warnings</p></dd>
+<dd><p>List with boundary condition warnings. For
+<code>beezdemand_tmb</code> fits it also carries <code>k_identification</code>: <code>NULL</code> unless
+k was estimated as a free parameter, otherwise the screen described in
+Details.</p></dd>
 
 <dt>residuals</dt>
 <dd><p>Summary statistics for residuals</p></dd>
 
 <dt>random_effects</dt>
-<dd><p>Summary of random effects (if applicable)</p></dd>
+<dd><p>Summary of random effects (if applicable).
+<code>variances</code> holds random-effect variances: on the log10 scale for
+<code>beezdemand_tmb</code> fits, and as reported by <code><a href="https://rdrr.io/pkg/nlme/man/VarCorr.html" class="external-link">nlme::VarCorr()</a></code> for
+<code>beezdemand_nlme</code> fits. <code>beezdemand_tmb</code> fits also carry <code>sd_log10</code>
+(the corresponding standard deviations, matching
+<code>summary(fit)$variance_components</code>) and <code>sd_internal_log</code> (the raw
+natural-log-scale standard deviations used by the near-zero
+degeneracy check).</p></dd>
 
 <dt>issues</dt>
 <dd><p>Character vector of identified issues</p></dd>
@@ -128,6 +138,12 @@ about convergence, boundary conditions, and residual patterns.</p>
 <li><p>Parameters at or near boundaries</p></li>
 <li><p>Residual patterns (heteroscedasticity, outliers)</p></li>
 <li><p>Random effect variance estimates near zero</p></li>
+<li><p>For <code><a href="fit_demand_tmb.html">fit_demand_tmb()</a></code> fits with <code>estimate_k = TRUE</code>, whether the
+fit shows the signature of an unidentified k: an implausible k, a decay
+exponent <code>alpha * Q0 * price</code> that never leaves its linear regime over
+the observed prices, a degenerate alpha, or <code>log_k</code> resting on a
+user-supplied bound. This is a screen, not a formal test: no flag means
+nothing was detected, not that k is identified.</p></li>
 <li><p>Correlation matrices near singularity</p></li>
 </ul></div>
     <div class="section level2">

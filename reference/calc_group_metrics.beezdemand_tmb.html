@@ -117,10 +117,27 @@ grid produced by <code>.tmb_build_emm_ref_grid()</code>.</p></li>
 weights (matches the emmeans default).</p></li>
 <li><p>Derive Pmax/Omax/Qmax from the marginalized log-parameters at
 the user-supplied (or training-mean default) covariate point.</p></li>
-</ol><p>This is "metrics evaluated at the average parameter values," NOT
-"average metrics across cells" – the two answers differ for nonlinear
+</ol><p>The result is "metrics evaluated at the average parameter values" rather
+than "average metrics across cells". The two answers differ for nonlinear
 transforms. The convention matches the parameter-level marginalization
 used by <code><a href="get_demand_param_emms.html">get_demand_param_emms()</a></code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="marginalisation-policy-tmb-vs-nlme-">Marginalisation policy (TMB vs NLME)<a class="anchor" aria-label="anchor" href="#marginalisation-policy-tmb-vs-nlme-"></a></h2>
+
+
+<p>This method averages the log-scale linear predictors with equal weight
+over the factor cells observed in the fitting data and then
+exponentiates. The NLME method
+(<code><a href="calc_group_metrics.beezdemand_nlme.html">calc_group_metrics.beezdemand_nlme()</a></code>) follows the same policy:
+per-cell EMMs from <code>emmeans</code>, rows for unobserved cells dropped,
+equal-weight geometric mean over the remaining cells. Cells of the full
+factorial crossing with no subjects are never averaged over by either
+backend. The two agree for any design fit in log space and can differ
+only when the NLME fit uses <code>param_space = "natural"</code>. In both
+backends continuous covariates are held at the training mean unless
+<code>at</code> supplies a single value; a multi-value continuous <code>at</code>
+entry warns and uses its first value.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -136,13 +153,13 @@ used by <code><a href="get_demand_param_emms.html">get_demand_param_emms()</a></
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).</span>
 <span class="r-in"><span><span class="fu"><a href="calc_group_metrics.html">calc_group_metrics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Pmax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 11.23768</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 11.6482</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Omax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 23.89412</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 23.92321</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $Qmax</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.126251</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.053813</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $elasticity_at_pmax</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1</span>

@@ -7,9 +7,9 @@ passed to the `trans` argument of
 [`ggplot2::scale_x_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
 or
 [`ggplot2::scale_y_continuous`](https://ggplot2.tidyverse.org/reference/scale_continuous.html).
-It's designed for non-negative data and handles zero values gracefully.
-The "pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that
-it handles a range including zero, but the transformation is `ll4`.
+It is intended for non-negative data and is defined at zero. The
+"pseudo" aspect is conceptual, similar to `pseudo_log_trans` in that it
+handles a range including zero, but the transformation is `ll4`.
 
 ## Usage
 

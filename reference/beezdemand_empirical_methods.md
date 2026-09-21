@@ -76,8 +76,6 @@ Creates visualizations of empirical measures across subjects.
 
 - Helps identify central tendencies and outliers
 
-- Uses modern beezdemand styling
-
 **Matrix type**:
 
 - Scatterplot matrix (pairs plot) showing relationships between measures

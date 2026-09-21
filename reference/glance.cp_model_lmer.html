@@ -87,7 +87,13 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with model summary statistics.</p>
+    <p>A tibble with model summary statistics: the columns of
+<code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">broom.mixed::glance()</a></code> for the underlying <code>merMod</code> fit, followed by
+<code>converged</code> (logical; <code>TRUE</code> when lme4 reported no convergence problem,
+<code>FALSE</code> when it did, <code>NA</code> when the fit predates the stored metadata or
+failed). <code>converged</code> mirrors <code><a href="https://broom.tidymodels.org/reference/glance.nls.html" class="external-link">broom::glance.nls()</a></code>'s <code>isConv</code> so a
+batch of fits can be screened programmatically; <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> report the same flag.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

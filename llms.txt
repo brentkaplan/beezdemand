@@ -60,7 +60,7 @@ S3 objects with consistent methods for inspection and inference.
 - [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md)
   : Fit Two-Part Mixed Effects Hurdle Demand Model
 - [`fit_cp_nls()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_nls.md)
-  : Fit cross-price demand with NLS (+ robust fallbacks)
+  : Fit cross-price demand with NLS (with fallback optimizers)
 - [`fit_cp_linear()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
   [`fit_cp_linear.default()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
   [`fit_cp_linear.mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_cp_linear.md)
@@ -592,7 +592,7 @@ Internal utility functions and helpers.
 Documentation-only pages that group related methods.
 
 - [`cp`](https://brentkaplan.github.io/beezdemand/reference/cp.md) :
-  Example cross‐price dataset
+  Example cross-price dataset
 - [`fixed-demand`](https://brentkaplan.github.io/beezdemand/reference/fixed-demand.md)
   : Fixed-Effect Demand Curve Fitting
 - [`param-registry`](https://brentkaplan.github.io/beezdemand/reference/param-registry.md)

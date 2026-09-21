@@ -84,6 +84,9 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Number of fixed parameters: 6 (Q0: 3, alpha: 3)
 trends <- get_demand_param_trends(fit, covariates = "dose_num",
                                   specs = ~ drug)
+#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
+#>   derived quantities may be unreliable.
+#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> Warning: ! No trends could be calculated -- all 2 (parameter, covariate) combinations
 #>   failed:
 #> ℹ Q0 x dose_num (Can't handle an object of class “emmGrid” Use help("models",

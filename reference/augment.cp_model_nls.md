@@ -22,4 +22,6 @@ augment(x, ...)
 ## Value
 
 A tibble with the original modelling data and added `.fitted` and
-`.resid` columns.
+`.resid` columns. Both are on the model's response scale: raw `y` for
+`equation = "exponentiated"` / `"additive"`, and `log10(y)` for
+`equation = "exponential"` (which is fit to `log10(y)`).

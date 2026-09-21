@@ -96,16 +96,16 @@ To obtain the standardized random effects (<code>u</code> matrix), access
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Data frame with subject-level random effects. Columns:</p><ul><li><p><code>id</code> — subject identifier</p></li>
-<li><p><code>b_i</code>, <code>c_i</code> (when present) — first-column convenience aliases
+    <p>Data frame with subject-level random effects. Columns:</p><ul><li><p><code>id</code>: subject identifier</p></li>
+<li><p><code>b_i</code>, <code>c_i</code> (when present): first-column convenience aliases
 for <code>q0_(Intercept)</code> and <code>alpha_(Intercept)</code>. Preserved for
 backward compatibility with older callers.</p></li>
-<li><p><code>q0_&lt;term&gt;</code> — per-block random-effect coefficients for log-Q0,
+<li><p><code>q0_&lt;term&gt;</code>: per-block random-effect coefficients for log-Q0,
 one column per random-effects design column from the parsed
 block structure. For factor-expanded or multi-block fits, these
 expose the per-condition slope REs that <code>b_i</code> / <code>c_i</code> alone do
 not surface.</p></li>
-<li><p><code>alpha_&lt;term&gt;</code> — analogous columns for log-alpha.</p></li>
+<li><p><code>alpha_&lt;term&gt;</code>: analogous columns for log-alpha.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -116,12 +116,12 @@ not surface.</p></li>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">nlme</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nlme/man/random.effects.html" class="external-link">ranef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    id        b_i        c_i q0_(Intercept) alpha_(Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  19  0.4347399 -0.6136355      0.4347399        -0.6136355</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  30 -0.8308979  0.4420229     -0.8308979         0.4420229</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  38 -0.3588356  0.1280378     -0.3588356         0.1280378</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  60  0.3938846  0.1112281      0.3938846         0.1112281</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  68  0.4514144 -0.3174826      0.4514144        -0.3174826</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 106 -0.1487057  0.4857013     -0.1487057         0.4857013</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  19  0.4351751 -0.6116759      0.4351751        -0.6116759</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  30 -0.8297240  0.4438124     -0.8297240         0.4438124</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  38 -0.3632195  0.1170514     -0.3632195         0.1170514</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  60  0.3962798  0.1156735      0.3962798         0.1156735</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  68  0.4495371 -0.3215051      0.4495371        -0.3215051</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 106 -0.1525620  0.4772347     -0.1525620         0.4772347</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

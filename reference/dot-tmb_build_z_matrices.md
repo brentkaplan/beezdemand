@@ -23,7 +23,7 @@ matrices `Z_q0` and `Z_alpha` that the Phase-2 generalized
 
 - id_var:
 
-  Subject id column (currently unused — reserved for future per-subject
+  Subject id column (currently unused; reserved for future per-subject
   reductions).
 
 ## Value

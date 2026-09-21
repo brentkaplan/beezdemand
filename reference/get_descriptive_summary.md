@@ -173,7 +173,7 @@ summary(desc)
 #> Missing Data:
 #>   No missing values detected
 
-# Grouped summary — statistics and plots faceted by group
+# Grouped summary: statistics and plots faceted by group
 data(apt_full)
 desc_g <- get_descriptive_summary(apt_full, by = "gender")
 desc_g$statistics

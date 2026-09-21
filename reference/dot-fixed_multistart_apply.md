@@ -59,10 +59,10 @@ the post-rescue verdicts automatically.
 
   The `agg` argument as supplied to
   [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)
-  (`NULL`, `"Mean"`, or `"Pooled"`). Codex 2F review fold, item 3: this
-  MUST be passed through unchanged to each rescue
+  (`NULL`, `"Mean"`, or `"Pooled"`). This must be passed through
+  unchanged to each rescue
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
-  call (never hard-coded to `NULL`) – for `agg = "Pooled"`,
+  call (never hard-coded to `NULL`). For `agg = "Pooled"`,
   `data_used[[i]]` is the raw (duplicated-price) stacked data, and
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)'s
   own `agg = "Pooled"` handling is what builds the deduplicated table
@@ -87,7 +87,7 @@ the post-rescue verdicts automatically.
 
   Named list of additional arguments forwarded from
   [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md)'s
-  `...` (e.g. `lobound`, `hibound`, `constrainq0`) – passed through to
+  `...` (e.g. `lobound`, `hibound`, `constrainq0`), passed through to
   each rescue
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)
   call, with any user-supplied `startq0`/`startalpha` stripped (the

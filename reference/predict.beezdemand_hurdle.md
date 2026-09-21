@@ -12,7 +12,7 @@ predict(
   type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   correction = TRUE,
   seed = 42L,
   se.fit = FALSE,
@@ -42,8 +42,8 @@ predict(
 
   `"demand"`
 
-  :   (default) Predicted expected consumption = (1 - P0) \* response –
-      the marginal expectation; see *Scoring predictions*
+  :   (default) Predicted expected consumption = (1 - P0) \* response
+      (the marginal expectation; see *Scoring predictions*)
 
   `"response"`
 
@@ -77,26 +77,31 @@ predict(
   `type = "probability"`, uses KDE/Normal/Empirical integration of the
   binary component. For `type = "response"` and `type = "demand"`, uses
   Monte Carlo integration over all random effects, producing the
-  **population-average** demand curve (accounting for Jensen's
-  inequality). Default is `FALSE`, which gives conditional (RE = 0)
-  predictions representing a "typical" subject at the center of the RE
-  distribution.
+  population-average demand curve (accounting for Jensen's inequality).
+  Default is `FALSE`, which gives conditional (RE = 0) predictions
+  representing a "typical" subject at the center of the RE distribution.
 
 - marginal_method:
 
-  Character. Method for marginal integration; one of `"kde"` (default,
-  kernel density estimate of BLUPs), `"normal"` (integrate over the
-  model-assumed N(0, sigma_a) distribution), or `"empirical"` (simple
-  average over BLUPs). Ignored when `marginal = FALSE`.
+  Character. Method for marginal integration; one of `"normal"`
+  (default; integrate over the model-assumed N(0, sigma_a) distribution
+  of the zero-component intercept, over the whole real line), `"kde"`
+  (kernel density estimate of the shrunken BLUPs), or `"empirical"`
+  (simple average over the BLUPs). `"normal"` is the model-consistent
+  choice: it integrates over the same distribution the fitted likelihood
+  integrates over. `"kde"` and `"empirical"` are descriptive summaries
+  of the shrunken BLUPs, which understate the random-effect spread (see
+  Details). The default was `"kde"` in the development versions before
+  0.3.0. Ignored when `marginal = FALSE`.
 
 - correction:
 
   Logical; if `TRUE` (default), applies the lognormal retransformation
   correction `exp(sigma_e^2 / 2)` when back-transforming from the log
-  scale to the natural consumption scale. This produces the **arithmetic
-  mean** (conditional on Q \> 0). Set to `FALSE` to obtain the
-  **median** (geometric mean), which is useful for individual-level
-  "most likely" predictions. Only applies to `type = "response"` and
+  scale to the natural consumption scale. This produces the arithmetic
+  mean (conditional on Q \> 0). Set to `FALSE` to obtain the median
+  (geometric mean), which is useful for individual-level "most likely"
+  predictions. Only applies to `type = "response"` and
   `type = "demand"`.
 
 - seed:
@@ -130,7 +135,12 @@ price, `prob_zero`, and `.fitted` (no subject column). Otherwise, a
 tibble containing the `newdata` columns plus `.fitted` and helper
 columns `predicted_log_consumption`, `predicted_consumption`,
 `prob_zero`, and `expected_consumption`. When requested, `.se.fit` and
-`.lower`/`.upper` are included.
+`.lower`/`.upper` are included. Marginal results carry a
+`marginal_method` attribute; Monte Carlo marginal results
+(`type = "response"` / `"demand"`) also carry a logical
+`re_cov_fallback` attribute that is `TRUE` when the random-effect draws
+had to use an uncorrelated (diagonal) covariance because the estimated
+covariance was not positive definite.
 
 ## Details
 
@@ -140,7 +150,7 @@ The hurdle model specifies Gaussian errors on log-consumption (Part II):
 `log(Q) ~ N(mu, sigma_e^2)`. The conditional distribution of Q given Q
 \> 0 is therefore lognormal. The arithmetic mean of a lognormal is
 `exp(mu + sigma_e^2/2)`, not `exp(mu)`. Using `exp(mu)` returns the
-**median** (geometric mean), which systematically underestimates the
+median (geometric mean), which systematically underestimates the
 arithmetic mean by a factor of `exp(sigma_e^2/2)`. This correction is
 applied by default when `type = "response"` or `type = "demand"`. Set
 `correction = FALSE` to obtain the median instead.
@@ -158,13 +168,18 @@ curve integrates over the random effect distribution, answering "what
 fraction of the population has stopped buying at this price?"
 
 The `"kde"` and `"empirical"` methods integrate over empirical Bayes
-estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
-compared to the true random effects, so these methods slightly
-underestimate the RE variance. In practice, this shrinkage bias is often
-smaller than the bias from assuming normality when the true RE
-distribution is non-normal. The `"normal"` method integrates over the
-model-assumed N(0, sigma_a) distribution, which is correct under the
-model but may be wrong if the normality assumption is violated. Use
+estimates (BLUPs) of the random intercepts. They are descriptive rather
+than model-consistent: BLUPs are shrunk toward zero compared to the true
+random effects (more so for subjects with few observations), so these
+methods understate the RE spread, and the marginal curve they produce
+summarises the fitted subjects rather than the population-level quantity
+the model defines. The `"normal"` method integrates over the
+model-assumed N(0, sigma_a) distribution, which is the model-consistent
+marginal (the same one the fitted likelihood integrates over) and is the
+choice to use when the marginal curve is reported as an estimate. It can
+be wrong only in the way the model itself is wrong, that is, if the
+normality assumption fails. The default remains `"kde"` for continuity
+with earlier versions. Use
 [`plot_qq()`](https://brentkaplan.github.io/beezdemand/reference/plot_qq.md)
 to assess RE normality.
 
@@ -173,17 +188,17 @@ to assess RE normality.
 Population-level demand predictions (when no subject ID is provided) can
 be computed in two ways:
 
-- **Conditional (default, `marginal = FALSE`):** Sets all random effects
-  to zero and evaluates the demand function at the fixed-effect
+- Conditional (default, `marginal = FALSE`): Sets all random effects to
+  zero and evaluates the demand function at the fixed-effect
   (population) parameters. For nonlinear models, this corresponds to the
-  **conditional mode**, not the population-average mean.
+  conditional mode rather than the population-average mean.
 
-- **Marginal (`marginal = TRUE`):** Integrates the prediction over the
+- Marginal (`marginal = TRUE`): Integrates the prediction over the
   estimated random-effects distribution via Monte Carlo sampling. This
-  gives the **population-average** demand curve. Due to Jensen's
-  inequality, this curve lies above the conditional curve when the
-  demand function is convex in the random effects (which it is for
-  exponential demand with log-normal Q0 and alpha).
+  gives the population-average demand curve. Due to Jensen's inequality,
+  this curve lies above the conditional curve when the demand function
+  is convex in the random effects (which it is for exponential demand
+  with log-normal Q0 and alpha).
 
 The conditional prediction is appropriate for characterizing a "typical"
 subject. The marginal prediction is appropriate for predicting aggregate

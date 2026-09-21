@@ -84,13 +84,13 @@ get_demand_param_emms(fit, param = "Q0")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female     4.49         1.50     0.113     3.59      5.61
-#> 2 gender=Male       7.74         2.05     0.110     6.24      9.60
+#> 1 gender=Female     4.43         1.49     0.111     3.56      5.51
+#> 2 gender=Male       7.65         2.03     0.108     6.19      9.44
 get_demand_param_emms(fit, param = "alpha")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female  0.0102         -4.59     0.169  0.00730    0.0142
-#> 2 gender=Male    0.00937        -4.67     0.154  0.00693    0.0127
+#> 1 gender=Female  0.00809        -4.82     0.147  0.00607   0.0108 
+#> 2 gender=Male    0.00737        -4.91     0.127  0.00574   0.00947
 # }
 ```

@@ -11,8 +11,8 @@ back to the point estimate and the result is flagged `uncertain`. The
 selected N and its lower neighbor are then re-evaluated with fresh
 replicates before minimality is claimed.
 
-The returned `n` is an *estimated minimum under Monte Carlo
-uncertainty*, not an exact bound. For grant-quality reporting, rerun
+The returned `n` is an *estimated minimum under Monte Carlo uncertainty*
+rather than an exact bound. For grant-quality reporting, rerun
 [`power_demand()`](https://brentkaplan.github.io/beezdemand/reference/power_demand.md)
 at the returned `n` with a large `n_sim` (2000+) and report that
 estimate with its Monte Carlo confidence interval.
@@ -121,7 +121,7 @@ find_n_demand(
   Gaussian errors on raw consumption; the approximation is closest at
   small `sigma_e`, and Type I calibration is verified by the test suite
   at the default and a 3x-larger `sigma_e`. Other equations are
-  sensitivity analyses with a different estimand – their contrasts are
+  sensitivity analyses with a different estimand, so their contrasts are
   not on the scale of the simulated delta.
 
 - random_effects:
@@ -183,13 +183,13 @@ An object of class `beezdemand_power_n`: a list with
   `"confirmed"` (selected N re-confirmed above target and N - 1 below),
   `"uncertain"` (a decision relied on a point estimate, N - 1 also
   cleared the target on reconfirmation, or an evaluated lower N read
-  above the target – so the returned N may not be minimal),
+  above the target, so the returned N may not be minimal),
   `"unresolved"` (the selected N failed its own reconfirmation; `n` is
   `NA`), or `"at_lower_bound"` (the target was already met at
-  `n_range[1]` on two independent looks; smaller N was not explored –
+  `n_range[1]` on two independent looks; smaller N was not explored;
   widen `n_range` downward if that matters). These labels describe a
-  heuristic Monte Carlo decision rule – repeated looks at ordinary
-  Wilson intervals across several N – not a formal sequential error
+  heuristic Monte Carlo decision rule (repeated looks at ordinary Wilson
+  intervals across several N) rather than a formal sequential error
   guarantee.
 
 - uncertain:

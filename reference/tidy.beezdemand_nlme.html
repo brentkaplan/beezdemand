@@ -74,6 +74,7 @@
 <span>  <span class="va">x</span>,</span>
 <span>  effects <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fixed"</span>, <span class="st">"ran_pars"</span><span class="op">)</span>,</span>
 <span>  report_space <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"log10"</span><span class="op">)</span>,</span>
+<span>  df_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"containment"</span>, <span class="st">"between"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -95,8 +96,16 @@
 <dd><p>Character. Reporting space for core parameters. One of
 <code>"natural"</code> or <code>"log10"</code> (<code>match.arg</code> default <code>"natural"</code>).
 <code>estimate</code>/<code>std.error</code> follow this scale; <code>statistic</code>/<code>p.value</code> are always on
-the estimation scale — nlme's native containment-t test
-(transformation-invariant).</p></dd>
+the estimation scale (nlme's native containment-t test, which is
+transformation-invariant).</p></dd>
+
+
+<dt id="arg-df-method">df_method<a class="anchor" aria-label="anchor" href="#arg-df-method"></a></dt>
+<dd><p>Character. <code>"containment"</code> (default) reports nlme's own
+df, which uses the observation-level residual df for between-subject
+terms as well, so their p-values are anticonservative; <code>"between"</code>
+substitutes <code>n_subjects - rank(X_between)</code> for between-subject terms and
+recomputes their p-values. See <code><a href="summary.beezdemand_nlme.html">summary.beezdemand_nlme()</a></code> for the rule.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -113,6 +122,8 @@ convention.</p></li>
 <li><p><code>std.error</code>: Standard error (<code>NA</code> for variance components)</p></li>
 <li><p><code>statistic</code>: t-value (<code>NA</code> for variance components)</p></li>
 <li><p><code>p.value</code>: P-value (<code>NA</code> for variance components)</p></li>
+<li><p><code>df</code>: Degrees of freedom the p-value uses (<code>NA</code> for variance
+components); see <code>df_method</code></p></li>
 <li><p><code>component</code>: <code>"fixed"</code> or <code>"variance"</code></p></li>
 <li><p><code>estimate_scale</code>: Scale that <code>estimate</code> is reported on</p></li>
 <li><p><code>term_display</code>: Display label for <code>term</code></p></li>

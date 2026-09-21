@@ -1,8 +1,7 @@
 # Prepare Hurdle Model Data
 
-Internal function to prepare data structures for TMB hurdle model
-fitting. Converts subject IDs to 0-indexed integers and creates derived
-variables.
+Prepares data structures for TMB hurdle model fitting. Converts subject
+IDs to 0-indexed integers and creates derived variables.
 
 ## Usage
 

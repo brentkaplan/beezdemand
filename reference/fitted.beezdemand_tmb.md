@@ -55,6 +55,6 @@ data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 head(fitted(fit))
-#> [1] 2.308394 2.262163 2.216312 2.170836 2.125734 2.081001
+#> [1] 2.315140 2.267293 2.219942 2.173084 2.126712 2.080822
 # }
 ```

@@ -10,6 +10,7 @@ tidy(
   x,
   effects = c("fixed", "ran_pars"),
   report_space = c("natural", "log10"),
+  df_method = c("containment", "between"),
   ...
 )
 ```
@@ -30,7 +31,18 @@ tidy(
   Character. Reporting space for core parameters. One of `"natural"` or
   `"log10"` (`match.arg` default `"natural"`). `estimate`/`std.error`
   follow this scale; `statistic`/`p.value` are always on the estimation
-  scale — nlme's native containment-t test (transformation-invariant).
+  scale (nlme's native containment-t test, which is
+  transformation-invariant).
+
+- df_method:
+
+  Character. `"containment"` (default) reports nlme's own df, which uses
+  the observation-level residual df for between-subject terms as well,
+  so their p-values are anticonservative; `"between"` substitutes
+  `n_subjects - rank(X_between)` for between-subject terms and
+  recomputes their p-values. See
+  [`summary.beezdemand_nlme()`](https://brentkaplan.github.io/beezdemand/reference/summary.beezdemand_nlme.md)
+  for the rule.
 
 - ...:
 
@@ -55,6 +67,9 @@ A tibble of model terms with columns:
 - `statistic`: t-value (`NA` for variance components)
 
 - `p.value`: P-value (`NA` for variance components)
+
+- `df`: Degrees of freedom the p-value uses (`NA` for variance
+  components); see `df_method`
 
 - `component`: `"fixed"` or `"variance"`
 

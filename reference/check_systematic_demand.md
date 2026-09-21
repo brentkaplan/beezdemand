@@ -209,7 +209,7 @@ tidy(check)
 #> #   bounce_pass <lgl>, reversals <int>, reversals_pass <lgl>, returns <int>,
 #> #   n_positive <int>, systematic <lgl>
 
-# Grouped check — results include group column
+# Grouped check: results include group column
 data(apt_full)
 check_g <- check_systematic_demand(apt_full, by = "gender")
 check_g$results

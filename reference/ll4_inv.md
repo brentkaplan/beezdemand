@@ -43,7 +43,7 @@ undefined in real arithmetic. In this case, the function returns `0`
 (consumption cannot be negative).
 
 This boundary condition arises in practice when a model predicts fitted
-values below zero on the LL4 scale — typically for extrapolation to very
+values below zero on the LL4 scale, typically for extrapolation to very
 high prices. The mapping to zero is the natural floor because
 `ll4(0) = 0` and the LL4 transformation is monotonically increasing on
 `[0, Inf)`.

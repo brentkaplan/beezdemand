@@ -14,11 +14,10 @@ For background on fitting individual demand curves, see
 For mixed-effects approaches to group comparisons, see
 [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md).
 
-> **Note:** For formal statistical inference on group differences,
-> mixed-effects models
-> ([`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md))
-> are the preferred modern approach, offering random effects and
-> estimated marginal means.
+> **Note:** For formal statistical inference on group differences, we
+> recommend the mixed-effects models in
+> [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md),
+> which provide random effects and estimated marginal means.
 > [`ExtraF()`](https://brentkaplan.github.io/beezdemand/reference/ExtraF.md)
 > remains useful for quick, traditional group comparisons.
 
@@ -165,18 +164,18 @@ ggplot(apt, aes(x = x, y = y, group = group)) +
 
 ### See Also
 
-- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md)
-  – Getting started with beezdemand
-- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md)
-  – Choosing the right model class for your data
-- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md)
-  – Fixed-effect demand modeling
-- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md)
-  – Mixed-effects nonlinear demand models (NLME)
-- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md)
-  – Two-part hurdle demand models
-- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md)
-  – Cross-price demand analysis
-- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md)
-  – Migrating from
+- [`vignette("beezdemand")`](https://brentkaplan.github.io/beezdemand/articles/beezdemand.md):
+  Getting started with beezdemand
+- [`vignette("model-selection")`](https://brentkaplan.github.io/beezdemand/articles/model-selection.md):
+  Choosing the right model class for your data
+- [`vignette("fixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/fixed-demand.md):
+  Fixed-effect demand modeling
+- [`vignette("mixed-demand")`](https://brentkaplan.github.io/beezdemand/articles/mixed-demand.md):
+  Mixed-effects nonlinear demand models (NLME)
+- [`vignette("hurdle-demand-models")`](https://brentkaplan.github.io/beezdemand/articles/hurdle-demand-models.md):
+  Two-part hurdle demand models
+- [`vignette("cross-price-models")`](https://brentkaplan.github.io/beezdemand/articles/cross-price-models.md):
+  Cross-price demand analysis
+- [`vignette("migration-guide")`](https://brentkaplan.github.io/beezdemand/articles/migration-guide.md):
+  Migrating from
   [`FitCurves()`](https://brentkaplan.github.io/beezdemand/reference/FitCurves.md)

@@ -88,7 +88,9 @@
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with the original modelling data and added <code>.fitted</code> and
-<code>.resid</code> columns.</p>
+<code>.resid</code> columns. Both are on the model's response scale: raw <code>y</code> for
+<code>equation = "exponentiated"</code> / <code>"additive"</code>, and <code>log10(y)</code> for
+<code>equation = "exponential"</code> (which is fit to <code>log10(y)</code>).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
