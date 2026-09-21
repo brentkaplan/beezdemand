@@ -139,7 +139,7 @@ print(mc_results$summary)
 #> logsigma_a   1.36074207   1.42004301   1.0435799         1.0       5
 #> logsigma_b   0.09177586   0.13790528   1.5026314         1.0       5
 #> logsigma_e   0.09265646   0.05896088   0.6363386         0.6       5
-#> rho_ab_raw   3.00042161 834.73811178 278.2069392         1.0       5
+#> rho_ab_raw   3.00042161 834.73811464 278.2069401         1.0       5
 
 # Check convergence rate
 cat("Convergence rate:", mc_results$n_converged / mc_results$n_sim, "\n")

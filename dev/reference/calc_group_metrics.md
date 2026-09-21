@@ -81,11 +81,11 @@ calc_group_metrics(fit)
 #> [1] 23.82811
 #> 
 #> $Qmax_unconditional
-#>   log_q0 
-#> 2.156681 
+#>  log_q0 
+#> 2.15668 
 #> 
 #> $p_zero_at_pmax
-#> [1] 8.473528e-20
+#> [1] 8.473535e-20
 #> 
 #> $method_unconditional
 #> [1] "numerical_optimize_observed_domain"

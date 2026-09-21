@@ -539,7 +539,7 @@ ap |>
     Persistence_sd = sd(Persistence, na.rm = TRUE)
   )
 #>   Amplitude_mean Persistence_mean Amplitude_sd Persistence_sd
-#> 1  -5.588131e-17    -2.271513e-17            1      0.8517458
+#> 1  -9.573396e-17     7.238336e-17            1      0.8517458
 ```
 
 Amplitude is a single z-score, so it has mean 0 and SD 1 within the
