@@ -7,7 +7,7 @@ format
 
 ``` r
 # S3 method for class 'cp_model_lmer'
-tidy(x, effects = c("fixed", "random", "ran_pars"), ...)
+tidy(x, effects = c("fixed", "ran_vals", "ran_pars", "random"), ...)
 ```
 
 ## Arguments
@@ -18,7 +18,10 @@ tidy(x, effects = c("fixed", "random", "ran_pars"), ...)
 
 - effects:
 
-  Which effects to return: "fixed" (default), "random", or "ran_pars".
+  Which effects to return: `"fixed"` (default), `"ran_vals"`
+  (conditional modes of the random effects), or `"ran_pars"`
+  (random-effect standard deviations and correlations). `"random"` is
+  accepted as an alias for `"ran_vals"`.
 
 - ...:
 
@@ -26,4 +29,6 @@ tidy(x, effects = c("fixed", "random", "ran_pars"), ...)
 
 ## Value
 
-A tibble with tidy coefficient information.
+A tibble with tidy coefficient information. When the model is `NULL`
+(the fit failed) a zero-row tibble with the same columns as the
+corresponding successful call is returned.

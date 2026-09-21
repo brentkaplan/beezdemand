@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-09-17</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/convergence-guide.Rmd" class="external-link"><code>vignettes/convergence-guide.Rmd</code></a></small>
       <div class="d-none name"><code>convergence-guide.Rmd</code></div>
@@ -194,57 +194,70 @@ scientifically plausible, or whether the model fits the data well.</p>
 <p>TMB models fitted with <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> and
 <code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code> use the <code>nlminb</code> optimizer
 by default. It reports the following convergence codes:</p>
+<p>R’s <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb()</a></code> reports only two convergence codes, 0 and
+1; the reason for a code-1 exit is the PORT status text in
+<code>fit$opt$message</code>:</p>
 <table class="table">
 <colgroup>
-<col width="15%">
-<col width="47%">
-<col width="37%">
+<col width="20%">
+<col width="30%">
+<col width="50%">
 </colgroup>
 <thead><tr class="header">
 <th align="center">Code</th>
-<th>What Triggered It</th>
+<th>Message</th>
 <th>What It Means</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="center">0</td>
-<td>Relative improvement in objective &lt; <code>rel.tol</code>
-</td>
+<td>“relative convergence (4)”, “X-convergence (3)”, “both X-convergence
+and relative convergence (5)”, “absolute function convergence (6)”</td>
 <td>The optimizer is satisfied that it found a minimum. This is the
 “normal” exit.</td>
 </tr>
 <tr class="even">
 <td align="center">1</td>
-<td>Number of iterations &gt;= <code>iter.max</code>
-</td>
-<td>The optimizer ran out of its iteration budget before satisfying its
-convergence criterion. The estimates may be fine (the optimizer simply
-ran out of iterations before it could confirm).</td>
+<td>“iteration limit reached without convergence (10)” or “function
+evaluation limit reached without convergence (9)”</td>
+<td>The optimizer ran out of its budget before satisfying its
+convergence criterion. The estimates may be fine (it simply ran out of
+iterations before it could confirm).</td>
 </tr>
 <tr class="odd">
-<td align="center">8</td>
-<td>Step size shrinks to zero but tolerance not met (“false
-convergence”)</td>
-<td>The optimizer cannot make further progress but hasn’t confirmed it
-reached a minimum. Often occurs when the solution is near a parameter
-boundary or when the likelihood surface is very flat.</td>
+<td align="center">1</td>
+<td>“false convergence (8)”</td>
+<td>The step size shrank to zero without meeting the tolerance. The
+optimizer cannot make further progress but has not confirmed a minimum.
+Often the solution is near a parameter boundary, the likelihood surface
+is very flat, or, as in the worked example below, the point is not a
+stationary point at all.</td>
+</tr>
+<tr class="even">
+<td align="center">1</td>
+<td>“singular convergence (7)”</td>
+<td>The model is over-parameterised near the solution (a direction with
+no curvature).</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Code 0</strong> is what you want, but it does not guarantee
 that the solution is correct. The optimizer may still have converged to
 a local minimum or a boundary.</p>
-<p><strong>Code 1</strong> (iteration limit) is often benign. If the
+<p><strong>Iteration limit</strong> exits are often benign. If the
 objective function was still decreasing, increasing
 <code>iter_max</code> in <code>tmb_control</code> may resolve it. If the
 objective had plateaued, the current estimates are likely at or very
 near the minimum.</p>
-<p><strong>Code 8</strong> (false convergence) sounds alarming but is
-common in well-specified demand models. TMB provides exact gradients via
-automatic differentiation, so code 8 is rarer than with
-finite-difference methods. When it does occur, it typically means the
-solution is at a feasibility boundary (e.g., a random effect variance
-near zero) rather than that the optimizer is stuck.</p>
+<p><strong>False convergence</strong> sounds alarming but is common in
+well-specified demand models. TMB provides exact gradients via automatic
+differentiation, so it is rarer than with finite-difference methods.
+When it does occur, it can mean the solution is at a feasibility
+boundary (e.g., a random effect variance near zero), or that the
+optimizer stalled on a ridge that is not a minimum. Check the gradient
+and the Hessian before trusting the estimates (see the checklist below);
+since 0.3.0 <code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> runs that check itself and
+tries to rescue the fit (see “Switching Optimizer”).</p>
 <div class="section level4">
 <h4 id="l-bfgs-b-convergence-codes">L-BFGS-B Convergence Codes<a class="anchor" aria-label="anchor" href="#l-bfgs-b-convergence-codes"></a>
 </h4>
@@ -789,7 +802,7 @@ percent), the solution is stable.</p>
 <td>Converged to wrong minimum: check data, try different starts</td>
 </tr>
 <tr class="even">
-<td align="center">1 or 8</td>
+<td align="center">1 (any message)</td>
 <td align="center">Yes</td>
 <td align="center">Yes</td>
 <td align="center">Yes</td>
@@ -799,15 +812,16 @@ percent), the solution is stable.</p>
 iterations to confirm)</td>
 </tr>
 <tr class="odd">
-<td align="center">1 or 8</td>
+<td align="center">1 (any message)</td>
 <td align="center">No</td>
 <td align="center">No</td>
 <td align="center">n/a</td>
 <td align="center">n/a</td>
-<td>Simplify model (fewer random effects, fix k)</td>
+<td>Not a solution: simplify model (fewer random effects, fix k) or let
+the false-convergence rescue run</td>
 </tr>
 <tr class="even">
-<td align="center">1 or 8</td>
+<td align="center">1 (any message)</td>
 <td align="center">n/a</td>
 <td align="center">n/a</td>
 <td align="center">n/a</td>
@@ -1085,8 +1099,8 @@ model and often resolves convergence problems:</p>
 </tr>
 <tr class="odd">
 <td>False convergence</td>
-<td>Code 8</td>
-<td>Try more iterations; try L-BFGS-B</td>
+<td>Code 1, message “false convergence (8)”</td>
+<td>Automatic rescue (default); else try L-BFGS-B or a warm start</td>
 </tr>
 <tr class="even">
 <td>Saddle point</td>
@@ -1117,22 +1131,69 @@ model and often resolves convergence problems:</p>
 <div class="section level4">
 <h4 id="switching-optimizer">Switching Optimizer<a class="anchor" aria-label="anchor" href="#switching-optimizer"></a>
 </h4>
-<p>If <code>nlminb</code> produces code 8 (false convergence), switching
-to L-BFGS-B sometimes helps because it uses a different line search
-strategy:</p>
+<p>If <code>nlminb</code> reports false convergence (code 1 with the
+message “false convergence (8)”), switching to L-BFGS-B sometimes helps
+because it uses a different line search strategy:</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_lbfgsb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  tmb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>optimizer <span class="op">=</span> <span class="st">"L-BFGS-B"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>Since 0.3.0 you rarely need to do this by hand:
+<code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code> tries a rescue itself whenever nlminb
+reports false convergence. A worked example shows what the rescue does
+and why the stalled point must not be kept.</p>
+<p><strong>Worked example: <code>apt_full</code>, exponential, gender,
+fixed <code>k = 2</code>.</strong> With the default
+<code>estimate_k = FALSE</code> the fixed-<code>k</code> fit stalls:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt_full</span><span class="op">)</span></span>
+<span><span class="va">fit_off</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span></span>
+<span>  <span class="va">apt_full</span>, equation <span class="op">=</span> <span class="st">"exponential"</span>, factors <span class="op">=</span> <span class="st">"gender"</span>,</span>
+<span>  tmb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rescue <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: TMB fit did not converge (optimizer code 1: false convergence (8)).</span></span>
+<span><span class="va">fit_off</span><span class="op">$</span><span class="va">opt</span><span class="op">$</span><span class="va">objective</span>                 <span class="co"># 3308.7</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">fit_off</span><span class="op">$</span><span class="va">tmb_obj</span><span class="op">$</span><span class="fu">gr</span><span class="op">(</span><span class="va">fit_off</span><span class="op">$</span><span class="va">opt</span><span class="op">$</span><span class="va">par</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>   <span class="co"># ~8e10</span></span></code></pre></div>
+<p>The negative log-likelihood at the stalled point (3308.7) looks
+respectable, but the gradient there has components of order 1e10 and the
+Hessian is indefinite (smallest eigenvalue about -4e6): it is not a
+stationary point, so it is not an estimate of anything. Restarting
+nlminb from that point and switching to L-BFGS-B both stall in the same
+region. What does work is a warm start from the free-<code>k</code>
+solution:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span><span class="va">apt_full</span>, equation <span class="op">=</span> <span class="st">"exponential"</span>, factors <span class="op">=</span> <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   nlminb reported false convergence; attempting rescue...</span></span>
+<span><span class="co">#&gt;   Rescued nlminb false convergence via free_k_warm_start (NLL 3308.738 -&gt; 3312.643;</span></span>
+<span><span class="co">#&gt;   the stalled point was not stationary)</span></span>
+<span><span class="va">fit</span><span class="op">$</span><span class="va">converged</span>                         <span class="co"># TRUE</span></span>
+<span><span class="va">fit</span><span class="op">$</span><span class="va">hessian_pd</span>                        <span class="co"># TRUE</span></span>
+<span><span class="va">fit</span><span class="op">$</span><span class="va">opt</span><span class="op">$</span><span class="va">rescue_method</span>                 <span class="co"># "free_k_warm_start"</span></span></code></pre></div>
+<p>The rescued fit has a <em>higher</em> NLL (3312.6) than the stalled
+point. That is expected: the stalled 3308.7 was reached on a ridge the
+optimizer could not leave and is not admissible, whereas 3312.6 is a
+genuine local minimum of the fixed-<code>k</code> likelihood (gradient
+below <code>rescue_grad_tol</code>, positive-definite Hessian). The
+rescue never picks a candidate by NLL alone; it requires convergence
+code 0, a small gradient and a positive-definite Hessian first.</p>
+<p>Two cautions. First, the rescued point is a local minimum on the
+fixed-<code>k</code> surface, not proven to be the global one. Second,
+the same data with <code>estimate_k = TRUE</code> converges cleanly at
+<code>k = 1.76</code> with NLL 3301.6, so this example is also a
+fixed-<code>k</code> sensitivity check: when a fixed-<code>k</code> fit
+needs rescuing, compare it with the free-<code>k</code> fit before
+reporting either (the Details of <code><a href="../reference/fit_demand_tmb.html">?fit_demand_tmb</a></code> explain
+when <code>k</code> is identified). To keep the old loud failure instead
+of the rescue, pass <code>tmb_control = list(rescue = FALSE)</code>.</p>
 </div>
 <div class="section level4">
 <h4 id="using-warm-starts">Using Warm Starts<a class="anchor" aria-label="anchor" href="#using-warm-starts"></a>
 </h4>
 <p>If you have a partially converged fit, you can use it as a starting
 point for a fresh optimization:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># First fit (may not fully converge)</span></span>
 <span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_tmb.html">fit_demand_tmb</a></span><span class="op">(</span><span class="va">data</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
 <span></span>
@@ -1144,7 +1205,7 @@ point for a fresh optimization:</p>
 <h4 id="hurdle-model-remedies">Hurdle Model Remedies<a class="anchor" aria-label="anchor" href="#hurdle-model-remedies"></a>
 </h4>
 <p>Hurdle models have additional options for controlling complexity:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Reduce random effects: 2-RE instead of 3-RE</span></span>
 <span><span class="va">fit_2re</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
@@ -1181,7 +1242,7 @@ point can prevent convergence</li>
 <code><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle()</a></code> instead, which handles zeros
 explicitly</li>
 </ul>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check data quality first</span></span>
 <span><span class="va">systematic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CheckUnsystematic.html">CheckUnsystematic</a></span><span class="op">(</span><span class="va">data</span>, deltaq <span class="op">=</span> <span class="fl">0.025</span>, bounce <span class="op">=</span> <span class="fl">0.1</span>, reversals <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">systematic</span><span class="op">$</span><span class="va">TotalPass</span><span class="op">)</span></span>
@@ -1201,7 +1262,7 @@ diagnostics.</p>
 <div class="section level3">
 <h3 id="tmb-example">TMB Example<a class="anchor" aria-label="anchor" href="#tmb-example"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_hurdle</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_hurdle.html">fit_demand_hurdle</a></span><span class="op">(</span><span class="va">apt</span>, y_var <span class="op">=</span> <span class="st">"y"</span>, x_var <span class="op">=</span> <span class="st">"x"</span>, id_var <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
 <span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_hurdle</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">diagnostics</span><span class="op">)</span></span></code></pre></div>
@@ -1222,7 +1283,7 @@ count</li>
 <div class="section level3">
 <h3 id="nlme-example">NLME Example<a class="anchor" aria-label="anchor" href="#nlme-example"></a>
 </h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_nlme</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_mixed.html">fit_demand_mixed</a></span><span class="op">(</span><span class="va">data</span>, y_var <span class="op">=</span> <span class="st">"y_ll4"</span>, equation_form <span class="op">=</span> <span class="st">"zben"</span><span class="op">)</span></span>
 <span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit_nlme</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">diagnostics</span><span class="op">)</span></span></code></pre></div>
@@ -1239,7 +1300,7 @@ count</li>
 </h3>
 <p>Here is a live example using the built-in <code>apt</code>
 dataset:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">apt</span><span class="op">)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_demand_fixed.html">fit_demand_fixed</a></span><span class="op">(</span><span class="va">apt</span>, equation <span class="op">=</span> <span class="st">"hs"</span><span class="op">)</span></span>
 <span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_demand_model.html">check_demand_model</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
@@ -1267,7 +1328,7 @@ dataset:</p>
 </h3>
 <p>For NLME models, you can also inspect the captured warnings
 directly:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Warnings captured during NLME fitting</span></span>
 <span><span class="va">fit_nlme</span><span class="op">$</span><span class="va">fit_warnings</span></span>
 <span></span>

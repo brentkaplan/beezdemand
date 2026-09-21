@@ -96,7 +96,7 @@
                         <h4 data-toc-skip class="author">Brent
 Kaplan</h4>
             
-            <h4 data-toc-skip class="date">2026-09-17</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/brentkaplan/beezdemand/blob/develop/vignettes/model-selection.Rmd" class="external-link"><code>vignettes/model-selection.Rmd</code></a></small>
       <div class="d-none name"><code>model-selection.Rmd</code></div>
@@ -473,7 +473,7 @@ effects, which gives it another route to convergence when
 </tr>
 <tr class="odd">
 <td>k parameter</td>
-<td>Estimated or fixed</td>
+<td>Fixed at 2 by default; optionally estimated</td>
 <td>Not available</td>
 </tr>
 <tr class="even">
@@ -656,7 +656,7 @@ zero handling, and comparability across studies.</p>
 <code>"koff"</code> / <code>"exponentiated"</code>
 </td>
 <td>Koffarnus et al. (2015)</td>
-<td align="center">No</td>
+<td align="center">Yes</td>
 <td align="center">Yes</td>
 <td>Fixed, NLME, TMB</td>
 </tr>
@@ -697,9 +697,10 @@ comparable across studies.</li>
 <li>For <strong>replication or comparability</strong> with existing
 literature, use <code>"hs"</code> or <code>"koff"</code> with the same
 <code>k</code> specification as the original study.</li>
-<li>When using <code>"hs"</code> or <code>"koff"</code>, zeros in
-consumption data are incompatible with the log transformation and will
-be dropped with a warning.</li>
+<li>When using <code>"hs"</code>, zeros in consumption data are
+incompatible with the log transformation of the response and are dropped
+with a warning. <code>"koff"</code> fits raw consumption, so zeros are
+retained (that is what the exponentiated form was introduced for).</li>
 </ul>
 <hr>
 </div>
@@ -853,7 +854,8 @@ output</li>
 <td><code><a href="../reference/fit_demand_fixed.html">fit_demand_fixed()</a></code></td>
 <td>Individual curves, quick analysis</td>
 <td>Simple, per-subject estimates</td>
-<td>Excludes</td>
+<td>
+<code>"hs"</code> drops; <code>"koff"</code> keeps</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/fit_demand_tmb.html">fit_demand_tmb()</a></code></td>

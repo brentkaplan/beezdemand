@@ -246,8 +246,10 @@ landing on <code>part2</code> (where <code><a href="https://rdrr.io/r/base/match
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Part I (Zero vs Positive), shared by both <code>part2</code> generators:</strong>
 $$logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) + a_i$$</p>
-<p><strong>Part II, <code>part2 = "koff"</code> (Zhao et al., 2016):</strong>
-$$\log(Y | Y &gt; 0) = (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) + \epsilon$$</p>
+<p><strong>Part II, <code>part2 = "koff"</code> (Zhao et al., 2016; mirrors
+<code>src/HurdleDemand3RE.h</code>):</strong>
+$$\alpha_i = \exp(\log \alpha + c_i)$$
+$$\log(Y | Y &gt; 0) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot price) - 1) + \epsilon$$</p>
 <p><strong>Part II, <code>part2 = "snd"</code> (exactly mirrors
 <code>src/HurdleDemand3RE_SND.h</code> / <code>src/HurdleDemand2RE_SND.h</code>, i.e. a
 log-linear/SND mean with lognormal errors and no <code>k</code>):</strong>

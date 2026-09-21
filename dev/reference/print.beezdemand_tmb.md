@@ -43,12 +43,12 @@ print(fit)
 #> Number of observations: 146 
 #> Observations dropped (zeros): 14 
 #> Random effects: 2 (~, Q0 + alpha, 1) 
-#> Log-likelihood: 40.65 
-#> AIC: -67.3 
+#> Log-likelihood: 40.53 
+#> AIC: -69.07 
 #> 
 #> Fixed Effects:
-#>       Q0.0    alpha.0      log_k   logsigma   logsigma logsigma_e    rho_raw 
-#>     1.8737    -5.8011     0.8955    -0.9528    -0.7798    -1.9498    -0.4675 
+#>       Q0.0    alpha.0   logsigma   logsigma logsigma_e    rho_raw 
+#>     1.8800    -5.5720    -0.9506    -0.7772    -1.9469    -0.4593 
 #> 
 #> Use summary() for full results.
 # }

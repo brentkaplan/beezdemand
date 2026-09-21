@@ -21,4 +21,13 @@ glance(x, ...)
 
 ## Value
 
-A tibble with model summary statistics.
+A tibble with model summary statistics: the columns of
+[`broom.mixed::glance()`](https://generics.r-lib.org/reference/glance.html)
+for the underlying `merMod` fit, followed by `converged` (logical;
+`TRUE` when lme4 reported no convergence problem, `FALSE` when it did,
+`NA` when the fit predates the stored metadata or failed). `converged`
+mirrors
+[`broom::glance.nls()`](https://broom.tidymodels.org/reference/glance.nls.html)'s
+`isConv` so a batch of fits can be screened programmatically;
+[`print()`](https://rdrr.io/r/base/print.html) and
+[`summary()`](https://rdrr.io/r/base/summary.html) report the same flag.

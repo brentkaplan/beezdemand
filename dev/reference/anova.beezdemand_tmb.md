@@ -88,13 +88,13 @@ anova(fit)
 #> # A tibble: 2 × 4
 #>   Group           Chisq    df  p.value
 #>   <chr>           <dbl> <int>    <dbl>
-#> 1 Q0 ~ gender    11.9       1 0.000569
-#> 2 alpha ~ gender  0.178     1 0.673   
+#> 1 Q0 ~ gender    12.4       1 0.000429
+#> 2 alpha ~ gender  0.230     1 0.632   
 anova(fit, group_by = "parameter")
 #> # A tibble: 2 × 4
 #>   Group Chisq    df   p.value
 #>   <chr> <dbl> <int>     <dbl>
-#> 1 Q0     521.     2 9.15e-114
-#> 2 alpha 1305.     2 3.47e-284
+#> 1 Q0     535.     2 6.59e-117
+#> 2 alpha 2539.     2 0        
 # }
 ```

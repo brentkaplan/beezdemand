@@ -446,14 +446,24 @@ errors while the simplified equation fits additive Gaussian errors on
 raw consumption (they share the mean function; the error models differ).
 The approximation is closest at small residual SD, and the null
 calibration is verified at both the default <code>sigma_e = 0.1</code>
-and a stress value of 0.3. The between-subject design’s random-effects
-structure is a step <em>less</em> approximate: with each subject in a
-single arm, the per-subject intercept refit matches the composed
-data-generating process exactly (only the error model remains a working
-approximation). Other equations remain available as sensitivity
-analyses, but their condition contrasts are defined on different
-parameterizations and are not validated against the simulated delta;
-<code>rho_bd</code> is locked at 0 in this version.</p>
+and a stress value of 0.3. In both designs the random-effects structure
+of the refit matches its simulator exactly. Only the error model is a
+working approximation.</p>
+<p>One point matters for interpreting the within-subject numbers. The
+simulator draws a new pair of subject deviations for every subject in
+every condition. Nothing about a subject carries over from condition 1
+to condition 2, and <code>rho_bd</code> is pinned at 0. The
+within-subject power estimate therefore describes two conditions with
+independent subject effects. Most within-subject studies run a paired
+repeated-measures design in which each subject’s deviation carries over.
+When that carried-over deviation is positively correlated across
+conditions, as it usually is, pairing shrinks the contrast variance and
+the estimate here is a conservative benchmark; a negative
+cross-condition correlation would make it optimistic. Other equations
+remain available as sensitivity analyses, but their condition contrasts
+are defined on different parameterizations and are not validated against
+the simulated delta; <code>rho_bd</code> is locked at 0 in this
+version.</p>
 <p>The <code>find_n_*</code> search statuses (<code>"confirmed"</code>,
 <code>"uncertain"</code>, <code>"unresolved"</code>) describe a
 heuristic Monte Carlo decision rule (repeated looks at ordinary Wilson

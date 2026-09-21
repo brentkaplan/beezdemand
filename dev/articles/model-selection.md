@@ -323,7 +323,7 @@ when you want:
 |----|----|----|
 | Backend | TMB (C++, automatic differentiation) | nlme (R, numerical gradients) |
 | Equations | exponential, exponentiated, simplified, zben | zben, simplified, exponentiated |
-| k parameter | Estimated or fixed | Not available |
+| k parameter | Fixed at 2 by default; optionally estimated | Not available |
 | Convergence | AD + Laplace + multi-start | Numerical gradients; can fail on nonlinear equations |
 | Speed | Fast (compiled C++) | Variable |
 
@@ -467,7 +467,7 @@ handling, and comparability across studies.
 | Equation | Function | Handles Zeros | k Required | Available In |
 |----|----|:--:|:--:|----|
 | `"hs"` / `"exponential"` | Hursh & Silberberg (2008) | No | Yes | Fixed, TMB, Hurdle |
-| `"koff"` / `"exponentiated"` | Koffarnus et al. (2015) | No | Yes | Fixed, NLME, TMB |
+| `"koff"` / `"exponentiated"` | Koffarnus et al. (2015) | Yes | Yes | Fixed, NLME, TMB |
 | `"zben"` | Zero-bounded exponential | Yes (via LL4) | No | NLME, TMB |
 | `"simplified"` | Rzeszutek et al. (2025) | Yes | No | Fixed, NLME, TMB, Hurdle |
 | `"zhao_exponential"` | Zhao et al. | No | Yes | Hurdle (default) |
@@ -489,9 +489,10 @@ the legacy names by
 - For **replication or comparability** with existing literature, use
   `"hs"` or `"koff"` with the same `k` specification as the original
   study.
-- When using `"hs"` or `"koff"`, zeros in consumption data are
-  incompatible with the log transformation and will be dropped with a
-  warning.
+- When using `"hs"`, zeros in consumption data are incompatible with the
+  log transformation of the response and are dropped with a warning.
+  `"koff"` fits raw consumption, so zeros are retained (that is what the
+  exponentiated form was introduced for).
 
 ------------------------------------------------------------------------
 
@@ -583,7 +584,7 @@ Q_0) always exists.)
 
 | Approach | Best For | Key Features | Handles Zeros |
 |----|----|----|----|
-| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) | Individual curves, quick analysis | Simple, per-subject estimates | Excludes |
+| [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md) | Individual curves, quick analysis | Simple, per-subject estimates | `"hs"` drops; `"koff"` keeps |
 | [`fit_demand_tmb()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_tmb.md) | Group comparisons (new work) | TMB backend, AD, multi-start, 4 equations | Depends on equation |
 | [`fit_demand_mixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_mixed.md) | Group comparisons (legacy) | nlme backend, emmeans integration | LL4 transform |
 | [`fit_demand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_hurdle.md) | Data with many zeros | Two-part model, TMB backend | Explicitly models |

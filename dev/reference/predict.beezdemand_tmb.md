@@ -144,8 +144,8 @@ head(predict(fit, type = "response"))
 #> # A tibble: 6 × 4
 #>   id        x     y .fitted
 #>   <fct> <dbl> <dbl>   <dbl>
-#> 1 19      0      10    2.31
-#> 2 19      0.5    10    2.26
+#> 1 19      0      10    2.32
+#> 2 19      0.5    10    2.27
 #> 3 19      1      10    2.22
 #> 4 19      1.5     8    2.17
 #> 5 19      2       8    2.13
@@ -157,10 +157,10 @@ predict(fit, newdata = nd, level = "population")
 #> # A tibble: 4 × 2
 #>       x predict.fixed
 #>   <dbl>         <dbl>
-#> 1  0.01         1.87 
-#> 2  1            1.76 
+#> 1  0.01         1.88 
+#> 2  1            1.77 
 #> 3  5            1.34 
-#> 4 10            0.866
+#> 4 10            0.864
 
 # Subject-conditional and population side by side in one call
 nd_id <- data.frame(x = c(0.01, 1, 5, 10), id = unique(apt$id)[1])
@@ -168,32 +168,32 @@ predict(fit, newdata = nd_id, level = c("population", "subject"))
 #> # A tibble: 4 × 4
 #>       x    id predict.fixed predict.id
 #>   <dbl> <dbl>         <dbl>      <dbl>
-#> 1  0.01    19         1.87        2.31
-#> 2  1       19         1.76        2.22
+#> 1  0.01    19         1.88        2.31
+#> 2  1       19         1.77        2.22
 #> 3  5       19         1.34        1.86
-#> 4 10       19         0.866       1.45
+#> 4 10       19         0.864       1.45
 
 # Population demand curve at specific prices
 predict(fit, type = "demand", prices = c(0, 1, 5, 10, 20))
 #> # A tibble: 5 × 2
 #>   price .fitted
 #>   <dbl>   <dbl>
-#> 1     0  1.87  
-#> 2     1  1.76  
+#> 1     0  1.88  
+#> 2     1  1.77  
 #> 3     5  1.34  
-#> 4    10  0.866 
-#> 5    20  0.0382
+#> 4    10  0.864 
+#> 5    20  0.0724
 
 # Subject-level parameters
 head(predict(fit, type = "parameters"))
 #> # A tibble: 6 × 8
 #>   id       b_i    c_i    Q0   alpha  Pmax  Omax pmax_at_bound
 #>   <chr>  <dbl>  <dbl> <dbl>   <dbl> <dbl> <dbl> <lgl>        
-#> 1 19     0.435 -0.614 10.1  0.00164 13.4   44.1 FALSE        
-#> 2 30    -0.831  0.442  2.84 0.00471 16.6   15.4 FALSE        
-#> 3 38    -0.359  0.128  4.55 0.00344 14.2   21.0 FALSE        
-#> 4 60     0.394  0.111  9.66 0.00338  6.78  21.4 FALSE        
-#> 5 68     0.451 -0.317 10.2  0.00220  9.83  32.8 FALSE        
-#> 6 106   -0.149  0.486  5.61 0.00492  8.02  14.7 FALSE        
+#> 1 19     0.435 -0.612 10.1  0.00206 13.9   44.1 FALSE        
+#> 2 30    -0.830  0.444  2.86 0.00593 17.1   15.3 FALSE        
+#> 3 38    -0.363  0.117  4.56 0.00428 14.9   21.3 FALSE        
+#> 4 60     0.396  0.116  9.74 0.00427  6.98  21.3 FALSE        
+#> 5 68     0.450 -0.322 10.3  0.00276 10.2   33.0 FALSE        
+#> 6 106   -0.153  0.477  5.63 0.00613  8.42  14.8 FALSE        
 # }
 ```

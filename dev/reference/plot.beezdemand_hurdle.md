@@ -35,7 +35,7 @@ plot(
   ind_line_alpha = 0.35,
   ind_line_size = 0.7,
   marginal = TRUE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   par_trans = NULL,
   ...
 )
@@ -185,7 +185,7 @@ plot(
 - marginal_method:
 
   Character. Method for marginal integration when `marginal = TRUE`. One
-  of `"kde"` (default), `"normal"`, or `"empirical"`. See
+  of `"normal"` (default), `"kde"`, or `"empirical"`. See
   [`predict.beezdemand_hurdle()`](https://brentkaplan.github.io/beezdemand/reference/predict.beezdemand_hurdle.md)
   for details.
 

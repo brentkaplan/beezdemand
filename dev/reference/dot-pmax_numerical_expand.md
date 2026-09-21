@@ -1,5 +1,10 @@
 # Numerical Pmax via Optimization with Adaptive Domain Expansion
 
+Retained as the fallback for a zben curve whose analytic search domain
+([`.zben_search_domain()`](https://brentkaplan.github.io/beezdemand/reference/dot-zben_search_domain.md))
+cannot be formed; zben fits with valid parameters search that domain
+directly and never expand.
+
 Some demand curves (notably zben's LL4-scale exponential decay
 back-transformed to the natural expenditure curve) can have an
 unconstrained expenditure-maximizing price well beyond the subject's

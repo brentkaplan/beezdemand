@@ -11,9 +11,14 @@ Black, 1989,
 ), exponential (Hursh & Silberberg, 2008,
 [doi:10.1037/0033-295X.115.1.186](https://doi.org/10.1037/0033-295X.115.1.186)
 ) and modified exponential (Koffarnus, Franck, Stein, & Bickel, 2015,
-[doi:10.1037/pha0000045](https://doi.org/10.1037/pha0000045) ), and (3)
+[doi:10.1037/pha0000045](https://doi.org/10.1037/pha0000045) ), (3)
 calculating numerous measures relevant to applied behavioral economists
-(Intensity, Pmax, Omax). Also supports plotting and comparing data.
+(Intensity, Pmax, Omax), (4) nonlinear mixed-effects demand models with
+subject-level random effects, fit either with 'nlme' or with a 'TMB'
+backend that also provides a two-part (hurdle) model for zero-inflated
+consumption, and (5) Monte Carlo power analysis for condition
+differences in demand parameters. Also supports plotting and comparing
+data.
 
 ## See also
 

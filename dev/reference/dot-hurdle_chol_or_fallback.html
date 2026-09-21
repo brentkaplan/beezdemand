@@ -106,7 +106,10 @@ fallback (length must equal <code>nrow(Sigma)</code>).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The upper-triangular Cholesky factor of <code>Sigma</code>, or of the
-diagonal fallback when <code>Sigma</code> is not positive definite.</p>
+diagonal fallback when <code>Sigma</code> is not positive definite. The result
+carries a logical attribute <code>"fallback"</code> (<code>TRUE</code> when the diagonal
+substitute was used); read it at the call site before any further
+matrix operation, since <code><a href="https://rdrr.io/r/base/t.html" class="external-link">t()</a></code> / <code>%*%</code> need not preserve it.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

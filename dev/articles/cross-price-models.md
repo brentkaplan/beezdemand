@@ -211,7 +211,7 @@ summary(fit_alt)
 #> BIC: 4.39 
 #> 
 #> Parameter Interpretation (natural scale):
-#> qalone (Q_alone): 14.86  - consumption at zero alternative price
+#> qalone (Q_alone): 14.86  - consumption as the alternative price grows without bound (the curve's asymptote; at an alternative price of 0 the model gives qalone scaled by 10^I)
 #> I: -0.3713  - interaction parameter (substitution direction)
 #> beta: 0.7463  - sensitivity parameter (sensitivity of relation to price)
 #> 
@@ -554,7 +554,7 @@ summary(fit_one)
 #> BIC: 33.23 
 #> 
 #> Parameter Interpretation (natural scale):
-#> qalone (Q_alone): 15.64  - consumption at zero alternative price
+#> qalone (Q_alone): 15.64  - consumption as the alternative price grows without bound (the curve's asymptote; at an alternative price of 0 the model gives qalone scaled by 10^I)
 #> I: -1.268  - interaction parameter (substitution direction)
 #> beta: 0.1829  - sensitivity parameter (sensitivity of relation to price)
 #> 

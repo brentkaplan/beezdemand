@@ -71,9 +71,9 @@ data(apt)
 fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
 VarCorr(fit)
-#>          Variance StdDev Corr  
-#> Q0       0.0281   0.167        
-#> alpha    0.0397   0.199  -0.436
-#> Residual 0.0202   0.142        
+#>          Variance StdDev Corr 
+#> Q0       0.0282   0.168       
+#> alpha    0.0399   0.200  -0.43
+#> Residual 0.0204   0.143       
 # }
 ```

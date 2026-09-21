@@ -60,38 +60,37 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5120    0.8097   15.0689  < 2e-16
-#>  alpha:(Intercept)   0.0030    0.0017  -10.3606  < 2e-16
-#>              log_k   0.8955    0.4838    1.8509 0.064184
-#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
-#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
-#>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
+#>     Q0:(Intercept)   6.5533    0.8122   15.1690  < 2e-16
+#>  alpha:(Intercept)   0.0038    0.0006  -37.7147  < 2e-16
+#>           logsigma  -0.9506    0.2294   -4.1441 3.41e-05
+#>           logsigma  -0.7772    0.2304   -3.3733 0.000743
+#>         logsigma_e  -1.9469    0.0629  -30.9396  < 2e-16
+#>            rho_raw  -0.4593    0.3292   -1.3951 0.162994
 #> 
 #> --- Variance Components ---
 #> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.1675
-#>  sigma_c (alpha RE SD)   0.1991
-#>  sigma_e (Residual SD)   0.1423
+#>     sigma_b (Q0 RE SD)   0.1679
+#>  sigma_c (alpha RE SD)   0.1996
+#>  sigma_e (Residual SD)   0.1427
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
-#>  rho_bc (Q0-alpha correlation)  -0.4362
+#>  rho_bc (Q0-alpha correlation)  -0.4295
 #> 
 #> --- Fit Statistics ---
-#> Log-likelihood: 40.65 
-#> AIC: -67.3 
-#> BIC: -46.41 
+#> Log-likelihood: 40.53 
+#> AIC: -69.07 
+#> BIC: -51.17 
 #> 
 #> --- Population Demand Metrics ---
-#> Pmax: 11.2377  Omax: 23.8941  Method: analytic_lambert_w
+#> Pmax: 11.6482  Omax: 23.9232  Method: analytic_lambert_w
 #> 
 #> --- Individual Parameter Summaries ---
-#>   Q0: Min=2.8370  Med=6.2483  Mean=6.9793  Max=10.2274
-#>   alpha: Min=0.0016  Med=0.0034  Mean=0.0034  Max=0.0062
-#>   Pmax: Min=5.7902  Med=11.6341  Mean=12.1608  Max=21.1473
-#>   Omax: Min=11.7465  Med=21.2007  Mean=26.1542  Max=44.1357
+#>   Q0: Min=2.8583  Med=6.2762  Mean=7.0238  Max=10.2728
+#>   alpha: Min=0.0021  Med=0.0043  Mean=0.0042  Max=0.0078
+#>   Pmax: Min=5.9675  Med=12.0725  Mean=12.6217  Max=22.1596
+#>   Omax: Min=11.6871  Med=21.2953  Mean=26.1968  Max=44.1029
 #> 
 #> Notes:
 #>   * 14 zero-consumption observations dropped for equation='exponential'. 
@@ -107,38 +106,37 @@ summary(fit, report_space = "log10")
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   0.8137    0.0540   15.0689  < 2e-16
-#>  alpha:(Intercept)  -2.5194    0.2432  -10.3606  < 2e-16
-#>              log_k   0.8955    0.4838    1.8509 0.064184
-#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
-#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
-#>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
+#>     Q0:(Intercept)   0.8165    0.0538   15.1690  < 2e-16
+#>  alpha:(Intercept)  -2.4199    0.0642  -37.7147  < 2e-16
+#>           logsigma  -0.9506    0.2294   -4.1441 3.41e-05
+#>           logsigma  -0.7772    0.2304   -3.3733 0.000743
+#>         logsigma_e  -1.9469    0.0629  -30.9396  < 2e-16
+#>            rho_raw  -0.4593    0.3292   -1.3951 0.162994
 #> 
 #> --- Variance Components ---
 #> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.1675
-#>  sigma_c (alpha RE SD)   0.1991
-#>  sigma_e (Residual SD)   0.1423
+#>     sigma_b (Q0 RE SD)   0.1679
+#>  sigma_c (alpha RE SD)   0.1996
+#>  sigma_e (Residual SD)   0.1427
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
-#>  rho_bc (Q0-alpha correlation)  -0.4362
+#>  rho_bc (Q0-alpha correlation)  -0.4295
 #> 
 #> --- Fit Statistics ---
-#> Log-likelihood: 40.65 
-#> AIC: -67.3 
-#> BIC: -46.41 
+#> Log-likelihood: 40.53 
+#> AIC: -69.07 
+#> BIC: -51.17 
 #> 
 #> --- Population Demand Metrics ---
-#> Pmax: 11.2377  Omax: 23.8941  Method: analytic_lambert_w
+#> Pmax: 11.6482  Omax: 23.9232  Method: analytic_lambert_w
 #> 
 #> --- Individual Parameter Summaries ---
-#>   Q0: Min=2.8370  Med=6.2483  Mean=6.9793  Max=10.2274
-#>   alpha: Min=0.0016  Med=0.0034  Mean=0.0034  Max=0.0062
-#>   Pmax: Min=5.7902  Med=11.6341  Mean=12.1608  Max=21.1473
-#>   Omax: Min=11.7465  Med=21.2007  Mean=26.1542  Max=44.1357
+#>   Q0: Min=2.8583  Med=6.2762  Mean=7.0238  Max=10.2728
+#>   alpha: Min=0.0021  Med=0.0043  Mean=0.0042  Max=0.0078
+#>   Pmax: Min=5.9675  Med=12.0725  Mean=12.6217  Max=22.1596
+#>   Omax: Min=11.6871  Med=21.2953  Mean=26.1968  Max=44.1029
 #> 
 #> Notes:
 #>   * 14 zero-consumption observations dropped for equation='exponential'. 

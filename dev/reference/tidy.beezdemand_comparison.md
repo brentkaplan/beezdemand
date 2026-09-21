@@ -61,13 +61,13 @@ tidy(res)
 #> # A tibble: 2 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - …  -0.236     0.0686    -3.45    Inf   -0.371    -0.102 5.69e-4
-#> 2 alpha Female - …   0.0358    0.0849     0.422   Inf   -0.131     0.202 6.73e-1
+#> 1 Q0    Female - …  -0.237     0.0673    -3.52    Inf   -0.369    -0.105 4.29e-4
+#> 2 alpha Female - …   0.0402    0.0839     0.479   Inf   -0.124     0.205 6.32e-1
 tidy(res, exponentiate = TRUE)
 #> # A tibble: 2 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - …    0.580        NA    -3.45    Inf    0.426     0.791 5.69e-4
-#> 2 alpha Female - …    1.09         NA     0.422   Inf    0.740     1.59  6.73e-1
+#> 1 Q0    Female - …    0.579        NA    -3.52    Inf    0.428     0.785 4.29e-4
+#> 2 alpha Female - …    1.10         NA     0.479   Inf    0.751     1.60  6.32e-1
 # }
 ```

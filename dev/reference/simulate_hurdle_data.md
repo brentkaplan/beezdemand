@@ -193,9 +193,10 @@ A data frame with columns:
 \$\$logit(P(Y=0)) = \beta_0 + \beta_1 \cdot \log(price + \epsilon) +
 a_i\$\$
 
-**Part II, `part2 = "koff"` (Zhao et al., 2016):** \$\$\log(Y \| Y \> 0)
-= (\log Q_0 + b_i) + k \cdot (\exp(-(\alpha + c_i) \cdot price) - 1) +
-\epsilon\$\$
+**Part II, `part2 = "koff"` (Zhao et al., 2016; mirrors
+`src/HurdleDemand3RE.h`):** \$\$\alpha_i = \exp(\log \alpha + c_i)\$\$
+\$\$\log(Y \| Y \> 0) = (\log Q_0 + b_i) + k \cdot (\exp(-\alpha_i \cdot
+price) - 1) + \epsilon\$\$
 
 **Part II, `part2 = "snd"` (exactly mirrors `src/HurdleDemand3RE_SND.h`
 / `src/HurdleDemand2RE_SND.h`, i.e. a log-linear/SND mean with lognormal

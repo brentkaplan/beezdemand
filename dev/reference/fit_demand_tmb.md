@@ -15,7 +15,7 @@ fit_demand_tmb(
   x_var = "x",
   id_var = "id",
   equation = c("exponentiated", "exponential", "simplified", "zben"),
-  estimate_k = TRUE,
+  estimate_k = FALSE,
   k = NULL,
   random_effects = Q0 + alpha ~ 1,
   covariance_structure = c("pdSymm", "pdDiag"),
@@ -81,14 +81,17 @@ fit_demand_tmb(
 
 - estimate_k:
 
-  Logical. If `TRUE` (default), estimate k as a free parameter. If
-  `FALSE`, fix k at the value given in `k`. Only relevant for
-  "exponentiated" and "exponential" equations.
+  Logical. If `FALSE` (default), k is held fixed at the value given in
+  `k`. If `TRUE`, k is estimated as a free parameter; see Details for
+  when the data support that. Only relevant for the "exponentiated" and
+  "exponential" equations.
 
 - k:
 
-  Numeric or `NULL`. Fixed value of k when `estimate_k = FALSE`. If
-  `NULL` and `estimate_k = FALSE`, k defaults to 2.
+  Numeric or `NULL`. Fixed value of k when `estimate_k = FALSE`. `NULL`
+  (the default) means k = 2, the conventional value of Hursh &
+  Silberberg (2008) and the default of
+  [`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
 
 - random_effects:
 
@@ -177,7 +180,29 @@ fit_demand_tmb(
   `optimizer`
 
   :   Character. `"nlminb"` (default) or `"L-BFGS-B"`. L-BFGS-B can
-      recover from nlminb convergence failures (code 1 or 8).
+      sometimes recover where nlminb reports convergence code 1 with a
+      `"false convergence (8)"` message (R's
+      [`nlminb()`](https://rdrr.io/r/stats/nlminb.html) reports only
+      codes 0/1; the PORT status is in `opt$message`).
+
+  `rescue`
+
+  :   Logical (default `TRUE`). When nlminb exits with false
+      convergence, retry automatically: restart nlminb from the stalled
+      point, then L-BFGS-B from it, and, for a fixed-`k` fit, warm-start
+      from a free-`k` refit. A candidate is accepted only if it reports
+      convergence code 0, its gradient satisfies
+      `max(abs(grad)) <= rescue_grad_tol`, and its Hessian is positive
+      definite; the lowest-NLL accepted candidate replaces the stalled
+      result and `fit$opt$rescued_from` / `fit$opt$rescue_method` record
+      it. If no candidate qualifies the fit fails loudly as before. See
+      [`vignette("convergence-guide")`](https://brentkaplan.github.io/beezdemand/articles/convergence-guide.md)
+      for the worked example.
+
+  `rescue_grad_tol`
+
+  :   Positive number (default `1e-2`): the maximum absolute gradient
+      component a rescue candidate may have.
 
   `iter_max`
 
@@ -199,9 +224,10 @@ fit_demand_tmb(
       (default NULL = no bounds). Names must match optimizer parameter
       names (e.g., `log_k`, `beta_q0`, `logsigma_b`). Note that most
       parameters are in log-space: e.g., to constrain k between 0.14 and
-      55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)`. A bound
-      name applies to *all* occurrences of that parameter (e.g., both
-      elements of `beta_q0`).
+      55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)` (which
+      bind only when `estimate_k = TRUE`, since a fixed k is not a free
+      parameter). A bound name applies to *all* occurrences of that
+      parameter (e.g., both elements of `beta_q0`).
 
   `upper`
 
@@ -321,10 +347,28 @@ finite-difference gradients cannot navigate the likelihood surface. TMB
 succeeds using exact automatic differentiation, Laplace approximation,
 and joint marginal likelihood optimization.
 
-When `estimate_k = TRUE`, k is estimated as a free parameter alongside
-Q0 and alpha. This typically improves model fit substantially. The
-conventional fixed-k approach (Hursh & Silberberg, 2008) often
-overestimates k by 3-8x.
+**Fixed versus estimated k.** By default k is held at 2, the convention
+of Hursh & Silberberg (2008) and the default of
+[`fit_demand_fixed()`](https://brentkaplan.github.io/beezdemand/reference/fit_demand_fixed.md).
+It is a convention rather than an estimate, so fits at a second value
+(say `k = 1.5` or `k = 3`) are worth reporting as a sensitivity check.
+alpha and the derived Pmax / Omax / EV move most; Q0 enters the
+likelihood jointly with alpha, so it can shift too.
+
+Setting `estimate_k = TRUE` estimates k alongside Q0 and alpha, which
+fits better on data that carry the information to support it. Many do
+not. The response depends on k through \\k(e^{-\alpha Q_0 C} - 1)\\, so
+while \\\alpha Q_0 C\\ stays small the curve is a straight line of slope
+\\k\alpha\\ and only that product is identified. What pins k down is the
+curvature that appears as consumption approaches its floor. On data
+whose consumption never gets there, a free k can drift to arbitrarily
+large values with a compensating alpha, giving a non-positive-definite
+Hessian and meaningless Pmax / Omax.
+[`check_demand_model()`](https://brentkaplan.github.io/beezdemand/reference/check_demand_model.md)
+screens a free-k fit for that signature and
+[`summary()`](https://rdrr.io/r/base/summary.html) carries the note. The
+screen reports what it detects; passing it is no evidence that k is
+identified.
 
 **Continuous within-subject random slopes (dose-response).** A numeric
 term in the random-effects formula (e.g. `Q0 + alpha ~ dose_c`) gives
@@ -386,6 +430,8 @@ data(apt)
 # Exponential (HS) on log(Q)
 fit <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
                       equation = "exponential")
+#> ℹ Using a fixed k = 2 (the `estimate_k = FALSE` default).
+#> • Pass `k` for a different constant, or `estimate_k = TRUE` to estimate k.
 #> Fitting TMB mixed-effects demand model...
 #>   Equation: exponential
 #>   equation='exponential': Dropped 14 zero-consumption observations (146 remaining).
@@ -393,8 +439,8 @@ fit <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [146 x 1], X_alpha [146 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = -40.65 (start set 3 of 3)
-#>   Converged (NLL = -40.65)
+#>   Multi-start: best NLL = -40.53 (start set 2 of 3)
+#>   Converged (NLL = -40.53)
 #>   Computing standard errors...
 #> Done.
 summary(fit)
@@ -409,38 +455,37 @@ summary(fit)
 #> 
 #> --- Fixed Effects ---
 #>               term estimate std.error statistic  p.value
-#>     Q0:(Intercept)   6.5120    0.8097   15.0689  < 2e-16
-#>  alpha:(Intercept)   0.0030    0.0017  -10.3606  < 2e-16
-#>              log_k   0.8955    0.4838    1.8509 0.064184
-#>           logsigma  -0.9528    0.2292   -4.1564 3.23e-05
-#>           logsigma  -0.7798    0.2302   -3.3879 0.000704
-#>         logsigma_e  -1.9498    0.0631  -30.9183  < 2e-16
-#>            rho_raw  -0.4675    0.3292   -1.4202 0.155547
+#>     Q0:(Intercept)   6.5533    0.8122   15.1690  < 2e-16
+#>  alpha:(Intercept)   0.0038    0.0006  -37.7147  < 2e-16
+#>           logsigma  -0.9506    0.2294   -4.1441 3.41e-05
+#>           logsigma  -0.7772    0.2304   -3.3733 0.000743
+#>         logsigma_e  -1.9469    0.0629  -30.9396  < 2e-16
+#>            rho_raw  -0.4593    0.3292   -1.3951 0.162994
 #> 
 #> --- Variance Components ---
 #> (Q0/alpha RE SDs on log10 scale; residual SD on likelihood scale)
 #>              Component Estimate
-#>     sigma_b (Q0 RE SD)   0.1675
-#>  sigma_c (alpha RE SD)   0.1991
-#>  sigma_e (Residual SD)   0.1423
+#>     sigma_b (Q0 RE SD)   0.1679
+#>  sigma_c (alpha RE SD)   0.1996
+#>  sigma_e (Residual SD)   0.1427
 #> 
 #> --- RE Correlations ---
 #>                      Component Estimate
-#>  rho_bc (Q0-alpha correlation)  -0.4362
+#>  rho_bc (Q0-alpha correlation)  -0.4295
 #> 
 #> --- Fit Statistics ---
-#> Log-likelihood: 40.65 
-#> AIC: -67.3 
-#> BIC: -46.41 
+#> Log-likelihood: 40.53 
+#> AIC: -69.07 
+#> BIC: -51.17 
 #> 
 #> --- Population Demand Metrics ---
-#> Pmax: 11.2377  Omax: 23.8941  Method: analytic_lambert_w
+#> Pmax: 11.6482  Omax: 23.9232  Method: analytic_lambert_w
 #> 
 #> --- Individual Parameter Summaries ---
-#>   Q0: Min=2.8370  Med=6.2483  Mean=6.9793  Max=10.2274
-#>   alpha: Min=0.0016  Med=0.0034  Mean=0.0034  Max=0.0062
-#>   Pmax: Min=5.7902  Med=11.6341  Mean=12.1608  Max=21.1473
-#>   Omax: Min=11.7465  Med=21.2007  Mean=26.1542  Max=44.1357
+#>   Q0: Min=2.8583  Med=6.2762  Mean=7.0238  Max=10.2728
+#>   alpha: Min=0.0021  Med=0.0043  Mean=0.0042  Max=0.0078
+#>   Pmax: Min=5.9675  Med=12.0725  Mean=12.6217  Max=22.1596
+#>   Omax: Min=11.6871  Med=21.2953  Mean=26.1968  Max=44.1029
 #> 
 #> Notes:
 #>   * 14 zero-consumption observations dropped for equation='exponential'. 
@@ -452,24 +497,17 @@ plot(fit)
 # Exponentiated (Koffarnus) on raw Q
 fit2 <- fit_demand_tmb(apt, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponentiated")
+#> ℹ Using a fixed k = 2 (the `estimate_k = FALSE` default).
+#> • Pass `k` for a different constant, or `estimate_k = TRUE` to estimate k.
 #> Fitting TMB mixed-effects demand model...
 #>   Equation: exponentiated
 #>   Subjects: 10, Observations: 160
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [160 x 1], X_alpha [160 x 1]
 #>   Optimizing...
-#>   Multi-start: best NLL = 171.10 (start set 2 of 3)
-#>   WARNING: Did not converge (code 1: false convergence (8))
+#>   Multi-start: best NLL = 176.58 (start set 1 of 3)
+#>   Converged (NLL = 176.58)
 #>   Computing standard errors...
-#> Warning: ! Hessian is not positive definite (`pdHess = FALSE`).
-#> ℹ Standard errors, p-values, and confidence intervals may be unreliable.
-#> ℹ Run `check_demand_model()` for detailed diagnostics.
-#> ℹ Consider simplifying the model (fewer random effects) or checking data
-#>   quality.
-#> Warning: ! Some standard errors are unavailable (non-positive variance estimates from
-#>   `TMB::sdreport()`).
-#> ℹ This usually reflects a weakly identified fit; check `$hessian_pd` and
-#>   `summary()` diagnostics.
 #> Done.
 
 # With covariates (a 30-per-gender subset keeps the example fast)
@@ -480,6 +518,8 @@ keep <- unlist(lapply(split(ids$id, ids$gender), head, 30))
 dat <- apt_full[apt_full$id %in% keep, ]
 fit3 <- fit_demand_tmb(dat, y_var = "y", x_var = "x", id_var = "id",
                        equation = "exponential", factors = "gender")
+#> ℹ Using a fixed k = 2 (the `estimate_k = FALSE` default).
+#> • Pass `k` for a different constant, or `estimate_k = TRUE` to estimate k.
 #> Fitting TMB mixed-effects demand model...
 #>   Equation: exponential
 #>   equation='exponential': Dropped 370 zero-consumption observations (650 remaining).
@@ -487,16 +527,16 @@ fit3 <- fit_demand_tmb(dat, y_var = "y", x_var = "x", id_var = "id",
 #>   Random effects: 2 total RE columns per subject (pdSymm(Q0:1, alpha:1))
 #>   Design matrices: X_q0 [650 x 2], X_alpha [650 x 2]
 #>   Optimizing...
-#>   Multi-start: best NLL = 175.98 (start set 3 of 3)
-#>   Converged (NLL = 175.98)
+#>   Multi-start: best NLL = 177.11 (start set 2 of 3)
+#>   Converged (NLL = 177.11)
 #>   Computing standard errors...
 #> Done.
 get_demand_param_emms(fit3, param = "alpha")
 #> # A tibble: 2 × 6
 #>   level         estimate estimate_log std.error conf.low conf.high
 #>   <chr>            <dbl>        <dbl>     <dbl>    <dbl>     <dbl>
-#> 1 gender=Female  0.00811        -4.81     0.202  0.00546    0.0121
-#> 2 gender=Male    0.00835        -4.79     0.183  0.00583    0.0119
+#> 1 gender=Female  0.00678        -4.99     0.171  0.00485   0.00948
+#> 2 gender=Male    0.00695        -4.97     0.148  0.00519   0.00930
 # }
 
 # Factor-expanded random slopes on a within-subject factor are supported

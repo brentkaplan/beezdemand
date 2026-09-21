@@ -133,6 +133,6 @@ tidy(res)
 #> # A tibble: 1 × 9
 #>   param contrast   estimate std.error statistic    df conf.low conf.high p.value
 #>   <chr> <chr>         <dbl>     <dbl>     <dbl> <dbl>    <dbl>     <dbl>   <dbl>
-#> 1 Q0    Female - …   -0.236    0.0686     -3.45   Inf   -0.371    -0.102 5.69e-4
+#> 1 Q0    Female - …   -0.237    0.0673     -3.52   Inf   -0.369    -0.105 4.29e-4
 # }
 ```
