@@ -120,9 +120,15 @@ test_that("get_demand_param_trends warns naming a dropped (param, covariate) com
 test_that("get_demand_param_trends: all-valid covariates raise no dropped-combo warning", {
   skip_on_cran()
   setup <- make_nlme_fit()
+  # The ko zben fit sits near the apVar PD boundary: on some platforms (Windows,
+  # covr-instrumented Linux) the convergence gate fires. That warning is
+  # correct and out of scope here; only a dropped-combo warning should fail.
   expect_no_warning(
-    get_demand_param_trends(
-      setup$fit, params = c("Q0", "alpha"), covariates = "dose_num", specs = ~drug
+    withCallingHandlers(
+      get_demand_param_trends(
+        setup$fit, params = c("Q0", "alpha"), covariates = "dose_num", specs = ~drug
+      ),
+      beezdemand_nlme_convergence_warning = function(w) invokeRestart("muffleWarning")
     )
   )
 })
