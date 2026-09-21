@@ -70,6 +70,11 @@ Q0, alpha, breakpoint, Pmax, Omax}
 \item{data}{Original data used for fitting}
 \item{param_info}{List with y_var, x_var, id_var, n_subjects, n_obs, etc.}
 \item{converged}{Logical indicating convergence}
+\item{re_cov_fallback}{Logical. \code{TRUE} when the estimated random-effects
+covariance was not positive definite and the subject-level effects
+were computed from an uncorrelated (diagonal) approximation; the
+reported correlations do not apply to those outputs. \code{summary()} and
+\code{print()} carry a note when it is \code{TRUE}.}
 \item{loglik}{Log-likelihood at convergence}
 \item{AIC, BIC}{Information criteria}
 \item{error_message}{Error message if fitting failed, NULL otherwise}
@@ -111,6 +116,16 @@ present parameters on the \eqn{\log_{10}} scale.
 To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
 use:
 \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
+
+The default \code{part2 = "zhao_exponential"} places no \eqn{Q_0} inside the
+exponent (\eqn{\exp(-\alpha_{Zhao} \, P)}), whereas the Hursh & Silberberg
+form used by \code{fit_demand_fixed(equation = "hs")} and
+\code{fit_demand_tmb(equation = "exponential")} uses \eqn{\exp(-\alpha_{HS} \, Q_0 \, P)}.
+The two \eqn{\alpha} values are therefore on different scales and relate as
+\deqn{\alpha_{HS} = \alpha_{Zhao} / Q_0,}
+so a Zhao \eqn{\alpha} is not directly comparable with an HS \eqn{\alpha}
+unless divided by the subject's (or group's) \eqn{Q_0}. Use
+\code{part2 = "exponential"} (alias \code{"hs_stdq0"}) for an HS-scaled \eqn{\alpha}.
 }
 
 \section{Convergence}{

@@ -314,3 +314,161 @@ test_that(".nlme_muffle_group_metrics_emms_noise mutes only the benign message +
   }
   expect_no_warning(beezdemand:::.nlme_muffle_group_metrics_emms_noise(gate_warn_fn()))
 })
+
+# ---------------------------------------------------------------------------
+# F-BD6-3 (audit 2026-09-06): a multi-value continuous `at` used to be
+# forwarded whole to emmeans (the grid expanded over every value and the
+# geometric mean averaged across them) while `conditioned_on` recorded only
+# the first value. The NLME method now normalises to the first value with
+# the same warning the TMB method emits, so the recorded conditioning is the
+# conditioning that was applied.
+# ---------------------------------------------------------------------------
+test_that("calc_group_metrics.beezdemand_nlme: multi-value continuous `at` warns and uses the first value (F-BD6-3)", {
+  skip_on_cran()
+  d <- .cgm_nlme_subsample()
+  fit <- fit_demand_mixed(
+    d, equation_form = "zben", continuous_covariates = "age",
+    y_var = "y_ll4", x_var = "x", id_var = "id")
+
+  cm_one <- calc_group_metrics(fit, at = list(age = 30))
+  expect_warning(
+    cm_two <- calc_group_metrics(fit, at = list(age = c(30, 60))),
+    "using first value"
+  )
+  expect_equal(cm_two$conditioned_on$covariates[["age"]], 30)
+  expect_equal(cm_two$Pmax, cm_one$Pmax, tolerance = 1e-10)
+  expect_equal(cm_two$Omax, cm_one$Omax, tolerance = 1e-10)
+})
+
+# ---------------------------------------------------------------------------
+# Batch 3 (2026-09-12), F-BD6-3: marginalise over OBSERVED factor cells with
+# equal weight (geometric mean), matching the TMB backend; F-BD6-5: `at` on a
+# collapse_levels fit was silently ignored.
+# ---------------------------------------------------------------------------
+
+# apt_full subsample with a second between-subject factor `site` whose
+# (Female, B) cell has no subjects (probe: scratchpad bd3/probe-fixtures.R).
+.cgm_nlme_incomplete_data <- function() {
+  data(apt_full, package = "beezdemand")
+  d <- apt_full[apt_full$gender %in% c("Male", "Female"), ]
+  d$gender <- droplevels(factor(d$gender))
+  ids <- unique(d[c("id", "gender")])
+  set.seed(1)
+  ids$site <- ifelse(ids$gender == "Female", "A", sample(c("A", "B"), nrow(ids), TRUE))
+  keep <- unlist(lapply(split(ids$id, paste(ids$gender, ids$site)), head, 20))
+  d <- d[d$id %in% keep, ]
+  d$site <- factor(ids$site[match(d$id, ids$id)])
+  d$id <- droplevels(factor(d$id))
+  d$y_ll4 <- ll4(d$y, lambda = 4)
+  d
+}
+
+.cgm_geom_mean <- function(v) {
+  v <- v[is.finite(v) & v > 0]
+  exp(mean(log(v)))
+}
+
+test_that("calc_group_metrics.beezdemand_nlme averages over observed cells only (F-BD6-3)", {
+  skip_on_cran()
+  d <- .cgm_nlme_incomplete_data()
+  cells <- unique(d[c("gender", "site")])
+  expect_identical(nrow(cells), 3L)  # (Female, B) unobserved
+
+  fit <- suppressMessages(fit_demand_mixed(
+    d, equation_form = "zben", factors = c("gender", "site"),
+    factor_interaction = FALSE, y_var = "y_ll4", x_var = "x", id_var = "id"))
+  expect_false(is.null(fit$model))  # a fitting regression must fail, not skip
+
+  eq <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    fit, param = "Q0", factors_in_emm = NULL, include_ev = FALSE)))
+  ea <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    fit, param = "alpha", factors_in_emm = NULL, include_ev = FALSE)))
+  expect_identical(nrow(eq), 4L)  # the full factorial grid has the empty cell
+  ref_obs <- beezdemand_calc_pmax_omax(
+    model_type = "snd",
+    params = list(alpha = .cgm_geom_mean(merge(ea, cells)$alpha_natural),
+                  q0 = .cgm_geom_mean(merge(eq, cells)$Q0_natural)),
+    param_scales = list(alpha = "natural", q0 = "natural"))
+  ref_full <- beezdemand_calc_pmax_omax(
+    model_type = "snd",
+    params = list(alpha = .cgm_geom_mean(ea$alpha_natural),
+                  q0 = .cgm_geom_mean(eq$Q0_natural)),
+    param_scales = list(alpha = "natural", q0 = "natural"))
+
+  cm <- calc_group_metrics(fit)
+  expect_true(is.numeric(cm$Pmax) && is.finite(cm$Pmax))
+  expect_equal(cm$Pmax, ref_obs$pmax_model, tolerance = 1e-6)
+  expect_equal(cm$Omax, ref_obs$omax_model, tolerance = 1e-6)
+  # Negative control: the full-grid estimand is a different number.
+  expect_false(isTRUE(all.equal(cm$Pmax, ref_full$pmax_model, tolerance = 1e-4)))
+
+  # `at` on one factor restricts the observed cells of that factor.
+  cm_f <- calc_group_metrics(fit, at = list(gender = "Female"))
+  eq_f <- merge(eq, cells[cells$gender == "Female", ])
+  ea_f <- merge(ea, cells[cells$gender == "Female", ])
+  expect_identical(nrow(eq_f), 1L)
+  ref_f <- beezdemand_calc_pmax_omax(
+    model_type = "snd",
+    params = list(alpha = .cgm_geom_mean(ea_f$alpha_natural),
+                  q0 = .cgm_geom_mean(eq_f$Q0_natural)),
+    param_scales = list(alpha = "natural", q0 = "natural"))
+  expect_equal(cm_f$Pmax, ref_f$pmax_model, tolerance = 1e-6)
+  # A requested cell with no data errors instead of extrapolating.
+  expect_error(calc_group_metrics(fit, at = list(gender = "Female", site = "B")),
+               "No usable")
+})
+
+test_that("calc_group_metrics.beezdemand_nlme honours `at` under partial collapse_levels (F-BD6-5)", {
+  skip_on_cran()
+  d <- .cgm_nlme_collapse_data()
+  # Collapse only Q0's factor; alpha keeps the original `grp` column.
+  cl <- list(Q0 = list(grp = list(x = c("A", "B"))))
+  fit <- suppressMessages(fit_demand_mixed(
+    d, equation_form = "zben", factors = "grp",
+    y_var = "y_ll4", x_var = "x", id_var = "id", collapse_levels = cl))
+  expect_false(is.null(fit$model))
+  expect_true("grp_Q0" %in% names(fit$data))
+  expect_identical(fit$param_info$factors_alpha, "grp")
+
+  cm_all <- calc_group_metrics(fit)
+  cm_a <- calc_group_metrics(fit, at = list(grp = "A"))
+  cm_c <- calc_group_metrics(fit, at = list(grp = "C"))
+  for (cm in list(cm_all, cm_a, cm_c)) expect_true(is.finite(cm$Pmax))
+  expect_identical(cm_a$conditioned_on$factors$grp, "A")
+  # Before batch 3 the restriction was silently dropped (cm_a == cm_all).
+  expect_false(isTRUE(all.equal(cm_a$Pmax, cm_all$Pmax, tolerance = 1e-4)))
+  expect_false(isTRUE(all.equal(cm_c$Pmax, cm_all$Pmax, tolerance = 1e-4)))
+  expect_false(isTRUE(all.equal(cm_a$Pmax, cm_c$Pmax, tolerance = 1e-4)))
+
+  # Reference for at = "C": Q0 cell = collapsed label "C" (unchanged level),
+  # alpha cell = "C".
+  eq <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    fit, param = "Q0", factors_in_emm = NULL, include_ev = FALSE)))
+  ea <- suppressWarnings(suppressMessages(get_demand_param_emms(
+    fit, param = "alpha", factors_in_emm = NULL, include_ev = FALSE)))
+  ref_c <- beezdemand_calc_pmax_omax(
+    model_type = "snd",
+    params = list(alpha = ea$alpha_natural[ea$grp == "C"],
+                  q0 = eq$Q0_natural[eq$grp == "C"]),
+    param_scales = list(alpha = "natural", q0 = "natural"))
+  expect_equal(cm_c$Pmax, ref_c$pmax_model, tolerance = 1e-6)
+
+  # The internal collapsed column is not a user-facing name (Codex END pass:
+  # it was accepted and then silently skipped).
+  expect_error(calc_group_metrics(fit, at = list(grp_Q0 = "x")), "original factor name")
+})
+
+test_that("calc_group_metrics.beezdemand_nlme runs when a parameter collapses to one level", {
+  skip_on_cran()
+  d <- .cgm_nlme_collapse_data()
+  cl <- list(alpha = list(grp = list(all = c("A", "B", "C"))))
+  fit <- suppressMessages(suppressWarnings(fit_demand_mixed(
+    d, equation_form = "zben", factors = "grp",
+    y_var = "y_ll4", x_var = "x", id_var = "id", collapse_levels = cl)))
+  expect_false(is.null(fit$model))
+  cm <- calc_group_metrics(fit)
+  expect_true(is.finite(cm$Pmax))
+  cm_b <- calc_group_metrics(fit, at = list(grp = "B"))
+  expect_true(is.finite(cm_b$Pmax))
+  expect_false(isTRUE(all.equal(cm_b$Pmax, cm$Pmax, tolerance = 1e-4)))
+})

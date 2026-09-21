@@ -28,8 +28,12 @@ test_that("vcov.beezdemand_tmb returns symmetric PSD matrix with names", {
   skip_on_cran()
   skip_if_not_installed("TMB")
   data(apt_full, package = "beezdemand")
+  # A PSD covariance needs a PD Hessian, so this needs a fit that converges.
+  # On these data the exponential 2-RE gender model does so at the k the free
+  # parameter finds (1.755) but not at the default k = 2, where nlminb reports
+  # false convergence -- so estimate_k is pinned here rather than left default.
   fit <- fit_demand_tmb(apt_full, equation = "exponential", factors = "gender",
-                        verbose = 0)
+                        estimate_k = TRUE, verbose = 0)
   V <- vcov(fit)
   expect_true(is.matrix(V))
   expect_true(isSymmetric(V, tol = 1e-8))

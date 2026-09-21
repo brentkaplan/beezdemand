@@ -20,8 +20,13 @@ Numeric vector of length \code{nobs(object)}.
 }
 \description{
 Response-scale residuals against the marginal (default) or conditional
-fitted values. \code{type = "pearson"} divides by the residual SD
-\code{exp(coef[["logsigma_e"]])}.
+fitted values. \code{type = "pearson"} returns the Part-II standardized
+residual on the model (log-consumption) scale,
+\code{(log(y) - mu_i) / sigma_e}, where \code{mu_i} is the subject-conditional
+linear predictor (\code{predict(type = "link")}) and \code{sigma_e} is
+\code{exp(coef[["logsigma_e"]])}; observations with \code{y = 0} have no Part-II
+residual and are \code{NA}. (Before 0.3.0 the raw-scale residual was divided by
+the log-scale \code{sigma_e}, which changed with the consumption unit.)
 }
 \seealso{
 \code{\link[=fitted.beezdemand_hurdle]{fitted.beezdemand_hurdle()}}.

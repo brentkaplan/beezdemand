@@ -614,6 +614,23 @@ fit_cp_linear <- function(
     # Fit model
     model <- lme4::lmer(formula, data = data, ...)
 
+    # F-BD11-4: keep lme4's convergence verdict on the object. lme4 reports
+    # optimizer failure through `optinfo$conv$opt` (non-zero) and its own
+    # post-fit checks through `optinfo$conv$lme4$messages`; it warns at fit
+    # time, but nothing downstream could see the verdict afterwards.
+    conv_info <- tryCatch(model@optinfo$conv, error = function(e) NULL)
+    conv_msgs <- as.character(unlist(conv_info$lme4$messages))
+    opt_code <- conv_info$opt
+    converged <- (is.null(opt_code) || identical(as.numeric(opt_code), 0)) &&
+      length(conv_msgs) == 0L
+    if (!converged) {
+      cli::cli_warn(c(
+        "!" = "lme4 reported a convergence problem for the mixed cross-price model.",
+        "i" = if (length(conv_msgs)) "lme4: {paste(conv_msgs, collapse = '; ')}",
+        "i" = "Fixed effects, standard errors and derived quantities from this fit may be unreliable."
+      ), class = c("beezdemand_cp_lmer_nonconverged_warning", "beezdemand_warning"))
+    }
+
     if (!return_all) {
       return(model)
     } else {
@@ -625,7 +642,10 @@ fit_cp_linear <- function(
         data = data,
         log10x = log10x,
         group_effects = group_effects,
-        random_slope = random_slope
+        random_slope = random_slope,
+        converged = converged,
+        convergence_messages = conv_msgs,
+        REML = tryCatch(lme4::isREML(model), error = function(e) TRUE)
       )
       class(result) <- "cp_model_lmer"
       return(result)

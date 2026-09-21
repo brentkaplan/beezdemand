@@ -10,7 +10,7 @@
   type = c("demand", "response", "link", "parameters", "probability"),
   prices = NULL,
   marginal = FALSE,
-  marginal_method = c("kde", "normal", "empirical"),
+  marginal_method = c("normal", "kde", "empirical"),
   correction = TRUE,
   seed = 42L,
   se.fit = FALSE,
@@ -54,9 +54,15 @@ Default is \code{FALSE}, which gives conditional (RE = 0) predictions
 representing a "typical" subject at the center of the RE distribution.}
 
 \item{marginal_method}{Character. Method for marginal integration; one of
-\code{"kde"} (default, kernel density estimate of BLUPs), \code{"normal"} (integrate
-over the model-assumed N(0, sigma_a) distribution), or \code{"empirical"}
-(simple average over BLUPs). Ignored when \code{marginal = FALSE}.}
+\code{"normal"} (default; integrate over the model-assumed N(0, sigma_a)
+distribution of the zero-component intercept, over the whole real
+line), \code{"kde"} (kernel density estimate of the shrunken BLUPs), or
+\code{"empirical"} (simple average over the BLUPs). \code{"normal"} is the
+model-consistent choice: it integrates over the same distribution the
+fitted likelihood integrates over. \code{"kde"} and \code{"empirical"} are
+descriptive summaries of the shrunken BLUPs, which understate the
+random-effect spread (see Details). The default was \code{"kde"} in the
+development versions before 0.3.0. Ignored when \code{marginal = FALSE}.}
 
 \item{correction}{Logical; if \code{TRUE} (default), applies the lognormal
 retransformation correction \code{exp(sigma_e^2 / 2)} when back-transforming
@@ -86,7 +92,12 @@ for price, \code{prob_zero}, and \code{.fitted} (no subject column).
 Otherwise, a tibble containing the \code{newdata} columns plus \code{.fitted} and
 helper columns \code{predicted_log_consumption}, \code{predicted_consumption},
 \code{prob_zero}, and \code{expected_consumption}. When requested, \code{.se.fit} and
-\code{.lower}/\code{.upper} are included.
+\code{.lower}/\code{.upper} are included. Marginal results carry a
+\code{marginal_method} attribute; Monte Carlo marginal results
+(\code{type = "response"} / \code{"demand"}) also carry a logical
+\code{re_cov_fallback} attribute that is \code{TRUE} when the random-effect draws
+had to use an uncorrelated (diagonal) covariance because the estimated
+covariance was not positive definite.
 }
 \description{
 Returns predictions from a fitted hurdle demand model.
@@ -117,14 +128,18 @@ the random effect distribution, answering "what fraction of the population
 has stopped buying at this price?"
 
 The \code{"kde"} and \code{"empirical"} methods integrate over empirical Bayes
-estimates (BLUPs) of the random intercepts. BLUPs are shrunk toward zero
-compared to the true random effects, so these methods slightly
-underestimate the RE variance. In practice, this shrinkage bias is often
-smaller than the bias from assuming normality when the true RE distribution
-is non-normal. The \code{"normal"} method integrates over the model-assumed
-N(0, sigma_a) distribution, which is correct under the model but may be
-wrong if the normality assumption is violated. Use \code{\link[=plot_qq]{plot_qq()}} to assess
-RE normality.
+estimates (BLUPs) of the random intercepts. They are descriptive rather
+than model-consistent: BLUPs are shrunk toward zero compared to the true
+random effects (more so for subjects with few observations), so these
+methods understate the RE spread, and the marginal curve they produce
+summarises the fitted subjects rather than the population-level quantity
+the model defines. The \code{"normal"} method integrates over the model-assumed
+N(0, sigma_a) distribution, which is the model-consistent marginal (the
+same one the fitted likelihood integrates over) and is the choice to use
+when the marginal curve is reported as an estimate. It can be wrong only
+in the way the model itself is wrong, that is, if the normality assumption
+fails. The default remains \code{"kde"} for continuity with earlier versions.
+Use \code{\link[=plot_qq]{plot_qq()}} to assess RE normality.
 }
 
 \subsection{Conditional vs. marginal demand predictions}{

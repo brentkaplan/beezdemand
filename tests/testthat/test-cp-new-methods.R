@@ -328,3 +328,17 @@ test_that("nobs returns NA on NULL model", {
   expect_true(is.na(nobs(fake_lm)))
   expect_true(is.na(nobs(fake_lmer)))
 })
+
+# --- audit 2026-09-06, F-BD11-2: residual scale for the exponential form ------
+
+test_that("augment.cp_model_nls returns model-scale residuals for the exponential form", {
+  skip_on_cran()
+  dat <- data.frame(id = 1, x = c(2, 4, 8, 16, 32, 64), y = c(3, 5, 5, 16, 17, 13),
+                    target = "alt", group = "E")
+  fit <- fit_cp_nls(dat, equation = "exponential", return_all = TRUE)
+  skip_if(is.null(fit$model))
+  aug <- augment(fit)
+  # Previously .resid was y - log10-scale fitted (e.g. 14.9 for y = 16).
+  expect_equal(aug$.resid, as.numeric(stats::residuals(fit$model)), tolerance = 1e-10)
+  expect_lt(max(abs(aug$.resid)), 1)
+})

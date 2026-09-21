@@ -34,7 +34,7 @@ remain on their internal scales; use \code{\link[=summary]{summary()}} or
 
 \item{method}{Character. \code{"wald"} (default) returns Hessian-based
 Wald intervals (\verb{coef +/- z * se}). \code{"simulate"} draws \code{R} parametric
-Monte Carlo samples from the joint asymptotic Gaussian posterior
+Monte Carlo samples from the asymptotic Gaussian sampling approximation
 \eqn{N(\hat\beta, \hat\Sigma)} (with \eqn{\hat\Sigma = }\code{vcov(object)})
 and reports per-coefficient empirical quantiles.}
 
@@ -56,7 +56,8 @@ Confidence Intervals for TMB Model Parameters
 }
 \details{
 \code{method = "simulate"} is Monte Carlo simulation from the
-asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+asymptotic Gaussian sampling approximation to the MLE (neither a
+Bayesian posterior, nor a data-resampling bootstrap, nor
 a profile-likelihood interval). Because the sampled distribution is
 the same Gaussian that Wald assumes, the simulated per-coefficient
 quantiles converge to the Wald intervals as \code{R -> Inf}; the method does

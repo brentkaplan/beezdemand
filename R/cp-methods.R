@@ -354,7 +354,9 @@ print.summary.cp_model_nls <- function(x, ...) {
     cat(
       "qalone (Q_alone):",
       format(x$derived_metrics$qalone, digits = 4),
-      " - consumption at zero alternative price\n"
+      " - consumption as the alternative price grows without bound",
+      "(the curve's asymptote; at an alternative price of 0 the model gives",
+      "qalone scaled by 10^I)\n"
     )
     cat(
       "I:",
@@ -796,7 +798,11 @@ summary.cp_model_lmer <- function(object, ...) {
     r2_conditional = r2$R2_conditional,
     AIC = aic,
     BIC = bic,
-    residuals = residuals(object$model)
+    residuals = residuals(object$model),
+    # F-BD11-4: carried from fit_cp_linear(); NULL for objects built before
+    # the field existed.
+    converged = object$converged,
+    convergence_messages = object$convergence_messages
   )
   class(result) <- "summary.cp_model_lmer"
   return(result)
@@ -1052,13 +1058,19 @@ tidy.cp_model_lm <- function(x, ...) {
 #' @export
 glance.cp_model_lm <- function(x, ...) {
   if (is.null(x$model)) {
+    # One all-NA row with broom::glance.lm's columns (F-BD11-4).
     return(tibble::tibble(
       r.squared = NA_real_,
       adj.r.squared = NA_real_,
       sigma = NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
-      df = NA_integer_,
+      df = NA_real_,
+      logLik = NA_real_,
+      AIC = NA_real_,
+      BIC = NA_real_,
+      deviance = NA_real_,
+      df.residual = NA_integer_,
       nobs = NA_integer_
     ))
   }
@@ -1068,18 +1080,36 @@ glance.cp_model_lm <- function(x, ...) {
 #' Extract coefficients from a mixed-effects cross-price model in tidy format
 #'
 #' @param x A cp_model_lmer object.
-#' @param effects Which effects to return: "fixed" (default), "random", or "ran_pars".
+#' @param effects Which effects to return: `"fixed"` (default), `"ran_vals"`
+#'   (conditional modes of the random effects), or `"ran_pars"` (random-effect
+#'   standard deviations and correlations). `"random"` is accepted as an alias
+#'   for `"ran_vals"`.
 #' @param ... Additional arguments passed to broom.mixed::tidy.
-#' @return A tibble with tidy coefficient information.
+#' @return A tibble with tidy coefficient information. When the model is
+#'   `NULL` (the fit failed) a zero-row tibble with the same columns as the
+#'   corresponding successful call is returned.
 #' @export
-tidy.cp_model_lmer <- function(x, effects = c("fixed", "random", "ran_pars"), ...) {
+tidy.cp_model_lmer <- function(x, effects = c("fixed", "ran_vals", "ran_pars", "random"), ...) {
   effects <- match.arg(effects)
+  # broom.mixed names the conditional-mode table "ran_vals"; "random" used to
+  # pass match.arg() here and then error inside broom.mixed (F-BD11-4).
+  if (identical(effects, "random")) effects <- "ran_vals"
   if (is.null(x$model)) {
-    return(tibble::tibble(
-      effect = character(0),
-      term = character(0),
-      estimate = numeric(0),
-      std.error = numeric(0)
+    # Typed empties mirroring broom.mixed::tidy.merMod's columns per `effects`.
+    return(switch(
+      effects,
+      fixed = tibble::tibble(
+        effect = character(0), term = character(0), estimate = numeric(0),
+        std.error = numeric(0), statistic = numeric(0)
+      ),
+      ran_vals = tibble::tibble(
+        effect = character(0), group = character(0), level = character(0),
+        term = character(0), estimate = numeric(0), std.error = numeric(0)
+      ),
+      ran_pars = tibble::tibble(
+        effect = character(0), group = character(0), term = character(0),
+        estimate = numeric(0)
+      )
     ))
   }
   if (!requireNamespace("broom.mixed", quietly = TRUE)) {
@@ -1092,24 +1122,40 @@ tidy.cp_model_lmer <- function(x, effects = c("fixed", "random", "ran_pars"), ..
 #'
 #' @param x A cp_model_lmer object.
 #' @param ... Additional arguments passed to broom.mixed::glance.
-#' @return A tibble with model summary statistics.
+#' @return A tibble with model summary statistics: the columns of
+#'   `broom.mixed::glance()` for the underlying `merMod` fit, followed by
+#'   `converged` (logical; `TRUE` when lme4 reported no convergence problem,
+#'   `FALSE` when it did, `NA` when the fit predates the stored metadata or
+#'   failed). `converged` mirrors `broom::glance.nls()`'s `isConv` so a
+#'   batch of fits can be screened programmatically; `print()` and
+#'   `summary()` report the same flag.
 #' @export
 glance.cp_model_lmer <- function(x, ...) {
+  converged_flag <- if (is.null(x$converged)) NA else isTRUE(x$converged)
   if (is.null(x$model)) {
-    return(tibble::tibble(
+    # One all-NA row with broom.mixed::glance.merMod's columns. The criterion
+    # column is `REMLcrit` for a REML fit and `deviance` for an ML fit;
+    # fit_cp_linear() records `REML` on the object, and lme4's default (REML)
+    # is assumed when it is absent. (F-BD11-4)
+    reml <- if (is.null(x$REML)) TRUE else isTRUE(x$REML)
+    out <- tibble::tibble(
       nobs = NA_integer_,
       sigma = NA_real_,
       logLik = NA_real_,
       AIC = NA_real_,
-      BIC = NA_real_,
-      deviance = NA_real_,
-      df.residual = NA_integer_
-    ))
+      BIC = NA_real_
+    )
+    out[[if (reml) "REMLcrit" else "deviance"]] <- NA_real_
+    out$df.residual <- NA_integer_
+    out$converged <- NA
+    return(out)
   }
   if (!requireNamespace("broom.mixed", quietly = TRUE)) {
     missing_package_error("broom.mixed", reason = "to glance mixed-effects models")
   }
-  broom.mixed::glance(x$model, ...)
+  out <- broom.mixed::glance(x$model, ...)
+  out$converged <- converged_flag
+  out
 }
 
 #-------------------------------------------------------------------------------
@@ -1145,7 +1191,14 @@ print.summary.cp_model_lmer <- function(x, ...) {
   cat("Mixed-Effects Linear Cross-Price Demand Model Summary\n")
   cat("====================================================\n\n")
   cat("Formula:", deparse(x$formula), "\n")
-  cat("Method:", x$method, "\n\n")
+  cat("Method:", x$method, "\n")
+  if (isFALSE(x$converged)) {
+    cat("Converged: no",
+        if (length(x$convergence_messages))
+          paste0(" (", paste(x$convergence_messages, collapse = "; "), ")")
+        else "", "\n", sep = "")
+  }
+  cat("\n")
   cat("Fixed Effects:\n")
   printCoefmat(x$coefficients)
   cat("\nRandom Effects:\n")
@@ -2056,6 +2109,13 @@ print.cp_model_nls <- function(x, ...) {
   cat(sprintf("  Method:       %s\n", x$method %||% "<unknown>"))
   n <- tryCatch(stats::nobs(x$model), error = function(e) NA_integer_)
   if (length(n) && !is.na(n)) cat(sprintf("  Observations: %d\n", as.integer(n)))
+  # F-BD11-4: a non-converged winning fit was printed like any other.
+  if (identical(x$convergence$isConv, FALSE)) {
+    msg <- x$convergence$stopMessage
+    cat(sprintf("  Converged:    no%s\n",
+                if (length(msg) == 1L && !is.na(msg) && nzchar(msg))
+                  paste0(" (", msg, ")") else ""))
+  }
   coefs <- tryCatch(stats::coef(x$model), error = function(e) NULL)
   if (!is.null(coefs) && length(coefs) > 0) {
     cat("\nCoefficients:\n")
@@ -2108,6 +2168,13 @@ print.cp_model_lmer <- function(x, ...) {
   }
   n <- tryCatch(stats::nobs(x$model), error = function(e) NA_integer_)
   if (length(n) && !is.na(n)) cat(sprintf("  Observations: %d\n", as.integer(n)))
+  # F-BD11-4: surface lme4's convergence verdict (stored by fit_cp_linear()).
+  if (isFALSE(x$converged)) {
+    msgs <- x$convergence_messages
+    cat(sprintf("  Converged:    no%s\n",
+                if (length(msgs) > 0) paste0(" (", paste(msgs, collapse = "; "), ")")
+                else ""))
+  }
   if (requireNamespace("lme4", quietly = TRUE)) {
     fe <- tryCatch(lme4::fixef(x$model), error = function(e) NULL)
     if (!is.null(fe) && length(fe) > 0) {
@@ -2128,16 +2195,28 @@ print.cp_model_lmer <- function(x, ...) {
 # .resid. cp_model_lmer additionally returns .fixed (population-level
 # predictions ignoring random effects).
 
+# Typed empty for a failed fit (F-BD11-4): the modelling-data columns (when
+# the object still carries them) with zero rows, plus the documented fitted
+# columns, so the shape matches a successful augment() minus the rows.
+.cp_augment_empty <- function(x, extra_cols) {
+  base <- if (!is.null(x$data)) tibble::as_tibble(x$data)[0, , drop = FALSE] else
+    tibble::tibble(.rows = 0L)
+  for (col in extra_cols) base[[col]] <- numeric(0)
+  base
+}
+
 #' Augment a Cross-Price Demand Model (Nonlinear)
 #'
 #' @param x A `cp_model_nls` object.
 #' @param ... Additional arguments (unused).
 #' @return A tibble with the original modelling data and added `.fitted` and
-#'   `.resid` columns.
+#'   `.resid` columns. Both are on the model's response scale: raw `y` for
+#'   `equation = "exponentiated"` / `"additive"`, and `log10(y)` for
+#'   `equation = "exponential"` (which is fit to `log10(y)`).
 #' @export
 augment.cp_model_nls <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
-    return(tibble::as_tibble(data.frame()))
+    return(.cp_augment_empty(x, c(".fitted", ".resid")))
   }
   fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
   out <- tibble::as_tibble(x$data)
@@ -2148,9 +2227,16 @@ augment.cp_model_nls <- function(x, ...) {
     return(out)
   }
   fitted_vals <- fitted_res
+  resid_vals <- tryCatch(stats::residuals(x$model), error = function(e) NULL)
   if (nrow(out) == length(fitted_vals)) {
     out$.fitted <- as.numeric(fitted_vals)
-    out$.resid <- if ("y" %in% names(out)) out$y - out$.fitted else NA_real_
+    # Model-scale residuals (audit 2026-09-06, F-BD11-2): the exponential
+    # form is fit to log10(y), so `y - .fitted` mixed scales.
+    out$.resid <- if (!is.null(resid_vals) && length(resid_vals) == nrow(out)) {
+      as.numeric(resid_vals)
+    } else {
+      NA_real_
+    }
   } else {
     .cp_warn_augment_omitted(
       .cp_augment_omit_reason(".fitted/.resid", "fitted()", fitted_vals, nrow(out))
@@ -2168,7 +2254,7 @@ augment.cp_model_nls <- function(x, ...) {
 #' @export
 augment.cp_model_lm <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
-    return(tibble::as_tibble(data.frame()))
+    return(.cp_augment_empty(x, c(".fitted", ".resid")))
   }
   fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
   resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)
@@ -2201,7 +2287,7 @@ augment.cp_model_lm <- function(x, ...) {
 #' @export
 augment.cp_model_lmer <- function(x, ...) {
   if (is.null(x$model) || is.null(x$data)) {
-    return(tibble::as_tibble(data.frame()))
+    return(.cp_augment_empty(x, c(".fitted", ".resid", ".fixed")))
   }
   fitted_res <- tryCatch(stats::fitted(x$model), error = function(e) e)
   resid_res <- tryCatch(stats::residuals(x$model), error = function(e) e)

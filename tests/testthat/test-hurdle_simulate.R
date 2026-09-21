@@ -686,3 +686,62 @@ test_that("run_hurdle_monte_carlo(seed = ) restores the caller's RNG state", {
   ))
   expect_identical(.Random.seed, before)
 })
+
+test_that("run_hurdle_monte_carlo() evaluates k and alpha (natural scale) for converged replicates", {
+  skip_if_not_installed("TMB")
+  skip_on_cran()
+  # Regression: the estimates were pulled from fit$model$coefficients by the
+  # names "k"/"alpha", which that slot stores as "log_k"/"log_alpha", so both
+  # rows were NA in every replicate and $summary never assessed them.
+  mc <- run_hurdle_monte_carlo(n_sim = 2, n_subjects = 40, n_random_effects = 2,
+                               verbose = FALSE, seed = 3)
+  ok_rows <- mc$estimates[mc$estimates$parameter %in% c("k", "alpha") & mc$estimates$converged, ]
+  expect_gt(nrow(ok_rows), 0)
+  expect_false(anyNA(ok_rows$estimate))
+  expect_false(anyNA(ok_rows$se))
+  expect_true(all(ok_rows$estimate > 0))
+  s <- mc$summary
+  expect_false(is.na(s$mean_estimate[s$parameter == "k"]))
+  expect_false(is.na(s$mean_estimate[s$parameter == "alpha"]))
+  expect_equal(s$n_valid[s$parameter == "k"], s$n_valid[s$parameter == "beta0"])
+})
+
+# =============================================================================
+# Release-correctness audit 2026-09-06 (F-BD9-3): the 3-RE koff simulator
+# must generate from the model the 3-RE TMB template fits
+# (alpha_i = exp(log(alpha) + c_i), src/HurdleDemand3RE.h), and the Monte
+# Carlo truth for rho_bc_raw must go through the partial-correlation mapping.
+# =============================================================================
+
+test_that("3-RE koff simulator uses a multiplicative alpha random effect", {
+  # With a huge sigma_c and additive alpha, subjects with c_i < -alpha had an
+  # INCREASING consumption curve. Multiplicative alpha_i is always positive,
+  # so log-consumption must be non-increasing in price for every subject when
+  # the residual noise is (numerically) off.
+  sim <- simulate_hurdle_data(n_subjects = 30, n_random_effects = 3,
+                              sigma_c = 3, sigma_e = 1e-8, seed = 11,
+                              stop_at_zero = FALSE)
+  pos <- sim[sim$y > 0, ]
+  ok <- vapply(split(pos, pos$id), function(d) {
+    d <- d[order(d$x), ]
+    all(diff(log(d$y)) <= 1e-6)
+  }, logical(1))
+  expect_true(all(ok))
+  # And the generated Part II reproduces the C++ mean exactly for one subject.
+  tp <- attr(sim, "true_params")
+  d1 <- pos[pos$id == pos$id[1], ]
+  alpha_1 <- exp(log(tp$alpha) + d1$c_i[1])
+  mu <- (tp$log_q0 + d1$b_i[1]) + tp$k * (exp(-alpha_1 * d1$x) - 1)
+  expect_equal(log(d1$y), mu, tolerance = 1e-6)
+})
+
+test_that(".hurdle_rho_bc_raw_from_corr() inverts the LKJ-Cholesky partial-correlation mapping", {
+  raw <- .hurdle_rho_bc_raw_from_corr(rho_ab = 0.5, rho_ac = 0.5, rho_bc = 0.25)
+  expect_equal(raw, 0)
+  # Round trip through the forward mapping used in src/HurdleDemand3RE.h.
+  fwd <- function(rho_ab, rho_ac, raw) rho_ab * rho_ac + tanh(raw) * sqrt((1 - rho_ab^2) * (1 - rho_ac^2))
+  for (rho in list(c(0.3, -0.2, 0.1), c(0, 0, 0.6), c(0.7, 0.6, 0.5))) {
+    raw <- .hurdle_rho_bc_raw_from_corr(rho[1], rho[2], rho[3])
+    expect_equal(fwd(rho[1], rho[2], raw), rho[3])
+  }
+})

@@ -410,7 +410,14 @@ NULL
     ))
   }
   
-  p_min <- max(price_range[1], 1e-6)  # Avoid exact zero
+  # Honour a positive lower bound as supplied (the zben analytic domain can
+  # legitimately sit below 1e-6 for very large alpha * Q0); only an
+  # observed range starting at zero (or below) gets the small positive floor.
+  p_min <- if (is.finite(price_range[1]) && price_range[1] > 0) {
+    price_range[1]
+  } else {
+    1e-6
+  }
 
   p_max <- price_range[2]
   
@@ -425,18 +432,63 @@ NULL
     ))
   }
   
+  safe_e <- function(p) {
+    val <- expenditure_fn(p)
+    if (!is.finite(val)) return(-Inf)
+    val
+  }
+
+  # Expenditure curves are not always unimodal (the zben LL4 back-transform can
+  # give two local maxima), and optimize() alone converges to whichever local
+  # maximum its golden-section steps happen to bracket -- so the answer used to
+  # depend on the observed price range. Scan a dense log-price grid first to
+  # locate the GLOBAL maximum, then refine with optimize() inside the
+  # bracketing grid cells.
+  # Evaluate the grid in one vectorised call when the expenditure function
+  # supports it (the engine's own curves do; boot_demand() calls this once
+  # per draw), falling back to element-wise evaluation otherwise.
+  eval_grid <- function(p) {
+    v <- tryCatch(expenditure_fn(p), error = function(e) NULL)
+    if (!is.numeric(v) || length(v) != length(p)) {
+      v <- vapply(p, safe_e, numeric(1))
+    }
+    v[!is.finite(v)] <- -Inf
+    v
+  }
   opt_result <- tryCatch(
     {
-      stats::optimize(
-        f = function(p) {
-          val <- expenditure_fn(p)
-          if (!is.finite(val)) return(-Inf)
-          val
-        },
-        interval = c(p_min, p_max),
-        maximum = TRUE,
-        tol = .Machine$double.eps^0.5
-      )
+      n_grid <- 2001L
+      lp <- seq(log(p_min), log(p_max), length.out = n_grid)
+      e_grid <- eval_grid(exp(lp))
+      if (!any(is.finite(e_grid))) stop("no finite expenditure on the grid")
+      # Refine EVERY grid-local maximum (leftmost point of a plateau; the
+      # endpoints count), not just the tallest sample: two nearly tied peaks
+      # with different curvature can be ranked wrongly by the samples alone.
+      # This is still a heuristic for arbitrary functions -- a peak narrower
+      # than a grid cell can be missed, and at most the eight tallest
+      # grid-local maxima are refined -- but the demand curves routed here
+      # are smooth with at most two maxima on the searched domain.
+      left <- c(-Inf, e_grid[-n_grid])
+      right <- c(e_grid[-1L], -Inf)
+      peaks <- which(is.finite(e_grid) & e_grid > left & e_grid >= right)
+      if (length(peaks) == 0L) peaks <- which.max(e_grid)
+      peaks <- peaks[order(e_grid[peaks], decreasing = TRUE)]
+      peaks <- peaks[seq_len(min(length(peaks), 8L))]
+      best <- NULL
+      for (i_pk in peaks) {
+        lo <- exp(lp[max(1L, i_pk - 1L)])
+        hi <- exp(lp[min(n_grid, i_pk + 1L)])
+        refined <- stats::optimize(
+          f = safe_e,
+          interval = c(lo, hi),
+          maximum = TRUE,
+          tol = .Machine$double.eps^0.5
+        )
+        cand <- if (refined$objective >= e_grid[i_pk]) refined else
+          list(maximum = exp(lp[i_pk]), objective = e_grid[i_pk])
+        if (is.null(best) || cand$objective > best$objective) best <- cand
+      }
+      best
     },
     error = function(e) NULL
   )
@@ -474,9 +526,49 @@ NULL
   )
 }
 
+#' Analytic search domain for the zben expenditure maximum
+#'
+#' @description
+#' The zben curve is `y_ll4(p) = q * exp(-t)` with `q = log10(Q0)` and the
+#' dimensionless price `t = alpha * Q0 * p / q`; the natural-scale
+#' expenditure is `E = p * (10^(4 q exp(-t)) - 1)^(1/4)`. Writing
+#' `u = 4 ln(Q0) * exp(-t)`, the stationarity condition
+#' `dE/dp = 0` reduces to `t * u / (4 (1 - exp(-u))) = 1`, and because
+#' `u / (1 - exp(-u)) >= 1` for every `u > 0`, every stationary point
+#' satisfies `t < 4`. All local (hence the global) expenditure maxima
+#' therefore lie at prices below `4 * log10(Q0) / (alpha * Q0)`, whatever
+#' prices were observed; the curve has at most two of them (Codex source
+#' review, release-correctness audit 2026-09-06). Searching this domain
+#' makes the reported `Pmax`/`Omax` independent of the observed price grid,
+#' which a doubling expansion that stops at the first interior peak cannot
+#' guarantee. Verified against a brute-force global search on 2 000 random
+#' `(Q0, alpha)` pairs (0 violations).
+#'
+#' @param alpha_nat,q0_nat Natural-scale zben parameters.
+#' @return Numeric `c(lower, upper)` search interval, or `NULL` when the
+#'   bound cannot be formed (non-finite or non-positive inputs).
+#' @keywords internal
+.zben_search_domain <- function(alpha_nat, q0_nat) {
+  if (is.null(alpha_nat) || is.null(q0_nat)) return(NULL)
+  alpha_nat <- as.numeric(alpha_nat)[1]
+  q0_nat <- as.numeric(q0_nat)[1]
+  if (!is.finite(alpha_nat) || !is.finite(q0_nat) ||
+        alpha_nat <= 0 || q0_nat <= 0) {
+    return(NULL)
+  }
+  q0_log10 <- max(log10(q0_nat), 1e-3)
+  bound <- 4 * q0_log10 / (alpha_nat * q0_nat)
+  if (!is.finite(bound) || bound <= 0) return(NULL)
+  c(bound * 1e-8, bound * 1.05)
+}
+
 #' Numerical Pmax via Optimization with Adaptive Domain Expansion
 #'
 #' @description
+#' Retained as the fallback for a zben curve whose analytic search domain
+#' ([.zben_search_domain()]) cannot be formed; zben fits with valid
+#' parameters search that domain directly and never expand.
+#'
 #' Some demand curves (notably zben's LL4-scale exponential decay
 #' back-transformed to the natural expenditure curve) can have an
 #' unconstrained expenditure-maximizing price well beyond the subject's
@@ -727,6 +819,30 @@ NULL
 #'   - zben: alpha, q0 (TMB-tier zero-bounded exponential; numerical fallback
 #'     only, which requires `price_obs` / `price_range` for the numerical search
 #'     domain; see [.pmax_numerical()])
+#'
+#' @section Multiple expenditure maxima:
+#' Two model families can have more than one local maximum of expenditure,
+#' and the reported Pmax is then a convention rather than the unique
+#' maximiser:
+#' \itemize{
+#'   \item **zben**: on the back-transformed scale the expenditure curve can
+#'     have two peaks, one on each side of the LL4 knee. With
+#'     `F(t) = t * exp(-t)` scaled by `q = log10(Q0)`, the two-peak regime is
+#'     the set of parameters for which the knee falls between the two
+#'     stationary points of the transformed curve (in the engine's notation
+#'     `F(b) < 4 ln Q0 < F(a)`). The engine searches the analytic domain that
+#'     contains every candidate, refines each grid-local maximum, and reports
+#'     the global one; a small change in `alpha` or `Q0` can therefore move
+#'     Pmax discontinuously from one peak to the other. Counts of fits on
+#'     which the old single-start optimiser missed the global peak measure
+#'     optimiser failure; they say nothing about how common the two-peak
+#'     regime is in data.
+#'   \item **HS / hurdle exponential with `k > e`**: the exponential
+#'     expenditure curve is unbounded as price grows, so the analytic Lambert-W
+#'     solution returns the *first* local maximum (the peak before expenditure
+#'     starts rising again), which is the quantity the demand literature
+#'     reports as Pmax. It is not the supremum of expenditure.
+#' }
 #' @param param_scales Named list mapping parameter names to their input scales:
 #'   "natural", "log", or "log10". Default assumes all natural.
 #' @param expenditure_fn Optional function E(p) for numerical fallback. If NULL
@@ -1031,14 +1147,29 @@ beezdemand_calc_pmax_omax <- function(
       }
     }
     
-    # Use numerical optimization. zben's unconstrained expenditure maximum
-    # can sit well beyond the observed price domain; its numerical search
-    # adaptively expands the domain instead of
-    # silently returning the observed-domain edge as Pmax. Other model
-    # types reaching this fallback (e.g. hurdle when analytic fails) keep
-    # the plain observed-domain search, unchanged from before.
-    if (!is.null(expenditure_fn) && !is.null(price_range)) {
-      num_result <- if (identical(model_type_lower, "zben")) {
+    # Use numerical optimization. zben's expenditure maximum can sit well
+    # beyond (or below) the observed price domain and the curve can be
+    # bimodal, so zben searches the analytic domain that provably contains
+    # every stationary point (see .zben_search_domain()) instead of the
+    # observed range; the doubling expansion is only a fallback for
+    # parameters that give no finite bound. Other model types reaching this
+    # fallback (e.g. hurdle when analytic fails) keep the plain
+    # observed-domain search, unchanged from before.
+    zben_domain <- NULL
+    if (identical(model_type_lower, "zben") && !is.null(params_nat)) {
+      zben_domain <- .zben_search_domain(
+        params_nat[["alpha"]] %||% params_nat[["log_alpha"]],
+        params_nat[["q0"]] %||% params_nat[["log_q0"]]
+      )
+    }
+    if (!is.null(expenditure_fn) &&
+          (!is.null(price_range) || !is.null(zben_domain))) {
+      num_result <- if (!is.null(zben_domain)) {
+        r <- .pmax_numerical(expenditure_fn, zben_domain)
+        if (isTRUE(r$success)) r$method <- "numerical_optimize_analytic_domain"
+        r$n_expansions <- 0L
+        r
+      } else if (identical(model_type_lower, "zben")) {
         .pmax_numerical_expand(expenditure_fn, price_range)
       } else {
         .pmax_numerical(expenditure_fn, price_range)

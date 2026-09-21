@@ -4,17 +4,22 @@
 \alias{tidy.cp_model_lmer}
 \title{Extract coefficients from a mixed-effects cross-price model in tidy format}
 \usage{
-\method{tidy}{cp_model_lmer}(x, effects = c("fixed", "random", "ran_pars"), ...)
+\method{tidy}{cp_model_lmer}(x, effects = c("fixed", "ran_vals", "ran_pars", "random"), ...)
 }
 \arguments{
 \item{x}{A cp_model_lmer object.}
 
-\item{effects}{Which effects to return: "fixed" (default), "random", or "ran_pars".}
+\item{effects}{Which effects to return: \code{"fixed"} (default), \code{"ran_vals"}
+(conditional modes of the random effects), or \code{"ran_pars"} (random-effect
+standard deviations and correlations). \code{"random"} is accepted as an alias
+for \code{"ran_vals"}.}
 
 \item{...}{Additional arguments passed to broom.mixed::tidy.}
 }
 \value{
-A tibble with tidy coefficient information.
+A tibble with tidy coefficient information. When the model is
+\code{NULL} (the fit failed) a zero-row tibble with the same columns as the
+corresponding successful call is returned.
 }
 \description{
 Extract coefficients from a mixed-effects cross-price model in tidy format

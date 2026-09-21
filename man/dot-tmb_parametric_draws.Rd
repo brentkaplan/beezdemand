@@ -2,7 +2,7 @@
 % Please edit documentation in R/tmb-parametric-draws.R
 \name{.tmb_parametric_draws}
 \alias{.tmb_parametric_draws}
-\title{Parametric Monte Carlo draws from a TMB fit's asymptotic posterior}
+\title{Parametric Monte Carlo draws from a TMB fit's asymptotic sampling approximation}
 \usage{
 .tmb_parametric_draws(object, R = 1000L, seed = NULL)
 }
@@ -21,7 +21,9 @@ the internal coefficient vector (\code{names(object$model$coefficients)}).
 }
 \description{
 Draws \code{R} samples of the internal-scale fixed-effect parameter vector from
-the joint asymptotic Gaussian posterior \eqn{N(\hat\beta, \hat\Sigma)}, where
+the asymptotic Gaussian sampling approximation \eqn{N(\hat\beta, \hat\Sigma)}
+(a frequentist approximation to the MLE's sampling distribution; no prior
+is involved), where
 \eqn{\hat\beta} is \code{object$model$coefficients} and \eqn{\hat\Sigma} is
 \code{vcov(object)} (the TMB \code{sdreport} fixed-effect covariance,
 \code{sdr$cov.fixed}). The mean vector and covariance are positionally
@@ -34,8 +36,17 @@ derived-metric bootstrap helpers. Draws are fixed-effect-only on the internal
 scale; callers transform to the natural scale or evaluate derived metrics as
 needed.
 
-The symmetric matrix square root is formed via an eigendecomposition with
-negative eigenvalues clamped to zero, matching \code{MASS::mvrnorm}'s
-robustness to a near-semidefinite covariance without taking a dependency.
+The symmetric matrix square root is formed via an eigendecomposition.
+Eigenvalues that are negative only to within numerical tolerance are clamped
+to zero, matching \code{MASS::mvrnorm}'s robustness to a near-semidefinite
+covariance without taking a dependency; a positive-semidefinite but singular
+covariance is therefore still usable (it defines a degenerate Gaussian).
+A materially indefinite covariance is refused instead of being silently
+repaired, because clamping a real negative eigenvalue would draw from a
+different distribution than the one requested (F-BD4-3). "Materially" is
+judged twice: against the largest absolute eigenvalue of the covariance, and
+against the largest absolute eigenvalue of its correlation-scaled form, so
+that a negative variance in a small-scale parameter is not masked by a
+large-scale one.
 }
 \keyword{internal}

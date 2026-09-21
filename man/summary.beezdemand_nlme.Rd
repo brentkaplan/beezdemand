@@ -4,7 +4,12 @@
 \alias{summary.beezdemand_nlme}
 \title{Summary method for beezdemand_nlme}
 \usage{
-\method{summary}{beezdemand_nlme}(object, report_space = c("natural", "log10"), ...)
+\method{summary}{beezdemand_nlme}(
+  object,
+  report_space = c("natural", "log10"),
+  df_method = c("containment", "between"),
+  ...
+)
 }
 \arguments{
 \item{object}{A beezdemand_nlme object}
@@ -14,6 +19,23 @@
 \code{estimate}/\code{std.error} follow this scale; \code{statistic}/\code{p.value} are always on
 the estimation scale (nlme's native containment-t test, which is
 transformation-invariant).}
+
+\item{df_method}{Character. Degrees of freedom used for the fixed-effect
+t tests. \code{"containment"} (default) reports nlme's own containment df
+unchanged. nlme's containment rule assigns the observation-level
+residual degrees of freedom to every fixed effect, including
+between-subject terms (a group factor), for which the effective sample
+size is the number of subjects; the default \code{df} and p-values for such
+terms are therefore anticonservative. \code{"between"} replaces the df of
+each between-subject term (a coefficient whose design column is
+constant within every subject, excluding the parameter intercepts) with
+\code{n_subjects - rank(X_between)}, where \code{X_between} is that parameter's
+subject-level design (intercept plus its between-subject columns), and
+recomputes the p-value from the unchanged t statistic. Intercepts and
+within-subject terms keep containment df in both modes (Pinheiro &
+Bates, 2000, section 2.4.2). Estimates and standard errors never change.
+Satterthwaite / Kenward-Roger df are not available for \code{nlme::nlme()}.
+The TMB backend reports an asymptotic z test instead.}
 
 \item{...}{Additional arguments (passed to summary.nlme)}
 }
@@ -25,7 +47,10 @@ A \code{summary.beezdemand_nlme} object (inherits from
 \item \code{model_class}: "beezdemand_nlme"
 \item \code{backend}: "nlme"
 \item \code{equation_form}: The equation form used ("zben" or "simplified")
-\item \code{coefficients}: Tibble of fixed effects with std.error, statistic, p.value
+\item \code{coefficients}: Tibble of fixed effects with std.error, statistic,
+p.value and \code{df} (the degrees of freedom the p-value uses; see
+\code{df_method})
+\item \code{df_method}: The \code{df_method} in effect
 \item \code{random_effects}: VarCorr output for random effects
 \item \code{logLik}, \code{AIC}, \code{BIC}: Model fit statistics
 }
@@ -33,4 +58,8 @@ A \code{summary.beezdemand_nlme} object (inherits from
 \description{
 Returns a structured summary object containing model coefficients,
 fit statistics, and random effects information.
+}
+\references{
+Pinheiro, J. C., & Bates, D. M. (2000). \emph{Mixed-Effects Models
+in S and S-PLUS}. Springer. Section 2.4.2.
 }

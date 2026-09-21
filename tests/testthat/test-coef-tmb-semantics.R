@@ -73,7 +73,8 @@ test_that("coef(type='subject') on within-subject factor fit matches get_subject
 test_that("coef(type='fixed') returns exactly the fixed-effect columns, k estimated", {
   skip_on_cran()
   data(apt, package = "beezdemand")
-  fit <- fit_demand_tmb(apt, equation = "exponential", verbose = 0)
+  fit <- fit_demand_tmb(apt, equation = "exponential", estimate_k = TRUE,
+                        verbose = 0)
 
   tn <- beezdemand:::.tmb_build_term_names(fit)
   expected_cols <- tn$term[c(tn$q0_idx, tn$alpha_idx)]

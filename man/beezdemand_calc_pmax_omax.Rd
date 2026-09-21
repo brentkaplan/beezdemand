@@ -82,6 +82,32 @@ Unified internal engine for pmax/omax computation. Supports analytic solutions
 (Lambert W for HS/hurdle, closed-form for SND), numerical fallback, and
 observed (row-wise) metrics. Parameter-scale conversions are handled internally.
 }
+\section{Multiple expenditure maxima}{
+
+Two model families can have more than one local maximum of expenditure,
+and the reported Pmax is then a convention rather than the unique
+maximiser:
+\itemize{
+\item \strong{zben}: on the back-transformed scale the expenditure curve can
+have two peaks, one on each side of the LL4 knee. With
+\code{F(t) = t * exp(-t)} scaled by \code{q = log10(Q0)}, the two-peak regime is
+the set of parameters for which the knee falls between the two
+stationary points of the transformed curve (in the engine's notation
+\verb{F(b) < 4 ln Q0 < F(a)}). The engine searches the analytic domain that
+contains every candidate, refines each grid-local maximum, and reports
+the global one; a small change in \code{alpha} or \code{Q0} can therefore move
+Pmax discontinuously from one peak to the other. Counts of fits on
+which the old single-start optimiser missed the global peak measure
+optimiser failure; they say nothing about how common the two-peak
+regime is in data.
+\item \strong{HS / hurdle exponential with \code{k > e}}: the exponential
+expenditure curve is unbounded as price grows, so the analytic Lambert-W
+solution returns the \emph{first} local maximum (the peak before expenditure
+starts rising again), which is the quantity the demand literature
+reports as Pmax. It is not the supremum of expenditure.
+}
+}
+
 \examples{
 \donttest{
 result <- beezdemand_calc_pmax_omax(

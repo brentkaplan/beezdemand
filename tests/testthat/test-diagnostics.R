@@ -371,11 +371,14 @@ test_that("check_demand_model.beezdemand_tmb 2-RE: named near_zero contains both
   expect_output(print(diag), "Model Diagnostics")
 })
 
-test_that("check_demand_model TMB: random_effect SDs are on the log10 scale (TICKET-002 addendum)", {
-  # TICKET-002 addendum: $random_effects$variances now matches the public
-  # summary()$variance_components convention -- Q0/alpha RE SDs on the log10
-  # scale (TICKET-015) -- and the raw natural-log-scale SDs used for the
-  # near-zero degeneracy heuristic are exposed separately as $sd_internal_log.
+test_that("check_demand_model TMB: RE variances, SDs and internal SDs (TICKET-002 addendum; F-BD13-1)", {
+  # TICKET-002 addendum pinned $variances to the public
+  # summary()$variance_components convention -- but those are Q0/alpha RE *SDs*
+  # on the log10 scale (TICKET-015), so the field name and the print label both
+  # lied. F-BD13-1 (audit 2026-09-06): $variances now holds true variances on
+  # the log10 scale, the SDs move to the explicitly named $sd_log10 (which is
+  # what still matches summary()), and $sd_internal_log keeps the raw
+  # natural-log-scale SDs used by the near-zero degeneracy heuristic.
   data(apt, package = "beezdemand")
   fit <- fit_demand_tmb(
     apt, y_var = "y", x_var = "x", id_var = "id",
@@ -386,12 +389,48 @@ test_that("check_demand_model TMB: random_effect SDs are on the log10 scale (TIC
   vc <- summary(fit)$variance_components
   re_summary <- vc$Estimate[!grepl("Residual", vc$Component)]
 
-  # $variances == summary() Q0/alpha rows (log10 scale).
-  expect_equal(unname(diag$random_effects$variances), re_summary,
+  # $sd_log10 == summary() Q0/alpha rows (log10-scale SDs).
+  expect_equal(unname(diag$random_effects$sd_log10), re_summary,
+               tolerance = 1e-8)
+  # $variances is the square of those -- the field name is now true.
+  expect_equal(unname(diag$random_effects$variances), re_summary^2,
                tolerance = 1e-8)
   # $sd_internal_log is the raw natural-log-scale SD (a factor log(10) larger).
   expect_equal(unname(diag$random_effects$sd_internal_log),
                re_summary * log(10), tolerance = 1e-8)
+  # Names stay aligned across the three vectors.
+  expect_identical(names(diag$random_effects$variances),
+                   names(diag$random_effects$sd_log10))
+
+  # The printed line reports the variance, matching its label.
+  out <- paste(capture.output(print(diag)), collapse = "\n")
+  expect_match(out, "variance", fixed = TRUE)
+  expect_match(out, sprintf("%.4g", diag$random_effects$variances[[1]]),
+               fixed = TRUE)
+})
+
+test_that("check_demand_model NLME: $variances holds VarCorr variances (F-BD13-1)", {
+  skip_on_cran()
+  skip_if_not_installed("nlme")
+
+  data(apt, package = "beezdemand")
+  apt$y_ll4 <- ll4(apt$y)
+  fit <- tryCatch(
+    fit_demand_mixed(apt, y_var = "y_ll4", x_var = "x", id_var = "id",
+                     equation_form = "zben"),
+    error = function(e) NULL
+  )
+  skip_if(is.null(fit) || is.null(fit$model), "NLME fixture did not fit here")
+
+  re <- suppressWarnings(check_demand_model(fit))$random_effects
+  skip_if(is.null(re$variances) || length(re$variances) == 0,
+          "no random-effect variances available")
+
+  vc <- nlme::VarCorr(fit$model)
+  skip_if(!("Variance" %in% colnames(vc)), "VarCorr has no Variance column")
+  nm <- names(re$variances)
+  expect_equal(unname(re$variances),
+               as.numeric(vc[nm, "Variance"]), tolerance = 1e-8)
 })
 
 test_that("plot_residuals works for TMB models", {
@@ -518,4 +557,111 @@ test_that("check_demand_model: healthy fits are unaffected (computation_failed F
   expect_no_warning(diag <- check_demand_model(fit))
   expect_false(isTRUE(diag$residuals$computation_failed))
   expect_false(any(grepl("could not be computed", diag$issues)))
+})
+
+# --- F-BD13-2: nested-grouping VarCorr extraction -----------------------------
+# nlme::VarCorr() on a nested lme returns group-header rows ("site =" with a
+# pdMat class string in the Variance cell) and REPEATED parameter rownames per
+# level. Indexing by rowname turned the headers into NA and returned the first
+# level's variance for every level, so the inner level was never reported.
+
+.f132_nested_lme <- function(slope = FALSE) {
+  set.seed(1)
+  d <- expand.grid(site = factor(1:4), subj = factor(1:6), x = 1:5)
+  d$y <- 2 + c(-.5, .2, .4, -.1)[d$site] +
+    rnorm(24, sd = .3)[as.integer(interaction(d$site, d$subj))] +
+    0.5 * d$x + rnorm(nrow(d), sd = .2)
+  if (slope) {
+    nlme::lme(y ~ x, random = ~ x | site/subj, data = d,
+              control = nlme::lmeControl(opt = "optim"))
+  } else {
+    nlme::lme(y ~ x, random = ~ 1 | site/subj, data = d)
+  }
+}
+
+test_that(".check_nlme_random_effects: nested grouping yields one finite variance per level, no NA flags (F-BD13-2)", {
+  fit <- .f132_nested_lme()
+  vc <- nlme::VarCorr(fit)
+  fake <- structure(list(model = fit), class = "beezdemand_nlme")
+  expect_no_warning(res <- beezdemand:::.check_nlme_random_effects(fake))
+  expect_false(isTRUE(res$computation_failed))
+  expect_length(res$variances, 2L)
+  expect_true(all(is.finite(res$variances)))
+  expect_false(anyNA(res$near_zero))
+  expect_false(anyDuplicated(names(res$variances)) > 0)
+  expect_setequal(names(res$variances), c("site:(Intercept)", "subj:(Intercept)"))
+  # Values are the two levels' own variances, in VarCorr order.
+  expect_equal(unname(res$variances["site:(Intercept)"]), as.numeric(vc[2, "Variance"]))
+  expect_equal(unname(res$variances["subj:(Intercept)"]), as.numeric(vc[4, "Variance"]))
+})
+
+test_that(".check_nlme_random_effects: nested random slope keeps every (level, term) pair and the Corr check (F-BD13-2)", {
+  fit <- .f132_nested_lme(slope = TRUE)
+  fake <- structure(list(model = fit), class = "beezdemand_nlme")
+  expect_no_warning(res <- beezdemand:::.check_nlme_random_effects(fake))
+  expect_setequal(
+    names(res$variances),
+    c("site:(Intercept)", "site:x", "subj:(Intercept)", "subj:x")
+  )
+  expect_true(all(is.finite(res$variances)))
+  expect_false(anyNA(res$near_zero))
+  expect_true(is.logical(res$near_singular) && !is.na(res$near_singular))
+})
+
+test_that(".check_nlme_random_effects: single-level fits keep bare parameter names (no regression)", {
+  set.seed(2)
+  d <- data.frame(id = factor(rep(1:8, each = 5)), x = rep(1:5, 8))
+  d$y <- 1 + rnorm(8)[d$id] + 0.3 * d$x + rnorm(40, sd = .2)
+  fit <- nlme::lme(y ~ x, random = ~ 1 | id, data = d)
+  fake <- structure(list(model = fit), class = "beezdemand_nlme")
+  res <- beezdemand:::.check_nlme_random_effects(fake)
+  expect_identical(names(res$variances), "(Intercept)")
+})
+
+# --- F-BD13-1 sub-items: NLME residual check is guarded and flags emptiness ---
+
+test_that(".check_nlme_residuals: residuals() failing both ways -> computation_failed + classed warning", {
+  fake <- structure(list(model = structure(list(), class = "f131_noresid")),
+                    class = "beezdemand_nlme")
+  warns <- testthat::capture_warnings(res <- beezdemand:::.check_nlme_residuals(fake))
+  expect_true(any(grepl("could not be computed", warns)))
+  expect_true(isTRUE(res$computation_failed))
+  expect_false(res$has_outliers)
+  expect_true(is.na(res$mean))
+})
+
+test_that(".check_nlme_residuals: zero residuals is a failed computation, not a clean pass", {
+  registerS3method("residuals", "f131_empty", function(object, ...) numeric(0),
+                   envir = asNamespace("stats"))
+  fake <- structure(list(model = structure(list(), class = "f131_empty")),
+                    class = "beezdemand_nlme")
+  warns <- testthat::capture_warnings(res <- beezdemand:::.check_nlme_residuals(fake))
+  expect_true(any(grepl("could not be computed", warns)))
+  expect_true(isTRUE(res$computation_failed))
+})
+
+test_that("check_demand_model.beezdemand_nlme surfaces a could-not-compute residual issue", {
+  registerS3method("residuals", "f131_empty2", function(object, ...) numeric(0),
+                   envir = asNamespace("stats"))
+  fake <- structure(
+    list(model = structure(list(), class = "f131_empty2"), param_info = list()),
+    class = "beezdemand_nlme"
+  )
+  diag <- suppressWarnings(check_demand_model(fake))
+  expect_true(any(grepl("Residual diagnostics could not be computed", diag$issues)))
+  expect_true(isTRUE(diag$residuals$computation_failed))
+})
+
+test_that(".check_fixed_residuals / .check_hurdle_residuals: non-numeric .resid is a failed computation", {
+  registerS3method("augment", "f131_chr",
+                   function(x, ...) data.frame(.resid = c("a", "b")),
+                   envir = asNamespace("generics"))
+  for (cls in c("beezdemand_fixed", "beezdemand_hurdle")) {
+    fake <- structure(list(), class = c("f131_chr", cls))
+    fn <- if (cls == "beezdemand_fixed") beezdemand:::.check_fixed_residuals else
+      beezdemand:::.check_hurdle_residuals
+    warns <- testthat::capture_warnings(res <- fn(fake))
+    expect_true(any(grepl("could not be computed", warns)), info = cls)
+    expect_true(isTRUE(res$computation_failed), info = cls)
+  }
 })

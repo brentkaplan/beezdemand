@@ -50,6 +50,22 @@ transforms. The convention matches the parameter-level marginalization
 used by \code{get_demand_param_emms()}.
 }
 
+\section{Marginalisation policy (TMB vs NLME)}{
+
+This method averages the log-scale linear predictors with equal weight
+over the factor cells observed in the fitting data and then
+exponentiates. The NLME method
+(\code{calc_group_metrics.beezdemand_nlme()}) follows the same policy:
+per-cell EMMs from \code{emmeans}, rows for unobserved cells dropped,
+equal-weight geometric mean over the remaining cells. Cells of the full
+factorial crossing with no subjects are never averaged over by either
+backend. The two agree for any design fit in log space and can differ
+only when the NLME fit uses \code{param_space = "natural"}. In both
+backends continuous covariates are held at the training mean unless
+\code{at} supplies a single value; a multi-value continuous \code{at}
+entry warns and uses its first value.
+}
+
 \examples{
 \donttest{
 data(apt)

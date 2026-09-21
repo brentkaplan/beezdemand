@@ -216,11 +216,34 @@ test_that(".tmb_parametric_draws-backed confint(simulate) surfaces the hessian_p
   skip_if(!all(is.finite(suppressWarnings(vcov(fit)))),
           "weak fixture's covariance is non-finite on this platform (draws unavailable by design)")
 
+  # F-BD4-3 (audit 2026-09-06): a non-PD Hessian usually leaves a materially
+  # INDEFINITE covariance, which the draws helper now refuses instead of
+  # silently clamping. The hessian_pd warning is still raised exactly once
+  # either way -- vcov() warns before the PSD gate runs -- so the dedup
+  # behaviour this test exists for is asserted on both branches.
+  V <- suppressWarnings(vcov(fit))
+  ev <- eigen(V, symmetric = TRUE)$values
+  indefinite <- any(ev < -max(abs(ev)) * sqrt(.Machine$double.eps))
+
+  err <- NULL
   conds <- .capture_warning_conditions(
-    draws <- beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1)
+    draws <- tryCatch(
+      beezdemand:::.tmb_parametric_draws(fit, R = 50, seed = 1),
+      beezdemand_indefinite_vcov_error = function(e) {
+        err <<- e
+        NULL
+      }
+    )
   )
   expect_identical(.n_hessian_pd_warnings(conds), 1L)
-  expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+
+  if (indefinite) {
+    expect_s3_class(err, "beezdemand_indefinite_vcov_error")
+    expect_null(draws)
+  } else {
+    expect_null(err)
+    expect_equal(dim(draws), c(50, length(fit$model$coefficients)))
+  }
 })
 
 # --- Release 0.3.0 CI fold: non-finite covariance -----------------------------
@@ -248,4 +271,120 @@ test_that(".tmb_parametric_draws refuses a non-finite covariance with a classed 
     dim(beezdemand:::.tmb_parametric_draws(fit, R = 10, seed = 1)),
     c(10, length(fit$model$coefficients))
   )
+})
+
+# --- F-BD4-3 (release-correctness audit 2026-09-06) --------------------------
+# A finite but INDEFINITE covariance used to pass the non-finite guard and get
+# silently repaired by `sqrt(pmax(e$values, 0))`, so draws came from a
+# different (rank-deficient) distribution than the one requested, with no
+# condition raised. It must now refuse with a classed error. Eigenvalues within
+# numerical tolerance of zero are still clamped: a PSD-singular covariance is a
+# legitimate degenerate Gaussian, not a defect.
+
+.fake_tmb_fit_with_cov <- function(V) {
+  nm <- colnames(V)
+  structure(
+    list(
+      model = list(coefficients = stats::setNames(rep(0, ncol(V)), nm)),
+      opt = list(par = stats::setNames(rep(0, ncol(V)), nm)),
+      sdr = list(cov.fixed = V),
+      converged = TRUE,
+      hessian_pd = TRUE
+    ),
+    class = "beezdemand_tmb"
+  )
+}
+
+.sym_from_eigen <- function(values, nm = paste0("p", seq_along(values))) {
+  p <- length(values)
+  Q <- qr.Q(qr(matrix(stats::rnorm(p * p), p, p)))
+  V <- Q %*% diag(values, p, p) %*% t(Q)
+  V <- (V + t(V)) / 2
+  dimnames(V) <- list(nm, nm)
+  V
+}
+
+test_that(".tmb_parametric_draws() refuses a materially indefinite covariance (F-BD4-3)", {
+  V <- matrix(c(1, 2, 2, 1), 2, dimnames = list(c("a", "b"), c("a", "b")))
+  expect_true(all(is.finite(V)))
+  expect_true(min(eigen(V, symmetric = TRUE)$values) < -0.5)
+
+  expect_error(
+    .tmb_parametric_draws(.fake_tmb_fit_with_cov(V), R = 10, seed = 1),
+    class = "beezdemand_indefinite_vcov_error"
+  )
+})
+
+test_that(".tmb_parametric_draws() still accepts PSD-singular and near-zero-negative covariances (F-BD4-3)", {
+  set.seed(11)
+
+  # Exactly singular (a zero eigenvalue) -- a degenerate but valid Gaussian.
+  V_sing <- .sym_from_eigen(c(2, 0.5, 0))
+  d_sing <- .tmb_parametric_draws(.fake_tmb_fit_with_cov(V_sing), R = 20, seed = 1)
+  expect_equal(dim(d_sing), c(20L, 3L))
+  expect_true(all(is.finite(d_sing)))
+
+  # Numerical noise: a negative eigenvalue far below the relative tolerance.
+  V_noise <- .sym_from_eigen(c(2, 0.5, -1e-14))
+  d_noise <- .tmb_parametric_draws(.fake_tmb_fit_with_cov(V_noise), R = 20, seed = 1)
+  expect_equal(dim(d_noise), c(20L, 3L))
+  expect_true(all(is.finite(d_noise)))
+
+  # All-zero covariance: every draw equals the mean vector.
+  V_zero <- matrix(0, 2, 2, dimnames = list(c("a", "b"), c("a", "b")))
+  d_zero <- .tmb_parametric_draws(.fake_tmb_fit_with_cov(V_zero), R = 5, seed = 1)
+  expect_true(all(d_zero == 0))
+})
+
+test_that("the indefinite-covariance gate propagates to confint(simulate) and boot_demand() (F-BD4-3)", {
+  skip_on_cran()
+  skip_if_not_installed("TMB")
+
+  data(apt, package = "beezdemand")
+  fit <- suppressWarnings(fit_demand_tmb(
+    apt, y_var = "y", x_var = "x", id_var = "id",
+    equation = "exponential", verbose = 0
+  ))
+  skip_if(is.null(fit$sdr$cov.fixed), "no sdreport covariance on this platform")
+
+  V <- as.matrix(fit$sdr$cov.fixed)
+  e <- eigen(V, symmetric = TRUE)
+  # Flip the smallest eigenvalue to a materially negative value.
+  e$values[length(e$values)] <- -max(abs(e$values))
+  V_bad <- e$vectors %*% diag(e$values) %*% t(e$vectors)
+  V_bad <- (V_bad + t(V_bad)) / 2
+  dimnames(V_bad) <- dimnames(V)
+
+  fit_bad <- fit
+  fit_bad$sdr$cov.fixed <- V_bad
+
+  expect_error(
+    suppressWarnings(confint(fit_bad, method = "simulate", R = 100, seed = 1)),
+    class = "beezdemand_indefinite_vcov_error"
+  )
+  expect_error(
+    suppressWarnings(boot_demand(fit_bad, statistics = "Pmax", R = 100, seed = 1)),
+    class = "beezdemand_indefinite_vcov_error"
+  )
+})
+
+test_that("the PSD gate is scale-invariant (F-BD4-3 end-pass fold)", {
+  # A spectrum-relative tolerance alone measures a small component's defect
+  # against the largest eigenvalue: for diag(c(1e12, -1)) the tolerance is
+  # ~1.5e4, so the negative variance would pass and that parameter would
+  # silently become deterministic. The correlation-scaled test catches it.
+  V_bad_scale <- diag(c(1e12, -1))
+  dimnames(V_bad_scale) <- list(c("a", "b"), c("a", "b"))
+  expect_error(
+    .tmb_parametric_draws(.fake_tmb_fit_with_cov(V_bad_scale), R = 10, seed = 1),
+    class = "beezdemand_indefinite_vcov_error"
+  )
+
+  # ... while a genuinely PSD covariance with a condition number of 1e24 is
+  # still accepted: disparate scales are not by themselves a defect.
+  V_ill <- diag(c(1e12, 1e-12))
+  dimnames(V_ill) <- list(c("a", "b"), c("a", "b"))
+  d_ill <- .tmb_parametric_draws(.fake_tmb_fit_with_cov(V_ill), R = 20, seed = 1)
+  expect_equal(dim(d_ill), c(20L, 2L))
+  expect_true(all(is.finite(d_ill)))
 })

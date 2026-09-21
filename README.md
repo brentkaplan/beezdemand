@@ -466,9 +466,10 @@ Key arguments:
 
 - `equation`: `"hs"` (Hursh & Silberberg, 2008; default) or `"koff"`
   (Koffarnus et al., 2015).
-- `k`: scaling constant. By default, calculated from the sample range +
-  0.5. Other options: `"ind"` (individual), `"fit"` (free parameter),
-  `"share"` (shared across all series).
+- `k`: scaling constant, `2` by default (the Hursh & Silberberg
+  convention). Other options: any other number, `"ind"` (calculated per
+  series from its consumption range + 0.5), `"range"` (the same
+  calculation over the whole sample), or `"fit"` (free parameter).
 - `agg`: `NULL` (individual fits; default), `"Mean"` (fit to averaged
   data), or `"Pooled"` (fit to all data ignoring clustering).
 
@@ -816,8 +817,10 @@ post-hoc comparisons.
 `beezdemand` also supports nonlinear mixed-effects demand models to
 estimate subject-level parameters (e.g., Q0 and alpha) while modeling
 fixed effects of conditions (e.g., dose, drug). The `zben` equation form
-pairs well with the included LL4 transformation to handle zeros and wide
-dynamic ranges.
+is defined on an LL4-transformed response: transform consumption with
+`ll4()` first and pass that column as `y_var` (fitting `zben` to raw
+consumption fits the wrong model). The transformation handles zeros and
+wide dynamic ranges.
 
 Key functions:
 
@@ -868,7 +871,8 @@ multi-start optimization. It is the **recommended backend for new
 mixed-effects work**: where the `nlme` PNLS algorithm can fail to
 converge on demand equations, TMB’s exact gradients and multi-start
 optimization give it another route to a solution, and it can
-additionally estimate the scaling constant `k` rather than fixing it.
+additionally estimate the scaling constant `k` rather than holding it at
+the default of 2 (see `?fit_demand_tmb` for when the data support that).
 Fits return `beezdemand_tmb` objects with the full S3 method suite
 (`coef()`, `predict()`, `summary()`, `plot()`, `tidy()`, `glance()`,
 `confint()`, `VarCorr()`, …) and support factor covariates with

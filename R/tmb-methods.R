@@ -59,6 +59,286 @@
   }
 }
 
+#' Per-observation decay exponent of a TMB demand fit
+#'
+#' @description
+#' Recomputes `alpha_ij * Q0_ij * price_ij` at every modelled row, mirroring the
+#' likelihood in `src/MixedDemand.h`, so factor levels, covariates, subject
+#' random effects and each row's own price all enter. The maximum over rows says
+#' how far the fitted curve travels down its decay before the observed prices
+#' run out.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @return A list with the per-row `alpha` and the row-wise decay exponent `u`,
+#'   or `NULL` when the stored design cannot be reassembled.
+#' @keywords internal
+.tmb_row_decay <- function(object) {
+  coefs <- object$model$coefficients
+  beta_q0 <- unname(coefs[names(coefs) == "beta_q0"])
+  beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
+  if (length(beta_q0) == 0L || length(beta_alpha) == 0L) return(NULL)
+
+  # The TMB environment holds exactly what the likelihood saw; the stored
+  # design matrices are the fallback when it is unavailable (a reloaded fit).
+  tdata <- tryCatch(object$tmb_obj$env$data, error = function(e) NULL)
+  X_q0 <- tdata$X_q0 %||% object$formula_details$X_q0
+  X_alpha <- tdata$X_alpha %||% object$formula_details$X_alpha
+  price <- tdata$price %||%
+    object$data[[object$param_info$x_var %||% "x"]]
+  if (is.null(X_q0) || is.null(X_alpha) || is.null(price)) return(NULL)
+  if (ncol(X_q0) != length(beta_q0) ||
+      ncol(X_alpha) != length(beta_alpha) ||
+      nrow(X_q0) != length(price) ||
+      nrow(X_alpha) != length(price)) {
+    return(NULL)
+  }
+
+  log_q0 <- as.vector(X_q0 %*% beta_q0)
+  log_alpha <- as.vector(X_alpha %*% beta_alpha)
+
+  # Subject random effects, when both the Z design and the fitted RE matrix are
+  # to hand. Without them the exponent is the fixed-effect part only.
+  subj <- tdata$subject_id
+  if (!is.null(subj)) {
+    subj <- as.integer(subj) + 1L
+    spars <- object$subject_pars
+    add_re <- function(lin, Z, M) {
+      if (is.null(Z) || is.null(M) || ncol(M) == 0L || ncol(Z) != ncol(M) ||
+          max(subj) > nrow(M) || nrow(Z) != length(lin)) {
+        return(lin)
+      }
+      lin + rowSums(Z * M[subj, , drop = FALSE])
+    }
+    log_q0 <- add_re(log_q0, tdata$Z_q0, attr(spars, "re_q0_mat"))
+    log_alpha <- add_re(log_alpha, tdata$Z_alpha, attr(spars, "re_alpha_mat"))
+  }
+
+  alpha <- exp(log_alpha)
+  list(alpha = alpha, u = alpha * exp(log_q0) * price)
+}
+
+
+#' Screen a free-k TMB fit for the signature of an unidentified k
+#'
+#' @description
+#' For the k-bearing equations the response depends on k through
+#' `k * (exp(-alpha * Q0 * price) - 1)`. While `alpha * Q0 * price` stays small
+#' that term is linear in price with slope `k * alpha`, so only the product is
+#' identified: k is pinned down by the curvature that appears as consumption
+#' approaches its floor. On data that never get there a free k can drift
+#' arbitrarily far with a compensating alpha.
+#'
+#' This is a heuristic screen for that signature rather than a formal
+#' identification test. A `"none"` severity means only that nothing was
+#' detected.
+#'
+#' @details
+#' Two findings point at the ridge directly and grade `"warn"`: a fitted k
+#' outside 0.001 to 1000, and a decay exponent that never reaches 0.05 at any
+#' modelled row. Three weaker findings grade `"suspect"`, because each has
+#' innocent explanations: a fitted alpha below 1e-8 (which also follows from a
+#' price unit rescaling, since alpha is not scale-free), `log_k` resting on a
+#' user-supplied optimizer bound (which may simply be a tight bound), and a
+#' non-positive-definite Hessian with a free k (which says the surface is flat
+#' somewhere without localising that to k).
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @return `NULL` when k was not estimated as a free parameter. Otherwise a list
+#'   with the fitted `k` and `log_k`, the largest decay exponent
+#'   `alpha * Q0 * price` over the modelled rows (`decay_exponent_max`), the
+#'   smallest fitted `alpha_min`, a character vector of `reasons`, `at_boundary`
+#'   (`"log_k"` when it rests on a user-supplied optimizer bound, otherwise
+#'   `character(0)`), and a `severity` of `"warn"`, `"suspect"` or `"none"`.
+#' @keywords internal
+.tmb_k_identification <- function(object) {
+  pinfo <- object$param_info
+  if (is.null(pinfo) || !isTRUE(pinfo$has_k) || !isTRUE(pinfo$estimate_k)) {
+    return(NULL)
+  }
+  coefs <- object$model$coefficients
+  if (!("log_k" %in% names(coefs))) return(NULL)
+
+  log_k <- unname(coefs[["log_k"]])
+  k <- exp(log_k)
+
+  rd <- .tmb_row_decay(object)
+  finite_or_na <- function(x) {
+    x <- x[is.finite(x)]
+    if (length(x) == 0L) NA_real_ else x
+  }
+  decay_max <- if (is.null(rd)) NA_real_ else {
+    v <- finite_or_na(rd$u)
+    if (length(v) == 1L && is.na(v)) NA_real_ else max(v)
+  }
+  alpha_min <- if (is.null(rd)) NA_real_ else {
+    v <- finite_or_na(rd$alpha)
+    if (length(v) == 1L && is.na(v)) NA_real_ else min(v)
+  }
+
+  strong <- character(0)
+  weak <- character(0)
+  at_boundary <- character(0)
+
+  # Points at the ridge directly.
+  if (is.finite(k) && (k > 1e3 || k < 1e-3)) {
+    strong <- c(strong, sprintf(
+      "the fitted k is %.3g, far outside the plausible range 0.001-1000", k))
+  }
+  if (!is.na(decay_max) && decay_max < 0.05) {
+    strong <- c(strong, sprintf(paste(
+      "the decay exponent alpha * Q0 * price reaches only %.3g at any observed",
+      "row, so consumption never approaches its floor and only the product",
+      "k * alpha is identified"), decay_max))
+  }
+
+  # Weaker signals: each has an innocent reading (see Details).
+  if (!is.na(alpha_min) && alpha_min < 1e-8) {
+    weak <- c(weak, sprintf(
+      "the smallest fitted alpha is %.3g (alpha is not scale-free, so this can also follow from the price units)",
+      alpha_min))
+  }
+  bounds <- pinfo$log_k_bounds
+  if (!is.null(bounds) && is.finite(log_k)) {
+    on_bound <- vapply(bounds, function(b) {
+      is.finite(b) && abs(log_k - b) <= 1e-6 * max(1, abs(b))
+    }, logical(1))
+    if (any(on_bound)) {
+      hit <- which(on_bound)[1]
+      at_boundary <- "log_k"
+      weak <- c(weak, sprintf(
+        "log_k rests on the user-supplied %s bound (%.4g)",
+        names(bounds)[hit], bounds[[hit]]))
+    }
+  }
+  if (isFALSE(object$hessian_pd)) {
+    weak <- c(weak, paste(
+      "the Hessian is not positive definite (which does not by itself",
+      "localise the problem to k)"))
+  }
+
+  severity <- if (length(strong) > 0L) {
+    "warn"
+  } else if (length(weak) > 0L) {
+    "suspect"
+  } else {
+    "none"
+  }
+
+  list(
+    k = k,
+    log_k = log_k,
+    decay_exponent_max = decay_max,
+    alpha_min = alpha_min,
+    reasons = c(strong, weak),
+    at_boundary = at_boundary,
+    severity = severity
+  )
+}
+
+
+#' Wording for the free-k identification screen
+#'
+#' @param ki The list returned by [.tmb_k_identification()].
+#' @return A list with `issue` and `recommendation` strings, or `NULL` when the
+#'   screen found nothing.
+#' @keywords internal
+.tmb_k_identification_message <- function(ki) {
+  if (is.null(ki) || ki$severity == "none") return(NULL)
+  lead <- if (ki$severity == "warn") {
+    "k is not identified by these data"
+  } else {
+    "k may not be identified by these data"
+  }
+  list(
+    issue = paste0(lead, ": ", paste(ki$reasons, collapse = "; "), "."),
+    recommendation = paste(
+      "Refit with `estimate_k = FALSE` and a fixed k (the default is k = 2),",
+      "and report a sensitivity fit at a second k."
+    )
+  )
+}
+
+
+#' Rebuild a fixed-effect design matrix pinned to the fitted contrasts
+#'
+#' `model.matrix()` honours `options("contrasts")` at call time. If that
+#' option changed after fitting, a rebuilt design keeps the same column
+#' count but encodes a different basis, so `beta` silently multiplies the
+#' wrong columns (F-BD6-2). This helper passes the fitted matrix's
+#' `contrasts` attribute, verifies the rebuilt columns match the fitted
+#' ones, reorders to the fitted order, and aborts loudly otherwise. The
+#' EMM grid builder applies the same rule (TICKET-016, F1).
+#'
+#' @param fitted_X The design matrix stored on the fit (`formula_details$X_*`).
+#' @param rhs A one-sided formula or its character form.
+#' @param data Data frame to build the design from.
+#' @param param `"Q0"` or `"alpha"`, for messages only.
+#' @return The rebuilt design matrix with the fitted column order and the
+#'   `assign` / `contrasts` attributes `model.matrix()` produced.
+#' @keywords internal
+.tmb_rebuild_fixed_design <- function(fitted_X, rhs, data, param = "Q0") {
+  if (is.character(rhs)) rhs <- stats::as.formula(rhs)
+  X <- stats::model.matrix(rhs, data = data,
+                           contrasts.arg = attr(fitted_X, "contrasts"))
+  fitted_cols <- colnames(fitted_X)
+  if (!is.null(fitted_cols)) {
+    if (!setequal(colnames(X), fitted_cols)) {
+      cli::cli_abort(c(
+        "Could not reproduce the fitted {param} design matrix.",
+        "i" = "Rebuilt columns: {.val {colnames(X)}}.",
+        "i" = "Fitted columns: {.val {fitted_cols}}.",
+        "x" = "This can happen if the model's factor levels or contrasts changed after fitting."
+      ))
+    }
+    if (!identical(colnames(X), fitted_cols)) {
+      asn <- attr(X, "assign")
+      ctr <- attr(X, "contrasts")
+      ord <- match(fitted_cols, colnames(X))
+      X <- X[, ord, drop = FALSE]
+      attr(X, "assign") <- asn[ord]
+      attr(X, "contrasts") <- ctr
+    }
+  }
+  X
+}
+
+#' Recreate `collapse_levels` factor columns in newdata
+#'
+#' `fit_demand_tmb(collapse_levels = ...)` fits on derived columns named
+#' `<factor>_Q0` / `<factor>_alpha` that live only in `object$data`. A user
+#' supplying newdata in the original shape has the original factor but not
+#' those columns, and `predict()` rejected the rows as missing required
+#' columns (F-BD6-4). The old-to-new level map is not stored on the fit, but
+#' it is recoverable exactly from the training data, where both columns are
+#' present. Columns already in `newdata` are left alone; an original level
+#' unseen in training is left `NA` and caught by the later level check.
+#'
+#' @param object A `beezdemand_tmb` fit.
+#' @param newdata Data frame.
+#' @return `newdata` with any missing collapsed columns added.
+#' @keywords internal
+.tmb_recreate_collapsed_columns <- function(object, newdata) {
+  ci <- object$collapse_info
+  if (is.null(ci) || length(ci) == 0L) return(newdata)
+  train <- object$data
+  for (param in names(ci)) {
+    for (orig in names(ci[[param]])) {
+      new_col <- ci[[param]][[orig]]$new_col_name
+      if (is.null(new_col) || new_col %in% names(newdata)) next
+      if (!(orig %in% names(newdata)) ||
+          !all(c(orig, new_col) %in% names(train))) next
+      map <- unique(data.frame(
+        old = as.character(train[[orig]]),
+        new = as.character(train[[new_col]]),
+        stringsAsFactors = FALSE
+      ))
+      new_vals <- map$new[match(as.character(newdata[[orig]]), map$old)]
+      newdata[[new_col]] <- factor(new_vals, levels = levels(train[[new_col]]))
+    }
+  }
+  newdata
+}
+
 #' Map a TMB design-matrix column to its originating model term
 #' @keywords internal
 .tmb_term_assign_map <- function(object, param) {
@@ -69,14 +349,20 @@
   f   <- if (param == "Q0") stats::formula(object)$Q0 else
     stats::formula(object)$alpha
   if (is.null(asn)) {
-    # Rebuild to recover the `assign` attribute (Task 0, Step 3 fallback).
-    X   <- stats::model.matrix(f, data = object$data)
+    # Rebuild to recover the `assign` attribute (Task 0, Step 3 fallback),
+    # pinned to the fit-time contrasts (F-BD6-2).
+    X   <- .tmb_rebuild_fixed_design(X, f, object$data, param)
     asn <- attr(X, "assign")
     cn  <- colnames(X)
   }
   labs <- attr(stats::terms(f), "term.labels")
-  # assign == 0 -> intercept (NA term label); k -> labs[k].
-  stats::setNames(ifelse(asn == 0L, NA_character_, labs[asn]), cn)
+  # assign == 0 -> intercept (NA term label); k -> labs[k]. Index with the
+  # zero clamped to 1: `labs[asn]` would DROP the intercept's 0, shorten the
+  # vector, and let ifelse() recycle it one position out of step (a factor +
+  # covariate design then grouped the wrong columns under each term).
+  lab_by_col <- labs[pmax(asn, 1L)]
+  lab_by_col[asn == 0L] <- NA_character_
+  stats::setNames(lab_by_col, cn)
 }
 
 #' Group beezdemand_tmb fixed effects into testable blocks for anova()
@@ -431,10 +717,21 @@ summary.beezdemand_tmb <- function(
       "Warning: Hessian not positive definite \u2014 standard errors may be unreliable."
     )
   }
+  k_msg <- .tmb_k_identification_message(.tmb_k_identification(object))
+  if (!is.null(k_msg)) {
+    notes <- c(notes, paste(k_msg$issue, k_msg$recommendation))
+  }
   if (length(object$opt_warnings %||% character(0)) > 0) {
     notes <- c(notes, sprintf(
       "Optimizer produced %d warning(s) during fitting.",
       length(object$opt_warnings)
+    ))
+  }
+  if (!is.null(object$opt$rescued_from)) {
+    notes <- c(notes, sprintf(
+      "Optimizer: nlminb reported '%s'; rescued via %s (NLL %.3f -> %.3f). The stalled point was not stationary; see vignette('convergence-guide').",
+      object$opt$rescued_from, object$opt$rescue_method,
+      object$opt$rescue_nll_before, object$opt$objective
     ))
   }
   if (!is.null(object$param_info$factors) && length(object$param_info$factors) > 0) {
@@ -1046,6 +1343,7 @@ predict.beezdemand_tmb <- function(
 ) {
   type <- match.arg(type)
   scale <- match.arg(scale)
+  .tmb_warn_if_not_converged(object)
   # `level` accepts one or both of "subject"/"population". A numeric
   # nlme-style level (0/1) is rejected here by match.arg(); see the @param
   # note contrasting this with predict.beezdemand_nlme().
@@ -1300,6 +1598,11 @@ predict.beezdemand_tmb <- function(
   beta_q0    <- unname(coefs[names(coefs) == "beta_q0"])
   beta_alpha <- unname(coefs[names(coefs) == "beta_alpha"])
 
+  # 0. Under `collapse_levels` the fitted factor columns are internal
+  #    (`age_group_Q0` / `age_group_alpha`); recreate them from the original
+  #    column so ordinary newdata predicts (F-BD6-4, end-pass review).
+  newdata <- .tmb_recreate_collapsed_columns(object, newdata)
+
   # 1. Validate required columns are present. Phase 2 also requires
   # variables that appear only in the RE formula RHS (not in `factors`):
   # without them, .tmb_build_z_matrices() in step 4 below crashes with
@@ -1380,14 +1683,14 @@ predict.beezdemand_tmb <- function(
     newdata[[f]] <- factor(new_vals, levels = train_levels)
   }
 
-  # 3. Rebuild per-row design matrices using the stored RHS.
-  X_q0_new <- stats::model.matrix(
-    stats::as.formula(object$formula_details$rhs_q0),
-    data = newdata
+  # 3. Rebuild per-row design matrices using the stored RHS, pinned to the
+  #    fit-time contrasts (F-BD6-2; see .tmb_rebuild_fixed_design()).
+  X_q0_new <- .tmb_rebuild_fixed_design(
+    object$formula_details$X_q0, object$formula_details$rhs_q0, newdata, "Q0"
   )
-  X_alpha_new <- stats::model.matrix(
-    stats::as.formula(object$formula_details$rhs_alpha),
-    data = newdata
+  X_alpha_new <- .tmb_rebuild_fixed_design(
+    object$formula_details$X_alpha, object$formula_details$rhs_alpha, newdata,
+    "alpha"
   )
 
   if (ncol(X_q0_new) != length(beta_q0)) {
@@ -2238,7 +2541,9 @@ plot.beezdemand_tmb <- function(
 #' @param ... Additional arguments.
 #'
 #' @return A tibble of model terms with columns `term`, `estimate`,
-#'   `std.error`, `statistic`, `p.value`, `component`, `estimate_scale`,
+#'   `std.error`, `statistic`, `p.value`, `df` (`Inf` on fixed-effect rows:
+#'   the Wald test is an asymptotic z, i.e. a t on infinite df; `NA` on
+#'   variance rows), `component`, `estimate_scale`,
 #'   and `term_display`. An `estimate_internal` column (the pre-transform
 #'   estimate) is additionally present whenever `effects` includes
 #'   `"fixed"`. Fixed-effect rows carry `component == "fixed"` (matching
@@ -2285,6 +2590,7 @@ tidy.beezdemand_tmb <- function(
 ) {
   effects <- match.arg(effects, several.ok = TRUE)
   report_space <- match.arg(report_space)
+  .tmb_warn_if_not_converged(x)
 
   result <- tibble::tibble()
 
@@ -2321,6 +2627,9 @@ tidy.beezdemand_tmb <- function(
       std.error = unname(se),
       statistic = unname(z_val),
       p.value = unname(p_val),
+      # Asymptotic z = t on infinite df; keeps the column set identical to
+      # tidy.beezdemand_nlme() (batch 3, F-BD10-1).
+      df = Inf,
       component = component,
       estimate_scale = estimate_scale,
       term_display = term
@@ -2358,6 +2667,7 @@ tidy.beezdemand_tmb <- function(
       std.error = NA_real_,
       statistic = NA_real_,
       p.value = NA_real_,
+      df = NA_real_,
       component = "variance",
       estimate_scale = ifelse(is_resid, "natural", "log10"),
       term_display = sd_tbl$Component
@@ -2681,6 +2991,22 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' @return `NULL`, invisibly.
 #' @keywords internal
 #' @noRd
+.tmb_warn_if_not_converged <- function(object) {
+  if (isFALSE(object$converged)) {
+    cli::cli_warn(
+      c(
+        "!" = "TMB fit did not converge; estimates, standard errors,
+               intervals, and predictions from it may be unreliable.",
+        "i" = "See {.fn summary} / {.fn check_demand_model}; refit with more
+               iterations ({.code tmb_control = list(iter_max = ...)}),
+               different starts, or a simpler random-effects structure."
+      ),
+      class = c("beezdemand_tmb_convergence_warning", "beezdemand_warning")
+    )
+  }
+  invisible(NULL)
+}
+
 .tmb_warn_if_hessian_not_pd <- function(object) {
   if (isFALSE(object$hessian_pd)) {
     cli::cli_warn(
@@ -2715,6 +3041,7 @@ augment.beezdemand_tmb <- function(x, newdata = NULL, ...) {
 #' }
 #' @export
 vcov.beezdemand_tmb <- function(object, ...) {
+  .tmb_warn_if_not_converged(object)
   .tmb_warn_if_hessian_not_pd(object)
   sdr <- object$sdr
   if (is.null(sdr) || is.null(sdr$cov.fixed)) {
@@ -2932,7 +3259,7 @@ anova.beezdemand_tmb <- function(object, ...,
 #'   `.tmb_format_variance_components()` for transformed variance components.
 #' @param method Character. `"wald"` (default) returns Hessian-based
 #'   Wald intervals (`coef +/- z * se`). `"simulate"` draws `R` parametric
-#'   Monte Carlo samples from the joint asymptotic Gaussian posterior
+#'   Monte Carlo samples from the asymptotic Gaussian sampling approximation
 #'   \eqn{N(\hat\beta, \hat\Sigma)} (with \eqn{\hat\Sigma = }`vcov(object)`)
 #'   and reports per-coefficient empirical quantiles.
 #' @param R Integer. Number of Monte Carlo draws for `method = "simulate"`.
@@ -2946,7 +3273,8 @@ anova.beezdemand_tmb <- function(object, ...,
 #' @return A tibble with term, estimate, conf.low, conf.high, level.
 #'
 #' @details `method = "simulate"` is Monte Carlo simulation from the
-#'   asymptotic Gaussian posterior (neither a data-resampling bootstrap nor
+#'   asymptotic Gaussian sampling approximation to the MLE (neither a
+#'   Bayesian posterior, nor a data-resampling bootstrap, nor
 #'   a profile-likelihood interval). Because the sampled distribution is
 #'   the same Gaussian that Wald assumes, the simulated per-coefficient
 #'   quantiles converge to the Wald intervals as `R -> Inf`; the method does
@@ -3006,7 +3334,10 @@ confint.beezdemand_tmb <- function(
   if (method == "wald") {
     # method = "simulate" routes through .tmb_parametric_draws() -> vcov(),
     # which already warns once; only the wald branch needs its own explicit
-    # check (it reads model$se directly, never calling vcov()).
+    # check (it reads model$se directly, never calling vcov()). The same
+    # holds for the convergence gate: the simulate branch warns once via
+    # vcov(); warning here too would duplicate it.
+    .tmb_warn_if_not_converged(object)
     .tmb_warn_if_hessian_not_pd(object)
     z <- stats::qnorm((1 + level) / 2)
     conf_low <- coefs - z * se_vec
@@ -4349,6 +4680,20 @@ get_demand_comparisons.beezdemand_tmb <- function(
 #' than "average metrics across cells". The two answers differ for nonlinear
 #' transforms. The convention matches the parameter-level marginalization
 #' used by \code{get_demand_param_emms()}.
+#'
+#' @section Marginalisation policy (TMB vs NLME):
+#' This method averages the log-scale linear predictors with equal weight
+#' over the factor cells observed in the fitting data and then
+#' exponentiates. The NLME method
+#' (\code{calc_group_metrics.beezdemand_nlme()}) follows the same policy:
+#' per-cell EMMs from \code{emmeans}, rows for unobserved cells dropped,
+#' equal-weight geometric mean over the remaining cells. Cells of the full
+#' factorial crossing with no subjects are never averaged over by either
+#' backend. The two agree for any design fit in log space and can differ
+#' only when the NLME fit uses \code{param_space = "natural"}. In both
+#' backends continuous covariates are held at the training mean unless
+#' \code{at} supplies a single value; a multi-value continuous \code{at}
+#' entry warns and uses its first value.
 #'
 #' @examples
 #' \donttest{

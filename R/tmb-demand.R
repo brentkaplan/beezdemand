@@ -198,7 +198,11 @@ NULL
   rhs_form <- stats::as.formula(
     paste("~", deparse1(block$formula[[3]]))
   )
-  X <- stats::model.matrix(rhs_form, data = data)
+  # Pin to the fit-time contrasts stored by the parser (F-BD6-2); blocks
+  # from intercept-only specs or older fits carry NULL, which is the
+  # default `model.matrix()` behaviour.
+  X <- stats::model.matrix(rhs_form, data = data,
+                           contrasts.arg = block$contrasts)
 
   # Reorder to match the parser's `terms_*` ordering (defensive — they
   # should already match).
@@ -587,6 +591,129 @@ NULL
   if (is.null(opt$message)) opt$message <- "unknown"
 
   list(opt = opt, warnings = opt_warnings)
+}
+
+
+#' Is this an nlminb "false convergence" exit?
+#'
+#' R's `nlminb()` reports `convergence` as 0/1 only; the PORT status is in
+#' `$message` (e.g. `"false convergence (8)"`, `"relative convergence (4)"`).
+#' @keywords internal
+#' @noRd
+.tmb_is_false_convergence <- function(opt, optimizer = "nlminb") {
+  identical(optimizer, "nlminb") &&
+    !identical(as.integer(opt$convergence), 0L) &&
+    grepl("false convergence", opt$message %||% "", fixed = TRUE)
+}
+
+#' Evaluate a rescue candidate on the fixed objective
+#'
+#' Accepts a candidate iff the optimizer reported convergence code 0, the
+#' gradient at the solution is finite with `max(abs(.)) <= grad_tol`, and the
+#' outer-parameter Hessian (`optimHess`) is positive definite.
+#' @return A list with `ok` (logical), `nll`, `max_grad`, `min_eigen`.
+#' @keywords internal
+#' @noRd
+.tmb_rescue_candidate_ok <- function(obj, cand, grad_tol) {
+  out <- list(ok = FALSE, nll = NA_real_, max_grad = NA_real_, min_eigen = NA_real_)
+  if (is.null(cand) || !identical(as.integer(cand$convergence), 0L)) return(out)
+  nll <- tryCatch(as.numeric(obj$fn(cand$par)), error = function(e) NA_real_)
+  if (!is.finite(nll)) return(out)
+  g <- tryCatch(as.numeric(obj$gr(cand$par)), error = function(e) NA_real_)
+  if (any(!is.finite(g))) return(out)
+  max_grad <- max(abs(g))
+  out$nll <- nll
+  out$max_grad <- max_grad
+  if (max_grad > grad_tol) return(out)
+  H <- tryCatch(stats::optimHess(cand$par, obj$fn, obj$gr), error = function(e) NULL)
+  if (is.null(H) || any(!is.finite(H))) return(out)
+  ev <- eigen((H + t(H)) / 2, symmetric = TRUE, only.values = TRUE)$values
+  out$min_eigen <- min(ev)
+  out$ok <- min(ev) > 0
+  out
+}
+
+#' Rescue an nlminb false-convergence exit
+#'
+#' Batch 3 (2026-09-12), audit F-BD4-1 side-finding. On apt_full
+#' (exponential, gender) the fixed-k default stalls at a point with a
+#' gradient norm of ~1e11 and an indefinite Hessian: not a stationary point,
+#' so its (lower) NLL is not an admissible solution. Candidates are tried in
+#' order and evaluated on the SAME objective by
+#' `.tmb_rescue_candidate_ok()`; among accepted candidates the lowest NLL
+#' wins. If none is accepted the original `opt` is returned unchanged (the
+#' fit still fails loudly through the convergence gate).
+#'
+#' @param obj The `TMB::MakeADFun()` object of the fit being rescued.
+#' @param opt The false-convergence optimizer result.
+#' @param tmb_control,user_specified,verbose As in `.tmb_run_optimizer()`.
+#' @param free_k_warm_start Optional named numeric vector: the free-k
+#'   solution projected onto this objective's parameters (see the caller).
+#' @return `opt`, possibly replaced by the accepted candidate with
+#'   `rescued_from`, `rescue_method`, `rescue_nll_before` fields added.
+#' @keywords internal
+#' @noRd
+.tmb_rescue_false_convergence <- function(obj, opt, tmb_control, user_specified,
+                                          verbose, free_k_warm_start = NULL) {
+  grad_tol <- tmb_control$rescue_grad_tol %||% 1e-2
+  nll_before <- as.numeric(opt$objective)
+  cands <- list()
+
+  ctrl_nlminb <- tmb_control
+  ctrl_nlminb$optimizer <- "nlminb"
+  ctrl_nlminb$warm_start <- NULL
+  ctrl_lbfgsb <- ctrl_nlminb
+  ctrl_lbfgsb$optimizer <- "L-BFGS-B"
+
+  cands$nlminb_restart <- .tmb_run_optimizer(
+    obj, opt$par, ctrl_nlminb, user_specified, verbose = 0)$opt
+  cands$lbfgsb <- .tmb_run_optimizer(
+    obj, opt$par, ctrl_lbfgsb, user_specified, verbose = 0)$opt
+  if (!is.null(free_k_warm_start)) {
+    cands$free_k_warm_start <- .tmb_run_optimizer(
+      obj, free_k_warm_start, ctrl_nlminb, user_specified, verbose = 0)$opt
+  }
+
+  best <- NULL
+  best_nll <- Inf
+  best_name <- NULL
+  for (nm in names(cands)) {
+    chk <- .tmb_rescue_candidate_ok(obj, cands[[nm]], grad_tol)
+    if (verbose >= 2) {
+      message(sprintf(
+        "  Rescue candidate %s: code %s, NLL %s, max|grad| %s, min eigen %s -> %s",
+        nm, cands[[nm]]$convergence %||% NA, format(chk$nll, digits = 6),
+        format(chk$max_grad, digits = 3), format(chk$min_eigen, digits = 3),
+        if (chk$ok) "accepted" else "rejected"))
+    }
+    if (isTRUE(chk$ok) && chk$nll < best_nll) {
+      best <- cands[[nm]]
+      best_nll <- chk$nll
+      best_name <- nm
+    }
+  }
+  if (is.null(best)) return(opt)
+
+  # Re-sync the ADFun's "best seen" state to the accepted candidate. TMB's
+  # sdreport() and parList() default to `obj$env$last.par.best`, which only
+  # advances on a LOWER objective; the rejected ridge has a lower NLL than
+  # the accepted stationary point, so without this sdreport() would report
+  # at the ridge (and its indefinite Hessian) rather than at the solution.
+  try({
+    obj$fn(best$par)
+    obj$env$last.par.best <- obj$env$last.par
+    obj$env$value.best <- as.numeric(best$objective)
+  }, silent = TRUE)
+
+  best$rescued_from <- opt$message
+  best$rescue_method <- best_name
+  best$rescue_nll_before <- nll_before
+  if (verbose >= 1) {
+    message(sprintf(
+      "  Rescued nlminb false convergence via %s (NLL %.3f -> %.3f; the stalled point was not stationary)",
+      best_name, nll_before, best_nll))
+  }
+  best
 }
 
 
@@ -1360,11 +1487,13 @@ NULL
 #'       in the decay rate). Subjects with estimated Q0 near 1 may have
 #'       biased parameter estimates.}
 #'   }
-#' @param estimate_k Logical. If `TRUE` (default), estimate k as a free
-#'   parameter. If `FALSE`, fix k at the value given in `k`. Only relevant for
+#' @param estimate_k Logical. If `FALSE` (default), k is held fixed at the
+#'   value given in `k`. If `TRUE`, k is estimated as a free parameter; see
+#'   Details for when the data support that. Only relevant for the
 #'   "exponentiated" and "exponential" equations.
 #' @param k Numeric or `NULL`. Fixed value of k when `estimate_k = FALSE`.
-#'   If `NULL` and `estimate_k = FALSE`, k defaults to 2.
+#'   `NULL` (the default) means k = 2, the conventional value of
+#'   Hursh & Silberberg (2008) and the default of [fit_demand_fixed()].
 #' @param random_effects Specification of subject-level random effects.
 #'   Accepts any of the following, in order of generality:
 #'   \describe{
@@ -1414,7 +1543,21 @@ NULL
 #' @param tmb_control List of control parameters for the optimizer:
 #'   \describe{
 #'     \item{`optimizer`}{Character. `"nlminb"` (default) or `"L-BFGS-B"`.
-#'       L-BFGS-B can recover from nlminb convergence failures (code 1 or 8).}
+#'       L-BFGS-B can sometimes recover where nlminb reports convergence
+#'       code 1 with a `"false convergence (8)"` message (R's `nlminb()`
+#'       reports only codes 0/1; the PORT status is in `opt$message`).}
+#'     \item{`rescue`}{Logical (default `TRUE`). When nlminb exits with
+#'       false convergence, retry automatically: restart nlminb from the
+#'       stalled point, then L-BFGS-B from it, and, for a fixed-`k` fit,
+#'       warm-start from a free-`k` refit. A candidate is accepted only if
+#'       it reports convergence code 0, its gradient satisfies
+#'       `max(abs(grad)) <= rescue_grad_tol`, and its Hessian is positive
+#'       definite; the lowest-NLL accepted candidate replaces the stalled
+#'       result and `fit$opt$rescued_from` / `fit$opt$rescue_method` record
+#'       it. If no candidate qualifies the fit fails loudly as before. See
+#'       `vignette("convergence-guide")` for the worked example.}
+#'     \item{`rescue_grad_tol`}{Positive number (default `1e-2`): the
+#'       maximum absolute gradient component a rescue candidate may have.}
 #'     \item{`iter_max`}{Maximum iterations (default 1000).}
 #'     \item{`eval_max`}{Maximum function evaluations (default 2000). Only
 #'       applies to nlminb; L-BFGS-B has no function evaluation limit.}
@@ -1424,9 +1567,10 @@ NULL
 #'       parameters (default NULL = no bounds). Names must match optimizer
 #'       parameter names (e.g., `log_k`, `beta_q0`, `logsigma_b`). Note that
 #'       most parameters are in log-space: e.g., to constrain k between 0.14
-#'       and 55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)`. A bound name
-#'       applies to *all* occurrences of that parameter (e.g., both elements
-#'       of `beta_q0`).}
+#'       and 55, use `lower = c(log_k = -2)`, `upper = c(log_k = 4)` (which bind
+#'       only when `estimate_k = TRUE`, since a fixed k is not a free
+#'       parameter). A bound name applies to *all* occurrences of that
+#'       parameter (e.g., both elements of `beta_q0`).}
 #'     \item{`upper`}{Named numeric vector of upper bounds (see `lower`).}
 #'     \item{`warm_start`}{Named numeric vector of starting values in
 #'       optimizer space (e.g., from a previous `fit$opt$par`). When provided,
@@ -1481,10 +1625,24 @@ NULL
 #' automatic differentiation, Laplace approximation, and joint marginal
 #' likelihood optimization.
 #'
-#' When \code{estimate_k = TRUE}, k is estimated as a free parameter alongside
-#' Q0 and alpha. This typically improves model fit substantially. The
-#' conventional fixed-k approach (Hursh & Silberberg, 2008) often overestimates
-#' k by 3-8x.
+#' **Fixed versus estimated k.** By default k is held at 2, the convention of
+#' Hursh & Silberberg (2008) and the default of \code{fit_demand_fixed()}. It is
+#' a convention rather than an estimate, so fits at a second value (say
+#' \code{k = 1.5} or \code{k = 3}) are worth reporting as a sensitivity check.
+#' alpha and the derived Pmax / Omax / EV move most; Q0 enters the likelihood
+#' jointly with alpha, so it can shift too.
+#'
+#' Setting \code{estimate_k = TRUE} estimates k alongside Q0 and alpha, which
+#' fits better on data that carry the information to support it. Many do not.
+#' The response depends on k through \eqn{k(e^{-\alpha Q_0 C} - 1)}, so while
+#' \eqn{\alpha Q_0 C} stays small the curve is a straight line of slope
+#' \eqn{k\alpha} and only that product is identified. What pins k down is the
+#' curvature that appears as consumption approaches its floor. On data whose
+#' consumption never gets there, a free k can drift to arbitrarily large values
+#' with a compensating alpha, giving a non-positive-definite Hessian and
+#' meaningless Pmax / Omax. \code{check_demand_model()} screens a free-k fit for
+#' that signature and \code{summary()} carries the note. The screen reports what
+#' it detects; passing it is no evidence that k is identified.
 #'
 #' **Continuous within-subject random slopes (dose-response).** A numeric term
 #' in the random-effects formula (e.g. \code{Q0 + alpha ~ dose_c}) gives each
@@ -1560,7 +1718,7 @@ fit_demand_tmb <- function(
   x_var = "x",
   id_var = "id",
   equation = c("exponentiated", "exponential", "simplified", "zben"),
-  estimate_k = TRUE,
+  estimate_k = FALSE,
   k = NULL,
   random_effects = Q0 + alpha ~ 1,
   covariance_structure = c("pdSymm", "pdDiag"),
@@ -1619,10 +1777,17 @@ fit_demand_tmb <- function(
 
   # Determine if k is used
   has_k <- equation %in% c("exponentiated", "exponential")
+  k_defaulted <- has_k && !estimate_k && is.null(k)
   if (has_k && !estimate_k) {
     if (is.null(k)) k <- 2
     if (!is.numeric(k) || length(k) != 1 || k <= 0) {
       stop("`k` must be a positive number.", call. = FALSE)
+    }
+    if (k_defaulted && verbose >= 1) {
+      cli::cli_inform(c(
+        "i" = "Using a fixed k = 2 (the {.code estimate_k = FALSE} default).",
+        "*" = "Pass {.arg k} for a different constant, or {.code estimate_k = TRUE} to estimate k."
+      ))
     }
   }
 
@@ -1846,7 +2011,9 @@ fit_demand_tmb <- function(
     lower      = NULL,
     upper      = NULL,
     warm_start = NULL,
-    trace      = 0
+    trace      = 0,
+    rescue     = TRUE,
+    rescue_grad_tol = 1e-2
   )
   user_specified <- names(tmb_control)
   tmb_control <- modifyList(default_control, tmb_control)
@@ -1887,6 +2054,15 @@ fit_demand_tmb <- function(
 
   if (!is.null(tmb_control$warm_start) && !is.numeric(tmb_control$warm_start)) {
     stop("tmb_control$warm_start must be a numeric vector", call. = FALSE)
+  }
+  if (!is.logical(tmb_control$rescue) || length(tmb_control$rescue) != 1 ||
+      is.na(tmb_control$rescue)) {
+    stop("tmb_control$rescue must be TRUE or FALSE", call. = FALSE)
+  }
+  if (!is.numeric(tmb_control$rescue_grad_tol) || length(tmb_control$rescue_grad_tol) != 1 ||
+      !is.finite(tmb_control$rescue_grad_tol) || tmb_control$rescue_grad_tol <= 0) {
+    stop("tmb_control$rescue_grad_tol must be a single positive finite number",
+         call. = FALSE)
   }
 
   # Warn about rel_tol + L-BFGS-B only when user explicitly provided rel_tol
@@ -1955,8 +2131,58 @@ fit_demand_tmb <- function(
     }
   }
 
+  # Batch 3 (F-BD4-1 side-finding): rescue an nlminb false-convergence exit
+  # once, on the winning start. Runs BEFORE the convergence gate so a
+  # successful rescue is a converged fit; a failed rescue changes nothing.
+  if (isTRUE(tmb_control$rescue) &&
+      .tmb_is_false_convergence(opt, tmb_control$optimizer)) {
+    if (verbose >= 1) message("  nlminb reported false convergence; attempting rescue...")
+    opt_rescued <- .tmb_rescue_false_convergence(
+      obj, opt, tmb_control, user_specified, verbose)
+    if (is.null(opt_rescued$rescued_from) && has_k && !estimate_k) {
+      # Warm start from the free-k solution projected onto this objective.
+      free_k_ws <- tryCatch({
+        ctrl_free <- tmb_control
+        ctrl_free$rescue <- FALSE
+        ctrl_free$warm_start <- NULL
+        fit_free <- suppressMessages(suppressWarnings(fit_demand_tmb(
+          data = data, y_var = y_var, x_var = x_var, id_var = id_var,
+          equation = equation, estimate_k = TRUE, k = NULL,
+          random_effects = random_effects,
+          covariance_structure = covariance_structure,
+          factors = factors, factor_interaction = factor_interaction,
+          continuous_covariates = continuous_covariates,
+          collapse_levels = collapse_levels, start_values = start_values,
+          tmb_control = ctrl_free, multi_start = multi_start,
+          validate_subject_pars = FALSE, verbose = 0, ...,
+          store_report_cov = FALSE)))
+        ws <- fit_free$opt$par[names(fit_free$opt$par) != "log_k"]
+        if (identical(unname(names(ws)), unname(names(obj$par)))) ws else NULL
+      }, error = function(e) NULL)
+      if (!is.null(free_k_ws)) {
+        opt_rescued <- .tmb_rescue_false_convergence(
+          obj, opt, tmb_control, user_specified, verbose,
+          free_k_warm_start = free_k_ws)
+      }
+    }
+    opt <- opt_rescued
+  }
+
   converged <- opt$convergence == 0
   try(obj$fn(opt$par), silent = TRUE)
+  if (!converged) {
+    # Audit 2026-09-06 (F-BD4-2): announce non-convergence regardless of
+    # `verbose`; the inference surfaces re-warn via .tmb_warn_if_not_converged().
+    cli::cli_warn(
+      c(
+        "!" = "TMB fit did not converge (optimizer code {opt$convergence}:
+               {opt$message}).",
+        "i" = "Estimates and standard errors from this fit may be unreliable;
+               see {.fn summary} / {.fn check_demand_model}."
+      ),
+      class = c("beezdemand_tmb_convergence_warning", "beezdemand_warning")
+    )
+  }
 
   if (verbose >= 1) {
     if (converged) {
@@ -2005,6 +2231,19 @@ fit_demand_tmb <- function(
   aic <- 2 * nll + 2 * n_fixed_params
   bic <- 2 * nll + n_fixed_params * log(n_obs)
 
+  # Effective optimizer bounds on log_k, kept so `check_demand_model()` can tell
+  # a free k resting on a user-supplied bound from one that stopped freely.
+  # NULL whenever k was not a free parameter.
+  log_k_bounds <- if (has_k && estimate_k) {
+    pick <- function(b, default) {
+      if (!is.null(b) && "log_k" %in% names(b)) unname(b[["log_k"]]) else default
+    }
+    c(lower = pick(tmb_control$lower, -Inf),
+      upper = pick(tmb_control$upper, Inf))
+  } else {
+    NULL
+  }
+
   # Build return object
   result <- structure(
     list(
@@ -2042,6 +2281,7 @@ fit_demand_tmb <- function(
         has_k = has_k,
         estimate_k = estimate_k,
         k_fixed = if (has_k && !estimate_k) k else NULL,
+        log_k_bounds = log_k_bounds,
         y_var = y_var,
         x_var = x_var,
         id_var = id_var,

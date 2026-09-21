@@ -997,6 +997,40 @@ get_observed_demand_param_emms <- function(
 #' Silberberg solution; `"zben"`/`"simplified"` use the simplified (SND)
 #' solution.
 #'
+#' @section Marginalisation policy (NLME vs TMB):
+#' Both backends marginalise over the factor cells that were **observed** in
+#' the fitting data, with equal weight per cell, on the log scale (a
+#' geometric mean of the per-cell parameter estimates). Cells of the full
+#' factorial crossing that contain no subjects are not averaged over, so
+#' population-level Pmax/Omax never extrapolate through the additive model
+#' into cells the design cannot estimate. (This is the observed-cells side of
+#' the two conventions in wide use: `emmeans` / `marginaleffects`'s
+#' `"balanced"` grid averages every combination of levels; `marginaleffects`'s
+#' default averages the observed rows with frequency weights. Neither is used
+#' here: unobserved cells get weight zero and observed cells get equal
+#' weight regardless of group size.)
+#' \itemize{
+#'   \item **NLME (this method)**: `emmeans` builds the full factorial
+#'     reference grid, the per-cell EMMs are back-transformed to the natural
+#'     scale, rows for unobserved cells are dropped, and the geometric mean is
+#'     taken over the remaining cells (for `param_space = "log10"` this equals
+#'     the arithmetic mean of the observed cells' log10 EMMs). Under
+#'     `param_space = "natural"` the cell EMMs are natural-scale estimates and
+#'     the geometric mean is taken of those directly, which is not the same
+#'     as averaging log predictors.
+#'   \item **TMB** (`calc_group_metrics.beezdemand_tmb()`): the log-scale
+#'     linear predictors are averaged with equal weight over the observed
+#'     factor cells, then exponentiated.
+#' }
+#' The two therefore agree for any design fit in log space and can differ
+#' only when the NLME fit is in natural space. In both backends continuous
+#' covariates are held at the training mean unless `at` supplies a single
+#' value; a multi-value continuous `at` entry warns and uses its first value.
+#' A factor level supplied in `at` restricts the observed cells to that
+#' level (for a `collapse_levels` fit the original level is translated to
+#' each parameter's collapsed label); requesting a combination of levels
+#' with no observed cell is an error rather than an extrapolation.
+#'
 #' @param object A `beezdemand_nlme` object from [fit_demand_mixed()].
 #' @param at Optional named list conditioning continuous covariates / factor
 #'   levels (same shape as the `beezdemand_tmb` method). Covariates default to
@@ -1041,7 +1075,22 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
       cli::cli_abort(
         "All elements of {.arg at} must be named (use {.code list(factor = level, cov = value)}).")
     }
-    valid_names <- c(all_factors, cov_names)
+    # Internal collapsed columns (`<factor>_Q0` / `<factor>_alpha`) are not
+    # user-facing: `at` must use the ORIGINAL factor name and level, which is
+    # translated to each parameter's collapsed label below (Codex END pass:
+    # an internal name was accepted and then silently skipped).
+    internal_cols <- unlist(lapply(object$collapse_info, function(ci) {
+      vapply(ci, function(x) x$new_col_name %||% NA_character_, character(1))
+    }), use.names = FALSE)
+    internal_cols <- internal_cols[!is.na(internal_cols)]
+    if (any(names(at) %in% internal_cols)) {
+      bad_int <- intersect(names(at), internal_cols)
+      cli::cli_abort(c(
+        "{.arg at} names the internal collapsed column{?s} {.field {bad_int}}.",
+        "i" = "Use the original factor name{?s} ({.field {sub('_(Q0|alpha)$', '', bad_int)}}) with an original level; it is translated to each parameter's collapsed label."
+      ))
+    }
+    valid_names <- setdiff(c(all_factors, cov_names), internal_cols)
     bad <- setdiff(names(at), valid_names)
     if (length(bad) > 0L) {
       cli::cli_abort(c(
@@ -1070,6 +1119,18 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
           cli::cli_abort(
             "{.field {nm}} value{?s} {.val {as.character(v)}} must be finite numeric.")
         }
+        # F-BD6-3: a multi-value continuous `at` was forwarded whole to
+        # emmeans (grid expanded, geometric mean taken across the values)
+        # while `conditioned_on` recorded only the first. Normalise to the
+        # first value with the TMB method's warning so the recorded
+        # conditioning is the conditioning applied.
+        if (length(v) > 1L) {
+          cli::cli_warn(c(
+            "{.arg at${nm}} has length {length(v)}; using first value {.val {v_num[1]}}.",
+            "i" = "Pass a single numeric value per continuous covariate."
+          ))
+          at[[nm]] <- v_num[1]
+        }
       }
     }
   }
@@ -1081,23 +1142,41 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
   k_val <- pinfo$k
 
   # Parameter-first marginalization: geometric mean of the per-cell natural
-  # EMMs. get_demand_param_emms() joins Q0+alpha internally regardless of
-  # `param`, so the per-param table can carry NA join rows under
-  # overlapping-label collapse_levels -- filter to finite-positive before the
-  # geometric mean, and abort if a parameter has no usable cells. emmeans
-  # SE-related warnings are irrelevant (only point estimates are used), so they
-  # are suppressed for silence-parity with the TMB method.
+  # EMMs over the OBSERVED factor cells (batch 3, F-BD6-3; matches the TMB
+  # method). Only continuous-covariate `at` entries are forwarded to
+  # emmeans; factor `at` entries are applied as a row filter on the cell
+  # table below, which also makes them effective on collapse_levels fits
+  # where the model column is `<factor>_Q0` / `<factor>_alpha` and emmeans
+  # ignored an `at` keyed by the original name (F-BD6-5).
+  # get_demand_param_emms() joins Q0+alpha internally regardless of `param`,
+  # so the per-param table can carry NA join rows under overlapping-label
+  # collapse_levels -- filter to finite-positive before the geometric mean,
+  # and abort if a parameter has no usable cells. emmeans SE-related warnings
+  # are irrelevant (only point estimates are used), so they are suppressed
+  # for silence-parity with the TMB method.
+  at_cov <- if (is.null(at)) NULL else at[intersect(names(at), cov_names)]
+  if (length(at_cov) == 0L) at_cov <- NULL
+  at_fac <- if (is.null(at)) list() else at[intersect(names(at), all_factors)]
   emm_q0 <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
-    object, param = "Q0", at = at, factors_in_emm = NULL, include_ev = FALSE))
+    object, param = "Q0", at = at_cov, factors_in_emm = NULL, include_ev = FALSE))
   emm_alpha <- .nlme_muffle_group_metrics_emms_noise(get_demand_param_emms(
-    object, param = "alpha", at = at, factors_in_emm = NULL, include_ev = FALSE))
+    object, param = "alpha", at = at_cov, factors_in_emm = NULL, include_ev = FALSE))
+  emm_q0 <- .nlme_cgm_observed_cells(emm_q0, object, "Q0", at_fac)
+  emm_alpha <- .nlme_cgm_observed_cells(emm_alpha, object, "alpha", at_fac)
 
   .marginal_geom_mean <- function(vals, lbl) {
     vals <- vals[is.finite(vals) & vals > 0]
     if (length(vals) == 0L) {
+      requested <- if (length(at_fac) > 0L) {
+        paste(names(at_fac), "=", vapply(at_fac, function(v) paste(as.character(v), collapse = "/"), character(1)),
+              collapse = ", ")
+      } else {
+        NULL
+      }
       cli::cli_abort(c(
         "No usable {lbl} EMM rows to marginalize.",
-        "i" = "All emmeans values were non-finite/non-positive (possible with overlapping {.arg collapse_levels} labels)."
+        "i" = "All emmeans values were non-finite/non-positive (possible with overlapping {.arg collapse_levels} labels), or {.arg at} requested a combination of factor levels with no observed cell.",
+        if (!is.null(requested)) c("x" = "Requested: {requested}.")
       ))
     }
     exp(mean(log(vals)))
@@ -1152,6 +1231,67 @@ calc_group_metrics.beezdemand_nlme <- function(object, at = NULL, ...) {
     method = result$method_model,
     conditioned_on = conditioned_on
   )
+}
+
+#' Restrict a per-cell NLME EMM table to observed factor cells
+#'
+#' Batch 3 (F-BD6-3 / F-BD6-5). For one parameter, resolves the design
+#' columns actually in the fitted formula (`param_info$factors_<param>`,
+#' keeping only columns with at least two levels in the data, since a
+#' column collapsed to a single level was dropped from the formula), maps
+#' each collapsed column back to the original factor name the EMM table
+#' uses, and keeps only the rows whose cell occurs in `object$data`. Factor
+#' entries of `at` (original levels) are translated to the parameter's
+#' collapsed labels and applied as a further restriction.
+#'
+#' @param tbl Per-cell tibble from `get_demand_param_emms(factors_in_emm = NULL)`.
+#' @param object A `beezdemand_nlme` fit.
+#' @param param `"Q0"` or `"alpha"`.
+#' @param at_fac Named list of factor levels (original labels), possibly empty.
+#' @return `tbl` with unobserved / non-requested cells removed.
+#' @keywords internal
+#' @noRd
+.nlme_cgm_observed_cells <- function(tbl, object, param, at_fac = list()) {
+  if (is.null(tbl) || nrow(tbl) == 0L) return(tbl)
+  pinfo <- object$param_info
+  cols <- if (identical(param, "Q0")) pinfo$factors_Q0 else pinfo$factors_alpha
+  cols <- cols %||% pinfo$factors %||% character(0)
+  cols <- cols[nzchar(cols) & !is.na(cols)]
+  cinfo <- object$collapse_info[[param]] %||% list()
+  dat <- object$data
+
+  active <- character(0)
+  orig_of <- character(0)
+  for (cc in cols) {
+    v <- dat[[cc]]
+    if (is.null(v) || length(unique(as.character(v))) < 2L) next
+    orig <- cc
+    for (o in names(cinfo)) {
+      if (identical(cinfo[[o]]$new_col_name, cc)) orig <- o
+    }
+    if (!orig %in% names(tbl)) next
+    active <- c(active, cc)
+    orig_of[cc] <- orig
+  }
+  if (length(active) == 0L) return(tbl)
+
+  make_key <- function(df, cs) {
+    do.call(paste, c(lapply(cs, function(x) as.character(df[[x]])), list(sep = "\r")))
+  }
+  obs <- unique(dat[, active, drop = FALSE])
+  for (f in names(at_fac)) {
+    cc <- active[orig_of[active] == f]
+    if (length(cc) == 0L) next
+    labels <- if (identical(cc, f)) {
+      as.character(at_fac[[f]])
+    } else {
+      pairs <- unique(dat[, c(f, cc), drop = FALSE])
+      unique(as.character(pairs[[cc]])[as.character(pairs[[f]]) %in% as.character(at_fac[[f]])])
+    }
+    obs <- obs[as.character(obs[[cc]]) %in% labels, , drop = FALSE]
+  }
+  keep <- make_key(tbl, unname(orig_of[active])) %in% make_key(obs, active)
+  tbl[keep, , drop = FALSE]
 }
 
 #' Get Pairwise Comparisons for Demand Parameters
@@ -2240,6 +2380,12 @@ get_demand_param_trends <- function(
     character(0)
   })
 
+  # F-BD6-1 (audit 2026-09-06): this was the only NLME inference surface
+  # that did not gate on convergence, so trends from a fit whose apVar could not
+  # be inverted were returned with no condition at all. Placed outside the
+  # emmeans tryCatch()s and the param/covariate loops so it warns exactly once.
+  .nlme_warn_if_not_converged(fit_obj)
+
   out_list <- list()
   # TICKET-064 (F13): a failed (param, covariate) combination was previously
   # dropped with `next` and no condition -- only a fully-empty result table
@@ -2545,6 +2691,102 @@ print.beezdemand_nlme <- function(
   invisible(x)
 }
 
+#' Add an empty `df` column to an empty coefficient tibble (NLME shape)
+#' @keywords internal
+#' @noRd
+.nlme_add_df_column <- function(tbl) {
+  if (!"df" %in% names(tbl)) {
+    tbl <- tibble::add_column(tbl, df = numeric(nrow(tbl)), .after = "p.value")
+  }
+  tbl
+}
+
+#' Between-subject degrees of freedom for an NLME fixed-effects table
+#'
+#' Batch 3 (F-BD10-1). For each parameter formula in
+#' `object$formula_details$fixed_effects_list` (e.g. `Q0 ~ gender`), the
+#' design matrix is rebuilt on the fitted data, each non-intercept column
+#' that is constant within every subject is classed between-subject, and
+#' those coefficients receive `n_subjects - rank(X_between)` where
+#' `X_between` is the parameter's subject-level design (intercept plus its
+#' between-subject columns). All other coefficients keep nlme's containment
+#' df. Coefficient names follow nlme (`"<param>.<column>"`; `"<param>"` for an
+#' intercept-only formula); a between-subject coefficient that cannot be
+#' matched to a `ttable` row keeps containment df and is named in a warning.
+#'
+#' @param object A `beezdemand_nlme` fit.
+#' @param ttable `summary(object$model)$tTable`.
+#' @return Numeric vector of df, in `ttable` row order.
+#' @keywords internal
+#' @noRd
+.nlme_between_df <- function(object, ttable) {
+  df_out <- unname(ttable[, "DF"])
+  names(df_out) <- rownames(ttable)
+  flist <- object$formula_details$fixed_effects_list
+  dat <- object$data
+  id_var <- object$param_info$id_var
+  if (is.null(flist) || is.null(dat) || is.null(id_var) || !id_var %in% names(dat)) {
+    cli::cli_warn(c(
+      "Cannot derive between-subject df for this fit; reporting containment df.",
+      "i" = "The fixed-effects formulas or the fitted data are not stored on the object."
+    ))
+    return(unname(df_out))
+  }
+  id <- as.character(dat[[id_var]])
+  n_subj <- length(unique(id))
+  subj_rows <- !duplicated(id)
+  unmatched <- character(0)
+
+  for (f in flist) {
+    param <- all.vars(f)[1L]
+    tt <- stats::delete.response(stats::terms(f))
+    X <- stats::model.matrix(tt, data = dat)
+    cn <- colnames(X)
+    coef_names <- if (length(cn) == 1L && identical(cn, "(Intercept)")) {
+      param
+    } else {
+      paste0(param, ".", cn)
+    }
+    is_intercept <- cn == "(Intercept)"
+    is_between <- vapply(seq_len(ncol(X)), function(j) {
+      all(tapply(X[, j], id, function(v) length(unique(v)) == 1L))
+    }, logical(1))
+    betw <- which(is_between & !is_intercept)
+    if (length(betw) == 0L) next
+    X_between <- cbind(1, X[subj_rows, betw, drop = FALSE])
+    df_b <- n_subj - qr(X_between)$rank
+    for (j in betw) {
+      nm <- coef_names[j]
+      if (nm %in% names(df_out)) {
+        df_out[nm] <- df_b
+      } else {
+        unmatched <- c(unmatched, nm)
+      }
+    }
+  }
+  if (length(unmatched) > 0L) {
+    cli::cli_warn(c(
+      "Between-subject df could not be assigned to {.val {unmatched}}; those terms keep containment df.",
+      "i" = "The rebuilt design column names did not match nlme's coefficient names."
+    ))
+  }
+  unname(df_out)
+}
+
+#' Apply `df_method` to an NLME fixed-effects tibble (has `df`, `statistic`, `p.value`)
+#' @keywords internal
+#' @noRd
+.nlme_apply_df_method <- function(tbl, object, ttable, df_method) {
+  if (!identical(df_method, "between")) return(tbl)
+  df_new <- .nlme_between_df(object, ttable)
+  changed <- which(df_new != tbl$df)
+  if (length(changed) > 0L) {
+    tbl$df[changed] <- df_new[changed]
+    tbl$p.value[changed] <- 2 * stats::pt(-abs(tbl$statistic[changed]), df_new[changed])
+  }
+  tbl
+}
+
 #' Summary method for beezdemand_nlme
 #'
 #' Returns a structured summary object containing model coefficients,
@@ -2556,6 +2798,22 @@ print.beezdemand_nlme <- function(
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
 #'   the estimation scale (nlme's native containment-t test, which is
 #'   transformation-invariant).
+#' @param df_method Character. Degrees of freedom used for the fixed-effect
+#'   t tests. `"containment"` (default) reports nlme's own containment df
+#'   unchanged. nlme's containment rule assigns the observation-level
+#'   residual degrees of freedom to every fixed effect, including
+#'   between-subject terms (a group factor), for which the effective sample
+#'   size is the number of subjects; the default `df` and p-values for such
+#'   terms are therefore anticonservative. `"between"` replaces the df of
+#'   each between-subject term (a coefficient whose design column is
+#'   constant within every subject, excluding the parameter intercepts) with
+#'   `n_subjects - rank(X_between)`, where `X_between` is that parameter's
+#'   subject-level design (intercept plus its between-subject columns), and
+#'   recomputes the p-value from the unchanged t statistic. Intercepts and
+#'   within-subject terms keep containment df in both modes (Pinheiro &
+#'   Bates, 2000, section 2.4.2). Estimates and standard errors never change.
+#'   Satterthwaite / Kenward-Roger df are not available for `nlme::nlme()`.
+#'   The TMB backend reports an asymptotic z test instead.
 #' @param ... Additional arguments (passed to summary.nlme)
 #' @return A `summary.beezdemand_nlme` object (inherits from
 #'   `beezdemand_summary`) with fields including:
@@ -2563,16 +2821,23 @@ print.beezdemand_nlme <- function(
 #'   - `model_class`: "beezdemand_nlme"
 #'   - `backend`: "nlme"
 #'   - `equation_form`: The equation form used ("zben" or "simplified")
-#'   - `coefficients`: Tibble of fixed effects with std.error, statistic, p.value
+#'   - `coefficients`: Tibble of fixed effects with std.error, statistic,
+#'     p.value and `df` (the degrees of freedom the p-value uses; see
+#'     `df_method`)
+#'   - `df_method`: The `df_method` in effect
 #'   - `random_effects`: VarCorr output for random effects
 #'   - `logLik`, `AIC`, `BIC`: Model fit statistics
+#' @references Pinheiro, J. C., & Bates, D. M. (2000). *Mixed-Effects Models
+#'   in S and S-PLUS*. Springer. Section 2.4.2.
 #' @export
 summary.beezdemand_nlme <- function(
   object,
   report_space = c("natural", "log10"),
+  df_method = c("containment", "between"),
   ...
 ) {
   report_space <- match.arg(report_space)
+  df_method <- match.arg(df_method)
   # Handle failed models
   if (is.null(object$model)) {
     return(structure(
@@ -2591,7 +2856,8 @@ summary.beezdemand_nlme <- function(
         logLik = NA_real_,
         AIC = NA_real_,
         BIC = NA_real_,
-        coefficients = beezdemand_empty_coefficients(),
+        coefficients = .nlme_add_df_column(beezdemand_empty_coefficients()),
+        df_method = df_method,
         derived_metrics = beezdemand_empty_derived_metrics(),
         fixed_effects = NULL,
         random_effects = NULL,
@@ -2612,10 +2878,12 @@ summary.beezdemand_nlme <- function(
     std.error = ttable[, "Std.Error"],
     statistic = ttable[, "t-value"],
     p.value = ttable[, "p-value"],
+    df = unname(ttable[, "DF"]),
     component = "fixed",
     estimate_scale = internal_space,
     term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
   )
+  coefficients <- .nlme_apply_df_method(coefficients, object, ttable, df_method)
 
   if (report_space != internal_space) {
     # Back-transform estimate/SE only; the Wald `statistic`/`p.value` stay on the
@@ -2682,6 +2950,7 @@ summary.beezdemand_nlme <- function(
       BIC = stats::BIC(object$model),
       sigma = object$model$sigma,
       coefficients = coefficients,
+      df_method = df_method,
       derived_metrics = beezdemand_empty_derived_metrics(),
       fixed_effects = ttable,
       random_effects = random_effects,
@@ -2739,12 +3008,26 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
           c("Value", "Std.Error", "t-value", "p-value")
         )
       )
-      # Use DF from original fixed_effects if available
-      if (!is.null(x$fixed_effects) && "DF" %in% colnames(x$fixed_effects)) {
-        df_col <- x$fixed_effects[, "DF", drop = TRUE]
+      # Batch 3 (F-BD10-1): print the df the p-values actually use (the
+      # tibble's `df`, which honours `df_method`), not nlme's raw DF column.
+      df_col <- if ("df" %in% names(coef_df)) {
+        coef_df$df
+      } else if (!is.null(x$fixed_effects) && "DF" %in% colnames(x$fixed_effects)) {
+        x$fixed_effects[, "DF", drop = TRUE]
+      } else {
+        NULL
+      }
+      if (!is.null(df_col)) {
         coef_mat <- cbind(coef_mat[, 1:2, drop = FALSE], DF = df_col, coef_mat[, 3:4, drop = FALSE])
       }
-      stats::printCoefmat(coef_mat, digits = digits, ...)
+      # Columns: Value, Std.Error, DF, t-value, p-value. Name the estimate /
+      # SE and test-statistic columns explicitly so DF is printed as a plain
+      # number rather than being formatted as the test statistic.
+      stats::printCoefmat(coef_mat, digits = digits, cs.ind = 1:2, tst.ind = 4, ...)
+      if (identical(x$df_method, "between")) {
+        cat("  df: between-subject terms use n_subjects - rank(subject-level design);",
+            "intercepts and within-subject terms use containment df.\n")
+      }
     } else {
       stats::printCoefmat(x$fixed_effects, digits = digits, ...)
     }
@@ -2786,6 +3069,11 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #'   `estimate`/`std.error` follow this scale; `statistic`/`p.value` are always on
 #'   the estimation scale (nlme's native containment-t test, which is
 #'   transformation-invariant).
+#' @param df_method Character. `"containment"` (default) reports nlme's own
+#'   df, which uses the observation-level residual df for between-subject
+#'   terms as well, so their p-values are anticonservative; `"between"`
+#'   substitutes `n_subjects - rank(X_between)` for between-subject terms and
+#'   recomputes their p-values. See [summary.beezdemand_nlme()] for the rule.
 #' @param ... Additional arguments (ignored)
 #' @return A tibble of model terms with columns:
 #'   - `term`: Parameter name
@@ -2796,6 +3084,8 @@ print.summary.beezdemand_nlme <- function(x, digits = 4, n = Inf, ...) {
 #'   - `std.error`: Standard error (`NA` for variance components)
 #'   - `statistic`: t-value (`NA` for variance components)
 #'   - `p.value`: P-value (`NA` for variance components)
+#'   - `df`: Degrees of freedom the p-value uses (`NA` for variance
+#'     components); see `df_method`
 #'   - `component`: `"fixed"` or `"variance"`
 #'   - `estimate_scale`: Scale that `estimate` is reported on
 #'   - `term_display`: Display label for `term`
@@ -2806,11 +3096,13 @@ tidy.beezdemand_nlme <- function(
   x,
   effects = c("fixed", "ran_pars"),
   report_space = c("natural", "log10"),
+  df_method = c("containment", "between"),
   ...
 ) {
   report_space <- match.arg(report_space)
+  df_method <- match.arg(df_method)
   if (is.null(x$model)) {
-    return(beezdemand_empty_coefficients())
+    return(.nlme_add_df_column(beezdemand_empty_coefficients()))
   }
 
   # TICKET-064 (F11): warn once when the fit didn't pass the convergence gate.
@@ -2829,10 +3121,12 @@ tidy.beezdemand_nlme <- function(
       std.error = ttable[, "Std.Error"],
       statistic = ttable[, "t-value"],
       p.value = ttable[, "p-value"],
+      df = unname(ttable[, "DF"]),
       component = "fixed",
       estimate_scale = internal_space,
       term_display = vapply(rownames(ttable), beezdemand_term_display_space, character(1), report_space = internal_space)
     )
+    fixed <- .nlme_apply_df_method(fixed, x, ttable, df_method)
 
     # Back-transform estimate/SE only; `statistic`/`p.value` stay on nlme's native
     # estimation scale so summary() and tidy() report the same transformation-
@@ -2863,6 +3157,7 @@ tidy.beezdemand_nlme <- function(
           std.error = NA_real_,
           statistic = NA_real_,
           p.value = NA_real_,
+          df = NA_real_,
           component = "variance",
           estimate_scale = "natural",
           term_display = var_names

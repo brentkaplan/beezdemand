@@ -22,12 +22,17 @@ NULL
 #'   fallback (length must equal `nrow(Sigma)`).
 #'
 #' @return The upper-triangular Cholesky factor of `Sigma`, or of the
-#'   diagonal fallback when `Sigma` is not positive definite.
+#'   diagonal fallback when `Sigma` is not positive definite. The result
+#'   carries a logical attribute `"fallback"` (`TRUE` when the diagonal
+#'   substitute was used); read it at the call site before any further
+#'   matrix operation, since `t()` / `%*%` need not preserve it.
 #' @keywords internal
 .hurdle_chol_or_fallback <- function(Sigma, sigma_diag) {
-  tryCatch(
+  fallback <- FALSE
+  L <- tryCatch(
     chol(Sigma),
     error = function(e) {
+      fallback <<- TRUE
       cli::cli_warn(c(
         "!" = "Estimated random-effects covariance is not positive definite.",
         "i" = paste(
@@ -39,6 +44,8 @@ NULL
       chol(diag(sigma_diag, nrow = length(sigma_diag)))
     }
   )
+  attr(L, "fallback") <- fallback
+  L
 }
 
 #' Prepare Hurdle Model Data
@@ -583,6 +590,11 @@ NULL
 #'   \item{data}{Original data used for fitting}
 #'   \item{param_info}{List with y_var, x_var, id_var, n_subjects, n_obs, etc.}
 #'   \item{converged}{Logical indicating convergence}
+#'   \item{re_cov_fallback}{Logical. `TRUE` when the estimated random-effects
+#'     covariance was not positive definite and the subject-level effects
+#'     were computed from an uncorrelated (diagonal) approximation; the
+#'     reported correlations do not apply to those outputs. `summary()` and
+#'     `print()` carry a note when it is `TRUE`.}
 #'   \item{loglik}{Log-likelihood at convergence}
 #'   \item{AIC, BIC}{Information criteria}
 #'   \item{error_message}{Error message if fitting failed, NULL otherwise}
@@ -617,6 +629,16 @@ NULL
 #' To compare \eqn{\alpha} estimates with models fit in \eqn{\log_{10}} space,
 #' use:
 #' \deqn{\log_{10}(\alpha) = \log(\alpha) / \log(10).}
+#'
+#' The default `part2 = "zhao_exponential"` places no \eqn{Q_0} inside the
+#' exponent (\eqn{\exp(-\alpha_{Zhao} \, P)}), whereas the Hursh & Silberberg
+#' form used by `fit_demand_fixed(equation = "hs")` and
+#' `fit_demand_tmb(equation = "exponential")` uses \eqn{\exp(-\alpha_{HS} \, Q_0 \, P)}.
+#' The two \eqn{\alpha} values are therefore on different scales and relate as
+#' \deqn{\alpha_{HS} = \alpha_{Zhao} / Q_0,}
+#' so a Zhao \eqn{\alpha} is not directly comparable with an HS \eqn{\alpha}
+#' unless divided by the subject's (or group's) \eqn{Q_0}. Use
+#' `part2 = "exponential"` (alias `"hs_stdq0"`) for an HS-scaled \eqn{\alpha}.
 #'
 #' @seealso \code{\link{summary.beezdemand_hurdle}}, \code{\link{predict.beezdemand_hurdle}}
 #'   (and its \emph{Scoring predictions} section: score zero-inclusive
@@ -1034,8 +1056,11 @@ fit_demand_hurdle <- function(
     # Numeric stability: rho parameters can imply a non-PD correlation matrix
     # (near-boundary rhos, overflow, tanh() rounding to +/-1). On failure,
     # .hurdle_chol_or_fallback() warns and substitutes an uncorrelated
-    # covariance so downstream reporting can proceed (TICKET-061).
-    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2, sigma_c^2)))
+    # covariance so downstream reporting can proceed (TICKET-061). Batch 3
+    # (F-BD9-7): the fallback is persisted on the fit as `re_cov_fallback`.
+    L <- .hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2, sigma_c^2))
+    re_cov_fallback <- isTRUE(attr(L, "fallback"))
+    L <- t(L)
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i", "c_i")
 
@@ -1138,7 +1163,9 @@ fit_demand_hurdle <- function(
       nrow = 2
     )
 
-    L <- t(.hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2)))
+    L <- .hurdle_chol_or_fallback(Sigma, c(sigma_a^2, sigma_b^2))
+    re_cov_fallback <- isTRUE(attr(L, "fallback"))
+    L <- t(L)
     random_effects_mat <- t(L %*% t(u_hat))
     colnames(random_effects_mat) <- c("a_i", "b_i")
 
@@ -1253,6 +1280,7 @@ fit_demand_hurdle <- function(
     opt = opt,
     sdr = sdr,
     hessian_pd = hessian_pd,
+    re_cov_fallback = re_cov_fallback,
     call = cl,
     data = data,
     param_info = list(

@@ -578,30 +578,123 @@ test_that("zben Pmax is invariant to the observed price domain for the same curv
   expect_false(isTRUE(all.equal(res_100$pmax_model, 100, tolerance = 1e-2)))
 })
 
-test_that("zben Pmax reports method_model = numerical_optimize_expanded and is_boundary_model FALSE when the true max is found", {
+test_that("zben Pmax searches an analytic domain independent of the observed prices (method label, no boundary flag)", {
   res <- beezdemand_calc_pmax_omax(
     model_type = "zben", params = list(alpha = 0.001, q0 = 10),
     param_scales = list(alpha = "natural", q0 = "natural"),
     price_obs = c(0, 20)
   )
-  expect_identical(res$method_model, "numerical_optimize_expanded")
+  expect_identical(res$method_model, "numerical_optimize_analytic_domain")
   expect_false(isTRUE(res$is_boundary_model))
+  # No observed prices at all: zben no longer needs them for the model Pmax.
+  res_np <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = 0.001, q0 = 10),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
+  expect_equal(res_np$pmax_model, res$pmax_model, tolerance = 1e-6)
 })
 
-test_that("zben Pmax flags is_boundary_model TRUE when the expansion cap is hit", {
-  # alpha this small pushes the true (unconstrained) expenditure-maximizing
-  # price to ~3.5e6; starting from a narrow observed domain [0, 1], six 10x
-  # expansions only reach 1e6 -- short of the true peak -- so the cap must
-  # be hit and the result flagged as domain-bound rather than silently
-  # returned as a converged interior optimum.
+test_that("zben Pmax finds a far-out maximum without an expansion cap", {
+  # alpha this small puts the true expenditure-maximizing price near 3.5e6;
+  # the old 10x-doubling expansion from [0, 1] capped at 1e6 and flagged
+  # is_boundary. The analytic domain (every stationary point has
+  # alpha * Q0 * P / log10(Q0) < 4) contains it directly.
+  truth <- .zben_truth(10, 1e-7, upper = 1e8, n_grid = 20000)
   res <- beezdemand_calc_pmax_omax(
     model_type = "zben", params = list(alpha = 1e-7, q0 = 10),
     param_scales = list(alpha = "natural", q0 = "natural"),
     price_obs = c(0, 1)
   )
-  expect_true(isTRUE(res$is_boundary_model))
-  expect_identical(res$method_model, "numerical_optimize_expanded")
+  expect_false(isTRUE(res$is_boundary_model))
+  expect_equal(res$pmax_model, truth$maximum, tolerance = 1e-3)
+  expect_equal(res$omax_model, truth$objective, tolerance = 1e-4)
+})
+
+test_that("zben Pmax returns the higher peak when the observed price range excludes it (Codex FIX-END-S counterexample)", {
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  Q0 <- 15; alpha <- 0.01
+  q <- log10(Q0)
+  E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+  lp <- seq(log(1e-3), log(1e4), length.out = 200001)
+  e <- E(exp(lp))
+  truth_pmax <- exp(lp[which.max(e)])   # ~25.8; the lower peak sits near 6.9
+  truth_omax <- max(e)
+  # (0, 10] sees only the lower peak; (10, 50] sees only the higher one.
+  for (po in list(c(0, 10), c(10, 50), c(0.01, 100))) {
+    r <- beezdemand_calc_pmax_omax(model_type = "zben",
+                                   params = list(alpha = alpha, q0 = Q0),
+                                   param_scales = list(alpha = "natural", q0 = "natural"),
+                                   price_obs = po)
+    expect_equal(r$pmax_model, truth_pmax, tolerance = 1e-3, info = paste(po, collapse = ","))
+    expect_equal(r$omax_model, truth_omax, tolerance = 1e-4, info = paste(po, collapse = ","))
+    expect_false(isTRUE(r$is_boundary_model), info = paste(po, collapse = ","))
+  }
+})
+
+test_that("zben Pmax matches a brute-force global search across the (Q0, alpha) plane", {
+  # Broad sweep including the bimodal band (Q0 ~ 12-25) and extreme scales;
+  # the truncated observed domain must not matter.
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  set.seed(20260907)
+  n_bad <- 0L
+  for (i in seq_len(60)) {
+    Q0 <- 10^stats::runif(1, 0.05, 3.5); alpha <- 10^stats::runif(1, -5, 0.5)
+    q <- log10(Q0)
+    E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+    bound <- 4 * q / (alpha * Q0)
+    lp <- seq(log(bound * 1e-9), log(bound * 2), length.out = 400001)
+    e <- E(exp(lp))
+    truth_pmax <- exp(lp[which.max(e)]); truth_omax <- max(e)
+    r <- beezdemand_calc_pmax_omax(model_type = "zben",
+                                   params = list(alpha = alpha, q0 = Q0),
+                                   param_scales = list(alpha = "natural", q0 = "natural"),
+                                   price_obs = c(0, 10))
+    # Ratios: relative agreement regardless of the magnitude of the values.
+    if (!isTRUE(all.equal(r$omax_model / truth_omax, 1, tolerance = 1e-5)) ||
+        !isTRUE(all.equal(r$pmax_model / truth_pmax, 1, tolerance = 2e-3))) n_bad <- n_bad + 1L
+  }
+  expect_identical(n_bad, 0L)
+})
+
+test_that("zben numerical Pmax finds the global maximum on a bimodal expenditure curve, independent of the observed price grid", {
+  # Regression: a single optimize() call over the search interval returned the
+  # lower of two local maxima for some (Q0, alpha), and which one depended on
+  # the observed price range (GH #19 follow-up).
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  Q0 <- 18.999; alpha <- 0.01198
+  q <- log10(Q0)
+  E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+  lp <- seq(log(1e-3), log(1e4), length.out = 200001)
+  e <- E(exp(lp))
+  truth_pmax <- exp(lp[which.max(e)])   # ~3.64 (the second local maximum near 17.5 is lower)
+  truth_omax <- max(e)
+  for (po in list(c(0.01, 100), c(1, 5, 10, 50), c(0.5, 1, 2, 5, 10, 20))) {
+    r <- beezdemand_calc_pmax_omax(model_type = "zben",
+                                   params = list(alpha = alpha, q0 = Q0),
+                                   param_scales = list(alpha = "natural", q0 = "natural"),
+                                   price_obs = po)
+    expect_equal(r$pmax_model, truth_pmax, tolerance = 1e-3, info = paste(po, collapse = ","))
+    expect_equal(r$omax_model, truth_omax, tolerance = 1e-4, info = paste(po, collapse = ","))
+  }
+})
+
+test_that("zben Pmax honours an analytic lower bound below the old 1e-6 price floor", {
+  # Q0 = 10, alpha = 1e6: the bound 4 * log10(Q0) / (alpha * Q0) = 4e-7 sits
+  # below 1e-6; the old floor rejected the interval and returned NA.
+  # (Brute-force truth inline: .zben_truth()'s grid starts at 1e-3, far above
+  # this peak. Ratios are compared because expect_equal() on numbers this
+  # small falls back to an absolute tolerance and would pass vacuously.)
+  ll4_inv10 <- function(y) { v <- 10^(4 * y) - 1; ifelse(v >= 0, v^(1 / 4), 0) }
+  Q0 <- 10; alpha <- 1e6; q <- log10(Q0)
+  E <- function(p) p * ll4_inv10(q * exp(-(alpha / q) * Q0 * p))
+  lp <- seq(log(1e-12), log(1e-3), length.out = 400001)
+  e <- E(exp(lp))
+  truth_pmax <- exp(lp[which.max(e)]); truth_omax <- max(e)   # ~3.48e-7 / 2.63e-7
+  res <- beezdemand_calc_pmax_omax(
+    model_type = "zben", params = list(alpha = 1e6, q0 = 10),
+    param_scales = list(alpha = "natural", q0 = "natural")
+  )
   expect_true(is.finite(res$pmax_model))
-  # The capped value is a lower bound on the true maximizer, not the answer.
-  expect_lt(res$pmax_model, 3.5e6)
+  expect_equal(res$pmax_model / truth_pmax, 1, tolerance = 1e-3)
+  expect_equal(res$omax_model / truth_omax, 1, tolerance = 1e-4)
 })

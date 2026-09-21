@@ -14,9 +14,19 @@
 #' @return An object of class `beezdemand_diagnostics` containing:
 #'   \describe{
 #'     \item{convergence}{List with convergence status and messages}
-#'     \item{boundary}{List with boundary condition warnings}
+#'     \item{boundary}{List with boundary condition warnings. For
+#'       `beezdemand_tmb` fits it also carries `k_identification`: `NULL` unless
+#'       k was estimated as a free parameter, otherwise the screen described in
+#'       Details.}
 #'     \item{residuals}{Summary statistics for residuals}
-#'     \item{random_effects}{Summary of random effects (if applicable)}
+#'     \item{random_effects}{Summary of random effects (if applicable).
+#'       `variances` holds random-effect variances: on the log10 scale for
+#'       `beezdemand_tmb` fits, and as reported by [nlme::VarCorr()] for
+#'       `beezdemand_nlme` fits. `beezdemand_tmb` fits also carry `sd_log10`
+#'       (the corresponding standard deviations, matching
+#'       `summary(fit)$variance_components`) and `sd_internal_log` (the raw
+#'       natural-log-scale standard deviations used by the near-zero
+#'       degeneracy check).}
 #'     \item{issues}{Character vector of identified issues}
 #'     \item{recommendations}{Character vector of recommendations}
 #'   }
@@ -28,6 +38,12 @@
 #'   \item Parameters at or near boundaries
 #'   \item Residual patterns (heteroscedasticity, outliers)
 #'   \item Random effect variance estimates near zero
+#'   \item For `fit_demand_tmb()` fits with `estimate_k = TRUE`, whether the
+#'     fit shows the signature of an unidentified k: an implausible k, a decay
+#'     exponent `alpha * Q0 * price` that never leaves its linear regime over
+#'     the observed prices, a degenerate alpha, or `log_k` resting on a
+#'     user-supplied bound. This is a screen, not a formal test: no flag means
+#'     nothing was detected, not that k is identified.
 #'   \item Correlation matrices near singularity
 #' }
 #'
@@ -138,7 +154,10 @@ check_demand_model.beezdemand_nlme <- function(object, ...) {
 
   # 4. Check residuals
   residuals <- .check_nlme_residuals(object)
-  if (residuals$has_outliers) {
+  if (isTRUE(residuals$computation_failed)) {
+    issues <- c(issues, "Residual diagnostics could not be computed")
+    recommendations <- c(recommendations, "Check residuals() on the fitted nlme model manually")
+  } else if (residuals$has_outliers) {
     issues <- c(issues, sprintf("Detected %d potential outliers (|resid| > 3 SD)", residuals$n_outliers))
     recommendations <- c(recommendations, "Investigate outlying observations")
   }
@@ -245,14 +264,17 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
   # 3. Random-effect SD components and near-zero check. Phase 2 generalized
   # the RE parameterization to a `logsigma` vector spanning all blocks;
   # iterate the full vector and label each entry by its (block, q0|alpha)
-  # slot. `variances` reports the SDs on the log10 scale -- exp(logsigma) /
-  # log(10) -- matching summary()$variance_components (TICKET-015). The raw
-  # natural-log-scale SDs are retained in `sd_internal_log`, and the
-  # near-zero degeneracy check is applied on that raw internal scale so its
-  # behavior is unchanged.
+  # slot. F-BD13-1 (audit 2026-09-06): `variances` used to report the SDs on
+  # the log10 scale -- exp(logsigma) / log(10) -- so both the field name and the
+  # print label were wrong. Those SDs now live in `sd_log10` (still matching
+  # summary()$variance_components, TICKET-015) and `variances` holds their
+  # squares, i.e. true variances on the log10 scale. The raw natural-log-scale
+  # SDs are retained in `sd_internal_log`, and the near-zero degeneracy check is
+  # still applied on that raw internal scale so its behavior is unchanged.
   coefs <- object$model$coefficients
   re_parsed <- object$param_info$random_effects_parsed
   re_variances <- numeric(0)
+  re_sd_log10 <- numeric(0)
   re_sd_internal <- numeric(0)
   near_zero <- logical(0)
 
@@ -272,7 +294,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
                 sprintf("%ssigma_b[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + j])
           re_sd_internal[nm] <- v
-          re_variances[nm] <- v / log(10)
+          re_sd_log10[nm] <- v / log(10)
+          re_variances[nm] <- (v / log(10))^2
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -282,7 +305,8 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
                 sprintf("%ssigma_c[%d]", block_label, j)
           v <- exp(logsigma_full[sigma_offset + d_q0 + j])
           re_sd_internal[nm] <- v
-          re_variances[nm] <- v / log(10)
+          re_sd_log10[nm] <- v / log(10)
+          re_variances[nm] <- (v / log(10))^2
           near_zero[nm] <- v < 1e-4
         }
       }
@@ -305,6 +329,7 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
 
   random_effects <- list(
     variances = re_variances,
+    sd_log10 = re_sd_log10,
     near_zero = near_zero,
     sd_internal_log = re_sd_internal
   )
@@ -378,12 +403,25 @@ check_demand_model.beezdemand_tmb <- function(object, ...) {
     recommendations <- c(recommendations, "Investigate outlying observations")
   }
 
+  # 5. Free-k identification screen. Returns NULL unless k was estimated as a
+  # free parameter; a "none" severity means nothing was detected, not that k is
+  # identified (see `.tmb_k_identification()`).
+  k_ident <- .tmb_k_identification(object)
+  k_msg <- .tmb_k_identification_message(k_ident)
+  if (!is.null(k_msg)) {
+    issues <- c(issues, k_msg$issue)
+    recommendations <- c(recommendations, k_msg$recommendation)
+  }
+
   structure(
     list(
       model_class = "beezdemand_tmb",
       convergence = convergence,
       hessian_pd = hessian_pd,
-      boundary = list(at_boundary = character(0)),
+      boundary = list(
+        at_boundary = k_ident$at_boundary %||% character(0),
+        k_identification = k_ident
+      ),
       residuals = residuals_info,
       random_effects = random_effects,
       issues = issues,
@@ -425,6 +463,25 @@ print.beezdemand_diagnostics <- function(x, ...) {
       for (nm in names(vars)) {
         status <- if (isTRUE(x$random_effects$near_zero[nm])) " [NEAR ZERO]" else ""
         cat(sprintf("  %s variance: %.4g%s\n", nm, vars[nm], status))
+      }
+    }
+  }
+
+  # Boundary / identification
+  bnd <- x$boundary
+  if (!is.null(bnd) && (length(bnd$at_boundary) > 0 ||
+                        !is.null(bnd$k_identification))) {
+    ki <- bnd$k_identification
+    show_k <- !is.null(ki) && ki$severity != "none"
+    if (length(bnd$at_boundary) > 0 || show_k) {
+      cat("\nBoundary and Identification:\n")
+      if (length(bnd$at_boundary) > 0) {
+        cat("  At boundary:", paste(bnd$at_boundary, collapse = ", "), "\n")
+      }
+      if (show_k) {
+        msg <- .tmb_k_identification_message(ki)
+        cat("  ", strwrap(msg$issue, width = 76, exdent = 4), sep = "",
+            fill = TRUE)
       }
     }
   }
@@ -885,7 +942,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     NULL
   })
 
-  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug) ||
+    !is.numeric(aug$.resid)
   if (computation_failed && is.null(fail_reason)) {
     fail_reason <- "augment() did not return a usable '.resid' column"
   }
@@ -960,6 +1018,19 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
   # usable-for-inference gate. (Fixed-effect SEs come from model$varFix, which is
   # available whenever the model fits; apVar is the stricter conditioning signal.)
   apVar_ok <- is.matrix(model$apVar) && all(is.finite(model$apVar))
+  # F-BD10-1: a finite apVar can still be indefinite (a saddle rather than a
+  # maximum); require it to be positive semi-definite up to rounding. A raw
+  # chol() would flip healthy fits on a -1e-16 eigenvalue (end-pass review),
+  # so use the symmetric eigenvalues with a relative tolerance.
+  if (apVar_ok) {
+    ev <- tryCatch(
+      eigen((model$apVar + t(model$apVar)) / 2, symmetric = TRUE,
+            only.values = TRUE)$values,
+      error = function(e) NULL
+    )
+    apVar_ok <- !is.null(ev) && length(ev) > 0 &&
+      all(ev > -sqrt(.Machine$double.eps) * max(abs(ev), 1e-300))
+  }
   no_error <- is.null(object$error_message)
   final_fit_ok <- apVar_ok && no_error
 
@@ -1082,27 +1153,66 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
 
   if (!is.null(vc)) {
     # Extract variance estimates
+    # F-BD13-1: prefer the "Variance" column so the field name is true.
+    # nlme::VarCorr() returns both columns for every class this package fits;
+    # the StdDev branch is defensive, and squares only the reported values --
+    # the near-zero predicate keeps comparing the column as returned, so the
+    # flagging threshold is unchanged on that path.
     var_cols <- c("Variance", "StdDev")
     var_col <- intersect(colnames(vc), var_cols)[1]
 
     if (!is.na(var_col)) {
-      # Get row names (parameter names)
-      param_names <- rownames(vc)
-      param_names <- param_names[param_names != "Residual"]
+      # F-BD13-2: walk the rows by INDEX, not by rowname. For a nested
+      # grouping (`~ 1 | site/id`) nlme::VarCorr() interleaves group-header
+      # rows (rowname "site =", a pdMat class string in the value cell) with
+      # the per-level parameter rows, and the parameter rownames repeat for
+      # every level. Indexing `vc[param_names, ]` coerced the headers to NA
+      # and returned the FIRST level's value for every repeat, so the inner
+      # level's variance was never reported. Header rows are dropped (their
+      # value cell is not numeric) and, when more than one grouping level is
+      # present, entries are named `<level>:<term>` so they stay unique;
+      # single-level fits keep the bare term names.
+      rn <- rownames(vc)
+      raw_vals <- suppressWarnings(as.numeric(vc[, var_col]))
+      is_header <- is.na(raw_vals) & grepl("=\\s*$", rn)
+      group_of <- character(length(rn))
+      current <- ""
+      for (i in seq_along(rn)) {
+        if (is_header[i]) current <- trimws(sub("=\\s*$", "", rn[i]))
+        group_of[i] <- current
+      }
+      keep <- !is_header & rn != "Residual"
+      n_groups <- length(unique(group_of[keep & nzchar(group_of)]))
+      param_names <- if (n_groups > 1L) {
+        paste0(group_of[keep], ":", rn[keep])
+      } else {
+        rn[keep]
+      }
 
       if (length(param_names) > 0) {
-        # Get variance values
-        var_vals <- as.numeric(vc[param_names, var_col])
+        var_vals <- raw_vals[keep]
         names(var_vals) <- param_names
-        variances <- var_vals
+        variances <- if (identical(var_col, "StdDev")) var_vals^2 else var_vals
+        names(variances) <- param_names
+        # Keep NA as NA: a retained row whose value did not parse is "not
+        # checked", never "checked and not near zero" (end-pass review).
         near_zero <- var_vals < 1e-6
         names(near_zero) <- param_names
+        if (anyNA(var_vals)) {
+          computation_failed <- TRUE
+          cli::cli_warn(
+            "Random-effects diagnostics could not be computed for {.val {param_names[is.na(var_vals)]}}: VarCorr() value did not parse as a number",
+            class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+          )
+        }
       }
     }
 
     # Check for near-singular correlation
     if ("Corr" %in% colnames(vc)) {
-      corr_vals <- as.numeric(vc[, "Corr"])
+      # The Corr column mixes numbers with "(Intr)" labels and blanks;
+      # coerce quietly and keep the numeric cells.
+      corr_vals <- suppressWarnings(as.numeric(vc[, "Corr"]))
       corr_vals <- corr_vals[!is.na(corr_vals)]
       if (length(corr_vals) > 0 && any(abs(corr_vals) > 0.99)) {
         near_singular <- TRUE
@@ -1134,19 +1244,49 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     ))
   }
 
+  # F-BD13-1 follow-up: mirror the hurdle/fixed helpers. Both residual
+  # attempts are guarded (the plain `residuals()` fallback used to escape),
+  # and an empty or non-numeric residual vector is reported as a failed
+  # computation with the classed warning, never as a clean "no outliers".
+  fail_reason <- NULL
   resid <- tryCatch(
     stats::residuals(object$model, type = "normalized"),
-    error = function(e) stats::residuals(object$model)
+    error = function(e) {
+      tryCatch(
+        stats::residuals(object$model),
+        error = function(e2) {
+          fail_reason <<- conditionMessage(e2)
+          NULL
+        }
+      )
+    }
   )
+  if (!is.null(resid) && !is.numeric(resid)) {
+    fail_reason <- "residuals() did not return a numeric vector"
+    resid <- NULL
+  }
+  if (!is.null(resid)) {
+    resid <- resid[!is.na(resid)]
+    if (length(resid) == 0) {
+      fail_reason <- "no non-missing residuals available"
+      resid <- NULL
+    }
+  }
 
-  if (is.null(resid) || length(resid) == 0) {
+  if (is.null(resid)) {
+    cli::cli_warn(
+      "Residual diagnostics could not be computed: {fail_reason %||%
+       'residuals() returned no usable output'}",
+      class = c("beezdemand_diagnostics_computation_warning", "beezdemand_warning")
+    )
     return(list(
       mean = NA_real_,
       sd = NA_real_,
       min = NA_real_,
       max = NA_real_,
       has_outliers = FALSE,
-      n_outliers = 0
+      n_outliers = 0,
+      computation_failed = TRUE
     ))
   }
 
@@ -1159,7 +1299,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     min = min(resid),
     max = max(resid),
     has_outliers = any(outliers),
-    n_outliers = sum(outliers)
+    n_outliers = sum(outliers),
+    computation_failed = FALSE
   )
 }
 
@@ -1222,7 +1363,8 @@ plot_qq.beezdemand_tmb <- function(object, which = NULL, ...) {
     NULL
   })
 
-  computation_failed <- is.null(aug) || !".resid" %in% names(aug)
+  computation_failed <- is.null(aug) || !".resid" %in% names(aug) ||
+    !is.numeric(aug$.resid)
   if (computation_failed && is.null(fail_reason)) {
     fail_reason <- "augment() did not return a usable '.resid' column"
   }
