@@ -154,7 +154,7 @@ head(fit$results)
 #>        Q0se      Alphase alpha_star alpha_star_se  N      AbsSS      SdRes
 #> 1 0.2685323 6.090445e-05 0.00836391  0.0002487819 16 0.01113625 0.02820366
 #> 2 0.2257764 6.760007e-04 0.02395943  0.0027613205 16 0.10721624 0.08751173
-#> 3 0.2146862 3.571177e-04 0.01717018  0.0014587505 14 0.02387617 0.04460584
+#> 3 0.2146862 3.571176e-04 0.01717018  0.0014587504 14 0.02387617 0.04460584
 #> 4 0.4591683 1.449834e-04 0.01756192  0.0005922269 14 0.02013543 0.04096282
 #> 5 0.3290277 9.636582e-05 0.01129556  0.0003936341 14 0.01006059 0.02895483
 #> 6 0.3002817 4.315615e-04 0.02565739  0.0017628379 11 0.01651102 0.04283174
@@ -531,8 +531,8 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] nls.multstart_2.0.0 gtable_0.3.6        TMB_1.9.25         
-#>  [4] xfun_0.61           bslib_0.12.0        ggplot2_4.0.3      
-#>  [7] htmlwidgets_1.6.4   insight_1.5.4       lattice_0.22-9     
+#>  [4] xfun_0.62           bslib_0.12.0        ggplot2_4.0.3      
+#>  [7] htmlwidgets_1.6.4   insight_1.6.1       lattice_0.22-9     
 #> [10] vctrs_0.7.3         tools_4.6.1         Rdpack_2.6.6       
 #> [13] generics_0.1.4      tibble_3.3.1        pkgconfig_2.0.3    
 #> [16] Matrix_1.7-5        RColorBrewer_1.1-3  S7_0.2.2           
@@ -543,13 +543,13 @@ sessionInfo()
 #> [31] nloptr_2.2.1        jquerylib_0.1.4     tidyr_1.3.2        
 #> [34] MASS_7.3-65         cachem_1.1.0        reformulas_0.4.4   
 #> [37] boot_1.3-32         nlme_3.1-169        tidyselect_1.2.1   
-#> [40] digest_0.6.39       performance_0.18.2  mvtnorm_1.4-2      
+#> [40] digest_0.6.39       performance_0.19.0  mvtnorm_1.4-2      
 #> [43] purrr_1.2.2         splines_4.6.1       fastmap_1.2.0      
 #> [46] grid_4.6.1          cli_3.6.6           magrittr_2.0.5     
 #> [49] patchwork_1.3.2     utf8_1.2.6          broom_1.0.13       
 #> [52] withr_3.0.3         scales_1.4.0        backports_1.5.1    
 #> [55] estimability_2.0.0  rmarkdown_2.32      emmeans_2.0.4      
-#> [58] otel_0.2.0          lme4_2.0-6          ragg_1.5.2         
+#> [58] otel_0.2.0          lme4_2.1-0          ragg_1.5.2         
 #> [61] coda_0.19-4.1       evaluate_1.0.5      knitr_1.52         
 #> [64] rbibutils_2.4.1     rlang_1.3.0         Rcpp_1.1.2         
 #> [67] xtable_1.8-8        glue_1.8.1          nlsr_2026.4.29     

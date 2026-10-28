@@ -15,9 +15,11 @@ passes with 0 errors, 0 warnings, 0 notes
 [`devtools::test()`](https://devtools.r-lib.org/reference/test.html)
 passes (all tests green)
 
-`lintr::lint_package()` reports no critical issues
+[`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+reports no critical issues
 
-Test coverage is adequate (check with `covr::package_coverage()`)
+Test coverage is adequate (check with
+[`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md))
 
 ### Documentation
 

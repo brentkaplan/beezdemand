@@ -72,7 +72,7 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Subjects: 10, Observations: 160
 #>   Fixed parameters: 9, Random effects per subject: 2
 #>   Optimizing...
-#>   Converged in 95 iterations
+#>   Converged in 93 iterations
 #>   Computing standard errors...
 #> Done. Log-likelihood: 2.31
 compare_hurdle_models(fit3, fit2)
