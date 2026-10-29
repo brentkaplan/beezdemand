@@ -67,7 +67,7 @@ jobs:
             cobertura.xml
             coverage.html
 
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@v7
         # Codecov uploads from `push` events require a valid CODECOV_TOKEN secret.
         # Without it, codecov-action exits non-zero and fails the workflow.
         if: ${{ env.CODECOV_TOKEN != '' }}
