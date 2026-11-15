@@ -15,7 +15,8 @@ if (file.exists("data/lowNicClean.csv")) {
 }
 
 # cannabisCigarettes -------------------------------------------------------
-# The source CSV is kept outside the repository (internal_docs/ is not tracked).
+# The source CSV is kept outside the repository (internal_docs/ is not tracked)
+# and already holds the sequential integer ids; no id conversion happens here.
 if (file.exists("internal_docs/cannabisCigarettes.csv")) {
   cannabisCigarettes <- tryCatch(read.csv("internal_docs/cannabisCigarettes.csv"), error = identity)
   if (!inherits(cannabisCigarettes, "error")) {
