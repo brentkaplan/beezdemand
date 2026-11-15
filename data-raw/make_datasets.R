@@ -15,9 +15,12 @@ if (file.exists("data/lowNicClean.csv")) {
 }
 
 # cannabisCigarettes -------------------------------------------------------
-if (file.exists("data/cannabisCigarettes.csv")) {
-  cannabisCigarettes <- tryCatch(read.csv("data/cannabisCigarettes.csv"), error = identity)
+# The source CSV is kept outside the repository (internal_docs/ is not tracked).
+if (file.exists("internal_docs/cannabisCigarettes.csv")) {
+  cannabisCigarettes <- tryCatch(read.csv("internal_docs/cannabisCigarettes.csv"), error = identity)
   if (!inherits(cannabisCigarettes, "error")) {
+    cannabisCigarettes$Q1035 <- NULL
+    stopifnot(is.integer(cannabisCigarettes$id), !anyNA(cannabisCigarettes$id))
     save(cannabisCigarettes, file = "data/cannabisCigarettes.rda", compress = "xz")
   }
 }
