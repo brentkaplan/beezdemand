@@ -711,6 +711,11 @@ contrast reports (a difference, not a `10^`-exponentiated ratio); `param_space
   informative sentinel instead of proceeding into a nonsensical
   single-group contrast.
 
+## Data
+
+* `cannabisCigarettes`: participant IDs replaced with sequential integers; the
+  `Q1035` column (a duplicate of `id`) was removed.
+
 ## New features
 
 * **`simulate_hurdle_data(part2 = "snd")` (TICKET-044).** Adds an SND
