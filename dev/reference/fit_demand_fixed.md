@@ -327,12 +327,12 @@ fit_g <- fit_demand_fixed(dat, equation = "hs", k = 2, by = "gender")
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
-#> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
-#>   singular gradient
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   singular gradient
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
@@ -349,6 +349,8 @@ fit_g <- fit_demand_fixed(dat, equation = "hs", k = 2, by = "gender")
 #>   number of iterations exceeded maximum of 50
 #> Error in nls(formula = (log(y)/log(10)) ~ (log(q0)/log(10)) + k * (exp(-alpha *  : 
 #>   number of iterations exceeded maximum of 50
+#> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
+#>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
 #>   singular gradient matrix at initial parameter estimates
 #> Error in nlsModel(formula, mf, start, wts, scaleOffset = scOff, nDcentral = nDcntr) : 
@@ -392,7 +394,7 @@ glance(fit_g)  # one row per group
 #> # A tibble: 2 × 13
 #>   gender model_class   backend equation k_spec  nobs n_subjects n_success n_fail
 #>   <chr>  <chr>         <chr>   <chr>    <chr>  <int>      <int>     <int>  <int>
-#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        34      4
+#> 1 Female beezdemand_f… legacy  hs       fixed…   378         38        33      5
 #> 2 Male   beezdemand_f… legacy  hs       fixed…   481         39        38      1
 #> # ℹ 4 more variables: converged <lgl>, logLik <dbl>, AIC <dbl>, BIC <dbl>
 # }

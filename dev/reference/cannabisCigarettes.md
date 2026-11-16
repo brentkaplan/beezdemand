@@ -10,8 +10,9 @@ cannabisCigarettes
 
 ## Format
 
-A data frame with columns including: id, x, y, commodity, and auxiliary
-fields (Q1035, CigPrice, CanPrice, variable, value).
+A data frame with columns including: id (a sequential integer
+participant identifier), x, y, commodity, and auxiliary fields
+(CigPrice, CanPrice, variable, value).
 
 ## Examples
 

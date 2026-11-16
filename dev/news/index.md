@@ -954,6 +954,11 @@ change is against the development version rather than against a release.
   existing \<3-row-per-group drop) now returns an informative sentinel
   instead of proceeding into a nonsensical single-group contrast.
 
+### Data
+
+- `cannabisCigarettes`: participant IDs replaced with sequential
+  integers; the `Q1035` column (a duplicate of `id`) was removed.
+
 ### New features
 
 - **`simulate_hurdle_data(part2 = "snd")` (TICKET-044).** Adds an SND
