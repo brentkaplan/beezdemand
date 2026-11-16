@@ -289,7 +289,7 @@ fit2 <- fit_demand_hurdle(apt, y_var = "y", x_var = "x", id_var = "id",
 #>   Subjects: 10, Observations: 160
 #>   Fixed parameters: 9, Random effects per subject: 2
 #>   Optimizing...
-#>   Converged in 95 iterations
+#>   Converged in 94 iterations
 #>   Computing standard errors...
 #> Done. Log-likelihood: 2.31
 
@@ -329,7 +329,7 @@ summary(fit3)
 #>          Estimate Std. Error
 #> alpha      0.0176     0.0115
 #> k          6.2563     3.5532
-#> var_a  17607.7218 47451.7806
+#> var_a  17607.7216 47451.7799
 #> var_b      0.1488     0.0682
 #> var_c      0.2050     0.0977
 #> cov_ab     9.2703     7.6244
