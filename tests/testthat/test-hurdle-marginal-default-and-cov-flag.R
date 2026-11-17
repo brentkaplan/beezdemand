@@ -105,6 +105,10 @@ test_that("predict(marginal = TRUE, type = 'demand') carries re_cov_fallback whe
   fit <- .b3_hurdle_fit()
   bad <- fit
   bad$model$coefficients[["rho_ab_raw"]] <- 40  # tanh(40) == 1 exactly -> singular Sigma
+  # Both SDs exactly 1, so Sigma is all ones and chol() fails on every platform.
+  # With the fitted SDs, rounding decides whether the second pivot is <= 0.
+  bad$model$coefficients[["logsigma_a"]] <- 0
+  bad$model$coefficients[["logsigma_b"]] <- 0
   pred <- suppressWarnings(predict(bad, type = "demand", marginal = TRUE, prices = c(1, 5)))
   expect_identical(attr(pred, "re_cov_fallback"), TRUE)
   expect_warning(predict(bad, type = "demand", marginal = TRUE, prices = c(1, 5)),
