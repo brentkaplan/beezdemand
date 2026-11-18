@@ -73,7 +73,7 @@ fit <- fit_demand_hurdle(apt_sub, y_var = "y", x_var = "x", id_var = "id")
 #> ℹ Run `check_demand_model()` for detailed diagnostics.
 #> ℹ Consider simplifying the model (fewer random effects) or checking data
 #>   quality.
-#> Done. Log-likelihood: -86.08
+#> Done. Log-likelihood: -80.84
 summary(fit)
 #> 
 #> Two-Part Mixed Effects Hurdle Demand Model
@@ -95,51 +95,51 @@ summary(fit)
 #> 
 #> Fixed Effects:
 #> --------------
-#>              Estimate Std. Error  z value
-#> beta0      -1.185e+02        NaN       NA
-#> beta1       1.131e+02        NaN       NA
-#> log_q0      1.995e+00  1.964e-02   101.55
-#> log_k       3.333e+01        NaN       NA
-#> log_alpha  -3.482e+01  1.354e-02 -2572.87
-#> logsigma_a  6.134e+00        NaN       NA
-#> logsigma_b -6.897e-01        NaN       NA
-#> logsigma_c -9.218e-01  8.597e-03  -107.22
-#> logsigma_e -1.504e+00  4.864e-02   -30.92
-#> rho_ab_raw -5.737e-02        NaN       NA
-#> rho_ac_raw  1.419e-01        NaN       NA
-#> rho_bc_raw  5.490e-01        NaN       NA
+#>              Estimate Std. Error   z value
+#> beta0      -1.156e+02  3.549e-01  -325.626
+#> beta1       1.089e+02        NaN        NA
+#> log_q0      1.982e+00  1.581e-01    12.540
+#> log_k       3.284e+01  6.526e-02   503.159
+#> log_alpha  -3.445e+01  1.702e-02 -2023.748
+#> logsigma_a  6.387e+00        NaN        NA
+#> logsigma_b -7.721e-01  1.099e-01    -7.024
+#> logsigma_c -9.420e-01  2.281e-02   -41.302
+#> logsigma_e -1.527e+00  5.210e-02   -29.302
+#> rho_ab_raw -1.685e-02  7.616e-03    -2.212
+#> rho_ac_raw  1.530e-01  5.004e-03    30.584
+#> rho_bc_raw  5.267e-01        NaN        NA
 #> 
 #> Variance Components:
 #> --------------------
-#>             Estimate Std. Error
-#> alpha   0.000000e+00     0.0000
-#> k       2.997419e+14        NaN
-#> var_a   2.128520e+05        NaN
-#> var_b   2.518000e-01        NaN
-#> var_c   1.583000e-01     0.0027
-#> cov_ab -1.326540e+01        NaN
-#> cov_ac  2.587260e+01        NaN
-#> cov_bc  9.700000e-02        NaN
-#> var_e   4.940000e-02     0.0048
+#>             Estimate   Std. Error
+#> alpha   0.000000e+00 0.000000e+00
+#> k       1.825765e+14 1.191568e+13
+#> var_a   3.527714e+05          NaN
+#> var_b   2.135000e-01 4.690000e-02
+#> var_c   1.520000e-01 6.900000e-03
+#> cov_ab -4.622500e+00 2.635800e+00
+#> cov_ac  3.516320e+01 1.095900e+00
+#> cov_bc  8.550000e-02 9.700000e-03
+#> var_e   4.720000e-02 4.900000e-03
 #> 
 #> Correlations:
 #> -------------
 #>        Estimate Std. Error
-#> rho_ab  -0.0573        NaN
-#> rho_ac   0.1410        NaN
-#> rho_bc   0.4859        NaN
+#> rho_ab  -0.0168     0.0076
+#> rho_ac   0.1519     0.0049
+#> rho_bc   0.4746        NaN
 #> 
 #> Model Fit:
 #> ----------
-#>   Log-likelihood: -86.08
-#>   AIC: 196.17
-#>   BIC: 242.11
+#>   Log-likelihood: -80.84
+#>   AIC: 185.68
+#>   BIC: 231.63
 #> 
 #> Demand Metrics (Group-Level):
 #> -----------------------------
-#>   Pmax (price at max expenditure): 4.4332
-#>   Omax (max expenditure): 12.0084
-#>   Q at Pmax: 2.7087
+#>   Pmax (price at max expenditure): 5.0093
+#>   Omax (max expenditure): 13.4662
+#>   Q at Pmax: 2.6882
 #>   Elasticity at Pmax: 0.0000
 #>   Method: analytic_lambert_w_hurdle
 #> 
@@ -147,19 +147,19 @@ summary(fit)
 #> ----------------------------------------------
 #>   Q0 (Intensity):
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   2.403   6.156   7.532   8.077  10.904  12.465 
+#>   2.367   6.086   7.426   8.000  10.766  12.318 
 #>   Alpha:
 #>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-#> 3.899e-16 5.636e-16 6.470e-16 7.361e-16 8.358e-16 1.572e-15 
+#> 6.078e-16 8.610e-16 1.045e-15 1.171e-15 1.331e-15 2.564e-15 
 #>   Breakpoint:
 #>       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-#> -0.0000415  5.4983508  8.9759897  9.7593745 11.2859038 29.0094132 
+#> -0.0000731  5.5246723  9.0208189  9.5167226 11.5063300 24.7984416 
 #>   Pmax:
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   2.122   3.992   5.157   5.131   5.921   8.557 
+#>   2.136   4.116   5.239   5.328   6.362   9.011 
 #>   Omax:
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   6.301   9.741  12.081  14.919  18.928  35.821 
+#>   6.839   9.850  12.917  15.279  19.745  35.959 
 #> 
 # }
 ```
