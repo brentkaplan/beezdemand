@@ -160,9 +160,6 @@ fit <- fit_demand_mixed(ko, y_var = "y_ll4", x_var = "x",
 #> Start values (first few): Q0_int=2.27, alpha_int=-3
 #> Number of fixed parameters: 10 (Q0: 5, alpha: 5)
 get_demand_comparisons(fit)
-#> Warning: ! NLME fit did not pass the convergence gate; standard errors, intervals, and
-#>   derived quantities may be unreliable.
-#> ℹ Hessian is not positive definite; variance estimates may be unreliable
 #> Using default 'compare_specs': ~ dose for EMMs.
 #> 
 #> --- Processing comparisons for parameter: Q0 ---
